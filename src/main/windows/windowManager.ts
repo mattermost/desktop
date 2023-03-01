@@ -11,6 +11,7 @@ import {
     CallsJoinCallMessage,
     CallsErrorMessage,
     CallsLinkClickMessage,
+    CallsEventHandler,
 } from 'types/calls';
 
 import {
@@ -97,15 +98,17 @@ export class WindowManager {
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
-        ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
-        ipcMain.on(CALLS_JOIN_CALL, this.createCallsWidgetWindow);
-        ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
-        ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
-        ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
-        ipcMain.on(CALLS_ERROR, this.handleCallsError);
-        ipcMain.on(CALLS_LINK_CLICK, this.handleCallsLinkClick);
+
+        // Calls handlers
+        ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.genCallsEventHandler(this.handleGetDesktopSources));
+        ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.genCallsEventHandler(this.handleDesktopSourcesModalRequest));
+        ipcMain.on(CALLS_JOIN_CALL, this.genCallsEventHandler(this.createCallsWidgetWindow));
+        ipcMain.on(CALLS_LEAVE_CALL, this.genCallsEventHandler(this.handleCallsLeave));
+        ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.genCallsEventHandler(this.handleCallsWidgetChannelLinkClick));
+        ipcMain.on(CALLS_ERROR, this.genCallsEventHandler(this.handleCallsError));
+        ipcMain.on(CALLS_LINK_CLICK, this.genCallsEventHandler(this.handleCallsLinkClick));
     }
 
     handleUpdateConfig = () => {
@@ -114,7 +117,17 @@ export class WindowManager {
         }
     }
 
-    createCallsWidgetWindow = (event: IpcMainEvent, viewName: string, msg: CallsJoinCallMessage) => {
+    genCallsEventHandler = (handler: CallsEventHandler) => {
+        return (event: IpcMainEvent, viewName: string, msg?: any) => {
+            if (this.callsWidgetWindow && !this.callsWidgetWindow.isAllowedEvent(event)) {
+                log.warn('WindowManager.genCallsEventHandler', 'Disallowed calls event');
+                return;
+            }
+            handler(viewName, msg);
+        };
+    }
+
+    createCallsWidgetWindow = (viewName: string, msg: CallsJoinCallMessage) => {
         log.debug('WindowManager.createCallsWidgetWindow');
         if (this.callsWidgetWindow) {
             // trying to join again the call we are already in should not be allowed.
@@ -130,10 +143,8 @@ export class WindowManager {
         }
 
         this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, currentView, {
-            siteURL: currentView.serverInfo.remoteInfo.siteURL!,
             callID: msg.callID,
             title: msg.title,
-            serverName: this.currentServerName!,
             channelURL: msg.channelURL,
         });
 
@@ -160,7 +171,7 @@ export class WindowManager {
         }
     }
 
-    handleCallsError = (event: IpcMainEvent, msg: CallsErrorMessage) => {
+    handleCallsError = (_: string, msg: CallsErrorMessage) => {
         log.debug('WindowManager.handleCallsError', msg);
 
         if (this.callsWidgetWindow) {
@@ -170,7 +181,7 @@ export class WindowManager {
         }
     }
 
-    handleCallsLinkClick = (_: IpcMainEvent, msg: CallsLinkClickMessage) => {
+    handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
         log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
 
         if (this.callsWidgetWindow) {
@@ -178,6 +189,12 @@ export class WindowManager {
             this.mainWindow?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
         }
+    }
+
+    handleCallsLeave = () => {
+        log.debug('WindowManager.handleCallsLeave');
+
+        this.callsWidgetWindow?.close();
     }
 
     showSettingsWindow = () => {
@@ -853,7 +870,7 @@ export class WindowManager {
         return event.sender.id;
     }
 
-    handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+    handleGetDesktopSources = async (viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
 
         const view = this.viewManager?.views.get(viewName);
