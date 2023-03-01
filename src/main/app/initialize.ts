@@ -407,7 +407,7 @@ function initializeAfterAppReady() {
                 callback(true);
                 return;
             }
-            if (callsWidgetWindow.popOut && webContents.id === callsWidgetWindow.win.webContents.id) {
+            if (callsWidgetWindow.popOut && webContents.id === callsWidgetWindow.popOut.webContents.id) {
                 callback(true);
                 return;
             }
