@@ -402,9 +402,15 @@ function initializeAfterAppReady() {
         }
 
         const callsWidgetWindow = WindowManager.callsWidgetWindow;
-        if (callsWidgetWindow && webContents.id === callsWidgetWindow.win.webContents.id) {
-            callback(true);
-            return;
+        if (callsWidgetWindow) {
+            if (webContents.id === callsWidgetWindow.win.webContents.id) {
+                callback(true);
+                return;
+            }
+            if (callsWidgetWindow.popOut && webContents.id === callsWidgetWindow.win.webContents.id) {
+                callback(true);
+                return;
+            }
         }
 
         const requestingURL = webContents.getURL();

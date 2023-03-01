@@ -40,7 +40,7 @@ type LoadURLOpts = {
 export default class CallsWidgetWindow extends EventEmitter {
     public win: BrowserWindow;
     private main: BrowserWindow;
-    private popOut: BrowserWindow | null = null;
+    public popOut: BrowserWindow | null = null;
     private mainView: MattermostView;
     private config: CallsWidgetWindowConfig;
     private boundsErr: Rectangle = {
