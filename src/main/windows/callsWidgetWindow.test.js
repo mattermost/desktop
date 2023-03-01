@@ -30,6 +30,14 @@ jest.mock('../views/webContentEvents', () => ({
     generateNewWindowListener: jest.fn(),
 }));
 
+jest.mock('common/utils/url', () => {
+    const originalModule = jest.requireActual('common/utils/url');
+    return {
+        ...originalModule,
+        ...originalModule.default,
+    };
+});
+
 describe('main/windows/callsWidgetWindow', () => {
     describe('create CallsWidgetWindow', () => {
         const widgetConfig = {
@@ -334,6 +342,25 @@ describe('main/windows/callsWidgetWindow', () => {
             };
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, config);
             const expected = `${mainView.serverInfo.server.url}plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
+            expect(widgetWindow.getWidgetURL()).toBe(expected);
+        });
+
+        it('getWidgetURL - under subpath', () => {
+            const config = {
+                ...widgetConfig,
+                title: 'call test title #/&',
+            };
+
+            const view = {
+                serverInfo: {
+                    server: {
+                        url: new URL('http://localhost:8065/subpath'),
+                    },
+                },
+            };
+
+            const widgetWindow = new CallsWidgetWindow(mainWindow, view, config);
+            const expected = `${view.serverInfo.server.url}/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
 

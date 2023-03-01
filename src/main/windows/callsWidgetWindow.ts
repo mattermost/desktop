@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import url from 'url';
 import {EventEmitter} from 'events';
 import {BrowserWindow, Rectangle, ipcMain, IpcMainEvent} from 'electron';
 import log from 'electron-log';
@@ -23,7 +22,7 @@ import {
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
 import Utils from 'common/utils/util';
-import urlUtils from 'common/utils/url';
+import urlUtils, {getFormattedPathName} from 'common/utils/url';
 import {
     CALLS_JOINED_CALL,
     CALLS_POPOUT_FOCUS,
@@ -121,7 +120,8 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private getWidgetURL() {
-        const u = new url.URL(this.mainView.serverInfo.server.url.toString());
+        const u = urlUtils.parseURL(this.mainView.serverInfo.server.url.toString()) as URL;
+        u.pathname = getFormattedPathName(u.pathname);
         u.pathname += `plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
         u.searchParams.append('call_id', this.config.callID);
         if (this.config.title) {
