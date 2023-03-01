@@ -1018,8 +1018,8 @@ describe('main/windows/windowManager', () => {
         const view = {
             name: 'server-1_tab-messaging',
             serverInfo: {
-                remoteInfo: {
-                    siteURL: 'http://server-1.com',
+                server: {
+                    url: new URL('http://server-1.com'),
                 },
             },
         };
@@ -1032,7 +1032,7 @@ describe('main/windows/windowManager', () => {
 
         it('should create calls widget window', () => {
             expect(windowManager.callsWidgetWindow).toBeUndefined();
-            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test'});
+            windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
             expect(windowManager.callsWidgetWindow).toBeDefined();
         });
 
@@ -1040,7 +1040,7 @@ describe('main/windows/windowManager', () => {
             const widgetWindow = windowManager.callsWidgetWindow;
             expect(widgetWindow).toBeDefined();
             widgetWindow.getCallID = jest.fn(() => 'test');
-            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test'});
+            windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
             expect(windowManager.callsWidgetWindow).toEqual(widgetWindow);
         });
 
@@ -1048,7 +1048,7 @@ describe('main/windows/windowManager', () => {
             const widgetWindow = windowManager.callsWidgetWindow;
             expect(widgetWindow).toBeDefined();
             widgetWindow.getCallID = jest.fn(() => 'test');
-            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test2'});
+            windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test2'});
             expect(windowManager.callsWidgetWindow).not.toEqual(widgetWindow);
         });
     });
@@ -1061,12 +1061,18 @@ describe('main/windows/windowManager', () => {
         };
 
         beforeEach(() => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    isAllowedEvent: jest.fn().mockReturnValue(true),
+                    win: {
+                        webContents: {
+                            send: jest.fn(),
+                        },
+                    },
+                };
+            });
+
             windowManager.callsWidgetWindow = new CallsWidgetWindow();
-            windowManager.callsWidgetWindow.win = {
-                webContents: {
-                    send: jest.fn(),
-                },
-            };
 
             Config.teams = [
                 {
@@ -1140,7 +1146,7 @@ describe('main/windows/windowManager', () => {
                 },
             ]);
 
-            await windowManager.handleGetDesktopSources(null, 'server-1_tab-1', null);
+            await windowManager.handleGetDesktopSources('server-1_tab-1', null);
 
             expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
                 {
@@ -1154,7 +1160,7 @@ describe('main/windows/windowManager', () => {
 
         it('should send error with no sources', async () => {
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
-            await windowManager.handleGetDesktopSources(null, 'server-2_tab-1', null);
+            await windowManager.handleGetDesktopSources('server-2_tab-1', null);
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
@@ -1175,7 +1181,7 @@ describe('main/windows/windowManager', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await windowManager.handleGetDesktopSources(null, 'server-1_tab-1', null);
+            await windowManager.handleGetDesktopSources('server-1_tab-1', null);
 
             expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
@@ -1204,7 +1210,7 @@ describe('main/windows/windowManager', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await windowManager.handleGetDesktopSources(null, 'server-1_tab-1', null);
+            await windowManager.handleGetDesktopSources('server-1_tab-1', null);
 
             expect(windowManager.missingScreensharePermissions).toBe(true);
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(1);
@@ -1216,7 +1222,7 @@ describe('main/windows/windowManager', () => {
                 err: 'screen-permissions',
             });
 
-            await windowManager.handleGetDesktopSources(null, 'server-1_tab-1', null);
+            await windowManager.handleGetDesktopSources('server-1_tab-1', null);
 
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(2);
             expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(1);
@@ -1239,6 +1245,13 @@ describe('main/windows/windowManager', () => {
             CallsWidgetWindow.mockImplementation(() => {
                 return {
                     getServerName: () => 'server-1',
+                    getMainView: jest.fn().mockReturnValue({
+                        view: {
+                            webContents: {
+                                send: jest.fn(),
+                            },
+                        },
+                    }),
                 };
             });
 
@@ -1310,6 +1323,14 @@ describe('main/windows/windowManager', () => {
             CallsWidgetWindow.mockImplementation(() => {
                 return {
                     getServerName: () => 'server-2',
+                    getMainView: jest.fn().mockReturnValue({
+                        view: {
+                            webContents: {
+                                send: jest.fn(),
+                            },
+                        },
+                    }),
+                    getChannelURL: jest.fn(),
                 };
             });
 
@@ -1398,7 +1419,7 @@ describe('main/windows/windowManager', () => {
 
         it('should focus view and propagate error to main view', () => {
             windowManager.callsWidgetWindow = new CallsWidgetWindow();
-            windowManager.handleCallsError(null, {err: 'client-error'});
+            windowManager.handleCallsError('', {err: 'client-error'});
             expect(windowManager.switchServer).toHaveBeenCalledWith('server-2');
             expect(windowManager.mainWindow.focus).toHaveBeenCalled();
             expect(windowManager.callsWidgetWindow.getMainView().view.webContents.send).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
@@ -1407,6 +1428,7 @@ describe('main/windows/windowManager', () => {
 
     describe('handleCallsLinkClick', () => {
         const windowManager = new WindowManager();
+        windowManager.switchServer = jest.fn();
         const view1 = {
             view: {
                 webContents: {
@@ -1418,12 +1440,26 @@ describe('main/windows/windowManager', () => {
             views: new Map([
                 ['server-1_tab-messaging', view1],
             ]),
-            getCurrentView: jest.fn(),
         };
 
+        beforeEach(() => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    getServerName: () => 'server-1',
+                    getMainView: jest.fn().mockReturnValue(view1),
+                };
+            });
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.teams = [];
+        });
+
         it('should pass through the click link to browser history push', () => {
-            windowManager.viewManager.getCurrentView.mockReturnValue(view1);
-            windowManager.handleCallsLinkClick(null, {link: '/other/subpath'});
+            windowManager.callsWidgetWindow = new CallsWidgetWindow();
+            windowManager.handleCallsLinkClick('', {link: '/other/subpath'});
+            expect(windowManager.switchServer).toHaveBeenCalledWith('server-1');
             expect(view1.view.webContents.send).toBeCalledWith('browser-history-push', '/other/subpath');
         });
     });
@@ -1432,8 +1468,8 @@ describe('main/windows/windowManager', () => {
         const view = {
             name: 'server-1_tab-messaging',
             serverInfo: {
-                remoteInfo: {
-                    siteURL: 'http://server-1.com',
+                server: {
+                    url: new URL('http://server-1.com'),
                 },
             },
         };
@@ -1454,8 +1490,43 @@ describe('main/windows/windowManager', () => {
                 };
             });
 
-            windowManager.createCallsWidgetWindow(null, 'server-1_tab-messaging', {callID: 'test'});
+            windowManager.createCallsWidgetWindow('server-1_tab-messaging', 'http://localhost:8065', {callID: 'test'});
             expect(windowManager.getServerURLFromWebContentsId('callsID')).toBe(windowManager.callsWidgetWindow.getURL());
+        });
+    });
+
+    describe('genCallsEventHandler', () => {
+        const windowManager = new WindowManager();
+
+        const handler = jest.fn();
+
+        it('should call handler if callsWidgetWindow is not defined', () => {
+            windowManager.genCallsEventHandler(handler)();
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not call handler if source is not allowed', () => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    isAllowedEvent: jest.fn().mockReturnValue(false),
+                };
+            });
+
+            windowManager.callsWidgetWindow = new CallsWidgetWindow();
+            windowManager.genCallsEventHandler(handler)();
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should call handler if source is allowed', () => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    isAllowedEvent: jest.fn().mockReturnValue(true),
+                };
+            });
+
+            windowManager.callsWidgetWindow = new CallsWidgetWindow();
+            windowManager.genCallsEventHandler(handler)();
+            expect(handler).toHaveBeenCalledTimes(1);
         });
     });
 });

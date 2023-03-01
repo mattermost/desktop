@@ -49,7 +49,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     case CALLS_POPOUT_FOCUS:
     case CALLS_ERROR:
     case CALLS_LEAVE_CALL: {
-        ipcRenderer.send(type, message);
+        ipcRenderer.send(type, 'widget', message);
         break;
     }
     }
