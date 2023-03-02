@@ -232,9 +232,6 @@ export default class CallsWidgetWindow extends EventEmitter {
         
         log.warn(`CallsWidgetWindow.onPopOutOpen: prevented window open to ${url}`);
         return {action: 'deny' as const};
-                autoHideMenuBar: true,
-            },
-        };
     }
 
     private onPopOutCreate = (win: BrowserWindow) => {
