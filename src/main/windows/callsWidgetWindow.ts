@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import url from 'url';
 import {EventEmitter} from 'events';
 import {BrowserWindow, Rectangle, ipcMain, IpcMainEvent} from 'electron';
 import log from 'electron-log';
@@ -23,7 +22,7 @@ import {
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
 import Utils from 'common/utils/util';
-import urlUtils from 'common/utils/url';
+import urlUtils, {getFormattedPathName} from 'common/utils/url';
 import {
     CALLS_JOINED_CALL,
     CALLS_POPOUT_FOCUS,
@@ -40,7 +39,7 @@ type LoadURLOpts = {
 export default class CallsWidgetWindow extends EventEmitter {
     public win: BrowserWindow;
     private main: BrowserWindow;
-    private popOut: BrowserWindow | null = null;
+    public popOut: BrowserWindow | null = null;
     private mainView: MattermostView;
     private config: CallsWidgetWindowConfig;
     private boundsErr: Rectangle = {
@@ -92,7 +91,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     public getServerName() {
-        return this.config.serverName;
+        return this.mainView.serverInfo.server.name;
     }
 
     public getChannelURL() {
@@ -121,8 +120,9 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private getWidgetURL() {
-        const u = new url.URL(this.config.siteURL);
-        u.pathname += `/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
+        const u = urlUtils.parseURL(this.mainView.serverInfo.server.url.toString()) as URL;
+        u.pathname = getFormattedPathName(u.pathname);
+        u.pathname += `plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
         u.searchParams.append('call_id', this.config.callID);
         if (this.config.title) {
             u.searchParams.append('title', this.config.title);
@@ -131,8 +131,13 @@ export default class CallsWidgetWindow extends EventEmitter {
         return u.toString();
     }
 
-    private onResize = (event: IpcMainEvent, msg: CallsWidgetResizeMessage) => {
+    private onResize = (ev: IpcMainEvent, _: string, msg: CallsWidgetResizeMessage) => {
         log.debug('CallsWidgetWindow.onResize', msg);
+
+        if (!this.isAllowedEvent(ev)) {
+            log.warn('CallsWidgetWindow.onResize', 'Disallowed calls event');
+            return;
+        }
 
         const zoomFactor = this.win.webContents.getZoomFactor();
         const currBounds = this.win.getBounds();
@@ -146,11 +151,25 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.setBounds(newBounds);
     }
 
-    private onShareScreen = (ev: IpcMainEvent, viewName: string, message: CallsWidgetShareScreenMessage) => {
+    private onShareScreen = (ev: IpcMainEvent, _: string, message: CallsWidgetShareScreenMessage) => {
+        log.debug('CallsWidgetWindow.onShareScreen');
+
+        if (!this.isAllowedEvent(ev)) {
+            log.warn('Disallowed calls event');
+            return;
+        }
+
         this.win.webContents.send(CALLS_WIDGET_SHARE_SCREEN, message);
     }
 
-    private onJoinedCall = (ev: IpcMainEvent, message: CallsJoinedCallMessage) => {
+    private onJoinedCall = (ev: IpcMainEvent, _: string, message: CallsJoinedCallMessage) => {
+        log.debug('CallsWidgetWindow.onJoinedCall');
+
+        if (!this.isAllowedEvent(ev)) {
+            log.warn('CallsWidgetWindow.onJoinedCall', 'Disallowed calls event');
+            return;
+        }
+
         this.mainView.view.webContents.send(CALLS_JOINED_CALL, message);
     }
 
@@ -228,6 +247,13 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     public getMainView() {
         return this.mainView;
+    }
+
+    public isAllowedEvent(event: IpcMainEvent) {
+        // Only allow events coming from either the widget window or the
+        // original Mattermost view that initiated it.
+        return event.sender.id === this.getWebContentsId() ||
+            event.sender.id === this.getMainView().getWebContents().id;
     }
 }
 

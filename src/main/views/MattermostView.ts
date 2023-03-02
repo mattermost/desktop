@@ -195,7 +195,7 @@ export class MattermostView extends EventEmitter {
                 } else {
                     WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
-                    log.info(`[${Util.shorten(this.tab.name)}] Couldn't stablish a connection with ${loadURL}: ${err}. Will continue to retry in the background.`);
+                    log.info(`[${Util.shorten(this.tab.name)}] Couldn't establish a connection with ${loadURL}: ${err}. Will continue to retry in the background.`);
                     this.status = Status.ERROR;
                     this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
                 }
