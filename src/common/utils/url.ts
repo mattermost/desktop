@@ -98,12 +98,6 @@ function isAdminUrl(serverUrl: URL | string, inputURL: URL | string) {
 }
 
 function isTeamUrl(serverUrl: URL | string, inputURL: URL | string, withApi?: boolean) {
-    const parsedURL = parseURL(inputURL);
-    const server = getServerInfo(serverUrl);
-    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
-        return false;
-    }
-
     const paths = [...getManagedResources(), ...nonTeamUrlPaths];
 
     if (withApi) {
@@ -191,7 +185,7 @@ function isCallsPopOutURL(serverURL: URL | string, inputURL: URL | string, callI
 
     const parsedURL = parseURL(inputURL);
     const server = getServerInfo(serverURL);
-    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
+    if (!server || !parsedURL) {
         return false;
     }
 
