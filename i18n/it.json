@@ -13,6 +13,5 @@
     "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "Canali",
     "common.tabs.TAB_FOCALBOARD": "Boards",
-    "common.permissions.canBasicAuth": "Autenticazione WEB",
-    "main.menus.app.help.downloadUpdate": ""
+    "common.permissions.canBasicAuth": "Autenticazione WEB"
 }
