@@ -213,6 +213,5 @@
     "renderer.components.settingsPage.loggingLevel.description": "Ведення журналів корисне для розробників і підтримки, щоб ізолювати проблеми, які можуть виникнути в додатку для комп’ютера.",
     "renderer.components.settingsPage.loadingConfig": "Завантаження конфігурації...",
     "renderer.components.settingsPage.launchAppMinimized.description": "Якщо доступно, додаток буде запущено у треї та не з'явиться вікно при запуску.",
-    "main.menus.app.help.ShowLogs": "Показати логи",
-    "renderer.modals.certificate.certificateModal.serial": ""
+    "main.menus.app.help.ShowLogs": "Показати логи"
 }

@@ -1,10 +1,6 @@
 {
-    "renderer.modals.login.loginModal.message.server": "",
     "common.tabs.TAB_MESSAGING": "",
-    "renderer.downloadsDropdownMenu.CancelDownload": "",
     "main.menus.app.help.commitString": "",
-    "renderer.components.extraBar.back": "",
     "renderer.components.settingsPage.trayIcon.show": "",
-    "renderer.components.autoSaveIndicator.saving": "",
     "main.badge.sessionExpired": ""
 }

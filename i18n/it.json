@@ -14,11 +14,7 @@
     "common.tabs.TAB_MESSAGING": "Canali",
     "common.tabs.TAB_FOCALBOARD": "Boards",
     "common.permissions.canBasicAuth": "Autenticazione WEB",
-    "main.menus.app.edit.selectAll": "",
     "main.windows.mainWindow.minimizeToTray.dialog.title": "",
-    "renderer.components.settingsPage.updates.checkNow": "",
     "main.menus.app.help.downloadUpdate": "",
-    "renderer.components.settingsPage.fullscreen.description": "",
-    "renderer.components.settingsPage.enableHardwareAcceleration": "",
-    "main.windows.mainWindow.closeApp.dialog.title": ""
+    "renderer.components.settingsPage.enableHardwareAcceleration": ""
 }
