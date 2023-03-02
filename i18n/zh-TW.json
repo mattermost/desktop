@@ -1,10 +1,6 @@
 {
-    "main.allowProtocolDialog.message": "",
     "renderer.downloadsDropdown.Update.MattermostVersionX": "",
-    "renderer.components.settingsPage.appLanguage.useSystemDefault": "",
     "renderer.components.settingsPage.showUnreadBadge": "",
-    "renderer.components.configureServer.url.placeholder": "",
     "renderer.components.autoSaveIndicator.saved": "",
-    "main.menus.app.help.commitString": "",
     "main.app.app.handleAppCertificateError.certError.dialog.detail": ""
 }

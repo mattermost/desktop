@@ -1,10 +1,6 @@
 {
-    "main.windows.mainWindow.closeApp.dialog.title": "",
     "renderer.components.autoSaveIndicator.saving": "",
-    "renderer.downloadsDropdownMenu.Open": "",
     "renderer.components.showCertificateModal.noCertSelected": "",
-    "renderer.components.welcomeScreen.slides.channels.subtitle": "",
     "main.menus.app.window.zoom": "",
-    "main.badge.unreadChannels": "",
     "label.no": ""
 }
