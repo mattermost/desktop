@@ -214,16 +214,10 @@
     "renderer.components.settingsPage.loadingConfig": "Завантаження конфігурації...",
     "renderer.components.settingsPage.launchAppMinimized.description": "Якщо доступно, додаток буде запущено у треї та не з'явиться вікно при запуску.",
     "main.menus.app.help.ShowLogs": "Показати логи",
-    "renderer.time.sec": "",
     "renderer.downloadsDropdown.Update.DownloadUpdate": "",
-    "renderer.components.settingsPage.loggingLevel": "",
     "renderer.downloadsDropdown.Update.MattermostVersionX": "",
-    "renderer.modals.certificate.certificateModal.title": "",
     "renderer.downloadsDropdownMenu.Open": "",
-    "renderer.modals.login.loginModal.title": "",
     "renderer.modals.certificate.certificateModal.serial": "",
-    "renderer.dropdown.addAServer": "",
     "renderer.components.welcomeScreen.slides.playbooks.title": "",
-    "renderer.components.showCertificateModal.subjectName": "",
     "renderer.modals.certificate.certificateModal.subtitle": ""
 }
