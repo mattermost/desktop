@@ -221,14 +221,17 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onPopOutOpen = ({url}: {url: string}) => {
-        if (!urlUtils.isCallsPopOutURL(this.mainView.serverInfo.server.url, url, this.config.callID)) {
-            log.warn(`CallsWidgetWindow.onPopOutOpen: prevented window open to ${url}`);
-            return {action: 'deny' as const};
+        if (urlUtils.isCallsPopOutURL(this.mainView.serverInfo.server.url, url, this.config.callID)) {
+            return {
+                action: 'allow' as const,
+                overrideBrowserWindowOptions: {
+                    autoHideMenuBar: true,
+                },
+            }
         }
-
-        return {
-            action: 'allow' as const,
-            overrideBrowserWindowOptions: {
+        
+        log.warn(`CallsWidgetWindow.onPopOutOpen: prevented window open to ${url}`);
+        return {action: 'deny' as const};
                 autoHideMenuBar: true,
             },
         };
