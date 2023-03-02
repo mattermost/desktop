@@ -1,18 +1,10 @@
 {
-    "main.badge.unreadChannels": "",
     "renderer.modals.login.loginModal.message.server": "",
-    "main.autoUpdater.noUpdate.detail": "",
     "common.tabs.TAB_MESSAGING": "",
-    "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "",
     "renderer.downloadsDropdownMenu.CancelDownload": "",
-    "renderer.components.settingsPage.checkSpelling": "",
     "main.menus.app.help.commitString": "",
-    "renderer.components.settingsPage.loadingConfig": "",
     "renderer.components.extraBar.back": "",
-    "renderer.modals.certificate.certificateModal.subject": "",
     "renderer.components.settingsPage.trayIcon.show": "",
-    "renderer.components.newTeamModal.title.edit": "",
     "renderer.components.autoSaveIndicator.saving": "",
-    "main.menus.app.history.forward": "",
     "main.badge.sessionExpired": ""
 }

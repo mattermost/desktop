@@ -214,7 +214,5 @@
     "renderer.components.settingsPage.loadingConfig": "Завантаження конфігурації...",
     "renderer.components.settingsPage.launchAppMinimized.description": "Якщо доступно, додаток буде запущено у треї та не з'явиться вікно при запуску.",
     "main.menus.app.help.ShowLogs": "Показати логи",
-    "renderer.downloadsDropdown.Update.MattermostVersionX": "",
-    "renderer.modals.certificate.certificateModal.serial": "",
-    "renderer.modals.certificate.certificateModal.subtitle": ""
+    "renderer.modals.certificate.certificateModal.serial": ""
 }

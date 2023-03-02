@@ -1,18 +1,10 @@
 {
-    "renderer.downloadsDropdown.Downloads": "",
     "main.windows.mainWindow.closeApp.dialog.title": "",
-    "renderer.components.extraBar.back": "",
     "renderer.components.autoSaveIndicator.saving": "",
-    "renderer.components.settingsPage.launchAppMinimized": "",
     "renderer.downloadsDropdownMenu.Open": "",
-    "main.menus.app.view.actualSize": "",
     "renderer.components.showCertificateModal.noCertSelected": "",
-    "renderer.components.newTeamModal.error.serverUrlExists": "",
     "renderer.components.welcomeScreen.slides.channels.subtitle": "",
-    "renderer.components.settingsPage.fullscreen": "",
     "main.menus.app.window.zoom": "",
-    "main.menus.app.help": "",
     "main.badge.unreadChannels": "",
-    "main.autoUpdater.noUpdate.detail": "",
     "label.no": ""
 }
