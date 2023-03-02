@@ -218,7 +218,7 @@
     "main.allowProtocolDialog.button.saveProtocolAsAllowed": "Evet (izin verildiği gibi {protokol} kaydet)",
     "label.yes": "Evet",
     "label.save": "Kaydet",
-    "label.remove": "Sil",
+    "label.remove": "Kaldır",
     "label.ok": "Tamam",
     "label.no": "Hayır",
     "label.login": "Oturum aç",
@@ -274,5 +274,6 @@
     "renderer.downloadsDropdown.ClearAll": "Tümünü temizle",
     "main.menus.app.view.downloads": "İndirmeler",
     "renderer.components.settingsPage.trayIcon.color": "Simge rengi: ",
-    "main.menus.app.help.RunDiagnostics": "Tanılamayı çalıştır"
+    "main.menus.app.help.RunDiagnostics": "Tanılamayı çalıştır",
+    "main.menus.app.help.ShowLogs": "Günlükleri görüntüle"
 }

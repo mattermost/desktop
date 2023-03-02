@@ -273,5 +273,6 @@
     "renderer.time.mins": "minutes",
     "renderer.components.errorView.havingTroubleConnecting": "A connection to {appName} couldn't be established. Retrying...",
     "renderer.components.settingsPage.trayIcon.color": "Icon colour: ",
-    "main.menus.app.help.RunDiagnostics": "Run diagnostics"
+    "main.menus.app.help.RunDiagnostics": "Run diagnostics",
+    "main.menus.app.help.ShowLogs": "Show logs"
 }

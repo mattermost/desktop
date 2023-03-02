@@ -25,10 +25,12 @@ jest.mock('electron', () => ({
             setWindowOpenHandler: jest.fn(),
         },
     })),
+    session: {},
 }));
 
 jest.mock('../allowProtocolDialog', () => ({}));
 jest.mock('../windows/windowManager', () => ({
+    getServerURLFromWebContentsId: jest.fn(),
     showMainWindow: jest.fn(),
 }));
 
@@ -57,6 +59,10 @@ jest.mock('common/utils/url', () => ({
     isChannelExportUrl: jest.fn(),
 }));
 
+jest.mock('main/app/utils', () => ({
+    flushCookiesStore: jest.fn(),
+}));
+
 jest.mock('../../../electron-builder.json', () => ({
     protocols: [
         {
@@ -78,7 +84,7 @@ describe('main/views/webContentsEvents', () => {
         const willNavigate = webContentsEventManager.generateWillNavigate(jest.fn());
 
         beforeEach(() => {
-            urlUtils.getView.mockImplementation(() => ({name: 'server_name', url: 'http://server-1.com'}));
+            WindowManager.getServerURLFromWebContentsId.mockImplementation(() => new URL('http://server-1.com'));
         });
 
         afterEach(() => {
@@ -95,7 +101,7 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should allow navigation when url isAdminURL', () => {
-            urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}/admin_console`));
+            urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}admin_console`));
             willNavigate(event, 'http://server-1.com/admin_console/subpath');
             expect(event.preventDefault).not.toBeCalled();
         });
@@ -141,7 +147,7 @@ describe('main/views/webContentsEvents', () => {
         const didStartNavigation = webContentsEventManager.generateDidStartNavigation(jest.fn());
 
         beforeEach(() => {
-            urlUtils.getView.mockImplementation(() => ({name: 'server_name', url: 'http://server-1.com'}));
+            WindowManager.getServerURLFromWebContentsId.mockImplementation(() => new URL('http://server-1.com'));
             urlUtils.isTrustedURL.mockReturnValue(true);
             urlUtils.isInternalURL.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(serverURL));
             urlUtils.isCustomLoginURL.mockImplementation((parsedURL) => parsedURL.toString().startsWith('http://loginurl.com/login'));
@@ -171,11 +177,11 @@ describe('main/views/webContentsEvents', () => {
 
         beforeEach(() => {
             urlUtils.isValidURI.mockReturnValue(true);
-            urlUtils.getView.mockReturnValue({name: 'server_name', url: 'http://server-1.com'});
-            urlUtils.isTeamUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}/myteam`));
-            urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}/admin_console`));
-            urlUtils.isPluginUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}/myplugin`));
-            urlUtils.isManagedResource.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}/myplugin`));
+            WindowManager.getServerURLFromWebContentsId.mockImplementation(() => new URL('http://server-1.com'));
+            urlUtils.isTeamUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}myteam`));
+            urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}admin_console`));
+            urlUtils.isPluginUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}myplugin`));
+            urlUtils.isManagedResource.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}myplugin`));
         });
 
         afterEach(() => {
@@ -206,7 +212,7 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should open in the browser when there is no server matching', () => {
-            urlUtils.getView.mockReturnValue(null);
+            WindowManager.getServerURLFromWebContentsId.mockReturnValue(undefined);
             expect(newWindow({url: 'http://server-2.com/subpath'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).toBeCalledWith('http://server-2.com/subpath');
         });
@@ -243,6 +249,12 @@ describe('main/views/webContentsEvents', () => {
         it('should open popup window for managed resources', () => {
             expect(newWindow({url: 'http://server-1.com/trusted/login'})).toStrictEqual({action: 'deny'});
             expect(webContentsEventManager.popupWindow).toBeTruthy();
+        });
+
+        it('should open external URIs in browser', () => {
+            urlUtils.isValidURI.mockReturnValue(false);
+            expect(newWindow({url: 'https://google.com'})).toStrictEqual({action: 'deny'});
+            expect(shell.openExternal).toBeCalledWith('https://google.com');
         });
     });
 });

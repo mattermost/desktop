@@ -9,12 +9,14 @@ import log from 'electron-log';
 
 import {
     CallsJoinCallMessage,
+    CallsErrorMessage,
+    CallsLinkClickMessage,
+    CallsEventHandler,
 } from 'types/calls';
 
 import {
     MAXIMIZE_CHANGE,
     HISTORY,
-    GET_LOADING_SCREEN_DATA,
     REACT_APP_INITIALIZED,
     LOADING_SCREEN_ANIMATION_FINISHED,
     FOCUS_THREE_DOT_MENU,
@@ -35,6 +37,8 @@ import {
     CALLS_LEAVE_CALL,
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
+    CALLS_ERROR,
+    CALLS_LINK_CLICK,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
@@ -43,7 +47,12 @@ import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {MattermostView} from 'main/views/MattermostView';
 
-import {getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {
+    getAdjustedWindowBoundaries,
+    shouldHaveBackBar,
+    resetScreensharePermissionsMacOS,
+    openScreensharePermissionsSettingsMacOS,
+} from '../utils';
 
 import {ViewManager, LoadingScreenState} from '../views/viewManager';
 import CriticalErrorHandler from '../CriticalErrorHandler';
@@ -73,13 +82,13 @@ export class WindowManager {
     downloadsDropdown?: DownloadsDropdownView;
     downloadsDropdownMenu?: DownloadsDropdownMenuView;
     currentServerName?: string;
+    missingScreensharePermissions?: boolean;
 
     constructor() {
         this.mainWindowReady = false;
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
         ipcMain.on(HISTORY, this.handleHistory);
-        ipcMain.handle(GET_LOADING_SCREEN_DATA, this.handleLoadingScreenDataRequest);
         ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);
@@ -89,13 +98,17 @@ export class WindowManager {
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
-        ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
-        ipcMain.on(CALLS_JOIN_CALL, this.createCallsWidgetWindow);
-        ipcMain.on(CALLS_LEAVE_CALL, () => this.callsWidgetWindow?.close());
-        ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.handleDesktopSourcesModalRequest);
-        ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
+
+        // Calls handlers
+        ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.genCallsEventHandler(this.handleGetDesktopSources));
+        ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.genCallsEventHandler(this.handleDesktopSourcesModalRequest));
+        ipcMain.on(CALLS_JOIN_CALL, this.genCallsEventHandler(this.createCallsWidgetWindow));
+        ipcMain.on(CALLS_LEAVE_CALL, this.genCallsEventHandler(this.handleCallsLeave));
+        ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.genCallsEventHandler(this.handleCallsWidgetChannelLinkClick));
+        ipcMain.on(CALLS_ERROR, this.genCallsEventHandler(this.handleCallsError));
+        ipcMain.on(CALLS_LINK_CLICK, this.genCallsEventHandler(this.handleCallsLinkClick));
     }
 
     handleUpdateConfig = () => {
@@ -104,7 +117,17 @@ export class WindowManager {
         }
     }
 
-    createCallsWidgetWindow = (event: IpcMainEvent, viewName: string, msg: CallsJoinCallMessage) => {
+    genCallsEventHandler = (handler: CallsEventHandler) => {
+        return (event: IpcMainEvent, viewName: string, msg?: any) => {
+            if (this.callsWidgetWindow && !this.callsWidgetWindow.isAllowedEvent(event)) {
+                log.warn('WindowManager.genCallsEventHandler', 'Disallowed calls event');
+                return;
+            }
+            handler(viewName, msg);
+        };
+    }
+
+    createCallsWidgetWindow = (viewName: string, msg: CallsJoinCallMessage) => {
         log.debug('WindowManager.createCallsWidgetWindow');
         if (this.callsWidgetWindow) {
             // trying to join again the call we are already in should not be allowed.
@@ -120,10 +143,8 @@ export class WindowManager {
         }
 
         this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, currentView, {
-            siteURL: currentView.serverInfo.remoteInfo.siteURL!,
             callID: msg.callID,
             title: msg.title,
-            serverName: this.currentServerName!,
             channelURL: msg.channelURL,
         });
 
@@ -134,21 +155,46 @@ export class WindowManager {
         log.debug('WindowManager.handleDesktopSourcesModalRequest');
 
         if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow?.getServerName());
+            this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
-            const currentView = this.viewManager?.getCurrentView();
-            currentView?.view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
+            this.callsWidgetWindow.getMainView().view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
         }
     }
 
     handleCallsWidgetChannelLinkClick = () => {
         log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
+
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             this.mainWindow?.focus();
-            const currentView = this.viewManager?.getCurrentView();
-            currentView?.view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
+            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
         }
+    }
+
+    handleCallsError = (_: string, msg: CallsErrorMessage) => {
+        log.debug('WindowManager.handleCallsError', msg);
+
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.mainWindow?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
+        }
+    }
+
+    handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
+        log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
+
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.mainWindow?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
+        }
+    }
+
+    handleCallsLeave = () => {
+        log.debug('WindowManager.handleCallsLeave');
+
+        this.callsWidgetWindow?.close();
     }
 
     showSettingsWindow = () => {
@@ -214,6 +260,9 @@ export class WindowManager {
             this.mainWindow.on('focus', this.focusBrowserView);
             this.mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
             this.mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
+
+            // Should not allow the main window to generate a window of its own
+            this.mainWindow.webContents.setWindowOpenHandler(() => ({action: 'deny'}));
 
             if (process.env.MM_DEBUG_SETTINGS) {
                 this.mainWindow.webContents.openDevTools({mode: 'detach'});
@@ -752,7 +801,7 @@ export class WindowManager {
 
         const currentView = this.viewManager?.views.get(viewName);
         const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
-        const redirectedViewName = urlUtils.getView(`${currentView?.tab.server.url}${cleanedPathName}`, Config.teams)?.name || viewName;
+        const redirectedViewName = this.viewManager?.getViewByURL(`${currentView?.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.name || viewName;
         if (this.viewManager?.closedViews.has(redirectedViewName)) {
             // If it's a closed view, just open it and stop
             this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
@@ -821,16 +870,52 @@ export class WindowManager {
         return event.sender.id;
     }
 
-    handleGetDesktopSources = async (event: IpcMainEvent, viewName: string, opts: Electron.SourcesOptions) => {
+    handleGetDesktopSources = async (viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
 
-        const globalWidget = viewName === 'widget' && this.callsWidgetWindow;
         const view = this.viewManager?.views.get(viewName);
-        if (!view && !globalWidget) {
-            return;
+        if (!view) {
+            log.error('WindowManager.handleGetDesktopSources: view not found');
+            return Promise.resolve();
         }
 
-        desktopCapturer.getSources(opts).then((sources) => {
+        if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
+            try {
+                // If permissions are missing we reset them so that the system
+                // prompt can be showed.
+                await resetScreensharePermissionsMacOS();
+
+                // We only open the system settings if permissions were already missing since
+                // on the first attempt to get the sources the OS will correctly show a prompt.
+                if (this.missingScreensharePermissions) {
+                    await openScreensharePermissionsSettingsMacOS();
+                }
+                this.missingScreensharePermissions = true;
+            } catch (err) {
+                log.error('failed to reset screen sharing permissions', err);
+            }
+        }
+
+        const screenPermissionsErrMsg = {err: 'screen-permissions'};
+
+        return desktopCapturer.getSources(opts).then((sources) => {
+            let hasScreenPermissions = true;
+            if (systemPreferences.getMediaAccessStatus) {
+                const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
+                log.debug('screenPermissions', screenPermissions);
+                if (screenPermissions === 'denied') {
+                    log.info('no screen sharing permissions');
+                    hasScreenPermissions = false;
+                }
+            }
+
+            if (!hasScreenPermissions || !sources.length) {
+                log.info('missing screen permissions');
+                view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+                this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+                return;
+            }
+
             const message = sources.map((source) => {
                 return {
                     id: source.id,
@@ -839,11 +924,14 @@ export class WindowManager {
                 };
             });
 
-            if (view) {
+            if (message.length > 0) {
                 view.view.webContents.send(DESKTOP_SOURCES_RESULT, message);
-            } else {
-                this.callsWidgetWindow?.win.webContents.send(DESKTOP_SOURCES_RESULT, message);
             }
+        }).catch((err) => {
+            log.error('desktopCapturer.getSources failed', err);
+
+            view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+            this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
         });
     }
 
@@ -856,6 +944,18 @@ export class WindowManager {
         }
         view?.reload();
         this.viewManager?.showByName(view?.name);
+    }
+
+    getServerURLFromWebContentsId = (id: number) => {
+        if (this.callsWidgetWindow && id === this.callsWidgetWindow.getWebContentsId()) {
+            return this.callsWidgetWindow.getURL();
+        }
+
+        const viewName = this.getViewNameByWebContentsId(id);
+        if (!viewName) {
+            return undefined;
+        }
+        return this.viewManager?.views.get(viewName)?.tab.server.url;
     }
 }
 

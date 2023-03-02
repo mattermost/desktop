@@ -8,8 +8,6 @@ import {FormattedMessage} from 'react-intl';
 
 import {Button} from 'react-bootstrap';
 
-import {START_UPDATE_DOWNLOAD} from 'common/communication';
-
 import Thumbnail from '../Thumbnail';
 
 type OwnProps = {
@@ -19,7 +17,7 @@ type OwnProps = {
 const UpdateAvailable = ({item}: OwnProps) => {
     const onButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         e?.preventDefault?.();
-        window.postMessage({type: START_UPDATE_DOWNLOAD}, window.location.href);
+        window.desktop.downloadsDropdown.startUpdateDownload();
     };
 
     return (

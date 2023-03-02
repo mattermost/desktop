@@ -1,10 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcRenderer} from 'electron/renderer';
+import {ipcRenderer, Rectangle} from 'electron/renderer';
 
-import {CombinedConfig, LocalConfiguration, Team} from './config';
-import {DownloadedItems} from './downloads';
+import {Language} from '../../i18n/i18n';
+
+import {CombinedConfig, LocalConfiguration, Team, TeamWithTabsAndGpo} from './config';
+import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import {SaveQueueItem} from './settings';
 
 declare global {
@@ -58,6 +60,7 @@ declare global {
             getAvailableLanguages: () => Promise<string[]>;
             getLocalConfiguration: (option?: keyof LocalConfiguration) => Promise<LocalConfiguration[keyof LocalConfiguration] | Partial<LocalConfiguration>>;
             getDownloadLocation: (downloadLocation?: string) => Promise<string>;
+            getLanguageInformation: () => Promise<Language>;
 
             onSynchronizeConfig: (listener: () => void) => void;
             onReloadConfiguration: (listener: () => void) => void;
@@ -80,9 +83,67 @@ declare global {
             onOpenDownloadsDropdown: (listener: () => void) => void;
             onShowDownloadsDropdownButtonBadge: (listener: () => void) => void;
             onHideDownloadsDropdownButtonBadge: (listener: () => void) => void;
-            onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems) => void) => void;
+            onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems, darkMode: boolean, windowBounds: Rectangle, item: DownloadedItem) => void) => void;
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
+
+            updateURLViewWidth: (width?: number) => void;
+
+            modals: {
+                cancelModal: <T>(data?: T) => void;
+                finishModal: <T>(data?: T) => void;
+                getModalInfo: <T>() => Promise<T>;
+                isModalUncloseable: () => Promise<boolean>;
+                confirmProtocol: (protocol: string, url: string) => void;
+                pingDomain: (url: string) => Promise<string>;
+            };
+
+            loadingScreen: {
+                loadingScreenAnimationFinished: () => void;
+                onToggleLoadingScreenVisibility: (listener: (toggle: boolean) => void) => void;
+            };
+
+            downloadsDropdown: {
+                requestInfo: () => void;
+                sendSize: (width: number, height: number) => void;
+                openFile: (item: DownloadedItem) => void;
+                startUpdateDownload: () => void;
+                startUpgrade: () => void;
+                requestClearDownloadsDropdown: () => void;
+                toggleDownloadsDropdownMenu: (payload: DownloadsMenuOpenEventPayload) => void;
+                focus: () => void;
+            };
+
+            downloadsDropdownMenu: {
+                requestInfo: () => void;
+                showInFolder: (item: DownloadedItem) => void;
+                cancelDownload: (item: DownloadedItem) => void;
+                clearFile: (item: DownloadedItem) => void;
+                openFile: (item: DownloadedItem) => void;
+
+                onUpdateDownloadsDropdownMenu: (listener: (item: DownloadedItem, darkMode: boolean) => void) => void;
+            };
+
+            serverDropdown: {
+                requestInfo: () => void;
+                sendSize: (width: number, height: number) => void;
+                switchServer: (serverName: string) => void;
+                showNewServerModal: () => void;
+                showEditServerModal: (serverName: string) => void;
+                showRemoveServerModal: (serverName: string) => void;
+
+                onUpdateServerDropdown: (listener: (
+                    teams: TeamWithTabsAndGpo[],
+                    darkMode: boolean,
+                    windowBounds: Rectangle,
+                    activeTeam?: string,
+                    enableServerManagement?: boolean,
+                    hasGPOTeams?: boolean,
+                    expired?: Map<string, boolean>,
+                    mentions?: Map<string, number>,
+                    unreads?: Map<string, boolean>,
+                ) => void) => void;
+            };
         };
     }
 }

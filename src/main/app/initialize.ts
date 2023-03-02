@@ -380,12 +380,15 @@ function initializeAfterAppReady() {
         'notifications',
         'fullscreen',
         'openExternal',
+        'clipboard-sanitized-write',
     ];
 
     // handle permission requests
     // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
     defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    // is the requested permission type supported?
+        log.debug('permission requested', webContents.getURL(), permission);
+
+        // is the requested permission type supported?
         if (!supportedPermissionTypes.includes(permission)) {
             callback(false);
             return;
@@ -398,10 +401,28 @@ function initializeAfterAppReady() {
             return;
         }
 
+        const callsWidgetWindow = WindowManager.callsWidgetWindow;
+        if (callsWidgetWindow) {
+            if (webContents.id === callsWidgetWindow.win.webContents.id) {
+                callback(true);
+                return;
+            }
+            if (callsWidgetWindow.popOut && webContents.id === callsWidgetWindow.popOut.webContents.id) {
+                callback(true);
+                return;
+            }
+        }
+
         const requestingURL = webContents.getURL();
+        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+
+        if (!serverURL) {
+            callback(false);
+            return;
+        }
 
         // is the requesting url trusted?
-        callback(urlUtils.isTrustedURL(requestingURL, Config.teams));
+        callback(urlUtils.isTrustedURL(requestingURL, serverURL));
     });
 
     // only check for non-Windows, as with Windows we have to wait for GPO teams

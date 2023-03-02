@@ -9,7 +9,7 @@
     "label.add": "Lägg till",
     "label.accept": "Acceptera",
     "common.tabs.TAB_PLAYBOOKS": "Playbooks",
-    "common.tabs.TAB_MESSAGING": "Kanaler",
+    "common.tabs.TAB_MESSAGING": "Channels",
     "common.tabs.TAB_FOCALBOARD": "Boards",
     "common.permissions.canBasicAuth": "Webbautentisering",
     "renderer.components.settingsPage.bounceIcon.untilOpenApp": "tills jag öppnar appen",
@@ -273,5 +273,6 @@
     "renderer.components.configureServer.cardtitle": "Ange dina serveruppgifter",
     "main.menus.app.view.downloads": "Nedladdningar",
     "renderer.components.settingsPage.trayIcon.color": "Ikonfärg: ",
-    "main.menus.app.help.RunDiagnostics": "Kör diagnostik"
+    "main.menus.app.help.RunDiagnostics": "Kör diagnostik",
+    "main.menus.app.help.ShowLogs": "Visa loggar"
 }

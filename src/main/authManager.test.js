@@ -58,12 +58,6 @@ jest.mock('common/utils/url', () => {
     const actualUrl = jest.requireActual('common/utils/url');
     return {
         ...actualUrl.default,
-        getView: (url) => {
-            if (url.toString() === 'http://badurl.com/') {
-                return null;
-            }
-            return {name: 'test', url};
-        },
         isTrustedURL: (url) => {
             return url.toString() === 'http://trustedurl.com/';
         },
@@ -92,6 +86,7 @@ jest.mock('main/trustedOrigins', () => ({
 
 jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn().mockImplementation(() => ({})),
+    getServerURLFromWebContentsId: jest.fn(),
 }));
 
 jest.mock('main/views/modalManager', () => ({
@@ -109,45 +104,45 @@ describe('main/authManager', () => {
         authManager.popLoginModal = jest.fn();
         authManager.popPermissionModal = jest.fn();
 
-        it('should not pop any modal on null url', () => {
-            authManager.handleAppLogin({preventDefault: jest.fn()}, null, {url: null}, null, jest.fn());
-            expect(authManager.popLoginModal).not.toBeCalled();
-            expect(authManager.popPermissionModal).not.toBeCalled();
-        });
-
-        it('should not pop any modal on null server', () => {
-            authManager.handleAppLogin({preventDefault: jest.fn()}, null, {url: 'http://badurl.com/'}, null, jest.fn());
+        it('should not pop any modal on a missing server', () => {
+            WindowManager.getServerURLFromWebContentsId.mockReturnValue(undefined);
+            authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 0}, {url: 'http://badurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).not.toBeCalled();
             expect(authManager.popPermissionModal).not.toBeCalled();
         });
 
         it('should popLoginModal when isTrustedURL', () => {
-            authManager.handleAppLogin({preventDefault: jest.fn()}, null, {url: 'http://trustedurl.com/'}, null, jest.fn());
+            WindowManager.getServerURLFromWebContentsId.mockReturnValue(new URL('http://trustedurl.com/'));
+            authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://trustedurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).toBeCalled();
             expect(authManager.popPermissionModal).not.toBeCalled();
         });
 
         it('should popLoginModal when isCustomLoginURL', () => {
-            authManager.handleAppLogin({preventDefault: jest.fn()}, null, {url: 'http://customloginurl.com/'}, null, jest.fn());
+            WindowManager.getServerURLFromWebContentsId.mockReturnValue(new URL('http://customloginurl.com/'));
+            authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://customloginurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).toBeCalled();
             expect(authManager.popPermissionModal).not.toBeCalled();
         });
 
         it('should popLoginModal when has permission', () => {
-            authManager.handleAppLogin({preventDefault: jest.fn()}, null, {url: 'http://haspermissionurl.com/'}, null, jest.fn());
+            WindowManager.getServerURLFromWebContentsId.mockReturnValue(new URL('http://haspermissionurl.com/'));
+            authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://haspermissionurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).toBeCalled();
             expect(authManager.popPermissionModal).not.toBeCalled();
         });
 
         it('should popPermissionModal when anything else is true', () => {
-            authManager.handleAppLogin({preventDefault: jest.fn()}, null, {url: 'http://someotherurl.com/'}, null, jest.fn());
+            WindowManager.getServerURLFromWebContentsId.mockReturnValue(new URL('http://someotherurl.com/'));
+            authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://someotherurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).not.toBeCalled();
             expect(authManager.popPermissionModal).toBeCalled();
         });
 
         it('should set login callback when logging in', () => {
+            WindowManager.getServerURLFromWebContentsId.mockReturnValue(new URL('http://someotherurl.com/'));
             const callback = jest.fn();
-            authManager.handleAppLogin({preventDefault: jest.fn()}, null, {url: 'http://someotherurl.com/'}, null, callback);
+            authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://someotherurl.com/'}, null, callback);
             expect(authManager.loginCallbackMap.get('http://someotherurl.com/')).toEqual(callback);
         });
     });

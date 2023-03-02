@@ -5,7 +5,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {AuthenticationResponseDetails} from 'electron/renderer';
 
-import {MODAL_CANCEL, MODAL_RESULT, RETRIEVE_MODAL_INFO} from 'common/communication';
+import {LoginModalInfo} from 'types/modals';
 
 import IntlProvider from 'renderer/intl_provider';
 
@@ -19,15 +19,15 @@ import LoginModal from './loginModal';
 setupDarkMode();
 
 const handleLoginCancel = (request: AuthenticationResponseDetails) => {
-    window.postMessage({type: MODAL_CANCEL, data: {request}}, window.location.href);
+    window.desktop.modals.cancelModal({request});
 };
 
 const handleLogin = (request: AuthenticationResponseDetails, username: string, password: string) => {
-    window.postMessage({type: MODAL_RESULT, data: {request, username, password}}, window.location.href);
+    window.desktop.modals.finishModal({request, username, password});
 };
 
 const getAuthInfo = () => {
-    window.postMessage({type: RETRIEVE_MODAL_INFO}, window.location.href);
+    return window.desktop.modals.getModalInfo<LoginModalInfo>();
 };
 
 const start = async () => {

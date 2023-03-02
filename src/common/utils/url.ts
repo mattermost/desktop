@@ -3,12 +3,7 @@
 
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
-import {TeamWithTabs} from 'types/config';
-import {ServerFromURL} from 'types/utils';
-
 import buildConfig from 'common/config/buildConfig';
-import {MattermostServer} from 'common/servers/MattermostServer';
-import {getServerView} from 'common/tabs/TabView';
 import {customLoginRegexPaths, nonTeamUrlPaths} from 'common/utils/constants';
 
 function isValidURL(testURL: string) {
@@ -126,43 +121,6 @@ function isManagedResource(serverUrl: URL | string, inputURL: URL | string) {
     return paths.some((testPath) => isUrlType(testPath, serverUrl, inputURL));
 }
 
-function getView(inputURL: URL | string, teams: TeamWithTabs[], ignoreScheme = false): ServerFromURL | undefined {
-    const parsedURL = parseURL(inputURL);
-    if (!parsedURL) {
-        return undefined;
-    }
-    let firstOption;
-    let secondOption;
-    teams.forEach((team) => {
-        const srv = new MattermostServer(team.name, team.url);
-
-        // sort by length so that we match the highest specificity last
-        const filteredTabs = team.tabs.map((tab) => {
-            const tabView = getServerView(srv, tab);
-            const parsedServerUrl = parseURL(tabView.url);
-            return {tabView, parsedServerUrl};
-        });
-
-        filteredTabs.sort((a, b) => a.tabView.url.toString().length - b.tabView.url.toString().length);
-        filteredTabs.forEach((tab) => {
-            if (tab.parsedServerUrl) {
-                // check server and subpath matches (without subpath pathname is \ so it always matches)
-                if (getFormattedPathName(tab.parsedServerUrl.pathname) !== '/' && equalUrlsWithSubpath(tab.parsedServerUrl, parsedURL, ignoreScheme)) {
-                    firstOption = {name: tab.tabView.name, url: tab.parsedServerUrl.toString()};
-                }
-                if (getFormattedPathName(tab.parsedServerUrl.pathname) === '/' && equalUrlsIgnoringSubpath(tab.parsedServerUrl, parsedURL, ignoreScheme)) {
-                    // in case the user added something on the path that doesn't really belong to the server
-                    // there might be more than one that matches, but we can't differentiate, so last one
-                    // is as good as any other in case there is no better match (e.g.: two subpath servers with the same origin)
-                    // e.g.: https://community.mattermost.com/core
-                    secondOption = {name: tab.tabView.name, url: tab.parsedServerUrl.toString()};
-                }
-            }
-        });
-    });
-    return firstOption || secondOption;
-}
-
 // next two functions are defined to clarify intent
 export function equalUrlsWithSubpath(url1: URL, url2: URL, ignoreScheme?: boolean) {
     if (ignoreScheme) {
@@ -178,24 +136,26 @@ export function equalUrlsIgnoringSubpath(url1: URL, url2: URL, ignoreScheme?: bo
     return url1.origin.toLowerCase() === url2.origin.toLowerCase();
 }
 
-function isTrustedURL(url: URL | string, teams: TeamWithTabs[]) {
+function isTrustedURL(url: URL | string, rootURL: URL | string) {
     const parsedURL = parseURL(url);
-    if (!parsedURL) {
+    const rootParsedURL = parseURL(rootURL);
+    if (!parsedURL || !rootParsedURL) {
         return false;
     }
-    return getView(parsedURL, teams) !== null;
+    return (getFormattedPathName(rootParsedURL.pathname) !== '/' && equalUrlsWithSubpath(rootParsedURL, parsedURL)) ||
+        (getFormattedPathName(rootParsedURL.pathname) === '/' && equalUrlsIgnoringSubpath(rootParsedURL, parsedURL));
 }
 
-function isCustomLoginURL(url: URL | string, server: ServerFromURL, teams: TeamWithTabs[]): boolean {
-    const serverURL = parseURL(server.url);
-    const subpath = server && serverURL ? serverURL.pathname : '';
+function isCustomLoginURL(url: URL | string, serverURL: URL | string): boolean {
+    const parsedServerURL = parseURL(serverURL);
     const parsedURL = parseURL(url);
-    if (!parsedURL) {
+    if (!parsedURL || !parsedServerURL) {
         return false;
     }
-    if (!isTrustedURL(parsedURL, teams)) {
+    if (!isTrustedURL(parsedURL, parsedServerURL)) {
         return false;
     }
+    const subpath = parsedServerURL.pathname;
     const urlPath = parsedURL.pathname;
     const replacement = subpath.endsWith('/') ? '/' : '';
     const replacedPath = urlPath.replace(subpath, replacement);
@@ -229,7 +189,6 @@ export default {
     isValidURI,
     isInternalURL,
     parseURL,
-    getView,
     getServerInfo,
     isAdminUrl,
     isTeamUrl,

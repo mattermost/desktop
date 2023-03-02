@@ -44,12 +44,13 @@ export class ServerInfo {
     onGetConfig = (data: ClientConfig) => {
         this.remoteInfo.serverVersion = data.Version;
         this.remoteInfo.siteURL = data.SiteURL;
+        this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.BuildBoards === 'true';
 
         this.trySendRemoteInfo();
     }
 
     onGetPlugins = (data: Array<{id: string; version: string}>) => {
-        this.remoteInfo.hasFocalboard = data.some((plugin) => plugin.id === 'focalboard');
+        this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.some((plugin) => plugin.id === 'focalboard');
         this.remoteInfo.hasPlaybooks = data.some((plugin) => plugin.id === 'playbooks');
 
         this.trySendRemoteInfo();

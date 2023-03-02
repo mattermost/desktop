@@ -6,7 +6,6 @@ import log from 'electron-log';
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
 
-import Config from 'common/config';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
@@ -15,7 +14,7 @@ import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
 import WindowManager from 'main/windows/windowManager';
 
-const modalPreload = getLocalPreload('modalPreload.js');
+const preload = getLocalPreload('desktopAPI.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
 const permissionModalHtml = getLocalURLString('permissionModal.html');
 
@@ -39,13 +38,13 @@ export class AuthManager {
         if (!parsedURL) {
             return;
         }
-        const server = urlUtils.getView(parsedURL, Config.teams);
-        if (!server) {
+        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+        if (!serverURL) {
             return;
         }
 
         this.loginCallbackMap.set(request.url, callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-        if (urlUtils.isTrustedURL(request.url, Config.teams) || urlUtils.isCustomLoginURL(parsedURL, server, Config.teams) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+        if (urlUtils.isTrustedURL(request.url, serverURL) || urlUtils.isCustomLoginURL(parsedURL, serverURL) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
             this.popLoginModal(request, authInfo);
         } else {
             this.popPermissionModal(request, authInfo, BASIC_AUTH_PERMISSION);
@@ -57,7 +56,7 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = modalManager.addModal<LoginModalData, LoginModalResult>(authInfo.isProxy ? `proxy-${authInfo.host}` : `login-${request.url}`, loginModalHtml, modalPreload, {request, authInfo}, mainWindow);
+        const modalPromise = modalManager.addModal<LoginModalData, LoginModalResult>(authInfo.isProxy ? `proxy-${authInfo.host}` : `login-${request.url}`, loginModalHtml, preload, {request, authInfo}, mainWindow);
         if (modalPromise) {
             modalPromise.then((data) => {
                 const {username, password} = data;
@@ -76,7 +75,7 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = modalManager.addModal(`permission-${request.url}`, permissionModalHtml, modalPreload, {url: request.url, permission}, mainWindow);
+        const modalPromise = modalManager.addModal(`permission-${request.url}`, permissionModalHtml, preload, {url: request.url, permission}, mainWindow);
         if (modalPromise) {
             modalPromise.then(() => {
                 this.handlePermissionGranted(request.url, permission);
