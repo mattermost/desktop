@@ -603,7 +603,7 @@ workflows:
   sec:
     jobs:
       - temp1:
-          context: mattermost-ci-pr-builds-s3
+          context: matterbuild-sentry
   build_and_test:
     jobs:
       - begin-notification:
