@@ -274,6 +274,5 @@
     "renderer.downloadsDropdown.ClearAll": "Mind törlése",
     "main.menus.app.view.downloads": "Letöltések",
     "renderer.components.settingsPage.trayIcon.color": "Ikon színe: ",
-    "main.menus.app.help.RunDiagnostics": "Diagnosztikák futtatása",
-    "main.menus.app.help.ShowLogs": ""
+    "main.menus.app.help.RunDiagnostics": "Diagnosztikák futtatása"
 }
