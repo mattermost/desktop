@@ -266,8 +266,6 @@
     "renderer.components.configureServer.connect.saving": "Connexion…",
     "renderer.components.configureServer.connect.default": "Connecter",
     "renderer.components.configureServer.cardtitle": "Saisissez les informations de votre serveur",
-    "renderer.components.welcomeScreen.slides.palybooks.subtitle": "",
     "renderer.components.welcomeScreen.slides.channels.title": "Canaux",
-    "renderer.components.welcomeScreen.slides.boards.title": "",
     "renderer.components.mainPage.titleBar": "Mattermost"
 }
