@@ -14,19 +14,11 @@
     "common.tabs.TAB_MESSAGING": "Canali",
     "common.tabs.TAB_FOCALBOARD": "Boards",
     "common.permissions.canBasicAuth": "Autenticazione WEB",
-    "renderer.components.showCertificateModal.noCertSelected": "",
     "main.menus.app.edit.selectAll": "",
-    "renderer.modals.certificate.certificateModal.subject": "",
     "main.windows.mainWindow.minimizeToTray.dialog.title": "",
-    "renderer.downloadsDropdownMenu.ShowInFolder": "",
     "renderer.components.settingsPage.updates.checkNow": "",
-    "renderer.components.settingsPage.appLanguage": "",
     "main.menus.app.help.downloadUpdate": "",
-    "renderer.components.showCertificateModal.subjectName": "",
     "renderer.components.settingsPage.fullscreen.description": "",
-    "renderer.components.configureServer.title": "",
     "renderer.components.settingsPage.enableHardwareAcceleration": "",
-    "main.menus.app.file.signInToAnotherServer": "",
-    "main.windows.mainWindow.closeApp.dialog.title": "",
-    "main.app.initialize.downloadBox.allFiles": ""
+    "main.windows.mainWindow.closeApp.dialog.title": ""
 }

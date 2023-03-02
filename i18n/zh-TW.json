@@ -1,18 +1,10 @@
 {
-    "renderer.components.settingsPage.checkSpelling.description": "",
     "main.allowProtocolDialog.message": "",
-    "renderer.components.newTeamModal.error.serverUrlExists": "",
     "renderer.downloadsDropdown.Update.MattermostVersionX": "",
-    "main.menus.app.window": "",
     "renderer.components.settingsPage.appLanguage.useSystemDefault": "",
-    "renderer.modals.certificate.certificateModal.issuer": "",
     "renderer.components.settingsPage.showUnreadBadge": "",
-    "renderer.components.settingsPage.bounceIcon.once": "",
     "renderer.components.configureServer.url.placeholder": "",
-    "renderer.components.settingsPage.minimizeToTray.description": "",
     "renderer.components.autoSaveIndicator.saved": "",
-    "main.menus.app.window.minimize": "",
     "main.menus.app.help.commitString": "",
-    "main.menus.app.edit": "",
     "main.app.app.handleAppCertificateError.certError.dialog.detail": ""
 }
