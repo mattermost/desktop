@@ -43,9 +43,9 @@ jobs:
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
-          name: build-linux
-          path: ./build/linux
-          retention-days: 14
+          name: build
+          path: ./build
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
 
   build-msi-installer:
     runs-on: windows-2022
@@ -92,7 +92,7 @@ jobs:
         with:
           name: build
           path: ./build
-          retention-days: 14
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
 
   mac-app-store-preflight:
     runs-on: macos-12
@@ -163,21 +163,23 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
         run: |
+          mkdir -p ./build/macos-release
           npm run package:mac-with-universal
           bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/macos-release
           bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
       - name: nightly/rename-arm64-to-m1
-        run: rename 's/arm64/m1/' ./build/macos-nightly/$(jq -r .version package.json)/*
+        run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
       - name: nightly/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: build
           path: ./build
-          retention-days: 14
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
 
   upload-to-s3:
     runs-on: ubuntu-22.04
+    outputs:
+      links: ${{ steps.generate-linklist.outputs.linklist }}
     needs:
       - build-mac-installer
       - build-msi-installer
@@ -197,24 +199,31 @@ jobs:
           cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
       - name: nightly/upload-to-s3
         run: aws s3 cp ./aws-s3-dist/ s3://releases.mattermost.com/desktop/ --acl public-read --cache-control "no-cache" --recursive
+      - name: nightly/generate-linklist
+        id: generate-linklist
+        run: |
+          mkdir -p ./links
+          echo "### Nightly builds:" > ./links/linklist.txt
+          echo "Links for $(date +"%b-%d-%Y")" >> ./links/linklist.txt
+          echo "##### :tux: Linux" > ./links/linklist.txt
+          for i in `ls ./build/linux/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          echo "##### :apple_logo: macOS" >> ./links/linklist.txt
+          for i in `ls ./build/macos-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          echo "##### :windows: Windows" >> ./links/linklist.txt
+          for i in `ls ./build/win-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          cat ./links/linklist.txt
+          echo "linklist=$(<./links/linklist.txt)" >> "$GITHUB_OUTPUT"
 
-  # share-links-to-channel:
-  #   runs-on: ubuntu-22.04
-  #   needs:
-  #     - build-mac-installer
-  #     - build-msi-installer
-  #     - build-linux
-  #   steps:
-  #     - name: nightly/share-links-to-channel
-  #       run: |
-  #         mkdir -p ./links
-  #         echo "### Nightly builds:\n" > ./links/linklist.txt
-  #         echo "Links for $(date +"%b-%d-%Y")" >> ./links/linklist.txt
-  #         cat ./build/linklist.txt >> ./links/linklist.txt
-  #         linklist=$(<./links/linklist.txt);
-  #         echo '{}' | jq "{
-  #           \"username\": \"NightBuilder\",
-  #           \"icon_url\": \"https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png\",
-  #           \"text\": \"${linklist}\"
-  #         }" >> /tmp/webhook-data.json
-  #         curl -i -X POST -H "Content-Type: application/json" -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_NIGHTLY_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+  share-links-to-channel:
+    runs-on: ubuntu-22.04
+    needs:
+      - upload-to-s3
+    steps:
+      - name: nightly/share-links-to-channel
+        run: |
+          echo '{}' | jq "{
+            \"username\": \"NightBuilder\",
+            \"icon_url\": \"https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png\",
+            \"text\": \"${{ needs.upload-to-s3.outputs.links }}\"
+          }" >> /tmp/webhook-data.json
+          curl -i -X POST -H "Content-Type: application/json" -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_NIGHTLY_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"

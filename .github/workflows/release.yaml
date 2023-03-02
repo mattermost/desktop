@@ -45,8 +45,6 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: release/create-build-folder
-        run: mkdir -p ./build
       - name: release/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -59,9 +57,9 @@ jobs:
         uses: ./.github/actions/test
       - name: release/build
         run: |
+          mkdir -p ./build/linux
           npm run package:linux
           bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/linux
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: release/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
@@ -83,16 +81,12 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: release/create-build-folder
-        run: mkdir -p ./build
       - name: release/optimize
         shell: powershell
-        run: |
-          ./scripts/Makefile.ps1 optimize
+        run: ./scripts/Makefile.ps1 optimize
       - name: release/install-deps
         shell: powershell
-        run: |
-          ./scripts/Makefile.ps1 install-deps
+        run: ./scripts/Makefile.ps1 install-deps
       - name: release/test
         uses: ./.github/actions/test
       - name: release/build
@@ -107,8 +101,8 @@ jobs:
           ./scripts/Makefile.ps1 build
       - name: release/package
         run: |
-          bash -x ./scripts/patch_updater_yml.sh
           mkdir -p ./build/win-release
+          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: release/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
@@ -146,9 +140,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
         run: |
+          mkdir -p ./build/macos-release
           npm run package:mac-with-universal
           bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/macos-release
           bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
       - name: release/rename-arm64-to-m1
         run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
@@ -180,8 +174,6 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: release/create-build-folder
-        run: mkdir -p ./build
       - name: release/install-dependencies
         run: |
           brew install yq
@@ -219,7 +211,7 @@ jobs:
       - name: release/upload-to-s3
         run: aws s3 cp ./aws-s3-dist/ s3://releases.mattermost.com/desktop/ --acl public-read --cache-control "no-cache" --recursive
 
-  upload-to-github:
+  github-release:
     runs-on: ubuntu-22.04
     needs:
       - upload-to-s3
@@ -249,7 +241,7 @@ jobs:
   end-notification:
     runs-on: ubuntu-22.04
     needs:
-      - upload-to-github
+      - github-release
     steps:
       - name: release/notify-channel
         run: |

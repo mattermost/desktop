@@ -1,4 +1,5 @@
 name: build-for-pr
+
 on:
   push:
     # only for build-pr branches
@@ -35,10 +36,9 @@ jobs:
           npm ci
       - name: ci/build
         run: |
-          mkdir -p ./build
+          mkdir -p ./build/linux
           npm run package:linux
           bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/linux
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
@@ -116,10 +116,9 @@ jobs:
         env:
           MM_WIN_INSTALLERS: 1
         run: |
-          mkdir -p ./build
+          mkdir -p ./build/win
           npm run package:windows
           bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/win
           bash -x ./scripts/cp_artifacts.sh release ./build/win
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
@@ -154,10 +153,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
         run: |
-          mkdir -p ./build
+          mkdir -p ./build/macos
           npm run package:mac
           bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/macos
           bash -x ./scripts/cp_artifacts.sh release ./build/macos/
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2

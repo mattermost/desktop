@@ -43,8 +43,7 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_KEY_PASSWORD }}
           PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
-        run: |
-          ./scripts/Makefile.ps1 build
+        run: ./scripts/Makefile.ps1 build
       - name: nightly/package
         run: |
           mkdir -p ./build/win
@@ -55,7 +54,7 @@ jobs:
         with:
           name: build
           path: ./build
-          retention-days: 14
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
 
   build-mac-installer:
     runs-on: macos-12
@@ -95,7 +94,7 @@ jobs:
         with:
           name: build
           path: ./build
-          retention-days: 14
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
 
   upload-to-s3-daily:
     runs-on: ubuntu-22.04
