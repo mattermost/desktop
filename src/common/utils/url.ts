@@ -195,9 +195,15 @@ function isCallsPopOutURL(serverURL: URL | string, inputURL: URL | string, callI
         return false;
     }
 
-    const regexRule = `^${server.subpath}[A-Za-z0-9-_]+/${CALLS_PLUGIN_ID}/expanded/${callID}$`;
+    const matches = parsedURL.pathname.match(new RegExp(`^${server.subpath}([A-Za-z0-9-_]+)/`, 'i'));
+    if (matches?.length !== 2) {
+        return false;
+    }
 
-    return new RegExp(regexRule, 'i').test(parsedURL.pathname);
+    const teamName = matches[1];
+    const subPath = `${teamName}/${CALLS_PLUGIN_ID}/expanded/${callID}`;
+
+    return isUrlType(subPath, serverURL, inputURL);
 }
 
 export default {

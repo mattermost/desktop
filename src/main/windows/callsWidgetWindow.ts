@@ -227,9 +227,9 @@ export default class CallsWidgetWindow extends EventEmitter {
                 overrideBrowserWindowOptions: {
                     autoHideMenuBar: true,
                 },
-            }
+            };
         }
-        
+
         log.warn(`CallsWidgetWindow.onPopOutOpen: prevented window open to ${url}`);
         return {action: 'deny' as const};
     }
