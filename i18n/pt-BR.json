@@ -124,6 +124,5 @@
     "main.tray.tray.expired": "Sessão expirada: Por favor entre novamente para continuar recebendo notificações.",
     "main.notifications.upgrade.readyToInstall.title": "Clique para reinciar e instalar a atualização",
     "main.notifications.upgrade.readyToInstall.body": "Uma versão do desktop está pronta para ser instalada.",
-    "main.menus.app.help": "Ajuda",
-    "renderer.components.settingsPage.updates.checkNow": ""
+    "main.menus.app.help": "Ajuda"
 }
