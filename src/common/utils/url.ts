@@ -4,7 +4,7 @@
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from 'common/config/buildConfig';
-import {customLoginRegexPaths, nonTeamUrlPaths} from 'common/utils/constants';
+import {customLoginRegexPaths, nonTeamUrlPaths, CALLS_PLUGIN_ID} from 'common/utils/constants';
 
 function isValidURL(testURL: string) {
     return Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && Boolean(parseURL(testURL));
@@ -98,12 +98,6 @@ function isAdminUrl(serverUrl: URL | string, inputURL: URL | string) {
 }
 
 function isTeamUrl(serverUrl: URL | string, inputURL: URL | string, withApi?: boolean) {
-    const parsedURL = parseURL(inputURL);
-    const server = getServerInfo(serverUrl);
-    if (!parsedURL || !server || (!equalUrlsIgnoringSubpath(server.url, parsedURL))) {
-        return false;
-    }
-
     const paths = [...getManagedResources(), ...nonTeamUrlPaths];
 
     if (withApi) {
@@ -184,6 +178,28 @@ function cleanPathName(basePathName: string, pathName: string) {
     return pathName;
 }
 
+function isCallsPopOutURL(serverURL: URL | string, inputURL: URL | string, callID: string) {
+    if (!serverURL || !inputURL || !callID) {
+        return false;
+    }
+
+    const parsedURL = parseURL(inputURL);
+    const server = getServerInfo(serverURL);
+    if (!server || !parsedURL) {
+        return false;
+    }
+
+    const matches = parsedURL.pathname.match(new RegExp(`^${server.subpath}([A-Za-z0-9-_]+)/`, 'i'));
+    if (matches?.length !== 2) {
+        return false;
+    }
+
+    const teamName = matches[1];
+    const subPath = `${teamName}/${CALLS_PLUGIN_ID}/expanded/${callID}`;
+
+    return isUrlType(subPath, serverURL, inputURL);
+}
+
 export default {
     isValidURL,
     isValidURI,
@@ -201,4 +217,5 @@ export default {
     isUrlType,
     cleanPathName,
     startsWithProtocol,
+    isCallsPopOutURL,
 };

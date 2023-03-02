@@ -4,8 +4,6 @@
 import {BrowserWindow, session, shell, WebContents} from 'electron';
 import log from 'electron-log';
 
-import {TeamWithTabs} from 'types/config';
-
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
@@ -71,6 +69,11 @@ export class WebContentsEventManager {
             }
             if (this.customLogins[contentID]?.inProgress) {
                 flushCookiesStore(session.defaultSession);
+                return;
+            }
+
+            const callID = WindowManager.callsWidgetWindow?.getCallID();
+            if (serverURL && callID && urlUtils.isCallsPopOutURL(serverURL, parsedURL, callID)) {
                 return;
             }
 
@@ -221,10 +224,9 @@ export class WebContentsEventManager {
         }
     };
 
-    addMattermostViewEventListeners = (mmview: MattermostView, getServersFunction: () => TeamWithTabs[]) => {
+    addMattermostViewEventListeners = (mmview: MattermostView) => {
         this.addWebContentsEventListeners(
             mmview.view.webContents,
-            getServersFunction,
             (contents: WebContents) => {
                 contents.on('page-title-updated', mmview.handleTitleUpdate);
                 contents.on('page-favicon-updated', mmview.handleFaviconUpdate);
@@ -242,7 +244,6 @@ export class WebContentsEventManager {
 
     addWebContentsEventListeners = (
         contents: WebContents,
-        getServersFunction: () => TeamWithTabs[],
         addListeners?: (contents: WebContents) => void,
         removeListeners?: (contents: WebContents) => void,
     ) => {

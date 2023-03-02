@@ -275,4 +275,58 @@ describe('common/utils/url', () => {
             )).toBe(false);
         });
     });
+
+    describe('isCallsPopOutURL', () => {
+        it('should match correct URL', () => {
+            expect(urlUtils.isCallsPopOutURL(
+                'http://example.org',
+                'http://example.org/team/com.mattermost.calls/expanded/callid',
+                'callid',
+            )).toBe(true);
+        });
+
+        it('should match with subpath', () => {
+            expect(urlUtils.isCallsPopOutURL(
+                'http://example.org/subpath',
+                'http://example.org/subpath/team/com.mattermost.calls/expanded/callid',
+                'callid',
+            )).toBe(true);
+        });
+
+        it('should match with teamname with dash', () => {
+            expect(urlUtils.isCallsPopOutURL(
+                'http://example.org',
+                'http://example.org/team-name/com.mattermost.calls/expanded/callid',
+                'callid',
+            )).toBe(true);
+        });
+
+        it('should not match with invalid team name', () => {
+            expect(urlUtils.isCallsPopOutURL(
+                'http://example.org',
+                'http://example.org/invalid$team/com.mattermost.calls/expanded/othercallid',
+                'callid',
+            )).toBe(false);
+        });
+
+        it('should not match with incorrect callid', () => {
+            expect(urlUtils.isCallsPopOutURL(
+                'http://example.org',
+                'http://example.org/team/com.mattermost.calls/expanded/othercallid',
+                'callid',
+            )).toBe(false);
+        });
+
+        it('should not match with incorrect origin', () => {
+            expect(urlUtils.isCallsPopOutURL(
+                'http://example.com',
+                'http://example.org/team/com.mattermost.calls/expanded/callid',
+                'callid',
+            )).toBe(false);
+        });
+
+        it('should not match with missing arguments', () => {
+            expect(urlUtils.isCallsPopOutURL()).toBe(false);
+        });
+    });
 });
