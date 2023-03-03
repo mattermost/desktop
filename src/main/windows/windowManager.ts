@@ -947,7 +947,7 @@ export class WindowManager {
     }
 
     getServerURLFromWebContentsId = (id: number) => {
-        if (this.callsWidgetWindow && id === this.callsWidgetWindow.getWebContentsId()) {
+        if (this.callsWidgetWindow && (id === this.callsWidgetWindow.getWebContentsId() || id === this.callsWidgetWindow.getPopOutWebContentsId())) {
             return this.callsWidgetWindow.getURL();
         }
 
