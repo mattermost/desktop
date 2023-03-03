@@ -177,7 +177,11 @@ export class WebContentsEventManager {
 
             // TODO: move popups to its own and have more than one.
             if (urlUtils.isPluginUrl(serverURL, parsedURL) || urlUtils.isManagedResource(serverURL, parsedURL)) {
-                if (!this.popupWindow) {
+                if (this.popupWindow) {
+                    this.popupWindow.once('ready-to-show', () => {
+                        this.popupWindow!.show();
+                    });
+                } else {
                     this.popupWindow = new BrowserWindow({
                         backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
                         //parent: WindowManager.getMainWindow(),
