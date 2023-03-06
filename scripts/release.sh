@@ -22,9 +22,9 @@ function tag {
 }
 
 function write_package_version {
-    temp_file="$(mktemp -t package.json)"
+    temp_file="$(mktemp -t package.json.XXXX)"
     jq ".version = \"${1}\"" ./package.json > "${temp_file}" && mv "${temp_file}" ./package.json
-    temp_file="$(mktemp -t package-lock.json)"
+    temp_file="$(mktemp -t package-lock.json.XXXX)"
     jq ".version = \"${1}\"" ./package-lock.json > "${temp_file}" && mv "${temp_file}" ./package-lock.json
 
     git add ./package.json ./package-lock.json
@@ -39,8 +39,8 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 # mattermost repo might not be the origin one, we don't want to enforce that.
-org="github.com:mattermost"
-git_origin="$(git remote -v | grep ${org} | grep push | awk '{print $1}')"
+org="github.com:mattermost|https://github.com/mattermost"
+git_origin="$(git remote -v | grep -E ${org} | grep push | awk '{print $1}')"
 if [[ -z "${git_origin}" ]]; then
     print_warning "Can't find a mattermost remote, defaulting to origin"
     git_origin="origin"
