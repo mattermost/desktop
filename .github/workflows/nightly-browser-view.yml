@@ -35,10 +35,9 @@ jobs:
         uses: ./.github/actions/patch-nightly-version
       - name: ci/build
         run: |
-          mkdir -p ./build
+          mkdir -p ./build/linux
           npm run package:linux
           bash -x ./scripts/patch_updater_yml.sh
-          mkdir -p ./build/linux
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
@@ -185,6 +184,10 @@ jobs:
       - build-msi-installer
       - build-linux
     steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
       - name: nightly/setup-aws-credentials
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
         with:
@@ -221,9 +224,9 @@ jobs:
     steps:
       - name: nightly/share-links-to-channel
         run: |
-          echo '{}' | jq "{
-            \"username\": \"NightBuilder\",
-            \"icon_url\": \"https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png\",
-            \"text\": \"${{ needs.upload-to-s3.outputs.links }}\"
-          }" >> /tmp/webhook-data.json
+          jq --null-input \
+          --arg icon_url "https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png" \
+          --arg username "NightBuilder" \
+          --arg text "${{ needs.upload-to-s3.outputs.links }}" \
+          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
           curl -i -X POST -H "Content-Type: application/json" -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_NIGHTLY_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"

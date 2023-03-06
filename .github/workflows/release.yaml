@@ -24,12 +24,11 @@ jobs:
     steps:
       - name: release/notify-channel
         run: |
-          export VERSION=$(jq -r .version package.json)
-          echo '{}' | jq "{
-            \"username\": \"MattermostRelease\",
-            \"icon_url\": \"https://mattermost.com/wp-content/uploads/2022/02/icon.png\",
-            \"text\": \"[${VERSION}] Release process for the desktop app has started, it should take about 30 minutes to complete.\"
-          }" >> /tmp/webhook-data.json
+          jq --null-input \
+          --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
+          --arg username "MattermostRelease" \
+          --arg text "[$(jq -r .version package.json)] Release process for the desktop app has started, it should take about 30 minutes to complete." \
+          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
           curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
 
   build-linux:
@@ -245,10 +244,9 @@ jobs:
     steps:
       - name: release/notify-channel
         run: |
-          export VERSION=$(jq -r .version package.json)
-          echo '{}' | jq "{
-            \"username\": \"MattermostRelease\",
-            \"icon_url\": \"https://mattermost.com/wp-content/uploads/2022/02/icon.png\",
-            \"text\": \"[${VERSION}] Release process for the desktop app ended, the new release can be found on [GitHub](https://github.com/mattermost/desktop/releases).\"
-          }" >> /tmp/webhook-data.json
+          jq --null-input \
+          --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
+          --arg username "MattermostRelease" \
+          --arg text "[$(jq -r .version package.json)] Release process for the desktop app ended, the new release can be found on [GitHub](https://github.com/mattermost/desktop/releases)." \
+          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
           curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
