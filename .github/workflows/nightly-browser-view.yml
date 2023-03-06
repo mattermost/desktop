@@ -1,0 +1,232 @@
+name: nightly-browser-view
+
+on:
+  schedule:
+    - cron: 0 4 * * 0-5
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TERM: xterm
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: ci/install-dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | sudo apt-key add -
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
+          npm ci
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
+      - name: ci/build
+        run: |
+          mkdir -p ./build/linux
+          npm run package:linux
+          bash -x ./scripts/patch_updater_yml.sh
+          bash -x ./scripts/cp_artifacts.sh release ./build/linux
+      - name: ci/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
+
+  build-msi-installer:
+    runs-on: windows-2022
+    steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: nightly/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: nightly/create-build-folder
+        run: mkdir -p ./build
+      - name: nightly/optimize
+        shell: powershell
+        run: |
+          ./scripts/Makefile.ps1 optimize
+      - name: nightly/install-deps
+        shell: powershell
+        run: |
+          ./scripts/Makefile.ps1 install-deps
+      - name: nightly/test
+        uses: ./.github/actions/test
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
+      - name: nightly/build
+        shell: powershell
+        env:
+          MM_WIN_INSTALLERS: 1
+          PFX_KEY: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX_KEY }}
+          CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_KEY_PASSWORD }}
+          PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
+          CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
+        run: |
+          ./scripts/Makefile.ps1 build
+      - name: nightly/package
+        run: |
+          bash -x ./scripts/patch_updater_yml.sh
+          mkdir -p ./build/win-release
+          bash -x ./scripts/cp_artifacts.sh release ./build/win-release
+      - name: nightly/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
+
+  mac-app-store-preflight:
+    runs-on: macos-12
+    env:
+      MAS_PROFILE: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MAS_PROFILE }}
+      MACOS_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}
+      MACOS_API_KEY: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY }}
+      MACOS_API_ISSUER_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_ISSUER_ID }}
+      CSC_FOR_PULL_REQUEST: true
+      CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_KEY_PASSWORD}}
+      CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
+    needs:
+      - begin-notification
+    steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: nightly/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: nightly/create-build-folder
+        run: mkdir -p ./build
+      - name: nightly/install-dependencies
+        run: |
+          brew install yq
+          npm ci
+      - name: nightly/copy-provisioning-profile
+        run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
+      - name: nightly/patch-version-number-for-MAS
+        run: ./scripts/patch_mas_version.sh
+      - name: nightly/test
+        uses: ./.github/actions/test
+      - name: nightly/package
+        run: npm run package:mas
+      - name: nightly/publish
+        run: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
+
+  build-mac-installer:
+    runs-on: macos-12
+    needs:
+      - mac-app-store-preflight
+    steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: nightly/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: nightly/create-build-folder
+        run: mkdir -p ./build
+      - name: nightly/install-dependencies
+        run: |
+          brew install yq rename
+          npm ci
+      - name: nightly/test
+        uses: ./.github/actions/test
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
+      - name: nightly/build
+        env:
+          APPLEID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}
+          APPLEIDPASS: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID_PASS }}
+          CSC_FOR_PULL_REQUEST: true
+          CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
+        run: |
+          mkdir -p ./build/macos-release
+          npm run package:mac-with-universal
+          bash -x ./scripts/patch_updater_yml.sh
+          bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
+      - name: nightly/rename-arm64-to-m1
+        run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
+      - name: nightly/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
+
+  upload-to-s3:
+    runs-on: ubuntu-22.04
+    outputs:
+      links: ${{ steps.generate-linklist.outputs.linklist }}
+    needs:
+      - build-mac-installer
+      - build-msi-installer
+      - build-linux
+    steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
+      - name: nightly/setup-aws-credentials
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.MM_DESKTOP_RELEASE_AWS_SECRET_ACCESS_KEY }}
+      - name: nightly/download-builds
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - name: nightly/setup-files-for-aws
+        run: |
+          mkdir -p ./aws-s3-dist
+          cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
+      - name: nightly/upload-to-s3
+        run: aws s3 cp ./aws-s3-dist/ s3://releases.mattermost.com/desktop/ --acl public-read --cache-control "no-cache" --recursive
+      - name: nightly/generate-linklist
+        id: generate-linklist
+        run: |
+          mkdir -p ./links
+          echo "### Nightly builds:" > ./links/linklist.txt
+          echo "Links for $(date +"%b-%d-%Y")" >> ./links/linklist.txt
+          echo "##### :tux: Linux" > ./links/linklist.txt
+          for i in `ls ./build/linux/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          echo "##### :apple_logo: macOS" >> ./links/linklist.txt
+          for i in `ls ./build/macos-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          echo "##### :windows: Windows" >> ./links/linklist.txt
+          for i in `ls ./build/win-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          cat ./links/linklist.txt
+          echo "linklist=$(<./links/linklist.txt)" >> "$GITHUB_OUTPUT"
+
+  share-links-to-channel:
+    runs-on: ubuntu-22.04
+    needs:
+      - upload-to-s3
+    steps:
+      - name: nightly/share-links-to-channel
+        run: |
+          jq --null-input \
+          --arg icon_url "https://upload.wikimedia.org/wikipedia/commons/1/17/Luna_symbol.png" \
+          --arg username "NightBuilder" \
+          --arg text "${{ needs.upload-to-s3.outputs.links }}" \
+          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
+          curl -i -X POST -H "Content-Type: application/json" -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_NIGHTLY_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"

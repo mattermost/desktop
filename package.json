@@ -50,7 +50,7 @@
     "test:e2e:run": "electron-mocha -r @babel/register --reporter mochawesome dist/tests/e2e_bundle.js",
     "test:e2e:send-report": "node ./e2e/save_report.js",
     "test:unit": "cross-env NODE_ENV=jest jest",
-    "test:unit-ci": "cross-env NODE_ENV=jest jest --runInBand",
+    "test:unit-ci": "cross-env NODE_ENV=jest jest",
     "test:coverage": "jest --coverage",
     "package:all": "cross-env NODE_ENV=production npm-run-all package:windows package:windows-nsis package:mac package:mac-with-universal package:linux",
     "package:windows": "npm-run-all build-prod && electron-builder --win zip --x64 --ia32 --arm64 --publish=never",
@@ -81,7 +81,7 @@
   "jest": {
     "clearMocks": true,
     "moduleDirectories": [
-      "",
+      "src",
       "node_modules"
     ],
     "moduleFileExtensions": [
@@ -190,7 +190,7 @@
     "eslint-plugin-react": "7.29.4",
     "eslint-plugin-react-hooks": "4.4.0",
     "fs-extra": "10.0.1",
-    "jest": "27.5.1",
+    "jest": "29.4.1",
     "jest-junit": "13.1.0",
     "joi": "17.6.0",
     "mini-css-extract-plugin": "2.6.0",
