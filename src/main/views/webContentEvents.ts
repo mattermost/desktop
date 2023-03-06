@@ -187,6 +187,17 @@ export class WebContentsEventManager {
                             spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
                         },
                     });
+                    this.popupWindow.webContents.on('will-redirect', (event, url) => {
+                        const parsedURL = urlUtils.parseURL(url);
+                        if (!parsedURL) {
+                            event.preventDefault();
+                            return;
+                        }
+
+                        if (urlUtils.isInternalURL(serverURL, parsedURL) && !urlUtils.isPluginUrl(serverURL, parsedURL) && !urlUtils.isManagedResource(serverURL, parsedURL)) {
+                            event.preventDefault();
+                        }
+                    });
                     this.popupWindow.webContents.setWindowOpenHandler(this.denyNewWindow);
                     this.popupWindow.once('ready-to-show', () => {
                         this.popupWindow!.show();
