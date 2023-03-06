@@ -28,32 +28,36 @@ const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0]
 export class WebContentsEventManager {
     customLogins: Record<number, CustomLogin>;
     listeners: Record<number, () => void>;
-    popupWindow?: BrowserWindow;
+    popupWindow?: {win: BrowserWindow; serverURL?: URL};
 
     constructor() {
         this.customLogins = {};
         this.listeners = {};
     }
 
-    private isTrustedPopupWindow = (webContents: WebContents) => {
-        if (!webContents) {
-            return false;
-        }
+    private isTrustedPopupWindow = (webContentsId: number) => {
         if (!this.popupWindow) {
             return false;
         }
-        return BrowserWindow.fromWebContents(webContents) === this.popupWindow;
+        return webContentsId === this.popupWindow.win.webContents.id;
     }
 
-    generateWillNavigate = () => {
-        return (event: Event & {sender: WebContents}, url: string) => {
-            log.debug('webContentEvents.will-navigate', {webContentsId: event.sender.id, url});
+    private getServerURLFromWebContentsId = (webContentsId: number) => {
+        if (this.popupWindow && webContentsId === this.popupWindow.win.webContents.id) {
+            return this.popupWindow.serverURL;
+        }
 
-            const contentID = event.sender.id;
+        return WindowManager.getServerURLFromWebContentsId(webContentsId);
+    }
+
+    generateWillNavigate = (webContentsId: number) => {
+        return (event: Event, url: string) => {
+            log.debug('webContentEvents.will-navigate', {webContentsId, url});
+
             const parsedURL = urlUtils.parseURL(url)!;
-            const serverURL = WindowManager.getServerURLFromWebContentsId(event.sender.id);
+            const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
-            if (serverURL && (urlUtils.isTeamUrl(serverURL, parsedURL) || urlUtils.isAdminUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(event.sender))) {
+            if (serverURL && (urlUtils.isTeamUrl(serverURL, parsedURL) || urlUtils.isAdminUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
                 return;
             }
 
@@ -67,7 +71,7 @@ export class WebContentsEventManager {
             if (parsedURL.protocol === 'mailto:') {
                 return;
             }
-            if (this.customLogins[contentID]?.inProgress) {
+            if (this.customLogins[webContentsId]?.inProgress) {
                 flushCookiesStore(session.defaultSession);
                 return;
             }
@@ -82,22 +86,21 @@ export class WebContentsEventManager {
         };
     };
 
-    generateDidStartNavigation = () => {
-        return (event: Event & {sender: WebContents}, url: string) => {
-            log.debug('webContentEvents.did-start-navigation', {webContentsId: event.sender.id, url});
+    generateDidStartNavigation = (webContentsId: number) => {
+        return (event: Event, url: string) => {
+            log.debug('webContentEvents.did-start-navigation', {webContentsId, url});
 
-            const contentID = event.sender.id;
             const parsedURL = urlUtils.parseURL(url)!;
-            const serverURL = WindowManager.getServerURLFromWebContentsId(event.sender.id);
+            const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
             if (!serverURL || !urlUtils.isTrustedURL(parsedURL, serverURL)) {
                 return;
             }
 
             if (serverURL && urlUtils.isCustomLoginURL(parsedURL, serverURL)) {
-                this.customLogins[contentID].inProgress = true;
-            } else if (serverURL && this.customLogins[contentID].inProgress && urlUtils.isInternalURL(serverURL || new URL(''), parsedURL)) {
-                this.customLogins[contentID].inProgress = false;
+                this.customLogins[webContentsId].inProgress = true;
+            } else if (serverURL && this.customLogins[webContentsId].inProgress && urlUtils.isInternalURL(serverURL || new URL(''), parsedURL)) {
+                this.customLogins[webContentsId].inProgress = false;
             }
         };
     };
@@ -135,7 +138,7 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            const serverURL = WindowManager.getServerURLFromWebContentsId(webContentsId);
+            const serverURL = this.getServerURLFromWebContentsId(webContentsId);
             if (!serverURL) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};
@@ -170,24 +173,38 @@ export class WebContentsEventManager {
                 log.info(`${details.url} is an admin console page, preventing to open a new window`);
                 return {action: 'deny'};
             }
-            if (this.popupWindow && this.popupWindow.webContents.getURL() === details.url) {
+            if (this.popupWindow && this.popupWindow.win.webContents.getURL() === details.url) {
                 log.info(`Popup window already open at provided url: ${details.url}`);
                 return {action: 'deny'};
             }
 
             // TODO: move popups to its own and have more than one.
             if (urlUtils.isPluginUrl(serverURL, parsedURL) || urlUtils.isManagedResource(serverURL, parsedURL)) {
-                if (!this.popupWindow) {
-                    this.popupWindow = new BrowserWindow({
-                        backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-                        //parent: WindowManager.getMainWindow(),
-                        show: false,
-                        center: true,
-                        webPreferences: {
-                            spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
-                        },
+                let popup: BrowserWindow;
+                if (this.popupWindow) {
+                    this.popupWindow.win.once('ready-to-show', () => {
+                        this.popupWindow?.win.show();
                     });
-                    this.popupWindow.webContents.on('will-redirect', (event, url) => {
+                    popup = this.popupWindow.win;
+                } else {
+                    this.popupWindow = {
+                        win: new BrowserWindow({
+                            backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
+                            //parent: WindowManager.getMainWindow(),
+                            show: false,
+                            center: true,
+                            webPreferences: {
+                                spellcheck: (typeof spellcheck === 'undefined' ? true : spellcheck),
+                            },
+                        }),
+                        serverURL,
+                    };
+                    this.customLogins[this.popupWindow.win.webContents.id] = {
+                        inProgress: false,
+                    };
+
+                    popup = this.popupWindow.win;
+                    popup.webContents.on('will-redirect', (event, url) => {
                         const parsedURL = urlUtils.parseURL(url);
                         if (!parsedURL) {
                             event.preventDefault();
@@ -198,23 +215,25 @@ export class WebContentsEventManager {
                             event.preventDefault();
                         }
                     });
-                    this.popupWindow.webContents.setWindowOpenHandler(this.denyNewWindow);
-                    this.popupWindow.once('closed', () => {
+                    popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
+                    popup.webContents.on('did-start-navigation', this.generateDidStartNavigation(popup.webContents.id));
+                    popup.webContents.setWindowOpenHandler(this.denyNewWindow);
+                    popup.once('closed', () => {
                         this.popupWindow = undefined;
                     });
-                    const contextMenu = new ContextMenu({}, this.popupWindow);
+
+                    const contextMenu = new ContextMenu({}, popup);
                     contextMenu.reload();
                 }
 
-                const popupWindow = this.popupWindow;
-                popupWindow.once('ready-to-show', () => popupWindow.show());
+                popup.once('ready-to-show', () => popup.show());
 
                 if (urlUtils.isManagedResource(serverURL, parsedURL)) {
-                    popupWindow.loadURL(details.url);
+                    popup.loadURL(details.url);
                 } else {
                     // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
                     // should be removed once a proper oAuth2 implementation is setup.
-                    popupWindow.loadURL(details.url, {
+                    popup.loadURL(details.url, {
                         userAgent: composeUserAgent(),
                     });
                 }
@@ -266,16 +285,16 @@ export class WebContentsEventManager {
             this.removeWebContentsListeners(contents.id);
         }
 
-        const willNavigate = this.generateWillNavigate();
-        contents.on('will-navigate', willNavigate as (e: Event, u: string) => void); // TODO: Electron types don't include sender for some reason
+        const willNavigate = this.generateWillNavigate(contents.id);
+        contents.on('will-navigate', willNavigate);
 
         // handle custom login requests (oath, saml):
         // 1. are we navigating to a supported local custom login path from the `/login` page?
         //    - indicate custom login is in progress
         // 2. are we finished with the custom login process?
         //    - indicate custom login is NOT in progress
-        const didStartNavigation = this.generateDidStartNavigation();
-        contents.on('did-start-navigation', didStartNavigation as (e: Event, u: string) => void);
+        const didStartNavigation = this.generateDidStartNavigation(contents.id);
+        contents.on('did-start-navigation', didStartNavigation);
 
         const spellcheck = Config.useSpellChecker;
         const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
@@ -285,8 +304,8 @@ export class WebContentsEventManager {
 
         const removeWebContentsListeners = () => {
             try {
-                contents.removeListener('will-navigate', willNavigate as (e: Event, u: string) => void);
-                contents.removeListener('did-start-navigation', didStartNavigation as (e: Event, u: string) => void);
+                contents.removeListener('will-navigate', willNavigate);
+                contents.removeListener('did-start-navigation', didStartNavigation);
                 removeListeners?.(contents);
             } catch (e) {
                 log.error(`Error while trying to detach listeners, this might be ok if the process crashed: ${e}`);
