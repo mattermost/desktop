@@ -1,0 +1,252 @@
+name: release
+
+on:
+  push:
+    # only for release and release candidates
+    # release-XX.YY.ZZ
+    # release-XX.YY.ZZ-rc-something
+    branches:
+      - release-[0-9]+.[0-9]+
+      - release-[0-9]+.[0-9]+.[0-9]+
+      - release-[0-9]+.[0-9]+-rc-[0-9]+
+      - release-[0-9]+.[0-9]+.[0-9]+-rc-[0-9]+
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TERM: xterm
+
+jobs:
+  begin-notification:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: release/notify-channel
+        run: |
+          jq --null-input \
+          --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
+          --arg username "MattermostRelease" \
+          --arg text "[$(jq -r .version package.json)] Release process for the desktop app has started, it should take about 30 minutes to complete." \
+          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
+          curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+
+  build-linux:
+    runs-on: ubuntu-latest-4-cores
+    needs:
+      - begin-notification
+    steps:
+      - name: release/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: release/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: release/install-dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | sudo apt-key add -
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
+          npm ci
+      - name: release/test
+        uses: ./.github/actions/test
+      - name: release/build
+        run: |
+          mkdir -p ./build/linux
+          npm run package:linux
+          bash -x ./scripts/patch_updater_yml.sh
+          bash -x ./scripts/cp_artifacts.sh release ./build/linux
+      - name: release/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 14 ## No need to keep CI builds more than 14 days
+
+  build-msi-installer:
+    runs-on: windows-2022
+    needs:
+      - begin-notification
+    steps:
+      - name: release/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: release/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: release/optimize
+        shell: powershell
+        run: ./scripts/Makefile.ps1 optimize
+      - name: release/install-deps
+        shell: powershell
+        run: ./scripts/Makefile.ps1 install-deps
+      - name: release/test
+        uses: ./.github/actions/test
+      - name: release/build
+        shell: powershell
+        env:
+          MM_WIN_INSTALLERS: 1
+          PFX_KEY: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX_KEY }}
+          CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_KEY_PASSWORD }}
+          PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
+          CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
+        run: |
+          ./scripts/Makefile.ps1 build
+      - name: release/package
+        run: |
+          mkdir -p ./build/win-release
+          bash -x ./scripts/patch_updater_yml.sh
+          bash -x ./scripts/cp_artifacts.sh release ./build/win-release
+      - name: release/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 14
+
+  build-mac-installer:
+    runs-on: macos-12
+    needs:
+      - mac-app-store-preflight
+    steps:
+      - name: release/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: release/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: release/create-build-folder
+        run: mkdir -p ./build
+      - name: release/install-dependencies
+        run: |
+          brew install yq rename
+          npm ci
+      - name: release/test
+        uses: ./.github/actions/test
+      - name: release/build
+        env:
+          APPLEID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}
+          APPLEIDPASS: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID_PASS }}
+          CSC_FOR_PULL_REQUEST: true
+          CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
+        run: |
+          mkdir -p ./build/macos-release
+          npm run package:mac-with-universal
+          bash -x ./scripts/patch_updater_yml.sh
+          bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
+      - name: release/rename-arm64-to-m1
+        run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
+      - name: release/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 14
+
+  mac-app-store-preflight:
+    runs-on: macos-12
+    env:
+      MAS_PROFILE: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MAS_PROFILE }}
+      MACOS_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}
+      MACOS_API_KEY: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY }}
+      MACOS_API_ISSUER_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_ISSUER_ID }}
+      CSC_FOR_PULL_REQUEST: true
+      CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_KEY_PASSWORD}}
+      CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
+    needs:
+      - begin-notification
+    steps:
+      - name: release/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: release/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: release/install-dependencies
+        run: |
+          brew install yq
+          npm ci
+      - name: release/copy-provisioning-profile
+        run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
+      - name: release/patch-version-number-for-MAS
+        run: ./scripts/patch_mas_version.sh
+      - name: release/test
+        uses: ./.github/actions/test
+      - name: release/package
+        run: npm run package:mas
+      - name: release/publish
+        run: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
+
+  upload-to-s3:
+    runs-on: ubuntu-22.04
+    needs:
+      - build-mac-installer
+      - build-msi-installer
+      - build-linux
+    steps:
+      - name: release/setup-aws-credentials
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.MM_DESKTOP_RELEASE_AWS_SECRET_ACCESS_KEY }}
+      - name: release/download-builds
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - name: release/setup-files-for-aws
+        run: |
+          mkdir -p ./aws-s3-dist
+          cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
+      - name: release/upload-to-s3
+        run: aws s3 cp ./aws-s3-dist/ s3://releases.mattermost.com/desktop/ --acl public-read --cache-control "no-cache" --recursive
+
+  github-release:
+    runs-on: ubuntu-22.04
+    needs:
+      - upload-to-s3
+    steps:
+      - name: release/download-builds
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - name: release/setup-files-for-github-release
+        run: |
+          mkdir -p ./ghr-dist
+          find ./build/{macos-release,win-release,linux} -type f -exec cp --backup=numbered -t ./ghr-dist {} +
+      - name: release/publish-release
+        run: |
+          go install github.com/tcnksm/ghr@latest
+          VERSION=$(jq -r .version package.json)
+          RELEASE_TITLE="v${VERSION} ($(date -u "+%Y-%m-%d"))"
+          ghr \
+            -t ${GITHUB_TOKEN} \
+            -u ${GITHUB_ACTOR} \
+            -draft \
+            --body="$(./scripts/generate_release_markdown.sh $VERSION)" \
+            --name="${RELEASE_TITLE}" $( [[ $VERSION =~ "-rc" ]] && printf %s "-prerelease") \
+            -r ${GITHUB_REPOSITORY} \
+            -c ${GITHUB_SHA} \
+            -delete \
+            v${VERSION} ./ghr-dist
+
+  end-notification:
+    runs-on: ubuntu-22.04
+    needs:
+      - github-release
+    steps:
+      - name: release/notify-channel
+        run: |
+          jq --null-input \
+          --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
+          --arg username "MattermostRelease" \
+          --arg text "[$(jq -r .version package.json)] Release process for the desktop app ended, the new release can be found on [GitHub](https://github.com/mattermost/desktop/releases)." \
+          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
+          curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"

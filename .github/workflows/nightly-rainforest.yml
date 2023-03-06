@@ -1,0 +1,122 @@
+name: nightly-rainforest
+
+on:
+  schedule:
+    - cron: 0 4 * * 0-5
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TERM: xterm
+  MM_DESKTOP_BUILD_DISABLEGPU: true
+  MM_DESKTOP_BUILD_SKIPONBOARDINGSCREENS: true
+
+jobs:
+  build-msi-installer:
+    runs-on: windows-2022
+    steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: nightly/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: nightly/optimize
+        shell: powershell
+        run: ./scripts/Makefile.ps1 optimize
+      - name: nightly/install-deps
+        shell: powershell
+        run: ./scripts/Makefile.ps1 install-deps
+      - name: nightly/test
+        uses: ./.github/actions/test
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
+      - name: nightly/build
+        shell: powershell
+        env:
+          MM_WIN_INSTALLERS: 1
+          PFX_KEY: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX_KEY }}
+          CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_KEY_PASSWORD }}
+          PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
+          CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
+        run: ./scripts/Makefile.ps1 build
+      - name: nightly/package
+        run: |
+          mkdir -p ./build/win
+          bash -x ./scripts/patch_updater_yml.sh
+          bash -x ./scripts/cp_artifacts.sh release ./build/win
+      - name: nightly/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
+
+  build-mac-installer:
+    runs-on: macos-12
+    steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: nightly/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: nightly/install-dependencies
+        run: |
+          brew install yq rename
+          npm ci
+      - name: nightly/test
+        uses: ./.github/actions/test
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
+      - name: nightly/build
+        env:
+          APPLEID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}
+          APPLEIDPASS: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID_PASS }}
+          CSC_FOR_PULL_REQUEST: true
+          CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
+        run: |
+          mkdir -p ./build/macos
+          npm run package:mac-with-universal
+          bash -x ./scripts/patch_updater_yml.sh
+          bash -x ./scripts/cp_artifacts.sh release ./build/macos
+      - name: nightly/rename-arm64-to-m1
+        run: rename 's/arm64/m1/' ./build/macos-nightly/$(jq -r .version package.json)/*
+      - name: nightly/upload-build
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: build
+          path: ./build
+          retention-days: 5 ## No need to keep them since they are uploaded on S3
+
+  upload-to-s3-daily:
+    runs-on: ubuntu-22.04
+    needs:
+      - build-mac-installer
+      - build-msi-installer
+    steps:
+      - name: nightly/setup-aws-credentials
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.MM_DESKTOP_DAILY_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.MM_DESKTOP_DAILY_AWS_SECRET_ACCESS_KEY }}
+      - name: nightly/download-builds
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - name: nightly/install-missing-deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install rename jq -y
+      - name: nightly/setup-files-for-aws
+        run: |
+          rename 's/\d+\.\d+\.\d+\-nightly\.\d+\/mattermost(.+)\d+\.\d+\.\d+\-nightly\.\d+/mattermost$1daily-develop/' ./build/macos/$(jq -r .version package.json)/*
+          rename 's/\d+\.\d+\.\d+\-nightly\.\d+\/mattermost(.+)\d+\.\d+\.\d+\-nightly\.\d+/mattermost$1daily-develop/' ./build/win/$(jq -r .version package.json)/*
+      - name: nightly/upload-to-s3
+        run: aws s3 cp ./build/ s3://mattermost-desktop-daily-builds/ --acl public-read --cache-control "no-cache" --recursive
