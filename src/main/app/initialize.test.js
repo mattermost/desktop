@@ -15,17 +15,21 @@ import {initialize} from './initialize';
 import {clearAppCache, getDeeplinkingURL, wasUpdated} from './utils';
 
 jest.mock('fs', () => ({
-    unlinkSync: jest.fn(),
+    accessSync: jest.fn(),
     existsSync: jest.fn().mockReturnValue(false),
+    mkdirSync: jest.fn(),
+    readFile: jest.fn(),
     readFileSync: jest.fn().mockImplementation((text) => text),
+    unlinkSync: jest.fn(),
     writeFile: jest.fn(),
-
+    writeFileSync: jest.fn(),
 }));
 
 jest.mock('path', () => {
     const original = jest.requireActual('path');
     return {
         ...original,
+        dirname: jest.fn().mockImplementation((p) => p),
         resolve: jest.fn(),
     };
 });
@@ -33,6 +37,7 @@ jest.mock('path', () => {
 jest.mock('electron', () => ({
     app: {
         on: jest.fn(),
+        handle: jest.fn(),
         exit: jest.fn(),
         getPath: jest.fn(),
         setPath: jest.fn(),
@@ -118,6 +123,9 @@ jest.mock('main/app/utils', () => ({
     wasUpdated: jest.fn(),
     initCookieManager: jest.fn(),
 }));
+jest.mock('main/appState', () => ({
+    on: jest.fn(),
+}));
 jest.mock('main/AppVersionManager', () => ({}));
 jest.mock('main/authManager', () => ({}));
 jest.mock('main/AutoLauncher', () => ({
@@ -155,7 +163,16 @@ jest.mock('main/windows/windowManager', () => ({
     getServerNameByWebContentsId: jest.fn(),
     getServerURLFromWebContentsId: jest.fn(),
 }));
+const originalProcess = process;
 describe('main/app/initialize', () => {
+    beforeAll(() => {
+        global.process = {
+            ...originalProcess,
+            on: jest.fn(),
+            chdir: jest.fn(),
+            cwd: jest.fn().mockImplementation((text) => text),
+        };
+    });
     beforeEach(() => {
         parseArgs.mockReturnValue({});
         Config.once.mockImplementation((event, cb) => {
@@ -173,6 +190,10 @@ describe('main/app/initialize', () => {
     afterEach(() => {
         jest.resetAllMocks();
         delete Config.data;
+    });
+
+    afterAll(() => {
+        global.process = originalProcess;
     });
 
     it('should initialize without errors', async () => {

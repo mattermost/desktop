@@ -1,0 +1,27 @@
+# Copyright 2022 Mattermost, Inc.
+name: "test-ci"
+description: This action used to run universal tests for all OS
+
+inputs:
+  shell:
+    description: The shell to run the test
+    required: true
+    default: bash
+
+runs:
+  using: "composite"
+  steps:
+    - name: ci/run-check-types
+      run: npm run check-types
+      shell: ${{ inputs.shell }}
+    - name: ci/run-i18n-check
+      shell: ${{ inputs.shell }}
+      run: |
+        npm run mmjstool -- i18n extract-desktop --desktop-dir .
+        git --no-pager diff --exit-code i18n/en.json
+    - name: ci/run-unit-ci
+      shell: ${{ inputs.shell }}
+      env:
+        ELECTRON_DISABLE_SANDBOX: "1"
+      run: |
+        npm run test:unit-ci
