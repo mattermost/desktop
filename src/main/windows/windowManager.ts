@@ -127,14 +127,17 @@ export class WindowManager {
         };
     }
 
-    createCallsWidgetWindow = (viewName: string, msg: CallsJoinCallMessage) => {
+    createCallsWidgetWindow = async (viewName: string, msg: CallsJoinCallMessage) => {
         log.debug('WindowManager.createCallsWidgetWindow');
         if (this.callsWidgetWindow) {
             // trying to join again the call we are already in should not be allowed.
             if (this.callsWidgetWindow.getCallID() === msg.callID) {
                 return;
             }
-            this.callsWidgetWindow.close();
+
+            // to switch from one call to another we need to wait for the existing
+            // window to be fully closed.
+            await this.callsWidgetWindow.close();
         }
         const currentView = this.viewManager?.views.get(viewName);
         if (!currentView) {

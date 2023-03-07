@@ -89,9 +89,16 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.load();
     }
 
-    public close() {
+    public async close() {
         log.debug('CallsWidgetWindow.close');
-        this.win.close();
+        return new Promise<void>((resolve) => {
+            if (this.win.isDestroyed()) {
+                resolve();
+                return;
+            }
+            this.once('closed', resolve);
+            this.win.close();
+        });
     }
 
     public getServerName() {
