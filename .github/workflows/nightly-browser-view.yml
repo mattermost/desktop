@@ -57,16 +57,14 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/create-build-folder
-        run: mkdir -p ./build
       - name: nightly/optimize
         shell: powershell
-        run: |
-          ./scripts/Makefile.ps1 optimize
+        run: ./scripts/Makefile.ps1 optimize
       - name: nightly/install-deps
         shell: powershell
         run: |
           ./scripts/Makefile.ps1 install-deps
+          npm ci
       - name: nightly/test
         uses: ./.github/actions/test
       - name: nightly/patch-version
@@ -79,12 +77,11 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_KEY_PASSWORD }}
           PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
-        run: |
-          ./scripts/Makefile.ps1 build
+        run: ./scripts/Makefile.ps1 build
       - name: nightly/package
         run: |
-          bash -x ./scripts/patch_updater_yml.sh
           mkdir -p ./build/win-release
+          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: nightly/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
@@ -103,8 +100,6 @@ jobs:
       CSC_FOR_PULL_REQUEST: true
       CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_KEY_PASSWORD}}
       CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
-    needs:
-      - begin-notification
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -114,8 +109,6 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/create-build-folder
-        run: mkdir -p ./build
       - name: nightly/install-dependencies
         run: |
           brew install yq
@@ -144,8 +137,6 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/create-build-folder
-        run: mkdir -p ./build
       - name: nightly/install-dependencies
         run: |
           brew install yq rename

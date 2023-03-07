@@ -30,7 +30,9 @@ jobs:
         run: ./scripts/Makefile.ps1 optimize
       - name: nightly/install-deps
         shell: powershell
-        run: ./scripts/Makefile.ps1 install-deps
+        run: |
+          ./scripts/Makefile.ps1 install-deps
+          npm ci
       - name: nightly/test
         uses: ./.github/actions/test
       - name: nightly/patch-version
