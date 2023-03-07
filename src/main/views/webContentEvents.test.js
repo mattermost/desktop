@@ -3,9 +3,11 @@
 
 'use strict';
 
-import {shell} from 'electron';
+import {shell, BrowserWindow} from 'electron';
 
 import urlUtils from 'common/utils/url';
+
+import ContextMenu from 'main/contextMenu';
 
 import * as WindowManager from '../windows/windowManager';
 import allowProtocolDialog from '../allowProtocolDialog';
@@ -17,21 +19,18 @@ jest.mock('electron', () => ({
     shell: {
         openExternal: jest.fn(),
     },
-    BrowserWindow: jest.fn().mockImplementation(() => ({
-        once: jest.fn(),
-        show: jest.fn(),
-        loadURL: jest.fn(),
-        webContents: {
-            setWindowOpenHandler: jest.fn(),
-        },
-    })),
+    BrowserWindow: jest.fn(),
     session: {},
 }));
+jest.mock('main/contextMenu', () => jest.fn());
 
 jest.mock('../allowProtocolDialog', () => ({}));
 jest.mock('../windows/windowManager', () => ({
     getServerURLFromWebContentsId: jest.fn(),
     showMainWindow: jest.fn(),
+}));
+jest.mock('../utils', () => ({
+    composeUserAgent: jest.fn(),
 }));
 
 jest.mock('common/config', () => ({
@@ -77,14 +76,14 @@ jest.mock('../allowProtocolDialog', () => ({
 }));
 
 describe('main/views/webContentsEvents', () => {
-    const event = {preventDefault: jest.fn(), sender: {id: 1}};
+    const event = {preventDefault: jest.fn()};
 
     describe('willNavigate', () => {
         const webContentsEventManager = new WebContentsEventManager();
-        const willNavigate = webContentsEventManager.generateWillNavigate(jest.fn());
+        const willNavigate = webContentsEventManager.generateWillNavigate(1);
 
         beforeEach(() => {
-            WindowManager.getServerURLFromWebContentsId.mockImplementation(() => new URL('http://server-1.com'));
+            webContentsEventManager.getServerURLFromWebContentsId = jest.fn().mockImplementation(() => new URL('http://server-1.com'));
         });
 
         afterEach(() => {
@@ -144,10 +143,10 @@ describe('main/views/webContentsEvents', () => {
 
     describe('didStartNavigation', () => {
         const webContentsEventManager = new WebContentsEventManager();
-        const didStartNavigation = webContentsEventManager.generateDidStartNavigation(jest.fn());
+        const didStartNavigation = webContentsEventManager.generateDidStartNavigation(1);
 
         beforeEach(() => {
-            WindowManager.getServerURLFromWebContentsId.mockImplementation(() => new URL('http://server-1.com'));
+            webContentsEventManager.getServerURLFromWebContentsId = jest.fn().mockImplementation(() => new URL('http://server-1.com'));
             urlUtils.isTrustedURL.mockReturnValue(true);
             urlUtils.isInternalURL.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(serverURL));
             urlUtils.isCustomLoginURL.mockImplementation((parsedURL) => parsedURL.toString().startsWith('http://loginurl.com/login'));
@@ -173,18 +172,32 @@ describe('main/views/webContentsEvents', () => {
 
     describe('newWindow', () => {
         const webContentsEventManager = new WebContentsEventManager();
-        const newWindow = webContentsEventManager.generateNewWindowListener(jest.fn());
+        const newWindow = webContentsEventManager.generateNewWindowListener(1, true);
 
         beforeEach(() => {
             urlUtils.isValidURI.mockReturnValue(true);
-            WindowManager.getServerURLFromWebContentsId.mockImplementation(() => new URL('http://server-1.com'));
+            webContentsEventManager.getServerURLFromWebContentsId = jest.fn().mockImplementation(() => new URL('http://server-1.com'));
             urlUtils.isTeamUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}myteam`));
             urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}admin_console`));
             urlUtils.isPluginUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}myplugin`));
-            urlUtils.isManagedResource.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}myplugin`));
+            urlUtils.isManagedResource.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}trusted`));
+
+            BrowserWindow.mockImplementation(() => ({
+                once: jest.fn(),
+                show: jest.fn(),
+                loadURL: jest.fn(),
+                webContents: {
+                    on: jest.fn(),
+                    setWindowOpenHandler: jest.fn(),
+                },
+            }));
+            ContextMenu.mockImplementation(() => ({
+                reload: jest.fn(),
+            }));
         });
 
         afterEach(() => {
+            webContentsEventManager.popupWindow = undefined;
             jest.resetAllMocks();
         });
         it('should deny on bad URL', () => {
@@ -237,7 +250,7 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should prevent from opening a new window if popup already exists', () => {
-            webContentsEventManager.popupWindow = {webContents: {getURL: () => 'http://server-1.com/myplugin/login'}};
+            webContentsEventManager.popupWindow = {win: {webContents: {getURL: () => 'http://server-1.com/myplugin/login'}}};
             expect(newWindow({url: 'http://server-1.com/myplugin/login'})).toStrictEqual({action: 'deny'});
         });
 
