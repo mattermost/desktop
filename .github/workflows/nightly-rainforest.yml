@@ -25,6 +25,8 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
       - name: nightly/optimize
         shell: powershell
         run: ./scripts/Makefile.ps1 optimize
@@ -32,11 +34,12 @@ jobs:
         shell: powershell
         run: |
           ./scripts/Makefile.ps1 install-deps
-          npm ci
+          npm i -g node-gyp
+          node-gyp install
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          npm ci --openssl_fips=''
       - name: nightly/test
         uses: ./.github/actions/test
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/build
         shell: powershell
         env:
@@ -69,14 +72,14 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
       - name: nightly/install-dependencies
         run: |
           brew install yq rename
           npm ci
       - name: nightly/test
         uses: ./.github/actions/test
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/build
         env:
           APPLEID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}

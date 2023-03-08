@@ -23,6 +23,8 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -31,8 +33,6 @@ jobs:
           wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
           sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
           npm ci
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: ci/build
         run: |
           mkdir -p ./build/linux
@@ -57,6 +57,8 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
       - name: nightly/optimize
         shell: powershell
         run: ./scripts/Makefile.ps1 optimize
@@ -64,11 +66,12 @@ jobs:
         shell: powershell
         run: |
           ./scripts/Makefile.ps1 install-deps
-          npm ci
+          npm i -g node-gyp
+          node-gyp install
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          npm ci --openssl_fips=''
       - name: nightly/test
         uses: ./.github/actions/test
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/build
         shell: powershell
         env:
@@ -109,6 +112,8 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
       - name: nightly/install-dependencies
         run: |
           brew install yq
@@ -137,14 +142,14 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
       - name: nightly/install-dependencies
         run: |
           brew install yq rename
           npm ci
       - name: nightly/test
         uses: ./.github/actions/test
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/build
         env:
           APPLEID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}
