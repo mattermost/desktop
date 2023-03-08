@@ -1529,7 +1529,7 @@ Utility tool to develop applications with Electron.
 * HOMEPAGE:
   * https://github.com/Quramy/electron-connect
 
-* LICENSE: 
+* LICENSE: MIT
 
 ---
 
@@ -3517,7 +3517,7 @@ Find potentially unused exports in your Typescript project with zero configurati
 * HOMEPAGE:
   * https://github.com/nadeesha/ts-prune
 
-* LICENSE: 
+* LICENSE: MIT
 
 ---
 
