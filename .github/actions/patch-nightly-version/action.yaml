@@ -8,4 +8,4 @@ runs:
     - name: ci/generate-version
       id: generate-version
       shell: bash
-      run: go run ${{ github.action_path }}/patch-version.go .
+      run: go run ${GITHUB_ACTION_PATH}/patch-version.go . # https://github.com/orgs/community/discussions/25910
