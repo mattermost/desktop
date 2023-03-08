@@ -1,6 +1,7 @@
 name: nightly-browser-view
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: 0 4 * * 0-5
 
