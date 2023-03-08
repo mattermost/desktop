@@ -75,13 +75,15 @@ describe('main/windows/callsWidgetWindow', () => {
         baseWindow.setAlwaysOnTop = jest.fn();
         baseWindow.setBackgroundColor = jest.fn();
         baseWindow.setMenuBarVisibility = jest.fn();
-        baseWindow.setBounds = jest.fn();
         baseWindow.webContents = {
             setWindowOpenHandler: jest.fn(),
             on: jest.fn(),
         };
+        baseWindow.isDestroyed = jest.fn(() => false);
 
         beforeEach(() => {
+            baseWindow.setBounds = jest.fn();
+
             mainWindow.getBounds.mockImplementation(() => {
                 return {
                     x: 0,
@@ -100,6 +102,14 @@ describe('main/windows/callsWidgetWindow', () => {
                 };
             });
 
+            baseWindow.show = jest.fn(() => {
+                baseWindow.emit('show');
+            });
+
+            baseWindow.close = jest.fn(() => {
+                baseWindow.emit('closed');
+            });
+
             baseWindow.loadURL.mockImplementation(() => ({
                 catch: jest.fn(),
             }));
@@ -108,6 +118,8 @@ describe('main/windows/callsWidgetWindow', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
+            baseWindow.removeAllListeners('show');
+            baseWindow.removeAllListeners('ready-to-show');
         });
 
         it('verify initial configuration', () => {
@@ -175,14 +187,24 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(widgetWindow.win.webContents.openDevTools).toHaveBeenCalled();
         });
 
-        it('closing window', () => {
-            baseWindow.close = jest.fn(() => {
-                baseWindow.emit('closed');
-            });
+        it('closing window', async () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+
+            await widgetWindow.close();
+
+            expect(widgetWindow.win.close).toHaveBeenCalled();
+            expect(widgetWindow.win.isDestroyed).toHaveBeenCalled();
+        });
+
+        it('closing window - already closed', async () => {
+            baseWindow.isDestroyed = jest.fn().mockReturnValue(true);
 
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            widgetWindow.close();
-            expect(widgetWindow.win.close).toHaveBeenCalled();
+
+            await widgetWindow.close();
+
+            expect(widgetWindow.win.isDestroyed).toHaveBeenCalled();
+            expect(widgetWindow.win.close).not.toHaveBeenCalled();
         });
 
         it('resize', () => {
@@ -190,10 +212,6 @@ describe('main/windows/callsWidgetWindow', () => {
                 ...baseWindow.webContents,
                 id: 'windowID',
             };
-
-            baseWindow.show = jest.fn(() => {
-                baseWindow.emit('show');
-            });
 
             let winBounds = {
                 x: 0,
@@ -209,12 +227,18 @@ describe('main/windows/callsWidgetWindow', () => {
                 winBounds = bounds;
             });
 
+            baseWindow.show = jest.fn(() => {
+                baseWindow.emit('show');
+            });
+
+            expect(baseWindow.setBounds).not.toHaveBeenCalled();
+
             baseWindow.webContents.getZoomFactor = jest.fn(() => 1.0);
 
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
             widgetWindow.win.emit('ready-to-show');
 
-            expect(baseWindow.setBounds).toHaveBeenCalledTimes(2);
+            expect(baseWindow.setBounds).toHaveBeenCalledTimes(1);
 
             expect(baseWindow.setBounds).toHaveBeenCalledWith({
                 x: 12,
@@ -259,10 +283,6 @@ describe('main/windows/callsWidgetWindow', () => {
                 ...baseWindow.webContents,
                 id: 'windowID',
             };
-
-            baseWindow.show = jest.fn(() => {
-                baseWindow.emit('show');
-            });
 
             let winBounds = {
                 x: 0,

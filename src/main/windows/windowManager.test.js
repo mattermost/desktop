@@ -1032,6 +1032,23 @@ describe('main/windows/windowManager', () => {
                 },
             },
         };
+
+        beforeEach(() => {
+            CallsWidgetWindow.mockImplementation(() => {
+                return {
+                    win: {
+                        isDestroyed: jest.fn(() => true),
+                    },
+                    on: jest.fn(),
+                    close: jest.fn(),
+                };
+            });
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
         const windowManager = new WindowManager();
         windowManager.viewManager = {
             views: new Map([
@@ -1039,25 +1056,25 @@ describe('main/windows/windowManager', () => {
             ]),
         };
 
-        it('should create calls widget window', () => {
+        it('should create calls widget window', async () => {
             expect(windowManager.callsWidgetWindow).toBeUndefined();
-            windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
+            await windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
             expect(windowManager.callsWidgetWindow).toBeDefined();
         });
 
-        it('should not create a new window if call is the same', () => {
+        it('should not create a new window if call is the same', async () => {
             const widgetWindow = windowManager.callsWidgetWindow;
             expect(widgetWindow).toBeDefined();
             widgetWindow.getCallID = jest.fn(() => 'test');
-            windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
+            await windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
             expect(windowManager.callsWidgetWindow).toEqual(widgetWindow);
         });
 
-        it('should create a new window if switching calls', () => {
+        it('should create a new window if switching calls', async () => {
             const widgetWindow = windowManager.callsWidgetWindow;
             expect(widgetWindow).toBeDefined();
             widgetWindow.getCallID = jest.fn(() => 'test');
-            windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test2'});
+            await windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test2'});
             expect(windowManager.callsWidgetWindow).not.toEqual(widgetWindow);
         });
     });
