@@ -9,7 +9,7 @@
     "main.app.app.handleAppCertificateError.certNotTrusted.dialog.title": "الشهاده غير موثقة",
     "main.app.app.handleAppCertificateError.certNotTrusted.dialog.message": "الشهاده من \"{issuerName}\" غيرموثقة.",
     "main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate": "مصادقه الشهاده غير الامنة",
-    "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "ألغاء الاتصال",
+    "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "إلغاء الاتصال",
     "main.app.app.handleAppCertificateError.certError.dialog.title": "خطأ فى الشهاده",
     "main.app.app.handleAppCertificateError.certError.dialog.message": "هناك مشكلة في الاعدادات مع خادم Mattermost هذا ، أو أن شخصًا ما يحاول اعتراض اتصالك. قد تحتاج أيضًا إلى تسجيل الدخول إلى شبكة Wi-Fi التي تتصل بها باستخدام متصفح الويب الخاص بك.",
     "main.app.app.handleAppCertificateError.certError.button.moreDetails": "تفاصيل اكثر",
@@ -25,7 +25,7 @@
     "label.login": "تسجيل الدخول",
     "label.close": "اغلاق",
     "label.change": "تغيير",
-    "label.cancel": "ألغاء",
+    "label.cancel": "إلغاء",
     "label.add": "أضف",
     "label.accept": "قبول",
     "common.tabs.TAB_MESSAGING": "القنوات",
@@ -109,5 +109,8 @@
     "main.app.utils.migrateMacAppStore.dialog.message": "استيراد الاعدادات الحالية",
     "main.app.utils.migrateMacAppStore.button.selectAndImport": "حدد مسار ثم استورد",
     "main.app.app.handleAppCertificateError.certError.dialog.detail": "{extraDetail}الاصل: {origin}\nخطأ: {error}",
-    "main.allowProtocolDialog.button.saveProtocolAsAllowed": "نعم (احفظ {protocol} على النحو المسموح به)"
+    "main.allowProtocolDialog.button.saveProtocolAsAllowed": "نعم (احفظ {protocol} على النحو المسموح به)",
+    "main.menus.app.help.RunDiagnostics": "تشغيل التشخيصات",
+    "main.menus.app.help.commitString": " commit: {hashVersion}",
+    "common.tabs.TAB_PLAYBOOKS": "أدلة التشغيل"
 }
