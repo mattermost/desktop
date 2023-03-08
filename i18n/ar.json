@@ -112,5 +112,12 @@
     "main.allowProtocolDialog.button.saveProtocolAsAllowed": "نعم (احفظ {protocol} على النحو المسموح به)",
     "main.menus.app.help.RunDiagnostics": "تشغيل التشخيصات",
     "main.menus.app.help.commitString": " commit: {hashVersion}",
-    "common.tabs.TAB_PLAYBOOKS": "أدلة التشغيل"
+    "common.tabs.TAB_PLAYBOOKS": "أدلة التشغيل",
+    "renderer.components.configureServer.connect.saving": "توصيل",
+    "renderer.components.configureServer.connect.default": "يتصل",
+    "renderer.components.configureServer.cardtitle": "أدخل تفاصيل الخادم الخاص بك",
+    "renderer.components.autoSaveIndicator.saving": "يحفظ",
+    "renderer.components.autoSaveIndicator.saved": "حفظ",
+    "main.windows.mainWindow.minimizeToTray.dialog.title": "تصغير إلى الصينية",
+    "main.windows.mainWindow.minimizeToTray.dialog.message": "سيستمر تشغيل {appName} في علبة النظام. يمكن تعطيل هذا في الإعدادات."
 }
