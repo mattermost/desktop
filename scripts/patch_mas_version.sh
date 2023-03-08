@@ -9,8 +9,8 @@ if [ "$BUILD_VERSION" == "" ]; then
     BUILD_VERSION=$STABLE_VERSION
 fi
 
-if [ "$CIRCLE_BUILD_NUM" != "" ]; then
-    BUILD_VERSION=$CIRCLE_BUILD_NUM
+if [ "$GITHUB_RUN_ID" != "" ]; then
+    BUILD_VERSION="${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
 fi
 
 temp_file="$(mktemp -t electron-builder.json)"
