@@ -214,7 +214,7 @@
     "renderer.components.settingsPage.checkSpelling": "맞춤법 검사",
     "renderer.components.settingsPage.bounceIcon.untilOpenApp": "앱을 열 때까지",
     "renderer.components.settingsPage.bounceIcon.once": "한 번",
-    "renderer.components.settingsPage.bounceIcon.description": "활성화하면 Dock 아이콘이 한 번 또는 새 알림을 수신할 때 사용자가 앱을 열 때까지 바운스됩니다.",
+    "renderer.components.settingsPage.bounceIcon.description": "활성화하면, 독(Dock) 아이콘 바운스가 한 번 또는 새 알림 수신 후 사용자가 앱을 열 때까지 일어납니다.",
     "renderer.components.settingsPage.appOptions": "앱 옵션",
     "renderer.components.settingsPage.appLanguage.useSystemDefault": "시스템 기본값 사용",
     "renderer.components.settingsPage.appLanguage.description": "데스크탑 앱이 메뉴 항목 및 팝업에 사용할 언어를 선택합니다. 아직 베타 버전이므로 일부 언어에는 번역 문자열이 없습니다.",
@@ -268,5 +268,7 @@
     "main.windows.mainWindow.closeApp.dialog.message": "종료하시겠습니까?",
     "main.windows.mainWindow.closeApp.dialog.detail": "더 이상 메시지 알림을 받지 않습니다. {appName}을(를) 시스템 트레이에서 실행 중인 상태로 두려면 설정(Settings)에서 활성화할 수 있습니다.",
     "renderer.components.settingsPage.bounceIcon": "Dock 아이콘 바운스",
-    "renderer.components.configureServer.subtitle": "팀의 커뮤니케이션 허브에<br></br>연결할 첫 번째 서버 설정"
+    "renderer.components.configureServer.subtitle": "팀의 커뮤니케이션 허브에<br></br>연결할 첫 번째 서버 설정",
+    "renderer.downloadsDropdown.remaining": "잔존",
+    "main.menus.app.help.ShowLogs": "로그 표시"
 }
