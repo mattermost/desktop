@@ -206,14 +206,18 @@ jobs:
           mkdir -p ./links
           echo "### Nightly builds:" > ./links/linklist.txt
           echo "Links for $(date +"%b-%d-%Y")" >> ./links/linklist.txt
-          echo "##### :tux: Linux" > ./links/linklist.txt
+          echo "##### :tux: Linux" >> ./links/linklist.txt
           for i in `ls ./build/linux/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
           echo "##### :apple_logo: macOS" >> ./links/linklist.txt
           for i in `ls ./build/macos-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
           echo "##### :windows: Windows" >> ./links/linklist.txt
           for i in `ls ./build/win-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
           cat ./links/linklist.txt
-          echo "linklist=$(<./links/linklist.txt)" >> "$GITHUB_OUTPUT"
+          LINKLIST=$(<./links/linklist.txt)
+          ## https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+          echo 'linklist<<EOF' >> $GITHUB_OUTPUT
+          echo "$LINKLIST" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
 
   share-links-to-channel:
     runs-on: ubuntu-22.04
