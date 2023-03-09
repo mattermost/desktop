@@ -13,6 +13,7 @@ env:
   TERM: xterm
   MM_DESKTOP_BUILD_DISABLEGPU: true
   MM_DESKTOP_BUILD_SKIPONBOARDINGSCREENS: true
+  MM_WIN_INSTALLERS: 1
 
 jobs:
   build-msi-installer:
