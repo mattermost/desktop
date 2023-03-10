@@ -1,0 +1,11 @@
+# Copyright 2022 Mattermost, Inc.
+name: "patch-version"
+description: This action is used to patch package.json version with the nightly build
+
+runs:
+  using: "composite"
+  steps:
+    - name: ci/generate-version
+      id: generate-version
+      shell: bash
+      run: go run ${GITHUB_ACTION_PATH}/patch-version.go . # https://github.com/orgs/community/discussions/25910
