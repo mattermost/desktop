@@ -44,8 +44,8 @@ export function openDeepLink(deeplinkingUrl: string) {
 }
 
 export function updateSpellCheckerLocales() {
-    if (Config.data?.spellCheckerLocales.length && app.isReady()) {
-        session.defaultSession.setSpellCheckerLanguages(Config.data?.spellCheckerLocales);
+    if (Config.spellCheckerLocales.length && app.isReady()) {
+        session.defaultSession.setSpellCheckerLanguages(Config.spellCheckerLocales);
     }
 }
 

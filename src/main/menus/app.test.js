@@ -59,55 +59,53 @@ jest.mock('common/tabs/TabView', () => ({
 
 describe('main/menus/app', () => {
     const config = {
-        data: {
-            enableServerManagement: true,
-            teams: [{
-                name: 'example',
-                url: 'http://example.com',
-                order: 0,
-                tabs: [
-                    {
-                        name: 'TAB_MESSAGING',
-                        order: 0,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_FOCALBOARD',
-                        order: 1,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_PLAYBOOKS',
-                        order: 2,
-                        isOpen: true,
-                    },
-                ],
-                lastActiveTab: 0,
-            }, {
-                name: 'github',
-                url: 'https://github.com/',
-                order: 1,
-                tabs: [
-                    {
-                        name: 'TAB_MESSAGING',
-                        order: 0,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_FOCALBOARD',
-                        order: 1,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_PLAYBOOKS',
-                        order: 2,
-                        isOpen: true,
-                    },
-                ],
-                lastActiveTab: 0,
-            }],
-            helpLink: 'http://link-to-help.site.com',
-        },
+        teams: [{
+            name: 'example',
+            url: 'http://example.com',
+            order: 0,
+            tabs: [
+                {
+                    name: 'TAB_MESSAGING',
+                    order: 0,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_FOCALBOARD',
+                    order: 1,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_PLAYBOOKS',
+                    order: 2,
+                    isOpen: true,
+                },
+            ],
+            lastActiveTab: 0,
+        }, {
+            name: 'github',
+            url: 'https://github.com/',
+            order: 1,
+            tabs: [
+                {
+                    name: 'TAB_MESSAGING',
+                    order: 0,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_FOCALBOARD',
+                    order: 1,
+                    isOpen: true,
+                },
+                {
+                    name: 'TAB_PLAYBOOKS',
+                    order: 2,
+                    isOpen: true,
+                },
+            ],
+            lastActiveTab: 0,
+        }],
+        enableServerManagement: true,
+        helpLink: 'http://link-to-help.site.com',
     };
     beforeEach(() => {
         getDarwinDoNotDisturb.mockReturnValue(false);
@@ -212,7 +210,7 @@ describe('main/menus/app', () => {
         const menu = createTemplate(modifiedConfig);
         const fileMenu = menu.find((item) => item.label === '&AppName' || item.label === '&File');
         const signInOption = fileMenu.submenu.find((item) => item.label === 'Sign in to Another Server');
-        expect(signInOption).not.toBe(undefined);
+        expect(signInOption).toBe(undefined);
     });
 
     it('should not show `Sign in to Another Server` if no teams are configured', () => {
@@ -233,7 +231,7 @@ describe('main/menus/app', () => {
         const menu = createTemplate(modifiedConfig);
         const fileMenu = menu.find((item) => item.label === '&AppName' || item.label === '&File');
         const signInOption = fileMenu.submenu.find((item) => item.label === 'Sign in to Another Server');
-        expect(signInOption).not.toBe(undefined);
+        expect(signInOption).toBe(undefined);
     });
 
     it('should show the first 9 servers (using order) in the Window menu', () => {
@@ -244,21 +242,19 @@ describe('main/menus/app', () => {
             return id;
         });
         const modifiedConfig = {
-            data: {
-                ...config.data,
-                teams: [...Array(15).keys()].map((key) => ({
-                    name: `server-${key}`,
-                    url: `http://server-${key}.com`,
-                    order: (key + 5) % 15,
-                    lastActiveTab: 0,
-                    tab: [
-                        {
-                            name: 'TAB_MESSAGING',
-                            isOpen: true,
-                        },
-                    ],
-                })),
-            },
+            ...config,
+            teams: [...Array(15).keys()].map((key) => ({
+                name: `server-${key}`,
+                url: `http://server-${key}.com`,
+                order: (key + 5) % 15,
+                lastActiveTab: 0,
+                tab: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        isOpen: true,
+                    },
+                ],
+            })),
         };
         const menu = createTemplate(modifiedConfig);
         const windowMenu = menu.find((item) => item.label === '&Window');
@@ -286,22 +282,20 @@ describe('main/menus/app', () => {
             }
             return id;
         });
-        WindowManager.getCurrentTeamName.mockImplementation(() => config.data.teams[0].name);
+        WindowManager.getCurrentTeamName.mockImplementation(() => config.teams[0].name);
 
         const modifiedConfig = {
-            data: {
-                ...config.data,
-                teams: [
-                    {
-                        ...config.data.teams[0],
-                        tabs: [...Array(15).keys()].map((key) => ({
-                            name: `tab-${key}`,
-                            isOpen: true,
-                            order: (key + 5) % 15,
-                        })),
-                    },
-                ],
-            },
+            ...config,
+            teams: [
+                {
+                    ...config.teams[0],
+                    tabs: [...Array(15).keys()].map((key) => ({
+                        name: `tab-${key}`,
+                        isOpen: true,
+                        order: (key + 5) % 15,
+                    })),
+                },
+            ],
         };
         const menu = createTemplate(modifiedConfig);
         const windowMenu = menu.find((item) => item.label === '&Window');

@@ -1,9 +1,15 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import fs from 'fs';
+
 import {Config} from 'common/config';
 
 const configPath = '/fake/config/path';
+
+jest.mock('fs', () => ({
+    readFileSync: jest.fn(),
+}));
 
 jest.mock('electron', () => ({
     app: {
@@ -107,7 +113,7 @@ describe('common/config', () => {
         it('should load the registry items and reload the config', () => {
             const config = new Config(configPath);
             config.reload = jest.fn();
-            config.loadRegistry({teams: [registryTeam]});
+            config.onLoadRegistry({teams: [registryTeam]});
             expect(config.reload).toHaveBeenCalled();
             expect(config.predefinedTeams).toContainEqual({
                 ...registryTeam,
@@ -231,10 +237,10 @@ describe('common/config', () => {
             const config = new Config(configPath);
             config.defaultConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
-            config.readFileSync = jest.fn().mockImplementation(() => {
+            fs.readFileSync.mockImplementation(() => {
                 throw new Error('Error message');
             });
-            config.writeFileSync = jest.fn();
+            config.writeFile = jest.fn();
 
             const configData = config.loadLocalConfigFile();
             expect(configData).toStrictEqual({test: 'test'});
@@ -244,10 +250,8 @@ describe('common/config', () => {
             const config = new Config(configPath);
             config.defaultConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
-            config.readFileSync = jest.fn().mockImplementation(() => {
-                return {version: -1};
-            });
-            config.writeFileSync = jest.fn();
+            fs.readFileSync.mockReturnValue('{"version": -1}');
+            config.writeFile = jest.fn();
 
             const configData = config.loadLocalConfigFile();
             expect(configData).toStrictEqual({test: 'test'});
@@ -255,10 +259,8 @@ describe('common/config', () => {
 
         it('should return config data if valid', () => {
             const config = new Config(configPath);
-            config.readFileSync = jest.fn().mockImplementation(() => {
-                return {version: 3};
-            });
-            config.writeFileSync = jest.fn();
+            fs.readFileSync.mockReturnValue('{"version": 3}');
+            config.writeFile = jest.fn();
 
             const configData = config.loadLocalConfigFile();
             expect(configData).toStrictEqual({version: 3});
