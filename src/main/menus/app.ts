@@ -12,6 +12,7 @@ import {getTabDisplayName, TabType} from 'common/tabs/TabView';
 import {Config} from 'common/config';
 
 import {localizeMessage} from 'main/i18nManager';
+import ServerManager from 'main/server/serverManager';
 import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
 import downloadsManager from 'main/downloadsManager';
@@ -47,7 +48,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     });
 
-    if (config.enableServerManagement === true && config.teams.length > 0) {
+    if (config.enableServerManagement === true && ServerManager.hasServers()) {
         platformAppMenu.push({
             label: localizeMessage('main.menus.app.file.signInToAnotherServer', 'Sign in to Another Server'),
             click() {
@@ -257,7 +258,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: isMac ? localizeMessage('main.menus.app.window.closeWindow', 'Close Window') : localizeMessage('main.menus.app.window.close', 'Close'),
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem,
-        ...(config.teams.length ? [{
+        ...(ServerManager.hasServers() ? [{
             label: localizeMessage('main.menus.app.window.showServers', 'Show Servers'),
             accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
             click() {

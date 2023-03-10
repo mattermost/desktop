@@ -12,6 +12,7 @@ import Utils from 'common/utils/util';
 
 import {updatePaths} from 'main/constants';
 import {ServerInfo} from 'main/server/serverInfo';
+import ServerManager from 'main/server/serverManager';
 
 import {getDeeplinkingURL, updateServerInfos, resizeScreen, migrateMacAppStore} from './utils';
 
@@ -59,6 +60,9 @@ jest.mock('main/menus/tray', () => ({}));
 jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
 }));
+jest.mock('main/server/serverManager', () => ({
+    getAllServers: jest.fn(),
+}));
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/windows/windowManager', () => ({}));
 
@@ -90,18 +94,15 @@ describe('main/app/utils', () => {
                 tabs,
             },
         ];
+        let teamsCopy;
 
         beforeEach(() => {
             Utils.isVersionGreaterThanOrEqualTo.mockImplementation((version) => version === '6.0.0');
+            teamsCopy = JSON.parse(JSON.stringify(teams));
             Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+                teamsCopy = value;
             });
-            const teamsCopy = JSON.parse(JSON.stringify(teams));
-            Config.teams = teamsCopy;
-        });
-
-        afterEach(() => {
-            delete Config.teams;
+            ServerManager.getAllServers.mockReturnValue(teamsCopy);
         });
 
         it('should open all tabs', async () => {
@@ -113,11 +114,11 @@ describe('main/app/utils', () => {
                 hasFocalboard: true,
             }});
 
-            updateServerInfos(Config.teams);
+            updateServerInfos(teamsCopy);
             await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
 
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBe(true);
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBe(true);
+            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBe(true);
+            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBe(true);
         });
 
         it('should open only playbooks', async () => {
@@ -129,11 +130,11 @@ describe('main/app/utils', () => {
                 hasFocalboard: false,
             }});
 
-            updateServerInfos(Config.teams);
+            updateServerInfos(teamsCopy);
             await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
 
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBe(true);
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBeUndefined();
+            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBe(true);
+            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBeUndefined();
         });
 
         it('should open none when server version is too old', async () => {
@@ -145,11 +146,11 @@ describe('main/app/utils', () => {
                 hasFocalboard: true,
             }});
 
-            updateServerInfos(Config.teams);
+            updateServerInfos(teamsCopy);
             await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
 
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBeUndefined();
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBeUndefined();
+            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBeUndefined();
+            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBeUndefined();
         });
 
         it('should update server URL using site URL', async () => {
@@ -161,10 +162,10 @@ describe('main/app/utils', () => {
                 hasFocalboard: true,
             }});
 
-            updateServerInfos(Config.teams);
+            updateServerInfos(teamsCopy);
             await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
 
-            expect(Config.teams.find((team) => team.name === 'server-1').url).toBe('http://server-2.com');
+            expect(teamsCopy.find((team) => team.name === 'server-1').url).toBe('http://server-2.com');
         });
     });
 

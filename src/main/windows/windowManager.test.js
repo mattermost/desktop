@@ -10,6 +10,7 @@ import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
+import ServerManager from 'main/server/serverManager';
 import {
     getAdjustedWindowBoundaries,
     resetScreensharePermissionsMacOS,
@@ -86,6 +87,10 @@ jest.mock('../downloadsManager', () => ({
 }));
 
 jest.mock('./callsWidgetWindow');
+jest.mock('main/server/serverManager', () => ({
+    getAllServers: jest.fn(),
+    getServer: jest.fn(),
+}));
 jest.mock('main/views/webContentEvents', () => ({}));
 
 describe('main/windows/windowManager', () => {
@@ -613,53 +618,63 @@ describe('main/windows/windowManager', () => {
         beforeEach(() => {
             jest.useFakeTimers();
             getTabViewName.mockImplementation((server, tab) => `${server}_${tab}`);
+            const server1 = {
+                name: 'server-1',
+                order: 1,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'tab-3',
+                        order: 1,
+                        isOpen: true,
+                    },
+                ],
+            };
+            const server2 = {
+                name: 'server-2',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'tab-3',
+                        order: 1,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 2,
+            };
+            const teams = [server1, server2];
+            ServerManager.getAllServers.mockReturnValue(teams);
+            ServerManager.getServer.mockImplementation((name) => {
+                switch (name) {
+                case 'server-1':
+                    return server1;
+                case 'server-2':
+                    return server2;
+                default:
+                    return undefined;
+                }
+            });
 
-            Config.teams = [
-                {
-                    name: 'server-1',
-                    order: 1,
-                    tabs: [
-                        {
-                            name: 'tab-1',
-                            order: 0,
-                            isOpen: false,
-                        },
-                        {
-                            name: 'tab-2',
-                            order: 2,
-                            isOpen: true,
-                        },
-                        {
-                            name: 'tab-3',
-                            order: 1,
-                            isOpen: true,
-                        },
-                    ],
-                }, {
-                    name: 'server-2',
-                    order: 0,
-                    tabs: [
-                        {
-                            name: 'tab-1',
-                            order: 0,
-                            isOpen: false,
-                        },
-                        {
-                            name: 'tab-2',
-                            order: 2,
-                            isOpen: true,
-                        },
-                        {
-                            name: 'tab-3',
-                            order: 1,
-                            isOpen: true,
-                        },
-                    ],
-                    lastActiveTab: 2,
-                },
-            ];
-
-            const map = Config.teams.reduce((arr, item) => {
+            const map = teams.reduce((arr, item) => {
                 item.tabs.forEach((tab) => {
                     arr.push([`${item.name}_${tab.name}`, {}]);
                 });
@@ -670,7 +685,6 @@ describe('main/windows/windowManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
         });
 
         afterAll(() => {
@@ -775,34 +789,33 @@ describe('main/windows/windowManager', () => {
         windowManager.switchTab = jest.fn();
 
         beforeEach(() => {
-            Config.teams = [
-                {
-                    name: 'server-1',
-                    order: 1,
-                    tabs: [
-                        {
-                            name: 'tab-1',
-                            order: 0,
-                            isOpen: false,
-                        },
-                        {
-                            name: 'tab-2',
-                            order: 2,
-                            isOpen: true,
-                        },
-                        {
-                            name: 'tab-3',
-                            order: 1,
-                            isOpen: true,
-                        },
-                    ],
-                },
-            ];
+            const server1 = {
+                name: 'server-1',
+                order: 1,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'tab-3',
+                        order: 1,
+                        isOpen: true,
+                    },
+                ],
+            };
+            ServerManager.getAllServers.mockReturnValue([server1]);
+            ServerManager.getServer.mockReturnValue(server1);
         });
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
         });
 
         it('should select next server when open', () => {
@@ -905,7 +918,7 @@ describe('main/windows/windowManager', () => {
         windowManager.handleBrowserHistoryButton = jest.fn();
 
         beforeEach(() => {
-            Config.teams = [
+            ServerManager.getAllServers.mockReturnValue([
                 {
                     name: 'server-1',
                     url: 'http://server-1.com',
@@ -928,13 +941,12 @@ describe('main/windows/windowManager', () => {
                         },
                     ],
                 },
-            ];
+            ]);
             urlUtils.cleanPathName.mockImplementation((base, path) => path);
         });
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
         });
 
         it('should open closed view if pushing to it', () => {
@@ -992,7 +1004,7 @@ describe('main/windows/windowManager', () => {
         };
 
         beforeEach(() => {
-            Config.teams = [
+            ServerManager.getAllServers.mockReturnValue([
                 {
                     name: 'server-1',
                     url: 'http://server-1.com',
@@ -1005,12 +1017,11 @@ describe('main/windows/windowManager', () => {
                         },
                     ],
                 },
-            ];
+            ]);
         });
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
             view1.isAtRoot = true;
         });
 
@@ -1100,7 +1111,7 @@ describe('main/windows/windowManager', () => {
 
             windowManager.callsWidgetWindow = new CallsWidgetWindow();
 
-            Config.teams = [
+            const teams = [
                 {
                     name: 'server-1',
                     order: 1,
@@ -1134,8 +1145,9 @@ describe('main/windows/windowManager', () => {
                     lastActiveTab: 2,
                 },
             ];
+            ServerManager.getAllServers.mockReturnValue(teams);
 
-            const map = Config.teams.reduce((arr, item) => {
+            const map = teams.reduce((arr, item) => {
                 item.tabs.forEach((tab) => {
                     arr.push([`${item.name}_${tab.name}`, {
                         view: {
@@ -1152,7 +1164,6 @@ describe('main/windows/windowManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
             windowManager.missingScreensharePermissions = undefined;
         });
 
@@ -1281,7 +1292,7 @@ describe('main/windows/windowManager', () => {
                 };
             });
 
-            Config.teams = [
+            const teams = [
                 {
                     name: 'server-1',
                     order: 1,
@@ -1315,8 +1326,9 @@ describe('main/windows/windowManager', () => {
                     lastActiveTab: 2,
                 },
             ];
+            ServerManager.getAllServers.mockReturnValue(teams);
 
-            const map = Config.teams.reduce((arr, item) => {
+            const map = teams.reduce((arr, item) => {
                 item.tabs.forEach((tab) => {
                     arr.push([`${item.name}_${tab.name}`, {}]);
                 });
@@ -1327,7 +1339,6 @@ describe('main/windows/windowManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
         });
 
         it('should switch server', () => {
@@ -1360,7 +1371,7 @@ describe('main/windows/windowManager', () => {
                 };
             });
 
-            Config.teams = [
+            const teams = [
                 {
                     name: 'server-1',
                     order: 1,
@@ -1394,8 +1405,9 @@ describe('main/windows/windowManager', () => {
                     lastActiveTab: 2,
                 },
             ];
+            ServerManager.getAllServers.mockReturnValue(teams);
 
-            const map = Config.teams.reduce((arr, item) => {
+            const map = teams.reduce((arr, item) => {
                 item.tabs.forEach((tab) => {
                     arr.push([`${item.name}_${tab.name}`, {}]);
                 });
@@ -1406,7 +1418,6 @@ describe('main/windows/windowManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
         });
 
         it('should switch server', () => {
@@ -1440,7 +1451,6 @@ describe('main/windows/windowManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
         });
 
         it('should focus view and propagate error to main view', () => {
@@ -1479,7 +1489,6 @@ describe('main/windows/windowManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            Config.teams = [];
         });
 
         it('should pass through the click link to browser history push', () => {

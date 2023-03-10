@@ -5,6 +5,7 @@ import Config from 'common/config';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
 import {getLocalURLString, getLocalPreload} from 'main/utils';
+import ServerManager from 'main/server/serverManager';
 import ModalManager from 'main/views/modalManager';
 import WindowManager from 'main/windows/windowManager';
 
@@ -25,6 +26,10 @@ jest.mock('common/tabs/TabView', () => ({
     getDefaultTeamWithTabsFromTeam: jest.fn(),
 }));
 jest.mock('main/notifications', () => ({}));
+jest.mock('main/server/serverManager', () => ({
+    getAllServers: jest.fn(),
+    hasServers: jest.fn(),
+}));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
     getLocalURLString: jest.fn(),
@@ -70,62 +75,60 @@ const teams = [
 
 describe('main/app/intercom', () => {
     describe('handleCloseTab', () => {
-        beforeEach(() => {
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
-            });
-            Config.teams = JSON.parse(JSON.stringify(teams));
-        });
+        let teamsCopy;
 
-        afterEach(() => {
-            delete Config.teams;
+        beforeEach(() => {
+            teamsCopy = JSON.parse(JSON.stringify(teams));
+            Config.set.mockImplementation((name, value) => {
+                teamsCopy = value;
+            });
+            ServerManager.getAllServers.mockReturnValue(teamsCopy);
         });
 
         it('should close the specified tab and switch to the next open tab', () => {
             handleCloseTab(null, 'server-1', 'tab-3');
             expect(WindowManager.switchTab).toBeCalledWith('server-1', 'tab-2');
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === 'tab-3').isOpen).toBe(false);
+            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === 'tab-3').isOpen).toBe(false);
         });
     });
 
     describe('handleOpenTab', () => {
-        beforeEach(() => {
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
-            });
-            Config.teams = JSON.parse(JSON.stringify(teams));
-        });
+        let teamsCopy;
 
-        afterEach(() => {
-            delete Config.teams;
+        beforeEach(() => {
+            teamsCopy = JSON.parse(JSON.stringify(teams));
+            Config.set.mockImplementation((name, value) => {
+                teamsCopy = value;
+            });
+            ServerManager.getAllServers.mockReturnValue(teamsCopy);
         });
 
         it('should open the specified tab', () => {
             handleOpenTab(null, 'server-1', 'tab-1');
             expect(WindowManager.switchTab).toBeCalledWith('server-1', 'tab-1');
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === 'tab-1').isOpen).toBe(true);
+            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === 'tab-1').isOpen).toBe(true);
         });
     });
 
     describe('handleNewServerModal', () => {
+        let teamsCopy;
+
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             WindowManager.getMainWindow.mockReturnValue({});
 
+            teamsCopy = JSON.parse(JSON.stringify(teams));
             Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+                teamsCopy = value;
             });
-            Config.teams = JSON.parse(JSON.stringify(teams));
+            ServerManager.getAllServers.mockReturnValue(teamsCopy);
+            ServerManager.hasServers.mockReturnValue(Boolean(teamsCopy.length));
 
             getDefaultTeamWithTabsFromTeam.mockImplementation((team) => ({
                 ...team,
                 tabs,
             }));
-        });
-
-        afterEach(() => {
-            delete Config.teams;
         });
 
         it('should add new team to the config', async () => {
@@ -137,7 +140,7 @@ describe('main/app/intercom', () => {
 
             handleNewServerModal();
             await promise;
-            expect(Config.teams).toContainEqual(expect.objectContaining({
+            expect(teamsCopy).toContainEqual(expect.objectContaining({
                 name: 'new-team',
                 url: 'http://new-team.com',
                 tabs,
@@ -147,19 +150,18 @@ describe('main/app/intercom', () => {
     });
 
     describe('handleEditServerModal', () => {
+        let teamsCopy;
+
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             WindowManager.getMainWindow.mockReturnValue({});
 
+            teamsCopy = JSON.parse(JSON.stringify(teams));
             Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+                teamsCopy = value;
             });
-            Config.teams = JSON.parse(JSON.stringify(teams));
-        });
-
-        afterEach(() => {
-            delete Config.teams;
+            ServerManager.getAllServers.mockReturnValue(teamsCopy);
         });
 
         it('should do nothing when the server cannot be found', () => {
@@ -176,12 +178,12 @@ describe('main/app/intercom', () => {
 
             handleEditServerModal(null, 'server-1');
             await promise;
-            expect(Config.teams).not.toContainEqual(expect.objectContaining({
+            expect(teamsCopy).not.toContainEqual(expect.objectContaining({
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,
             }));
-            expect(Config.teams).toContainEqual(expect.objectContaining({
+            expect(teamsCopy).toContainEqual(expect.objectContaining({
                 name: 'new-team',
                 url: 'http://new-team.com',
                 tabs,
@@ -190,19 +192,18 @@ describe('main/app/intercom', () => {
     });
 
     describe('handleRemoveServerModal', () => {
+        let teamsCopy;
+
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             WindowManager.getMainWindow.mockReturnValue({});
 
+            teamsCopy = JSON.parse(JSON.stringify(teams));
             Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+                teamsCopy = value;
             });
-            Config.teams = JSON.parse(JSON.stringify(teams));
-        });
-
-        afterEach(() => {
-            delete Config.teams;
+            ServerManager.getAllServers.mockReturnValue(teamsCopy);
         });
 
         it('should remove the existing team', async () => {
@@ -211,7 +212,7 @@ describe('main/app/intercom', () => {
 
             handleRemoveServerModal(null, 'server-1');
             await promise;
-            expect(Config.teams).not.toContainEqual(expect.objectContaining({
+            expect(teamsCopy).not.toContainEqual(expect.objectContaining({
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,
@@ -222,7 +223,7 @@ describe('main/app/intercom', () => {
             const promise = Promise.resolve(false);
             ModalManager.addModal.mockReturnValue(promise);
 
-            expect(Config.teams).toContainEqual(expect.objectContaining({
+            expect(teamsCopy).toContainEqual(expect.objectContaining({
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,
@@ -230,7 +231,7 @@ describe('main/app/intercom', () => {
 
             handleRemoveServerModal(null, 'server-1');
             await promise;
-            expect(Config.teams).toContainEqual(expect.objectContaining({
+            expect(teamsCopy).toContainEqual(expect.objectContaining({
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,
@@ -239,15 +240,19 @@ describe('main/app/intercom', () => {
     });
 
     describe('handleWelcomeScreenModal', () => {
+        let teamsCopy;
+
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             WindowManager.getMainWindow.mockReturnValue({});
 
+            teamsCopy = [];
             Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+                teamsCopy = value;
             });
-            Config.teams = JSON.parse(JSON.stringify([]));
+            ServerManager.getAllServers.mockReturnValue(teamsCopy);
+            ServerManager.hasServers.mockReturnValue(Boolean(teamsCopy.length));
         });
 
         it('should show welcomeScreen modal', async () => {
@@ -266,6 +271,7 @@ describe('main/app/intercom', () => {
             WindowManager.getMainWindow.mockReturnValue({
                 isVisible: () => true,
             });
+            ServerManager.hasServers.mockReturnValue(true);
 
             Config.set.mockImplementation((name, value) => {
                 Config[name] = value;

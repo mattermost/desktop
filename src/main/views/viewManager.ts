@@ -32,6 +32,7 @@ import FocalboardTabView from 'common/tabs/FocalboardTabView';
 import PlaybooksTabView from 'common/tabs/PlaybooksTabView';
 
 import {localizeMessage} from 'main/i18nManager';
+import ServerManager from 'main/server/serverManager';
 import {ServerInfo} from 'main/server/serverInfo';
 
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
@@ -75,7 +76,7 @@ export class ViewManager {
     }
 
     getServers = () => {
-        return Config.teams.concat();
+        return ServerManager.getAllServers().concat();
     }
 
     loadServer = (server: TeamWithTabs) => {

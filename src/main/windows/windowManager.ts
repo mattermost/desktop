@@ -45,6 +45,8 @@ import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
+import downloadsManager from 'main/downloadsManager';
+import ServerManager from 'main/server/serverManager';
 import {MattermostView} from 'main/views/MattermostView';
 
 import {
@@ -60,8 +62,6 @@ import CriticalErrorHandler from '../CriticalErrorHandler';
 import TeamDropdownView from '../views/teamDropdownView';
 import DownloadsDropdownView from '../views/downloadsDropdownView';
 import DownloadsDropdownMenuView from '../views/downloadsDropdownMenuView';
-
-import downloadsManager from 'main/downloadsManager';
 
 import {createSettingsWindow} from './settingsWindow';
 import createMainWindow from './mainWindow';
@@ -113,7 +113,7 @@ export class WindowManager {
 
     handleUpdateConfig = () => {
         if (this.viewManager) {
-            this.viewManager.reloadConfiguration(Config.teams || []);
+            this.viewManager.reloadConfiguration(ServerManager.getAllServers() || []);
         }
     }
 
@@ -275,7 +275,7 @@ export class WindowManager {
                 this.viewManager.updateMainWindow(this.mainWindow);
             }
 
-            this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
+            this.teamDropdown = new TeamDropdownView(this.mainWindow, ServerManager.getAllServers(), Config.darkMode, Config.enableServerManagement);
             this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, downloadsManager.getDownloads(), Config.darkMode);
             this.downloadsDropdownMenu = new DownloadsDropdownMenuView(this.mainWindow, Config.darkMode);
         }
@@ -601,14 +601,14 @@ export class WindowManager {
 
     initializeCurrentServerName = () => {
         if (!this.currentServerName) {
-            this.currentServerName = (Config.teams.find((team) => team.order === Config.lastActiveTeam) || Config.teams.find((team) => team.order === 0))?.name;
+            this.currentServerName = (ServerManager.getAllServers().find((team) => team.order === Config.lastActiveTeam) || ServerManager.getAllServers().find((team) => team.order === 0))?.name;
         }
     }
 
     switchServer = (serverName: string, waitForViewToExist = false) => {
         log.debug('windowManager.switchServer');
         this.showMainWindow();
-        const server = Config.teams.find((team) => team.name === serverName);
+        const server = ServerManager.getServer(serverName);
         if (!server) {
             log.error('Cannot find server in config');
             return;
@@ -776,7 +776,7 @@ export class WindowManager {
             return;
         }
 
-        const currentTeamTabs = Config.teams.find((team) => team.name === currentView.tab.server.name)?.tabs;
+        const currentTeamTabs = ServerManager.getServer(currentView.tab.server.name)?.tabs;
         const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
         const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
         if (!currentTeamTabs || !currentTab || !filteredTabs) {

@@ -9,6 +9,7 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
 import parseArgs from 'main/ParseArgs';
+import ServerManager from 'main/server/serverManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {initialize} from './initialize';
@@ -144,6 +145,9 @@ jest.mock('main/notifications', () => ({
     displayDownloadCompleted: jest.fn(),
 }));
 jest.mock('main/ParseArgs', () => jest.fn());
+jest.mock('main/server/serverManager', () => ({
+    getAllServers: jest.fn(),
+}));
 jest.mock('main/tray/tray', () => ({
     refreshTrayImages: jest.fn(),
     setupTray: jest.fn(),
@@ -181,7 +185,7 @@ describe('main/app/initialize', () => {
             }
         });
         Config.data = {};
-        Config.teams = [];
+        ServerManager.getAllServers.mockReturnValue([]);
         app.whenReady.mockResolvedValue();
         app.requestSingleInstanceLock.mockReturnValue(true);
         app.getPath.mockImplementation((p) => `/basedir/${p}`);

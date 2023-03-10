@@ -26,6 +26,7 @@ import {localizeMessage} from 'main/i18nManager';
 import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
+import ServerManager from 'main/server/serverManager';
 import {setTrayMenu} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
@@ -57,7 +58,7 @@ export function updateServerInfos(teams: TeamWithTabs[]) {
         serverInfos.push(serverInfo.promise);
     });
     Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
-        const teams = Config.teams;
+        const teams = ServerManager.getAllServers();
         let hasUpdates = false;
         teams.forEach((team) => {
             hasUpdates = hasUpdates || updateServerURL(data, team);

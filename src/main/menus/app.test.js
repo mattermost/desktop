@@ -6,6 +6,7 @@
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {localizeMessage} from 'main/i18nManager';
+import ServerManager from 'main/server/serverManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {createTemplate} from './app';
@@ -48,6 +49,9 @@ jest.mock('macos-notification-state', () => ({
 }));
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
+}));
+jest.mock('main/server/serverManager', () => ({
+    hasServers: jest.fn(),
 }));
 jest.mock('main/windows/windowManager', () => ({
     getCurrentTeamName: jest.fn(),
@@ -186,6 +190,7 @@ describe('main/menus/app', () => {
                 return id;
             }
         });
+        ServerManager.hasServers.mockReturnValue(true);
         const menu = createTemplate(config);
         const fileMenu = menu.find((item) => item.label === '&AppName' || item.label === '&File');
         const signInOption = fileMenu.submenu.find((item) => item.label === 'Sign in to Another Server');
@@ -203,6 +208,7 @@ describe('main/menus/app', () => {
                 return '';
             }
         });
+        ServerManager.hasServers.mockReturnValue(true);
         const modifiedConfig = {
             ...config,
             enableServerManagement: false,
@@ -224,6 +230,7 @@ describe('main/menus/app', () => {
                 return '';
             }
         });
+        ServerManager.hasServers.mockReturnValue(false);
         const modifiedConfig = {
             ...config,
             teams: [],

@@ -5,11 +5,11 @@ import {app, BrowserWindow, Event, dialog, WebContents, Certificate, Details} fr
 import log from 'electron-log';
 
 import urlUtils from 'common/utils/url';
-import Config from 'common/config';
 
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
 import {localizeMessage} from 'main/i18nManager';
+import ServerManager from 'main/server/serverManager';
 import {destroyTray} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
@@ -93,13 +93,15 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         const errorID = `${origin}:${error}`;
 
         const serverName = WindowManager.getServerNameByWebContentsId(webContents.id);
-        const server = Config.teams.find((team) => team.name === serverName);
-        if (server) {
-            const serverURL = urlUtils.parseURL(server.url);
-            if (serverURL && serverURL.origin !== origin) {
-                log.warn(`Ignoring certificate for unmatched origin ${origin}, will not trust`);
-                callback(false);
-                return;
+        if (serverName) {
+            const server = ServerManager.getServer(serverName);
+            if (server) {
+                const serverURL = urlUtils.parseURL(server.url);
+                if (serverURL && serverURL.origin !== origin) {
+                    log.warn(`Ignoring certificate for unmatched origin ${origin}, will not trust`);
+                    callback(false);
+                    return;
+                }
             }
         }
 

@@ -14,6 +14,7 @@ import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
+import ServerManager from 'main/server/serverManager';
 import ModalManager from 'main/views/modalManager';
 import WindowManager from 'main/windows/windowManager';
 
@@ -54,7 +55,7 @@ export function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName
 export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
     log.debug('Intercom.handleCloseTab', {serverName, tabName});
 
-    const teams = Config.teams;
+    const teams = ServerManager.getAllServers();
     teams.forEach((team) => {
         if (team.name === serverName) {
             team.tabs.forEach((tab) => {
@@ -72,7 +73,7 @@ export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName:
 export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
     log.debug('Intercom.handleOpenTab', {serverName, tabName});
 
-    const teams = Config.teams;
+    const teams = ServerManager.getAllServers();
     teams.forEach((team) => {
         if (team.name === serverName) {
             team.tabs.forEach((tab) => {
@@ -126,8 +127,8 @@ export function handleMainWindowIsShown() {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const showWelcomeScreen = () => !(Boolean(__SKIP_ONBOARDING_SCREENS__) || Config.teams.length);
-    const showNewServerModal = () => Config.teams.length === 0;
+    const showWelcomeScreen = () => !(Boolean(__SKIP_ONBOARDING_SCREENS__) || ServerManager.hasServers());
+    const showNewServerModal = () => !ServerManager.hasServers();
 
     /**
      * The 2 lines above need to be functions, otherwise the mainWindow.once() callback from previous
@@ -136,7 +137,7 @@ export function handleMainWindowIsShown() {
 
     const mainWindow = WindowManager.getMainWindow();
 
-    log.debug('intercom.handleMainWindowIsShown', {configTeams: Config.teams, showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
+    log.debug('intercom.handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
         handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
     } else {
@@ -157,10 +158,10 @@ export function handleNewServerModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('newServer', html, preload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
+    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team, index) => ({...team, index})), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = Config.teams;
+            const teams = ServerManager.getAllServers();
             const order = teams.length;
             const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
             teams.push(newTeam);
@@ -189,7 +190,7 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
     if (!mainWindow) {
         return;
     }
-    const serverIndex = Config.teams.findIndex((team) => team.name === name);
+    const serverIndex = ServerManager.getAllServers().findIndex((team) => team.name === name);
     if (serverIndex < 0) {
         return;
     }
@@ -198,13 +199,13 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
         html,
         preload,
         {
-            currentTeams: Config.teams.map((team, index) => ({...team, index})),
-            team: {...Config.teams[serverIndex], index: serverIndex},
+            currentTeams: ServerManager.getAllServers().map((team, index) => ({...team, index})),
+            team: {...ServerManager.getAllServers()[serverIndex], index: serverIndex},
         },
         mainWindow);
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = Config.teams;
+            const teams = ServerManager.getAllServers();
             teams[serverIndex].name = data.name;
             teams[serverIndex].url = data.url;
             Config.set('teams', teams);
@@ -235,7 +236,7 @@ export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     if (modalPromise) {
         modalPromise.then((remove) => {
             if (remove) {
-                const teams = Config.teams;
+                const teams = ServerManager.getAllServers();
                 const removedTeam = teams.findIndex((team) => team.name === name);
                 if (removedTeam < 0) {
                     return;
@@ -271,10 +272,10 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('welcomeScreen', html, preload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
+    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('welcomeScreen', html, preload, ServerManager.getAllServers().map((team, index) => ({...team, index})), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = Config.teams;
+            const teams = ServerManager.getAllServers();
             const order = teams.length;
             const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
             teams.push(newTeam);
@@ -326,7 +327,7 @@ export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom:
 export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
     log.debug('Intercom.handleUpdateLastActive', {serverName, viewName});
 
-    const teams = Config.teams;
+    const teams = ServerManager.getAllServers();
     teams.forEach((team) => {
         if (team.name === serverName) {
             const viewOrder = team?.tabs.find((tab) => tab.name === viewName)?.order || 0;

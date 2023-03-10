@@ -52,6 +52,7 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
+import ServerManager from 'main/server/serverManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
@@ -266,7 +267,7 @@ function initializeInterCommunicationEventListeners() {
 }
 
 function initializeAfterAppReady() {
-    updateServerInfos(Config.teams);
+    updateServerInfos(ServerManager.getAllServers());
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 
