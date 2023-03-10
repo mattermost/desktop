@@ -219,6 +219,8 @@ jobs:
     needs:
       - upload-to-s3
     steps:
+      - name: release/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: release/download-builds
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
       - name: release/setup-files-for-github-release
