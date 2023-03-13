@@ -1,0 +1,42 @@
+name: nightly-builds
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 4 * * 0-5
+
+jobs:
+  tag-nightly-build:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.tag-creation.outputs.tag }}
+    steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: nightly/patch-version
+        uses: ./.github/actions/patch-nightly-version
+      - name: nightly/create-nightly-build-tag
+        id: tag-creation
+        run: |
+          git config --global user.email "nightly-build@mattermost.com"
+          git config --global user.name "Nightly Build"
+          git checkout -b "$(jq -r .version package.json)"
+          git add package.json
+          git commit -m "Nightly build $(jq -r .version package.json)"
+          git tag "$(jq -r .version package.json)" -m "Nightly build $(jq -r .version package.json)"
+          git push --tags --force
+          echo "tag=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+
+  nightly-browser-view:
+    needs:
+      - tag-nightly-build
+    uses: ./.github/workflows/nightly-browser-view.yml
+    with:
+      tag: ${{ needs.tag-nightly-build.outputs.tag }}
+
+  nightly-rainforest:
+    needs:
+      - tag-nightly-build
+    uses: ./.github/workflows/nightly-rainforest.yml
+    with:
+      tag: ${{ needs.tag-nightly-build.outputs.tag }}
