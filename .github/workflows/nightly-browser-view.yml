@@ -1,9 +1,18 @@
 name: nightly-browser-view
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Reference tag of the nightly build"
+        required: true
+        type: string
   workflow_dispatch:
-  schedule:
-    - cron: 0 4 * * 0-5
+    inputs:
+      tag:
+        description: "Reference tag of the nightly build"
+        required: true
+        type: string
 
 defaults:
   run:
@@ -12,6 +21,7 @@ defaults:
 env:
   TERM: xterm
   MM_WIN_INSTALLERS: 1
+  REFERENCE: ${{ inputs.tag }}
 
 jobs:
   build-linux:
@@ -19,14 +29,14 @@ jobs:
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          ref: ${{ env.REFERENCE }}
       - name: ci/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -53,14 +63,14 @@ jobs:
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/optimize
         shell: powershell
         run: ./scripts/Makefile.ps1 optimize
@@ -109,14 +119,14 @@ jobs:
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/install-dependencies
         run: |
           brew install yq
@@ -139,14 +149,14 @@ jobs:
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/install-dependencies
         run: |
           brew install yq rename
@@ -185,8 +195,8 @@ jobs:
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
+        with:
+          ref: ${{ env.REFERENCE }}
       - name: nightly/setup-aws-credentials
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
         with:
@@ -232,4 +242,4 @@ jobs:
           --arg username "NightBuilder" \
           --arg text "${{ needs.upload-to-s3.outputs.links }}" \
           '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
-          curl -i -X POST -H "Content-Type: application/json" -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_NIGHTLY_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+          curl -i -X POST -H "Content-Type: application/json" -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_NIGHTLY_WEBHOOK_URL }}

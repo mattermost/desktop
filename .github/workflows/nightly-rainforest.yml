@@ -1,9 +1,18 @@
 name: nightly-rainforest
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Reference tag of the nightly build"
+        required: true
+        type: string
   workflow_dispatch:
-  schedule:
-    - cron: 0 4 * * 0-5
+    inputs:
+      tag:
+        description: "Reference tag of the nightly build"
+        required: true
+        type: string
 
 defaults:
   run:
@@ -14,6 +23,7 @@ env:
   MM_DESKTOP_BUILD_DISABLEGPU: true
   MM_DESKTOP_BUILD_SKIPONBOARDINGSCREENS: true
   MM_WIN_INSTALLERS: 1
+  REFERENCE: ${{ inputs.tag }}
 
 jobs:
   build-msi-installer:
@@ -21,14 +31,14 @@ jobs:
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/optimize
         shell: powershell
         run: ./scripts/Makefile.ps1 optimize
@@ -69,14 +79,14 @@ jobs:
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/patch-version
-        uses: ./.github/actions/patch-nightly-version
       - name: nightly/install-dependencies
         run: |
           brew install yq rename
@@ -110,6 +120,10 @@ jobs:
       - build-mac-installer
       - build-msi-installer
     steps:
+      - name: nightly/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          ref: ${{ env.REFERENCE }}
       - name: nightly/setup-aws-credentials
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
         with:
