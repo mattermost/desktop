@@ -228,20 +228,14 @@ jobs:
           mkdir -p ./ghr-dist
           find ./build/{macos-release,win-release,linux} -type f -exec cp --backup=numbered -t ./ghr-dist {} +
       - name: release/publish-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.MATTERMOST_BUILD_GH_TOKEN }}
         run: |
-          go install github.com/tcnksm/ghr@latest
           VERSION=$(jq -r .version package.json)
+          ./scripts/generate_release_markdown.sh ${VERSION} > release-notes.md
           RELEASE_TITLE="v${VERSION} ($(date -u "+%Y-%m-%d"))"
-          ghr \
-            -t ${GITHUB_TOKEN} \
-            -u ${GITHUB_ACTOR} \
-            -draft \
-            --body="$(./scripts/generate_release_markdown.sh $VERSION)" \
-            --name="${RELEASE_TITLE}" $( [[ $VERSION =~ "-rc" ]] && printf %s "-prerelease") \
-            -r ${GITHUB_REPOSITORY} \
-            -c ${GITHUB_SHA} \
-            -delete \
-            v${VERSION} ./ghr-dist
+          [[ $VERSION =~ "-rc" ]] && PRERELEASE="--prerelease"
+          gh release create --draft ${PRERELEASE} --verify-tag -F release-notes.md --target "${GITHUB_SHA}" --title "${RELEASE_TITLE}" "${GITHUB_REF_NAME}" ./ghr-dist/*
 
   end-notification:
     runs-on: ubuntu-22.04
