@@ -27,8 +27,12 @@ jest.mock('common/tabs/TabView', () => ({
 }));
 jest.mock('main/notifications', () => ({}));
 jest.mock('main/server/serverManager', () => ({
+    toggleTab: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),
+    addServer: jest.fn(),
+    editServer: jest.fn(),
+    removeServer: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
@@ -79,8 +83,29 @@ describe('main/app/intercom', () => {
 
         beforeEach(() => {
             teamsCopy = JSON.parse(JSON.stringify(teams));
-            Config.set.mockImplementation((name, value) => {
-                teamsCopy = value;
+            ServerManager.toggleTab.mockImplementation(() => {
+                teamsCopy = [
+                    {
+                        ...teams[0],
+                        tabs: [
+                            {
+                                name: 'tab-1',
+                                order: 0,
+                                isOpen: false,
+                            },
+                            {
+                                name: 'tab-2',
+                                order: 2,
+                                isOpen: true,
+                            },
+                            {
+                                name: 'tab-3',
+                                order: 1,
+                                isOpen: false,
+                            },
+                        ],
+                    },
+                ];
             });
             ServerManager.getAllServers.mockReturnValue(teamsCopy);
         });
@@ -93,20 +118,9 @@ describe('main/app/intercom', () => {
     });
 
     describe('handleOpenTab', () => {
-        let teamsCopy;
-
-        beforeEach(() => {
-            teamsCopy = JSON.parse(JSON.stringify(teams));
-            Config.set.mockImplementation((name, value) => {
-                teamsCopy = value;
-            });
-            ServerManager.getAllServers.mockReturnValue(teamsCopy);
-        });
-
         it('should open the specified tab', () => {
             handleOpenTab(null, 'server-1', 'tab-1');
             expect(WindowManager.switchTab).toBeCalledWith('server-1', 'tab-1');
-            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === 'tab-1').isOpen).toBe(true);
         });
     });
 
@@ -119,10 +133,18 @@ describe('main/app/intercom', () => {
             WindowManager.getMainWindow.mockReturnValue({});
 
             teamsCopy = JSON.parse(JSON.stringify(teams));
-            Config.set.mockImplementation((name, value) => {
-                teamsCopy = value;
+            ServerManager.addServer.mockImplementation(() => {
+                const newTeam = {
+                    name: 'new-team',
+                    url: 'http://new-team.com',
+                    tabs,
+                };
+                teamsCopy = [
+                    ...teamsCopy,
+                    newTeam,
+                ];
+                return newTeam;
             });
-            ServerManager.getAllServers.mockReturnValue(teamsCopy);
             ServerManager.hasServers.mockReturnValue(Boolean(teamsCopy.length));
 
             getDefaultTeamWithTabsFromTeam.mockImplementation((team) => ({
@@ -158,8 +180,16 @@ describe('main/app/intercom', () => {
             WindowManager.getMainWindow.mockReturnValue({});
 
             teamsCopy = JSON.parse(JSON.stringify(teams));
-            Config.set.mockImplementation((name, value) => {
-                teamsCopy = value;
+            ServerManager.editServer.mockImplementation((team, index) => {
+                if (index < 0) {
+                    return;
+                }
+                const newTeam = {
+                    ...teamsCopy[0],
+                    name: 'new-team',
+                    url: 'http://new-team.com',
+                };
+                teamsCopy = [newTeam];
             });
             ServerManager.getAllServers.mockReturnValue(teamsCopy);
         });
@@ -200,8 +230,8 @@ describe('main/app/intercom', () => {
             WindowManager.getMainWindow.mockReturnValue({});
 
             teamsCopy = JSON.parse(JSON.stringify(teams));
-            Config.set.mockImplementation((name, value) => {
-                teamsCopy = value;
+            ServerManager.removeServer.mockImplementation(() => {
+                teamsCopy = [];
             });
             ServerManager.getAllServers.mockReturnValue(teamsCopy);
         });

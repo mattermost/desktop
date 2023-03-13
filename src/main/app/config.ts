@@ -11,11 +11,12 @@ import Config from 'common/config';
 
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
+import ServerManager from 'main/server/serverManager';
 import {refreshTrayImages} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleMainWindowIsShown} from './intercom';
-import {handleUpdateMenuEvent, setLoggingLevel, updateServerInfos, updateSpellCheckerLocales} from './utils';
+import {handleUpdateMenuEvent, setLoggingLevel, updateSpellCheckerLocales} from './utils';
 
 let didCheckForAddServerModal = false;
 
@@ -65,7 +66,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 
     if (process.platform === 'win32' && !didCheckForAddServerModal && typeof Config.registryConfigData !== 'undefined') {
         didCheckForAddServerModal = true;
-        updateServerInfos(newConfig.teams);
+        ServerManager.updateServerInfos(newConfig.teams);
         WindowManager.initializeCurrentServerName();
         handleMainWindowIsShown();
     }

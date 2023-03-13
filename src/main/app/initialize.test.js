@@ -9,7 +9,6 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
 import parseArgs from 'main/ParseArgs';
-import ServerManager from 'main/server/serverManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {initialize} from './initialize';
@@ -119,7 +118,6 @@ jest.mock('main/app/utils', () => ({
     getDeeplinkingURL: jest.fn(),
     handleUpdateMenuEvent: jest.fn(),
     shouldShowTrayIcon: jest.fn(),
-    updateServerInfos: jest.fn(),
     updateSpellCheckerLocales: jest.fn(),
     wasUpdated: jest.fn(),
     initCookieManager: jest.fn(),
@@ -146,7 +144,7 @@ jest.mock('main/notifications', () => ({
 }));
 jest.mock('main/ParseArgs', () => jest.fn());
 jest.mock('main/server/serverManager', () => ({
-    getAllServers: jest.fn(),
+    init: jest.fn(),
 }));
 jest.mock('main/tray/tray', () => ({
     refreshTrayImages: jest.fn(),
@@ -185,7 +183,6 @@ describe('main/app/initialize', () => {
             }
         });
         Config.data = {};
-        ServerManager.getAllServers.mockReturnValue([]);
         app.whenReady.mockResolvedValue();
         app.requestSingleInstanceLock.mockReturnValue(true);
         app.getPath.mockImplementation((p) => `/basedir/${p}`);

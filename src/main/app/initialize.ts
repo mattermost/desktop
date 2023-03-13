@@ -93,7 +93,6 @@ import {
     getDeeplinkingURL,
     handleUpdateMenuEvent,
     shouldShowTrayIcon,
-    updateServerInfos,
     updateSpellCheckerLocales,
     wasUpdated,
     initCookieManager,
@@ -227,6 +226,8 @@ function initializeBeforeAppReady() {
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
+
+    ServerManager.init();
 }
 
 function initializeInterCommunicationEventListeners() {
@@ -267,7 +268,6 @@ function initializeInterCommunicationEventListeners() {
 }
 
 function initializeAfterAppReady() {
-    updateServerInfos(ServerManager.getAllServers());
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 

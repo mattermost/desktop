@@ -8,16 +8,12 @@ import fs from 'fs-extra';
 import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage, screen} from 'electron';
 import log, {LevelOption} from 'electron-log';
 
-import {MigrationInfo, TeamWithTabs} from 'types/config';
-import {RemoteInfo} from 'types/server';
+import {MigrationInfo} from 'types/config';
 import {Boundaries} from 'types/utils';
 
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
-import {MattermostServer} from 'common/servers/MattermostServer';
-import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
-import Utils from 'common/utils/util';
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
 
 import updateManager from 'main/autoUpdater';
@@ -25,8 +21,6 @@ import {migrationInfoPath, updatePaths} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
-import {ServerInfo} from 'main/server/serverInfo';
-import ServerManager from 'main/server/serverManager';
 import {setTrayMenu} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
@@ -48,59 +42,6 @@ export function updateSpellCheckerLocales() {
     if (Config.spellCheckerLocales.length && app.isReady()) {
         session.defaultSession.setSpellCheckerLanguages(Config.spellCheckerLocales);
     }
-}
-
-export function updateServerInfos(teams: TeamWithTabs[]) {
-    log.silly('app.utils.updateServerInfos');
-    const serverInfos: Array<Promise<RemoteInfo | string | undefined>> = [];
-    teams.forEach((team) => {
-        const serverInfo = new ServerInfo(new MattermostServer(team.name, team.url));
-        serverInfos.push(serverInfo.promise);
-    });
-    Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
-        const teams = ServerManager.getAllServers();
-        let hasUpdates = false;
-        teams.forEach((team) => {
-            hasUpdates = hasUpdates || updateServerURL(data, team);
-            hasUpdates = hasUpdates || openExtraTabs(data, team);
-        });
-        if (hasUpdates) {
-            Config.set('teams', teams);
-        }
-    }).catch((reason: any) => {
-        log.error('Error getting server infos', reason);
-    });
-}
-
-function updateServerURL(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
-    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
-    if (remoteInfo && remoteInfo.siteURL && team.url !== remoteInfo.siteURL) {
-        team.url = remoteInfo.siteURL;
-        return true;
-    }
-    return false;
-}
-
-function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
-    let hasUpdates = false;
-    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
-    if (remoteInfo) {
-        team.tabs.forEach((tab) => {
-            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
-                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && typeof tab.isOpen === 'undefined') {
-                    log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
-                    tab.isOpen = true;
-                    hasUpdates = true;
-                }
-                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && typeof tab.isOpen === 'undefined') {
-                    log.info(`opening ${team.name}___${tab.name} on hasFocalboard`);
-                    tab.isOpen = true;
-                    hasUpdates = true;
-                }
-            }
-        });
-    }
-    return hasUpdates;
 }
 
 export function handleUpdateMenuEvent() {

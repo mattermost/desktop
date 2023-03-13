@@ -9,7 +9,6 @@ import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
 import {REGISTRY_READ_EVENT} from 'common/config/RegistryConfig';
-import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
@@ -19,7 +18,6 @@ import ModalManager from 'main/views/modalManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleAppBeforeQuit} from './app';
-import {updateServerInfos} from './utils';
 
 export function handleReloadConfig() {
     log.debug('Intercom.handleReloadConfig');
@@ -55,36 +53,16 @@ export function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName
 export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
     log.debug('Intercom.handleCloseTab', {serverName, tabName});
 
-    const teams = ServerManager.getAllServers();
-    teams.forEach((team) => {
-        if (team.name === serverName) {
-            team.tabs.forEach((tab) => {
-                if (tab.name === tabName) {
-                    tab.isOpen = false;
-                }
-            });
-        }
-    });
-    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
+    ServerManager.toggleTab(serverName, tabName, false);
+    const nextTab = ServerManager.getAllServers().find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
     WindowManager.switchTab(serverName, nextTab);
-    Config.set('teams', teams);
 }
 
 export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
     log.debug('Intercom.handleOpenTab', {serverName, tabName});
 
-    const teams = ServerManager.getAllServers();
-    teams.forEach((team) => {
-        if (team.name === serverName) {
-            team.tabs.forEach((tab) => {
-                if (tab.name === tabName) {
-                    tab.isOpen = true;
-                }
-            });
-        }
-    });
+    ServerManager.toggleTab(serverName, tabName, true);
     WindowManager.switchTab(serverName, tabName);
-    Config.set('teams', teams);
 }
 
 export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
@@ -161,12 +139,7 @@ export function handleNewServerModal() {
     const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team, index) => ({...team, index})), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = ServerManager.getAllServers();
-            const order = teams.length;
-            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
-            teams.push(newTeam);
-            Config.set('teams', teams);
-            updateServerInfos([newTeam]);
+            const newTeam = ServerManager.addServer(data);
             WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -204,13 +177,7 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
         },
         mainWindow);
     if (modalPromise) {
-        modalPromise.then((data) => {
-            const teams = ServerManager.getAllServers();
-            teams[serverIndex].name = data.name;
-            teams[serverIndex].url = data.url;
-            Config.set('teams', teams);
-            updateServerInfos([teams[serverIndex]]);
-        }).catch((e) => {
+        modalPromise.then((data) => ServerManager.editServer(data, serverIndex)).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
                 log.error(`there was an error in the edit server modal: ${e}`);
@@ -236,19 +203,7 @@ export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
     if (modalPromise) {
         modalPromise.then((remove) => {
             if (remove) {
-                const teams = ServerManager.getAllServers();
-                const removedTeam = teams.findIndex((team) => team.name === name);
-                if (removedTeam < 0) {
-                    return;
-                }
-                const removedOrder = teams[removedTeam].order;
-                teams.splice(removedTeam, 1);
-                teams.forEach((value) => {
-                    if (value.order > removedOrder) {
-                        value.order--;
-                    }
-                });
-                Config.set('teams', teams);
+                ServerManager.removeServer(name);
             }
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -275,12 +230,7 @@ export function handleWelcomeScreenModal() {
     const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('welcomeScreen', html, preload, ServerManager.getAllServers().map((team, index) => ({...team, index})), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = ServerManager.getAllServers();
-            const order = teams.length;
-            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
-            teams.push(newTeam);
-            Config.set('teams', teams);
-            updateServerInfos([newTeam]);
+            const newTeam = ServerManager.addServer(data);
             WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -327,17 +277,7 @@ export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom:
 export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
     log.debug('Intercom.handleUpdateLastActive', {serverName, viewName});
 
-    const teams = ServerManager.getAllServers();
-    teams.forEach((team) => {
-        if (team.name === serverName) {
-            const viewOrder = team?.tabs.find((tab) => tab.name === viewName)?.order || 0;
-            team.lastActiveTab = viewOrder;
-        }
-    });
-    Config.setMultiple({
-        teams,
-        lastActiveTeam: teams.find((team) => team.name === serverName)?.order || 0,
-    });
+    ServerManager.updateLastActive(serverName, viewName);
 }
 
 export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {
