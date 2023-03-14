@@ -252,7 +252,7 @@ function generateTitle() {
         title = 'E2E for Master Nightly Build';
         break;
     default:
-        title = 'E2E for Build$';
+        title = 'E2E for Master Build';
     }
 
     return title;
