@@ -4,10 +4,10 @@
 'use strict';
 
 const fs = require('fs');
-
 const path = require('path');
 
 const ps = require('ps-node');
+const rimraf = require('rimraf');
 
 const {_electron: electron} = require('playwright');
 const chai = require('chai');
@@ -174,7 +174,7 @@ module.exports = {
 
     cleanDataDir() {
         try {
-            fs.rmdirSync(userDataDir, {recursive: true});
+            rimraf.rimrafSync(userDataDir, {maxRetries: 3});
         } catch (err) {
             if (err.code !== 'ENOENT') {
                 // eslint-disable-next-line no-console

@@ -212,6 +212,7 @@
     "react-intl": "5.20.10",
     "react-select": "5.2.2",
     "recursive-readdir": "^2.2.2",
+    "rimraf": "4.4.0",
     "robotjs": "0.6.0",
     "sass": "1.49.11",
     "sass-loader": "12.6.0",
