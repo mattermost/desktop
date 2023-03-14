@@ -241,6 +241,12 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
+            const otherServerURL = WindowManager.viewManager?.getViewByURL(parsedURL);
+            if (otherServerURL && urlUtils.isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
+                WindowManager.showMainWindow(parsedURL);
+                return {action: 'deny'};
+            }
+
             // If all else fails, just open externally
             shell.openExternal(details.url);
             return {action: 'deny'};
