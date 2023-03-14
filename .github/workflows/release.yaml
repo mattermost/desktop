@@ -12,6 +12,7 @@ defaults:
 
 env:
   TERM: xterm
+  MM_WIN_INSTALLERS: 1
 
 jobs:
   begin-notification:
