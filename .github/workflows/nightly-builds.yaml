@@ -31,6 +31,7 @@ jobs:
     needs:
       - tag-nightly-build
     uses: ./.github/workflows/nightly-browser-view.yml
+    secrets: inherit
     with:
       tag: ${{ needs.tag-nightly-build.outputs.tag }}
 
@@ -38,5 +39,6 @@ jobs:
     needs:
       - tag-nightly-build
     uses: ./.github/workflows/nightly-rainforest.yml
+    secrets: inherit
     with:
       tag: ${{ needs.tag-nightly-build.outputs.tag }}
