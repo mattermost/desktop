@@ -76,16 +76,16 @@ function ConfigureServer({
         if (urlUtils.startsWithProtocol(checkURL)) {
             return Promise.resolve(checkURL);
         }
-        return window.desktop.modals.pingDomain(checkURL).then((result: string | Error) => {
-            let newURL = checkURL;
-            if (result instanceof Error) {
-                console.error(`Could not ping url: ${checkURL}`);
-            } else {
-                newURL = `${result}://${checkURL}`;
+        return window.desktop.modals.pingDomain(checkURL).
+            then((result: string) => {
+                const newURL = `${result}://${checkURL}`;
                 setUrl(newURL);
-            }
-            return newURL;
-        });
+                return newURL;
+            }).
+            catch(() => {
+                console.error(`Could not ping url: ${checkURL}`);
+                return checkURL;
+            });
     };
 
     const validateName = () => {

@@ -156,13 +156,13 @@ class NewTeamModal extends React.PureComponent<Props, State> {
             return Promise.resolve(undefined);
         }
 
-        return window.desktop.modals.pingDomain(teamUrl).then((result: string | Error) => {
-            if (result instanceof Error) {
-                console.error(`Could not ping url: ${teamUrl}`);
-            } else {
+        return window.desktop.modals.pingDomain(teamUrl).
+            then((result: string) => {
                 this.setState({teamUrl: `${result}://${this.state.teamUrl}`});
-            }
-        });
+            }).
+            catch(() => {
+                console.error(`Could not ping url: ${teamUrl}`);
+            });
     }
 
     getError() {
