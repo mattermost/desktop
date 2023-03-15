@@ -17,14 +17,14 @@ import {
     Config as ConfigType,
     LocalConfiguration,
     RegistryConfig as RegistryConfigType,
-    TeamWithTabs,
+    ConfigTeam,
 } from 'types/config';
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
 
 import {configPath} from 'main/constants';
 import * as Validator from 'main/Validator';
-import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
+import {getDefaultConfigTeamFromTeam} from 'common/tabs/TabView';
 import Utils, {copy} from 'common/utils/util';
 
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
@@ -50,7 +50,7 @@ export class Config extends EventEmitter {
     useNativeWindow: boolean;
     canUpgradeValue?: boolean
 
-    predefinedTeams: TeamWithTabs[];
+    predefinedTeams: ConfigTeam[];
 
     constructor(configFilePath: string) {
         super();
@@ -59,7 +59,7 @@ export class Config extends EventEmitter {
         this.registryConfig = new RegistryConfig();
         this.predefinedTeams = [];
         if (buildConfig.defaultTeams) {
-            this.predefinedTeams.push(...buildConfig.defaultTeams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
+            this.predefinedTeams.push(...buildConfig.defaultTeams.map((team, index) => getDefaultConfigTeamFromTeam({...team, order: index})));
         }
         try {
             this.useNativeWindow = os.platform() === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2');
@@ -145,7 +145,7 @@ export class Config extends EventEmitter {
         return config;
     }
 
-    private handleUpdateTeams = (event: Electron.IpcMainInvokeEvent, newTeams: TeamWithTabs[]) => {
+    private handleUpdateTeams = (event: Electron.IpcMainInvokeEvent, newTeams: ConfigTeam[]) => {
         log.debug('Config.handleUpdateTeams');
         log.silly('Config.handleUpdateTeams', newTeams);
 
@@ -177,7 +177,7 @@ export class Config extends EventEmitter {
 
         this.registryConfigData = registryData;
         if (this.registryConfigData.teams) {
-            this.predefinedTeams.push(...this.registryConfigData.teams.map((team) => getDefaultTeamWithTabsFromTeam(team)));
+            this.predefinedTeams.push(...this.registryConfigData.teams.map((team, index) => getDefaultConfigTeamFromTeam({...team, order: index})));
         }
         this.reload();
     }
@@ -208,15 +208,15 @@ export class Config extends EventEmitter {
         if (newData.darkMode && newData.darkMode !== this.darkMode) {
             this.emit('darkModeChange', newData.darkMode);
         }
-        this.localConfigData = Object.assign({}, this.localConfigData, newData);
-        if (newData.teams && this.localConfigData) {
-            this.localConfigData.teams = this.filterOutPredefinedTeams(newData.teams as TeamWithTabs[]);
-            this.predefinedTeams = this.filterInPredefinedTeams(newData.teams as TeamWithTabs[]);
-        }
+        this.localConfigData = Object.assign({}, this.localConfigData, {...newData, teams: undefined});
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
+    }
 
-        return this.localConfigData; //this is the only part that changes
+    setServers = (servers: ConfigTeam[]) => {
+        this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers});
+        this.regenerateCombinedConfigData();
+        this.saveLocalConfigData();
     }
 
     // getters for accessing the various config data inputs
@@ -249,7 +249,7 @@ export class Config extends EventEmitter {
         return this.combinedData?.darkMode ?? defaultPreferences.darkMode;
     }
     get localTeams() {
-        return this.localConfigData?.teams ?? defaultPreferences.version;
+        return this.localConfigData?.teams ?? defaultPreferences.teams;
     }
     get enableHardwareAcceleration() {
         return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;
@@ -419,7 +419,7 @@ export class Config extends EventEmitter {
         delete this.combinedData!.defaultTeams;
 
         // IMPORTANT: properly combine teams from all sources
-        let combinedTeams: TeamWithTabs[] = [];
+        let combinedTeams: ConfigTeam[] = [];
 
         combinedTeams.push(...this.predefinedTeams);
 
@@ -447,7 +447,7 @@ export class Config extends EventEmitter {
      *
      * @param {array} teams array of teams to check for duplicates
      */
-    private filterOutDuplicateTeams = (teams: TeamWithTabs[]) => {
+    private filterOutDuplicateTeams = (teams: ConfigTeam[]) => {
         let newTeams = teams;
         const uniqueURLs = new Set();
         newTeams = newTeams.filter((team) => {
@@ -460,7 +460,7 @@ export class Config extends EventEmitter {
      * Returns the provided array fo teams with existing teams filtered out
      * @param {array} teams array of teams to check for already defined teams
      */
-    private filterOutPredefinedTeams = (teams: TeamWithTabs[]) => {
+    private filterOutPredefinedTeams = (teams: ConfigTeam[]) => {
         let newTeams = teams;
 
         // filter out predefined teams
@@ -475,7 +475,7 @@ export class Config extends EventEmitter {
      * Returns the provided array fo teams with existing teams includes
      * @param {array} teams array of teams to check for already defined teams
      */
-    private filterInPredefinedTeams = (teams: TeamWithTabs[]) => {
+    private filterInPredefinedTeams = (teams: ConfigTeam[]) => {
         let newTeams = teams;
 
         // filter out predefined teams
@@ -490,7 +490,7 @@ export class Config extends EventEmitter {
      * Apply a default sort order to the team list, if no order is specified.
      * @param {array} teams to sort
      */
-    private sortUnorderedTeams = (teams: TeamWithTabs[]) => {
+    private sortUnorderedTeams = (teams: ConfigTeam[]) => {
         // We want to preserve the array order of teams in the config, otherwise a lot of bugs will occur
         const mappedTeams = teams.map((team, index) => ({team, originalOrder: index}));
 

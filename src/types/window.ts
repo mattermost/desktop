@@ -5,7 +5,7 @@ import {ipcRenderer, Rectangle} from 'electron/renderer';
 
 import {Language} from '../../i18n/i18n';
 
-import {CombinedConfig, LocalConfiguration, Team, TeamWithTabsAndGpo} from './config';
+import {CombinedConfig, LocalConfiguration, Team, MattermostTeam} from './config';
 import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import {SaveQueueItem} from './settings';
 
@@ -133,7 +133,7 @@ declare global {
                 showRemoveServerModal: (serverName: string) => void;
 
                 onUpdateServerDropdown: (listener: (
-                    teams: TeamWithTabsAndGpo[],
+                    teams: MattermostTeam[],
                     darkMode: boolean,
                     windowBounds: Rectangle,
                     activeTeam?: string,

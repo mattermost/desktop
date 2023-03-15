@@ -13,6 +13,7 @@ export type TabTuple = [string, TabType];
 
 export interface TabView {
     server: MattermostServer;
+    isOpen?: boolean;
 
     get name(): string;
     get type(): TabType;
@@ -21,25 +22,29 @@ export interface TabView {
     get urlTypeTuple(): TabTuple;
 }
 
-export function getDefaultTeamWithTabsFromTeam(team: Team) {
+export function getDefaultConfigTeamFromTeam(team: Team & {order: number; lastActiveTab?: number}) {
     return {
         ...team,
-        tabs: [
-            {
-                name: TAB_MESSAGING,
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: TAB_FOCALBOARD,
-                order: 1,
-            },
-            {
-                name: TAB_PLAYBOOKS,
-                order: 2,
-            },
-        ],
+        tabs: getDefaultTabs(),
     };
+}
+
+export function getDefaultTabs() {
+    return [
+        {
+            name: TAB_MESSAGING,
+            order: 0,
+            isOpen: true,
+        },
+        {
+            name: TAB_FOCALBOARD,
+            order: 1,
+        },
+        {
+            name: TAB_PLAYBOOKS,
+            order: 2,
+        },
+    ];
 }
 
 export function getTabDisplayName(tabType: TabType) {

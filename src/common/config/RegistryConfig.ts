@@ -76,12 +76,11 @@ export default class RegistryConfig extends EventEmitter {
    */
     async getServersListFromRegistry() {
         const defaultServers = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-        return defaultServers.flat(2).reduce((servers: Team[], server, index) => {
+        return defaultServers.flat(2).reduce((servers: Team[], server) => {
             if (server) {
                 servers.push({
                     name: (server as WindowsRegistry.RegistryItem).name,
                     url: (server as WindowsRegistry.RegistryItem).value,
-                    order: index,
                 });
             }
             return servers;
