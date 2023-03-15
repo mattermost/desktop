@@ -106,9 +106,17 @@ export class Config extends EventEmitter {
         if (process.platform === 'darwin' || process.platform === 'win32') {
             nativeTheme.on('updated', this.handleUpdateTheme);
         }
-        this.registryConfig = new RegistryConfig();
-        this.registryConfig.once(REGISTRY_READ_EVENT, this.loadRegistry);
-        this.registryConfig.init();
+    }
+
+    initRegistry = () => {
+        return new Promise<void>((resolve) => {
+            this.registryConfig = new RegistryConfig();
+            this.registryConfig.once(REGISTRY_READ_EVENT, (data) => {
+                this.loadRegistry(data);
+                resolve();
+            });
+            this.registryConfig.init();
+        });
     }
 
     /**
