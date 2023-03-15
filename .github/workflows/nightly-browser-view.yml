@@ -54,7 +54,7 @@ jobs:
       - name: ci/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
-          name: build
+          name: build-browser-view
           path: ./build
           retention-days: 5 ## No need to keep them since they are uploaded on S3
 
@@ -102,7 +102,7 @@ jobs:
       - name: nightly/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
-          name: build
+          name: build-browser-view
           path: ./build
           retention-days: 5 ## No need to keep them since they are uploaded on S3
 
@@ -180,7 +180,7 @@ jobs:
       - name: nightly/upload-build
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
-          name: build
+          name: build-browser-view
           path: ./build
           retention-days: 5 ## No need to keep them since they are uploaded on S3
 
@@ -205,6 +205,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.MM_DESKTOP_RELEASE_AWS_SECRET_ACCESS_KEY }}
       - name: nightly/download-builds
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: build-browser-view
+          path: build
       - name: nightly/setup-files-for-aws
         run: |
           mkdir -p ./aws-s3-dist
