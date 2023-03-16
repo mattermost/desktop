@@ -104,6 +104,32 @@ case "${1}" in
 
         fi
     ;;
+    "pre-final")
+        if [[ "${branch_name}" =~ "release-" ]]; then
+            print_info "Releasing v${current_version} for MAS approval"
+            new_pkg_version="${current_version}"
+            write_package_version "${new_pkg_version}"
+            if [[ "${new_pkg_version}" =~ "-mas." ]]; then
+                mas="${new_pkg_version#*-mas.}"
+            else
+                mas=0
+            fi
+            case "${mas}" in
+                ''|*[!0-9]*)
+                    mas=0
+                ;;
+                *)
+                    mas=$(( mas + 1 ))
+                ;;
+            esac
+            tag "${new_pkg_version}-mas.${mas}" "MAS approval ${mas}"
+            print_info "Locally created an MAS approval version. In order to build you'll have to:"
+            print_info "$ git push --follow-tags ${git_origin} ${branch_name}:${branch_name}"
+        else
+            print_error "Can't release on a non release-X.Y branch"
+            exit 2
+        fi
+    ;;
     "final")
         if [[ "${branch_name}" =~ "release-" ]]; then
             print_info "Releasing v${current_version}"
