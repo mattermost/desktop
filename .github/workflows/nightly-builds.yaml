@@ -27,10 +27,10 @@ jobs:
           git push --tags --force
           echo "tag=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
 
-  nightly-browser-view:
+  nightly-main:
     needs:
       - tag-nightly-build
-    uses: ./.github/workflows/nightly-browser-view.yml
+    uses: ./.github/workflows/nightly-main.yml
     secrets: inherit
     with:
       tag: ${{ needs.tag-nightly-build.outputs.tag }}
