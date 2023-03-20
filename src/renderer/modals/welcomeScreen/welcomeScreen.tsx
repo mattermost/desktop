@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
-import {TeamWithIndex} from 'types/config';
+import {MattermostTeam} from 'types/config';
 
 import IntlProvider from 'renderer/intl_provider';
 
@@ -15,7 +15,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 const MOBILE_SCREEN_WIDTH = 1200;
 
-const onConnect = (data: TeamWithIndex) => {
+const onConnect = (data: MattermostTeam) => {
     window.desktop.modals.finishModal(data);
 };
 
@@ -23,7 +23,7 @@ const WelcomeScreenModalWrapper = () => {
     const [darkMode, setDarkMode] = useState(false);
     const [getStarted, setGetStarted] = useState(false);
     const [mobileView, setMobileView] = useState(false);
-    const [currentTeams, setCurrentTeams] = useState<TeamWithIndex[]>([]);
+    const [currentTeams, setCurrentTeams] = useState<MattermostTeam[]>([]);
 
     const handleWindowResize = () => {
         setMobileView(window.innerWidth < MOBILE_SCREEN_WIDTH);
@@ -38,7 +38,7 @@ const WelcomeScreenModalWrapper = () => {
             setDarkMode(result);
         });
 
-        window.desktop.modals.getModalInfo<TeamWithIndex[]>().then((result) => {
+        window.desktop.modals.getModalInfo<MattermostTeam[]>().then((result) => {
             setCurrentTeams(result);
         });
 

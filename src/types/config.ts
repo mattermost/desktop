@@ -3,8 +3,11 @@
 
 export type Tab = {
     name: string;
-    order: number;
     isOpen?: boolean;
+}
+
+export type ConfigTab = Tab & {
+    order: number;
 }
 
 export type Team = {
@@ -15,12 +18,16 @@ export type Team = {
 export type ConfigTeam = Team & {
     order: number;
     lastActiveTab?: number;
-    tabs: Tab[];
+    tabs: ConfigTab[];
 }
 
 export type MattermostTeam = Team & {
     id?: string;
     isPredefined?: boolean;
+}
+
+export type MattermostTab = Tab & {
+    id?: string;
 }
 
 export type Config = ConfigV3;
@@ -120,8 +127,7 @@ export type RegistryConfig = {
     enableAutoUpdater: boolean;
 }
 
-export type CombinedConfig = ConfigV3 & BuildConfig & {
-    registryTeams: Team[];
+export type CombinedConfig = Omit<ConfigV3, 'teams'> & Omit<BuildConfig, 'defaultTeams'> & {
     appName: string;
     useNativeWindow: boolean;
 }

@@ -24,7 +24,7 @@ import {
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
-    GET_VIEW_NAME,
+    GET_VIEW_ID,
     GET_VIEW_WEBCONTENTS_ID,
     RESIZE_MODAL,
     APP_LOGGED_OUT,
@@ -39,11 +39,12 @@ import {
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
     CALLS_ERROR,
     CALLS_LINK_CLICK,
+    SERVERS_UPDATE,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
-import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
+import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import downloadsManager from 'main/downloadsManager';
 import ServerManager from 'main/server/serverManager';
@@ -81,7 +82,7 @@ export class WindowManager {
     teamDropdown?: TeamDropdownView;
     downloadsDropdown?: DownloadsDropdownView;
     downloadsDropdownMenu?: DownloadsDropdownMenuView;
-    currentServerName?: string;
+    currentServerId?: string;
     missingScreensharePermissions?: boolean;
 
     constructor() {
@@ -96,7 +97,7 @@ export class WindowManager {
         ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
         ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
-        ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
+        ipcMain.handle(GET_VIEW_ID, this.handleGetViewId);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
@@ -109,25 +110,28 @@ export class WindowManager {
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.genCallsEventHandler(this.handleCallsWidgetChannelLinkClick));
         ipcMain.on(CALLS_ERROR, this.genCallsEventHandler(this.handleCallsError));
         ipcMain.on(CALLS_LINK_CLICK, this.genCallsEventHandler(this.handleCallsLinkClick));
+
+        ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
     }
 
     handleUpdateConfig = () => {
         if (this.viewManager) {
-            this.viewManager.reloadConfiguration(ServerManager.getAllServers() || []);
+            this.viewManager.reloadConfiguration();
         }
+        this.mainWindow?.webContents.send(SERVERS_UPDATE);
     }
 
     genCallsEventHandler = (handler: CallsEventHandler) => {
-        return (event: IpcMainEvent, viewName: string, msg?: any) => {
+        return (event: IpcMainEvent, viewId: string, msg?: any) => {
             if (this.callsWidgetWindow && !this.callsWidgetWindow.isAllowedEvent(event)) {
                 log.warn('WindowManager.genCallsEventHandler', 'Disallowed calls event');
                 return;
             }
-            handler(viewName, msg);
+            handler(viewId, msg);
         };
     }
 
-    createCallsWidgetWindow = async (viewName: string, msg: CallsJoinCallMessage) => {
+    createCallsWidgetWindow = async (viewId: string, msg: CallsJoinCallMessage) => {
         log.debug('WindowManager.createCallsWidgetWindow');
         if (this.callsWidgetWindow) {
             // trying to join again the call we are already in should not be allowed.
@@ -139,7 +143,7 @@ export class WindowManager {
             // window to be fully closed.
             await this.callsWidgetWindow.close();
         }
-        const currentView = this.viewManager?.views.get(viewName);
+        const currentView = this.viewManager?.views.get(viewId);
         if (!currentView) {
             log.error('unable to create calls widget window: currentView is missing');
             return;
@@ -158,7 +162,7 @@ export class WindowManager {
         log.debug('WindowManager.handleDesktopSourcesModalRequest');
 
         if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.switchServer(this.callsWidgetWindow.getServerId());
             this.mainWindow?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
         }
@@ -168,7 +172,7 @@ export class WindowManager {
         log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
 
         if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.switchServer(this.callsWidgetWindow.getServerId());
             this.mainWindow?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
         }
@@ -178,7 +182,7 @@ export class WindowManager {
         log.debug('WindowManager.handleCallsError', msg);
 
         if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.switchServer(this.callsWidgetWindow.getServerId());
             this.mainWindow?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
         }
@@ -188,7 +192,7 @@ export class WindowManager {
         log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
 
         if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerName());
+            this.switchServer(this.callsWidgetWindow.getServerId());
             this.mainWindow?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
         }
@@ -275,7 +279,7 @@ export class WindowManager {
                 this.viewManager.updateMainWindow(this.mainWindow);
             }
 
-            this.teamDropdown = new TeamDropdownView(this.mainWindow, ServerManager.getAllServers(), Config.darkMode, Config.enableServerManagement);
+            this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.darkMode, Config.enableServerManagement);
             this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, downloadsManager.getDownloads(), Config.darkMode);
             this.downloadsDropdownMenu = new DownloadsDropdownMenuView(this.mainWindow, Config.darkMode);
         }
@@ -595,49 +599,41 @@ export class WindowManager {
             this.viewManager = new ViewManager(this.mainWindow);
             this.viewManager.load();
             this.viewManager.showInitial();
-            this.initializeCurrentServerName();
+            this.initializeCurrentServerId();
         }
     }
 
-    initializeCurrentServerName = () => {
-        if (!this.currentServerName) {
-            this.currentServerName = (ServerManager.getAllServers().find((team) => team.order === Config.lastActiveTeam) || ServerManager.getAllServers().find((team) => team.order === 0))?.name;
+    initializeCurrentServerId = () => {
+        if (!this.currentServerId && ServerManager.hasServers()) {
+            this.currentServerId = ServerManager.getLastActiveServer().id;
         }
     }
 
-    switchServer = (serverName: string, waitForViewToExist = false) => {
+    switchServer = (serverId: string, waitForViewToExist = false) => {
         log.debug('windowManager.switchServer');
         this.showMainWindow();
-        const server = ServerManager.getServer(serverName);
+        const server = ServerManager.getServer(serverId);
         if (!server) {
             log.error('Cannot find server in config');
             return;
         }
-        this.currentServerName = serverName;
-        let nextTab = server.tabs.find((tab) => tab.isOpen && tab.order === (server.lastActiveTab || 0));
-        if (!nextTab) {
-            const openTabs = server.tabs.filter((tab) => tab.isOpen);
-            nextTab = openTabs.find((e) => e.order === 0) || openTabs.concat().sort((a, b) => a.order - b.order)[0];
-        }
-        const tabViewName = getTabViewName(serverName, nextTab.name);
+        this.currentServerId = server.id;
+        const nextTab = ServerManager.getLastActiveTabForServer(serverId);
         if (waitForViewToExist) {
             const timeout = setInterval(() => {
-                if (this.viewManager?.views.has(tabViewName)) {
-                    this.viewManager?.showByName(tabViewName);
+                if (this.viewManager?.views.has(nextTab.id)) {
+                    this.viewManager?.showById(nextTab.id);
                     clearTimeout(timeout);
                 }
             }, 100);
         } else {
-            this.viewManager?.showByName(tabViewName);
+            this.viewManager?.showById(nextTab.id);
         }
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
     }
 
-    switchTab = (serverName: string, tabName: string) => {
-        log.debug('windowManager.switchTab');
-        this.showMainWindow();
-        const tabViewName = getTabViewName(serverName, tabName);
-        this.viewManager?.showByName(tabViewName);
+    switchTab = (tabId: string) => {
+        this.viewManager?.showById(tabId);
     }
 
     focusBrowserView = () => {
@@ -695,9 +691,9 @@ export class WindowManager {
         }
     }
 
-    getViewNameByWebContentsId = (webContentsId: number) => {
+    getViewIdByWebContentsId = (webContentsId: number) => {
         const view = this.viewManager?.findViewByWebContent(webContentsId);
-        return view?.name;
+        return view?.id;
     }
 
     getServerNameByWebContentsId = (webContentsId: number) => {
@@ -776,44 +772,44 @@ export class WindowManager {
             return;
         }
 
-        const currentTeamTabs = ServerManager.getServer(currentView.tab.server.name)?.tabs;
-        const filteredTabs = currentTeamTabs?.filter((tab) => tab.isOpen);
-        const currentTab = currentTeamTabs?.find((tab) => tab.name === currentView.tab.type);
+        const currentTeamTabs = ServerManager.getOrderedTabsForServer(currentView.tab.server.id).map((tab, index) => ({tab, index}));
+        const filteredTabs = currentTeamTabs?.filter((tab) => tab.tab.isOpen);
+        const currentTab = currentTeamTabs?.find((tab) => tab.tab.name === currentView.tab.type);
         if (!currentTeamTabs || !currentTab || !filteredTabs) {
             return;
         }
 
-        let currentOrder = currentTab.order;
+        let currentOrder = currentTab.index;
         let nextIndex = -1;
         while (nextIndex === -1) {
             const nextOrder = (fn(currentOrder, currentTeamTabs.length) % currentTeamTabs.length);
-            nextIndex = filteredTabs.findIndex((tab) => tab.order === nextOrder);
+            nextIndex = filteredTabs.findIndex((tab) => tab.index === nextOrder);
             currentOrder = nextOrder;
         }
 
-        const newTab = filteredTabs[nextIndex];
-        this.switchTab(currentView.tab.server.name, newTab.name);
+        const newTab = filteredTabs[nextIndex].tab;
+        this.switchTab(newTab.id);
     }
 
     handleGetDarkMode = () => {
         return Config.darkMode;
     }
 
-    handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
-        log.debug('WindowManager.handleBrowserHistoryPush', {viewName, pathName});
+    handleBrowserHistoryPush = (e: IpcMainEvent, viewId: string, pathName: string) => {
+        log.debug('WindowManager.handleBrowserHistoryPush', {viewId, pathName});
 
-        const currentView = this.viewManager?.views.get(viewName);
+        const currentView = this.viewManager?.views.get(viewId);
         const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
-        const redirectedViewName = this.viewManager?.getViewByURL(`${currentView?.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.name || viewName;
-        if (this.viewManager?.closedViews.has(redirectedViewName)) {
+        const redirectedviewId = ServerManager.lookupTabByURL(`${currentView?.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
+        if (this.viewManager?.closedViews.has(redirectedviewId)) {
             // If it's a closed view, just open it and stop
-            this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
+            this.viewManager.openClosedTab(redirectedviewId, `${currentView?.tab.server.url}${cleanedPathName}`);
             return;
         }
-        let redirectedView = this.viewManager?.views.get(redirectedViewName) || currentView;
-        if (redirectedView !== currentView && redirectedView?.tab.server.name === this.currentServerName && redirectedView?.isLoggedIn) {
-            log.info('redirecting to a new view', redirectedView?.name || viewName);
-            this.viewManager?.showByName(redirectedView?.name || viewName);
+        let redirectedView = this.viewManager?.views.get(redirectedviewId) || currentView;
+        if (redirectedView !== currentView && redirectedView?.tab.server.id === this.currentServerId && redirectedView?.isLoggedIn) {
+            log.info('redirecting to a new view', redirectedView?.id || viewId);
+            this.viewManager?.showById(redirectedView?.id || viewId);
         } else {
             redirectedView = currentView;
         }
@@ -822,15 +818,15 @@ export class WindowManager {
         if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && cleanedPathName === '/')) {
             redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, cleanedPathName);
             if (redirectedView) {
-                this.handleBrowserHistoryButton(e, redirectedView.name);
+                this.handleBrowserHistoryButton(e, redirectedView.id);
             }
         }
     }
 
-    handleBrowserHistoryButton = (e: IpcMainEvent, viewName: string) => {
-        log.debug('WindowManager.handleBrowserHistoryButton', viewName);
+    handleBrowserHistoryButton = (e: IpcMainEvent, viewId: string) => {
+        log.debug('WindowManager.handleBrowserHistoryButton', viewId);
 
-        const currentView = this.viewManager?.views.get(viewName);
+        const currentView = this.viewManager?.views.get(viewId);
         if (currentView) {
             if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
                 currentView.view.webContents.clearHistory();
@@ -842,41 +838,50 @@ export class WindowManager {
         }
     }
 
-    getCurrentTeamName = () => {
-        return this.currentServerName;
+    getCurrentTeamId = () => {
+        return this.currentServerId;
     }
 
-    handleAppLoggedIn = (event: IpcMainEvent, viewName: string) => {
-        log.debug('WindowManager.handleAppLoggedIn', viewName);
+    handleAppLoggedIn = (event: IpcMainEvent, viewId: string) => {
+        log.debug('WindowManager.handleAppLoggedIn', viewId);
 
-        const view = this.viewManager?.views.get(viewName);
+        const view = this.viewManager?.views.get(viewId);
         if (view && !view.isLoggedIn) {
             view.isLoggedIn = true;
-            this.viewManager?.reloadViewIfNeeded(viewName);
+            this.viewManager?.reloadViewIfNeeded(viewId);
         }
     }
 
-    handleAppLoggedOut = (event: IpcMainEvent, viewName: string) => {
-        log.debug('WindowManager.handleAppLoggedOut', viewName);
+    handleAppLoggedOut = (event: IpcMainEvent, viewId: string) => {
+        log.debug('WindowManager.handleAppLoggedOut', viewId);
 
-        const view = this.viewManager?.views.get(viewName);
+        const view = this.viewManager?.views.get(viewId);
         if (view && view.isLoggedIn) {
             view.isLoggedIn = false;
         }
     }
 
-    handleGetViewName = (event: IpcMainInvokeEvent) => {
-        return this.getViewNameByWebContentsId(event.sender.id);
+    handleGetViewId = (event: IpcMainInvokeEvent) => {
+        // TODO
+        const viewId = this.getViewIdByWebContentsId(event.sender.id);
+        if (!viewId) {
+            return null;
+        }
+        const view = this.viewManager?.views.get(viewId);
+        if (!view) {
+            return null;
+        }
+        return `${view.tab.server.name}___${view.tab.name}`;
     }
 
     handleGetWebContentsId = (event: IpcMainInvokeEvent) => {
         return event.sender.id;
     }
 
-    handleGetDesktopSources = async (viewName: string, opts: Electron.SourcesOptions) => {
-        log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
+    handleGetDesktopSources = async (viewId: string, opts: Electron.SourcesOptions) => {
+        log.debug('WindowManager.handleGetDesktopSources', {viewId, opts});
 
-        const view = this.viewManager?.views.get(viewName);
+        const view = this.viewManager?.views.get(viewId);
         if (!view) {
             log.error('WindowManager.handleGetDesktopSources: view not found');
             return Promise.resolve();
@@ -946,7 +951,7 @@ export class WindowManager {
             return;
         }
         view?.reload();
-        this.viewManager?.showByName(view?.name);
+        this.viewManager?.showById(view?.id);
     }
 
     getServerURLFromWebContentsId = (id: number) => {
@@ -954,11 +959,11 @@ export class WindowManager {
             return this.callsWidgetWindow.getURL();
         }
 
-        const viewName = this.getViewNameByWebContentsId(id);
-        if (!viewName) {
+        const viewId = this.getViewIdByWebContentsId(id);
+        if (!viewId) {
             return undefined;
         }
-        return this.viewManager?.views.get(viewName)?.tab.server.url;
+        return this.viewManager?.views.get(viewId)?.tab.server.url;
     }
 }
 

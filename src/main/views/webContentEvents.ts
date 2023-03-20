@@ -9,6 +9,7 @@ import urlUtils from 'common/utils/url';
 
 import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
+import ServerManager from 'main/server/serverManager';
 
 import WindowManager from '../windows/windowManager';
 
@@ -241,7 +242,7 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            const otherServerURL = WindowManager.viewManager?.getViewByURL(parsedURL);
+            const otherServerURL = ServerManager.lookupTabByURL(parsedURL);
             if (otherServerURL && urlUtils.isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
                 WindowManager.showMainWindow(parsedURL);
                 return {action: 'deny'};

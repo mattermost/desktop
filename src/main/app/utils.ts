@@ -56,7 +56,7 @@ export function handleUpdateMenuEvent() {
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-        const tMenu = createTrayMenu(Config.data!);
+        const tMenu = createTrayMenu();
         setTrayMenu(tMenu);
     }
 }

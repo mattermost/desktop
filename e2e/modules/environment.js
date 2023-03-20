@@ -234,7 +234,7 @@ module.exports = {
                 if (!window.testHelper) {
                     return null;
                 }
-                const name = await window.testHelper.getViewName();
+                const name = await window.testHelper.getViewId();
                 const webContentsId = await window.testHelper.getWebContentsId();
                 return {viewName: name, webContentsId};
             }).then((result) => {

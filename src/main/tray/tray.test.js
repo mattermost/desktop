@@ -62,7 +62,7 @@ jest.mock('main/badge', () => ({
 jest.mock('main/windows/windowManager', () => ({
     handleUpdateConfig: jest.fn(),
     sendToRenderer: jest.fn(),
-    initializeCurrentServerName: jest.fn(),
+    initializeCurrentServerId: jest.fn(),
 }));
 
 describe('main/tray', () => {

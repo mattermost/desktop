@@ -222,7 +222,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 const view = WindowManager.viewManager?.getCurrentView();
                 if (view && view.view.webContents.canGoBack() && !view.isAtRoot) {
                     view.view.webContents.goBack();
-                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.name);
+                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.id);
                 }
             },
         }, {
@@ -232,13 +232,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 const view = WindowManager.viewManager?.getCurrentView();
                 if (view && view.view.webContents.canGoForward()) {
                     view.view.webContents.goForward();
-                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.name);
+                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.id);
                 }
             },
         }],
     });
 
-    const teams = config.teams || [];
+    const teams = ServerManager.getOrderedServers();
     const windowMenu = {
         id: 'window',
         label: localizeMessage('main.menus.app.window', '&Window'),
@@ -265,22 +265,22 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 ipcMain.emit(OPEN_TEAMS_DROPDOWN);
             },
         }] : []),
-        ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team, i) => {
+        ...teams.slice(0, 9).map((team, i) => {
             const items = [];
             items.push({
                 label: team.name,
                 accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
                 click() {
-                    WindowManager.switchServer(team.name);
+                    WindowManager.switchServer(team.id);
                 },
             });
-            if (WindowManager.getCurrentTeamName() === team.name) {
-                team.tabs.filter((tab) => tab.isOpen).sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).forEach((tab, i) => {
+            if (WindowManager.getCurrentTeamId() === team.id) {
+                ServerManager.getOrderedTabsForServer(team.id).slice(0, 9).forEach((tab, i) => {
                     items.push({
-                        label: `    ${localizeMessage(`common.tabs.${tab.name}`, getTabDisplayName(tab.name as TabType))}`,
+                        label: `    ${localizeMessage(`common.tabs.${tab.type}`, getTabDisplayName(tab.type as TabType))}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
-                            WindowManager.switchTab(team.name, tab.name);
+                            WindowManager.switchTab(tab.id);
                         },
                     });
                 });

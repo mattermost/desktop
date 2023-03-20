@@ -18,7 +18,6 @@ export const GET_LOCAL_CONFIGURATION = 'get-local-configuration';
 export const RELOAD_CONFIGURATION = 'reload-config';
 export const EMIT_CONFIGURATION = 'emit-configuration';
 
-export const UPDATE_TEAMS = 'update-teams';
 export const DARK_MODE_CHANGE = 'dark_mode_change';
 export const GET_DARK_MODE = 'get-dark-mode';
 export const USER_ACTIVITY_UPDATE = 'user-activity-update';
@@ -106,7 +105,7 @@ export const APP_LOGGED_OUT = 'app-logged-out';
 
 export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checker-languages';
 
-export const GET_VIEW_NAME = 'get-view-name';
+export const GET_VIEW_ID = 'get-view-id';
 export const GET_VIEW_WEBCONTENTS_ID = 'get-view-webcontents-id';
 
 export const RESIZE_MODAL = 'resize-modal';
@@ -163,3 +162,10 @@ export const DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD = 'downloads-dropdown-menu-
 export const DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE = 'downloads-dropdown-menu-clear-file';
 export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-file';
 export const DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-menu-show-file-in-folder';
+
+export const SERVERS_UPDATE = 'servers-update';
+export const UPDATE_SERVER_ORDER = 'update-server-order';
+export const UPDATE_TAB_ORDER = 'update-tab-order';
+export const GET_LAST_ACTIVE = 'get-last-active';
+export const GET_ORDERED_SERVERS = 'get-ordered-servers';
+export const GET_ORDERED_TABS_FOR_SERVER = 'get-ordered-tabs-for-server';

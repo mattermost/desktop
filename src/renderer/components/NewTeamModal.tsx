@@ -6,15 +6,15 @@ import React from 'react';
 import {Modal, Button, FormGroup, FormControl, FormLabel, FormText} from 'react-bootstrap';
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
-import {TeamWithIndex} from 'types/config';
+import {MattermostTeam} from 'types/config';
 
 import urlUtils from 'common/utils/url';
 
 type Props = {
     onClose?: () => void;
-    onSave?: (team: TeamWithIndex) => void;
-    team?: TeamWithIndex;
-    currentTeams?: TeamWithIndex[];
+    onSave?: (team: MattermostTeam) => void;
+    team?: MattermostTeam;
+    currentTeams?: MattermostTeam[];
     editMode?: boolean;
     show?: boolean;
     restoreFocus?: boolean;
@@ -26,7 +26,7 @@ type Props = {
 type State = {
     teamName: string;
     teamUrl: string;
-    teamIndex?: number;
+    teamId?: string;
     teamOrder: number;
     saveStarted: boolean;
 }
@@ -55,8 +55,7 @@ class NewTeamModal extends React.PureComponent<Props, State> {
         this.setState({
             teamName: this.props.team ? this.props.team.name : '',
             teamUrl: this.props.team ? this.props.team.url : '',
-            teamIndex: this.props.team?.index,
-            teamOrder: this.props.team ? this.props.team.order : (this.props.currentOrder || 0),
+            teamId: this.props.team?.id,
             saveStarted: false,
         });
     }
@@ -67,10 +66,7 @@ class NewTeamModal extends React.PureComponent<Props, State> {
         }
         if (this.props.currentTeams) {
             const currentTeams = [...this.props.currentTeams];
-            if (this.props.editMode && this.props.team) {
-                currentTeams.splice(this.props.team.index, 1);
-            }
-            if (currentTeams.find((team) => team.name === this.state.teamName)) {
+            if (currentTeams.find((team) => team.id !== this.state.teamId && team.name === this.state.teamName)) {
                 return (
                     <FormattedMessage
                         id='renderer.components.newTeamModal.error.serverNameExists'
@@ -103,10 +99,7 @@ class NewTeamModal extends React.PureComponent<Props, State> {
         }
         if (this.props.currentTeams) {
             const currentTeams = [...this.props.currentTeams];
-            if (this.props.editMode && this.props.team) {
-                currentTeams.splice(this.props.team.index, 1);
-            }
-            if (currentTeams.find((team) => team.url === this.state.teamUrl)) {
+            if (currentTeams.find((team) => team.id !== this.state.teamId && team.url === this.state.teamUrl)) {
                 return (
                     <FormattedMessage
                         id='renderer.components.newTeamModal.error.serverUrlExists'
@@ -199,8 +192,7 @@ class NewTeamModal extends React.PureComponent<Props, State> {
                 this.props.onSave?.({
                     url: this.state.teamUrl,
                     name: this.state.teamName,
-                    index: this.state.teamIndex!,
-                    order: this.state.teamOrder,
+                    id: this.state.teamId,
                 });
             }
         });

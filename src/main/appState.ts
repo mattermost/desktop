@@ -17,13 +17,13 @@ const status = {
     emitter: new events.EventEmitter(),
 };
 
-const emitMentions = (serverName: string) => {
-    const newMentions = getMentions(serverName);
-    const newUnreads = getUnreads(serverName);
-    const isExpired = getIsExpired(serverName);
+const emitMentions = (viewId: string) => {
+    const newMentions = getMentions(viewId);
+    const newUnreads = getUnreads(viewId);
+    const isExpired = getIsExpired(viewId);
 
-    WindowManager.sendToRenderer(UPDATE_MENTIONS, serverName, newMentions, newUnreads, isExpired);
-    log.silly('AppState.emitMentions', {serverName, isExpired, newMentions, newUnreads});
+    WindowManager.sendToRenderer(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
+    log.silly('AppState.emitMentions', {viewId, isExpired, newMentions, newUnreads});
     emitStatus();
 };
 
@@ -48,17 +48,17 @@ const emitStatus = () => {
     emitDropdown(status.expired, status.mentions, status.unreads);
 };
 
-export const updateMentions = (serverName: string, mentions: number, unreads?: boolean) => {
+export const updateMentions = (viewId: string, mentions: number, unreads?: boolean) => {
     if (typeof unreads !== 'undefined') {
-        status.unreads.set(serverName, Boolean(unreads));
+        status.unreads.set(viewId, Boolean(unreads));
     }
-    status.mentions.set(serverName, mentions || 0);
-    emitMentions(serverName);
+    status.mentions.set(viewId, mentions || 0);
+    emitMentions(viewId);
 };
 
-export const updateUnreads = (serverName: string, unreads: boolean) => {
-    status.unreads.set(serverName, Boolean(unreads));
-    emitMentions(serverName);
+export const updateUnreads = (viewId: string, unreads: boolean) => {
+    status.unreads.set(viewId, Boolean(unreads));
+    emitMentions(viewId);
 };
 
 export const updateBadge = () => {
@@ -68,16 +68,16 @@ export const updateBadge = () => {
     emitBadge(expired, mentions, unreads);
 };
 
-const getUnreads = (serverName: string) => {
-    return status.unreads.get(serverName) || false;
+const getUnreads = (viewId: string) => {
+    return status.unreads.get(viewId) || false;
 };
 
-const getMentions = (serverName: string) => {
-    return status.mentions.get(serverName) || 0; // this might be undefined as a way to tell that we don't know as it might need to login still.
+const getMentions = (viewId: string) => {
+    return status.mentions.get(viewId) || 0; // this might be undefined as a way to tell that we don't know as it might need to login still.
 };
 
-const getIsExpired = (serverName: string) => {
-    return status.expired.get(serverName) || false;
+const getIsExpired = (viewId: string) => {
+    return status.expired.get(viewId) || false;
 };
 
 const totalMentions = () => {
@@ -109,19 +109,19 @@ const anyExpired = () => {
 // add any other event emitter methods if needed
 export const on = status.emitter.on.bind(status.emitter);
 
-const setSessionExpired = (serverName: string, expired: boolean) => {
+const setSessionExpired = (viewId: string, expired: boolean) => {
     const isExpired = Boolean(expired);
-    const old = status.expired.get(serverName);
-    status.expired.set(serverName, isExpired);
+    const old = status.expired.get(viewId);
+    status.expired.set(viewId, isExpired);
     if (typeof old !== 'undefined' && old !== isExpired) {
         emitTray();
     }
-    emitMentions(serverName);
+    emitMentions(viewId);
 };
 
-ipcMain.on(SESSION_EXPIRED, (event, isExpired, serverName) => {
+ipcMain.on(SESSION_EXPIRED, (event, isExpired, viewId) => {
     if (isExpired) {
-        log.debug('SESSION_EXPIRED', {isExpired, serverName});
+        log.debug('SESSION_EXPIRED', {isExpired, viewId});
     }
-    setSessionExpired(serverName, isExpired);
+    setSessionExpired(viewId, isExpired);
 });

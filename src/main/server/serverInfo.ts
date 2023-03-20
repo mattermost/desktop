@@ -14,13 +14,15 @@ export class ServerInfo {
     remoteInfo: RemoteInfo;
     promise: Promise<RemoteInfo | string | undefined>;
     onRetrievedRemoteInfo?: (result?: RemoteInfo | string) => void;
+    onError?: (error: Error) => void;
 
     constructor(server: MattermostServer) {
         this.server = server;
-        this.remoteInfo = {name: server.name};
+        this.remoteInfo = {id: server.id};
 
-        this.promise = new Promise<RemoteInfo | string | undefined>((resolve) => {
+        this.promise = new Promise<RemoteInfo | string | undefined>((resolve, reject) => {
             this.onRetrievedRemoteInfo = resolve;
+            this.onError = reject;
         });
         this.getRemoteInfo();
     }
@@ -31,14 +33,14 @@ export class ServerInfo {
             false,
             this.onGetConfig,
             this.onRetrievedRemoteInfo,
-            this.onRetrievedRemoteInfo);
+            this.onError);
 
         getServerAPI<Array<{id: string; version: string}>>(
             new URL(`${this.server.url.toString()}/api/v4/plugins/webapp`),
             false,
             this.onGetPlugins,
             this.onRetrievedRemoteInfo,
-            this.onRetrievedRemoteInfo);
+            this.onError);
     }
 
     onGetConfig = (data: ClientConfig) => {

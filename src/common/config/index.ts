@@ -20,7 +20,7 @@ import {
     ConfigTeam,
 } from 'types/config';
 
-import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
+import {GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
 
 import {configPath} from 'main/constants';
 import * as Validator from 'main/Validator';
@@ -38,7 +38,7 @@ import migrateConfigItems from './migrationPreferences';
  */
 
 export class Config extends EventEmitter {
-    configFilePath: string;
+    private configFilePath: string;
 
     registryConfig: RegistryConfig;
 
@@ -68,13 +68,16 @@ export class Config extends EventEmitter {
         }
     }
 
+    setConfigPath = (configPath: string) => {
+        this.configFilePath = configPath;
+    }
+
     // separating constructor from init so main can setup event listeners
     init = (): void => {
         this.reload();
 
         ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
         ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
-        ipcMain.handle(UPDATE_TEAMS, this.handleUpdateTeams);
         ipcMain.on(UPDATE_CONFIGURATION, this.updateConfiguration);
         if (process.platform === 'darwin' || process.platform === 'win32') {
             nativeTheme.on('updated', this.handleUpdateTheme);
@@ -145,14 +148,6 @@ export class Config extends EventEmitter {
         return config;
     }
 
-    private handleUpdateTeams = (event: Electron.IpcMainInvokeEvent, newTeams: ConfigTeam[]) => {
-        log.debug('Config.handleUpdateTeams');
-        log.silly('Config.handleUpdateTeams', newTeams);
-
-        this.set('teams', newTeams);
-        return this.combinedData!.teams;
-    }
-
     /**
      * Detects changes in darkmode if it is windows or osx, updates the config and propagates the changes
      * @emits 'darkModeChange'
@@ -213,8 +208,10 @@ export class Config extends EventEmitter {
         this.saveLocalConfigData();
     }
 
-    setServers = (servers: ConfigTeam[]) => {
-        this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers});
+    setServers = (servers: ConfigTeam[], lastActiveTeam?: number) => {
+        log.debug('Config.setServers', servers, lastActiveTeam);
+
+        this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveTeam ?? this.localConfigData?.lastActiveTeam});
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
     }
@@ -241,9 +238,6 @@ export class Config extends EventEmitter {
 
     get version() {
         return this.combinedData?.version ?? defaultPreferences.version;
-    }
-    get teams() {
-        return this.combinedData?.teams ?? defaultPreferences.teams;
     }
     get darkMode() {
         return this.combinedData?.darkMode ?? defaultPreferences.darkMode;
@@ -413,109 +407,20 @@ export class Config extends EventEmitter {
      */
     private regenerateCombinedConfigData = () => {
         // combine all config data in the correct order
-        this.combinedData = Object.assign({}, this.defaultConfigData, this.localConfigData, this.buildConfigData, this.registryConfigData, {useNativeWindow: this.useNativeWindow});
-
-        // remove unecessary data pulled from default and build config
-        delete this.combinedData!.defaultTeams;
-
-        // IMPORTANT: properly combine teams from all sources
-        let combinedTeams: ConfigTeam[] = [];
-
-        combinedTeams.push(...this.predefinedTeams);
-
-        // - add locally defined teams only if server management is enabled
-        if (this.localConfigData && this.enableServerManagement) {
-            combinedTeams.push(...this.localConfigData.teams || []);
-        }
-
-        this.predefinedTeams = this.filterOutDuplicateTeams(this.predefinedTeams);
-        combinedTeams = this.filterOutDuplicateTeams(combinedTeams);
-        combinedTeams = this.sortUnorderedTeams(combinedTeams);
+        this.combinedData = Object.assign({},
+            {...this.defaultConfigData, teams: undefined},
+            {...this.localConfigData, teams: undefined},
+            {...this.buildConfigData, defaultTeams: undefined},
+            {...this.registryConfigData, teams: undefined},
+            {useNativeWindow: this.useNativeWindow},
+        );
 
         if (this.combinedData) {
-            this.combinedData.teams = combinedTeams;
-            this.combinedData.registryTeams = this.registryConfigData?.teams || [];
             if (process.platform === 'darwin' || process.platform === 'win32') {
                 this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
             }
             this.combinedData.appName = app.name;
         }
-    }
-
-    /**
-     * Returns the provided list of teams with duplicates filtered out
-     *
-     * @param {array} teams array of teams to check for duplicates
-     */
-    private filterOutDuplicateTeams = (teams: ConfigTeam[]) => {
-        let newTeams = teams;
-        const uniqueURLs = new Set();
-        newTeams = newTeams.filter((team) => {
-            return uniqueURLs.has(`${team.name}:${team.url}`) ? false : uniqueURLs.add(`${team.name}:${team.url}`);
-        });
-        return newTeams;
-    }
-
-    /**
-     * Returns the provided array fo teams with existing teams filtered out
-     * @param {array} teams array of teams to check for already defined teams
-     */
-    private filterOutPredefinedTeams = (teams: ConfigTeam[]) => {
-        let newTeams = teams;
-
-        // filter out predefined teams
-        newTeams = newTeams.filter((newTeam) => {
-            return this.predefinedTeams.findIndex((existingTeam) => newTeam.url === existingTeam.url) === -1; // eslint-disable-line max-nested-callbacks
-        });
-
-        return newTeams;
-    }
-
-    /**
-     * Returns the provided array fo teams with existing teams includes
-     * @param {array} teams array of teams to check for already defined teams
-     */
-    private filterInPredefinedTeams = (teams: ConfigTeam[]) => {
-        let newTeams = teams;
-
-        // filter out predefined teams
-        newTeams = newTeams.filter((newTeam) => {
-            return this.predefinedTeams.findIndex((existingTeam) => newTeam.url === existingTeam.url) >= 0; // eslint-disable-line max-nested-callbacks
-        });
-
-        return newTeams;
-    }
-
-    /**
-     * Apply a default sort order to the team list, if no order is specified.
-     * @param {array} teams to sort
-     */
-    private sortUnorderedTeams = (teams: ConfigTeam[]) => {
-        // We want to preserve the array order of teams in the config, otherwise a lot of bugs will occur
-        const mappedTeams = teams.map((team, index) => ({team, originalOrder: index}));
-
-        // Make a best pass at interpreting sort order. If an order is not specified, assume it is 0.
-        //
-        const newTeams = mappedTeams.sort((x, y) => {
-            if (!x.team.order) {
-                x.team.order = 0;
-            }
-            if (!y.team.order) {
-                y.team.order = 0;
-            }
-
-            // once we ensured `order` exists, we can sort numerically
-            return x.team.order - y.team.order;
-        });
-
-        // Now re-number all items from 0 to (max), ensuring user's sort order is preserved. The
-        // new tabbed interface requires an item with order:0 in order to raise the first tab.
-        //
-        newTeams.forEach((mappedTeam, i) => {
-            mappedTeam.team.order = i;
-        });
-
-        return newTeams.sort((x, y) => x.originalOrder - y.originalOrder).map((mappedTeam) => mappedTeam.team);
     }
 
     // helper functions
@@ -577,7 +482,7 @@ export default config;
 ipcMain.on(UPDATE_PATHS, () => {
     log.debug('Config.UPDATE_PATHS');
 
-    config.configFilePath = configPath;
+    config.setConfigPath(configPath);
     if (config.combinedData) {
         config.reload();
     }

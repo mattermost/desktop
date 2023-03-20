@@ -4,7 +4,7 @@
 import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 import log from 'electron-log';
 
-import {Team, TeamWithIndex, RegistryConfig as RegistryConfigType} from 'types/config';
+import {Team, MattermostTeam, RegistryConfig as RegistryConfigType} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
@@ -18,13 +18,6 @@ import ModalManager from 'main/views/modalManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleAppBeforeQuit} from './app';
-
-export function handleReloadConfig() {
-    log.debug('Intercom.handleReloadConfig');
-
-    Config.reload();
-    WindowManager.handleUpdateConfig();
-}
 
 export function handleAppVersion() {
     return {
@@ -40,29 +33,33 @@ export function handleQuit(e: IpcMainEvent, reason: string, stack: string) {
     app.quit();
 }
 
-export function handleSwitchServer(event: IpcMainEvent, serverName: string) {
-    log.silly('Intercom.handleSwitchServer', serverName);
-    WindowManager.switchServer(serverName);
+export function handleSwitchServer(event: IpcMainEvent, serverId: string) {
+    log.silly('Intercom.handleSwitchServer', serverId);
+    WindowManager.switchServer(serverId);
 }
 
-export function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.silly('Intercom.handleSwitchTab', {serverName, tabName});
-    WindowManager.switchTab(serverName, tabName);
+export function handleSwitchTab(event: IpcMainEvent, tabId: string) {
+    log.silly('Intercom.handleSwitchTab', {tabId});
+    WindowManager.switchTab(tabId);
 }
 
-export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.debug('Intercom.handleCloseTab', {serverName, tabName});
+export function handleCloseTab(event: IpcMainEvent, tabId: string) {
+    log.debug('Intercom.handleCloseTab', {tabId});
 
-    ServerManager.toggleTab(serverName, tabName, false);
-    const nextTab = ServerManager.getAllServers().find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
-    WindowManager.switchTab(serverName, nextTab);
+    const tab = ServerManager.getTab(tabId);
+    if (!tab) {
+        return;
+    }
+    ServerManager.toggleTab(tabId, false);
+    const nextTab = ServerManager.getLastActiveTabForServer(tab.server.id);
+    WindowManager.switchTab(nextTab.id);
 }
 
-export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.debug('Intercom.handleOpenTab', {serverName, tabName});
+export function handleOpenTab(event: IpcMainEvent, tabId: string) {
+    log.debug('Intercom.handleOpenTab', {tabId});
 
-    ServerManager.toggleTab(serverName, tabName, true);
-    WindowManager.switchTab(serverName, tabName);
+    ServerManager.toggleTab(tabId, true);
+    WindowManager.switchTab(tabId);
 }
 
 export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
@@ -136,11 +133,11 @@ export function handleNewServerModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team, index) => ({...team, index})), mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<MattermostTeam[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team) => team.toMattermostTeam()), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
             const newTeam = ServerManager.addServer(data);
-            WindowManager.switchServer(newTeam.name, true);
+            WindowManager.switchServer(newTeam.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -152,8 +149,8 @@ export function handleNewServerModal() {
     }
 }
 
-export function handleEditServerModal(e: IpcMainEvent, name: string) {
-    log.debug('Intercom.handleEditServerModal', name);
+export function handleEditServerModal(e: IpcMainEvent, id: string) {
+    log.debug('Intercom.handleEditServerModal', id);
 
     const html = getLocalURLString('editServer.html');
 
@@ -163,21 +160,21 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
     if (!mainWindow) {
         return;
     }
-    const serverIndex = ServerManager.getAllServers().findIndex((team) => team.name === name);
-    if (serverIndex < 0) {
+    const server = ServerManager.getServer(id);
+    if (!server) {
         return;
     }
-    const modalPromise = ModalManager.addModal<{currentTeams: TeamWithIndex[]; team: TeamWithIndex}, Team>(
+    const modalPromise = ModalManager.addModal<{currentTeams: MattermostTeam[]; team: MattermostTeam}, Team>(
         'editServer',
         html,
         preload,
         {
-            currentTeams: ServerManager.getAllServers().map((team, index) => ({...team, index})),
-            team: {...ServerManager.getAllServers()[serverIndex], index: serverIndex},
+            currentTeams: ServerManager.getAllServers().map((team) => team.toMattermostTeam()),
+            team: server.toMattermostTeam(),
         },
         mainWindow);
     if (modalPromise) {
-        modalPromise.then((data) => ServerManager.editServer(data, serverIndex)).catch((e) => {
+        modalPromise.then((data) => ServerManager.editServer(id, data)).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
                 log.error(`there was an error in the edit server modal: ${e}`);
@@ -188,22 +185,26 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
     }
 }
 
-export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
-    log.debug('Intercom.handleRemoveServerModal', name);
+export function handleRemoveServerModal(e: IpcMainEvent, id: string) {
+    log.debug('Intercom.handleRemoveServerModal', id);
 
     const html = getLocalURLString('removeServer.html');
 
     const preload = getLocalPreload('desktopAPI.js');
 
+    const server = ServerManager.getServer(id);
+    if (!server) {
+        return;
+    }
     const mainWindow = WindowManager.getMainWindow();
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<string, boolean>('removeServer', html, preload, name, mainWindow);
+    const modalPromise = ModalManager.addModal<string, boolean>('removeServer', html, preload, server.name, mainWindow);
     if (modalPromise) {
         modalPromise.then((remove) => {
             if (remove) {
-                ServerManager.removeServer(name);
+                ServerManager.removeServer(server.id);
             }
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -227,11 +228,11 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('welcomeScreen', html, preload, ServerManager.getAllServers().map((team, index) => ({...team, index})), mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<MattermostTeam[], MattermostTeam>('welcomeScreen', html, preload, ServerManager.getAllServers().map((team) => team.toMattermostTeam()), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
             const newTeam = ServerManager.addServer(data);
-            WindowManager.switchServer(newTeam.name, true);
+            WindowManager.switchServer(newTeam.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -274,10 +275,10 @@ export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom:
     return result.filePaths[0];
 }
 
-export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
-    log.debug('Intercom.handleUpdateLastActive', {serverName, viewName});
+export function handleUpdateLastActive(event: IpcMainEvent, tabId: string) {
+    log.debug('Intercom.handleUpdateLastActive', {tabId});
 
-    ServerManager.updateLastActive(serverName, viewName);
+    ServerManager.updateLastActive(tabId);
 }
 
 export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {

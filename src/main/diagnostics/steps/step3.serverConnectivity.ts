@@ -4,7 +4,7 @@
 import {ElectronLog} from 'electron-log';
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
-import Config from 'common/config';
+import ServerManager from 'main/server/serverManager';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
@@ -15,7 +15,7 @@ const stepDescriptiveName = 'serverConnectivity';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        const teams = Config.combinedData?.teams || [];
+        const teams = ServerManager.getAllServers();
 
         await Promise.all(teams.map(async (team) => {
             logger.debug('Pinging server: ', team.url);

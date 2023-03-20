@@ -5,7 +5,7 @@ import {ipcRenderer, Rectangle} from 'electron/renderer';
 
 import {Language} from '../../i18n/i18n';
 
-import {CombinedConfig, LocalConfiguration, Team, MattermostTeam} from './config';
+import {CombinedConfig, LocalConfiguration, MattermostTab, MattermostTeam} from './config';
 import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import {SaveQueueItem} from './settings';
 
@@ -34,8 +34,8 @@ declare global {
             openAppMenu: () => void;
             closeTeamsDropdown: () => void;
             openTeamsDropdown: () => void;
-            switchTab: (serverName: string, tabName: string) => void;
-            closeTab: (serverName: string, tabName: string) => void;
+            switchTab: (tabId: string) => void;
+            closeTab: (tabId: string) => void;
             closeWindow: () => void;
             minimizeWindow: () => void;
             maximizeWindow: () => void;
@@ -50,7 +50,13 @@ declare global {
             checkForUpdates: () => void;
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
 
-            updateTeams: (updatedTeams: Team[]) => Promise<void>;
+            updateServerOrder: (serverOrder: string[]) => Promise<void>;
+            updateTabOrder: (serverId: string, tabOrder: string[]) => Promise<void>;
+            getLastActive: () => Promise<{server: string; tab: string}>;
+            getOrderedServers: () => Promise<MattermostTeam[]>;
+            getOrderedTabsForServer: (serverId: string) => Promise<MattermostTab[]>;
+            onUpdateServers: (listener: () => void) => void;
+
             getConfiguration: (option?: keyof CombinedConfig) => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
             getVersion: () => Promise<{name: string; version: string}>;
             getDarkMode: () => Promise<boolean>;
@@ -65,10 +71,10 @@ declare global {
             onSynchronizeConfig: (listener: () => void) => void;
             onReloadConfiguration: (listener: () => void) => void;
             onDarkModeChange: (listener: (darkMode: boolean) => void) => void;
-            onLoadRetry: (listener: (viewName: string, retry: Date, err: string, loadUrl: string) => void) => void;
-            onLoadSuccess: (listener: (viewName: string) => void) => void;
-            onLoadFailed: (listener: (viewName: string, err: string, loadUrl: string) => void) => void;
-            onSetActiveView: (listener: (serverName: string, tabName: string) => void) => void;
+            onLoadRetry: (listener: (viewId: string, retry: Date, err: string, loadUrl: string) => void) => void;
+            onLoadSuccess: (listener: (viewId: string) => void) => void;
+            onLoadFailed: (listener: (viewId: string, err: string, loadUrl: string) => void) => void;
+            onSetActiveView: (listener: (serverId: string, tabId: string) => void) => void;
             onMaximizeChange: (listener: (maximize: boolean) => void) => void;
             onEnterFullScreen: (listener: () => void) => void;
             onLeaveFullScreen: (listener: () => void) => void;
@@ -127,10 +133,10 @@ declare global {
             serverDropdown: {
                 requestInfo: () => void;
                 sendSize: (width: number, height: number) => void;
-                switchServer: (serverName: string) => void;
+                switchServer: (serverId: string) => void;
                 showNewServerModal: () => void;
-                showEditServerModal: (serverName: string) => void;
-                showRemoveServerModal: (serverName: string) => void;
+                showEditServerModal: (serverId: string) => void;
+                showRemoveServerModal: (serverId: string) => void;
 
                 onUpdateServerDropdown: (listener: (
                     teams: MattermostTeam[],

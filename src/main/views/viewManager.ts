@@ -3,9 +3,6 @@
 import log from 'electron-log';
 import {BrowserView, BrowserWindow, dialog, ipcMain, IpcMainEvent} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
-import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
-
-import {Tab, TeamWithTabs} from 'types/config';
 
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
@@ -23,17 +20,13 @@ import {
     DARK_MODE_CHANGE,
 } from 'common/communication';
 import Config from 'common/config';
-import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
+import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {getTabViewName, TabTuple, TabType, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
-import MessagingTabView from 'common/tabs/MessagingTabView';
-import FocalboardTabView from 'common/tabs/FocalboardTabView';
-import PlaybooksTabView from 'common/tabs/PlaybooksTabView';
+import {TabView} from 'common/tabs/TabView';
 
 import {localizeMessage} from 'main/i18nManager';
 import ServerManager from 'main/server/serverManager';
-import {ServerInfo} from 'main/server/serverInfo';
 
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
@@ -53,7 +46,7 @@ export enum LoadingScreenState {
 export class ViewManager {
     lastActiveServer?: number;
     viewOptions: BrowserViewConstructorOptions;
-    closedViews: Map<string, {srv: MattermostServer; tab: Tab}>;
+    closedViews: Map<string, {srv: MattermostServer; tab: TabView}>;
     views: Map<string, MattermostView>;
     currentView?: string;
     urlView?: BrowserView;
@@ -75,19 +68,13 @@ export class ViewManager {
         this.mainWindow = mainWindow;
     }
 
-    getServers = () => {
-        return ServerManager.getAllServers().concat();
+    loadServer = (server: MattermostServer) => {
+        const tabs = ServerManager.getOrderedTabsForServer(server.id);
+        tabs.forEach((tab) => this.loadView(server, tab));
     }
 
-    loadServer = (server: TeamWithTabs) => {
-        const srv = new MattermostServer(server.name, server.url);
-        const serverInfo = new ServerInfo(srv);
-        server.tabs.forEach((tab) => this.loadView(srv, serverInfo, tab));
-    }
-
-    makeView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string): MattermostView => {
-        const tabView = this.getServerView(srv, tab.name);
-        const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
+    makeView = (srv: MattermostServer, tab: TabView, url?: string): MattermostView => {
+        const view = new MattermostView(tab, this.mainWindow, this.viewOptions);
         view.once(LOAD_SUCCESS, this.activateView);
         view.load(url);
         view.on(UPDATE_TARGET_URL, this.showURLView);
@@ -97,21 +84,21 @@ export class ViewManager {
     }
 
     addView = (view: MattermostView): void => {
-        this.views.set(view.name, view);
-        if (this.closedViews.has(view.name)) {
-            this.closedViews.delete(view.name);
+        this.views.set(view.id, view);
+        if (this.closedViews.has(view.id)) {
+            this.closedViews.delete(view.id);
         }
         if (!this.loadingScreen) {
             this.createLoadingScreen();
         }
     }
 
-    loadView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string) => {
+    loadView = (srv: MattermostServer, tab: TabView, url?: string) => {
         if (!tab.isOpen) {
-            this.closedViews.set(getTabViewName(srv.name, tab.name), {srv, tab});
+            this.closedViews.set(tab.id, {srv, tab});
             return;
         }
-        const view = this.makeView(srv, serverInfo, tab, url);
+        const view = this.makeView(srv, tab, url);
         this.addView(view);
     }
 
@@ -123,43 +110,38 @@ export class ViewManager {
     }
 
     load = () => {
-        this.getServers().forEach((server) => this.loadServer(server));
+        ServerManager.getAllServers().forEach((server) => this.loadServer(server));
     }
 
     /** Called when a new configuration is received
      * Servers or tabs have been added or edited. We need to
      * close, open, or reload tabs, taking care to reuse tabs and
      * preserve focus on the currently selected tab. */
-    reloadConfiguration = (configServers: TeamWithTabs[]) => {
+    reloadConfiguration = () => {
         log.debug('viewManager.reloadConfiguration');
 
-        const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.urlTypeTuple;
+        const currentTabId: string | undefined = this.views.get(this.currentView as string)?.tab.id;
 
-        const current: Map<TabTuple, MattermostView> = new Map();
+        const current: Map<string, MattermostView> = new Map();
         for (const view of this.views.values()) {
-            current.set(view.urlTypeTuple, view);
+            current.set(view.tab.id, view);
         }
 
-        const views: Map<TabTuple, MattermostView> = new Map();
-        const closed: Map<TabTuple, {srv: MattermostServer; tab: Tab; name: string}> = new Map();
+        const views: Map<string, MattermostView> = new Map();
+        const closed: Map<string, {srv: MattermostServer; tab: TabView}> = new Map();
 
-        const sortedTabs = configServers.flatMap((x) => [...x.tabs].
-            sort((a, b) => a.order - b.order).
-            map((t): [TeamWithTabs, Tab] => [x, t]));
+        const sortedTabs = ServerManager.getAllServers().flatMap((x) => ServerManager.getOrderedTabsForServer(x.id).
+            map((t): [MattermostServer, TabView] => [x, t]));
 
-        for (const [team, tab] of sortedTabs) {
-            const srv = new MattermostServer(team.name, team.url);
-            const info = new ServerInfo(srv);
-            const tabTuple = tuple(new URL(team.url).href, tab.name as TabType);
-            const recycle = current.get(tabTuple);
+        for (const [srv, tab] of sortedTabs) {
+            const recycle = current.get(tab.id);
             if (!tab.isOpen) {
-                const view = this.getServerView(srv, tab.name);
-                closed.set(tabTuple, {srv, tab, name: view.name});
+                closed.set(tab.id, {srv, tab});
             } else if (recycle) {
                 recycle.updateServerInfo(srv);
-                views.set(tabTuple, recycle);
+                views.set(tab.id, recycle);
             } else {
-                views.set(tabTuple, this.makeView(srv, info, tab, tabTuple[0]));
+                views.set(tab.id, this.makeView(srv, tab, `${tab.url}`));
             }
         }
 
@@ -174,16 +156,16 @@ export class ViewManager {
         // commit views
         this.views = new Map();
         for (const x of views.values()) {
-            this.views.set(x.name, x);
+            this.views.set(x.id, x);
         }
 
         // commit closed
         for (const x of closed.values()) {
-            this.closedViews.set(x.name, {srv: x.srv, tab: x.tab});
+            this.closedViews.set(x.tab.id, {srv: x.srv, tab: x.tab});
         }
 
-        if ((focusedTuple && closed.has(focusedTuple)) || (this.currentView && this.closedViews.has(this.currentView))) {
-            if (configServers.length) {
+        if ((currentTabId && closed.has(currentTabId)) || (this.currentView && this.closedViews.has(this.currentView))) {
+            if (ServerManager.hasServers()) {
                 this.currentView = undefined;
                 this.showInitial();
             } else {
@@ -192,12 +174,12 @@ export class ViewManager {
         }
 
         // show the focused tab (or initial)
-        if (focusedTuple && views.has(focusedTuple)) {
-            const view = views.get(focusedTuple);
-            if (view) {
-                this.currentView = view.name;
-                this.showByName(view.name);
-                this.mainWindow.webContents.send(SET_ACTIVE_VIEW, view.tab.server.name, view.tab.type);
+        if (currentTabId && views.has(currentTabId)) {
+            const view = views.get(currentTabId);
+            if (view && view.id !== this.currentView) {
+                this.currentView = view.id;
+                this.showById(view.id);
+                this.mainWindow.webContents.send(SET_ACTIVE_VIEW, view.tab.server.id, view.tab.id);
             }
         } else {
             this.showInitial();
@@ -207,57 +189,47 @@ export class ViewManager {
     showInitial = () => {
         log.verbose('viewManager.showInitial');
 
-        const servers = this.getServers();
-        if (servers.length) {
-            const element = servers.find((e) => e.order === this.lastActiveServer) || servers.find((e) => e.order === 0);
-            if (element && element.tabs.length) {
-                let tab = element.tabs.find((tab) => tab.order === element.lastActiveTab) || element.tabs.find((tab) => tab.order === 0);
-                if (!tab?.isOpen) {
-                    const openTabs = element.tabs.filter((tab) => tab.isOpen);
-                    tab = openTabs.find((e) => e.order === 0) || openTabs.concat().sort((a, b) => a.order - b.order)[0];
-                }
-                if (tab) {
-                    const tabView = getTabViewName(element.name, tab.name);
-                    this.showByName(tabView);
-                }
-            }
+        if (ServerManager.hasServers()) {
+            const lastActiveServer = ServerManager.getLastActiveServer();
+            const lastActiveTab = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
+            this.showById(lastActiveTab.id);
         } else {
-            this.mainWindow.webContents.send(SET_ACTIVE_VIEW, null, null);
+            this.mainWindow.webContents.send(SET_ACTIVE_VIEW);
             ipcMain.emit(MAIN_WINDOW_SHOWN);
         }
     }
 
-    showByName = (name: string) => {
-        log.debug('viewManager.showByName', name);
+    showById = (tabId: string) => {
+        log.debug('viewManager.showById', tabId);
 
-        const newView = this.views.get(name);
+        const newView = this.views.get(tabId);
         if (newView) {
             if (newView.isVisible) {
                 return;
             }
-            if (this.currentView && this.currentView !== name) {
+            if (this.currentView && this.currentView !== tabId) {
                 const previous = this.getCurrentView();
                 if (previous) {
                     previous.hide();
                 }
             }
 
-            this.currentView = name;
+            this.currentView = tabId;
             if (!newView.isErrored()) {
                 newView.show();
                 if (newView.needsLoadingScreen()) {
                     this.showLoadingScreen();
                 }
             }
-            newView.window.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.name, newView.tab.type);
-            ipcMain.emit(SET_ACTIVE_VIEW, true, newView.tab.server.name, newView.tab.type);
+            newView.window.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.id, newView.tab.id);
+            ipcMain.emit(SET_ACTIVE_VIEW, true, newView.tab.server.id, newView.tab.id);
             if (newView.isReady()) {
-                ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.server.name, newView.tab.type);
+                ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.id);
             } else {
-                log.warn(`couldn't show ${name}, not ready`);
+                log.warn(`couldn't show ${tabId}, not ready`);
             }
         } else {
-            log.warn(`Couldn't find a view with name: ${name}`);
+            log.warn(`Couldn't find a view with name: ${tabId}`);
         }
         modalManager.showModal();
     }
@@ -278,7 +250,7 @@ export class ViewManager {
         log.debug('viewManager.activateView', viewName);
 
         if (this.currentView === viewName) {
-            this.showByName(this.currentView);
+            this.showById(this.currentView);
         }
         const view = this.views.get(viewName);
         if (!view) {
@@ -293,26 +265,26 @@ export class ViewManager {
 
         const view = this.views.get(server);
         if (view && this.getCurrentView() === view) {
-            this.showByName(this.currentView!);
+            this.showById(this.currentView!);
             this.fadeLoadingScreen();
         }
     }
 
-    openClosedTab = (name: string, url?: string) => {
-        if (!this.closedViews.has(name)) {
+    openClosedTab = (id: string, url?: string) => {
+        if (!this.closedViews.has(id)) {
             return;
         }
-        const {srv, tab} = this.closedViews.get(name)!;
+        const {srv, tab} = this.closedViews.get(id)!;
         tab.isOpen = true;
-        this.loadView(srv, new ServerInfo(srv), tab, url);
-        this.showByName(name);
-        const view = this.views.get(name)!;
+        this.loadView(srv, tab, url);
+        this.showById(id);
+        const view = this.views.get(id)!;
         view.isVisible = true;
         view.on(LOAD_SUCCESS, () => {
             view.isVisible = false;
-            this.showByName(name);
+            this.showById(id);
         });
-        ipcMain.emit(OPEN_TAB, null, srv.name, tab.name);
+        ipcMain.emit(OPEN_TAB, null, tab.id);
     }
 
     failLoading = (tabName: string) => {
@@ -495,58 +467,31 @@ export class ViewManager {
         }
     }
 
-    deeplinkSuccess = (viewName: string) => {
-        log.debug('viewManager.deeplinkSuccess', viewName);
+    deeplinkSuccess = (viewId: string) => {
+        log.debug('viewManager.deeplinkSuccess', viewId);
 
-        const view = this.views.get(viewName);
+        const view = this.views.get(viewId);
         if (!view) {
             return;
         }
-        this.showByName(viewName);
+        this.showById(viewId);
         view.removeListener(LOAD_FAILED, this.deeplinkFailed);
     };
 
-    deeplinkFailed = (viewName: string, err: string, url: string) => {
-        log.error(`[${viewName}] failed to load deeplink ${url}: ${err}`);
-        const view = this.views.get(viewName);
+    deeplinkFailed = (viewId: string, err: string, url: string) => {
+        log.error(`[${viewId}] failed to load deeplink ${url}: ${err}`);
+        const view = this.views.get(viewId);
         if (!view) {
             return;
         }
         view.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
     }
 
-    getViewByURL = (inputURL: URL | string, ignoreScheme = false) => {
-        log.silly('ViewManager.getViewByURL', `${inputURL}`, ignoreScheme);
-
-        const parsedURL = urlUtils.parseURL(inputURL);
-        if (!parsedURL) {
-            return undefined;
-        }
-        const server = this.getServers().find((team) => {
-            const parsedServerUrl = urlUtils.parseURL(team.url)!;
-            return equalUrlsIgnoringSubpath(parsedURL, parsedServerUrl, ignoreScheme) && parsedURL.pathname.match(new RegExp(`^${parsedServerUrl.pathname}(.+)?(/(.+))?$`));
-        });
-        if (!server) {
-            return undefined;
-        }
-        const mmServer = new MattermostServer(server.name, server.url);
-        let selectedTab = this.getServerView(mmServer, TAB_MESSAGING);
-        server.tabs.
-            filter((tab) => tab.name !== TAB_MESSAGING).
-            forEach((tab) => {
-                const tabCandidate = this.getServerView(mmServer, tab.name);
-                if (parsedURL.pathname.match(new RegExp(`^${tabCandidate.url.pathname}(/(.+))?`))) {
-                    selectedTab = tabCandidate;
-                }
-            });
-        return selectedTab;
-    }
-
     handleDeepLink = (url: string | URL) => {
         // TODO: fix for new tabs
         if (url) {
             const parsedURL = urlUtils.parseURL(url)!;
-            const tabView = this.getViewByURL(parsedURL, true);
+            const tabView = ServerManager.lookupTabByURL(parsedURL, true);
             if (tabView) {
                 const urlWithSchema = `${urlUtils.parseURL(tabView.url)?.origin}${parsedURL.pathname}${parsedURL.search}`;
                 if (this.closedViews.has(tabView.name)) {
@@ -558,10 +503,10 @@ export class ViewManager {
                         return;
                     }
 
-                    if (view.isInitialized() && view.serverInfo.remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
+                    if (view.isInitialized() && ServerManager.getRemoteInfo(view.tab.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(view.tab.server.id)?.serverVersion ?? '', '6.0.0')) {
                         const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
                         view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
-                        this.deeplinkSuccess(view.name);
+                        this.deeplinkSuccess(view.id);
                     } else {
                         // attempting to change parsedURL protocol results in it not being modified.
                         view.resetLoadingStatus();
@@ -585,18 +530,5 @@ export class ViewManager {
                 view.view.webContents.send(channel, ...args);
             }
         });
-    }
-
-    private getServerView = (srv: MattermostServer, tabName: string) => {
-        switch (tabName) {
-        case TAB_MESSAGING:
-            return new MessagingTabView(srv);
-        case TAB_FOCALBOARD:
-            return new FocalboardTabView(srv);
-        case TAB_PLAYBOOKS:
-            return new PlaybooksTabView(srv);
-        default:
-            throw new Error('Not implemeneted');
-        }
     }
 }

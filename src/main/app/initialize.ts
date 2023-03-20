@@ -21,7 +21,6 @@ import {
     NOTIFY_MENTION,
     GET_DOWNLOAD_LOCATION,
     SHOW_SETTINGS_WINDOW,
-    RELOAD_CONFIGURATION,
     SWITCH_TAB,
     CLOSE_TAB,
     OPEN_TAB,
@@ -80,7 +79,6 @@ import {
     handleOpenAppMenu,
     handleOpenTab,
     handleQuit,
-    handleReloadConfig,
     handleRemoveServerModal,
     handleSelectDownload,
     handleSwitchServer,
@@ -133,7 +131,7 @@ export async function initialize() {
 
     // initialization that should run once the app is ready
     initializeInterCommunicationEventListeners();
-    initializeAfterAppReady();
+    await initializeAfterAppReady();
 }
 
 //
@@ -231,7 +229,6 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.on(RELOAD_CONFIGURATION, handleReloadConfig);
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
@@ -267,7 +264,9 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(PING_DOMAIN, handlePingDomain);
 }
 
-function initializeAfterAppReady() {
+async function initializeAfterAppReady() {
+    ServerManager.updateServerInfos(ServerManager.serverOrder);
+
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 

@@ -74,7 +74,7 @@ describe('main/views/viewManager', () => {
 
         beforeEach(() => {
             viewManager.createLoadingScreen = jest.fn();
-            viewManager.showByName = jest.fn();
+            viewManager.showById = jest.fn();
             viewManager.getServerView = jest.fn().mockImplementation((srv, tabName) => ({name: `${srv.name}-${tabName}`}));
             MattermostView.mockImplementation((tab) => ({
                 on: jest.fn(),
@@ -178,7 +178,7 @@ describe('main/views/viewManager', () => {
 
         beforeEach(() => {
             viewManager.loadView = jest.fn();
-            viewManager.showByName = jest.fn();
+            viewManager.showById = jest.fn();
             viewManager.showInitial = jest.fn();
             viewManager.mainWindow.webContents = {
                 send: jest.fn(),
@@ -318,7 +318,7 @@ describe('main/views/viewManager', () => {
                     ],
                 },
             ]);
-            expect(viewManager.showByName).toHaveBeenCalledWith('server1-tab1');
+            expect(viewManager.showById).toHaveBeenCalledWith('server1-tab1');
         });
 
         it('should show initial if currentView has been removed', () => {
@@ -424,7 +424,7 @@ describe('main/views/viewManager', () => {
         viewManager.getServers = () => teams.concat();
 
         beforeEach(() => {
-            viewManager.showByName = jest.fn();
+            viewManager.showById = jest.fn();
             getTabViewName.mockImplementation((server, tab) => `${server}_${tab}`);
         });
 
@@ -436,13 +436,13 @@ describe('main/views/viewManager', () => {
 
         it('should show first server and first open tab in order when last active not defined', () => {
             viewManager.showInitial();
-            expect(viewManager.showByName).toHaveBeenCalledWith('server-2_tab-3');
+            expect(viewManager.showById).toHaveBeenCalledWith('server-2_tab-3');
         });
 
         it('should show first tab in order of last active server', () => {
             viewManager.lastActiveServer = 1;
             viewManager.showInitial();
-            expect(viewManager.showByName).toHaveBeenCalledWith('server-1_tab-3');
+            expect(viewManager.showById).toHaveBeenCalledWith('server-1_tab-3');
         });
 
         it('should show last active tab of first server', () => {
@@ -489,7 +489,7 @@ describe('main/views/viewManager', () => {
                 lastActiveTab: 2,
             }];
             viewManager.showInitial();
-            expect(viewManager.showByName).toHaveBeenCalledWith('server-2_tab-2');
+            expect(viewManager.showById).toHaveBeenCalledWith('server-2_tab-2');
         });
 
         it('should show next tab when last active tab is closed', () => {
@@ -536,7 +536,7 @@ describe('main/views/viewManager', () => {
                 lastActiveTab: 2,
             }];
             viewManager.showInitial();
-            expect(viewManager.showByName).toHaveBeenCalledWith('server-2_tab-1');
+            expect(viewManager.showById).toHaveBeenCalledWith('server-2_tab-1');
         });
 
         it('should open new server modal when no servers exist', () => {
@@ -551,7 +551,7 @@ describe('main/views/viewManager', () => {
         });
     });
 
-    describe('showByName', () => {
+    describe('showById', () => {
         const viewManager = new ViewManager({});
         const baseView = {
             isReady: jest.fn(),
@@ -591,12 +591,12 @@ describe('main/views/viewManager', () => {
             };
             viewManager.views.set('server1-tab1', view);
 
-            viewManager.showByName('server1-tab1');
+            viewManager.showById('server1-tab1');
             expect(viewManager.currentView).toBeUndefined();
             expect(view.isReady).not.toBeCalled();
             expect(view.show).not.toBeCalled();
 
-            viewManager.showByName('some-view-name');
+            viewManager.showById('some-view-name');
             expect(viewManager.currentView).toBeUndefined();
             expect(view.isReady).not.toBeCalled();
             expect(view.show).not.toBeCalled();
@@ -615,7 +615,7 @@ describe('main/views/viewManager', () => {
             viewManager.views.set('oldView', oldView);
             viewManager.views.set('newView', newView);
             viewManager.currentView = 'oldView';
-            viewManager.showByName('newView');
+            viewManager.showById('newView');
             expect(oldView.hide).toHaveBeenCalled();
         });
 
@@ -623,7 +623,7 @@ describe('main/views/viewManager', () => {
             const view = {...baseView};
             view.isErrored.mockReturnValue(true);
             viewManager.views.set('view1', view);
-            viewManager.showByName('view1');
+            viewManager.showById('view1');
             expect(view.show).not.toHaveBeenCalled();
         });
 
@@ -632,7 +632,7 @@ describe('main/views/viewManager', () => {
             view.isErrored.mockReturnValue(false);
             view.needsLoadingScreen.mockImplementation(() => true);
             viewManager.views.set('view1', view);
-            viewManager.showByName('view1');
+            viewManager.showById('view1');
             expect(viewManager.showLoadingScreen).toHaveBeenCalled();
         });
 
@@ -641,7 +641,7 @@ describe('main/views/viewManager', () => {
             view.needsLoadingScreen.mockImplementation(() => false);
             view.isErrored.mockReturnValue(false);
             viewManager.views.set('view1', view);
-            viewManager.showByName('view1');
+            viewManager.showById('view1');
             expect(viewManager.currentView).toBe('view1');
             expect(view.show).toHaveBeenCalled();
         });

@@ -9,7 +9,6 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 import {MentionData} from 'types/notification';
 
 import {PLAY_SOUND} from 'common/communication';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import WindowManager from '../windows/windowManager';
 
@@ -34,6 +33,11 @@ export function displayMention(title: string, body: string, channel: {id: string
     }
 
     const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
+    const viewId = WindowManager.getViewIdByWebContentsId(webcontents.id);
+    if (!viewId) {
+        return;
+    }
+    const view = WindowManager.viewManager?.views.get(viewId);
 
     const options = {
         title: `${serverName}: ${title}`,
@@ -66,8 +70,8 @@ export function displayMention(title: string, body: string, channel: {id: string
 
     mention.on('click', () => {
         log.debug('notification click', serverName, mention);
-        if (serverName) {
-            WindowManager.switchTab(serverName, TAB_MESSAGING);
+        if (serverName && view) {
+            WindowManager.switchTab(view.tab.id);
             webcontents.send('notification-clicked', {channel, teamId, url});
         }
     });

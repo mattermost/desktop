@@ -158,9 +158,9 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
                 CertificateStore.save();
                 certificateErrorCallbacks.get(errorID)(true);
 
-                const viewName = WindowManager.getViewNameByWebContentsId(webContents.id);
-                if (viewName) {
-                    const view = WindowManager.viewManager?.views.get(viewName);
+                const viewId = WindowManager.getViewIdByWebContentsId(webContents.id);
+                if (viewId) {
+                    const view = WindowManager.viewManager?.views.get(viewId);
                     view?.load(url);
                 } else {
                     webContents.loadURL(url);

@@ -612,7 +612,7 @@ describe('main/windows/windowManager', () => {
     describe('switchServer', () => {
         const windowManager = new WindowManager();
         windowManager.viewManager = {
-            showByName: jest.fn(),
+            showById: jest.fn(),
         };
 
         beforeEach(() => {
@@ -696,30 +696,30 @@ describe('main/windows/windowManager', () => {
         it('should do nothing if cannot find the server', () => {
             windowManager.switchServer('server-3');
             expect(getTabViewName).not.toBeCalled();
-            expect(windowManager.viewManager.showByName).not.toBeCalled();
+            expect(windowManager.viewManager.showById).not.toBeCalled();
         });
 
         it('should show first open tab in order when last active not defined', () => {
             windowManager.switchServer('server-1');
-            expect(windowManager.viewManager.showByName).toHaveBeenCalledWith('server-1_tab-3');
+            expect(windowManager.viewManager.showById).toHaveBeenCalledWith('server-1_tab-3');
         });
 
         it('should show last active tab of chosen server', () => {
             windowManager.switchServer('server-2');
-            expect(windowManager.viewManager.showByName).toHaveBeenCalledWith('server-2_tab-2');
+            expect(windowManager.viewManager.showById).toHaveBeenCalledWith('server-2_tab-2');
         });
 
         it('should wait for view to exist if specified', () => {
             windowManager.viewManager.views.delete('server-1_tab-3');
             windowManager.switchServer('server-1', true);
-            expect(windowManager.viewManager.showByName).not.toBeCalled();
+            expect(windowManager.viewManager.showById).not.toBeCalled();
 
             jest.advanceTimersByTime(200);
-            expect(windowManager.viewManager.showByName).not.toBeCalled();
+            expect(windowManager.viewManager.showById).not.toBeCalled();
 
             windowManager.viewManager.views.set('server-1_tab-3', {});
             jest.advanceTimersByTime(200);
-            expect(windowManager.viewManager.showByName).toBeCalledWith('server-1_tab-3');
+            expect(windowManager.viewManager.showById).toBeCalledWith('server-1_tab-3');
         });
     });
 
@@ -912,7 +912,7 @@ describe('main/windows/windowManager', () => {
                 ['server-1_other_type_2', view3],
             ]),
             openClosedTab: jest.fn(),
-            showByName: jest.fn(),
+            showById: jest.fn(),
             getViewByURL: jest.fn(),
         };
         windowManager.handleBrowserHistoryButton = jest.fn();
@@ -964,7 +964,7 @@ describe('main/windows/windowManager', () => {
         it('should open redirect view if different from current view', () => {
             windowManager.viewManager.getViewByURL.mockReturnValue({name: 'server-1_other_type_1'});
             windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_1/subpath');
-            expect(windowManager.viewManager.showByName).toBeCalledWith('server-1_other_type_1');
+            expect(windowManager.viewManager.showById).toBeCalledWith('server-1_other_type_1');
         });
 
         it('should ignore redirects to "/" to Messages from other tabs', () => {
@@ -1093,7 +1093,7 @@ describe('main/windows/windowManager', () => {
     describe('handleGetDesktopSources', () => {
         const windowManager = new WindowManager();
         windowManager.viewManager = {
-            showByName: jest.fn(),
+            showById: jest.fn(),
             getCurrentView: jest.fn(),
         };
 
@@ -1274,7 +1274,7 @@ describe('main/windows/windowManager', () => {
         const windowManager = new WindowManager();
         windowManager.switchServer = jest.fn();
         windowManager.viewManager = {
-            showByName: jest.fn(),
+            showById: jest.fn(),
             getCurrentView: jest.fn(),
         };
 
@@ -1352,7 +1352,7 @@ describe('main/windows/windowManager', () => {
         const windowManager = new WindowManager();
         windowManager.switchServer = jest.fn();
         windowManager.viewManager = {
-            showByName: jest.fn(),
+            showById: jest.fn(),
             getCurrentView: jest.fn(),
         };
 

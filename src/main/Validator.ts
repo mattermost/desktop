@@ -5,7 +5,7 @@ import log from 'electron-log';
 import Joi from 'joi';
 
 import {Args} from 'types/args';
-import {AnyConfig, ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';
+import {AnyConfig, ConfigV0, ConfigV1, ConfigV2, ConfigV3, ConfigTeam} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 import {SavedWindowState} from 'types/mainWindow';
 import {AppState} from 'types/appState';
@@ -212,7 +212,7 @@ function cleanTeam<T extends {name: string; url: string}>(team: T) {
     };
 }
 
-function cleanTeamWithTabs(team: TeamWithTabs) {
+function cleanTeamWithTabs(team: ConfigTeam) {
     return {
         ...cleanTeam(team),
         tabs: team.tabs.map((tab) => {

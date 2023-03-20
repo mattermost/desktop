@@ -11,7 +11,6 @@ import Config from 'common/config';
 
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
-import ServerManager from 'main/server/serverManager';
 import {refreshTrayImages} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
@@ -39,7 +38,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         return;
     }
 
-    WindowManager.handleUpdateConfig();
     if (app.isReady()) {
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
@@ -66,8 +64,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 
     if (process.platform === 'win32' && !didCheckForAddServerModal && typeof Config.registryConfigData !== 'undefined') {
         didCheckForAddServerModal = true;
-        ServerManager.updateServerInfos(newConfig.teams);
-        WindowManager.initializeCurrentServerName();
+        WindowManager.initializeCurrentServerId();
         handleMainWindowIsShown();
     }
 
