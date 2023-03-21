@@ -148,6 +148,7 @@ export class WindowManager {
         this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, currentView, {
             callID: msg.callID,
             title: msg.title,
+            rootID: msg.rootID,
             channelURL: msg.channelURL,
         });
 

@@ -146,6 +146,9 @@ export default class CallsWidgetWindow extends EventEmitter {
         if (this.config.title) {
             u.searchParams.append('title', this.config.title);
         }
+        if (this.config.rootID) {
+            u.searchParams.append('root_id', this.config.rootID);
+        }
 
         return u.toString();
     }
