@@ -4,11 +4,10 @@
 import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 import log from 'electron-log';
 
-import {Team, MattermostTeam, RegistryConfig as RegistryConfigType} from 'types/config';
+import {Team, MattermostTeam} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
-import {REGISTRY_READ_EVENT} from 'common/config/RegistryConfig';
 import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
@@ -65,36 +64,24 @@ export function handleOpenTab(event: IpcMainEvent, tabId: string) {
 export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
     log.debug('Intercom.handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
 
-    const showWelcomeScreenFunc = () => {
-        if (showWelcomeScreen) {
-            handleWelcomeScreenModal();
+    if (showWelcomeScreen) {
+        handleWelcomeScreenModal();
 
-            if (process.env.NODE_ENV === 'test') {
-                const welcomeScreen = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
-                if (welcomeScreen?.view.webContents.isLoading()) {
-                    welcomeScreen?.view.webContents.once('did-finish-load', () => {
-                        app.emit('e2e-app-loaded');
-                    });
-                } else {
+        if (process.env.NODE_ENV === 'test') {
+            const welcomeScreen = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
+            if (welcomeScreen?.view.webContents.isLoading()) {
+                welcomeScreen?.view.webContents.once('did-finish-load', () => {
                     app.emit('e2e-app-loaded');
-                }
+                });
+            } else {
+                app.emit('e2e-app-loaded');
             }
-
-            return;
         }
-        if (showNewServerModal) {
-            handleNewServerModal();
-        }
-    };
 
-    if (process.platform === 'win32' && !Config.registryConfigData) {
-        Config.registryConfig.once(REGISTRY_READ_EVENT, (data: Partial<RegistryConfigType>) => {
-            if (data.teams?.length === 0) {
-                showWelcomeScreenFunc();
-            }
-        });
-    } else {
-        showWelcomeScreenFunc();
+        return;
+    }
+    if (showNewServerModal) {
+        handleNewServerModal();
     }
 }
 

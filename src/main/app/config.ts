@@ -17,8 +17,6 @@ import WindowManager from 'main/windows/windowManager';
 import {handleMainWindowIsShown} from './intercom';
 import {handleUpdateMenuEvent, setLoggingLevel, updateSpellCheckerLocales} from './utils';
 
-let didCheckForAddServerModal = false;
-
 //
 // config event handlers
 //
@@ -62,11 +60,8 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         });
     }
 
-    if (process.platform === 'win32' && !didCheckForAddServerModal && typeof Config.registryConfigData !== 'undefined') {
-        didCheckForAddServerModal = true;
-        WindowManager.initializeCurrentServerId();
-        handleMainWindowIsShown();
-    }
+    WindowManager.initializeCurrentServerId();
+    handleMainWindowIsShown();
 
     handleUpdateMenuEvent();
     if (newConfig.trayIconTheme) {

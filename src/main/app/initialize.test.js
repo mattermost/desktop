@@ -97,6 +97,7 @@ jest.mock('common/config', () => ({
     once: jest.fn(),
     on: jest.fn(),
     init: jest.fn(),
+    initRegistry: jest.fn(),
 }));
 
 jest.mock('common/utils/url', () => ({
