@@ -225,8 +225,6 @@ function initializeBeforeAppReady() {
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
-
-    ServerManager.init();
 }
 
 function initializeInterCommunicationEventListeners() {
@@ -266,7 +264,8 @@ function initializeInterCommunicationEventListeners() {
 }
 
 async function initializeAfterAppReady() {
-    ServerManager.updateServerInfos(ServerManager.serverOrder);
+    ServerManager.init();
+    await ServerManager.updateServerInfos(ServerManager.serverOrder);
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
