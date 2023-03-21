@@ -384,6 +384,16 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
 
+        it('getWidgetURL - with rootID', () => {
+            const config = {
+                ...widgetConfig,
+                rootID: 'call_thread_id',
+            };
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, config);
+            const expected = `${mainView.serverInfo.server.url}plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&root_id=call_thread_id`;
+            expect(widgetWindow.getWidgetURL()).toBe(expected);
+        });
+
         it('onShareScreen', () => {
             baseWindow.webContents = {
                 ...baseWindow.webContents,
