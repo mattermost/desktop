@@ -3,14 +3,11 @@
 export type CallsWidgetWindowConfig = {
     callID: string;
     title: string;
+    rootID: string;
     channelURL: string;
 }
 
-export type CallsJoinCallMessage = {
-    callID: string;
-    title: string;
-    channelURL: string;
-}
+export type CallsJoinCallMessage = CallsWidgetWindowConfig;
 
 export type CallsWidgetResizeMessage = {
     element: string;
