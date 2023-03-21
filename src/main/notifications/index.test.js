@@ -10,7 +10,6 @@ import {getFocusAssist} from 'windows-focus-assist';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {PLAY_SOUND} from 'common/communication';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {localizeMessage} from 'main/i18nManager';
 
@@ -73,6 +72,10 @@ jest.mock('macos-notification-state', () => ({
 
 jest.mock('../windows/windowManager', () => ({
     getServerNameByWebContentsId: () => 'server_name',
+    getViewIdByWebContentsId: () => 'server_id',
+    viewManager: {
+        views: new Map([['server_id', {tab: {id: 'server_id'}}]]),
+    },
     sendToRenderer: jest.fn(),
     flashFrame: jest.fn(),
     switchTab: jest.fn(),
@@ -220,7 +223,7 @@ describe('main/notifications', () => {
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
-            expect(WindowManager.switchTab).toHaveBeenCalledWith('server_name', TAB_MESSAGING);
+            expect(WindowManager.switchTab).toHaveBeenCalledWith('server_id');
         });
     });
 

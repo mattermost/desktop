@@ -34,7 +34,7 @@ jest.mock('main/Validator', () => ({
 }));
 
 jest.mock('common/tabs/TabView', () => ({
-    getDefaultTeamWithTabsFromTeam: (value) => ({
+    getDefaultConfigTeamFromTeam: (value) => ({
         ...value,
         tabs: [
             {
@@ -161,7 +161,22 @@ describe('common/config', () => {
             expect(config.saveLocalConfigData).toHaveBeenCalled();
         });
 
-        it('should set teams without including predefined', () => {
+        it('should not allow teams to be set using this method', () => {
+            const config = new Config(configPath);
+            config.localConfigData = {teams: [team]};
+            config.regenerateCombinedConfigData = jest.fn().mockImplementation(() => {
+                config.combinedData = {...config.localConfigData};
+            });
+            config.saveLocalConfigData = jest.fn();
+
+            config.set('teams', [{...buildTeamWithTabs, name: 'build-team-2'}]);
+            expect(config.localConfigData.teams).not.toContainEqual({...buildTeamWithTabs, name: 'build-team-2'});
+            expect(config.localConfigData.teams).toContainEqual(team);
+        });
+    });
+
+    describe('setServers', () => {
+        it('should set only local servers', () => {
             const config = new Config(configPath);
             config.localConfigData = {};
             config.regenerateCombinedConfigData = jest.fn().mockImplementation(() => {
@@ -169,10 +184,11 @@ describe('common/config', () => {
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.set('teams', [{...buildTeamWithTabs, name: 'build-team-2'}, team]);
-            expect(config.localConfigData.teams).not.toContainEqual({...buildTeamWithTabs, name: 'build-team-2'});
-            expect(config.localConfigData.teams).toContainEqual(team);
-            expect(config.predefinedTeams).toContainEqual({...buildTeamWithTabs, name: 'build-team-2'});
+            config.setServers([{...buildTeamWithTabs, name: 'build-team-2'}, team], 0);
+            expect(config.localConfigData.teams).toContainEqual({...buildTeamWithTabs, name: 'build-team-2'});
+            expect(config.localConfigData.lastActiveTeam).toBe(0);
+            expect(config.regenerateCombinedConfigData).toHaveBeenCalled();
+            expect(config.saveLocalConfigData).toHaveBeenCalled();
         });
     });
 
@@ -291,8 +307,6 @@ describe('common/config', () => {
             config.regenerateCombinedConfigData();
             config.combinedData.darkMode = false;
             expect(config.combinedData).toStrictEqual({
-                teams: [],
-                registryTeams: [],
                 appName: 'Mattermost',
                 useNativeWindow: false,
                 darkMode: false,
@@ -306,7 +320,7 @@ describe('common/config', () => {
             });
         });
 
-        it('should combine teams from all sources and filter duplicates', () => {
+        it('should not include any teams in the combined config', () => {
             const config = new Config(configPath);
             config.defaultConfigData = {};
             config.localConfigData = {};
@@ -332,56 +346,10 @@ describe('common/config', () => {
             config.regenerateCombinedConfigData();
             config.combinedData.darkMode = false;
             expect(config.combinedData).toStrictEqual({
-                teams: [
-                    team,
-                    {
-                        ...team,
-                        name: 'local-team-2',
-                        order: 1,
-                        url: 'http://local-team-2.com',
-                    },
-                    {
-                        ...team,
-                        name: 'local-team-1',
-                        order: 2,
-                        url: 'http://local-team-1.com',
-                    },
-                ],
-                registryTeams: [],
                 appName: 'Mattermost',
                 useNativeWindow: false,
                 darkMode: false,
                 enableServerManagement: true,
-            });
-        });
-
-        it('should not include local teams if enableServerManagement is false', () => {
-            const config = new Config(configPath);
-            config.defaultConfigData = {};
-            config.localConfigData = {};
-            config.buildConfigData = {enableServerManagement: false};
-            config.registryConfigData = {};
-            config.predefinedTeams = [team, team];
-            config.useNativeWindow = false;
-            config.localConfigData = {teams: [
-                team,
-                {
-                    ...team,
-                    name: 'local-team-1',
-                    order: 1,
-                    url: 'http://local-team-1.com',
-                },
-            ]};
-
-            config.regenerateCombinedConfigData();
-            config.combinedData.darkMode = false;
-            expect(config.combinedData).toStrictEqual({
-                teams: [team],
-                registryTeams: [],
-                appName: 'Mattermost',
-                useNativeWindow: false,
-                darkMode: false,
-                enableServerManagement: false,
             });
         });
     });

@@ -9,7 +9,6 @@ export const TAB_MESSAGING = 'TAB_MESSAGING';
 export const TAB_FOCALBOARD = 'TAB_FOCALBOARD';
 export const TAB_PLAYBOOKS = 'TAB_PLAYBOOKS';
 export type TabType = typeof TAB_MESSAGING | typeof TAB_FOCALBOARD | typeof TAB_PLAYBOOKS;
-export type TabTuple = [string, TabType];
 
 export interface TabView {
     id: string;

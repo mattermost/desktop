@@ -141,7 +141,7 @@ export class ViewManager {
                 recycle.updateServerInfo(srv);
                 views.set(tab.id, recycle);
             } else {
-                views.set(tab.id, this.makeView(srv, tab, `${tab.url}`));
+                views.set(tab.id, this.makeView(srv, tab));
             }
         }
 
@@ -180,6 +180,8 @@ export class ViewManager {
                 this.currentView = view.id;
                 this.showById(view.id);
                 this.mainWindow.webContents.send(SET_ACTIVE_VIEW, view.tab.server.id, view.tab.id);
+            } else {
+                this.focus();
             }
         } else {
             this.showInitial();
@@ -493,13 +495,13 @@ export class ViewManager {
             const parsedURL = urlUtils.parseURL(url)!;
             const tabView = ServerManager.lookupTabByURL(parsedURL, true);
             if (tabView) {
-                const urlWithSchema = `${urlUtils.parseURL(tabView.url)?.origin}${parsedURL.pathname}${parsedURL.search}`;
-                if (this.closedViews.has(tabView.name)) {
-                    this.openClosedTab(tabView.name, urlWithSchema);
+                const urlWithSchema = `${tabView.url.origin}${parsedURL.pathname}${parsedURL.search}`;
+                if (this.closedViews.has(tabView.id)) {
+                    this.openClosedTab(tabView.id, urlWithSchema);
                 } else {
-                    const view = this.views.get(tabView.name);
+                    const view = this.views.get(tabView.id);
                     if (!view) {
-                        log.error(`Couldn't find a view matching the name ${tabView.name}`);
+                        log.error(`Couldn't find a view matching the name ${tabView.id}`);
                         return;
                     }
 

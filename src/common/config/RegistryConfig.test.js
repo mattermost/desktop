@@ -67,7 +67,6 @@ describe('common/config/RegistryConfig', () => {
         expect(registryConfig.data.teams).toContainEqual({
             name: 'server-1',
             url: 'http://server-1.com',
-            order: 0,
         });
         expect(registryConfig.data.enableAutoUpdater).toBe(true);
         expect(registryConfig.data.enableServerManagement).toBe(true);

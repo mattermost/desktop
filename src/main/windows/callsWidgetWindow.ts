@@ -101,10 +101,6 @@ export default class CallsWidgetWindow extends EventEmitter {
         });
     }
 
-    public getServerName() {
-        return this.mainView.tab.server.name;
-    }
-
     public getServerId() {
         return this.mainView.tab.server.id;
     }

@@ -46,7 +46,7 @@ jest.mock('main/i18nManager', () => ({
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     getMainWindow: jest.fn(),
-    getViewNameByWebContentsId: jest.fn(),
+    getViewIdByWebContentsId: jest.fn(),
     getServerNameByWebContentsId: jest.fn(),
     viewManager: {
         views: new Map(),
@@ -165,7 +165,7 @@ describe('main/app/app', () => {
             dialog.showMessageBox.mockResolvedValue({response: 0});
             const load = jest.fn();
             WindowManager.viewManager.views.set('view-name', {load});
-            WindowManager.getViewNameByWebContentsId.mockReturnValue('view-name');
+            WindowManager.getViewIdByWebContentsId.mockReturnValue('view-name');
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
             expect(load).toHaveBeenCalledWith(testURL);

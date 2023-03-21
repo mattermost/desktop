@@ -33,6 +33,9 @@ jest.mock('main/server/serverManager', () => ({
     addServer: jest.fn(),
     editServer: jest.fn(),
     removeServer: jest.fn(),
+    getServer: jest.fn(),
+    getTab: jest.fn(),
+    getLastActiveTabForServer: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
@@ -71,6 +74,7 @@ const tabs = [
 ];
 const teams = [
     {
+        id: 'server-1',
         name: 'server-1',
         url: 'http://server-1.com',
         tabs,
@@ -79,48 +83,19 @@ const teams = [
 
 describe('main/app/intercom', () => {
     describe('handleCloseTab', () => {
-        let teamsCopy;
-
-        beforeEach(() => {
-            teamsCopy = JSON.parse(JSON.stringify(teams));
-            ServerManager.toggleTab.mockImplementation(() => {
-                teamsCopy = [
-                    {
-                        ...teams[0],
-                        tabs: [
-                            {
-                                name: 'tab-1',
-                                order: 0,
-                                isOpen: false,
-                            },
-                            {
-                                name: 'tab-2',
-                                order: 2,
-                                isOpen: true,
-                            },
-                            {
-                                name: 'tab-3',
-                                order: 1,
-                                isOpen: false,
-                            },
-                        ],
-                    },
-                ];
-            });
-            ServerManager.getAllServers.mockReturnValue(teamsCopy);
-        });
-
         it('should close the specified tab and switch to the next open tab', () => {
-            handleCloseTab(null, 'server-1', 'tab-3');
-            expect(WindowManager.switchTab).toBeCalledWith('server-1', 'tab-2');
-            expect(teamsCopy.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === 'tab-3').isOpen).toBe(false);
+            ServerManager.getTab.mockReturnValue({server: {id: 'server-1'}});
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-2'});
+            handleCloseTab(null, 'tab-3');
+            expect(ServerManager.toggleTab).toBeCalledWith('tab-3', false);
+            expect(WindowManager.switchTab).toBeCalledWith('tab-2');
         });
     });
 
     describe('handleOpenTab', () => {
         it('should open the specified tab', () => {
-            handleOpenTab(null, 'server-1', 'tab-1');
-            expect(WindowManager.switchTab).toBeCalledWith('server-1', 'tab-1');
+            handleOpenTab(null, 'tab-1');
+            expect(WindowManager.switchTab).toBeCalledWith('tab-1');
         });
     });
 
@@ -133,8 +108,10 @@ describe('main/app/intercom', () => {
             WindowManager.getMainWindow.mockReturnValue({});
 
             teamsCopy = JSON.parse(JSON.stringify(teams));
+            ServerManager.getAllServers.mockReturnValue([]);
             ServerManager.addServer.mockImplementation(() => {
                 const newTeam = {
+                    id: 'server-1',
                     name: 'new-team',
                     url: 'http://new-team.com',
                     tabs,
@@ -163,11 +140,12 @@ describe('main/app/intercom', () => {
             handleNewServerModal();
             await promise;
             expect(teamsCopy).toContainEqual(expect.objectContaining({
+                id: 'server-1',
                 name: 'new-team',
                 url: 'http://new-team.com',
                 tabs,
             }));
-            expect(WindowManager.switchServer).toBeCalledWith('new-team', true);
+            expect(WindowManager.switchServer).toBeCalledWith('server-1', true);
         });
     });
 
@@ -180,18 +158,23 @@ describe('main/app/intercom', () => {
             WindowManager.getMainWindow.mockReturnValue({});
 
             teamsCopy = JSON.parse(JSON.stringify(teams));
-            ServerManager.editServer.mockImplementation((team, index) => {
-                if (index < 0) {
+            ServerManager.getServer.mockImplementation((id) => {
+                if (id !== teamsCopy[0].id) {
+                    return undefined;
+                }
+                return {...teamsCopy[0], toMattermostTeam: jest.fn()};
+            });
+            ServerManager.editServer.mockImplementation((id, team) => {
+                if (id !== teamsCopy[0].id) {
                     return;
                 }
                 const newTeam = {
                     ...teamsCopy[0],
-                    name: 'new-team',
-                    url: 'http://new-team.com',
+                    ...team,
                 };
                 teamsCopy = [newTeam];
             });
-            ServerManager.getAllServers.mockReturnValue(teamsCopy);
+            ServerManager.getAllServers.mockReturnValue(teamsCopy.map((team) => ({...team, toMattermostTeam: jest.fn()})));
         });
 
         it('should do nothing when the server cannot be found', () => {
@@ -209,11 +192,13 @@ describe('main/app/intercom', () => {
             handleEditServerModal(null, 'server-1');
             await promise;
             expect(teamsCopy).not.toContainEqual(expect.objectContaining({
+                id: 'server-1',
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,
             }));
             expect(teamsCopy).toContainEqual(expect.objectContaining({
+                id: 'server-1',
                 name: 'new-team',
                 url: 'http://new-team.com',
                 tabs,
@@ -230,6 +215,12 @@ describe('main/app/intercom', () => {
             WindowManager.getMainWindow.mockReturnValue({});
 
             teamsCopy = JSON.parse(JSON.stringify(teams));
+            ServerManager.getServer.mockImplementation((id) => {
+                if (id !== teamsCopy[0].id) {
+                    return undefined;
+                }
+                return teamsCopy[0];
+            });
             ServerManager.removeServer.mockImplementation(() => {
                 teamsCopy = [];
             });
@@ -243,6 +234,7 @@ describe('main/app/intercom', () => {
             handleRemoveServerModal(null, 'server-1');
             await promise;
             expect(teamsCopy).not.toContainEqual(expect.objectContaining({
+                id: 'server-1',
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,
@@ -254,6 +246,7 @@ describe('main/app/intercom', () => {
             ModalManager.addModal.mockReturnValue(promise);
 
             expect(teamsCopy).toContainEqual(expect.objectContaining({
+                id: 'server-1',
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,
@@ -262,6 +255,7 @@ describe('main/app/intercom', () => {
             handleRemoveServerModal(null, 'server-1');
             await promise;
             expect(teamsCopy).toContainEqual(expect.objectContaining({
+                id: 'server-1',
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,

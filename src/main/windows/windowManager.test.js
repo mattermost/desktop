@@ -90,6 +90,10 @@ jest.mock('./callsWidgetWindow');
 jest.mock('main/server/serverManager', () => ({
     getAllServers: jest.fn(),
     getServer: jest.fn(),
+    on: jest.fn(),
+    lookupTabByURL: jest.fn(),
+    getOrderedTabsForServer: jest.fn(),
+    getLastActiveTabForServer: jest.fn(),
 }));
 jest.mock('main/views/webContentEvents', () => ({}));
 
@@ -617,52 +621,12 @@ describe('main/windows/windowManager', () => {
 
         beforeEach(() => {
             jest.useFakeTimers();
-            getTabViewName.mockImplementation((server, tab) => `${server}_${tab}`);
             const server1 = {
-                name: 'server-1',
-                order: 1,
-                tabs: [
-                    {
-                        name: 'tab-1',
-                        order: 0,
-                        isOpen: false,
-                    },
-                    {
-                        name: 'tab-2',
-                        order: 2,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'tab-3',
-                        order: 1,
-                        isOpen: true,
-                    },
-                ],
+                id: 'server-1',
             };
             const server2 = {
-                name: 'server-2',
-                order: 0,
-                tabs: [
-                    {
-                        name: 'tab-1',
-                        order: 0,
-                        isOpen: false,
-                    },
-                    {
-                        name: 'tab-2',
-                        order: 2,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'tab-3',
-                        order: 1,
-                        isOpen: true,
-                    },
-                ],
-                lastActiveTab: 2,
+                id: 'server-2',
             };
-            const teams = [server1, server2];
-            ServerManager.getAllServers.mockReturnValue(teams);
             ServerManager.getServer.mockImplementation((name) => {
                 switch (name) {
                 case 'server-1':
@@ -673,14 +637,11 @@ describe('main/windows/windowManager', () => {
                     return undefined;
                 }
             });
-
-            const map = teams.reduce((arr, item) => {
-                item.tabs.forEach((tab) => {
-                    arr.push([`${item.name}_${tab.name}`, {}]);
-                });
-                return arr;
-            }, []);
-            windowManager.viewManager.views = new Map(map);
+            windowManager.viewManager.views = new Map([
+                ['tab-1', {id: 'tab-1'}],
+                ['tab-2', {id: 'tab-2'}],
+                ['tab-3', {id: 'tab-3'}],
+            ]);
         });
 
         afterEach(() => {
@@ -700,26 +661,29 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should show first open tab in order when last active not defined', () => {
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-3'});
             windowManager.switchServer('server-1');
-            expect(windowManager.viewManager.showById).toHaveBeenCalledWith('server-1_tab-3');
+            expect(windowManager.viewManager.showById).toHaveBeenCalledWith('tab-3');
         });
 
         it('should show last active tab of chosen server', () => {
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-2'});
             windowManager.switchServer('server-2');
-            expect(windowManager.viewManager.showById).toHaveBeenCalledWith('server-2_tab-2');
+            expect(windowManager.viewManager.showById).toHaveBeenCalledWith('tab-2');
         });
 
         it('should wait for view to exist if specified', () => {
-            windowManager.viewManager.views.delete('server-1_tab-3');
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-3'});
+            windowManager.viewManager.views.delete('tab-3');
             windowManager.switchServer('server-1', true);
             expect(windowManager.viewManager.showById).not.toBeCalled();
 
             jest.advanceTimersByTime(200);
             expect(windowManager.viewManager.showById).not.toBeCalled();
 
-            windowManager.viewManager.views.set('server-1_tab-3', {});
+            windowManager.viewManager.views.set('tab-3', {});
             jest.advanceTimersByTime(200);
-            expect(windowManager.viewManager.showById).toBeCalledWith('server-1_tab-3');
+            expect(windowManager.viewManager.showById).toBeCalledWith('tab-3');
         });
     });
 
@@ -789,29 +753,24 @@ describe('main/windows/windowManager', () => {
         windowManager.switchTab = jest.fn();
 
         beforeEach(() => {
-            const server1 = {
-                name: 'server-1',
-                order: 1,
-                tabs: [
-                    {
-                        name: 'tab-1',
-                        order: 0,
-                        isOpen: false,
-                    },
-                    {
-                        name: 'tab-2',
-                        order: 2,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'tab-3',
-                        order: 1,
-                        isOpen: true,
-                    },
-                ],
-            };
-            ServerManager.getAllServers.mockReturnValue([server1]);
-            ServerManager.getServer.mockReturnValue(server1);
+            const tabs = [
+                {
+                    id: 'tab-1',
+                    name: 'tab-1',
+                    isOpen: false,
+                },
+                {
+                    id: 'tab-2',
+                    name: 'tab-2',
+                    isOpen: true,
+                },
+                {
+                    id: 'tab-3',
+                    name: 'tab-3',
+                    isOpen: true,
+                },
+            ];
+            ServerManager.getOrderedTabsForServer.mockReturnValue(tabs);
         });
 
         afterEach(() => {
@@ -829,7 +788,7 @@ describe('main/windows/windowManager', () => {
             });
 
             windowManager.selectTab((order) => order + 1);
-            expect(windowManager.switchTab).toBeCalledWith('server-1', 'tab-2');
+            expect(windowManager.switchTab).toBeCalledWith('tab-2');
         });
 
         it('should select previous server when open', () => {
@@ -843,7 +802,7 @@ describe('main/windows/windowManager', () => {
             });
 
             windowManager.selectTab((order, length) => (length + (order - 1)));
-            expect(windowManager.switchTab).toBeCalledWith('server-1', 'tab-3');
+            expect(windowManager.switchTab).toBeCalledWith('tab-3');
         });
 
         it('should skip over closed tab', () => {
@@ -856,14 +815,14 @@ describe('main/windows/windowManager', () => {
                 },
             });
             windowManager.selectTab((order) => order + 1);
-            expect(windowManager.switchTab).toBeCalledWith('server-1', 'tab-3');
+            expect(windowManager.switchTab).toBeCalledWith('tab-3');
         });
     });
 
     describe('handleBrowserHistoryPush', () => {
         const windowManager = new WindowManager();
         const view1 = {
-            name: 'server-1_tab-messaging',
+            id: 'server-1_tab-messaging',
             isLoggedIn: true,
             tab: {
                 type: TAB_MESSAGING,
@@ -879,7 +838,7 @@ describe('main/windows/windowManager', () => {
         };
         const view2 = {
             ...view1,
-            name: 'server-1_other_type_1',
+            id: 'server-1_other_type_1',
             tab: {
                 ...view1.tab,
                 type: 'other_type_1',
@@ -892,7 +851,7 @@ describe('main/windows/windowManager', () => {
         };
         const view3 = {
             ...view1,
-            name: 'server-1_other_type_2',
+            id: 'server-1_other_type_2',
             tab: {
                 ...view1.tab,
                 type: 'other_type_2',
@@ -950,7 +909,7 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should open closed view if pushing to it', () => {
-            windowManager.viewManager.getViewByURL.mockReturnValue({name: 'server-1_other_type_2'});
+            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_2'});
             windowManager.viewManager.openClosedTab.mockImplementation((name) => {
                 const view = windowManager.viewManager.closedViews.get(name);
                 windowManager.viewManager.closedViews.delete(name);
@@ -962,13 +921,13 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should open redirect view if different from current view', () => {
-            windowManager.viewManager.getViewByURL.mockReturnValue({name: 'server-1_other_type_1'});
+            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_1'});
             windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_1/subpath');
             expect(windowManager.viewManager.showById).toBeCalledWith('server-1_other_type_1');
         });
 
         it('should ignore redirects to "/" to Messages from other tabs', () => {
-            windowManager.viewManager.getViewByURL.mockReturnValue({name: 'server-1_tab-messaging'});
+            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_tab-messaging'});
             windowManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
             expect(view1.view.webContents.send).not.toBeCalled();
         });
@@ -1281,7 +1240,7 @@ describe('main/windows/windowManager', () => {
         beforeEach(() => {
             CallsWidgetWindow.mockImplementation(() => {
                 return {
-                    getServerName: () => 'server-1',
+                    getServerId: () => 'server-1',
                     getMainView: jest.fn().mockReturnValue({
                         view: {
                             webContents: {
@@ -1359,7 +1318,7 @@ describe('main/windows/windowManager', () => {
         beforeEach(() => {
             CallsWidgetWindow.mockImplementation(() => {
                 return {
-                    getServerName: () => 'server-2',
+                    getServerId: () => 'server-2',
                     getMainView: jest.fn().mockReturnValue({
                         view: {
                             webContents: {
@@ -1437,7 +1396,7 @@ describe('main/windows/windowManager', () => {
         beforeEach(() => {
             CallsWidgetWindow.mockImplementation(() => {
                 return {
-                    getServerName: () => 'server-2',
+                    getServerId: () => 'server-2',
                     getMainView: jest.fn().mockReturnValue({
                         view: {
                             webContents: {
@@ -1481,7 +1440,7 @@ describe('main/windows/windowManager', () => {
         beforeEach(() => {
             CallsWidgetWindow.mockImplementation(() => {
                 return {
-                    getServerName: () => 'server-1',
+                    getServerId: () => 'server-1',
                     getMainView: jest.fn().mockReturnValue(view1),
                 };
             });

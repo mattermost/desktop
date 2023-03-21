@@ -210,7 +210,7 @@ export class Config extends EventEmitter {
         if (newData.darkMode && newData.darkMode !== this.darkMode) {
             this.emit('darkModeChange', newData.darkMode);
         }
-        this.localConfigData = Object.assign({}, this.localConfigData, {...newData, teams: undefined});
+        this.localConfigData = Object.assign({}, this.localConfigData, {...newData, teams: this.localConfigData?.teams});
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
     }
@@ -415,12 +415,16 @@ export class Config extends EventEmitter {
     private regenerateCombinedConfigData = () => {
         // combine all config data in the correct order
         this.combinedData = Object.assign({},
-            {...this.defaultConfigData, teams: undefined},
-            {...this.localConfigData, teams: undefined},
-            {...this.buildConfigData, defaultTeams: undefined},
-            {...this.registryConfigData, teams: undefined},
+            this.defaultConfigData,
+            this.localConfigData,
+            this.buildConfigData,
+            this.registryConfigData,
             {useNativeWindow: this.useNativeWindow},
         );
+
+        // We don't want to include the servers in the combined config, they should only be accesible via the ServerManager
+        delete (this.combinedData as any).teams;
+        delete (this.combinedData as any).defaultTeams;
 
         if (this.combinedData) {
             if (process.platform === 'darwin' || process.platform === 'win32') {

@@ -5,7 +5,7 @@ import {upgradeV0toV1, upgradeV1toV2, upgradeV2toV3} from 'common/config/upgrade
 import pastDefaultPreferences from 'common/config/pastDefaultPreferences';
 
 jest.mock('common/tabs/TabView', () => ({
-    getDefaultTeamWithTabsFromTeam: (value) => ({
+    getDefaultConfigTeamFromTeam: (value) => ({
         ...value,
         tabs: [
             {
@@ -122,7 +122,6 @@ describe('common/config/upgradePreferences', () => {
                             name: 'tab2',
                         },
                     ],
-                    lastActiveTab: 0,
                 }, {
                     name: 'Secondary team',
                     url: 'http://server-2.com',
@@ -135,7 +134,6 @@ describe('common/config/upgradePreferences', () => {
                             name: 'tab2',
                         },
                     ],
-                    lastActiveTab: 0,
                 }],
             });
         });

@@ -57,8 +57,9 @@ describe('main/windows/callsWidgetWindow', () => {
                     id: 'mainViewID',
                 },
             },
-            serverInfo: {
+            tab: {
                 server: {
+                    id: 'test-server-id',
                     name: 'test-server-name',
                     url: new URL('http://localhost:8065'),
                 },
@@ -340,9 +341,9 @@ describe('main/windows/callsWidgetWindow', () => {
             });
         });
 
-        it('getServerName', () => {
+        it('getServerId', () => {
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.getServerName()).toBe('test-server-name');
+            expect(widgetWindow.getServerId()).toBe('test-server-id');
         });
 
         it('getChannelURL', () => {
@@ -361,7 +362,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 title: 'call test title #/&',
             };
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, config);
-            const expected = `${mainView.serverInfo.server.url}plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
+            const expected = `${mainView.tab.server.url}plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
 
@@ -372,7 +373,7 @@ describe('main/windows/callsWidgetWindow', () => {
             };
 
             const view = {
-                serverInfo: {
+                tab: {
                     server: {
                         url: new URL('http://localhost:8065/subpath'),
                     },
@@ -380,7 +381,7 @@ describe('main/windows/callsWidgetWindow', () => {
             };
 
             const widgetWindow = new CallsWidgetWindow(mainWindow, view, config);
-            const expected = `${view.serverInfo.server.url}/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
+            const expected = `${view.tab.server.url}/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
 
@@ -390,7 +391,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 rootID: 'call_thread_id',
             };
             const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, config);
-            const expected = `${mainView.serverInfo.server.url}plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&root_id=call_thread_id`;
+            const expected = `${mainView.tab.server.url}plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&root_id=call_thread_id`;
             expect(widgetWindow.getWidgetURL()).toBe(expected);
         });
 

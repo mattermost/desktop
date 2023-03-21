@@ -146,6 +146,7 @@ jest.mock('main/notifications', () => ({
 jest.mock('main/ParseArgs', () => jest.fn());
 jest.mock('main/server/serverManager', () => ({
     init: jest.fn(),
+    updateServerInfos: jest.fn(),
 }));
 jest.mock('main/tray/tray', () => ({
     refreshTrayImages: jest.fn(),

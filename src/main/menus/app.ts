@@ -277,7 +277,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             if (WindowManager.getCurrentTeamId() === team.id) {
                 ServerManager.getOrderedTabsForServer(team.id).slice(0, 9).forEach((tab, i) => {
                     items.push({
-                        label: `    ${localizeMessage(`common.tabs.${tab.type}`, getTabDisplayName(tab.type as TabType))}`,
+                        label: `    ${localizeMessage(`common.tabs.${tab.name}`, getTabDisplayName(tab.name as TabType))}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
                             WindowManager.switchTab(tab.id);

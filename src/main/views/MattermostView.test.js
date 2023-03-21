@@ -48,13 +48,13 @@ jest.mock('../utils', () => ({
     shouldHaveBackBar: jest.fn(),
 }));
 
-const server = new MattermostServer('server_name', 'http://server-1.com');
-const tabView = new MessagingTabView(server);
+const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'}, false);
+const tabView = new MessagingTabView(server, true);
 
 describe('main/views/MattermostView', () => {
     describe('load', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
 
         beforeEach(() => {
             mattermostView.loadSuccess = jest.fn();
@@ -112,7 +112,7 @@ describe('main/views/MattermostView', () => {
 
     describe('retry', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
         const retryInBackgroundFn = jest.fn();
 
         beforeEach(() => {
@@ -166,7 +166,7 @@ describe('main/views/MattermostView', () => {
             await expect(promise).rejects.toThrow(error);
             expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
             expect(mattermostView.loadRetry).not.toBeCalled();
-            expect(WindowManager.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.tab.name, expect.any(String), expect.any(String));
+            expect(WindowManager.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.tab.id, expect.any(String), expect.any(String));
             expect(mattermostView.status).toBe(-1);
             jest.runAllTimers();
             expect(retryInBackgroundFn).toBeCalled();
@@ -175,7 +175,7 @@ describe('main/views/MattermostView', () => {
 
     describe('loadSuccess', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -202,7 +202,7 @@ describe('main/views/MattermostView', () => {
 
     describe('show', () => {
         const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn(), on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -253,7 +253,7 @@ describe('main/views/MattermostView', () => {
 
     describe('destroy', () => {
         const window = {removeBrowserView: jest.fn(), on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
 
         beforeEach(() => {
             mattermostView.view.webContents.destroy = jest.fn();
@@ -266,7 +266,7 @@ describe('main/views/MattermostView', () => {
 
         it('should clear mentions', () => {
             mattermostView.destroy();
-            expect(appState.updateMentions).toBeCalledWith(mattermostView.tab.name, 0, false);
+            expect(appState.updateMentions).toBeCalledWith(mattermostView.tab.id, 0, false);
         });
 
         it('should clear outstanding timeouts', () => {
@@ -280,7 +280,7 @@ describe('main/views/MattermostView', () => {
 
     describe('handleInputEvents', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
 
         it('should open three dot menu on pressing Alt', () => {
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown', alt: true, shift: false, control: false, meta: false});
@@ -304,7 +304,7 @@ describe('main/views/MattermostView', () => {
 
     describe('handleDidNavigate', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
 
         beforeEach(() => {
             mattermostView.setBounds = jest.fn();
@@ -325,7 +325,7 @@ describe('main/views/MattermostView', () => {
 
     describe('handleUpdateTarget', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
 
         beforeEach(() => {
             mattermostView.emit = jest.fn();
@@ -356,16 +356,16 @@ describe('main/views/MattermostView', () => {
 
     describe('updateMentionsFromTitle', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, window, {});
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 7);
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.id, 7);
         });
 
         it('should parse unreads from title', () => {
             mattermostView.updateMentionsFromTitle('* Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0);
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.id, 0);
         });
     });
 });
