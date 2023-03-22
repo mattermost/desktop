@@ -146,14 +146,14 @@ contextBridge.exposeInMainWorld('desktop', {
     getOrderedTabsForServer: (serverId) => ipcRenderer.invoke(GET_ORDERED_TABS_FOR_SERVER, serverId),
     onUpdateServers: (listener) => ipcRenderer.on(SERVERS_UPDATE, () => listener()),
 
-    getConfiguration: (option) => ipcRenderer.invoke(GET_CONFIGURATION, option),
+    getConfiguration: () => ipcRenderer.invoke(GET_CONFIGURATION),
     getVersion: () => ipcRenderer.invoke('get-app-version'),
     getDarkMode: () => ipcRenderer.invoke(GET_DARK_MODE),
     requestHasDownloads: () => ipcRenderer.invoke(REQUEST_HAS_DOWNLOADS),
     getFullScreenStatus: () => ipcRenderer.invoke(GET_FULL_SCREEN_STATUS),
     getAvailableSpellCheckerLanguages: () => ipcRenderer.invoke(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES),
     getAvailableLanguages: () => ipcRenderer.invoke(GET_AVAILABLE_LANGUAGES),
-    getLocalConfiguration: (option) => ipcRenderer.invoke(GET_LOCAL_CONFIGURATION, option),
+    getLocalConfiguration: () => ipcRenderer.invoke(GET_LOCAL_CONFIGURATION),
     getDownloadLocation: (downloadLocation) => ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, downloadLocation),
     getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
 

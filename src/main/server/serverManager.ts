@@ -49,7 +49,7 @@ export class ServerManager extends EventEmitter {
         this.lastActiveTab = new Map();
     }
 
-    init = () => {
+    init = async () => {
         log.debug('ServerManager.init');
 
         this.reloadFromConfig();
@@ -59,43 +59,8 @@ export class ServerManager extends EventEmitter {
         ipcMain.handle(GET_LAST_ACTIVE, this.handleGetLastActive);
         ipcMain.handle(GET_ORDERED_SERVERS, () => this.getOrderedServers().map((srv) => srv.toMattermostTeam()));
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, (event, serverId) => this.getOrderedTabsForServer(serverId).map((tab) => tab.toMattermostTab()));
-    }
 
-    private reloadFromConfig = () => {
-        const serverOrder: string[] = [];
-        Config.predefinedTeams.forEach((team) => {
-            const id = this.initServer(team, true);
-            serverOrder.push(id);
-        });
-        if (Config.enableServerManagement) {
-            Config.localTeams.sort((a, b) => a.order - b.order).forEach((team) => {
-                const id = this.initServer(team, false);
-                serverOrder.push(id);
-            });
-        }
-        this.filterOutDuplicateTeams();
-        this.serverOrder = serverOrder;
-        if (Config.lastActiveTeam) {
-            this.lastActiveServer = this.serverOrder[Config.lastActiveTeam];
-        }
-    }
-
-    private filterOutDuplicateTeams = () => {
-        const servers = [...this.servers.keys()].map((key) => ({key, value: this.servers.get(key)!}));
-        const uniqueServers = new Set();
-        servers.forEach((server) => {
-            if (uniqueServers.has(`${server.value.name}:${server.value.url}`)) {
-                this.servers.delete(server.key);
-            } else {
-                uniqueServers.add(`${server.value.name}:${server.value.url}`);
-            }
-        });
-    }
-
-    private handleGetLastActive = () => {
-        const server = this.getLastActiveServer();
-        const tab = this.getLastActiveTabForServer(server.id);
-        return {server: server.id, tab: tab.id};
+        await this.updateServerInfos(this.serverOrder);
     }
 
     updateServerOrder = (event: IpcMainEvent, serverOrder: string[]) => {
@@ -106,31 +71,10 @@ export class ServerManager extends EventEmitter {
     }
 
     updateTabOrder = (event: IpcMainEvent, serverId: string, tabOrder: string[]) => {
-        log.verbose('ServerManager.updateTabOrder', serverId, tabOrder);
+        log.debug('ServerManager.updateTabOrder', serverId, tabOrder);
 
         this.tabOrder.set(serverId, tabOrder);
         this.persistServers();
-    }
-
-    private initServer = (team: ConfigTeam, isPredefined: boolean) => {
-        const server = new MattermostServer(team, isPredefined);
-        this.servers.set(server.id, server);
-
-        log.debug('initialized server', server.name, server.id);
-
-        const tabOrder: string[] = [];
-        team.tabs.sort((a, b) => a.order - b.order).forEach((tab) => {
-            const tabView = this.getTabView(server, tab.name, tab.isOpen);
-            log.debug('initialized tab', server.name, tabView.name, tabView.id);
-
-            this.tabs.set(tabView.id, tabView);
-            tabOrder.push(tabView.id);
-        });
-        this.tabOrder.set(server.id, tabOrder);
-        if (typeof team.lastActiveTab !== 'undefined') {
-            this.lastActiveTab.set(server.id, tabOrder[team.lastActiveTab]);
-        }
-        return server.id;
     }
 
     getOrderedTabsForServer = (serverId: string) => {
@@ -190,35 +134,12 @@ export class ServerManager extends EventEmitter {
         return this.getFirstOpenTabForServer(serverId);
     }
 
-    private getFirstOpenTabForServer = (serverId: string) => {
-        const tabOrder = this.tabOrder.get(serverId);
-        if (!tabOrder) {
-            throw new Error(`Cannot find tabs for server id ${serverId}`);
-        }
-        const openTabs = this.getOrderedTabsForServer(serverId).filter((tab) => tab.isOpen);
-        const firstTab = openTabs[0];
-        if (!firstTab) {
-            throw new Error(`No tabs open for server id ${serverId}`);
-        }
-        return firstTab;
-    }
-
     getServer = (id: string) => {
         return this.servers.get(id);
     }
 
     getTab = (id: string) => {
         return this.tabs.get(id);
-    }
-
-    // TODO: Deprecate me
-    getServerByName = (name: string) => {
-        return this.getAllServers().find((srv) => srv.name === name);
-    }
-
-    // TODO: Deprecate me
-    getTabByName = (serverId: string, type: string) => {
-        return this.tabOrder.get(serverId)?.map((tabId) => this.tabs.get(tabId)).find((tab) => tab?.type === type);
     }
 
     getAllServers = () => {
@@ -257,61 +178,6 @@ export class ServerManager extends EventEmitter {
                 }
             });
         return selectedTab;
-    }
-
-    private persistServers = (lastActiveTeam?: number) => {
-        this.emit(SERVERS_UPDATE, this.getAllServers());
-
-        const localServers = [...this.servers.values()].
-            filter((server) => !server.isPredefined).
-            map((server) => this.toConfigTeam(server));
-        Config.setServers(localServers, lastActiveTeam);
-    }
-
-    private getLastActiveTab = (serverId: string) => {
-        let lastActiveTab: number | undefined;
-        if (this.lastActiveTab.has(serverId)) {
-            const index = this.tabOrder.get(serverId)?.indexOf(this.lastActiveTab.get(serverId)!);
-            if (typeof index !== 'undefined' && index >= 0) {
-                lastActiveTab = index;
-            }
-        }
-        return lastActiveTab;
-    }
-
-    private toConfigTeam = (server: MattermostServer): ConfigTeam => {
-        return {
-            name: server.name,
-            url: `${server.url}`,
-            order: this.serverOrder.indexOf(server.id),
-            lastActiveTab: this.getLastActiveTab(server.id),
-            tabs: this.tabOrder.get(server.id)?.reduce((tabs, tabId, index) => {
-                const tab = this.tabs.get(tabId);
-                if (!tab) {
-                    return tabs;
-                }
-                tabs.push({
-                    name: tab?.type,
-                    order: index,
-                    isOpen: tab.isOpen,
-                });
-                return tabs;
-            }, [] as ConfigTab[]) ?? [],
-        };
-    }
-
-    private getTabView = (srv: MattermostServer, tabName: string, isOpen?: boolean) => {
-        log.debug('ServerManager.getTabView', srv.name, tabName, isOpen);
-        switch (tabName) {
-        case TAB_MESSAGING:
-            return new MessagingTabView(srv, isOpen);
-        case TAB_FOCALBOARD:
-            return new FocalboardTabView(srv, isOpen);
-        case TAB_PLAYBOOKS:
-            return new PlaybooksTabView(srv, isOpen);
-        default:
-            throw new Error('Not implemeneted');
-        }
     }
 
     addServer = (server: Team) => {
@@ -387,7 +253,7 @@ export class ServerManager extends EventEmitter {
         this.persistServers(serverOrder);
     }
 
-    updateServerInfos = (serverIds: string[]) => {
+    private updateServerInfos = (serverIds: string[]) => {
         log.debug('ServerManager.updateServerInfos', serverIds);
 
         const serverInfos: Array<Promise<{id: string; data: RemoteInfo | string | undefined}>> = [];
@@ -413,6 +279,132 @@ export class ServerManager extends EventEmitter {
         }).catch((reason: Error) => {
             log.error('Error getting server infos', reason);
         });
+    }
+
+    private reloadFromConfig = () => {
+        const serverOrder: string[] = [];
+        Config.predefinedTeams.forEach((team) => {
+            const id = this.initServer(team, true);
+            serverOrder.push(id);
+        });
+        if (Config.enableServerManagement) {
+            Config.localTeams.sort((a, b) => a.order - b.order).forEach((team) => {
+                const id = this.initServer(team, false);
+                serverOrder.push(id);
+            });
+        }
+        this.filterOutDuplicateTeams();
+        this.serverOrder = serverOrder;
+        if (Config.lastActiveTeam) {
+            this.lastActiveServer = this.serverOrder[Config.lastActiveTeam];
+        }
+    }
+
+    private filterOutDuplicateTeams = () => {
+        const servers = [...this.servers.keys()].map((key) => ({key, value: this.servers.get(key)!}));
+        const uniqueServers = new Set();
+        servers.forEach((server) => {
+            if (uniqueServers.has(`${server.value.name}:${server.value.url}`)) {
+                this.servers.delete(server.key);
+            } else {
+                uniqueServers.add(`${server.value.name}:${server.value.url}`);
+            }
+        });
+    }
+
+    private handleGetLastActive = () => {
+        const server = this.getLastActiveServer();
+        const tab = this.getLastActiveTabForServer(server.id);
+        return {server: server.id, tab: tab.id};
+    }
+
+    private initServer = (team: ConfigTeam, isPredefined: boolean) => {
+        const server = new MattermostServer(team, isPredefined);
+        this.servers.set(server.id, server);
+
+        log.debug('initialized server', server.name, server.id);
+
+        const tabOrder: string[] = [];
+        team.tabs.sort((a, b) => a.order - b.order).forEach((tab) => {
+            const tabView = this.getTabView(server, tab.name, tab.isOpen);
+            log.debug('initialized tab', server.name, tabView.name, tabView.id);
+
+            this.tabs.set(tabView.id, tabView);
+            tabOrder.push(tabView.id);
+        });
+        this.tabOrder.set(server.id, tabOrder);
+        if (typeof team.lastActiveTab !== 'undefined') {
+            this.lastActiveTab.set(server.id, tabOrder[team.lastActiveTab]);
+        }
+        return server.id;
+    }
+
+    private getFirstOpenTabForServer = (serverId: string) => {
+        const tabOrder = this.tabOrder.get(serverId);
+        if (!tabOrder) {
+            throw new Error(`Cannot find tabs for server id ${serverId}`);
+        }
+        const openTabs = this.getOrderedTabsForServer(serverId).filter((tab) => tab.isOpen);
+        const firstTab = openTabs[0];
+        if (!firstTab) {
+            throw new Error(`No tabs open for server id ${serverId}`);
+        }
+        return firstTab;
+    }
+
+    private persistServers = (lastActiveTeam?: number) => {
+        this.emit(SERVERS_UPDATE, this.getAllServers());
+
+        const localServers = [...this.servers.values()].
+            filter((server) => !server.isPredefined).
+            map((server) => this.toConfigTeam(server));
+        Config.setServers(localServers, lastActiveTeam);
+    }
+
+    private getLastActiveTab = (serverId: string) => {
+        let lastActiveTab: number | undefined;
+        if (this.lastActiveTab.has(serverId)) {
+            const index = this.tabOrder.get(serverId)?.indexOf(this.lastActiveTab.get(serverId)!);
+            if (typeof index !== 'undefined' && index >= 0) {
+                lastActiveTab = index;
+            }
+        }
+        return lastActiveTab;
+    }
+
+    private toConfigTeam = (server: MattermostServer): ConfigTeam => {
+        return {
+            name: server.name,
+            url: `${server.url}`,
+            order: this.serverOrder.indexOf(server.id),
+            lastActiveTab: this.getLastActiveTab(server.id),
+            tabs: this.tabOrder.get(server.id)?.reduce((tabs, tabId, index) => {
+                const tab = this.tabs.get(tabId);
+                if (!tab) {
+                    return tabs;
+                }
+                tabs.push({
+                    name: tab?.type,
+                    order: index,
+                    isOpen: tab.isOpen,
+                });
+                return tabs;
+            }, [] as ConfigTab[]) ?? [],
+        };
+    }
+
+    private getTabView = (srv: MattermostServer, tabName: string, isOpen?: boolean) => {
+        log.debug('ServerManager.getTabView', srv.name, tabName, isOpen);
+        switch (tabName) {
+        case TAB_MESSAGING:
+            return new MessagingTabView(srv, isOpen);
+        case TAB_FOCALBOARD:
+            return new FocalboardTabView(srv, isOpen);
+        case TAB_PLAYBOOKS:
+            return new PlaybooksTabView(srv, isOpen);
+        default:
+            throw new Error('Not implemeneted');
+        }
     }
 
     private updateServerURL = (serverId: string, data: RemoteInfo) => {

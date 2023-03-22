@@ -46,7 +46,6 @@ jest.mock('electron', () => {
 jest.mock('main/app/utils', () => ({
     handleUpdateMenuEvent: jest.fn(),
     updateSpellCheckerLocales: jest.fn(),
-    updateServerInfos: jest.fn(),
     setLoggingLevel: jest.fn(),
 }));
 jest.mock('main/app/intercom', () => ({

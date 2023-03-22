@@ -3,7 +3,7 @@
 
 import path from 'path';
 
-import {app, ipcMain, session} from 'electron';
+import {app, ipcMain, nativeTheme, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
 import log from 'electron-log';
@@ -35,6 +35,10 @@ import {
     PING_DOMAIN,
     MAIN_WINDOW_SHOWN,
     OPEN_APP_MENU,
+    GET_CONFIGURATION,
+    GET_LOCAL_CONFIGURATION,
+    UPDATE_CONFIGURATION,
+    UPDATE_PATHS,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -46,7 +50,7 @@ import AutoLauncher from 'main/AutoLauncher';
 import updateManager from 'main/autoUpdater';
 import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
-import {updatePaths} from 'main/constants';
+import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
@@ -68,7 +72,7 @@ import {
     handleAppWindowAllClosed,
     handleChildProcessGone,
 } from './app';
-import {handleConfigUpdate, handleDarkModeChange} from './config';
+import {handleConfigUpdate, handleDarkModeChange, handleGetConfiguration, handleGetLocalConfiguration, handleUpdateTheme, updateConfiguration} from './config';
 import {
     handleMainWindowIsShown,
     handleAppVersion,
@@ -170,7 +174,15 @@ async function initializeConfig() {
 
             resolve();
         });
-        Config.init();
+        Config.init(configPath, app.name, app.getAppPath());
+        ipcMain.on(UPDATE_PATHS, () => {
+            log.debug('Config.UPDATE_PATHS');
+
+            Config.setConfigPath(configPath);
+            if (Config.data) {
+                Config.reload();
+            }
+        });
     });
 }
 
@@ -225,6 +237,11 @@ function initializeBeforeAppReady() {
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
+
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+        nativeTheme.on('updated', handleUpdateTheme);
+        handleUpdateTheme();
+    }
 }
 
 function initializeInterCommunicationEventListeners() {
@@ -261,11 +278,13 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
     ipcMain.handle(PING_DOMAIN, handlePingDomain);
+    ipcMain.handle(GET_CONFIGURATION, handleGetConfiguration);
+    ipcMain.handle(GET_LOCAL_CONFIGURATION, handleGetLocalConfiguration);
+    ipcMain.on(UPDATE_CONFIGURATION, updateConfiguration);
 }
 
 async function initializeAfterAppReady() {
-    ServerManager.init();
-    await ServerManager.updateServerInfos(ServerManager.serverOrder);
+    await ServerManager.init();
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;

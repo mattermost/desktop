@@ -1,10 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, ipcMain} from 'electron';
+import {app, ipcMain, nativeTheme} from 'electron';
 import log, {LogLevel} from 'electron-log';
 
-import {CombinedConfig} from 'types/config';
+import {CombinedConfig, Config as ConfigType} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
@@ -20,6 +20,41 @@ import {handleUpdateMenuEvent, setLoggingLevel, updateSpellCheckerLocales} from 
 //
 // config event handlers
 //
+
+export function handleGetConfiguration() {
+    log.debug('Config.handleGetConfiguration');
+
+    return Config.data;
+}
+
+export function handleGetLocalConfiguration() {
+    log.debug('Config.handleGetLocalConfiguration');
+
+    return {
+        ...Config.localData,
+        appName: app.name,
+        enableServerManagement: Config.enableServerManagement,
+        canUpgrade: Config.canUpgrade,
+    };
+}
+
+export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []) {
+    log.debug('Config.updateConfiguration', properties);
+
+    if (properties.length) {
+        const newData = properties.reduce((obj, data) => {
+            (obj as any)[data.key] = data.data;
+            return obj;
+        }, {} as Partial<ConfigType>);
+        Config.setMultiple(newData);
+    }
+}
+
+export function handleUpdateTheme() {
+    log.debug('Config.handleUpdateTheme');
+
+    Config.set('darkMode', nativeTheme.shouldUseDarkColors);
+}
 
 export function handleConfigUpdate(newConfig: CombinedConfig) {
     if (log.transports.file.level !== newConfig.logLevel) {

@@ -118,7 +118,6 @@ export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 export const RELOAD_CURRENT_VIEW = 'reload-current-view';
 
 export const PING_DOMAIN = 'ping-domain';
-export const PING_DOMAIN_RESPONSE = 'ping-domain-response';
 
 export const GET_LANGUAGE_INFORMATION = 'get-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';

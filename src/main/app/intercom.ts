@@ -61,7 +61,7 @@ export function handleOpenTab(event: IpcMainEvent, tabId: string) {
     WindowManager.switchTab(tabId);
 }
 
-export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
+function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
     log.debug('Intercom.handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
 
     if (showWelcomeScreen) {

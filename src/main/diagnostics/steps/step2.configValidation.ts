@@ -6,9 +6,9 @@ import {ElectronLog} from 'electron-log';
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
 import Config from 'common/config';
+import * as Validator from 'common/Validator';
 
 import {configPath} from 'main/constants';
-import * as Validator from 'main/Validator';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
@@ -23,7 +23,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
         const validData = Validator.validateConfigData(configData);
 
         if (!validData) {
-            throw new Error(`Config validation failed. Config: ${JSON.stringify(Config.combinedData, null, 4)}`);
+            throw new Error(`Config validation failed. Config: ${JSON.stringify(Config.data, null, 4)}`);
         }
 
         return {

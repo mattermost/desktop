@@ -51,9 +51,6 @@ jest.mock('main/windows/windowManager', () => ({
 }));
 
 jest.mock('./app', () => ({}));
-jest.mock('./utils', () => ({
-    updateServerInfos: jest.fn(),
-}));
 
 const tabs = [
     {

@@ -7,11 +7,10 @@ import {ipcMain} from 'electron';
 import {AppState} from 'types/appState';
 
 import {UPDATE_PATHS} from 'common/communication';
+import * as Validator from 'common/Validator';
 import JsonFileManager from 'common/JsonFileManager';
 
 import {appVersionJson} from 'main/constants';
-
-import * as Validator from './Validator';
 
 export class AppVersionManager extends JsonFileManager<AppState> {
     constructor(file: string) {

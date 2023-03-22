@@ -9,10 +9,10 @@ import {BrowserWindow, screen, app, globalShortcut, dialog} from 'electron';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
 import Config from 'common/config';
+import * as Validator from 'common/Validator';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constants';
 
 import ContextMenu from '../contextMenu';
-import * as Validator from '../Validator';
 
 import createMainWindow from './mainWindow';
 
@@ -58,7 +58,7 @@ jest.mock('fs', () => ({
     writeFileSync: jest.fn(),
 }));
 
-jest.mock('../Validator', () => ({
+jest.mock('common/Validator', () => ({
     validateBoundsInfo: jest.fn(),
 }));
 

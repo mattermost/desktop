@@ -31,7 +31,7 @@ import * as appState from '../appState';
 
 import WebContentsEventManager from './webContentEvents';
 
-export enum Status {
+enum Status {
     LOADING,
     READY,
     WAITING_MM,

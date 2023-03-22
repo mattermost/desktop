@@ -7,7 +7,6 @@ import os from 'os';
 import path from 'path';
 
 import {EventEmitter} from 'events';
-import {ipcMain, nativeTheme, app} from 'electron';
 import log from 'electron-log';
 
 import {
@@ -15,17 +14,13 @@ import {
     BuildConfig,
     CombinedConfig,
     Config as ConfigType,
-    LocalConfiguration,
     RegistryConfig as RegistryConfigType,
     ConfigTeam,
 } from 'types/config';
 
-import {GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
-
-import {configPath} from 'main/constants';
-import * as Validator from 'main/Validator';
 import {getDefaultConfigTeamFromTeam} from 'common/tabs/TabView';
 import Utils, {copy} from 'common/utils/util';
+import * as Validator from 'common/Validator';
 
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
@@ -38,28 +33,27 @@ import migrateConfigItems from './migrationPreferences';
  */
 
 export class Config extends EventEmitter {
-    private configFilePath: string;
+    private configFilePath?: string;
+    private appName?: string;
+    private appPath?: string;
 
-    registryConfig: RegistryConfig;
+    private registryConfig: RegistryConfig;
+    private predefinedServers: ConfigTeam[];
+    private useNativeWindow: boolean;
 
-    combinedData?: CombinedConfig;
-    registryConfigData?: Partial<RegistryConfigType>;
-    defaultConfigData?: ConfigType;
-    buildConfigData?: BuildConfig;
-    localConfigData?: ConfigType;
-    useNativeWindow: boolean;
-    canUpgradeValue?: boolean
+    private combinedData?: CombinedConfig;
+    private localConfigData?: ConfigType;
+    private registryConfigData?: Partial<RegistryConfigType>;
+    private defaultConfigData?: ConfigType;
+    private buildConfigData?: BuildConfig;
+    private canUpgradeValue?: boolean
 
-    predefinedTeams: ConfigTeam[];
-
-    constructor(configFilePath: string) {
+    constructor() {
         super();
-        this.configFilePath = configFilePath;
-        this.canUpgradeValue = this.checkWriteableApp();
         this.registryConfig = new RegistryConfig();
-        this.predefinedTeams = [];
+        this.predefinedServers = [];
         if (buildConfig.defaultTeams) {
-            this.predefinedTeams.push(...buildConfig.defaultTeams.map((team, index) => getDefaultConfigTeamFromTeam({...team, order: index})));
+            this.predefinedServers.push(...buildConfig.defaultTeams.map((team, index) => getDefaultConfigTeamFromTeam({...team, order: index})));
         }
         try {
             this.useNativeWindow = os.platform() === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2');
@@ -68,20 +62,13 @@ export class Config extends EventEmitter {
         }
     }
 
-    setConfigPath = (configPath: string) => {
-        this.configFilePath = configPath;
-    }
+    init = (configFilePath: string, appName: string, appPath: string) => {
+        this.configFilePath = configFilePath;
+        this.appName = appName;
+        this.appPath = appPath;
+        this.canUpgradeValue = this.checkWriteableApp();
 
-    // separating constructor from init so main can setup event listeners
-    init = (): void => {
         this.reload();
-
-        ipcMain.handle(GET_CONFIGURATION, this.handleGetConfiguration);
-        ipcMain.handle(GET_LOCAL_CONFIGURATION, this.handleGetLocalConfiguration);
-        ipcMain.on(UPDATE_CONFIGURATION, this.updateConfiguration);
-        if (process.platform === 'darwin' || process.platform === 'win32') {
-            nativeTheme.on('updated', this.handleUpdateTheme);
-        }
     }
 
     initRegistry = () => {
@@ -114,76 +101,6 @@ export class Config extends EventEmitter {
         this.emit('update', this.combinedData);
     }
 
-    /*****************
-     * Event handlers
-     *****************/
-
-    private updateConfiguration = (event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []): Partial<ConfigType> | undefined => {
-        log.debug('Config.updateConfiguration', properties);
-
-        if (properties.length) {
-            const newData = properties.reduce((obj, data) => {
-                (obj as any)[data.key] = data.data;
-                return obj;
-            }, {} as Partial<ConfigType>);
-            this.setMultiple(newData);
-        }
-
-        return this.localConfigData;
-    }
-
-    private handleGetConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof CombinedConfig) => {
-        log.debug('Config.handleGetConfiguration', option);
-
-        const config = {...this.combinedData};
-        if (option) {
-            return config[option];
-        }
-        return config;
-    }
-
-    private handleGetLocalConfiguration = (event: Electron.IpcMainInvokeEvent, option: keyof ConfigType) => {
-        log.debug('Config.handleGetLocalConfiguration', option);
-
-        const config: Partial<LocalConfiguration> = {...this.localConfigData};
-        config.appName = app.name;
-        config.enableServerManagement = this.combinedData?.enableServerManagement;
-        config.canUpgrade = this.canUpgrade;
-        if (option) {
-            return config[option];
-        }
-        return config;
-    }
-
-    /**
-     * Detects changes in darkmode if it is windows or osx, updates the config and propagates the changes
-     * @emits 'darkModeChange'
-     */
-    private handleUpdateTheme = () => {
-        log.debug('Config.handleUpdateTheme');
-
-        if (this.combinedData && this.combinedData.darkMode !== nativeTheme.shouldUseDarkColors) {
-            this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
-            this.emit('darkModeChange', this.combinedData.darkMode);
-        }
-    }
-
-    /**
-     * Gets the teams from registry into the config object and reload
-     *
-     * @param {object} registryData Team configuration from the registry and if teams can be managed by user
-     */
-
-    private onLoadRegistry = (registryData: Partial<RegistryConfigType>): void => {
-        log.verbose('Config.loadRegistry', {registryData});
-
-        this.registryConfigData = registryData;
-        if (this.registryConfigData.teams) {
-            this.predefinedTeams.push(...this.registryConfigData.teams.map((team, index) => getDefaultConfigTeamFromTeam({...team, order: index})));
-        }
-        this.reload();
-    }
-
     /*********************
      * Setters and Getters
      *********************/
@@ -197,6 +114,10 @@ export class Config extends EventEmitter {
     set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
         log.debug('Config.set');
         this.setMultiple({[key]: data});
+    }
+
+    setConfigPath = (configPath: string) => {
+        this.configFilePath = configPath;
     }
 
     /**
@@ -251,6 +172,9 @@ export class Config extends EventEmitter {
     }
     get localTeams() {
         return this.localConfigData?.teams ?? defaultPreferences.teams;
+    }
+    get predefinedTeams() {
+        return this.predefinedServers;
     }
     get enableHardwareAcceleration() {
         return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;
@@ -326,6 +250,22 @@ export class Config extends EventEmitter {
     }
 
     /**
+     * Gets the teams from registry into the config object and reload
+     *
+     * @param {object} registryData Team configuration from the registry and if teams can be managed by user
+     */
+
+    private onLoadRegistry = (registryData: Partial<RegistryConfigType>): void => {
+        log.debug('Config.loadRegistry', {registryData});
+
+        this.registryConfigData = registryData;
+        if (this.registryConfigData.teams) {
+            this.predefinedTeams.push(...this.registryConfigData.teams.map((team, index) => getDefaultConfigTeamFromTeam({...team, order: index})));
+        }
+        this.reload();
+    }
+
+    /**
      * Config file loading methods
      */
 
@@ -337,11 +277,11 @@ export class Config extends EventEmitter {
      * @emits {error} emitted if saving local config data to file fails
      */
     private saveLocalConfigData = (): void => {
-        if (!this.localConfigData) {
+        if (!(this.configFilePath && this.localConfigData)) {
             return;
         }
 
-        log.info('Saving config data to file...');
+        log.verbose('Saving config data to file...');
 
         try {
             this.writeFile(this.configFilePath, this.localConfigData, (error: NodeJS.ErrnoException | null) => {
@@ -363,6 +303,10 @@ export class Config extends EventEmitter {
      * Loads and returns locally stored config data from the filesystem or returns app defaults if no file is found
      */
     private loadLocalConfigFile = (): AnyConfig => {
+        if (!this.configFilePath) {
+            throw new Error('Unable to read from config, no path specified');
+        }
+
         let configData: AnyConfig;
         try {
             configData = JSON.parse(fs.readFileSync(this.configFilePath, 'utf8'));
@@ -388,6 +332,10 @@ export class Config extends EventEmitter {
      * @param {*} data locally stored data
      */
     private checkForConfigUpdates = (data: AnyConfig) => {
+        if (!this.configFilePath) {
+            throw new Error('Config not initialized');
+        }
+
         let configData = data;
         if (this.defaultConfigData) {
             try {
@@ -413,6 +361,10 @@ export class Config extends EventEmitter {
      * Properly combines all sources of data into a single, manageable set of all config data
      */
     private regenerateCombinedConfigData = () => {
+        if (!this.appName) {
+            throw new Error('Config not initialized, cannot regenerate');
+        }
+
         // combine all config data in the correct order
         this.combinedData = Object.assign({},
             this.defaultConfigData,
@@ -427,10 +379,7 @@ export class Config extends EventEmitter {
         delete (this.combinedData as any).defaultTeams;
 
         if (this.combinedData) {
-            if (process.platform === 'darwin' || process.platform === 'win32') {
-                this.combinedData.darkMode = nativeTheme.shouldUseDarkColors;
-            }
-            this.combinedData.appName = app.name;
+            this.combinedData.appName = this.appName;
         }
     }
 
@@ -458,9 +407,13 @@ export class Config extends EventEmitter {
     }
 
     private checkWriteableApp = () => {
+        if (!this.appPath) {
+            throw new Error('Config not initialized, cannot regenerate');
+        }
+
         if (process.platform === 'win32') {
             try {
-                fs.accessSync(path.join(path.dirname(app.getAppPath()), '../../'), fs.constants.W_OK);
+                fs.accessSync(path.join(path.dirname(this.appPath), '../../'), fs.constants.W_OK);
 
                 // check to make sure that app-update.yml exists
                 if (!fs.existsSync(path.join(process.resourcesPath, 'app-update.yml'))) {
@@ -468,7 +421,7 @@ export class Config extends EventEmitter {
                     return false;
                 }
             } catch (error) {
-                log.info(`${app.getAppPath()}: ${error}`);
+                log.info(`${this.appPath}: ${error}`);
                 log.warn('autoupgrade disabled');
                 return false;
             }
@@ -487,14 +440,5 @@ export class Config extends EventEmitter {
     }
 }
 
-const config = new Config(configPath);
+const config = new Config();
 export default config;
-
-ipcMain.on(UPDATE_PATHS, () => {
-    log.debug('Config.UPDATE_PATHS');
-
-    config.setConfigPath(configPath);
-    if (config.combinedData) {
-        config.reload();
-    }
-});

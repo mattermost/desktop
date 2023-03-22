@@ -57,14 +57,14 @@ declare global {
             getOrderedTabsForServer: (serverId: string) => Promise<MattermostTab[]>;
             onUpdateServers: (listener: () => void) => void;
 
-            getConfiguration: (option?: keyof CombinedConfig) => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
+            getConfiguration: () => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
             getVersion: () => Promise<{name: string; version: string}>;
             getDarkMode: () => Promise<boolean>;
             requestHasDownloads: () => Promise<boolean>;
             getFullScreenStatus: () => Promise<boolean>;
             getAvailableSpellCheckerLanguages: () => Promise<string[]>;
             getAvailableLanguages: () => Promise<string[]>;
-            getLocalConfiguration: (option?: keyof LocalConfiguration) => Promise<LocalConfiguration[keyof LocalConfiguration] | Partial<LocalConfiguration>>;
+            getLocalConfiguration: () => Promise<LocalConfiguration[keyof LocalConfiguration] | Partial<LocalConfiguration>>;
             getDownloadLocation: (downloadLocation?: string) => Promise<string>;
             getLanguageInformation: () => Promise<Language>;
 
