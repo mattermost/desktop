@@ -52,7 +52,6 @@ describe('main/server/serverManager', () => {
             })});
 
             await serverManager.updateServerInfos(['server-1']);
-            console.log('peepee');
 
             expect(serverManager.tabs.get('tab-2').isOpen).toBe(true);
             expect(serverManager.tabs.get('tab-3').isOpen).toBe(true);
