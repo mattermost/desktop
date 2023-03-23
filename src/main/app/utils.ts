@@ -9,10 +9,12 @@ import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeIma
 import log, {LevelOption} from 'electron-log';
 
 import {MigrationInfo} from 'types/config';
+import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
 
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
+import {MattermostServer} from 'common/servers/MattermostServer';
 import urlUtils from 'common/utils/url';
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
 
@@ -21,6 +23,8 @@ import {migrationInfoPath, updatePaths} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
+import {ServerInfo} from 'main/server/serverInfo';
+import ServerManager from 'main/server/serverManager';
 import {setTrayMenu} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 
@@ -234,4 +238,19 @@ export function migrateMacAppStore() {
 export function setLoggingLevel(level: LevelOption) {
     log.transports.console.level = level;
     log.transports.file.level = level;
+}
+
+export async function updateServerInfos(servers: MattermostServer[]) {
+    const map: Map<string, RemoteInfo> = new Map();
+    await Promise.all(servers.map((srv) => {
+        const serverInfo = new ServerInfo(srv);
+        return serverInfo.fetchRemoteInfo().
+            then((data) => {
+                map.set(srv.id, data);
+            }).
+            catch((error) => {
+                log.warn('Could not get server info for', srv.name, error);
+            });
+    }));
+    ServerManager.updateRemoteInfos(map);
 }

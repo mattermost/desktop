@@ -5,8 +5,6 @@ import {TAB_MESSAGING, TAB_FOCALBOARD, TAB_PLAYBOOKS} from 'common/tabs/TabView'
 import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
 import Utils from 'common/utils/util';
 
-import {ServerInfo} from 'main/server/serverInfo';
-
 import {ServerManager} from './serverManager';
 
 jest.mock('common/config', () => ({
@@ -24,7 +22,7 @@ jest.mock('main/server/serverInfo', () => ({
 }));
 
 describe('main/server/serverManager', () => {
-    describe('updateServerInfos', () => {
+    describe('updateRemoteInfos', () => {
         const serverManager = new ServerManager();
 
         beforeEach(() => {
@@ -39,64 +37,64 @@ describe('main/server/serverManager', () => {
                 ['tab-3', {id: 'tab-3', name: TAB_FOCALBOARD}],
             ]);
             serverManager.tabOrder = new Map([['server-1', ['tab-1', 'tab-2', 'tab-3']]]);
+            serverManager.persistServers = jest.fn();
             Utils.isVersionGreaterThanOrEqualTo.mockImplementation((version) => version === '6.0.0');
         });
 
+        it('should not save when there is nothing to update', () => {
+            serverManager.updateRemoteInfos(new Map([['server-1', {
+                siteURL: 'http://server-1.com',
+                serverVersion: '6.0.0',
+                hasPlaybooks: false,
+                hasFocalboard: false,
+            }]]));
+
+            expect(serverManager.persistServers).not.toHaveBeenCalled();
+        });
+
         it('should open all tabs', async () => {
-            ServerInfo.mockReturnValue({promise: Promise.resolve({
-                id: 'server-1',
+            serverManager.updateRemoteInfos(new Map([['server-1', {
                 siteURL: 'http://server-1.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
-            })});
-
-            await serverManager.updateServerInfos(['server-1']);
+            }]]));
 
             expect(serverManager.tabs.get('tab-2').isOpen).toBe(true);
             expect(serverManager.tabs.get('tab-3').isOpen).toBe(true);
         });
 
         it('should open only playbooks', async () => {
-            ServerInfo.mockReturnValue({promise: Promise.resolve({
-                id: 'server-1',
+            serverManager.updateRemoteInfos(new Map([['server-1', {
                 siteURL: 'http://server-1.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: false,
-            })});
-
-            await serverManager.updateServerInfos(['server-1']);
+            }]]));
 
             expect(serverManager.tabs.get('tab-2').isOpen).toBe(true);
             expect(serverManager.tabs.get('tab-3').isOpen).toBeUndefined();
         });
 
         it('should open none when server version is too old', async () => {
-            ServerInfo.mockReturnValue({promise: Promise.resolve({
-                id: 'server-1',
+            serverManager.updateRemoteInfos(new Map([['server-1', {
                 siteURL: 'http://server-1.com',
                 serverVersion: '5.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
-            })});
-
-            await serverManager.updateServerInfos(['server-1']);
+            }]]));
 
             expect(serverManager.tabs.get('tab-2').isOpen).toBeUndefined();
             expect(serverManager.tabs.get('tab-3').isOpen).toBeUndefined();
         });
 
         it('should update server URL using site URL', async () => {
-            ServerInfo.mockReturnValue({promise: Promise.resolve({
-                id: 'server-1',
+            serverManager.updateRemoteInfos(new Map([['server-1', {
                 siteURL: 'http://server-2.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
-            })});
-
-            await serverManager.updateServerInfos(['server-1']);
+            }]]));
 
             expect(serverManager.servers.get('server-1').url.toString()).toBe('http://server-2.com/');
         });

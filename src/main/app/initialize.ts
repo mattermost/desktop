@@ -39,6 +39,12 @@ import {
     GET_LOCAL_CONFIGURATION,
     UPDATE_CONFIGURATION,
     UPDATE_PATHS,
+    UPDATE_SERVER_ORDER,
+    UPDATE_TAB_ORDER,
+    GET_LAST_ACTIVE,
+    GET_ORDERED_SERVERS,
+    GET_ORDERED_TABS_FOR_SERVER,
+    SERVERS_MODIFIED,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -89,6 +95,9 @@ import {
     handleSwitchTab,
     handleUpdateLastActive,
     handlePingDomain,
+    handleGetOrderedServers,
+    handleGetOrderedTabsForServer,
+    handleGetLastActive,
 } from './intercom';
 import {
     clearAppCache,
@@ -99,6 +108,7 @@ import {
     wasUpdated,
     initCookieManager,
     migrateMacAppStore,
+    updateServerInfos,
 } from './utils';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
@@ -281,10 +291,22 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(GET_CONFIGURATION, handleGetConfiguration);
     ipcMain.handle(GET_LOCAL_CONFIGURATION, handleGetLocalConfiguration);
     ipcMain.on(UPDATE_CONFIGURATION, updateConfiguration);
+
+    ipcMain.on(UPDATE_SERVER_ORDER, (event, serverOrder) => ServerManager.updateServerOrder(serverOrder));
+    ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, tabOrder) => ServerManager.updateTabOrder(serverId, tabOrder));
+    ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
+    ipcMain.handle(GET_ORDERED_SERVERS, handleGetOrderedServers);
+    ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedTabsForServer);
 }
 
 async function initializeAfterAppReady() {
-    await ServerManager.init();
+    ServerManager.reloadFromConfig();
+    updateServerInfos(ServerManager.getAllServers());
+    ServerManager.on(SERVERS_MODIFIED, (serverIds?: string[]) => {
+        if (serverIds && serverIds.length) {
+            updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
+        }
+    });
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;

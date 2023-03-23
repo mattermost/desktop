@@ -126,6 +126,7 @@ jest.mock('main/app/utils', () => ({
     updateSpellCheckerLocales: jest.fn(),
     wasUpdated: jest.fn(),
     initCookieManager: jest.fn(),
+    updateServerInfos: jest.fn(),
 }));
 jest.mock('main/appState', () => ({
     on: jest.fn(),
@@ -149,7 +150,9 @@ jest.mock('main/notifications', () => ({
 }));
 jest.mock('main/ParseArgs', () => jest.fn());
 jest.mock('main/server/serverManager', () => ({
-    init: jest.fn(),
+    reloadFromConfig: jest.fn(),
+    getAllServers: jest.fn(),
+    on: jest.fn(),
 }));
 jest.mock('main/tray/tray', () => ({
     refreshTrayImages: jest.fn(),

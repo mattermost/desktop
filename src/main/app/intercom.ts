@@ -61,6 +61,20 @@ export function handleOpenTab(event: IpcMainEvent, tabId: string) {
     WindowManager.switchTab(tabId);
 }
 
+export function handleGetOrderedServers() {
+    return ServerManager.getOrderedServers().map((srv) => srv.toMattermostTeam());
+}
+
+export function handleGetOrderedTabsForServer(event: IpcMainInvokeEvent, serverId: string) {
+    return ServerManager.getOrderedTabsForServer(serverId).map((tab) => tab.toMattermostTab());
+}
+
+export function handleGetLastActive() {
+    const server = ServerManager.getLastActiveServer();
+    const tab = ServerManager.getLastActiveTabForServer(server.id);
+    return {server: server.id, tab: tab.id};
+}
+
 function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
     log.debug('Intercom.handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
 
