@@ -9,7 +9,7 @@ import urlUtils from 'common/utils/url';
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
 import {localizeMessage} from 'main/i18nManager';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 import {destroyTray} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 

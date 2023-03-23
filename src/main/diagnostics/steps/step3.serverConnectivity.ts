@@ -4,7 +4,7 @@
 import {ElectronLog} from 'electron-log';
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 
 import DiagnosticsStep from '../DiagnosticStep';
 

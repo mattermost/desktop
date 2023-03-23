@@ -26,7 +26,7 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
 import {localizeMessage} from 'main/i18nManager';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 

@@ -12,7 +12,7 @@ import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 import ModalManager from 'main/views/modalManager';
 import WindowManager from 'main/windows/windowManager';
 

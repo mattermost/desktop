@@ -12,7 +12,7 @@ import {getTabDisplayName, TabType} from 'common/tabs/TabView';
 import {Config} from 'common/config';
 
 import {localizeMessage} from 'main/i18nManager';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
 import downloadsManager from 'main/downloadsManager';

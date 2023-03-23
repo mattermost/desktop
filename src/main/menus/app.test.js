@@ -6,7 +6,7 @@
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {localizeMessage} from 'main/i18nManager';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {createTemplate} from './app';
@@ -50,7 +50,7 @@ jest.mock('macos-notification-state', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-jest.mock('main/server/serverManager', () => ({
+jest.mock('common/servers/serverManager', () => ({
     hasServers: jest.fn(),
     getOrderedServers: jest.fn(),
     getOrderedTabsForServer: jest.fn(),

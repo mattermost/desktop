@@ -3,7 +3,7 @@
 
 'use strict';
 
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 
 import {createTemplate} from './tray';
 
@@ -11,7 +11,7 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
-jest.mock('main/server/serverManager', () => ({
+jest.mock('common/servers/serverManager', () => ({
     getOrderedServers: jest.fn(),
 }));
 

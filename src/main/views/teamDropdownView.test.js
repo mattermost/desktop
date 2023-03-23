@@ -29,7 +29,7 @@ jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
 
-jest.mock('main/server/serverManager', () => ({
+jest.mock('common/servers/serverManager', () => ({
     on: jest.fn(),
     getOrderedServers: jest.fn().mockReturnValue([]),
 }));

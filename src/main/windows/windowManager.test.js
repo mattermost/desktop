@@ -10,7 +10,7 @@ import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 import {
     getAdjustedWindowBoundaries,
     resetScreensharePermissionsMacOS,
@@ -87,7 +87,7 @@ jest.mock('../downloadsManager', () => ({
 }));
 
 jest.mock('./callsWidgetWindow');
-jest.mock('main/server/serverManager', () => ({
+jest.mock('common/servers/serverManager', () => ({
     getAllServers: jest.fn(),
     getServer: jest.fn(),
     on: jest.fn(),

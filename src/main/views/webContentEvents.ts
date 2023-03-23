@@ -9,7 +9,7 @@ import urlUtils from 'common/utils/url';
 
 import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 
 import WindowManager from '../windows/windowManager';
 

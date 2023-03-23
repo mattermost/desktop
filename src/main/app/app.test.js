@@ -20,7 +20,7 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('main/server/serverManager', () => ({
+jest.mock('common/servers/serverManager', () => ({
     getServer: (name) => ({
         name,
         url: 'http://server-1.com',

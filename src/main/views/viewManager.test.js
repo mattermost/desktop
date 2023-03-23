@@ -8,7 +8,7 @@ import {dialog, ipcMain} from 'electron';
 
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN, SET_ACTIVE_VIEW} from 'common/communication';
 
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 
 import {MattermostView} from './MattermostView';
 import {ViewManager} from './viewManager';
@@ -54,7 +54,7 @@ jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
 }));
 
-jest.mock('main/server/serverManager', () => ({
+jest.mock('common/servers/serverManager', () => ({
     getOrderedTabsForServer: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),

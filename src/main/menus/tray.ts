@@ -7,7 +7,7 @@ import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
 
 import WindowManager from 'main/windows/windowManager';
 import {localizeMessage} from 'main/i18nManager';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 
 export function createTemplate() {
     const teams = ServerManager.getOrderedServers();

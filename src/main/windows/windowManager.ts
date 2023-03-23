@@ -47,7 +47,7 @@ import Config from 'common/config';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import downloadsManager from 'main/downloadsManager';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 import {MattermostView} from 'main/views/MattermostView';
 
 import {

@@ -19,7 +19,7 @@ import {
 } from 'common/communication';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import * as AppState from '../appState';

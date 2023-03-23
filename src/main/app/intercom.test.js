@@ -5,7 +5,7 @@ import Config from 'common/config';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
 import {getLocalURLString, getLocalPreload} from 'main/utils';
-import ServerManager from 'main/server/serverManager';
+import ServerManager from 'common/servers/serverManager';
 import ModalManager from 'main/views/modalManager';
 import WindowManager from 'main/windows/windowManager';
 
@@ -26,7 +26,7 @@ jest.mock('common/tabs/TabView', () => ({
     getDefaultTeamWithTabsFromTeam: jest.fn(),
 }));
 jest.mock('main/notifications', () => ({}));
-jest.mock('main/server/serverManager', () => ({
+jest.mock('common/servers/serverManager', () => ({
     toggleTab: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),

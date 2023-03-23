@@ -21,7 +21,7 @@ jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
 }));
 
-describe('main/server/serverManager', () => {
+describe('common/servers/serverManager', () => {
     describe('updateRemoteInfos', () => {
         const serverManager = new ServerManager();
 

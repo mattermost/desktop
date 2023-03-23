@@ -149,7 +149,7 @@ jest.mock('main/notifications', () => ({
     displayDownloadCompleted: jest.fn(),
 }));
 jest.mock('main/ParseArgs', () => jest.fn());
-jest.mock('main/server/serverManager', () => ({
+jest.mock('common/servers/serverManager', () => ({
     reloadFromConfig: jest.fn(),
     getAllServers: jest.fn(),
     on: jest.fn(),
