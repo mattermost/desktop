@@ -329,4 +329,18 @@ describe('common/utils/url', () => {
             expect(urlUtils.isCallsPopOutURL()).toBe(false);
         });
     });
+
+    describe('escapeRegExp', () => {
+        it('simple', () => {
+            expect(urlUtils.escapeRegExp('simple')).toBe('simple');
+        });
+
+        it('path', () => {
+            expect(urlUtils.escapeRegExp('/path/')).toBe('/path/');
+        });
+
+        it('regexp', () => {
+            expect(urlUtils.escapeRegExp('/path(a+)+')).toBe('/path\\(a\\+\\)\\+');
+        });
+    });
 });
