@@ -247,18 +247,15 @@ export default class CallsWidgetWindow extends EventEmitter {
         // Let the webContentsEventManager handle links that try to open a new window
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
 
-        this.popOut.webContents.on('will-redirect', (event, url) => {
-            const parsedURL = urlUtils.parseURL(url);
-            if (!parsedURL) {
-                event.preventDefault();
-                return;
-            }
+        // Need to capture and handle redirects for security.
+        this.popOut.webContents.on('will-redirect', this.onWillRedirect);
+    }
 
-            const serverURL = this.mainView.serverInfo.server.url;
-            if (urlUtils.isInternalURL(serverURL, parsedURL) && !urlUtils.isPluginUrl(serverURL, parsedURL) && !urlUtils.isManagedResource(serverURL, parsedURL)) {
-                event.preventDefault();
-            }
-        });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private onWillRedirect = (event: Event, url: string) => {
+        // There's no reason we would allow a redirect from the call's popout. Eventually we may, so revise then.
+        // Note for the future: the code from https://github.com/mattermost/desktop/pull/2580 will not work for us.
+        event.preventDefault();
     }
 
     private onPopOutFocus = () => {
