@@ -1,1 +1,8 @@
-{}
+{
+    "label.add": "Pridėti",
+    "label.accept": "Priimti",
+    "common.tabs.TAB_PLAYBOOKS": "Žaidimų knygos",
+    "common.tabs.TAB_MESSAGING": "Kanalai",
+    "common.tabs.TAB_FOCALBOARD": "Lentos",
+    "common.permissions.canBasicAuth": "Žiniatinklio autentifikavimas"
+}
