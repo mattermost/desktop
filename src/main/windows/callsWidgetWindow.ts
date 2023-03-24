@@ -250,6 +250,19 @@ export default class CallsWidgetWindow extends EventEmitter {
 
         // Let the webContentsEventManager handle links that try to open a new window
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
+
+        this.popOut.webContents.on('will-redirect', (event, url) => {
+            const parsedURL = urlUtils.parseURL(url);
+            if (!parsedURL) {
+                event.preventDefault();
+                return;
+            }
+
+            const serverURL = this.mainView.serverInfo.server.url;
+            if (urlUtils.isInternalURL(serverURL, parsedURL) && !urlUtils.isPluginUrl(serverURL, parsedURL) && !urlUtils.isManagedResource(serverURL, parsedURL)) {
+                event.preventDefault();
+            }
+        });
     }
 
     private onPopOutFocus = () => {
