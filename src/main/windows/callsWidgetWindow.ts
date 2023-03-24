@@ -2,25 +2,21 @@
 // See LICENSE.txt for license information.
 
 import {EventEmitter} from 'events';
-import {BrowserWindow, Rectangle, ipcMain, IpcMainEvent} from 'electron';
+import {BrowserWindow, ipcMain, IpcMainEvent, Rectangle} from 'electron';
 import log from 'electron-log';
 
 import {
-    CallsWidgetWindowConfig,
+    CallsJoinedCallMessage,
     CallsWidgetResizeMessage,
     CallsWidgetShareScreenMessage,
-    CallsJoinedCallMessage,
+    CallsWidgetWindowConfig,
 } from 'types/calls';
 
 import {MattermostView} from 'main/views/MattermostView';
 
 import {getLocalPreload} from 'main/utils';
 
-import {
-    MINIMUM_CALLS_WIDGET_WIDTH,
-    MINIMUM_CALLS_WIDGET_HEIGHT,
-    CALLS_PLUGIN_ID,
-} from 'common/utils/constants';
+import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import urlUtils, {getFormattedPathName} from 'common/utils/url';
 import {
@@ -231,7 +227,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.setBounds(initialBounds);
     }
 
-    private onPopOutOpen = ({url}: {url: string}) => {
+    private onPopOutOpen = ({url}: { url: string }) => {
         if (urlUtils.isCallsPopOutURL(this.mainView.serverInfo.server.url, url, this.config.callID)) {
             return {
                 action: 'allow' as const,
