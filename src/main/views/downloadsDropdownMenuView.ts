@@ -20,6 +20,7 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
 } from 'common/communication';
+import Config from 'common/config';
 import {
     DOWNLOADS_DROPDOWN_FULL_WIDTH,
     DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT,
@@ -41,12 +42,12 @@ export default class DownloadsDropdownMenuView {
     window: BrowserWindow;
     windowBounds: Electron.Rectangle;
 
-    constructor(window: BrowserWindow, darkMode: boolean) {
+    constructor(window: BrowserWindow) {
         this.open = false;
         this.item = undefined;
         this.coordinates = undefined;
         this.window = window;
-        this.darkMode = darkMode;
+        this.darkMode = Config.darkMode;
 
         this.windowBounds = this.window.getContentBounds();
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);

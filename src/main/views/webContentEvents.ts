@@ -191,7 +191,7 @@ export class WebContentsEventManager {
                     this.popupWindow = {
                         win: new BrowserWindow({
                             backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-                            //parent: WindowManager.getMainWindow(),
+                            //parent: MainWindow.get(),
                             show: false,
                             center: true,
                             webPreferences: {

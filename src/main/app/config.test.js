@@ -46,7 +46,6 @@ jest.mock('main/tray/tray', () => ({
 jest.mock('main/windows/windowManager', () => ({
     handleUpdateConfig: jest.fn(),
     sendToRenderer: jest.fn(),
-    initializeCurrentServerId: jest.fn(),
 }));
 
 describe('main/app/config', () => {

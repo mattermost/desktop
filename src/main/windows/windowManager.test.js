@@ -4,9 +4,8 @@
 /* eslint-disable max-lines */
 'use strict';
 
-import {app, systemPreferences, desktopCapturer} from 'electron';
+import {systemPreferences, desktopCapturer} from 'electron';
 
-import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
@@ -17,9 +16,11 @@ import {
     openScreensharePermissionsSettingsMacOS,
 } from 'main/utils';
 
+import ViewManager from '../views/viewManager';
+
 import {WindowManager} from './windowManager';
-import createMainWindow from './mainWindow';
-import {createSettingsWindow} from './settingsWindow';
+import MainWindow from './mainWindow';
+import SettingsWindow from './settingsWindow';
 
 import CallsWidgetWindow from './callsWidgetWindow';
 
@@ -69,19 +70,27 @@ jest.mock('../utils', () => ({
     resetScreensharePermissionsMacOS: jest.fn(),
 }));
 jest.mock('../views/viewManager', () => ({
-    ViewManager: jest.fn(),
-    LoadingScreenState: {
-        HIDDEN: 3,
-    },
+    reloadConfiguration: jest.fn(),
+    showById: jest.fn(),
+    getCurrentView: jest.fn(),
+    getView: jest.fn(),
+    isLoadingScreenHidden: jest.fn(),
+    isViewClosed: jest.fn(),
+    openClosedTab: jest.fn(),
+    setLoadingScreenBounds: jest.fn(),
+    handleDeepLink: jest.fn(),
 }));
 jest.mock('../CriticalErrorHandler', () => jest.fn());
 jest.mock('../views/teamDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
 jest.mock('./settingsWindow', () => ({
-    createSettingsWindow: jest.fn(),
+    show: jest.fn(),
+    get: jest.fn(),
 }));
-jest.mock('./mainWindow', () => jest.fn());
+jest.mock('./mainWindow', () => ({
+    get: jest.fn(),
+}));
 jest.mock('../downloadsManager', () => ({
     getDownloads: () => {},
 }));
@@ -90,6 +99,7 @@ jest.mock('./callsWidgetWindow');
 jest.mock('common/servers/serverManager', () => ({
     getAllServers: jest.fn(),
     getServer: jest.fn(),
+    getCurrentServer: jest.fn(),
     on: jest.fn(),
     lookupTabByURL: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
@@ -101,112 +111,49 @@ describe('main/windows/windowManager', () => {
     describe('handleUpdateConfig', () => {
         const windowManager = new WindowManager();
 
-        beforeEach(() => {
-            windowManager.viewManager = {
-                reloadConfiguration: jest.fn(),
-            };
-        });
-
         it('should reload config', () => {
             windowManager.handleUpdateConfig();
-            expect(windowManager.viewManager.reloadConfiguration).toHaveBeenCalled();
-        });
-    });
-
-    describe('showSettingsWindow', () => {
-        const windowManager = new WindowManager();
-        windowManager.showMainWindow = jest.fn();
-
-        afterEach(() => {
-            jest.resetAllMocks();
-            delete windowManager.settingsWindow;
-            delete windowManager.mainWindow;
-        });
-
-        it('should show settings window if it exists', () => {
-            const settingsWindow = {show: jest.fn()};
-            windowManager.settingsWindow = settingsWindow;
-            windowManager.showSettingsWindow();
-            expect(settingsWindow.show).toHaveBeenCalled();
-        });
-
-        it('should create windows if they dont exist and delete the settings window when it is closed', () => {
-            let callback;
-            createSettingsWindow.mockReturnValue({on: (event, cb) => {
-                if (event === 'closed') {
-                    callback = cb;
-                }
-            }});
-            windowManager.showSettingsWindow();
-            expect(windowManager.showMainWindow).toHaveBeenCalled();
-            expect(createSettingsWindow).toHaveBeenCalled();
-            expect(windowManager.settingsWindow).toBeDefined();
-
-            callback();
-            expect(windowManager.settingsWindow).toBeUndefined();
+            expect(ViewManager.reloadConfiguration).toHaveBeenCalled();
         });
     });
 
     describe('showMainWindow', () => {
         const windowManager = new WindowManager();
-        windowManager.viewManager = {
-            handleDeepLink: jest.fn(),
-            updateMainWindow: jest.fn(),
-        };
         windowManager.initializeViewManager = jest.fn();
 
+        const mainWindow = {
+            visible: false,
+            isVisible: () => mainWindow.visible,
+            show: jest.fn().mockImplementation(() => {
+                mainWindow.visible = true;
+            }),
+            focus: jest.fn(),
+            on: jest.fn(),
+            once: jest.fn(),
+            webContents: {
+                setWindowOpenHandler: jest.fn(),
+            },
+        };
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(mainWindow);
+        });
+
         afterEach(() => {
-            delete windowManager.mainWindow;
+            jest.resetAllMocks();
         });
 
         it('should show main window if it exists and focus it if it is already visible', () => {
-            windowManager.mainWindow = {
-                visible: false,
-                isVisible: () => windowManager.mainWindow.visible,
-                show: jest.fn().mockImplementation(() => {
-                    windowManager.mainWindow.visible = true;
-                }),
-                focus: jest.fn(),
-            };
+            windowManager.showMainWindow();
+            expect(mainWindow.show).toHaveBeenCalled();
 
             windowManager.showMainWindow();
-            expect(windowManager.mainWindow.show).toHaveBeenCalled();
-
-            windowManager.showMainWindow();
-            expect(windowManager.mainWindow.focus).toHaveBeenCalled();
-        });
-
-        it('should quit the app when the main window fails to create', () => {
-            windowManager.showMainWindow();
-            expect(app.quit).toHaveBeenCalled();
-        });
-
-        it('should create the main window and add listeners', () => {
-            const window = {
-                on: jest.fn(),
-                once: jest.fn(),
-                webContents: {
-                    setWindowOpenHandler: jest.fn(),
-                },
-            };
-            createMainWindow.mockReturnValue(window);
-            windowManager.showMainWindow();
-            expect(windowManager.mainWindow).toBe(window);
-            expect(window.on).toHaveBeenCalled();
-            expect(window.webContents.setWindowOpenHandler).toHaveBeenCalled();
+            expect(mainWindow.focus).toHaveBeenCalled();
         });
 
         it('should open deep link when provided', () => {
-            const window = {
-                on: jest.fn(),
-                once: jest.fn(),
-                webContents: {
-                    setWindowOpenHandler: jest.fn(),
-                },
-            };
-            createMainWindow.mockReturnValue(window);
             windowManager.showMainWindow('mattermost://server-1.com/subpath');
-            expect(windowManager.viewManager.handleDeepLink).toHaveBeenCalledWith('mattermost://server-1.com/subpath');
+            expect(ViewManager.handleDeepLink).toHaveBeenCalledWith('mattermost://server-1.com/subpath');
         });
     });
 
@@ -223,11 +170,7 @@ describe('main/windows/windowManager', () => {
                 },
             },
         };
-        windowManager.viewManager = {
-            getCurrentView: () => view,
-            setLoadingScreenBounds: jest.fn(),
-        };
-        windowManager.mainWindow = {
+        const mainWindow = {
             getContentBounds: () => ({width: 800, height: 600}),
             getSize: () => [1000, 900],
         };
@@ -237,6 +180,8 @@ describe('main/windows/windowManager', () => {
 
         beforeEach(() => {
             jest.useFakeTimers();
+            MainWindow.get.mockReturnValue(mainWindow);
+            ViewManager.getCurrentView.mockReturnValue(view);
             getAdjustedWindowBoundaries.mockImplementation((width, height) => ({width, height}));
         });
 
@@ -250,7 +195,7 @@ describe('main/windows/windowManager', () => {
 
         it('should update loading screen and team dropdown bounds', () => {
             windowManager.handleResizeMainWindow();
-            expect(windowManager.viewManager.setLoadingScreenBounds).toHaveBeenCalled();
+            expect(ViewManager.setLoadingScreenBounds).toHaveBeenCalled();
             expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
         });
 
@@ -285,12 +230,7 @@ describe('main/windows/windowManager', () => {
                 },
             },
         };
-        windowManager.viewManager = {
-            getCurrentView: () => view,
-            setLoadingScreenBounds: jest.fn(),
-            loadingScreenState: 3,
-        };
-        windowManager.mainWindow = {
+        const mainWindow = {
             getContentBounds: () => ({width: 1000, height: 900}),
             getSize: () => [1000, 900],
         };
@@ -299,25 +239,29 @@ describe('main/windows/windowManager', () => {
         };
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(mainWindow);
+            ViewManager.getCurrentView.mockReturnValue(view);
             getAdjustedWindowBoundaries.mockImplementation((width, height) => ({width, height}));
         });
 
         afterEach(() => {
             windowManager.isResizing = false;
-            jest.resetAllMocks();
+            jest.clearAllMocks();
         });
 
         it('should update loading screen and team dropdown bounds', () => {
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
-            expect(windowManager.viewManager.setLoadingScreenBounds).toHaveBeenCalled();
+            expect(ViewManager.setLoadingScreenBounds).toHaveBeenCalled();
             expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
         });
 
         it('should not resize if the app is already resizing', () => {
             windowManager.isResizing = true;
+            ViewManager.isLoadingScreenHidden.mockReturnValue(true);
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
+            expect(event.preventDefault).toHaveBeenCalled();
             expect(view.setBounds).not.toHaveBeenCalled();
         });
 
@@ -342,12 +286,14 @@ describe('main/windows/windowManager', () => {
                 },
             },
         };
-        windowManager.mainWindow = {
+        const mainWindow = {
             getContentBounds: () => ({width: 800, height: 600}),
             getSize: () => [1000, 900],
         };
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(mainWindow);
+            ViewManager.getCurrentView.mockReturnValue(view);
             getAdjustedWindowBoundaries.mockImplementation((width, height) => ({width, height}));
         });
 
@@ -356,17 +302,7 @@ describe('main/windows/windowManager', () => {
             jest.resetAllMocks();
         });
 
-        it('should not handle bounds if no window available', () => {
-            windowManager.handleResizedMainWindow();
-            expect(windowManager.isResizing).toBe(false);
-            expect(view.setBounds).not.toHaveBeenCalled();
-        });
-
         it('should use getContentBounds when the platform is different to linux', () => {
-            windowManager.viewManager = {
-                getCurrentView: () => view,
-            };
-
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'windows',
@@ -401,7 +337,7 @@ describe('main/windows/windowManager', () => {
 
     describe('restoreMain', () => {
         const windowManager = new WindowManager();
-        windowManager.mainWindow = {
+        const mainWindow = {
             isVisible: jest.fn(),
             isMinimized: jest.fn(),
             restore: jest.fn(),
@@ -409,134 +345,61 @@ describe('main/windows/windowManager', () => {
             focus: jest.fn(),
         };
 
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(mainWindow);
+        });
+
         afterEach(() => {
             jest.resetAllMocks();
-            delete windowManager.settingsWindow;
         });
 
         it('should restore main window if minimized', () => {
-            windowManager.mainWindow.isMinimized.mockReturnValue(true);
+            mainWindow.isMinimized.mockReturnValue(true);
             windowManager.restoreMain();
-            expect(windowManager.mainWindow.restore).toHaveBeenCalled();
+            expect(mainWindow.restore).toHaveBeenCalled();
         });
 
         it('should show main window if not visible or minimized', () => {
-            windowManager.mainWindow.isVisible.mockReturnValue(false);
-            windowManager.mainWindow.isMinimized.mockReturnValue(false);
+            mainWindow.isVisible.mockReturnValue(false);
+            mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
-            expect(windowManager.mainWindow.show).toHaveBeenCalled();
+            expect(mainWindow.show).toHaveBeenCalled();
         });
 
         it('should focus main window if visible and not minimized', () => {
-            windowManager.mainWindow.isVisible.mockReturnValue(true);
-            windowManager.mainWindow.isMinimized.mockReturnValue(false);
+            mainWindow.isVisible.mockReturnValue(true);
+            mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
-            expect(windowManager.mainWindow.focus).toHaveBeenCalled();
+            expect(mainWindow.focus).toHaveBeenCalled();
         });
 
         it('should focus settings window regardless of main window state if it exists', () => {
-            windowManager.settingsWindow = {
-                focus: jest.fn(),
-            };
+            const settingsWindow = {focus: jest.fn()};
+            SettingsWindow.get.mockReturnValue(settingsWindow);
 
-            windowManager.mainWindow.isVisible.mockReturnValue(false);
-            windowManager.mainWindow.isMinimized.mockReturnValue(false);
+            mainWindow.isVisible.mockReturnValue(false);
+            mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
-            expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
-            windowManager.settingsWindow.focus.mockClear();
+            expect(settingsWindow.focus).toHaveBeenCalled();
+            settingsWindow.focus.mockClear();
 
-            windowManager.mainWindow.isVisible.mockReturnValue(true);
-            windowManager.mainWindow.isMinimized.mockReturnValue(false);
+            mainWindow.isVisible.mockReturnValue(true);
+            mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
-            expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
-            windowManager.settingsWindow.focus.mockClear();
+            expect(settingsWindow.focus).toHaveBeenCalled();
+            settingsWindow.focus.mockClear();
 
-            windowManager.mainWindow.isVisible.mockReturnValue(false);
-            windowManager.mainWindow.isMinimized.mockReturnValue(true);
+            mainWindow.isVisible.mockReturnValue(false);
+            mainWindow.isMinimized.mockReturnValue(true);
             windowManager.restoreMain();
-            expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
-            windowManager.settingsWindow.focus.mockClear();
+            expect(settingsWindow.focus).toHaveBeenCalled();
+            settingsWindow.focus.mockClear();
 
-            windowManager.mainWindow.isVisible.mockReturnValue(true);
-            windowManager.mainWindow.isMinimized.mockReturnValue(true);
+            mainWindow.isVisible.mockReturnValue(true);
+            mainWindow.isMinimized.mockReturnValue(true);
             windowManager.restoreMain();
-            expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
-            windowManager.settingsWindow.focus.mockClear();
-        });
-    });
-
-    describe('flashFrame', () => {
-        const windowManager = new WindowManager();
-        windowManager.mainWindow = {
-            flashFrame: jest.fn(),
-        };
-        windowManager.settingsWindow = {
-            flashFrame: jest.fn(),
-        };
-
-        beforeEach(() => {
-            Config.notifications = {};
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-            Config.notifications = {};
-        });
-
-        it('linux/windows - should not flash frame when config item is not set', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'linux',
-            });
-            windowManager.flashFrame(true);
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(windowManager.mainWindow.flashFrame).not.toBeCalled();
-            expect(windowManager.settingsWindow.flashFrame).not.toBeCalled();
-        });
-
-        it('linux/windows - should flash frame when config item is set', () => {
-            Config.notifications = {
-                flashWindow: true,
-            };
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'linux',
-            });
-            windowManager.flashFrame(true);
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(windowManager.mainWindow.flashFrame).toBeCalledWith(true);
-        });
-
-        it('mac - should not bounce icon when config item is not set', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-            windowManager.flashFrame(true);
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(app.dock.bounce).not.toBeCalled();
-        });
-
-        it('mac - should bounce icon when config item is set', () => {
-            Config.notifications = {
-                bounceIcon: true,
-                bounceIconType: 'critical',
-            };
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-            windowManager.flashFrame(true);
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(app.dock.bounce).toHaveBeenCalledWith('critical');
+            expect(settingsWindow.focus).toHaveBeenCalled();
+            settingsWindow.focus.mockClear();
         });
     });
 
@@ -565,8 +428,6 @@ describe('main/windows/windowManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            delete windowManager.mainWindow;
-            delete windowManager.settingsWindow;
         });
 
         it('should do nothing when the windows arent set', () => {
@@ -578,13 +439,13 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should maximize when not maximized and vice versa', () => {
-            windowManager.mainWindow = mainWindow;
+            MainWindow.get.mockReturnValue(mainWindow);
 
-            windowManager.mainWindow.isMaximized.mockReturnValue(false);
+            mainWindow.isMaximized.mockReturnValue(false);
             windowManager.handleDoubleClick();
             expect(mainWindow.maximize).toHaveBeenCalled();
 
-            windowManager.mainWindow.isMaximized.mockReturnValue(true);
+            mainWindow.isMaximized.mockReturnValue(true);
             windowManager.handleDoubleClick();
             expect(mainWindow.unmaximize).toHaveBeenCalled();
         });
@@ -594,16 +455,15 @@ describe('main/windows/windowManager', () => {
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
-            windowManager.flashFrame(true);
 
             systemPreferences.getUserDefault.mockReturnValue('Minimize');
-            windowManager.settingsWindow = settingsWindow;
+            SettingsWindow.get.mockReturnValue(settingsWindow);
 
-            windowManager.settingsWindow.isMinimized.mockReturnValue(false);
+            settingsWindow.isMinimized.mockReturnValue(false);
             windowManager.handleDoubleClick(null, 'settings');
             expect(settingsWindow.minimize).toHaveBeenCalled();
 
-            windowManager.settingsWindow.isMinimized.mockReturnValue(true);
+            settingsWindow.isMinimized.mockReturnValue(true);
             windowManager.handleDoubleClick(null, 'settings');
             expect(settingsWindow.restore).toHaveBeenCalled();
 
@@ -615,9 +475,11 @@ describe('main/windows/windowManager', () => {
 
     describe('switchServer', () => {
         const windowManager = new WindowManager();
-        windowManager.viewManager = {
-            showById: jest.fn(),
-        };
+        const views = new Map([
+            ['tab-1', {id: 'tab-1'}],
+            ['tab-2', {id: 'tab-2'}],
+            ['tab-3', {id: 'tab-3'}],
+        ]);
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -637,11 +499,7 @@ describe('main/windows/windowManager', () => {
                     return undefined;
                 }
             });
-            windowManager.viewManager.views = new Map([
-                ['tab-1', {id: 'tab-1'}],
-                ['tab-2', {id: 'tab-2'}],
-                ['tab-3', {id: 'tab-3'}],
-            ]);
+            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
         });
 
         afterEach(() => {
@@ -657,41 +515,38 @@ describe('main/windows/windowManager', () => {
         it('should do nothing if cannot find the server', () => {
             windowManager.switchServer('server-3');
             expect(getTabViewName).not.toBeCalled();
-            expect(windowManager.viewManager.showById).not.toBeCalled();
+            expect(ViewManager.showById).not.toBeCalled();
         });
 
         it('should show first open tab in order when last active not defined', () => {
             ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-3'});
             windowManager.switchServer('server-1');
-            expect(windowManager.viewManager.showById).toHaveBeenCalledWith('tab-3');
+            expect(ViewManager.showById).toHaveBeenCalledWith('tab-3');
         });
 
         it('should show last active tab of chosen server', () => {
             ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-2'});
             windowManager.switchServer('server-2');
-            expect(windowManager.viewManager.showById).toHaveBeenCalledWith('tab-2');
+            expect(ViewManager.showById).toHaveBeenCalledWith('tab-2');
         });
 
         it('should wait for view to exist if specified', () => {
             ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-3'});
-            windowManager.viewManager.views.delete('tab-3');
+            views.delete('tab-3');
             windowManager.switchServer('server-1', true);
-            expect(windowManager.viewManager.showById).not.toBeCalled();
+            expect(ViewManager.showById).not.toBeCalled();
 
             jest.advanceTimersByTime(200);
-            expect(windowManager.viewManager.showById).not.toBeCalled();
+            expect(ViewManager.showById).not.toBeCalled();
 
-            windowManager.viewManager.views.set('tab-3', {});
+            views.set('tab-3', {});
             jest.advanceTimersByTime(200);
-            expect(windowManager.viewManager.showById).toBeCalledWith('tab-3');
+            expect(ViewManager.showById).toBeCalledWith('tab-3');
         });
     });
 
     describe('handleHistory', () => {
         const windowManager = new WindowManager();
-        windowManager.viewManager = {
-            getCurrentView: jest.fn(),
-        };
 
         it('should only go to offset if it can', () => {
             const view = {
@@ -702,12 +557,12 @@ describe('main/windows/windowManager', () => {
                     },
                 },
             };
-            windowManager.viewManager.getCurrentView.mockReturnValue(view);
+            ViewManager.getCurrentView.mockReturnValue(view);
 
             windowManager.handleHistory(null, 1);
             expect(view.view.webContents.goToOffset).not.toBeCalled();
 
-            windowManager.viewManager.getCurrentView.mockReturnValue({
+            ViewManager.getCurrentView.mockReturnValue({
                 ...view,
                 view: {
                     ...view.view,
@@ -738,7 +593,7 @@ describe('main/windows/windowManager', () => {
             view.view.webContents.goToOffset.mockImplementation(() => {
                 throw new Error('hi');
             });
-            windowManager.viewManager.getCurrentView.mockReturnValue(view);
+            ViewManager.getCurrentView.mockReturnValue(view);
 
             windowManager.handleHistory(null, 1);
             expect(view.load).toBeCalledWith('http://server-1.com');
@@ -747,9 +602,6 @@ describe('main/windows/windowManager', () => {
 
     describe('selectTab', () => {
         const windowManager = new WindowManager();
-        windowManager.viewManager = {
-            getCurrentView: jest.fn(),
-        };
         windowManager.switchTab = jest.fn();
 
         beforeEach(() => {
@@ -778,7 +630,7 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should select next server when open', () => {
-            windowManager.viewManager.getCurrentView.mockReturnValue({
+            ViewManager.getCurrentView.mockReturnValue({
                 tab: {
                     server: {
                         name: 'server-1',
@@ -792,7 +644,7 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should select previous server when open', () => {
-            windowManager.viewManager.getCurrentView.mockReturnValue({
+            ViewManager.getCurrentView.mockReturnValue({
                 tab: {
                     server: {
                         name: 'server-1',
@@ -806,7 +658,7 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should skip over closed tab', () => {
-            windowManager.viewManager.getCurrentView.mockReturnValue({
+            ViewManager.getCurrentView.mockReturnValue({
                 tab: {
                     server: {
                         name: 'server-1',
@@ -821,6 +673,31 @@ describe('main/windows/windowManager', () => {
 
     describe('handleBrowserHistoryPush', () => {
         const windowManager = new WindowManager();
+        windowManager.handleBrowserHistoryButton = jest.fn();
+        const servers = [
+            {
+                name: 'server-1',
+                url: 'http://server-1.com',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'tab-messaging',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'other_type_1',
+                        order: 2,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'other_type_2',
+                        order: 1,
+                        isOpen: false,
+                    },
+                ],
+            },
+        ];
         const view1 = {
             id: 'server-1_tab-messaging',
             isLoggedIn: true,
@@ -862,46 +739,20 @@ describe('main/windows/windowManager', () => {
                 },
             },
         };
-        windowManager.viewManager = {
-            views: new Map([
-                ['server-1_tab-messaging', view1],
-                ['server-1_other_type_1', view2],
-            ]),
-            closedViews: new Map([
-                ['server-1_other_type_2', view3],
-            ]),
-            openClosedTab: jest.fn(),
-            showById: jest.fn(),
-            getViewByURL: jest.fn(),
-        };
-        windowManager.handleBrowserHistoryButton = jest.fn();
+        const views = new Map([
+            ['server-1_tab-messaging', view1],
+            ['server-1_other_type_1', view2],
+        ]);
+        const closedViews = new Map([
+            ['server-1_other_type_2', view3],
+        ]);
 
         beforeEach(() => {
-            ServerManager.getAllServers.mockReturnValue([
-                {
-                    name: 'server-1',
-                    url: 'http://server-1.com',
-                    order: 0,
-                    tabs: [
-                        {
-                            name: 'tab-messaging',
-                            order: 0,
-                            isOpen: true,
-                        },
-                        {
-                            name: 'other_type_1',
-                            order: 2,
-                            isOpen: true,
-                        },
-                        {
-                            name: 'other_type_2',
-                            order: 1,
-                            isOpen: false,
-                        },
-                    ],
-                },
-            ]);
+            ServerManager.getAllServers.mockReturnValue(servers);
+            ServerManager.getCurrentServer.mockReturnValue(servers[0]);
             urlUtils.cleanPathName.mockImplementation((base, path) => path);
+            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
+            ViewManager.isViewClosed.mockImplementation((viewId) => closedViews.has(viewId));
         });
 
         afterEach(() => {
@@ -910,20 +761,20 @@ describe('main/windows/windowManager', () => {
 
         it('should open closed view if pushing to it', () => {
             ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_2'});
-            windowManager.viewManager.openClosedTab.mockImplementation((name) => {
-                const view = windowManager.viewManager.closedViews.get(name);
-                windowManager.viewManager.closedViews.delete(name);
-                windowManager.viewManager.views.set(name, view);
+            ViewManager.openClosedTab.mockImplementation((name) => {
+                const view = closedViews.get(name);
+                closedViews.delete(name);
+                views.set(name, view);
             });
 
             windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_2/subpath');
-            expect(windowManager.viewManager.openClosedTab).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
+            expect(ViewManager.openClosedTab).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
         });
 
         it('should open redirect view if different from current view', () => {
             ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_1'});
             windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_1/subpath');
-            expect(windowManager.viewManager.showById).toBeCalledWith('server-1_other_type_1');
+            expect(ViewManager.showById).toBeCalledWith('server-1_other_type_1');
         });
 
         it('should ignore redirects to "/" to Messages from other tabs', () => {
@@ -956,11 +807,6 @@ describe('main/windows/windowManager', () => {
                 },
             },
         };
-        windowManager.viewManager = {
-            views: new Map([
-                ['server-1_tab-messaging', view1],
-            ]),
-        };
 
         beforeEach(() => {
             ServerManager.getAllServers.mockReturnValue([
@@ -977,6 +823,7 @@ describe('main/windows/windowManager', () => {
                     ],
                 },
             ]);
+            ViewManager.getView.mockReturnValue(view1);
         });
 
         afterEach(() => {
@@ -994,6 +841,7 @@ describe('main/windows/windowManager', () => {
     });
 
     describe('createCallsWidgetWindow', () => {
+        const windowManager = new WindowManager();
         const view = {
             name: 'server-1_tab-messaging',
             serverInfo: {
@@ -1004,27 +852,19 @@ describe('main/windows/windowManager', () => {
         };
 
         beforeEach(() => {
-            CallsWidgetWindow.mockImplementation(() => {
-                return {
-                    win: {
-                        isDestroyed: jest.fn(() => true),
-                    },
-                    on: jest.fn(),
-                    close: jest.fn(),
-                };
+            CallsWidgetWindow.mockReturnValue({
+                win: {
+                    isDestroyed: jest.fn(() => true),
+                },
+                on: jest.fn(),
+                close: jest.fn(),
             });
+            ViewManager.getView.mockReturnValue(view);
         });
 
         afterEach(() => {
             jest.resetAllMocks();
         });
-
-        const windowManager = new WindowManager();
-        windowManager.viewManager = {
-            views: new Map([
-                ['server-1_tab-messaging', view],
-            ]),
-        };
 
         it('should create calls widget window', async () => {
             expect(windowManager.callsWidgetWindow).toBeUndefined();
@@ -1051,74 +891,65 @@ describe('main/windows/windowManager', () => {
 
     describe('handleGetDesktopSources', () => {
         const windowManager = new WindowManager();
-        windowManager.viewManager = {
-            showById: jest.fn(),
-            getCurrentView: jest.fn(),
+        windowManager.callsWidgetWindow = {
+            isAllowedEvent: jest.fn().mockReturnValue(true),
+            win: {
+                webContents: {
+                    send: jest.fn(),
+                },
+            },
         };
-
-        beforeEach(() => {
-            CallsWidgetWindow.mockImplementation(() => {
-                return {
-                    isAllowedEvent: jest.fn().mockReturnValue(true),
-                    win: {
+        const teams = [
+            {
+                name: 'server-1',
+                order: 1,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+            }, {
+                name: 'server-2',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 2,
+            },
+        ];
+        const map = teams.reduce((arr, item) => {
+            item.tabs.forEach((tab) => {
+                arr.push([`${item.name}_${tab.name}`, {
+                    view: {
                         webContents: {
                             send: jest.fn(),
                         },
                     },
-                };
+                }]);
             });
+            return arr;
+        }, []);
+        const views = new Map(map);
 
-            windowManager.callsWidgetWindow = new CallsWidgetWindow();
-
-            const teams = [
-                {
-                    name: 'server-1',
-                    order: 1,
-                    tabs: [
-                        {
-                            name: 'tab-1',
-                            order: 0,
-                            isOpen: false,
-                        },
-                        {
-                            name: 'tab-2',
-                            order: 2,
-                            isOpen: true,
-                        },
-                    ],
-                }, {
-                    name: 'server-2',
-                    order: 0,
-                    tabs: [
-                        {
-                            name: 'tab-1',
-                            order: 0,
-                            isOpen: false,
-                        },
-                        {
-                            name: 'tab-2',
-                            order: 2,
-                            isOpen: true,
-                        },
-                    ],
-                    lastActiveTab: 2,
-                },
-            ];
+        beforeEach(() => {
             ServerManager.getAllServers.mockReturnValue(teams);
-
-            const map = teams.reduce((arr, item) => {
-                item.tabs.forEach((tab) => {
-                    arr.push([`${item.name}_${tab.name}`, {
-                        view: {
-                            webContents: {
-                                send: jest.fn(),
-                            },
-                        },
-                    }]);
-                });
-                return arr;
-            }, []);
-            windowManager.viewManager.views = new Map(map);
+            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
         });
 
         afterEach(() => {
@@ -1144,7 +975,7 @@ describe('main/windows/windowManager', () => {
 
             await windowManager.handleGetDesktopSources('server-1_tab-1', null);
 
-            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
+            expect(views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
                 {
                     id: 'screen0',
                 },
@@ -1160,7 +991,7 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(windowManager.viewManager.views.get('server-2_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-2_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
@@ -1183,10 +1014,10 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledTimes(1);
+            expect(views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledTimes(1);
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
 
@@ -1214,7 +1045,7 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(windowManager.viewManager.views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
 
@@ -1232,10 +1063,6 @@ describe('main/windows/windowManager', () => {
     describe('handleDesktopSourcesModalRequest', () => {
         const windowManager = new WindowManager();
         windowManager.switchServer = jest.fn();
-        windowManager.viewManager = {
-            showById: jest.fn(),
-            getCurrentView: jest.fn(),
-        };
 
         beforeEach(() => {
             CallsWidgetWindow.mockImplementation(() => {
@@ -1293,7 +1120,7 @@ describe('main/windows/windowManager', () => {
                 });
                 return arr;
             }, []);
-            windowManager.viewManager.views = new Map(map);
+            ViewManager.views = new Map(map);
         });
 
         afterEach(() => {
@@ -1310,10 +1137,6 @@ describe('main/windows/windowManager', () => {
     describe('handleCallsWidgetChannelLinkClick', () => {
         const windowManager = new WindowManager();
         windowManager.switchServer = jest.fn();
-        windowManager.viewManager = {
-            showById: jest.fn(),
-            getCurrentView: jest.fn(),
-        };
 
         beforeEach(() => {
             CallsWidgetWindow.mockImplementation(() => {
@@ -1372,7 +1195,7 @@ describe('main/windows/windowManager', () => {
                 });
                 return arr;
             }, []);
-            windowManager.viewManager.views = new Map(map);
+            ViewManager.views = new Map(map);
         });
 
         afterEach(() => {
@@ -1389,23 +1212,21 @@ describe('main/windows/windowManager', () => {
     describe('handleCallsError', () => {
         const windowManager = new WindowManager();
         windowManager.switchServer = jest.fn();
-        windowManager.mainWindow = {
-            focus: jest.fn(),
+        const mainView = {
+            view: {
+                webContents: {
+                    send: jest.fn(),
+                },
+            },
         };
+        windowManager.callsWidgetWindow = {
+            getServerId: () => 'server-2',
+            getMainView: () => mainView,
+        };
+        const focus = jest.fn();
 
         beforeEach(() => {
-            CallsWidgetWindow.mockImplementation(() => {
-                return {
-                    getServerId: () => 'server-2',
-                    getMainView: jest.fn().mockReturnValue({
-                        view: {
-                            webContents: {
-                                send: jest.fn(),
-                            },
-                        },
-                    }),
-                };
-            });
+            MainWindow.get.mockReturnValue({focus});
         });
 
         afterEach(() => {
@@ -1413,11 +1234,10 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should focus view and propagate error to main view', () => {
-            windowManager.callsWidgetWindow = new CallsWidgetWindow();
             windowManager.handleCallsError('', {err: 'client-error'});
             expect(windowManager.switchServer).toHaveBeenCalledWith('server-2');
-            expect(windowManager.mainWindow.focus).toHaveBeenCalled();
-            expect(windowManager.callsWidgetWindow.getMainView().view.webContents.send).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
+            expect(focus).toHaveBeenCalled();
+            expect(mainView.view.webContents.send).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
         });
     });
 
@@ -1431,11 +1251,6 @@ describe('main/windows/windowManager', () => {
                 },
             },
         };
-        windowManager.viewManager = {
-            views: new Map([
-                ['server-1_tab-messaging', view1],
-            ]),
-        };
 
         beforeEach(() => {
             CallsWidgetWindow.mockImplementation(() => {
@@ -1444,6 +1259,7 @@ describe('main/windows/windowManager', () => {
                     getMainView: jest.fn().mockReturnValue(view1),
                 };
             });
+            ViewManager.getView.mockReturnValue(view1);
         });
 
         afterEach(() => {
@@ -1459,32 +1275,14 @@ describe('main/windows/windowManager', () => {
     });
 
     describe('getServerURLFromWebContentsId', () => {
-        const view = {
-            name: 'server-1_tab-messaging',
-            serverInfo: {
-                server: {
-                    url: new URL('http://server-1.com'),
-                },
-            },
-        };
         const windowManager = new WindowManager();
-        windowManager.viewManager = {
-            views: new Map([
-                ['server-1_tab-messaging', view],
-            ]),
-            findViewByWebContent: jest.fn(),
-        };
 
         it('should return calls widget URL', () => {
-            CallsWidgetWindow.mockImplementation(() => {
-                return {
-                    on: jest.fn(),
-                    getURL: jest.fn(() => 'http://localhost:8065'),
-                    getWebContentsId: jest.fn(() => 'callsID'),
-                };
-            });
-
-            windowManager.createCallsWidgetWindow('server-1_tab-messaging', 'http://localhost:8065', {callID: 'test'});
+            windowManager.callsWidgetWindow = {
+                on: jest.fn(),
+                getURL: jest.fn(() => 'http://localhost:8065'),
+                getWebContentsId: jest.fn(() => 'callsID'),
+            };
             expect(windowManager.getServerURLFromWebContentsId('callsID')).toBe(windowManager.callsWidgetWindow.getURL());
         });
     });

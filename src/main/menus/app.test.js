@@ -7,7 +7,6 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 
 import {localizeMessage} from 'main/i18nManager';
 import ServerManager from 'common/servers/serverManager';
-import WindowManager from 'main/windows/windowManager';
 
 import {createTemplate} from './app';
 
@@ -52,13 +51,19 @@ jest.mock('main/i18nManager', () => ({
 }));
 jest.mock('common/servers/serverManager', () => ({
     hasServers: jest.fn(),
+    getCurrentServer: jest.fn(),
     getOrderedServers: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
 }));
+jest.mock('main/diagnostics', () => ({}));
+jest.mock('main/downloadsManager', () => ({
+    hasDownloads: jest.fn(),
+}));
+jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
-    getCurrentTeamId: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
+jest.mock('main/windows/settingsWindow', () => ({}));
 jest.mock('common/tabs/TabView', () => ({
     getTabDisplayName: (name) => name,
 }));
@@ -99,6 +104,7 @@ describe('main/menus/app', () => {
     ];
 
     beforeEach(() => {
+        ServerManager.getCurrentServer.mockReturnValue(servers[0]);
         ServerManager.getOrderedServers.mockReturnValue(servers);
         ServerManager.getOrderedTabsForServer.mockReturnValue(tabs);
         getDarwinDoNotDisturb.mockReturnValue(false);
@@ -269,7 +275,7 @@ describe('main/menus/app', () => {
             }
             return id;
         });
-        WindowManager.getCurrentTeamId.mockImplementation(() => servers[0].id);
+        ServerManager.getCurrentServer.mockImplementation(() => ({id: servers[0].id}));
 
         const modifiedTabs = [...Array(15).keys()].map((key) => ({
             id: `tab-${key}`,

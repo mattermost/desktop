@@ -24,6 +24,8 @@ import {
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView} from 'common/tabs/TabView';
 
+import MainWindow from 'main/windows/mainWindow';
+
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
 import WindowManager from '../windows/windowManager';
@@ -344,7 +346,7 @@ export class MattermostView extends EventEmitter {
         this.registerAltKeyPressed(input);
 
         if (this.isAltKeyReleased(input)) {
-            WindowManager.focusThreeDotMenu();
+            MainWindow.focusThreeDotMenu();
         }
     }
 

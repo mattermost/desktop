@@ -17,6 +17,7 @@ import {
     SET_ACTIVE_VIEW,
     SERVERS_UPDATE,
 } from 'common/communication';
+import Config from 'common/config';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 
 import ServerManager from 'common/servers/serverManager';
@@ -40,12 +41,12 @@ export default class TeamDropdownView {
     windowBounds: Electron.Rectangle;
     isOpen: boolean;
 
-    constructor(window: BrowserWindow, darkMode: boolean, enableServerManagement: boolean) {
+    constructor(window: BrowserWindow) {
         this.teams = this.getOrderedTeams();
         this.hasGPOTeams = this.teams.some((srv) => srv.isPredefined);
         this.window = window;
-        this.darkMode = darkMode;
-        this.enableServerManagement = enableServerManagement;
+        this.darkMode = Config.darkMode;
+        this.enableServerManagement = Config.enableServerManagement;
         this.isOpen = false;
 
         this.windowBounds = this.window.getContentBounds();

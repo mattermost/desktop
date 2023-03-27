@@ -17,6 +17,8 @@ import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
 import downloadsManager from 'main/downloadsManager';
 import Diagnostics from 'main/diagnostics';
+import ViewManager from 'main/views/viewManager';
+import SettingsWindow from 'main/windows/settingsWindow';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -44,7 +46,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: settingsLabel,
         accelerator: 'CmdOrCtrl+,',
         click() {
-            WindowManager.showSettingsWindow();
+            SettingsWindow.show();
         },
     });
 
@@ -219,7 +221,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.history.back', 'Back'),
             accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
             click: () => {
-                const view = WindowManager.viewManager?.getCurrentView();
+                const view = ViewManager.getCurrentView();
                 if (view && view.view.webContents.canGoBack() && !view.isAtRoot) {
                     view.view.webContents.goBack();
                     ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.id);
@@ -229,7 +231,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.history.forward', 'Forward'),
             accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
             click: () => {
-                const view = WindowManager.viewManager?.getCurrentView();
+                const view = ViewManager.getCurrentView();
                 if (view && view.view.webContents.canGoForward()) {
                     view.view.webContents.goForward();
                     ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.id);
@@ -274,7 +276,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                     WindowManager.switchServer(team.id);
                 },
             });
-            if (WindowManager.getCurrentTeamId() === team.id) {
+            if (ServerManager.getCurrentServer().id === team.id) {
                 ServerManager.getOrderedTabsForServer(team.id).slice(0, 9).forEach((tab, i) => {
                     items.push({
                         label: `    ${localizeMessage(`common.tabs.${tab.name}`, getTabDisplayName(tab.name as TabType))}`,

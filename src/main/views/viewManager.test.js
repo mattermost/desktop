@@ -10,6 +10,8 @@ import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN, SET_ACTIVE_VIEW} 
 
 import ServerManager from 'common/servers/serverManager';
 
+import MainWindow from 'main/windows/mainWindow';
+
 import {MattermostView} from './MattermostView';
 import {ViewManager} from './viewManager';
 
@@ -23,6 +25,7 @@ jest.mock('electron', () => ({
     ipcMain: {
         emit: jest.fn(),
         on: jest.fn(),
+        handle: jest.fn(),
     },
 }));
 
@@ -54,7 +57,12 @@ jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
 }));
 
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+}));
+
 jest.mock('common/servers/serverManager', () => ({
+    getCurrentServer: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),
@@ -83,6 +91,7 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.createLoadingScreen = jest.fn();
             viewManager.showById = jest.fn();
+            MainWindow.get.mockReturnValue({});
             MattermostView.mockImplementation((tab) => ({
                 on: jest.fn(),
                 load: loadFn,
@@ -188,9 +197,11 @@ describe('main/views/viewManager', () => {
             viewManager.showById = jest.fn();
             viewManager.showInitial = jest.fn();
             viewManager.focus = jest.fn();
-            viewManager.mainWindow.webContents = {
-                send: jest.fn(),
-            };
+            MainWindow.get.mockReturnValue({
+                webContents: {
+                    send: jest.fn(),
+                },
+            });
 
             const onceFn = jest.fn();
             const loadFn = jest.fn();
@@ -368,11 +379,14 @@ describe('main/views/viewManager', () => {
     });
 
     describe('showInitial', () => {
-        const viewManager = new ViewManager({webContents: {send: jest.fn()}});
+        const viewManager = new ViewManager();
+        const window = {webContents: {send: jest.fn()}};
 
         beforeEach(() => {
             viewManager.showById = jest.fn();
+            MainWindow.get.mockReturnValue(window);
             ServerManager.hasServers.mockReturnValue(true);
+            ServerManager.getCurrentServer.mockReturnValue({id: 'server-0'});
         });
 
         afterEach(() => {
@@ -389,7 +403,7 @@ describe('main/views/viewManager', () => {
         it('should open new server modal when no servers exist', () => {
             ServerManager.hasServers.mockReturnValue(false);
             viewManager.showInitial();
-            expect(viewManager.mainWindow.webContents.send).toHaveBeenCalledWith(SET_ACTIVE_VIEW);
+            expect(window.webContents.send).toHaveBeenCalledWith(SET_ACTIVE_VIEW);
             expect(ipcMain.emit).toHaveBeenCalledWith(MAIN_WINDOW_SHOWN);
         });
     });
@@ -496,13 +510,14 @@ describe('main/views/viewManager', () => {
             setTopBrowserView: jest.fn(),
             addBrowserView: jest.fn(),
         };
-        const viewManager = new ViewManager(window);
+        const viewManager = new ViewManager();
         const loadingScreen = {webContents: {send: jest.fn(), isLoading: () => false}};
 
         beforeEach(() => {
             viewManager.createLoadingScreen = jest.fn();
             viewManager.setLoadingScreenBounds = jest.fn();
             window.getBrowserViews.mockImplementation(() => []);
+            MainWindow.get.mockReturnValue(window);
         });
 
         afterEach(() => {

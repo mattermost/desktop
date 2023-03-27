@@ -8,6 +8,7 @@ import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
 import WindowManager from 'main/windows/windowManager';
 import {localizeMessage} from 'main/i18nManager';
 import ServerManager from 'common/servers/serverManager';
+import SettingsWindow from 'main/windows/settingsWindow';
 
 export function createTemplate() {
     const teams = ServerManager.getOrderedServers();
@@ -24,7 +25,7 @@ export function createTemplate() {
         }, {
             label: process.platform === 'darwin' ? localizeMessage('main.menus.tray.preferences', 'Preferences...') : localizeMessage('main.menus.tray.settings', 'Settings'),
             click: () => {
-                WindowManager.showSettingsWindow();
+                SettingsWindow.show();
             },
         }, {
             type: 'separator',

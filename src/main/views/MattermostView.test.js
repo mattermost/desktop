@@ -7,6 +7,7 @@ import {LOAD_FAILED, TOGGLE_BACK_BUTTON, UPDATE_TARGET_URL} from 'common/communi
 import {MattermostServer} from 'common/servers/MattermostServer';
 import MessagingTabView from 'common/tabs/MessagingTabView';
 
+import MainWindow from '../windows/mainWindow';
 import * as WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 import Utils from '../utils';
@@ -30,9 +31,11 @@ jest.mock('electron', () => ({
     },
 }));
 
+jest.mock('../windows/mainWindow', () => ({
+    focusThreeDotMenu: jest.fn(),
+}));
 jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
-    focusThreeDotMenu: jest.fn(),
 }));
 jest.mock('../appState', () => ({
     updateMentions: jest.fn(),
@@ -285,12 +288,12 @@ describe('main/views/MattermostView', () => {
         it('should open three dot menu on pressing Alt', () => {
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown', alt: true, shift: false, control: false, meta: false});
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyUp'});
-            expect(WindowManager.focusThreeDotMenu).toHaveBeenCalled();
+            expect(MainWindow.focusThreeDotMenu).toHaveBeenCalled();
         });
 
         it('should not open three dot menu on holding Alt', () => {
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown'});
-            expect(WindowManager.focusThreeDotMenu).not.toHaveBeenCalled();
+            expect(MainWindow.focusThreeDotMenu).not.toHaveBeenCalled();
         });
 
         it('should not open three dot menu on Alt as key combp', () => {
@@ -298,7 +301,7 @@ describe('main/views/MattermostView', () => {
             mattermostView.handleInputEvents(null, {key: 'F', type: 'keyDown'});
             mattermostView.handleInputEvents(null, {key: 'F', type: 'keyUp'});
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyUp'});
-            expect(WindowManager.focusThreeDotMenu).not.toHaveBeenCalled();
+            expect(MainWindow.focusThreeDotMenu).not.toHaveBeenCalled();
         });
     });
 

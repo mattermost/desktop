@@ -9,6 +9,7 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
 import parseArgs from 'main/ParseArgs';
+import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
 
 import {initialize} from './initialize';
@@ -166,12 +167,17 @@ jest.mock('main/UserActivityMonitor', () => ({
     startMonitoring: jest.fn(),
 }));
 jest.mock('main/windows/windowManager', () => ({
-    getMainWindow: jest.fn(),
     showMainWindow: jest.fn(),
-    sendToMattermostViews: jest.fn(),
     sendToRenderer: jest.fn(),
     getServerNameByWebContentsId: jest.fn(),
     getServerURLFromWebContentsId: jest.fn(),
+}));
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+}));
+jest.mock('main/views/viewManager', () => ({
+    get: jest.fn(),
+    sendToAllViews: jest.fn(),
 }));
 const originalProcess = process;
 describe('main/app/initialize', () => {
@@ -277,7 +283,7 @@ describe('main/app/initialize', () => {
             expect(callback).toHaveBeenCalledWith(false);
 
             callback = jest.fn();
-            WindowManager.getMainWindow.mockReturnValue({webContents: {id: 1}});
+            MainWindow.get.mockReturnValue({webContents: {id: 1}});
             session.defaultSession.setPermissionRequestHandler.mockImplementation((cb) => {
                 cb({id: 1, getURL: () => 'http://server-1.com'}, 'openExternal', callback);
             });

@@ -25,7 +25,7 @@ export class ServerManager extends EventEmitter {
     private servers: Map<string, MattermostServer>;
     private remoteInfo: Map<string, RemoteInfo>;
     private serverOrder: string[];
-    private lastActiveServer?: string;
+    private currentServerId?: string;
 
     private tabs: Map<string, TabView>;
     private tabOrder: Map<string, string[]>;
@@ -70,20 +70,17 @@ export class ServerManager extends EventEmitter {
         }, [] as MattermostServer[]);
     }
 
-    getLastActiveServer = () => {
-        log.debug('ServerManager.getLastActiveServer');
+    getCurrentServer = () => {
+        log.debug('ServerManager.getcurrentServer');
 
-        if (this.lastActiveServer) {
-            const server = this.servers.get(this.lastActiveServer);
-            if (server) {
-                return server;
-            }
+        if (!this.currentServerId) {
+            throw new Error('No server set as current');
         }
-        const firstServer = this.servers.get(this.serverOrder[0]);
-        if (!firstServer) {
-            throw new Error('No servers exist');
+        const server = this.servers.get(this.currentServerId);
+        if (!server) {
+            throw new Error('Current server does not exist');
         }
-        return firstServer;
+        return server;
     }
 
     getLastActiveTabForServer = (serverId: string) => {
@@ -242,7 +239,7 @@ export class ServerManager extends EventEmitter {
         }
         this.lastActiveTab.set(tab.server.id, tabId);
 
-        this.lastActiveServer = tab.server.id;
+        this.currentServerId = tab.server.id;
 
         const serverOrder = this.serverOrder.findIndex((srv) => srv === tab.server.id);
         this.persistServers(serverOrder);
@@ -263,7 +260,9 @@ export class ServerManager extends EventEmitter {
         this.filterOutDuplicateTeams();
         this.serverOrder = serverOrder;
         if (Config.lastActiveTeam) {
-            this.lastActiveServer = this.serverOrder[Config.lastActiveTeam];
+            this.currentServerId = this.serverOrder[Config.lastActiveTeam];
+        } else {
+            this.currentServerId = this.serverOrder[0];
         }
     }
 

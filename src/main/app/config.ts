@@ -95,7 +95,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         });
     }
 
-    WindowManager.initializeCurrentServerId();
     handleMainWindowIsShown();
 
     handleUpdateMenuEvent();

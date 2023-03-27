@@ -15,6 +15,7 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 import ServerManager from 'common/servers/serverManager';
 import ModalManager from 'main/views/modalManager';
 import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {handleAppBeforeQuit} from './app';
 
@@ -70,7 +71,7 @@ export function handleGetOrderedTabsForServer(event: IpcMainInvokeEvent, serverI
 }
 
 export function handleGetLastActive() {
-    const server = ServerManager.getLastActiveServer();
+    const server = ServerManager.getCurrentServer();
     const tab = ServerManager.getLastActiveTabForServer(server.id);
     return {server: server.id, tab: tab.id};
 }
@@ -111,7 +112,7 @@ export function handleMainWindowIsShown() {
      * calls of this function will notification re-evaluate the booleans passed to "handleShowOnboardingScreens".
     */
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
 
     log.debug('intercom.handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
@@ -130,7 +131,7 @@ export function handleNewServerModal() {
 
     const preload = getLocalPreload('desktopAPI.js');
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
@@ -157,7 +158,7 @@ export function handleEditServerModal(e: IpcMainEvent, id: string) {
 
     const preload = getLocalPreload('desktopAPI.js');
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
@@ -197,7 +198,7 @@ export function handleRemoveServerModal(e: IpcMainEvent, id: string) {
     if (!server) {
         return;
     }
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
@@ -225,7 +226,7 @@ export function handleWelcomeScreenModal() {
 
     const preload = getLocalPreload('desktopAPI.js');
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
@@ -259,7 +260,7 @@ export function handleOpenAppMenu() {
         return;
     }
     windowMenu.popup({
-        window: WindowManager.getMainWindow(),
+        window: MainWindow.get(),
         x: 18,
         y: 18,
     });

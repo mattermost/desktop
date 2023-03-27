@@ -1,8 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import log from 'electron-log';
-import {BrowserView, BrowserWindow, dialog, ipcMain, IpcMainEvent} from 'electron';
-import {BrowserViewConstructorOptions} from 'electron/main';
+import {BrowserView, dialog, ipcMain, IpcMainEvent} from 'electron';
 
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
@@ -23,10 +22,11 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
+import ServerManager from 'common/servers/serverManager';
 import {TabView} from 'common/tabs/TabView';
 
 import {localizeMessage} from 'main/i18nManager';
-import ServerManager from 'common/servers/serverManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
@@ -37,35 +37,26 @@ import WebContentsEventManager from './webContentEvents';
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
 
-export enum LoadingScreenState {
+enum LoadingScreenState {
     VISIBLE = 1,
     FADING = 2,
     HIDDEN = 3,
 }
 
 export class ViewManager {
-    lastActiveServer?: number;
-    viewOptions: BrowserViewConstructorOptions;
-    closedViews: Map<string, {srv: MattermostServer; tab: TabView}>;
-    views: Map<string, MattermostView>;
-    currentView?: string;
-    urlView?: BrowserView;
-    urlViewCancel?: () => void;
-    mainWindow: BrowserWindow;
-    loadingScreen?: BrowserView;
-    loadingScreenState: LoadingScreenState;
+    private closedViews: Map<string, {srv: MattermostServer; tab: TabView}>;
+    private views: Map<string, MattermostView>;
+    private currentView?: string;
 
-    constructor(mainWindow: BrowserWindow) {
-        this.lastActiveServer = Config.lastActiveTeam;
-        this.viewOptions = {webPreferences: {spellcheck: Config.useSpellChecker}};
+    private urlView?: BrowserView;
+    private urlViewCancel?: () => void;
+    private loadingScreen?: BrowserView;
+    private loadingScreenState: LoadingScreenState;
+
+    constructor() {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
-        this.mainWindow = mainWindow;
         this.closedViews = new Map();
         this.loadingScreenState = LoadingScreenState.HIDDEN;
-    }
-
-    updateMainWindow = (mainWindow: BrowserWindow) => {
-        this.mainWindow = mainWindow;
     }
 
     loadServer = (server: MattermostServer) => {
@@ -74,7 +65,12 @@ export class ViewManager {
     }
 
     makeView = (srv: MattermostServer, tab: TabView, url?: string): MattermostView => {
-        const view = new MattermostView(tab, this.mainWindow, this.viewOptions);
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            throw new Error('Cannot create view, no main window present');
+        }
+
+        const view = new MattermostView(tab, mainWindow, {webPreferences: {spellcheck: Config.useSpellChecker}});
         view.once(LOAD_SUCCESS, this.activateView);
         view.load(url);
         view.on(UPDATE_TARGET_URL, this.showURLView);
@@ -111,6 +107,10 @@ export class ViewManager {
 
     load = () => {
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
+    }
+
+    getView = (viewId: string) => {
+        return this.views.get(viewId);
     }
 
     /** Called when a new configuration is received
@@ -169,7 +169,7 @@ export class ViewManager {
                 this.currentView = undefined;
                 this.showInitial();
             } else {
-                this.mainWindow.webContents.send(SET_ACTIVE_VIEW);
+                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
             }
         }
 
@@ -179,7 +179,7 @@ export class ViewManager {
             if (view && view.id !== this.currentView) {
                 this.currentView = view.id;
                 this.showById(view.id);
-                this.mainWindow.webContents.send(SET_ACTIVE_VIEW, view.tab.server.id, view.tab.id);
+                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.tab.server.id, view.tab.id);
             } else {
                 this.focus();
             }
@@ -192,11 +192,11 @@ export class ViewManager {
         log.verbose('viewManager.showInitial');
 
         if (ServerManager.hasServers()) {
-            const lastActiveServer = ServerManager.getLastActiveServer();
+            const lastActiveServer = ServerManager.getCurrentServer();
             const lastActiveTab = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
             this.showById(lastActiveTab.id);
         } else {
-            this.mainWindow.webContents.send(SET_ACTIVE_VIEW);
+            MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
             ipcMain.emit(MAIN_WINDOW_SHOWN);
         }
     }
@@ -332,6 +332,11 @@ export class ViewManager {
     showURLView = (url: URL | string) => {
         log.silly('viewManager.showURLView', url);
 
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
+        }
+
         if (this.urlViewCancel) {
             this.urlViewCancel();
         }
@@ -350,13 +355,13 @@ export class ViewManager {
             const query = new Map([['url', urlString]]);
             const localURL = getLocalURLString('urlView.html', query);
             urlView.webContents.loadURL(localURL);
-            this.mainWindow.addBrowserView(urlView);
-            const boundaries = this.views.get(this.currentView || '')?.view.getBounds() ?? this.mainWindow.getBounds();
+            MainWindow.get()?.addBrowserView(urlView);
+            const boundaries = this.views.get(this.currentView || '')?.view.getBounds() ?? mainWindow.getBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
                 try {
-                    this.mainWindow.removeBrowserView(urlView);
+                    MainWindow.get()?.removeBrowserView(urlView);
                 } catch (e) {
                     log.error('Failed to remove URL view', e);
                 }
@@ -397,7 +402,11 @@ export class ViewManager {
 
     setLoadingScreenBounds = () => {
         if (this.loadingScreen) {
-            this.loadingScreen.setBounds(getWindowBoundaries(this.mainWindow));
+            const mainWindow = MainWindow.get();
+            if (!mainWindow) {
+                return;
+            }
+            this.loadingScreen.setBounds(getWindowBoundaries(mainWindow));
         }
     }
 
@@ -416,6 +425,11 @@ export class ViewManager {
     }
 
     showLoadingScreen = () => {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
+        }
+
         if (!this.loadingScreen) {
             this.createLoadingScreen();
         }
@@ -430,10 +444,10 @@ export class ViewManager {
             this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
         }
 
-        if (this.mainWindow.getBrowserViews().includes(this.loadingScreen!)) {
-            this.mainWindow.setTopBrowserView(this.loadingScreen!);
+        if (mainWindow.getBrowserViews().includes(this.loadingScreen!)) {
+            mainWindow.setTopBrowserView(this.loadingScreen!);
         } else {
-            this.mainWindow.addBrowserView(this.loadingScreen!);
+            mainWindow.addBrowserView(this.loadingScreen!);
         }
 
         this.setLoadingScreenBounds();
@@ -446,10 +460,18 @@ export class ViewManager {
         }
     }
 
+    isViewClosed = (viewId: string) => {
+        return this.closedViews.has(viewId);
+    }
+
+    isLoadingScreenHidden = () => {
+        return this.loadingScreenState === LoadingScreenState.HIDDEN;
+    }
+
     hideLoadingScreen = () => {
         if (this.loadingScreen && this.loadingScreenState !== LoadingScreenState.HIDDEN) {
             this.loadingScreenState = LoadingScreenState.HIDDEN;
-            this.mainWindow.removeBrowserView(this.loadingScreen);
+            MainWindow.get()?.removeBrowserView(this.loadingScreen);
         }
     }
 
@@ -534,3 +556,6 @@ export class ViewManager {
         });
     }
 }
+
+const viewManager = new ViewManager();
+export default viewManager;

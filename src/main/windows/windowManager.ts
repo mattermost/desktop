@@ -2,9 +2,8 @@
 // See LICENSE.txt for license information.
 
 /* eslint-disable max-lines */
-import path from 'path';
 
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
+import {app, BrowserWindow, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
 import {
@@ -19,7 +18,6 @@ import {
     HISTORY,
     REACT_APP_INITIALIZED,
     LOADING_SCREEN_ANIMATION_FINISHED,
-    FOCUS_THREE_DOT_MENU,
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
@@ -40,15 +38,17 @@ import {
     CALLS_ERROR,
     CALLS_LINK_CLICK,
     SERVERS_UPDATE,
+    WINDOW_CLOSE,
+    WINDOW_MAXIMIZE,
+    WINDOW_MINIMIZE,
+    WINDOW_RESTORE,
+    DOUBLE_CLICK_ON_WINDOW,
 } from 'common/communication';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
-
-import downloadsManager from 'main/downloadsManager';
 import ServerManager from 'common/servers/serverManager';
-import {MattermostView} from 'main/views/MattermostView';
 
 import {
     getAdjustedWindowBoundaries,
@@ -57,37 +57,30 @@ import {
     openScreensharePermissionsSettingsMacOS,
 } from '../utils';
 
-import {ViewManager, LoadingScreenState} from '../views/viewManager';
-import CriticalErrorHandler from '../CriticalErrorHandler';
-
+import ViewManager from '../views/viewManager';
+import {MattermostView} from '../views/MattermostView';
 import TeamDropdownView from '../views/teamDropdownView';
 import DownloadsDropdownView from '../views/downloadsDropdownView';
 import DownloadsDropdownMenuView from '../views/downloadsDropdownMenuView';
 
-import {createSettingsWindow} from './settingsWindow';
-import createMainWindow from './mainWindow';
-
+import MainWindow from './mainWindow';
 import CallsWidgetWindow from './callsWidgetWindow';
+import SettingsWindow from './settingsWindow';
 
 // singleton module to manage application's windows
 
 export class WindowManager {
-    assetsDir: string;
-
-    mainWindow?: BrowserWindow;
-    mainWindowReady: boolean;
-    settingsWindow?: BrowserWindow;
     callsWidgetWindow?: CallsWidgetWindow;
-    viewManager?: ViewManager;
-    teamDropdown?: TeamDropdownView;
-    downloadsDropdown?: DownloadsDropdownView;
-    downloadsDropdownMenu?: DownloadsDropdownMenuView;
-    currentServerId?: string;
-    missingScreensharePermissions?: boolean;
+
+    private teamDropdown?: TeamDropdownView;
+    private downloadsDropdown?: DownloadsDropdownView;
+    private downloadsDropdownMenu?: DownloadsDropdownMenuView;
+    private missingScreensharePermissions?: boolean;
+
+    private isResizing: boolean;
 
     constructor() {
-        this.mainWindowReady = false;
-        this.assetsDir = path.resolve(app.getAppPath(), 'assets');
+        this.isResizing = false;
 
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
@@ -101,6 +94,11 @@ export class WindowManager {
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
+        ipcMain.on(WINDOW_CLOSE, this.handleClose);
+        ipcMain.on(WINDOW_MAXIMIZE, this.handleMaximize);
+        ipcMain.on(WINDOW_MINIMIZE, this.handleMinimize);
+        ipcMain.on(WINDOW_RESTORE, this.handleRestore);
+        ipcMain.on(DOUBLE_CLICK_ON_WINDOW, this.handleDoubleClick);
 
         // Calls handlers
         ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.genCallsEventHandler(this.handleGetDesktopSources));
@@ -114,319 +112,55 @@ export class WindowManager {
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
     }
 
-    handleUpdateConfig = () => {
-        if (this.viewManager) {
-            this.viewManager.reloadConfiguration();
-        }
-        this.mainWindow?.webContents.send(SERVERS_UPDATE);
-    }
-
-    genCallsEventHandler = (handler: CallsEventHandler) => {
-        return (event: IpcMainEvent, viewId: string, msg?: any) => {
-            if (this.callsWidgetWindow && !this.callsWidgetWindow.isAllowedEvent(event)) {
-                log.warn('WindowManager.genCallsEventHandler', 'Disallowed calls event');
-                return;
-            }
-            handler(viewId, msg);
-        };
-    }
-
-    createCallsWidgetWindow = async (viewId: string, msg: CallsJoinCallMessage) => {
-        log.debug('WindowManager.createCallsWidgetWindow');
-        if (this.callsWidgetWindow) {
-            // trying to join again the call we are already in should not be allowed.
-            if (this.callsWidgetWindow.getCallID() === msg.callID) {
-                return;
-            }
-
-            // to switch from one call to another we need to wait for the existing
-            // window to be fully closed.
-            await this.callsWidgetWindow.close();
-        }
-        const currentView = this.viewManager?.views.get(viewId);
-        if (!currentView) {
-            log.error('unable to create calls widget window: currentView is missing');
-            return;
-        }
-
-        this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, currentView, {
-            callID: msg.callID,
-            title: msg.title,
-            rootID: msg.rootID,
-            channelURL: msg.channelURL,
-        });
-
-        this.callsWidgetWindow.on('closed', () => delete this.callsWidgetWindow);
-    }
-
-    handleDesktopSourcesModalRequest = () => {
-        log.debug('WindowManager.handleDesktopSourcesModalRequest');
-
-        if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerId());
-            this.mainWindow?.focus();
-            this.callsWidgetWindow.getMainView().view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
-        }
-    }
-
-    handleCallsWidgetChannelLinkClick = () => {
-        log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
-
-        if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerId());
-            this.mainWindow?.focus();
-            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
-        }
-    }
-
-    handleCallsError = (_: string, msg: CallsErrorMessage) => {
-        log.debug('WindowManager.handleCallsError', msg);
-
-        if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerId());
-            this.mainWindow?.focus();
-            this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
-        }
-    }
-
-    handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
-        log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
-
-        if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerId());
-            this.mainWindow?.focus();
-            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
-        }
-    }
-
-    handleCallsLeave = () => {
-        log.debug('WindowManager.handleCallsLeave');
-
-        this.callsWidgetWindow?.close();
-    }
-
-    showSettingsWindow = () => {
-        log.debug('WindowManager.showSettingsWindow');
-
-        if (this.settingsWindow) {
-            this.settingsWindow.show();
-        } else {
-            if (!this.mainWindow) {
-                this.showMainWindow();
-            }
-            const withDevTools = Boolean(process.env.MM_DEBUG_SETTINGS) || false;
-
-            this.settingsWindow = createSettingsWindow(this.mainWindow!, withDevTools);
-            this.settingsWindow.on('closed', () => {
-                delete this.settingsWindow;
-            });
-        }
-    }
-
     showMainWindow = (deeplinkingURL?: string | URL) => {
         log.debug('WindowManager.showMainWindow', deeplinkingURL);
 
-        if (this.mainWindow) {
-            if (this.mainWindow.isVisible()) {
-                this.mainWindow.focus();
+        const mainWindow = MainWindow.get();
+        if (mainWindow) {
+            if (mainWindow.isVisible()) {
+                mainWindow.focus();
             } else {
-                this.mainWindow.show();
+                mainWindow.show();
             }
         } else {
-            this.mainWindowReady = false;
-            this.mainWindow = createMainWindow({
-                linuxAppIcon: path.join(this.assetsDir, 'linux', 'app_icon.png'),
-            });
-
-            if (!this.mainWindow) {
-                log.error('unable to create main window');
-                app.quit();
-                return;
-            }
-
-            this.mainWindow.once('ready-to-show', () => {
-                this.mainWindowReady = true;
-            });
-
-            // window handlers
-            this.mainWindow.on('closed', () => {
-                log.warn('main window closed');
-                delete this.mainWindow;
-                this.mainWindowReady = false;
-            });
-            this.mainWindow.on('unresponsive', () => {
-                CriticalErrorHandler.setMainWindow(this.mainWindow!);
-                CriticalErrorHandler.windowUnresponsiveHandler();
-            });
-            this.mainWindow.on('maximize', this.handleMaximizeMainWindow);
-            this.mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);
-            if (process.platform !== 'darwin') {
-                this.mainWindow.on('resize', this.handleResizeMainWindow);
-            }
-            this.mainWindow.on('will-resize', this.handleWillResizeMainWindow);
-            this.mainWindow.on('resized', this.handleResizedMainWindow);
-            this.mainWindow.on('focus', this.focusBrowserView);
-            this.mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
-            this.mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
-
-            // Should not allow the main window to generate a window of its own
-            this.mainWindow.webContents.setWindowOpenHandler(() => ({action: 'deny'}));
-
-            if (process.env.MM_DEBUG_SETTINGS) {
-                this.mainWindow.webContents.openDevTools({mode: 'detach'});
-            }
-
-            if (this.viewManager) {
-                this.viewManager.updateMainWindow(this.mainWindow);
-            }
-
-            this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.darkMode, Config.enableServerManagement);
-            this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, downloadsManager.getDownloads(), Config.darkMode);
-            this.downloadsDropdownMenu = new DownloadsDropdownMenuView(this.mainWindow, Config.darkMode);
+            this.createMainWindow();
         }
-        this.initializeViewManager();
 
         if (deeplinkingURL) {
-            this.viewManager!.handleDeepLink(deeplinkingURL);
+            ViewManager.handleDeepLink(deeplinkingURL);
         }
     }
 
-    getMainWindow = (ensureCreated?: boolean) => {
-        if (ensureCreated && !this.mainWindow) {
-            this.showMainWindow();
-        }
-        return this.mainWindow;
-    }
-
-    on = this.mainWindow?.on;
-
-    handleMaximizeMainWindow = () => {
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
-        this.sendToRenderer(MAXIMIZE_CHANGE, true);
-    }
-
-    handleUnmaximizeMainWindow = () => {
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
-        this.sendToRenderer(MAXIMIZE_CHANGE, false);
-    }
-
-    isResizing = false;
-
-    handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
-        log.silly('WindowManager.handleWillResizeMainWindow');
-
-        if (!(this.viewManager && this.mainWindow)) {
+    private createMainWindow = () => {
+        const mainWindow = MainWindow.get(true);
+        if (!mainWindow) {
             return;
         }
 
-        /**
-         * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
-         * causing the "resize" event to not fire
-         */
-        const prevBounds = this.getBounds();
-        if (prevBounds.height === newBounds.height && prevBounds.width === newBounds.width) {
-            return;
+        // window handlers
+        mainWindow.on('maximize', this.handleMaximizeMainWindow);
+        mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);
+        if (process.platform !== 'darwin') {
+            mainWindow.on('resize', this.handleResizeMainWindow);
         }
+        mainWindow.on('will-resize', this.handleWillResizeMainWindow);
+        mainWindow.on('resized', this.handleResizedMainWindow);
+        mainWindow.on('focus', this.focusBrowserView);
+        mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
+        mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
 
-        if (this.isResizing && this.viewManager.loadingScreenState === LoadingScreenState.HIDDEN && this.viewManager.getCurrentView()) {
-            log.debug('prevented resize');
-            event.preventDefault();
-            return;
-        }
+        this.teamDropdown = new TeamDropdownView(mainWindow);
+        this.downloadsDropdown = new DownloadsDropdownView(mainWindow);
+        this.downloadsDropdownMenu = new DownloadsDropdownMenuView(mainWindow);
 
-        this.throttledWillResize(newBounds);
-        this.viewManager?.setLoadingScreenBounds();
-        this.teamDropdown?.updateWindowBounds();
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
-        ipcMain.emit(RESIZE_MODAL, null, newBounds);
-    }
-
-    handleResizedMainWindow = () => {
-        log.silly('WindowManager.handleResizedMainWindow');
-
-        if (this.mainWindow) {
-            const bounds = this.getBounds();
-            this.throttledWillResize(bounds);
-            ipcMain.emit(RESIZE_MODAL, null, bounds);
-            this.teamDropdown?.updateWindowBounds();
-            this.downloadsDropdown?.updateWindowBounds();
-            this.downloadsDropdownMenu?.updateWindowBounds();
-        }
-        this.isResizing = false;
-    }
-
-    handleViewFinishedResizing = () => {
-        this.isResizing = false;
-    }
-
-    private throttledWillResize = (newBounds: Electron.Rectangle) => {
-        log.silly('WindowManager.throttledWillResize', {newBounds});
-
-        this.isResizing = true;
-        this.setCurrentViewBounds(newBounds);
-    }
-
-    handleResizeMainWindow = () => {
-        log.silly('WindowManager.handleResizeMainWindow');
-
-        if (!(this.viewManager && this.mainWindow)) {
-            return;
-        }
-        if (this.isResizing) {
-            return;
-        }
-
-        const bounds = this.getBounds();
-
-        // Another workaround since the window doesn't update properly under Linux for some reason
-        // See above comment
-        setTimeout(this.setCurrentViewBounds, 10, bounds);
-        this.viewManager.setLoadingScreenBounds();
-        this.teamDropdown?.updateWindowBounds();
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
-        ipcMain.emit(RESIZE_MODAL, null, bounds);
-    };
-
-    setCurrentViewBounds = (bounds: {width: number; height: number}) => {
-        log.debug('WindowManager.setCurrentViewBounds', {bounds});
-
-        const currentView = this.viewManager?.getCurrentView();
-        if (currentView) {
-            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL()));
-            this.setBoundsFunction(currentView, adjustedBounds);
-        }
-    }
-
-    private setBoundsFunction = (currentView: MattermostView, bounds: Electron.Rectangle) => {
-        log.silly('setBoundsFunction', bounds.width, bounds.height);
-        currentView.setBounds(bounds);
-    };
-
-    private getBounds = () => {
-        let bounds;
-
-        if (this.mainWindow) {
-            // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
-            // https://github.com/electron/electron/issues/28699
-            // https://github.com/electron/electron/issues/28106
-            if (process.platform === 'linux') {
-                const size = this.mainWindow.getSize();
-                bounds = {width: size[0], height: size[1]};
-            } else {
-                bounds = this.mainWindow.getContentBounds();
-            }
-        }
-
-        return bounds as Electron.Rectangle;
+        this.initializeViewManager();
     }
 
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
-    sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
-        if (!this.mainWindow || !this.mainWindowReady) {
+    private sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
+        const mainWindow = MainWindow.get();
+
+        if (!mainWindow || !MainWindow.isReady) {
             if (maxRetries > 0) {
                 log.info(`Can't send ${channel}, will retry`);
                 setTimeout(() => {
@@ -437,10 +171,11 @@ export class WindowManager {
             }
             return;
         }
-        this.mainWindow!.webContents.send(channel, ...args);
-        if (this.settingsWindow && this.settingsWindow.isVisible()) {
+        mainWindow.webContents.send(channel, ...args);
+        const settingsWindow = SettingsWindow.get();
+        if (settingsWindow && settingsWindow.isVisible()) {
             try {
-                this.settingsWindow.webContents.send(channel, ...args);
+                settingsWindow.webContents.send(channel, ...args);
             } catch (e) {
                 log.error(`There was an error while trying to communicate with the renderer: ${e}`);
             }
@@ -451,163 +186,37 @@ export class WindowManager {
         this.sendToRendererWithRetry(3, channel, ...args);
     }
 
-    sendToAll = (channel: string, ...args: unknown[]) => {
-        this.sendToRenderer(channel, ...args);
-        if (this.settingsWindow) {
-            this.settingsWindow.webContents.send(channel, ...args);
-        }
-
-        // TODO: should we include popups?
-    }
-
-    sendToMattermostViews = (channel: string, ...args: unknown[]) => {
-        if (this.viewManager) {
-            this.viewManager.sendToAllViews(channel, ...args);
-        }
-    }
-
     restoreMain = () => {
         log.info('restoreMain');
-        if (!this.mainWindow) {
+        if (!MainWindow.get()) {
             this.showMainWindow();
         }
-        if (!this.mainWindow!.isVisible() || this.mainWindow!.isMinimized()) {
-            if (this.mainWindow!.isMinimized()) {
-                this.mainWindow!.restore();
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            throw new Error('Main window does not exist');
+        }
+        if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
+            if (mainWindow.isMinimized()) {
+                mainWindow.restore();
             } else {
-                this.mainWindow!.show();
+                mainWindow.show();
             }
-            if (this.settingsWindow) {
-                this.settingsWindow.focus();
+            const settingsWindow = SettingsWindow.get();
+            if (settingsWindow) {
+                settingsWindow.focus();
             } else {
-                this.mainWindow!.focus();
+                mainWindow.focus();
             }
-        } else if (this.settingsWindow) {
-            this.settingsWindow.focus();
+        } else if (SettingsWindow.get()) {
+            SettingsWindow.get()!.focus();
         } else {
-            this.mainWindow!.focus();
+            mainWindow.focus();
         }
     }
 
-    flashFrame = (flash: boolean) => {
-        if (process.platform === 'linux' || process.platform === 'win32') {
-            if (Config.notifications.flashWindow) {
-                this.mainWindow?.flashFrame(flash);
-            }
-        }
-        if (process.platform === 'darwin' && Config.notifications.bounceIcon) {
-            app.dock.bounce(Config.notifications.bounceIconType);
-        }
-    }
-
-    drawBadge = (text: string, small: boolean) => {
-        const scale = 2; // should rely display dpi
-        const size = (small ? 20 : 16) * scale;
-        const canvas = document.createElement('canvas');
-        canvas.setAttribute('width', `${size}`);
-        canvas.setAttribute('height', `${size}`);
-        const ctx = canvas.getContext('2d');
-
-        if (!ctx) {
-            log.error('Could not create canvas context');
-            return null;
-        }
-
-        // circle
-        ctx.fillStyle = '#FF1744'; // Material Red A400
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // text
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = (11 * scale) + 'px sans-serif';
-        ctx.fillText(text, size / 2, size / 2, size);
-
-        return canvas.toDataURL();
-    }
-
-    createDataURL = (text: string, small: boolean) => {
-        const win = this.mainWindow;
-        if (!win) {
-            return null;
-        }
-
-        // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
-        const safeSmall = Boolean(small);
-        const code = `
-        window.drawBadge = ${this.drawBadge};
-        window.drawBadge('${text || ''}', ${safeSmall});
-      `;
-        return win.webContents.executeJavaScript(code);
-    }
-
-    setOverlayIcon = async (badgeText: string | undefined, description: string, small: boolean) => {
-        if (process.platform === 'win32') {
-            let overlay = null;
-            if (this.mainWindow) {
-                if (badgeText) {
-                    try {
-                        const dataUrl = await this.createDataURL(badgeText, small);
-                        overlay = nativeImage.createFromDataURL(dataUrl);
-                    } catch (err) {
-                        log.error(`Couldn't generate a badge: ${err}`);
-                    }
-                }
-                this.mainWindow.setOverlayIcon(overlay, description);
-            }
-        }
-    }
-
-    isMainWindow = (window: BrowserWindow) => {
-        return this.mainWindow && this.mainWindow === window;
-    }
-
-    handleDoubleClick = (e: IpcMainEvent, windowType?: string) => {
-        log.debug('WindowManager.handleDoubleClick', windowType);
-
-        let action = 'Maximize';
-        if (process.platform === 'darwin') {
-            action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
-        }
-        const win = (windowType === 'settings') ? this.settingsWindow : this.mainWindow;
-        if (!win) {
-            return;
-        }
-        switch (action) {
-        case 'Minimize':
-            if (win.isMinimized()) {
-                win.restore();
-            } else {
-                win.minimize();
-            }
-            break;
-        case 'Maximize':
-        default:
-            if (win.isMaximized()) {
-                win.unmaximize();
-            } else {
-                win.maximize();
-            }
-            break;
-        }
-    }
-
-    initializeViewManager = () => {
-        if (!this.viewManager && Config && this.mainWindow) {
-            this.viewManager = new ViewManager(this.mainWindow);
-            this.viewManager.load();
-            this.viewManager.showInitial();
-            this.initializeCurrentServerId();
-        }
-    }
-
-    initializeCurrentServerId = () => {
-        if (!this.currentServerId && ServerManager.hasServers()) {
-            this.currentServerId = ServerManager.getLastActiveServer().id;
-        }
+    private initializeViewManager = () => {
+        ViewManager.load();
+        ViewManager.showInitial();
     }
 
     switchServer = (serverId: string, waitForViewToExist = false) => {
@@ -618,146 +227,90 @@ export class WindowManager {
             log.error('Cannot find server in config');
             return;
         }
-        this.currentServerId = server.id;
         const nextTab = ServerManager.getLastActiveTabForServer(serverId);
         if (waitForViewToExist) {
             const timeout = setInterval(() => {
-                if (this.viewManager?.views.has(nextTab.id)) {
-                    this.viewManager?.showById(nextTab.id);
+                if (ViewManager.getView(nextTab.id)) {
+                    ViewManager.showById(nextTab.id);
                     clearTimeout(timeout);
                 }
             }, 100);
         } else {
-            this.viewManager?.showById(nextTab.id);
+            ViewManager.showById(nextTab.id);
         }
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
     }
 
     switchTab = (tabId: string) => {
-        this.viewManager?.showById(tabId);
+        ViewManager.showById(tabId);
     }
 
     focusBrowserView = () => {
         log.debug('WindowManager.focusBrowserView');
 
-        if (this.viewManager) {
-            this.viewManager.focus();
+        if (ViewManager) {
+            ViewManager.focus();
         } else {
             log.error('Trying to call focus when the viewManager has not yet been initialized');
         }
     }
 
     openBrowserViewDevTools = () => {
-        if (this.viewManager) {
-            this.viewManager.openViewDevTools();
-        }
-    }
-
-    focusThreeDotMenu = () => {
-        if (this.mainWindow) {
-            this.mainWindow.webContents.focus();
-            this.mainWindow.webContents.send(FOCUS_THREE_DOT_MENU);
-        }
-    }
-
-    handleLoadingScreenDataRequest = () => {
-        return {
-            darkMode: Config.darkMode || false,
-        };
-    }
-
-    handleReactAppInitialized = (e: IpcMainEvent, view: string) => {
-        log.debug('WindowManager.handleReactAppInitialized', view);
-
-        if (this.viewManager) {
-            this.viewManager.setServerInitialized(view);
-        }
-    }
-
-    handleLoadingScreenAnimationFinished = () => {
-        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
-
-        if (this.viewManager) {
-            this.viewManager.hideLoadingScreen();
-        }
-
-        if (process.env.NODE_ENV === 'test') {
-            app.emit('e2e-app-loaded');
+        if (ViewManager) {
+            ViewManager.openViewDevTools();
         }
     }
 
     updateLoadingScreenDarkMode = (darkMode: boolean) => {
-        if (this.viewManager) {
-            this.viewManager.updateLoadingScreenDarkMode(darkMode);
-        }
-    }
-
-    getViewIdByWebContentsId = (webContentsId: number) => {
-        const view = this.viewManager?.findViewByWebContent(webContentsId);
-        return view?.id;
-    }
-
-    getServerNameByWebContentsId = (webContentsId: number) => {
-        const view = this.viewManager?.findViewByWebContent(webContentsId);
-        return view?.tab.server.name;
-    }
-
-    close = () => {
-        const focused = BrowserWindow.getFocusedWindow();
-        focused?.close();
-    }
-    maximize = () => {
-        const focused = BrowserWindow.getFocusedWindow();
-        if (focused) {
-            focused.maximize();
-        }
-    }
-    minimize = () => {
-        const focused = BrowserWindow.getFocusedWindow();
-        if (focused) {
-            focused.minimize();
-        }
-    }
-    restore = () => {
-        const focused = BrowserWindow.getFocusedWindow();
-        if (focused) {
-            focused.restore();
-        }
-        if (focused?.isFullScreen()) {
-            focused.setFullScreen(false);
+        if (ViewManager) {
+            ViewManager.updateLoadingScreenDarkMode(darkMode);
         }
     }
 
     reload = () => {
-        const currentView = this.viewManager?.getCurrentView();
+        const currentView = ViewManager.getCurrentView();
         if (currentView) {
-            this.viewManager?.showLoadingScreen();
+            ViewManager.showLoadingScreen();
             currentView.reload();
         }
     }
 
     sendToFind = () => {
-        const currentView = this.viewManager?.getCurrentView();
+        const currentView = ViewManager.getCurrentView();
         if (currentView) {
             currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
         }
     }
 
-    handleHistory = (event: IpcMainEvent, offset: number) => {
-        log.debug('WindowManager.handleHistory', offset);
+    /**
+     * ID fetching
+     */
 
-        if (this.viewManager) {
-            const activeView = this.viewManager.getCurrentView();
-            if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
-                try {
-                    activeView.view.webContents.goToOffset(offset);
-                } catch (error) {
-                    log.error(error);
-                    activeView.load(activeView.tab.url);
-                }
-            }
-        }
+    getViewIdByWebContentsId = (webContentsId: number) => {
+        const view = ViewManager.findViewByWebContent(webContentsId);
+        return view?.id;
     }
+
+    getServerNameByWebContentsId = (webContentsId: number) => {
+        const view = ViewManager.findViewByWebContent(webContentsId);
+        return view?.tab.server.name;
+    }
+
+    getServerURLFromWebContentsId = (id: number) => {
+        if (this.callsWidgetWindow && (id === this.callsWidgetWindow.getWebContentsId() || id === this.callsWidgetWindow.getPopOutWebContentsId())) {
+            return this.callsWidgetWindow.getURL();
+        }
+
+        const viewId = this.getViewIdByWebContentsId(id);
+        if (!viewId) {
+            return undefined;
+        }
+        return ViewManager.getView(viewId)?.tab.server.url;
+    }
+
+    /**
+     * Tab switching
+     */
 
     selectNextTab = () => {
         this.selectTab((order) => order + 1);
@@ -767,8 +320,8 @@ export class WindowManager {
         this.selectTab((order, length) => (length + (order - 1)));
     }
 
-    selectTab = (fn: (order: number, length: number) => number) => {
-        const currentView = this.viewManager?.getCurrentView();
+    private selectTab = (fn: (order: number, length: number) => number) => {
+        const currentView = ViewManager.getCurrentView();
         if (!currentView) {
             return;
         }
@@ -792,25 +345,179 @@ export class WindowManager {
         this.switchTab(newTab.id);
     }
 
-    handleGetDarkMode = () => {
+    /*****************
+     * MAIN WINDOW EVENT HANDLERS
+     *****************/
+
+    private handleMaximizeMainWindow = () => {
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
+        this.sendToRenderer(MAXIMIZE_CHANGE, true);
+    }
+
+    private handleUnmaximizeMainWindow = () => {
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
+        this.sendToRenderer(MAXIMIZE_CHANGE, false);
+    }
+
+    private handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
+        log.silly('WindowManager.handleWillResizeMainWindow');
+
+        /**
+         * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
+         * causing the "resize" event to not fire
+         */
+        const prevBounds = this.getBounds();
+        if (prevBounds.height === newBounds.height && prevBounds.width === newBounds.width) {
+            return;
+        }
+
+        if (this.isResizing && ViewManager.isLoadingScreenHidden() && ViewManager.getCurrentView()) {
+            log.debug('prevented resize');
+            event.preventDefault();
+            return;
+        }
+
+        this.throttledWillResize(newBounds);
+        ViewManager.setLoadingScreenBounds();
+        this.teamDropdown?.updateWindowBounds();
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
+        ipcMain.emit(RESIZE_MODAL, null, newBounds);
+    }
+
+    private handleResizedMainWindow = () => {
+        log.silly('WindowManager.handleResizedMainWindow');
+
+        const bounds = this.getBounds();
+        this.throttledWillResize(bounds);
+        ipcMain.emit(RESIZE_MODAL, null, bounds);
+        this.teamDropdown?.updateWindowBounds();
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
+        this.isResizing = false;
+    }
+
+    private throttledWillResize = (newBounds: Electron.Rectangle) => {
+        log.silly('WindowManager.throttledWillResize', {newBounds});
+
+        this.isResizing = true;
+        this.setCurrentViewBounds(newBounds);
+    }
+
+    private handleResizeMainWindow = () => {
+        log.silly('WindowManager.handleResizeMainWindow');
+
+        if (this.isResizing) {
+            return;
+        }
+
+        const bounds = this.getBounds();
+
+        // Another workaround since the window doesn't update properly under Linux for some reason
+        // See above comment
+        setTimeout(this.setCurrentViewBounds, 10, bounds);
+        ViewManager.setLoadingScreenBounds();
+        this.teamDropdown?.updateWindowBounds();
+        this.downloadsDropdown?.updateWindowBounds();
+        this.downloadsDropdownMenu?.updateWindowBounds();
+        ipcMain.emit(RESIZE_MODAL, null, bounds);
+    };
+
+    private setCurrentViewBounds = (bounds: {width: number; height: number}) => {
+        log.debug('WindowManager.setCurrentViewBounds', {bounds});
+
+        const currentView = ViewManager.getCurrentView();
+        if (currentView) {
+            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL()));
+            this.setBoundsFunction(currentView, adjustedBounds);
+        }
+    }
+
+    private setBoundsFunction = (currentView: MattermostView, bounds: Electron.Rectangle) => {
+        log.silly('setBoundsFunction', bounds.width, bounds.height);
+        currentView.setBounds(bounds);
+    };
+
+    private getBounds = () => {
+        let bounds;
+
+        const mainWindow = MainWindow.get();
+        if (mainWindow) {
+            // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
+            // https://github.com/electron/electron/issues/28699
+            // https://github.com/electron/electron/issues/28106
+            if (process.platform === 'linux') {
+                const size = mainWindow.getSize();
+                bounds = {width: size[0], height: size[1]};
+            } else {
+                bounds = mainWindow.getContentBounds();
+            }
+        }
+
+        return bounds as Electron.Rectangle;
+    }
+
+    /*****************
+     * IPC EVENT HANDLERS
+     *****************/
+
+    private handleReactAppInitialized = (e: IpcMainEvent, view: string) => {
+        log.debug('WindowManager.handleReactAppInitialized', view);
+
+        if (ViewManager) {
+            ViewManager.setServerInitialized(view);
+        }
+    }
+
+    private handleHistory = (event: IpcMainEvent, offset: number) => {
+        log.debug('WindowManager.handleHistory', offset);
+
+        if (ViewManager) {
+            const activeView = ViewManager.getCurrentView();
+            if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
+                try {
+                    activeView.view.webContents.goToOffset(offset);
+                } catch (error) {
+                    log.error(error);
+                    activeView.load(activeView.tab.url);
+                }
+            }
+        }
+    }
+
+    private handleGetDarkMode = () => {
         return Config.darkMode;
     }
 
-    handleBrowserHistoryPush = (e: IpcMainEvent, viewId: string, pathName: string) => {
+    private handleLoadingScreenAnimationFinished = () => {
+        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
+
+        if (ViewManager) {
+            ViewManager.hideLoadingScreen();
+        }
+
+        if (process.env.NODE_ENV === 'test') {
+            app.emit('e2e-app-loaded');
+        }
+    }
+
+    private handleBrowserHistoryPush = (e: IpcMainEvent, viewId: string, pathName: string) => {
         log.debug('WindowManager.handleBrowserHistoryPush', {viewId, pathName});
 
-        const currentView = this.viewManager?.views.get(viewId);
+        const currentView = ViewManager.getView(viewId);
         const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
         const redirectedviewId = ServerManager.lookupTabByURL(`${currentView?.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
-        if (this.viewManager?.closedViews.has(redirectedviewId)) {
+        if (ViewManager.isViewClosed(redirectedviewId)) {
             // If it's a closed view, just open it and stop
-            this.viewManager.openClosedTab(redirectedviewId, `${currentView?.tab.server.url}${cleanedPathName}`);
+            ViewManager.openClosedTab(redirectedviewId, `${currentView?.tab.server.url}${cleanedPathName}`);
             return;
         }
-        let redirectedView = this.viewManager?.views.get(redirectedviewId) || currentView;
-        if (redirectedView !== currentView && redirectedView?.tab.server.id === this.currentServerId && redirectedView?.isLoggedIn) {
+        let redirectedView = ViewManager.getView(redirectedviewId) || currentView;
+        if (redirectedView !== currentView && redirectedView?.tab.server.id === ServerManager.getCurrentServer().id && redirectedView?.isLoggedIn) {
             log.info('redirecting to a new view', redirectedView?.id || viewId);
-            this.viewManager?.showById(redirectedView?.id || viewId);
+            ViewManager.showById(redirectedView?.id || viewId);
         } else {
             redirectedView = currentView;
         }
@@ -824,10 +531,10 @@ export class WindowManager {
         }
     }
 
-    handleBrowserHistoryButton = (e: IpcMainEvent, viewId: string) => {
+    private handleBrowserHistoryButton = (e: IpcMainEvent, viewId: string) => {
         log.debug('WindowManager.handleBrowserHistoryButton', viewId);
 
-        const currentView = this.viewManager?.views.get(viewId);
+        const currentView = ViewManager.getView(viewId);
         if (currentView) {
             if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
                 currentView.view.webContents.clearHistory();
@@ -839,50 +546,131 @@ export class WindowManager {
         }
     }
 
-    getCurrentTeamId = () => {
-        return this.currentServerId;
-    }
-
-    handleAppLoggedIn = (event: IpcMainEvent, viewId: string) => {
+    private handleAppLoggedIn = (event: IpcMainEvent, viewId: string) => {
         log.debug('WindowManager.handleAppLoggedIn', viewId);
 
-        const view = this.viewManager?.views.get(viewId);
+        const view = ViewManager.getView(viewId);
         if (view && !view.isLoggedIn) {
             view.isLoggedIn = true;
-            this.viewManager?.reloadViewIfNeeded(viewId);
+            ViewManager.reloadViewIfNeeded(viewId);
         }
     }
 
-    handleAppLoggedOut = (event: IpcMainEvent, viewId: string) => {
+    private handleAppLoggedOut = (event: IpcMainEvent, viewId: string) => {
         log.debug('WindowManager.handleAppLoggedOut', viewId);
 
-        const view = this.viewManager?.views.get(viewId);
+        const view = ViewManager.getView(viewId);
         if (view && view.isLoggedIn) {
             view.isLoggedIn = false;
         }
     }
 
-    handleGetViewId = (event: IpcMainInvokeEvent) => {
+    private handleGetViewId = (event: IpcMainInvokeEvent) => {
         // TODO
         const viewId = this.getViewIdByWebContentsId(event.sender.id);
         if (!viewId) {
             return null;
         }
-        const view = this.viewManager?.views.get(viewId);
+        const view = ViewManager.getView(viewId);
         if (!view) {
             return null;
         }
         return `${view.tab.server.name}___${view.tab.name}`;
     }
 
-    handleGetWebContentsId = (event: IpcMainInvokeEvent) => {
+    private handleGetWebContentsId = (event: IpcMainInvokeEvent) => {
         return event.sender.id;
     }
 
-    handleGetDesktopSources = async (viewId: string, opts: Electron.SourcesOptions) => {
+    private handleReloadCurrentView = () => {
+        log.debug('WindowManager.handleReloadCurrentView');
+
+        const view = ViewManager.getCurrentView();
+        if (!view) {
+            return;
+        }
+        view?.reload();
+        ViewManager.showById(view?.id);
+    }
+
+    private handleViewFinishedResizing = () => {
+        this.isResizing = false;
+    }
+
+    private handleClose = () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        focused?.close();
+    }
+    private handleMaximize = () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        if (focused) {
+            focused.maximize();
+        }
+    }
+    private handleMinimize = () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        if (focused) {
+            focused.minimize();
+        }
+    }
+    private handleRestore = () => {
+        const focused = BrowserWindow.getFocusedWindow();
+        if (focused) {
+            focused.restore();
+        }
+        if (focused?.isFullScreen()) {
+            focused.setFullScreen(false);
+        }
+    }
+
+    handleDoubleClick = (e: IpcMainEvent, windowType?: string) => {
+        log.debug('WindowManager.handleDoubleClick', windowType);
+
+        let action = 'Maximize';
+        if (process.platform === 'darwin') {
+            action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+        }
+        const win = (windowType === 'settings') ? SettingsWindow.get() : MainWindow.get();
+        if (!win) {
+            return;
+        }
+        switch (action) {
+        case 'Minimize':
+            if (win.isMinimized()) {
+                win.restore();
+            } else {
+                win.minimize();
+            }
+            break;
+        case 'Maximize':
+        default:
+            if (win.isMaximized()) {
+                win.unmaximize();
+            } else {
+                win.maximize();
+            }
+            break;
+        }
+    }
+
+    /************************
+     * CALLS WIDGET HANDLERS
+     ************************/
+
+    private genCallsEventHandler = (handler: CallsEventHandler) => {
+        return (event: IpcMainEvent, viewId: string, msg?: any) => {
+            if (this.callsWidgetWindow && !this.callsWidgetWindow.isAllowedEvent(event)) {
+                log.warn('WindowManager.genCallsEventHandler', 'Disallowed calls event');
+                return;
+            }
+            handler(viewId, msg);
+        };
+    }
+
+    private handleGetDesktopSources = async (viewId: string, opts: Electron.SourcesOptions) => {
         log.debug('WindowManager.handleGetDesktopSources', {viewId, opts});
 
-        const view = this.viewManager?.views.get(viewId);
+        const view = ViewManager.getView(viewId);
         if (!view) {
             log.error('WindowManager.handleGetDesktopSources: view not found');
             return Promise.resolve();
@@ -944,27 +732,88 @@ export class WindowManager {
         });
     }
 
-    handleReloadCurrentView = () => {
-        log.debug('WindowManager.handleReloadCurrentView');
+    private createCallsWidgetWindow = async (viewId: string, msg: CallsJoinCallMessage) => {
+        log.debug('WindowManager.createCallsWidgetWindow');
+        if (this.callsWidgetWindow) {
+            // trying to join again the call we are already in should not be allowed.
+            if (this.callsWidgetWindow.getCallID() === msg.callID) {
+                return;
+            }
 
-        const view = this.viewManager?.getCurrentView();
-        if (!view) {
+            // to switch from one call to another we need to wait for the existing
+            // window to be fully closed.
+            await this.callsWidgetWindow.close();
+        }
+        const currentView = ViewManager.getView(viewId);
+        if (!currentView) {
+            log.error('unable to create calls widget window: currentView is missing');
             return;
         }
-        view?.reload();
-        this.viewManager?.showById(view?.id);
+
+        this.callsWidgetWindow = new CallsWidgetWindow(MainWindow.get()!, currentView, {
+            callID: msg.callID,
+            title: msg.title,
+            rootID: msg.rootID,
+            channelURL: msg.channelURL,
+        });
+
+        this.callsWidgetWindow.on('closed', () => delete this.callsWidgetWindow);
     }
 
-    getServerURLFromWebContentsId = (id: number) => {
-        if (this.callsWidgetWindow && (id === this.callsWidgetWindow.getWebContentsId() || id === this.callsWidgetWindow.getPopOutWebContentsId())) {
-            return this.callsWidgetWindow.getURL();
-        }
+    private handleDesktopSourcesModalRequest = () => {
+        log.debug('WindowManager.handleDesktopSourcesModalRequest');
 
-        const viewId = this.getViewIdByWebContentsId(id);
-        if (!viewId) {
-            return undefined;
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerId());
+            MainWindow.get()?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
         }
-        return this.viewManager?.views.get(viewId)?.tab.server.url;
+    }
+
+    private handleCallsLeave = () => {
+        log.debug('WindowManager.handleCallsLeave');
+
+        this.callsWidgetWindow?.close();
+    }
+
+    private handleCallsWidgetChannelLinkClick = () => {
+        log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
+
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerId());
+            MainWindow.get()?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
+        }
+    }
+
+    private handleCallsError = (_: string, msg: CallsErrorMessage) => {
+        log.debug('WindowManager.handleCallsError', msg);
+
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerId());
+            MainWindow.get()?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
+        }
+    }
+
+    private handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
+        log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
+
+        if (this.callsWidgetWindow) {
+            this.switchServer(this.callsWidgetWindow.getServerId());
+            MainWindow.get()?.focus();
+            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
+        }
+    }
+
+    /**
+     * Server Manager update handler
+     */
+    private handleUpdateConfig = () => {
+        if (ViewManager) {
+            ViewManager.reloadConfiguration();
+        }
+        MainWindow.get()?.webContents.send(SERVERS_UPDATE);
     }
 }
 

@@ -59,6 +59,11 @@ jest.mock('electron', () => {
         Notification: NotificationMock,
     };
 });
+jest.mock('main/downloadsManager', () => ({
+    getDownloads: jest.fn(),
+    onOpen: jest.fn(),
+    onClose: jest.fn(),
+}));
 jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));

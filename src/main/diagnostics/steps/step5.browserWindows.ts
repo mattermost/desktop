@@ -5,7 +5,7 @@ import {ElectronLog} from 'electron-log';
 
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
-import windowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
@@ -17,11 +17,11 @@ const stepDescriptiveName = 'BrowserWindowsChecks';
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
         /** Main window check */
-        if (!windowManager.mainWindowReady) {
+        if (!MainWindow.isReady) {
             throw new Error('Main window not ready');
         }
-        const mainWindowVisibilityStatus = browserWindowVisibilityStatus('mainWindow', windowManager.mainWindow);
-        const webContentsOk = webContentsCheck(windowManager.mainWindow?.webContents);
+        const mainWindowVisibilityStatus = browserWindowVisibilityStatus('mainWindow', MainWindow.get());
+        const webContentsOk = webContentsCheck(MainWindow.get()?.webContents);
 
         if (mainWindowVisibilityStatus.some((status) => !status.ok) || !webContentsOk) {
             return {

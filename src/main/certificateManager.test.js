@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 import ModalManager from 'main/views/modalManager';
 import {CertificateManager} from 'main/certificateManager';
 
-jest.mock('main/windows/windowManager', () => ({
-    getMainWindow: jest.fn().mockImplementation(() => ({})),
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn().mockImplementation(() => ({})),
 }));
 
 jest.mock('main/views/modalManager', () => ({
@@ -50,7 +50,7 @@ describe('main/certificateManager', () => {
         const certificateManager = new CertificateManager();
 
         it('should not pop modal when no main window exists', () => {
-            WindowManager.getMainWindow.mockImplementationOnce(() => null);
+            MainWindow.get.mockImplementationOnce(() => null);
             certificateManager.popCertificateModal('http://anormalurl.com', [{data: 'test 1'}, {data: 'test 2'}, {data: 'test 3'}]);
             expect(ModalManager.addModal).not.toBeCalled();
         });

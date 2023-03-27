@@ -48,6 +48,7 @@ jest.mock('main/i18nManager', () => ({
 jest.mock('main/menus/app', () => ({}));
 jest.mock('main/menus/tray', () => ({}));
 jest.mock('main/tray/tray', () => ({}));
+jest.mock('main/windows/mainWindow', () => ({}));
 jest.mock('main/windows/windowManager', () => ({}));
 
 jest.mock('./initialize', () => ({
