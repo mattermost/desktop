@@ -362,7 +362,7 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     focusOnWebView = () => {
-        window.desktop.focusBrowserView();
+        window.desktop.focusCurrentView();
         this.handleCloseDropdowns();
     }
 

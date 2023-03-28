@@ -3,7 +3,7 @@
 
 /* eslint-disable max-lines */
 
-import {app, BrowserWindow, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
+import {BrowserWindow, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
 import {
@@ -16,17 +16,12 @@ import {
 import {
     MAXIMIZE_CHANGE,
     HISTORY,
-    REACT_APP_INITIALIZED,
-    LOADING_SCREEN_ANIMATION_FINISHED,
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
-    APP_LOGGED_IN,
     GET_VIEW_ID,
     GET_VIEW_WEBCONTENTS_ID,
     RESIZE_MODAL,
-    APP_LOGGED_OUT,
-    BROWSER_HISTORY_BUTTON,
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
     RELOAD_CURRENT_VIEW,
@@ -44,10 +39,8 @@ import {
     WINDOW_RESTORE,
     DOUBLE_CLICK_ON_WINDOW,
 } from 'common/communication';
-import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
 import ServerManager from 'common/servers/serverManager';
 
 import {
@@ -84,12 +77,6 @@ export class WindowManager {
 
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
-        ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
-        ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);
-        ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
-        ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
-        ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
-        ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.handle(GET_VIEW_ID, this.handleGetViewId);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
@@ -145,7 +132,7 @@ export class WindowManager {
         }
         mainWindow.on('will-resize', this.handleWillResizeMainWindow);
         mainWindow.on('resized', this.handleResizedMainWindow);
-        mainWindow.on('focus', this.focusBrowserView);
+        mainWindow.on('focus', ViewManager.focusCurrentView);
         mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
         mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
 
@@ -215,8 +202,7 @@ export class WindowManager {
     }
 
     private initializeViewManager = () => {
-        ViewManager.load();
-        ViewManager.showInitial();
+        ViewManager.init();
     }
 
     switchServer = (serverId: string, waitForViewToExist = false) => {
@@ -245,36 +231,6 @@ export class WindowManager {
         ViewManager.showById(tabId);
     }
 
-    focusBrowserView = () => {
-        log.debug('WindowManager.focusBrowserView');
-
-        if (ViewManager) {
-            ViewManager.focus();
-        } else {
-            log.error('Trying to call focus when the viewManager has not yet been initialized');
-        }
-    }
-
-    openBrowserViewDevTools = () => {
-        if (ViewManager) {
-            ViewManager.openViewDevTools();
-        }
-    }
-
-    updateLoadingScreenDarkMode = (darkMode: boolean) => {
-        if (ViewManager) {
-            ViewManager.updateLoadingScreenDarkMode(darkMode);
-        }
-    }
-
-    reload = () => {
-        const currentView = ViewManager.getCurrentView();
-        if (currentView) {
-            ViewManager.showLoadingScreen();
-            currentView.reload();
-        }
-    }
-
     sendToFind = () => {
         const currentView = ViewManager.getCurrentView();
         if (currentView) {
@@ -286,26 +242,12 @@ export class WindowManager {
      * ID fetching
      */
 
-    getViewIdByWebContentsId = (webContentsId: number) => {
-        const view = ViewManager.findViewByWebContent(webContentsId);
-        return view?.id;
-    }
-
-    getServerNameByWebContentsId = (webContentsId: number) => {
-        const view = ViewManager.findViewByWebContent(webContentsId);
-        return view?.tab.server.name;
-    }
-
     getServerURLFromWebContentsId = (id: number) => {
         if (this.callsWidgetWindow && (id === this.callsWidgetWindow.getWebContentsId() || id === this.callsWidgetWindow.getPopOutWebContentsId())) {
             return this.callsWidgetWindow.getURL();
         }
 
-        const viewId = this.getViewIdByWebContentsId(id);
-        if (!viewId) {
-            return undefined;
-        }
-        return ViewManager.getView(viewId)?.tab.server.url;
+        return ViewManager.getViewByWebContentsId(id)?.tab.server.url;
     }
 
     /**
@@ -463,14 +405,6 @@ export class WindowManager {
      * IPC EVENT HANDLERS
      *****************/
 
-    private handleReactAppInitialized = (e: IpcMainEvent, view: string) => {
-        log.debug('WindowManager.handleReactAppInitialized', view);
-
-        if (ViewManager) {
-            ViewManager.setServerInitialized(view);
-        }
-    }
-
     private handleHistory = (event: IpcMainEvent, offset: number) => {
         log.debug('WindowManager.handleHistory', offset);
 
@@ -491,87 +425,9 @@ export class WindowManager {
         return Config.darkMode;
     }
 
-    private handleLoadingScreenAnimationFinished = () => {
-        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
-
-        if (ViewManager) {
-            ViewManager.hideLoadingScreen();
-        }
-
-        if (process.env.NODE_ENV === 'test') {
-            app.emit('e2e-app-loaded');
-        }
-    }
-
-    private handleBrowserHistoryPush = (e: IpcMainEvent, viewId: string, pathName: string) => {
-        log.debug('WindowManager.handleBrowserHistoryPush', {viewId, pathName});
-
-        const currentView = ViewManager.getView(viewId);
-        const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
-        const redirectedviewId = ServerManager.lookupTabByURL(`${currentView?.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
-        if (ViewManager.isViewClosed(redirectedviewId)) {
-            // If it's a closed view, just open it and stop
-            ViewManager.openClosedTab(redirectedviewId, `${currentView?.tab.server.url}${cleanedPathName}`);
-            return;
-        }
-        let redirectedView = ViewManager.getView(redirectedviewId) || currentView;
-        if (redirectedView !== currentView && redirectedView?.tab.server.id === ServerManager.getCurrentServer().id && redirectedView?.isLoggedIn) {
-            log.info('redirecting to a new view', redirectedView?.id || viewId);
-            ViewManager.showById(redirectedView?.id || viewId);
-        } else {
-            redirectedView = currentView;
-        }
-
-        // Special case check for Channels to not force a redirect to "/", causing a refresh
-        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && cleanedPathName === '/')) {
-            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, cleanedPathName);
-            if (redirectedView) {
-                this.handleBrowserHistoryButton(e, redirectedView.id);
-            }
-        }
-    }
-
-    private handleBrowserHistoryButton = (e: IpcMainEvent, viewId: string) => {
-        log.debug('WindowManager.handleBrowserHistoryButton', viewId);
-
-        const currentView = ViewManager.getView(viewId);
-        if (currentView) {
-            if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
-                currentView.view.webContents.clearHistory();
-                currentView.isAtRoot = true;
-            } else {
-                currentView.isAtRoot = false;
-            }
-            currentView?.view.webContents.send(BROWSER_HISTORY_BUTTON, currentView.view.webContents.canGoBack(), currentView.view.webContents.canGoForward());
-        }
-    }
-
-    private handleAppLoggedIn = (event: IpcMainEvent, viewId: string) => {
-        log.debug('WindowManager.handleAppLoggedIn', viewId);
-
-        const view = ViewManager.getView(viewId);
-        if (view && !view.isLoggedIn) {
-            view.isLoggedIn = true;
-            ViewManager.reloadViewIfNeeded(viewId);
-        }
-    }
-
-    private handleAppLoggedOut = (event: IpcMainEvent, viewId: string) => {
-        log.debug('WindowManager.handleAppLoggedOut', viewId);
-
-        const view = ViewManager.getView(viewId);
-        if (view && view.isLoggedIn) {
-            view.isLoggedIn = false;
-        }
-    }
-
     private handleGetViewId = (event: IpcMainInvokeEvent) => {
         // TODO
-        const viewId = this.getViewIdByWebContentsId(event.sender.id);
-        if (!viewId) {
-            return null;
-        }
-        const view = ViewManager.getView(viewId);
+        const view = ViewManager.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return null;
         }
@@ -810,9 +666,6 @@ export class WindowManager {
      * Server Manager update handler
      */
     private handleUpdateConfig = () => {
-        if (ViewManager) {
-            ViewManager.reloadConfiguration();
-        }
         MainWindow.get()?.webContents.send(SERVERS_UPDATE);
     }
 }

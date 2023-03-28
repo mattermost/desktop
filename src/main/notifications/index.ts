@@ -11,6 +11,7 @@ import {MentionData} from 'types/notification';
 import Config from 'common/config';
 import {PLAY_SOUND} from 'common/communication';
 
+import ViewManager from '../views/viewManager';
 import MainWindow from '../windows/mainWindow';
 import WindowManager from '../windows/windowManager';
 
@@ -34,11 +35,11 @@ export function displayMention(title: string, body: string, channel: {id: string
         return;
     }
 
-    const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
-    const viewId = WindowManager.getViewIdByWebContentsId(webcontents.id);
-    if (!viewId) {
+    const view = ViewManager.getViewByWebContentsId(webcontents.id);
+    if (!view) {
         return;
     }
+    const serverName = view.tab.server.name;
 
     const options = {
         title: `${serverName}: ${title}`,
@@ -72,7 +73,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     mention.on('click', () => {
         log.debug('notification click', serverName, mention);
         if (serverName) {
-            WindowManager.switchTab(viewId);
+            WindowManager.switchTab(view.id);
             webcontents.send('notification-clicked', {channel, teamId, url});
         }
     });

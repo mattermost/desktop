@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import log from 'electron-log';
-import {BrowserView, dialog, ipcMain, IpcMainEvent} from 'electron';
+import {app, BrowserView, dialog, ipcMain, IpcMainEvent} from 'electron';
 
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
@@ -17,13 +17,19 @@ import {
     UPDATE_URL_VIEW_WIDTH,
     MAIN_WINDOW_SHOWN,
     DARK_MODE_CHANGE,
+    SERVERS_UPDATE,
+    REACT_APP_INITIALIZED,
+    LOADING_SCREEN_ANIMATION_FINISHED,
+    BROWSER_HISTORY_BUTTON,
+    APP_LOGGED_OUT,
+    APP_LOGGED_IN,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
-import {TabView} from 'common/tabs/TabView';
+import {TabView, TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -48,7 +54,6 @@ export class ViewManager {
     private views: Map<string, MattermostView>;
     private currentView?: string;
 
-    private urlView?: BrowserView;
     private urlViewCancel?: () => void;
     private loadingScreen?: BrowserView;
     private loadingScreenState: LoadingScreenState;
@@ -57,148 +62,40 @@ export class ViewManager {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.closedViews = new Map();
         this.loadingScreenState = LoadingScreenState.HIDDEN;
+
+        ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
+        ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);
+        ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
+        ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
+        ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
+        ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
+
+        ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
     }
 
-    loadServer = (server: MattermostServer) => {
-        const tabs = ServerManager.getOrderedTabsForServer(server.id);
-        tabs.forEach((tab) => this.loadView(server, tab));
-    }
-
-    makeView = (srv: MattermostServer, tab: TabView, url?: string): MattermostView => {
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            throw new Error('Cannot create view, no main window present');
-        }
-
-        const view = new MattermostView(tab, mainWindow, {webPreferences: {spellcheck: Config.useSpellChecker}});
-        view.once(LOAD_SUCCESS, this.activateView);
-        view.load(url);
-        view.on(UPDATE_TARGET_URL, this.showURLView);
-        view.on(LOADSCREEN_END, this.finishLoading);
-        view.on(LOAD_FAILED, this.failLoading);
-        return view;
-    }
-
-    addView = (view: MattermostView): void => {
-        this.views.set(view.id, view);
-        if (this.closedViews.has(view.id)) {
-            this.closedViews.delete(view.id);
-        }
-        if (!this.loadingScreen) {
-            this.createLoadingScreen();
-        }
-    }
-
-    loadView = (srv: MattermostServer, tab: TabView, url?: string) => {
-        if (!tab.isOpen) {
-            this.closedViews.set(tab.id, {srv, tab});
-            return;
-        }
-        const view = this.makeView(srv, tab, url);
-        this.addView(view);
-    }
-
-    reloadViewIfNeeded = (viewName: string) => {
-        const view = this.views.get(viewName);
-        if (view && view.view.webContents.getURL() !== view.tab.url.toString() && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
-            view.load(view.tab.url);
-        }
-    }
-
-    load = () => {
+    init = () => {
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
+        this.showInitial();
     }
 
     getView = (viewId: string) => {
         return this.views.get(viewId);
     }
 
-    /** Called when a new configuration is received
-     * Servers or tabs have been added or edited. We need to
-     * close, open, or reload tabs, taking care to reuse tabs and
-     * preserve focus on the currently selected tab. */
-    reloadConfiguration = () => {
-        log.debug('viewManager.reloadConfiguration');
-
-        const currentTabId: string | undefined = this.views.get(this.currentView as string)?.tab.id;
-
-        const current: Map<string, MattermostView> = new Map();
-        for (const view of this.views.values()) {
-            current.set(view.tab.id, view);
+    getCurrentView = () => {
+        if (this.currentView) {
+            return this.views.get(this.currentView);
         }
 
-        const views: Map<string, MattermostView> = new Map();
-        const closed: Map<string, {srv: MattermostServer; tab: TabView}> = new Map();
-
-        const sortedTabs = ServerManager.getAllServers().flatMap((x) => ServerManager.getOrderedTabsForServer(x.id).
-            map((t): [MattermostServer, TabView] => [x, t]));
-
-        for (const [srv, tab] of sortedTabs) {
-            const recycle = current.get(tab.id);
-            if (!tab.isOpen) {
-                closed.set(tab.id, {srv, tab});
-            } else if (recycle) {
-                recycle.updateServerInfo(srv);
-                views.set(tab.id, recycle);
-            } else {
-                views.set(tab.id, this.makeView(srv, tab));
-            }
-        }
-
-        // commit the data to our local state
-        // destroy everything that no longer exists
-        for (const [k, v] of current) {
-            if (!views.has(k)) {
-                v.destroy();
-            }
-        }
-
-        // commit views
-        this.views = new Map();
-        for (const x of views.values()) {
-            this.views.set(x.id, x);
-        }
-
-        // commit closed
-        for (const x of closed.values()) {
-            this.closedViews.set(x.tab.id, {srv: x.srv, tab: x.tab});
-        }
-
-        if ((currentTabId && closed.has(currentTabId)) || (this.currentView && this.closedViews.has(this.currentView))) {
-            if (ServerManager.hasServers()) {
-                this.currentView = undefined;
-                this.showInitial();
-            } else {
-                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
-            }
-        }
-
-        // show the focused tab (or initial)
-        if (currentTabId && views.has(currentTabId)) {
-            const view = views.get(currentTabId);
-            if (view && view.id !== this.currentView) {
-                this.currentView = view.id;
-                this.showById(view.id);
-                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.tab.server.id, view.tab.id);
-            } else {
-                this.focus();
-            }
-        } else {
-            this.showInitial();
-        }
+        return undefined;
     }
 
-    showInitial = () => {
-        log.verbose('viewManager.showInitial');
+    getViewByWebContentsId = (webContentsId: number) => {
+        return [...this.views.values()].find((view) => view.view.webContents.id === webContentsId);
+    }
 
-        if (ServerManager.hasServers()) {
-            const lastActiveServer = ServerManager.getCurrentServer();
-            const lastActiveTab = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
-            this.showById(lastActiveTab.id);
-        } else {
-            MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
-            ipcMain.emit(MAIN_WINDOW_SHOWN);
-        }
+    isViewClosed = (viewId: string) => {
+        return this.closedViews.has(viewId);
     }
 
     showById = (tabId: string) => {
@@ -236,7 +133,9 @@ export class ViewManager {
         modalManager.showModal();
     }
 
-    focus = () => {
+    focusCurrentView = () => {
+        log.debug('viewManager.focusCurrentView');
+
         if (modalManager.isModalDisplayed()) {
             modalManager.focusCurrentModal();
             return;
@@ -248,7 +147,144 @@ export class ViewManager {
         }
     }
 
-    activateView = (viewName: string) => {
+    reload = () => {
+        const currentView = this.getCurrentView();
+        if (currentView) {
+            this.showLoadingScreen();
+            currentView.reload();
+        }
+    }
+
+    sendToAllViews = (channel: string, ...args: unknown[]) => {
+        this.views.forEach((view) => {
+            if (!view.view.webContents.isDestroyed()) {
+                view.view.webContents.send(channel, ...args);
+            }
+        });
+    }
+
+    /**
+     * Deep linking
+     */
+
+    handleDeepLink = (url: string | URL) => {
+        // TODO: fix for new tabs
+        if (url) {
+            const parsedURL = urlUtils.parseURL(url)!;
+            const tabView = ServerManager.lookupTabByURL(parsedURL, true);
+            if (tabView) {
+                const urlWithSchema = `${tabView.url.origin}${parsedURL.pathname}${parsedURL.search}`;
+                if (this.closedViews.has(tabView.id)) {
+                    this.openClosedTab(tabView.id, urlWithSchema);
+                } else {
+                    const view = this.views.get(tabView.id);
+                    if (!view) {
+                        log.error(`Couldn't find a view matching the name ${tabView.id}`);
+                        return;
+                    }
+
+                    if (view.isInitialized() && ServerManager.getRemoteInfo(view.tab.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(view.tab.server.id)?.serverVersion ?? '', '6.0.0')) {
+                        const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
+                        view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+                        this.deeplinkSuccess(view.id);
+                    } else {
+                        // attempting to change parsedURL protocol results in it not being modified.
+                        view.resetLoadingStatus();
+                        view.load(urlWithSchema);
+                        view.once(LOAD_SUCCESS, this.deeplinkSuccess);
+                        view.once(LOAD_FAILED, this.deeplinkFailed);
+                    }
+                }
+            } else {
+                dialog.showErrorBox(
+                    localizeMessage('main.views.viewManager.handleDeepLink.error.title', 'No matching server'),
+                    localizeMessage('main.views.viewManager.handleDeepLink.error.body', 'There is no configured server in the app that matches the requested url: {url}', {url: parsedURL.toString()}),
+                );
+            }
+        }
+    };
+
+    private deeplinkSuccess = (viewId: string) => {
+        log.debug('viewManager.deeplinkSuccess', viewId);
+
+        const view = this.views.get(viewId);
+        if (!view) {
+            return;
+        }
+        this.showById(viewId);
+        view.removeListener(LOAD_FAILED, this.deeplinkFailed);
+    };
+
+    private deeplinkFailed = (viewId: string, err: string, url: string) => {
+        log.error(`[${viewId}] failed to load deeplink ${url}: ${err}`);
+        const view = this.views.get(viewId);
+        if (!view) {
+            return;
+        }
+        view.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
+    }
+
+    /**
+     * View loading helpers
+     */
+
+    private loadServer = (server: MattermostServer) => {
+        const tabs = ServerManager.getOrderedTabsForServer(server.id);
+        tabs.forEach((tab) => this.loadView(server, tab));
+    }
+
+    private loadView = (srv: MattermostServer, tab: TabView, url?: string) => {
+        if (!tab.isOpen) {
+            this.closedViews.set(tab.id, {srv, tab});
+            return;
+        }
+        const view = this.makeView(srv, tab, url);
+        this.addView(view);
+    }
+
+    private makeView = (srv: MattermostServer, tab: TabView, url?: string): MattermostView => {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            throw new Error('Cannot create view, no main window present');
+        }
+
+        const view = new MattermostView(tab, mainWindow, {webPreferences: {spellcheck: Config.useSpellChecker}});
+        view.once(LOAD_SUCCESS, this.activateView);
+        view.on(LOADSCREEN_END, this.finishLoading);
+        view.on(LOAD_FAILED, this.failLoading);
+        view.on(UPDATE_TARGET_URL, this.showURLView);
+        view.load(url);
+        return view;
+    }
+
+    private addView = (view: MattermostView): void => {
+        this.views.set(view.id, view);
+        if (this.closedViews.has(view.id)) {
+            this.closedViews.delete(view.id);
+        }
+        if (!this.loadingScreen) {
+            this.createLoadingScreen();
+        }
+    }
+
+    private showInitial = () => {
+        log.verbose('viewManager.showInitial');
+
+        if (ServerManager.hasServers()) {
+            const lastActiveServer = ServerManager.getCurrentServer();
+            const lastActiveTab = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
+            this.showById(lastActiveTab.id);
+        } else {
+            MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
+            ipcMain.emit(MAIN_WINDOW_SHOWN);
+        }
+    }
+
+    /**
+     * Mattermost view event handlers
+     */
+
+    private activateView = (viewName: string) => {
         log.debug('viewManager.activateView', viewName);
 
         if (this.currentView === viewName) {
@@ -262,7 +298,7 @@ export class ViewManager {
         WebContentsEventManager.addMattermostViewEventListeners(view);
     }
 
-    finishLoading = (server: string) => {
+    private finishLoading = (server: string) => {
         log.debug('viewManager.finishLoading', server);
 
         const view = this.views.get(server);
@@ -272,24 +308,7 @@ export class ViewManager {
         }
     }
 
-    openClosedTab = (id: string, url?: string) => {
-        if (!this.closedViews.has(id)) {
-            return;
-        }
-        const {srv, tab} = this.closedViews.get(id)!;
-        tab.isOpen = true;
-        this.loadView(srv, tab, url);
-        this.showById(id);
-        const view = this.views.get(id)!;
-        view.isVisible = true;
-        view.on(LOAD_SUCCESS, () => {
-            view.isVisible = false;
-            this.showById(id);
-        });
-        ipcMain.emit(OPEN_TAB, null, tab.id);
-    }
-
-    failLoading = (tabName: string) => {
+    private failLoading = (tabName: string) => {
         log.debug('viewManager.failLoading', tabName);
 
         this.fadeLoadingScreen();
@@ -298,38 +317,7 @@ export class ViewManager {
         }
     }
 
-    getCurrentView() {
-        if (this.currentView) {
-            return this.views.get(this.currentView);
-        }
-
-        return undefined;
-    }
-
-    openViewDevTools = () => {
-        const view = this.getCurrentView();
-        if (view) {
-            view.openDevTools();
-        } else {
-            log.error(`couldn't find ${this.currentView}`);
-        }
-    }
-
-    findViewByWebContent(webContentId: number) {
-        let found = null;
-        let view;
-        const entries = this.views.values();
-
-        for (view of entries) {
-            const wc = view.getWebContents();
-            if (wc && wc.id === webContentId) {
-                found = view;
-            }
-        }
-        return found;
-    }
-
-    showURLView = (url: URL | string) => {
+    private showURLView = (url: URL | string) => {
         log.silly('viewManager.showURLView', url);
 
         const mainWindow = MainWindow.get();
@@ -400,6 +388,10 @@ export class ViewManager {
         }
     }
 
+    /**
+     * Loading Screen
+     */
+
     setLoadingScreenBounds = () => {
         if (this.loadingScreen) {
             const mainWindow = MainWindow.get();
@@ -410,21 +402,17 @@ export class ViewManager {
         }
     }
 
-    createLoadingScreen = () => {
-        const preload = getLocalPreload('desktopAPI.js');
-        this.loadingScreen = new BrowserView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
-        const localURL = getLocalURLString('loadingScreen.html');
-        this.loadingScreen.webContents.loadURL(localURL);
+    updateLoadingScreenDarkMode = (darkMode: boolean) => {
+        if (this.loadingScreen) {
+            this.loadingScreen.webContents.send(DARK_MODE_CHANGE, darkMode);
+        }
     }
 
-    showLoadingScreen = () => {
+    isLoadingScreenHidden = () => {
+        return this.loadingScreenState === LoadingScreenState.HIDDEN;
+    }
+
+    private showLoadingScreen = () => {
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
@@ -453,30 +441,187 @@ export class ViewManager {
         this.setLoadingScreenBounds();
     }
 
-    fadeLoadingScreen = () => {
+    private createLoadingScreen = () => {
+        const preload = getLocalPreload('desktopAPI.js');
+        this.loadingScreen = new BrowserView({webPreferences: {
+            preload,
+
+            // Workaround for this issue: https://github.com/electron/electron/issues/30993
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            transparent: true,
+        }});
+        const localURL = getLocalURLString('loadingScreen.html');
+        this.loadingScreen.webContents.loadURL(localURL);
+    }
+
+    private fadeLoadingScreen = () => {
         if (this.loadingScreen && this.loadingScreenState === LoadingScreenState.VISIBLE) {
             this.loadingScreenState = LoadingScreenState.FADING;
             this.loadingScreen.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
         }
     }
 
-    isViewClosed = (viewId: string) => {
-        return this.closedViews.has(viewId);
+    /**
+     * Event Handlers
+     */
+
+    /** Called when a new configuration is received
+     * Servers or tabs have been added or edited. We need to
+     * close, open, or reload tabs, taking care to reuse tabs and
+     * preserve focus on the currently selected tab. */
+    private handleReloadConfiguration = () => {
+        log.debug('viewManager.handleReloadConfiguration');
+
+        const currentTabId: string | undefined = this.views.get(this.currentView as string)?.tab.id;
+
+        const current: Map<string, MattermostView> = new Map();
+        for (const view of this.views.values()) {
+            current.set(view.tab.id, view);
+        }
+
+        const views: Map<string, MattermostView> = new Map();
+        const closed: Map<string, {srv: MattermostServer; tab: TabView}> = new Map();
+
+        const sortedTabs = ServerManager.getAllServers().flatMap((x) => ServerManager.getOrderedTabsForServer(x.id).
+            map((t): [MattermostServer, TabView] => [x, t]));
+
+        for (const [srv, tab] of sortedTabs) {
+            const recycle = current.get(tab.id);
+            if (!tab.isOpen) {
+                closed.set(tab.id, {srv, tab});
+            } else if (recycle) {
+                recycle.updateServerInfo(srv);
+                views.set(tab.id, recycle);
+            } else {
+                views.set(tab.id, this.makeView(srv, tab));
+            }
+        }
+
+        // commit the data to our local state
+        // destroy everything that no longer exists
+        for (const [k, v] of current) {
+            if (!views.has(k)) {
+                v.destroy();
+            }
+        }
+
+        // commit views
+        this.views = new Map();
+        for (const x of views.values()) {
+            this.views.set(x.id, x);
+        }
+
+        // commit closed
+        for (const x of closed.values()) {
+            this.closedViews.set(x.tab.id, {srv: x.srv, tab: x.tab});
+        }
+
+        if ((currentTabId && closed.has(currentTabId)) || (this.currentView && this.closedViews.has(this.currentView))) {
+            if (ServerManager.hasServers()) {
+                this.currentView = undefined;
+                this.showInitial();
+            } else {
+                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
+            }
+        }
+
+        // show the focused tab (or initial)
+        if (currentTabId && views.has(currentTabId)) {
+            const view = views.get(currentTabId);
+            if (view && view.id !== this.currentView) {
+                this.currentView = view.id;
+                this.showById(view.id);
+                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.tab.server.id, view.tab.id);
+            } else {
+                this.focusCurrentView();
+            }
+        } else {
+            this.showInitial();
+        }
     }
 
-    isLoadingScreenHidden = () => {
-        return this.loadingScreenState === LoadingScreenState.HIDDEN;
+    private handleAppLoggedIn = (event: IpcMainEvent, viewId: string) => {
+        log.debug('WindowManager.handleAppLoggedIn', viewId);
+
+        const view = this.getView(viewId);
+        if (view && !view.isLoggedIn) {
+            view.isLoggedIn = true;
+            if (view.view.webContents.getURL() !== view.tab.url.toString() && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
+                view.load(view.tab.url);
+            }
+        }
     }
 
-    hideLoadingScreen = () => {
+    private handleAppLoggedOut = (event: IpcMainEvent, viewId: string) => {
+        log.debug('WindowManager.handleAppLoggedOut', viewId);
+
+        const view = this.getView(viewId);
+        if (view && view.isLoggedIn) {
+            view.isLoggedIn = false;
+        }
+    }
+
+    private handleBrowserHistoryPush = (e: IpcMainEvent, viewId: string, pathName: string) => {
+        log.debug('WindowManager.handleBrowserHistoryPush', {viewId, pathName});
+
+        const currentView = this.getView(viewId);
+        const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
+        const redirectedviewId = ServerManager.lookupTabByURL(`${currentView?.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
+        if (this.isViewClosed(redirectedviewId)) {
+            // If it's a closed view, just open it and stop
+            this.openClosedTab(redirectedviewId, `${currentView?.tab.server.url}${cleanedPathName}`);
+            return;
+        }
+        let redirectedView = this.getView(redirectedviewId) || currentView;
+        if (redirectedView !== currentView && redirectedView?.tab.server.id === ServerManager.getCurrentServer().id && redirectedView?.isLoggedIn) {
+            log.info('redirecting to a new view', redirectedView?.id || viewId);
+            this.showById(redirectedView?.id || viewId);
+        } else {
+            redirectedView = currentView;
+        }
+
+        // Special case check for Channels to not force a redirect to "/", causing a refresh
+        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && cleanedPathName === '/')) {
+            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, cleanedPathName);
+            if (redirectedView) {
+                this.handleBrowserHistoryButton(e, redirectedView.id);
+            }
+        }
+    }
+
+    private handleBrowserHistoryButton = (e: IpcMainEvent, viewId: string) => {
+        log.debug('WindowManager.handleBrowserHistoryButton', viewId);
+
+        const currentView = this.getView(viewId);
+        if (currentView) {
+            if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
+                currentView.view.webContents.clearHistory();
+                currentView.isAtRoot = true;
+            } else {
+                currentView.isAtRoot = false;
+            }
+            currentView?.view.webContents.send(BROWSER_HISTORY_BUTTON, currentView.view.webContents.canGoBack(), currentView.view.webContents.canGoForward());
+        }
+    }
+
+    private handleLoadingScreenAnimationFinished = () => {
+        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
+
         if (this.loadingScreen && this.loadingScreenState !== LoadingScreenState.HIDDEN) {
             this.loadingScreenState = LoadingScreenState.HIDDEN;
             MainWindow.get()?.removeBrowserView(this.loadingScreen);
         }
+
+        if (process.env.NODE_ENV === 'test') {
+            app.emit('e2e-app-loaded');
+        }
     }
 
-    setServerInitialized = (server: string) => {
-        const view = this.views.get(server);
+    private handleReactAppInitialized = (e: IpcMainEvent, viewId: string) => {
+        log.debug('WindowManager.handleReactAppInitialized', viewId);
+
+        const view = this.views.get(viewId);
         if (view) {
             view.setInitialized();
             if (this.getCurrentView() === view) {
@@ -485,75 +630,25 @@ export class ViewManager {
         }
     }
 
-    updateLoadingScreenDarkMode = (darkMode: boolean) => {
-        if (this.loadingScreen) {
-            this.loadingScreen.webContents.send(DARK_MODE_CHANGE, darkMode);
-        }
-    }
+    /**
+     * Helper functions
+     */
 
-    deeplinkSuccess = (viewId: string) => {
-        log.debug('viewManager.deeplinkSuccess', viewId);
-
-        const view = this.views.get(viewId);
-        if (!view) {
+    private openClosedTab = (id: string, url?: string) => {
+        if (!this.closedViews.has(id)) {
             return;
         }
-        this.showById(viewId);
-        view.removeListener(LOAD_FAILED, this.deeplinkFailed);
-    };
-
-    deeplinkFailed = (viewId: string, err: string, url: string) => {
-        log.error(`[${viewId}] failed to load deeplink ${url}: ${err}`);
-        const view = this.views.get(viewId);
-        if (!view) {
-            return;
-        }
-        view.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
-    }
-
-    handleDeepLink = (url: string | URL) => {
-        // TODO: fix for new tabs
-        if (url) {
-            const parsedURL = urlUtils.parseURL(url)!;
-            const tabView = ServerManager.lookupTabByURL(parsedURL, true);
-            if (tabView) {
-                const urlWithSchema = `${tabView.url.origin}${parsedURL.pathname}${parsedURL.search}`;
-                if (this.closedViews.has(tabView.id)) {
-                    this.openClosedTab(tabView.id, urlWithSchema);
-                } else {
-                    const view = this.views.get(tabView.id);
-                    if (!view) {
-                        log.error(`Couldn't find a view matching the name ${tabView.id}`);
-                        return;
-                    }
-
-                    if (view.isInitialized() && ServerManager.getRemoteInfo(view.tab.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(view.tab.server.id)?.serverVersion ?? '', '6.0.0')) {
-                        const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
-                        view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
-                        this.deeplinkSuccess(view.id);
-                    } else {
-                        // attempting to change parsedURL protocol results in it not being modified.
-                        view.resetLoadingStatus();
-                        view.load(urlWithSchema);
-                        view.once(LOAD_SUCCESS, this.deeplinkSuccess);
-                        view.once(LOAD_FAILED, this.deeplinkFailed);
-                    }
-                }
-            } else {
-                dialog.showErrorBox(
-                    localizeMessage('main.views.viewManager.handleDeepLink.error.title', 'No matching server'),
-                    localizeMessage('main.views.viewManager.handleDeepLink.error.body', 'There is no configured server in the app that matches the requested url: {url}', {url: parsedURL.toString()}),
-                );
-            }
-        }
-    };
-
-    sendToAllViews = (channel: string, ...args: unknown[]) => {
-        this.views.forEach((view) => {
-            if (!view.view.webContents.isDestroyed()) {
-                view.view.webContents.send(channel, ...args);
-            }
+        const {srv, tab} = this.closedViews.get(id)!;
+        tab.isOpen = true;
+        this.loadView(srv, tab, url);
+        this.showById(id);
+        const view = this.views.get(id)!;
+        view.isVisible = true;
+        view.on(LOAD_SUCCESS, () => {
+            view.isVisible = false;
+            this.showById(id);
         });
+        ipcMain.emit(OPEN_TAB, null, tab.id);
     }
 }
 

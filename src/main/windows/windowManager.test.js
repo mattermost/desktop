@@ -6,8 +6,7 @@
 
 import {systemPreferences, desktopCapturer} from 'electron';
 
-import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
-import urlUtils from 'common/utils/url';
+import {getTabViewName} from 'common/tabs/TabView';
 
 import ServerManager from 'common/servers/serverManager';
 import {
@@ -54,11 +53,6 @@ jest.mock('electron', () => ({
 
 jest.mock('common/config', () => ({}));
 
-jest.mock('common/utils/url', () => ({
-    isTeamUrl: jest.fn(),
-    isAdminUrl: jest.fn(),
-    cleanPathName: jest.fn(),
-}));
 jest.mock('common/tabs/TabView', () => ({
     getTabViewName: jest.fn(),
     TAB_MESSAGING: 'tab-messaging',
@@ -108,15 +102,6 @@ jest.mock('common/servers/serverManager', () => ({
 jest.mock('main/views/webContentEvents', () => ({}));
 
 describe('main/windows/windowManager', () => {
-    describe('handleUpdateConfig', () => {
-        const windowManager = new WindowManager();
-
-        it('should reload config', () => {
-            windowManager.handleUpdateConfig();
-            expect(ViewManager.reloadConfiguration).toHaveBeenCalled();
-        });
-    });
-
     describe('showMainWindow', () => {
         const windowManager = new WindowManager();
         windowManager.initializeViewManager = jest.fn();
@@ -668,175 +653,6 @@ describe('main/windows/windowManager', () => {
             });
             windowManager.selectTab((order) => order + 1);
             expect(windowManager.switchTab).toBeCalledWith('tab-3');
-        });
-    });
-
-    describe('handleBrowserHistoryPush', () => {
-        const windowManager = new WindowManager();
-        windowManager.handleBrowserHistoryButton = jest.fn();
-        const servers = [
-            {
-                name: 'server-1',
-                url: 'http://server-1.com',
-                order: 0,
-                tabs: [
-                    {
-                        name: 'tab-messaging',
-                        order: 0,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'other_type_1',
-                        order: 2,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'other_type_2',
-                        order: 1,
-                        isOpen: false,
-                    },
-                ],
-            },
-        ];
-        const view1 = {
-            id: 'server-1_tab-messaging',
-            isLoggedIn: true,
-            tab: {
-                type: TAB_MESSAGING,
-                server: {
-                    url: 'http://server-1.com',
-                },
-            },
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
-        };
-        const view2 = {
-            ...view1,
-            id: 'server-1_other_type_1',
-            tab: {
-                ...view1.tab,
-                type: 'other_type_1',
-            },
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
-        };
-        const view3 = {
-            ...view1,
-            id: 'server-1_other_type_2',
-            tab: {
-                ...view1.tab,
-                type: 'other_type_2',
-            },
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
-        };
-        const views = new Map([
-            ['server-1_tab-messaging', view1],
-            ['server-1_other_type_1', view2],
-        ]);
-        const closedViews = new Map([
-            ['server-1_other_type_2', view3],
-        ]);
-
-        beforeEach(() => {
-            ServerManager.getAllServers.mockReturnValue(servers);
-            ServerManager.getCurrentServer.mockReturnValue(servers[0]);
-            urlUtils.cleanPathName.mockImplementation((base, path) => path);
-            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
-            ViewManager.isViewClosed.mockImplementation((viewId) => closedViews.has(viewId));
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-        });
-
-        it('should open closed view if pushing to it', () => {
-            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_2'});
-            ViewManager.openClosedTab.mockImplementation((name) => {
-                const view = closedViews.get(name);
-                closedViews.delete(name);
-                views.set(name, view);
-            });
-
-            windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_2/subpath');
-            expect(ViewManager.openClosedTab).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
-        });
-
-        it('should open redirect view if different from current view', () => {
-            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_1'});
-            windowManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_1/subpath');
-            expect(ViewManager.showById).toBeCalledWith('server-1_other_type_1');
-        });
-
-        it('should ignore redirects to "/" to Messages from other tabs', () => {
-            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_tab-messaging'});
-            windowManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
-            expect(view1.view.webContents.send).not.toBeCalled();
-        });
-    });
-
-    describe('handleBrowserHistoryButton', () => {
-        const windowManager = new WindowManager();
-        const view1 = {
-            name: 'server-1_tab-messaging',
-            isLoggedIn: true,
-            isAtRoot: true,
-            tab: {
-                type: TAB_MESSAGING,
-                server: {
-                    url: 'http://server-1.com',
-                },
-                url: new URL('http://server-1.com'),
-            },
-            view: {
-                webContents: {
-                    canGoBack: jest.fn(),
-                    canGoForward: jest.fn(),
-                    clearHistory: jest.fn(),
-                    send: jest.fn(),
-                    getURL: jest.fn(),
-                },
-            },
-        };
-
-        beforeEach(() => {
-            ServerManager.getAllServers.mockReturnValue([
-                {
-                    name: 'server-1',
-                    url: 'http://server-1.com',
-                    order: 0,
-                    tabs: [
-                        {
-                            name: 'tab-messaging',
-                            order: 0,
-                            isOpen: true,
-                        },
-                    ],
-                },
-            ]);
-            ViewManager.getView.mockReturnValue(view1);
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-            view1.isAtRoot = true;
-        });
-
-        it('should erase history and set isAtRoot when navigating to root URL', () => {
-            view1.isAtRoot = false;
-            view1.view.webContents.getURL.mockReturnValue(view1.tab.url.toString());
-            windowManager.handleBrowserHistoryButton(null, 'server-1_tab-messaging');
-            expect(view1.view.webContents.clearHistory).toHaveBeenCalled();
-            expect(view1.isAtRoot).toBe(true);
         });
     });
 

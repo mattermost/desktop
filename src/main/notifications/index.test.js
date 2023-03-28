@@ -72,18 +72,23 @@ jest.mock('windows-focus-assist', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
+jest.mock('../views/viewManager', () => ({
+    getViewByWebContentsId: () => ({
+        id: 'server_id',
+        tab: {
+            server: {
+                name: 'server_name',
+            },
+        },
+    }),
+}));
 jest.mock('../windows/mainWindow', () => ({
     get: jest.fn(),
 }));
 jest.mock('../windows/windowManager', () => ({
-    getServerNameByWebContentsId: () => 'server_name',
-    getViewIdByWebContentsId: () => 'server_id',
     sendToRenderer: jest.fn(),
     flashFrame: jest.fn(),
     switchTab: jest.fn(),
-}));
-jest.mock('../views/viewManager', () => ({
-    views: new Map([['server_id', {tab: {id: 'server_id'}}]]),
 }));
 
 jest.mock('main/i18nManager', () => ({

@@ -130,7 +130,7 @@ contextBridge.exposeInMainWorld('desktop', {
     maximizeWindow: () => ipcRenderer.send(WINDOW_MAXIMIZE),
     restoreWindow: () => ipcRenderer.send(WINDOW_RESTORE),
     doubleClickOnWindow: (windowName) => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, windowName),
-    focusBrowserView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
+    focusCurrentView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
     reloadCurrentView: () => ipcRenderer.send(RELOAD_CURRENT_VIEW),
     closeDownloadsDropdown: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN),
     closeDownloadsDropdownMenu: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU),

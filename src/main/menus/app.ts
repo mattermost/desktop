@@ -134,14 +134,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: localizeMessage('main.menus.app.view.reload', 'Reload'),
         accelerator: 'CmdOrCtrl+R',
         click() {
-            WindowManager.reload();
+            ViewManager.reload();
         },
     }, {
         label: localizeMessage('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
             session.defaultSession.clearCache();
-            WindowManager.reload();
+            ViewManager.reload();
         },
     }, {
         role: 'togglefullscreen',
@@ -195,7 +195,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }, {
         label: localizeMessage('main.menus.app.view.devToolsCurrentServer', 'Developer Tools for Current Server'),
         click() {
-            WindowManager.openBrowserViewDevTools();
+            ViewManager.getCurrentView()?.openDevTools();
         },
     }];
 

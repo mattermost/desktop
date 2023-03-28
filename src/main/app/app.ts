@@ -9,7 +9,6 @@ import urlUtils from 'common/utils/url';
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
 import {localizeMessage} from 'main/i18nManager';
-import ServerManager from 'common/servers/serverManager';
 import {destroyTray} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
 import ViewManager from 'main/views/viewManager';
@@ -94,16 +93,13 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     // update the callback
         const errorID = `${origin}:${error}`;
 
-        const serverName = WindowManager.getServerNameByWebContentsId(webContents.id);
-        if (serverName) {
-            const server = ServerManager.getServer(serverName);
-            if (server) {
-                const serverURL = urlUtils.parseURL(server.url);
-                if (serverURL && serverURL.origin !== origin) {
-                    log.warn(`Ignoring certificate for unmatched origin ${origin}, will not trust`);
-                    callback(false);
-                    return;
-                }
+        const view = ViewManager.getViewByWebContentsId(webContents.id);
+        if (view?.tab.server) {
+            const serverURL = urlUtils.parseURL(view.tab.server.url);
+            if (serverURL && serverURL.origin !== origin) {
+                log.warn(`Ignoring certificate for unmatched origin ${origin}, will not trust`);
+                callback(false);
+                return;
             }
         }
 
@@ -160,10 +156,8 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
                 CertificateStore.save();
                 certificateErrorCallbacks.get(errorID)(true);
 
-                const viewId = WindowManager.getViewIdByWebContentsId(webContents.id);
-                if (viewId) {
-                    const view = ViewManager.getView(viewId);
-                    view?.load(url);
+                if (view) {
+                    view.load(url);
                 } else {
                     webContents.loadURL(url);
                 }

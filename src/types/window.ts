@@ -41,7 +41,7 @@ declare global {
             maximizeWindow: () => void;
             restoreWindow: () => void;
             doubleClickOnWindow: (windowName?: string) => void;
-            focusBrowserView: () => void;
+            focusCurrentView: () => void;
             reloadCurrentView: () => void;
             closeDownloadsDropdown: () => void;
             closeDownloadsDropdownMenu: () => void;

@@ -7,8 +7,9 @@
 import {dialog, ipcMain} from 'electron';
 
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN, SET_ACTIVE_VIEW} from 'common/communication';
-
+import {TAB_MESSAGING} from 'common/tabs/TabView';
 import ServerManager from 'common/servers/serverManager';
+import urlUtils from 'common/utils/url';
 
 import MainWindow from 'main/windows/mainWindow';
 
@@ -39,6 +40,9 @@ jest.mock('common/servers/MattermostServer', () => ({
 }));
 
 jest.mock('common/utils/url', () => ({
+    isTeamUrl: jest.fn(),
+    isAdminUrl: jest.fn(),
+    cleanPathName: jest.fn(),
     parseURL: (url) => {
         try {
             return new URL(url);
@@ -70,6 +74,7 @@ jest.mock('common/servers/serverManager', () => ({
     getLastActiveTabForServer: jest.fn(),
     lookupTabByURL: jest.fn(),
     getRemoteInfo: jest.fn(),
+    on: jest.fn(),
 }));
 
 jest.mock('./MattermostView', () => ({
@@ -78,6 +83,7 @@ jest.mock('./MattermostView', () => ({
 
 jest.mock('./modalManager', () => ({
     showModal: jest.fn(),
+    isModalDisplayed: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({}));
 
@@ -309,6 +315,7 @@ describe('main/views/viewManager', () => {
                 },
                 destroy: jest.fn(),
                 updateServerInfo: jest.fn(),
+                focus: jest.fn(),
             };
             viewManager.currentView = 'tab1';
             viewManager.views.set('tab1', view);
@@ -323,7 +330,7 @@ describe('main/views/viewManager', () => {
                 },
             ]);
             viewManager.reloadConfiguration();
-            expect(viewManager.focus).toHaveBeenCalled();
+            expect(view.focus).toHaveBeenCalled();
         });
 
         it('should show initial if currentView has been removed', () => {
@@ -405,6 +412,177 @@ describe('main/views/viewManager', () => {
             viewManager.showInitial();
             expect(window.webContents.send).toHaveBeenCalledWith(SET_ACTIVE_VIEW);
             expect(ipcMain.emit).toHaveBeenCalledWith(MAIN_WINDOW_SHOWN);
+        });
+    });
+
+    describe('handleBrowserHistoryPush', () => {
+        const viewManager = new ViewManager();
+        viewManager.handleBrowserHistoryButton = jest.fn();
+        viewManager.showById = jest.fn();
+        const servers = [
+            {
+                name: 'server-1',
+                url: 'http://server-1.com',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'tab-messaging',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'other_type_1',
+                        order: 2,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'other_type_2',
+                        order: 1,
+                        isOpen: false,
+                    },
+                ],
+            },
+        ];
+        const view1 = {
+            id: 'server-1_tab-messaging',
+            isLoggedIn: true,
+            tab: {
+                type: TAB_MESSAGING,
+                server: {
+                    url: 'http://server-1.com',
+                },
+            },
+            view: {
+                webContents: {
+                    send: jest.fn(),
+                },
+            },
+        };
+        const view2 = {
+            ...view1,
+            id: 'server-1_other_type_1',
+            tab: {
+                ...view1.tab,
+                type: 'other_type_1',
+            },
+            view: {
+                webContents: {
+                    send: jest.fn(),
+                },
+            },
+        };
+        const view3 = {
+            ...view1,
+            id: 'server-1_other_type_2',
+            tab: {
+                ...view1.tab,
+                type: 'other_type_2',
+            },
+            view: {
+                webContents: {
+                    send: jest.fn(),
+                },
+            },
+        };
+        const views = new Map([
+            ['server-1_tab-messaging', view1],
+            ['server-1_other_type_1', view2],
+        ]);
+        const closedViews = new Map([
+            ['server-1_other_type_2', view3],
+        ]);
+        viewManager.getView = (viewId) => views.get(viewId);
+        viewManager.isViewClosed = (viewId) => closedViews.has(viewId);
+        viewManager.openClosedTab = jest.fn();
+
+        beforeEach(() => {
+            ServerManager.getAllServers.mockReturnValue(servers);
+            ServerManager.getCurrentServer.mockReturnValue(servers[0]);
+            urlUtils.cleanPathName.mockImplementation((base, path) => path);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should open closed view if pushing to it', () => {
+            viewManager.openClosedTab.mockImplementation((name) => {
+                const view = closedViews.get(name);
+                closedViews.delete(name);
+                views.set(name, view);
+            });
+            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_2'});
+            viewManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_2/subpath');
+            expect(viewManager.openClosedTab).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
+        });
+
+        it('should open redirect view if different from current view', () => {
+            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_1'});
+            viewManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_1/subpath');
+            expect(viewManager.showById).toBeCalledWith('server-1_other_type_1');
+        });
+
+        it('should ignore redirects to "/" to Messages from other tabs', () => {
+            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_tab-messaging'});
+            viewManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
+            expect(view1.view.webContents.send).not.toBeCalled();
+        });
+    });
+
+    describe('handleBrowserHistoryButton', () => {
+        const viewManager = new ViewManager();
+        const view1 = {
+            name: 'server-1_tab-messaging',
+            isLoggedIn: true,
+            isAtRoot: true,
+            tab: {
+                type: TAB_MESSAGING,
+                server: {
+                    url: 'http://server-1.com',
+                },
+                url: new URL('http://server-1.com'),
+            },
+            view: {
+                webContents: {
+                    canGoBack: jest.fn(),
+                    canGoForward: jest.fn(),
+                    clearHistory: jest.fn(),
+                    send: jest.fn(),
+                    getURL: jest.fn(),
+                },
+            },
+        };
+        viewManager.getView = jest.fn();
+
+        beforeEach(() => {
+            ServerManager.getAllServers.mockReturnValue([
+                {
+                    name: 'server-1',
+                    url: 'http://server-1.com',
+                    order: 0,
+                    tabs: [
+                        {
+                            name: 'tab-messaging',
+                            order: 0,
+                            isOpen: true,
+                        },
+                    ],
+                },
+            ]);
+            viewManager.getView.mockReturnValue(view1);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            view1.isAtRoot = true;
+        });
+
+        it('should erase history and set isAtRoot when navigating to root URL', () => {
+            view1.isAtRoot = false;
+            view1.view.webContents.getURL.mockReturnValue(view1.tab.url.toString());
+            viewManager.handleBrowserHistoryButton(null, 'server-1_tab-messaging');
+            expect(view1.view.webContents.clearHistory).toHaveBeenCalled();
+            expect(view1.isAtRoot).toBe(true);
         });
     });
 

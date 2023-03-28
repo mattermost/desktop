@@ -3,7 +3,7 @@
 
 'use strict';
 
-import * as WindowManager from '../windows/windowManager';
+import ViewManager from 'main/views/viewManager';
 
 import {ModalManager} from './modalManager';
 
@@ -22,9 +22,11 @@ jest.mock('main/views/webContentEvents', () => ({
 jest.mock('./modalView', () => ({
     ModalView: jest.fn(),
 }));
-jest.mock('../windows/windowManager', () => ({
+jest.mock('main/views/viewManager', () => ({
+    focusCurrentView: jest.fn(),
+}));
+jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
-    focusBrowserView: jest.fn(),
 }));
 jest.mock('process', () => ({
     env: {},
@@ -157,7 +159,7 @@ describe('main/views/modalManager', () => {
             modalManager.modalQueue.pop();
             modalManager.modalPromises.delete('test2');
             modalManager.handleModalFinished('resolve', {sender: {id: 1}}, 'something');
-            expect(WindowManager.focusBrowserView).toBeCalled();
+            expect(ViewManager.focusCurrentView).toBeCalled();
         });
     });
 });
