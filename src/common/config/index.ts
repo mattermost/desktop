@@ -72,6 +72,10 @@ export class Config extends EventEmitter {
     }
 
     initRegistry = () => {
+        if (process.platform !== 'win32') {
+            return Promise.resolve();
+        }
+
         return new Promise<void>((resolve) => {
             this.registryConfig = new RegistryConfig();
             this.registryConfig.once(REGISTRY_READ_EVENT, (data) => {

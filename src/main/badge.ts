@@ -60,20 +60,18 @@ function createDataURL(win: BrowserWindow, text: string, small: boolean) {
 }
 
 async function setOverlayIcon(badgeText: string | undefined, description: string, small: boolean) {
-    if (process.platform === 'win32') {
-        let overlay = null;
-        const mainWindow = MainWindow.get();
-        if (mainWindow) {
-            if (badgeText) {
-                try {
-                    const dataUrl = await createDataURL(mainWindow, badgeText, small);
-                    overlay = nativeImage.createFromDataURL(dataUrl);
-                } catch (err) {
-                    log.error(`Couldn't generate a badge: ${err}`);
-                }
+    let overlay = null;
+    const mainWindow = MainWindow.get();
+    if (mainWindow) {
+        if (badgeText) {
+            try {
+                const dataUrl = await createDataURL(mainWindow, badgeText, small);
+                overlay = nativeImage.createFromDataURL(dataUrl);
+            } catch (err) {
+                log.error(`Couldn't generate a badge: ${err}`);
             }
-            mainWindow.setOverlayIcon(overlay, description);
         }
+        mainWindow.setOverlayIcon(overlay, description);
     }
 }
 
