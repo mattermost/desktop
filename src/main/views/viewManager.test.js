@@ -135,7 +135,7 @@ describe('main/views/viewManager', () => {
         });
     });
 
-    describe('reloadViewIfNeeded', () => {
+    describe('handleAppLoggedIn', () => {
         const viewManager = new ViewManager({});
 
         afterEach(() => {
@@ -156,7 +156,7 @@ describe('main/views/viewManager', () => {
                 },
             };
             viewManager.views.set('view1', view);
-            viewManager.reloadViewIfNeeded('view1');
+            viewManager.handleAppLoggedIn(null, 'view1');
             expect(view.load).toHaveBeenCalledWith(new URL('http://server-1.com/'));
         });
 
@@ -173,7 +173,7 @@ describe('main/views/viewManager', () => {
                 },
             };
             viewManager.views.set('view1', view);
-            viewManager.reloadViewIfNeeded('view1');
+            viewManager.handleAppLoggedIn(null, 'view1');
             expect(view.load).not.toHaveBeenCalled();
         });
 
@@ -190,12 +190,12 @@ describe('main/views/viewManager', () => {
                 },
             };
             viewManager.views.set('view1', view);
-            viewManager.reloadViewIfNeeded('view1');
+            viewManager.handleAppLoggedIn(null, 'view1');
             expect(view.load).not.toHaveBeenCalled();
         });
     });
 
-    describe('reloadConfiguration', () => {
+    describe('handleReloadConfiguration', () => {
         const viewManager = new ViewManager({});
 
         beforeEach(() => {
@@ -250,7 +250,7 @@ describe('main/views/viewManager', () => {
                     isOpen: true,
                 },
             ]);
-            viewManager.reloadConfiguration();
+            viewManager.handleReloadConfiguration();
             expect(viewManager.views.get('tab1')).toBe(view);
             expect(makeSpy).not.toHaveBeenCalled();
             makeSpy.mockRestore();
@@ -267,7 +267,7 @@ describe('main/views/viewManager', () => {
                     isOpen: false,
                 },
             ]);
-            viewManager.reloadConfiguration();
+            viewManager.handleReloadConfiguration();
             expect(viewManager.closedViews.has('tab1')).toBe(true);
         });
 
@@ -286,7 +286,7 @@ describe('main/views/viewManager', () => {
                     url: new URL('http://server1.com/tab'),
                 },
             ]);
-            viewManager.reloadConfiguration();
+            viewManager.handleReloadConfiguration();
             expect(makeSpy).toHaveBeenCalledWith(
                 {
                     id: 'server1',
@@ -329,7 +329,7 @@ describe('main/views/viewManager', () => {
                     isOpen: true,
                 },
             ]);
-            viewManager.reloadConfiguration();
+            viewManager.handleReloadConfiguration();
             expect(view.focus).toHaveBeenCalled();
         });
 
@@ -355,7 +355,7 @@ describe('main/views/viewManager', () => {
                     isOpen: false,
                 },
             ]);
-            viewManager.reloadConfiguration();
+            viewManager.handleReloadConfiguration();
             expect(viewManager.showInitial).toBeCalled();
         });
 
@@ -379,7 +379,7 @@ describe('main/views/viewManager', () => {
                     isOpen: false,
                 },
             ]);
-            viewManager.reloadConfiguration();
+            viewManager.handleReloadConfiguration();
             expect(view.destroy).toBeCalled();
             expect(viewManager.showInitial).toBeCalled();
         });
