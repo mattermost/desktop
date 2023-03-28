@@ -184,6 +184,12 @@ function cleanPathName(basePathName: string, pathName: string) {
     return pathName;
 }
 
+// RegExp string escaping function, as recommended by
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
+function escapeRegExp(s: string) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
 function isCallsPopOutURL(serverURL: URL | string, inputURL: URL | string, callID: string) {
     if (!serverURL || !inputURL || !callID) {
         return false;
@@ -195,7 +201,7 @@ function isCallsPopOutURL(serverURL: URL | string, inputURL: URL | string, callI
         return false;
     }
 
-    const matches = parsedURL.pathname.match(new RegExp(`^${server.subpath}([A-Za-z0-9-_]+)/`, 'i'));
+    const matches = parsedURL.pathname.match(new RegExp(`^${escapeRegExp(server.subpath)}([A-Za-z0-9-_]+)/`, 'i'));
     if (matches?.length !== 2) {
         return false;
     }
@@ -224,4 +230,5 @@ export default {
     cleanPathName,
     startsWithProtocol,
     isCallsPopOutURL,
+    escapeRegExp,
 };
