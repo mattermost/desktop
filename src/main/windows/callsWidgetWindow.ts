@@ -244,7 +244,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     private onPopOutCreate = (win: BrowserWindow) => {
         this.popOut = win;
 
-        // Let the webContentsEventManager handle links that try to open a new window
+        // Let the webContentsEventManager handle links that try to open a new window.
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
 
         // Need to capture and handle redirects for security.
