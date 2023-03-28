@@ -454,6 +454,16 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(widgetWindow.onPopOutOpen({url: popOutURL})).toHaveProperty('action', 'deny');
         });
 
+        it('popout redirects are disabled', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+
+            const ev = {preventDefault: jest.fn()};
+
+            const redirectURL = 'http://localhost:8065/login/sso/saml?redirect_to=https://google.com';
+            widgetWindow.onWillRedirect(ev, redirectURL);
+            expect(ev.preventDefault).toHaveBeenCalled();
+        });
+
         it('onPopOutFocus', () => {
             baseWindow.webContents = {
                 ...baseWindow.webContents,
@@ -484,7 +494,6 @@ describe('main/windows/callsWidgetWindow', () => {
 
             widgetWindow.onPopOutCreate(popOut);
             expect(widgetWindow.popOut).toBe(popOut);
-            expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
 
             widgetWindow.onPopOutFocus();
             expect(popOut.focus).toHaveBeenCalled();
@@ -494,6 +503,32 @@ describe('main/windows/callsWidgetWindow', () => {
             widgetWindow.onPopOutFocus();
             expect(popOut.focus).toHaveBeenCalled();
             expect(popOut.restore).toHaveBeenCalled();
+        });
+
+        it('onPopOutCreate', () => {
+            baseWindow.webContents = {
+                ...baseWindow.webContents,
+                send: jest.fn(),
+            };
+
+            baseWindow.restore = jest.fn();
+
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+
+            expect(baseWindow.webContents.setWindowOpenHandler).toHaveBeenCalledWith(widgetWindow.onPopOutOpen);
+            expect(baseWindow.webContents.on).toHaveBeenCalledWith('did-create-window', widgetWindow.onPopOutCreate);
+            expect(widgetWindow.popOut).toBeNull();
+
+            const popOut = new EventEmitter();
+            popOut.webContents = {
+                on: jest.fn(),
+                id: 'webContentsId',
+            };
+
+            widgetWindow.onPopOutCreate(popOut);
+            expect(widgetWindow.popOut).toBe(popOut);
+            expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
+            expect(popOut.webContents.on).toHaveBeenCalledWith('will-redirect', widgetWindow.onWillRedirect);
         });
 
         it('getWebContentsId', () => {
