@@ -13,6 +13,10 @@
     display: none;
 }
 
+#extra-bar.dark-mode {
+    background-color: #000;
+}
+
 span.backLabel {
     font-family: "Open Sans", sans-serif;
     font-weight: normal;
