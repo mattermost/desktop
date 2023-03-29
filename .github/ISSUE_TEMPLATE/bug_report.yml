@@ -16,6 +16,8 @@ body:
         required: true
       - label: This issue doesn't reproduce on web browsers (such as in Chrome). If it does, [issue reports go to the Mattermost Server repository](https://github.com/mattermost/mattermost-server/issues).
         required: true
+      - label: This issue reproduces on the most recent [stable version](https://github.com/mattermost/desktop/releases/latest), or the most recent [prerelease version](https://github.com/mattermost/desktop/releases) of the Mattermost Desktop App.
+        required: true
       - label: I have read the [contribution guidelines](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md).
         required: true
 - type: input
