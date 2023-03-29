@@ -38,7 +38,7 @@ import {
     GET_LAST_ACTIVE,
     GET_ORDERED_SERVERS,
     GET_ORDERED_TABS_FOR_SERVER,
-    SERVERS_MODIFIED,
+    SERVERS_URL_MODIFIED,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils from 'common/utils/url';
@@ -291,7 +291,7 @@ function initializeInterCommunicationEventListeners() {
 async function initializeAfterAppReady() {
     ServerManager.reloadFromConfig();
     updateServerInfos(ServerManager.getAllServers());
-    ServerManager.on(SERVERS_MODIFIED, (serverIds?: string[]) => {
+    ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
         if (serverIds && serverIds.length) {
             updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
         }

@@ -6,7 +6,7 @@
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, clipboard} from 'electron';
 import log from 'electron-log';
 
-import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {t} from 'common/utils/util';
 import {getTabDisplayName, TabType} from 'common/tabs/TabView';
 import {Config} from 'common/config';
@@ -128,7 +128,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: localizeMessage('main.menus.app.view.find', 'Find..'),
         accelerator: 'CmdOrCtrl+F',
         click() {
-            WindowManager.sendToFind();
+            ViewManager.sendToFind();
         },
     }, {
         label: localizeMessage('main.menus.app.view.reload', 'Reload'),
@@ -221,21 +221,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.history.back', 'Back'),
             accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
             click: () => {
-                const view = ViewManager.getCurrentView();
-                if (view && view.view.webContents.canGoBack() && !view.isAtRoot) {
-                    view.view.webContents.goBack();
-                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.id);
-                }
+                ViewManager.getCurrentView()?.goToOffset(-1);
             },
         }, {
             label: localizeMessage('main.menus.app.history.forward', 'Forward'),
             accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
             click: () => {
-                const view = ViewManager.getCurrentView();
-                if (view && view.view.webContents.canGoForward()) {
-                    view.view.webContents.goForward();
-                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.id);
-                }
+                ViewManager.getCurrentView()?.goToOffset(1);
             },
         }],
     });

@@ -18,8 +18,6 @@ import {protocols} from '../../../electron-builder.json';
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
 
-import {MattermostView} from './MattermostView';
-
 type CustomLogin = {
     inProgress: boolean;
 }
@@ -51,7 +49,7 @@ export class WebContentsEventManager {
         return WindowManager.getServerURLFromWebContentsId(webContentsId);
     }
 
-    generateWillNavigate = (webContentsId: number) => {
+    private generateWillNavigate = (webContentsId: number) => {
         return (event: Event, url: string) => {
             log.debug('webContentEvents.will-navigate', {webContentsId, url});
 
@@ -87,7 +85,7 @@ export class WebContentsEventManager {
         };
     };
 
-    generateDidStartNavigation = (webContentsId: number) => {
+    private generateDidStartNavigation = (webContentsId: number) => {
         return (event: Event, url: string) => {
             log.debug('webContentEvents.did-start-navigation', {webContentsId, url});
 
@@ -106,12 +104,12 @@ export class WebContentsEventManager {
         };
     };
 
-    denyNewWindow = (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
+    private denyNewWindow = (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
         log.warn(`Prevented popup window to open a new window to ${details.url}.`);
         return {action: 'deny'};
     };
 
-    generateNewWindowListener = (webContentsId: number, spellcheck?: boolean) => {
+    private generateNewWindowListener = (webContentsId: number, spellcheck?: boolean) => {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
             log.debug('webContentEvents.new-window', details.url);
 
@@ -258,24 +256,6 @@ export class WebContentsEventManager {
         if (this.listeners[id]) {
             this.listeners[id]();
         }
-    };
-
-    addMattermostViewEventListeners = (mmview: MattermostView) => {
-        this.addWebContentsEventListeners(
-            mmview.view.webContents,
-            (contents: WebContents) => {
-                contents.on('page-title-updated', mmview.handleTitleUpdate);
-                contents.on('page-favicon-updated', mmview.handleFaviconUpdate);
-                contents.on('update-target-url', mmview.handleUpdateTarget);
-                contents.on('did-navigate', mmview.handleDidNavigate);
-            },
-            (contents: WebContents) => {
-                contents.removeListener('page-title-updated', mmview.handleTitleUpdate);
-                contents.removeListener('page-favicon-updated', mmview.handleFaviconUpdate);
-                contents.removeListener('update-target-url', mmview.handleUpdateTarget);
-                contents.removeListener('did-navigate', mmview.handleDidNavigate);
-            },
-        );
     };
 
     addWebContentsEventListeners = (

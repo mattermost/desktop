@@ -86,6 +86,7 @@ jest.mock('./modalManager', () => ({
     isModalDisplayed: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({}));
+jest.mock('../appState', () => ({}));
 
 describe('main/views/viewManager', () => {
     describe('loadView', () => {
@@ -132,66 +133,6 @@ describe('main/views/viewManager', () => {
             expect(viewManager.createLoadingScreen).toHaveBeenCalled();
             expect(onceFn).toHaveBeenCalledWith(LOAD_SUCCESS, viewManager.activateView);
             expect(loadFn).toHaveBeenCalledWith('http://server-1.com/subpath');
-        });
-    });
-
-    describe('handleAppLoggedIn', () => {
-        const viewManager = new ViewManager({});
-
-        afterEach(() => {
-            jest.resetAllMocks();
-            viewManager.views = new Map();
-        });
-
-        it('should reload view when URL is not on subpath of original server URL', () => {
-            const view = {
-                load: jest.fn(),
-                view: {
-                    webContents: {
-                        getURL: () => 'http://server-2.com/subpath',
-                    },
-                },
-                tab: {
-                    url: new URL('http://server-1.com/'),
-                },
-            };
-            viewManager.views.set('view1', view);
-            viewManager.handleAppLoggedIn(null, 'view1');
-            expect(view.load).toHaveBeenCalledWith(new URL('http://server-1.com/'));
-        });
-
-        it('should not reload if URLs are matching', () => {
-            const view = {
-                load: jest.fn(),
-                view: {
-                    webContents: {
-                        getURL: () => 'http://server-1.com/',
-                    },
-                },
-                tab: {
-                    url: new URL('http://server-1.com/'),
-                },
-            };
-            viewManager.views.set('view1', view);
-            viewManager.handleAppLoggedIn(null, 'view1');
-            expect(view.load).not.toHaveBeenCalled();
-        });
-
-        it('should not reload if URL is subpath of server URL', () => {
-            const view = {
-                load: jest.fn(),
-                view: {
-                    webContents: {
-                        getURL: () => 'http://server-1.com/subpath',
-                    },
-                },
-                tab: {
-                    url: new URL('http://server-1.com/'),
-                },
-            };
-            viewManager.views.set('view1', view);
-            viewManager.handleAppLoggedIn(null, 'view1');
-            expect(view.load).not.toHaveBeenCalled();
         });
     });
 
@@ -452,11 +393,7 @@ describe('main/views/viewManager', () => {
                     url: 'http://server-1.com',
                 },
             },
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
+            sendToRenderer: jest.fn(),
         };
         const view2 = {
             ...view1,
@@ -465,11 +402,7 @@ describe('main/views/viewManager', () => {
                 ...view1.tab,
                 type: 'other_type_1',
             },
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
+            sendToRenderer: jest.fn(),
         };
         const view3 = {
             ...view1,
@@ -478,11 +411,7 @@ describe('main/views/viewManager', () => {
                 ...view1.tab,
                 type: 'other_type_2',
             },
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
+            sendToRenderer: jest.fn(),
         };
         const views = new Map([
             ['server-1_tab-messaging', view1],
@@ -525,64 +454,7 @@ describe('main/views/viewManager', () => {
         it('should ignore redirects to "/" to Messages from other tabs', () => {
             ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_tab-messaging'});
             viewManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
-            expect(view1.view.webContents.send).not.toBeCalled();
-        });
-    });
-
-    describe('handleBrowserHistoryButton', () => {
-        const viewManager = new ViewManager();
-        const view1 = {
-            name: 'server-1_tab-messaging',
-            isLoggedIn: true,
-            isAtRoot: true,
-            tab: {
-                type: TAB_MESSAGING,
-                server: {
-                    url: 'http://server-1.com',
-                },
-                url: new URL('http://server-1.com'),
-            },
-            view: {
-                webContents: {
-                    canGoBack: jest.fn(),
-                    canGoForward: jest.fn(),
-                    clearHistory: jest.fn(),
-                    send: jest.fn(),
-                    getURL: jest.fn(),
-                },
-            },
-        };
-        viewManager.getView = jest.fn();
-
-        beforeEach(() => {
-            ServerManager.getAllServers.mockReturnValue([
-                {
-                    name: 'server-1',
-                    url: 'http://server-1.com',
-                    order: 0,
-                    tabs: [
-                        {
-                            name: 'tab-messaging',
-                            order: 0,
-                            isOpen: true,
-                        },
-                    ],
-                },
-            ]);
-            viewManager.getView.mockReturnValue(view1);
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-            view1.isAtRoot = true;
-        });
-
-        it('should erase history and set isAtRoot when navigating to root URL', () => {
-            view1.isAtRoot = false;
-            view1.view.webContents.getURL.mockReturnValue(view1.tab.url.toString());
-            viewManager.handleBrowserHistoryButton(null, 'server-1_tab-messaging');
-            expect(view1.view.webContents.clearHistory).toHaveBeenCalled();
-            expect(view1.isAtRoot).toBe(true);
+            expect(view1.sendToRenderer).not.toBeCalled();
         });
     });
 
@@ -726,12 +598,8 @@ describe('main/views/viewManager', () => {
             resetLoadingStatus: jest.fn(),
             load: jest.fn(),
             once: jest.fn(),
-            isInitialized: jest.fn(),
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
+            isReady: jest.fn(),
+            sendToRenderer: jest.fn(),
             serverInfo: {
                 remoteInfo: {
                     serverVersion: '1.0.0',
@@ -768,10 +636,10 @@ describe('main/views/viewManager', () => {
                     },
                 },
             };
-            view.isInitialized.mockImplementation(() => true);
+            view.isReady.mockImplementation(() => true);
             viewManager.views.set('view1', view);
             viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
-            expect(view.view.webContents.send).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/deep/link?thing=yes');
+            expect(view.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/deep/link?thing=yes');
         });
 
         it('should throw error if view is missing', () => {

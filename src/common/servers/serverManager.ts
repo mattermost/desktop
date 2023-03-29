@@ -10,7 +10,7 @@ import {RemoteInfo} from 'types/server';
 
 import Config from 'common/config';
 import {
-    SERVERS_MODIFIED,
+    SERVERS_URL_MODIFIED,
     SERVERS_UPDATE,
 } from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -181,7 +181,7 @@ export class ServerManager extends EventEmitter {
         });
         this.tabOrder.set(newServer.id, tabOrder);
 
-        this.emit(SERVERS_MODIFIED, [newServer.id]);
+        this.emit(SERVERS_URL_MODIFIED, [newServer.id]);
         this.persistServers();
         return newServer;
     }
@@ -190,6 +190,11 @@ export class ServerManager extends EventEmitter {
         const existingServer = this.servers.get(serverId);
         if (!existingServer) {
             return;
+        }
+
+        let urlModified;
+        if (existingServer.url.toString() !== urlUtils.parseURL(server.url)?.toString()) {
+            urlModified = () => this.emit(SERVERS_URL_MODIFIED, [serverId]);
         }
         existingServer.name = server.name;
         existingServer.updateURL(server.url);
@@ -203,7 +208,7 @@ export class ServerManager extends EventEmitter {
             }
         });
 
-        this.emit(SERVERS_MODIFIED, [serverId]);
+        urlModified?.();
         this.persistServers();
     }
 
@@ -312,13 +317,13 @@ export class ServerManager extends EventEmitter {
         return firstTab;
     }
 
-    private persistServers = (lastActiveTeam?: number) => {
+    private persistServers = async (lastActiveTeam?: number) => {
         this.emit(SERVERS_UPDATE);
 
         const localServers = [...this.servers.values()].
             filter((server) => !server.isPredefined).
             map((server) => this.toConfigTeam(server));
-        Config.setServers(localServers, lastActiveTeam);
+        await Config.setServers(localServers, lastActiveTeam);
     }
 
     private getLastActiveTab = (serverId: string) => {

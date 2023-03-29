@@ -530,61 +530,6 @@ describe('main/windows/windowManager', () => {
         });
     });
 
-    describe('handleHistory', () => {
-        const windowManager = new WindowManager();
-
-        it('should only go to offset if it can', () => {
-            const view = {
-                view: {
-                    webContents: {
-                        goToOffset: jest.fn(),
-                        canGoToOffset: () => false,
-                    },
-                },
-            };
-            ViewManager.getCurrentView.mockReturnValue(view);
-
-            windowManager.handleHistory(null, 1);
-            expect(view.view.webContents.goToOffset).not.toBeCalled();
-
-            ViewManager.getCurrentView.mockReturnValue({
-                ...view,
-                view: {
-                    ...view.view,
-                    webContents: {
-                        ...view.view.webContents,
-                        canGoToOffset: () => true,
-                    },
-                },
-            });
-
-            windowManager.handleHistory(null, 1);
-            expect(view.view.webContents.goToOffset).toBeCalled();
-        });
-
-        it('should load base URL if an error occurs', () => {
-            const view = {
-                load: jest.fn(),
-                tab: {
-                    url: 'http://server-1.com',
-                },
-                view: {
-                    webContents: {
-                        goToOffset: jest.fn(),
-                        canGoToOffset: () => true,
-                    },
-                },
-            };
-            view.view.webContents.goToOffset.mockImplementation(() => {
-                throw new Error('hi');
-            });
-            ViewManager.getCurrentView.mockReturnValue(view);
-
-            windowManager.handleHistory(null, 1);
-            expect(view.load).toBeCalledWith('http://server-1.com');
-        });
-    });
-
     describe('selectTab', () => {
         const windowManager = new WindowManager();
         windowManager.switchTab = jest.fn();
@@ -752,11 +697,7 @@ describe('main/windows/windowManager', () => {
         const map = teams.reduce((arr, item) => {
             item.tabs.forEach((tab) => {
                 arr.push([`${item.name}_${tab.name}`, {
-                    view: {
-                        webContents: {
-                            send: jest.fn(),
-                        },
-                    },
+                    sendToRenderer: jest.fn(),
                 }]);
             });
             return arr;
@@ -791,7 +732,7 @@ describe('main/windows/windowManager', () => {
 
             await windowManager.handleGetDesktopSources('server-1_tab-1', null);
 
-            expect(views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('desktop-sources-result', [
+            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('desktop-sources-result', [
                 {
                     id: 'screen0',
                 },
@@ -807,7 +748,7 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(views.get('server-2_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-2_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
@@ -830,10 +771,10 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledTimes(1);
+            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledTimes(1);
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
 
@@ -861,7 +802,7 @@ describe('main/windows/windowManager', () => {
             expect(windowManager.callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(views.get('server-1_tab-1').view.webContents.send).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
 
@@ -885,11 +826,7 @@ describe('main/windows/windowManager', () => {
                 return {
                     getServerId: () => 'server-1',
                     getMainView: jest.fn().mockReturnValue({
-                        view: {
-                            webContents: {
-                                send: jest.fn(),
-                            },
-                        },
+                        sendToRenderer: jest.fn(),
                     }),
                 };
             });
@@ -959,11 +896,7 @@ describe('main/windows/windowManager', () => {
                 return {
                     getServerId: () => 'server-2',
                     getMainView: jest.fn().mockReturnValue({
-                        view: {
-                            webContents: {
-                                send: jest.fn(),
-                            },
-                        },
+                        sendToRenderer: jest.fn(),
                     }),
                     getChannelURL: jest.fn(),
                 };
@@ -1029,11 +962,7 @@ describe('main/windows/windowManager', () => {
         const windowManager = new WindowManager();
         windowManager.switchServer = jest.fn();
         const mainView = {
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
+            sendToRenderer: jest.fn(),
         };
         windowManager.callsWidgetWindow = {
             getServerId: () => 'server-2',
@@ -1053,7 +982,7 @@ describe('main/windows/windowManager', () => {
             windowManager.handleCallsError('', {err: 'client-error'});
             expect(windowManager.switchServer).toHaveBeenCalledWith('server-2');
             expect(focus).toHaveBeenCalled();
-            expect(mainView.view.webContents.send).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
+            expect(mainView.sendToRenderer).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
         });
     });
 
@@ -1061,11 +990,7 @@ describe('main/windows/windowManager', () => {
         const windowManager = new WindowManager();
         windowManager.switchServer = jest.fn();
         const view1 = {
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
+            sendToRenderer: jest.fn(),
         };
 
         beforeEach(() => {
@@ -1086,7 +1011,7 @@ describe('main/windows/windowManager', () => {
             windowManager.callsWidgetWindow = new CallsWidgetWindow();
             windowManager.handleCallsLinkClick('', {link: '/other/subpath'});
             expect(windowManager.switchServer).toHaveBeenCalledWith('server-1');
-            expect(view1.view.webContents.send).toBeCalledWith('browser-history-push', '/other/subpath');
+            expect(view1.sendToRenderer).toBeCalledWith('browser-history-push', '/other/subpath');
         });
     });
 

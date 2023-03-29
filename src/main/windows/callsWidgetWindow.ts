@@ -188,7 +188,7 @@ export default class CallsWidgetWindow extends EventEmitter {
             return;
         }
 
-        this.mainView.view.webContents.send(CALLS_JOINED_CALL, message);
+        this.mainView.sendToRenderer(CALLS_JOINED_CALL, message);
     }
 
     private setBounds(bounds: Rectangle) {
@@ -288,7 +288,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         // Only allow events coming from either the widget window or the
         // original Mattermost view that initiated it.
         return event.sender.id === this.getWebContentsId() ||
-            event.sender.id === this.getMainView().getWebContents().id;
+            event.sender.id === this.getMainView().webContentsId;
     }
 }
 
