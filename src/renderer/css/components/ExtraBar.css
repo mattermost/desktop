@@ -14,7 +14,15 @@
 }
 
 #extra-bar.dark-mode {
-    background-color: #000;
+    background: #2e2e2e;
+}
+
+#extra-bar.dark-mode .btn-link {
+    color: rgba(243,243,243,0.7);
+}
+
+#extra-bar.dark-mode span.backLabel {
+    color: rgba(243,243,243,0.7);
 }
 
 span.backLabel {
