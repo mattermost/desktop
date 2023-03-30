@@ -98,6 +98,22 @@ jest.mock('common/servers/serverManager', () => ({
     lookupTabByURL: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
     getLastActiveTabForServer: jest.fn(),
+    getServerLog: () => ({
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        verbose: jest.fn(),
+        debug: jest.fn(),
+        silly: jest.fn(),
+    }),
+    getViewLog: () => ({
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        verbose: jest.fn(),
+        debug: jest.fn(),
+        silly: jest.fn(),
+    }),
 }));
 jest.mock('main/views/webContentEvents', () => ({}));
 

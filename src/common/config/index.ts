@@ -7,7 +7,6 @@ import os from 'os';
 import path from 'path';
 
 import {EventEmitter} from 'events';
-import log from 'electron-log';
 
 import {
     AnyConfig,
@@ -18,6 +17,7 @@ import {
     ConfigTeam,
 } from 'types/config';
 
+import logger from 'common/log';
 import {getDefaultConfigTeamFromTeam} from 'common/tabs/TabView';
 import Utils, {copy} from 'common/utils/util';
 import * as Validator from 'common/Validator';
@@ -31,6 +31,8 @@ import migrateConfigItems from './migrationPreferences';
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
  */
+
+const log = logger.withPrefix('Config');
 
 export class Config extends EventEmitter {
     private configFilePath?: string;
@@ -116,7 +118,7 @@ export class Config extends EventEmitter {
      * @param {*} data value to save for provided key
      */
     set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
-        log.debug('Config.set');
+        log.debug('set');
         this.setMultiple({[key]: data});
     }
 
@@ -130,7 +132,7 @@ export class Config extends EventEmitter {
      * @param {array} properties an array of config properties to save
      */
     setMultiple = (newData: Partial<ConfigType>) => {
-        log.debug('Config.setMultiple', newData);
+        log.debug('setMultiple', newData);
 
         if (newData.darkMode && newData.darkMode !== this.darkMode) {
             this.emit('darkModeChange', newData.darkMode);
@@ -141,7 +143,7 @@ export class Config extends EventEmitter {
     }
 
     setServers = (servers: ConfigTeam[], lastActiveTeam?: number) => {
-        log.debug('Config.setServers', servers, lastActiveTeam);
+        log.debug('setServers', servers, lastActiveTeam);
 
         this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveTeam ?? this.localConfigData?.lastActiveTeam});
         this.regenerateCombinedConfigData();
@@ -260,7 +262,7 @@ export class Config extends EventEmitter {
      */
 
     private onLoadRegistry = (registryData: Partial<RegistryConfigType>): void => {
-        log.debug('Config.loadRegistry', {registryData});
+        log.debug('loadRegistry', {registryData});
 
         this.registryConfigData = registryData;
         if (this.registryConfigData.teams) {

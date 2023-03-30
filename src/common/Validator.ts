@@ -1,6 +1,5 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import log from 'electron-log';
 
 import Joi from 'joi';
 
@@ -12,6 +11,7 @@ import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
 import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
+import logger from 'common/log';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
@@ -22,6 +22,8 @@ const defaultWindowWidth = 1000;
 const defaultWindowHeight = 700;
 const minWindowWidth = 400;
 const minWindowHeight = 240;
+
+const log = logger.withPrefix('Validator');
 
 const argsSchema = Joi.object<Args>({
     hidden: Joi.boolean(),

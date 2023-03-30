@@ -26,15 +26,15 @@ describe('common/servers/serverManager', () => {
         const serverManager = new ServerManager();
 
         beforeEach(() => {
-            const server = {id: 'server-1', url: new URL('http://server-1.com')};
+            const server = {id: 'server-1', url: new URL('http://server-1.com'), name: 'server-1'};
             server.updateURL = (url) => {
                 server.url = new URL(url);
             };
             serverManager.servers = new Map([['server-1', server]]);
             serverManager.tabs = new Map([
-                ['tab-1', {id: 'tab-1', name: TAB_MESSAGING, isOpen: true}],
-                ['tab-2', {id: 'tab-2', name: TAB_PLAYBOOKS}],
-                ['tab-3', {id: 'tab-3', name: TAB_FOCALBOARD}],
+                ['tab-1', {id: 'tab-1', name: TAB_MESSAGING, isOpen: true, server}],
+                ['tab-2', {id: 'tab-2', name: TAB_PLAYBOOKS, server}],
+                ['tab-3', {id: 'tab-3', name: TAB_FOCALBOARD, server}],
             ]);
             serverManager.tabOrder = new Map([['server-1', ['tab-1', 'tab-2', 'tab-3']]]);
             serverManager.persistServers = jest.fn();

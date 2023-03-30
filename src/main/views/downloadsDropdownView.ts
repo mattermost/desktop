@@ -3,8 +3,6 @@
 
 import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
-import log from 'electron-log';
-
 import {CombinedConfig} from 'types/config';
 import {DownloadedItem, DownloadedItems} from 'types/downloads';
 
@@ -21,11 +19,14 @@ import {
     DOWNLOADS_DROPDOWN_OPEN_FILE,
 } from 'common/communication';
 import Config from 'common/config';
+import logger from 'common/log';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
+
+const log = logger.withPrefix('DownloadsDropdownView');
 
 export default class DownloadsDropdownView {
     bounds?: Electron.Rectangle;
@@ -73,7 +74,7 @@ export default class DownloadsDropdownView {
     }
 
     updateDownloads = (event: IpcMainEvent, downloads: DownloadedItems) => {
-        log.debug('DownloadsDropdownView.updateDownloads', {downloads});
+        log.debug('updateDownloads', {downloads});
 
         this.downloads = downloads;
 
@@ -81,13 +82,13 @@ export default class DownloadsDropdownView {
     }
 
     updateDownloadsDropdownMenuItem = (event: IpcMainEvent, item?: DownloadedItem) => {
-        log.debug('DownloadsDropdownView.updateDownloadsDropdownMenuItem', {item});
+        log.debug('updateDownloadsDropdownMenuItem', {item});
         this.item = item;
         this.updateDownloadsDropdown();
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
-        log.debug('DownloadsDropdownView.updateConfig');
+        log.debug('updateConfig');
 
         this.darkMode = config.darkMode;
         this.updateDownloadsDropdown();
@@ -98,7 +99,7 @@ export default class DownloadsDropdownView {
      * the downloads dropdown at the correct position
      */
     updateWindowBounds = () => {
-        log.debug('DownloadsDropdownView.updateWindowBounds');
+        log.debug('updateWindowBounds');
 
         this.windowBounds = this.window.getContentBounds();
         this.updateDownloadsDropdown();
@@ -106,7 +107,7 @@ export default class DownloadsDropdownView {
     }
 
     updateDownloadsDropdown = () => {
-        log.debug('DownloadsDropdownView.updateDownloadsDropdown');
+        log.debug('updateDownloadsDropdown');
 
         this.view.webContents.send(
             UPDATE_DOWNLOADS_DROPDOWN,
@@ -118,7 +119,7 @@ export default class DownloadsDropdownView {
     }
 
     handleOpen = () => {
-        log.debug('DownloadsDropdownView.handleOpen', {bounds: this.bounds});
+        log.debug('handleOpen', {bounds: this.bounds});
 
         if (!this.bounds) {
             return;
@@ -132,7 +133,7 @@ export default class DownloadsDropdownView {
     }
 
     handleClose = () => {
-        log.debug('DownloadsDropdownView.handleClose');
+        log.debug('handleClose');
 
         this.view.setBounds(this.getBounds(0, 0));
         downloadsManager.onClose();
@@ -145,7 +146,7 @@ export default class DownloadsDropdownView {
     }
 
     openFile = (e: IpcMainEvent, item: DownloadedItem) => {
-        log.debug('DownloadsDropdownView.openFile', {item});
+        log.debug('openFile', {item});
 
         downloadsManager.openFile(item);
     }
@@ -187,7 +188,7 @@ export default class DownloadsDropdownView {
     }
 
     handleReceivedDownloadsDropdownSize = (event: IpcMainEvent, width: number, height: number) => {
-        log.silly('DownloadsDropdownView.handleReceivedDownloadsDropdownSize', {width, height});
+        log.silly('handleReceivedDownloadsDropdownSize', {width, height});
 
         this.bounds = this.getBounds(width, height);
         if (downloadsManager.getIsOpen()) {

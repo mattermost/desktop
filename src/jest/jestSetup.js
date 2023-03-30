@@ -12,7 +12,7 @@ jest.mock('main/constants', () => ({
     updatePaths: jest.fn(),
 }));
 
-jest.mock('electron-log', () => {
+jest.mock('common/log', () => {
     const logLevelsFn = {
         error: jest.fn(),
         warn: jest.fn(),
@@ -22,9 +22,19 @@ jest.mock('electron-log', () => {
         silly: jest.fn(),
     };
     return {
-        create: jest.fn(() => ({
+        create: () => ({
             ...logLevelsFn,
-        })),
+        }),
+        withPrefix: () => ({
+            ...logLevelsFn,
+        }),
+        withServer: () => ({
+            ...logLevelsFn,
+        }),
+        withView: () => ({
+            ...logLevelsFn,
+        }),
+        setLoggingLevel: jest.fn(),
         ...logLevelsFn,
         transports: {
             file: {

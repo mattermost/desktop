@@ -4,7 +4,6 @@
 /* eslint-disable max-lines */
 
 import {BrowserWindow, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
-import log from 'electron-log';
 
 import {
     CallsJoinCallMessage,
@@ -38,6 +37,7 @@ import {
     WINDOW_RESTORE,
     DOUBLE_CLICK_ON_WINDOW,
 } from 'common/communication';
+import logger from 'common/log';
 import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
@@ -60,6 +60,8 @@ import CallsWidgetWindow from './callsWidgetWindow';
 import SettingsWindow from './settingsWindow';
 
 // singleton module to manage application's windows
+
+const log = logger.withPrefix('WindowManager');
 
 export class WindowManager {
     callsWidgetWindow?: CallsWidgetWindow;
@@ -98,7 +100,7 @@ export class WindowManager {
     }
 
     showMainWindow = (deeplinkingURL?: string | URL) => {
-        log.debug('WindowManager.showMainWindow', deeplinkingURL);
+        log.debug('showMainWindow', deeplinkingURL);
 
         const mainWindow = MainWindow.get();
         if (mainWindow) {
@@ -147,7 +149,7 @@ export class WindowManager {
 
         if (!mainWindow || !MainWindow.isReady) {
             if (maxRetries > 0) {
-                log.info(`Can't send ${channel}, will retry`);
+                log.debug(`Can't send ${channel}, will retry`);
                 setTimeout(() => {
                     this.sendToRendererWithRetry(maxRetries - 1, channel, ...args);
                 }, SECOND);
@@ -204,11 +206,11 @@ export class WindowManager {
     }
 
     switchServer = (serverId: string, waitForViewToExist = false) => {
-        log.debug('windowManager.switchServer');
+        ServerManager.getServerLog(serverId, 'WindowManager').debug('switchServer');
         this.showMainWindow();
         const server = ServerManager.getServer(serverId);
         if (!server) {
-            log.error('Cannot find server in config');
+            ServerManager.getServerLog(serverId, 'WindowManager').error('Cannot find server in config');
             return;
         }
         const nextTab = ServerManager.getLastActiveTabForServer(serverId);
@@ -295,7 +297,7 @@ export class WindowManager {
     }
 
     private handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
-        log.silly('WindowManager.handleWillResizeMainWindow');
+        log.silly('handleWillResizeMainWindow');
 
         /**
          * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
@@ -321,7 +323,7 @@ export class WindowManager {
     }
 
     private handleResizedMainWindow = () => {
-        log.silly('WindowManager.handleResizedMainWindow');
+        log.silly('handleResizedMainWindow');
 
         const bounds = this.getBounds();
         this.throttledWillResize(bounds);
@@ -333,14 +335,14 @@ export class WindowManager {
     }
 
     private throttledWillResize = (newBounds: Electron.Rectangle) => {
-        log.silly('WindowManager.throttledWillResize', {newBounds});
+        log.silly('throttledWillResize', {newBounds});
 
         this.isResizing = true;
         this.setCurrentViewBounds(newBounds);
     }
 
     private handleResizeMainWindow = () => {
-        log.silly('WindowManager.handleResizeMainWindow');
+        log.silly('handleResizeMainWindow');
 
         if (this.isResizing) {
             return;
@@ -359,7 +361,7 @@ export class WindowManager {
     };
 
     private setCurrentViewBounds = (bounds: {width: number; height: number}) => {
-        log.debug('WindowManager.setCurrentViewBounds', {bounds});
+        log.debug('setCurrentViewBounds', {bounds});
 
         const currentView = ViewManager.getCurrentView();
         if (currentView) {
@@ -448,7 +450,7 @@ export class WindowManager {
     }
 
     handleDoubleClick = (e: IpcMainEvent, windowType?: string) => {
-        log.debug('WindowManager.handleDoubleClick', windowType);
+        log.debug('handleDoubleClick', windowType);
 
         let action = 'Maximize';
         if (process.platform === 'darwin') {
@@ -484,7 +486,7 @@ export class WindowManager {
     private genCallsEventHandler = (handler: CallsEventHandler) => {
         return (event: IpcMainEvent, viewId: string, msg?: any) => {
             if (this.callsWidgetWindow && !this.callsWidgetWindow.isAllowedEvent(event)) {
-                log.warn('WindowManager.genCallsEventHandler', 'Disallowed calls event');
+                log.warn('genCallsEventHandler', 'Disallowed calls event');
                 return;
             }
             handler(viewId, msg);
@@ -492,11 +494,12 @@ export class WindowManager {
     }
 
     private handleGetDesktopSources = async (viewId: string, opts: Electron.SourcesOptions) => {
-        log.debug('WindowManager.handleGetDesktopSources', {viewId, opts});
+        const viewLogger = ServerManager.getViewLog(viewId, 'WindowManager');
+        viewLogger.debug('handleGetDesktopSources', opts);
 
         const view = ViewManager.getView(viewId);
         if (!view) {
-            log.error('WindowManager.handleGetDesktopSources: view not found');
+            viewLogger.error('handleGetDesktopSources: view not found');
             return Promise.resolve();
         }
 
@@ -513,7 +516,7 @@ export class WindowManager {
                 }
                 this.missingScreensharePermissions = true;
             } catch (err) {
-                log.error('failed to reset screen sharing permissions', err);
+                viewLogger.error('failed to reset screen sharing permissions', err);
             }
         }
 
@@ -523,15 +526,15 @@ export class WindowManager {
             let hasScreenPermissions = true;
             if (systemPreferences.getMediaAccessStatus) {
                 const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
-                log.debug('screenPermissions', screenPermissions);
+                viewLogger.debug('screenPermissions', screenPermissions);
                 if (screenPermissions === 'denied') {
-                    log.info('no screen sharing permissions');
+                    viewLogger.info('no screen sharing permissions');
                     hasScreenPermissions = false;
                 }
             }
 
             if (!hasScreenPermissions || !sources.length) {
-                log.info('missing screen permissions');
+                viewLogger.info('missing screen permissions');
                 view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
                 this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
                 return;
@@ -549,7 +552,7 @@ export class WindowManager {
                 view.sendToRenderer(DESKTOP_SOURCES_RESULT, message);
             }
         }).catch((err) => {
-            log.error('desktopCapturer.getSources failed', err);
+            viewLogger.error('desktopCapturer.getSources failed', err);
 
             view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
             this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
@@ -557,7 +560,7 @@ export class WindowManager {
     }
 
     private createCallsWidgetWindow = async (viewId: string, msg: CallsJoinCallMessage) => {
-        log.debug('WindowManager.createCallsWidgetWindow');
+        ServerManager.getViewLog(viewId, 'WindowManager').debug('createCallsWidgetWindow');
         if (this.callsWidgetWindow) {
             // trying to join again the call we are already in should not be allowed.
             if (this.callsWidgetWindow.getCallID() === msg.callID) {
@@ -570,7 +573,7 @@ export class WindowManager {
         }
         const currentView = ViewManager.getView(viewId);
         if (!currentView) {
-            log.error('unable to create calls widget window: currentView is missing');
+            ServerManager.getViewLog(viewId, 'WindowManager').error('unable to create calls widget window: currentView is missing');
             return;
         }
 
@@ -585,7 +588,7 @@ export class WindowManager {
     }
 
     private handleDesktopSourcesModalRequest = () => {
-        log.debug('WindowManager.handleDesktopSourcesModalRequest');
+        log.debug('handleDesktopSourcesModalRequest');
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerId());
@@ -595,13 +598,13 @@ export class WindowManager {
     }
 
     private handleCallsLeave = () => {
-        log.debug('WindowManager.handleCallsLeave');
+        log.debug('handleCallsLeave');
 
         this.callsWidgetWindow?.close();
     }
 
     private handleCallsWidgetChannelLinkClick = () => {
-        log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
+        log.debug('handleCallsWidgetChannelLinkClick');
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerId());
@@ -611,7 +614,7 @@ export class WindowManager {
     }
 
     private handleCallsError = (_: string, msg: CallsErrorMessage) => {
-        log.debug('WindowManager.handleCallsError', msg);
+        log.debug('handleCallsError', msg);
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerId());
@@ -621,7 +624,7 @@ export class WindowManager {
     }
 
     private handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
-        log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
+        log.debug('handleCallsLinkClick with linkURL', msg.link);
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerId());

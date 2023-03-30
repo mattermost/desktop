@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import {BrowserWindow, ipcMain} from 'electron';
-import log from 'electron-log';
 
 import {SHOW_SETTINGS_WINDOW} from 'common/communication';
 import Config from 'common/config';
+import log from 'common/log';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
@@ -55,8 +55,7 @@ export class SettingsWindow {
         this.win.setMenuBarVisibility(false);
         this.win.loadURL(localURL).catch(
             (reason) => {
-                log.error(`Settings window failed to load: ${reason}`);
-                log.info(process.env);
+                log.error('failed to load', reason);
             });
         this.win.show();
 

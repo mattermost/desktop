@@ -6,11 +6,11 @@
 import fs from 'fs';
 
 import {dialog, shell} from 'electron';
-import log from 'electron-log';
 
 import {localizeMessage} from 'main/i18nManager';
 
 import buildConfig from 'common/config/buildConfig';
+import log from 'common/log';
 import * as Validator from 'common/Validator';
 
 import MainWindow from './windows/mainWindow';
@@ -70,7 +70,7 @@ export class AllowProtocolDialog {
                 this.allowedProtocols.push(protocol);
                 function handleError(err: NodeJS.ErrnoException | null) {
                     if (err) {
-                        log.error(err);
+                        log.withPrefix('AllowProtocolDialog').error(err);
                     }
                 }
                 fs.writeFile(allowedProtocolFile, JSON.stringify(this.allowedProtocols), handleError);

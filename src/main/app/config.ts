@@ -2,12 +2,13 @@
 // See LICENSE.txt for license information.
 
 import {app, ipcMain, nativeTheme} from 'electron';
-import log, {LogLevel} from 'electron-log';
+import {LevelOption} from 'electron-log';
 
 import {CombinedConfig, Config as ConfigType} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
+import logger, {setLoggingLevel} from 'common/log';
 
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
@@ -16,20 +17,22 @@ import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleMainWindowIsShown} from './intercom';
-import {handleUpdateMenuEvent, setLoggingLevel, updateSpellCheckerLocales} from './utils';
+import {handleUpdateMenuEvent, updateSpellCheckerLocales} from './utils';
+
+const log = logger.withPrefix('App.Config');
 
 //
 // config event handlers
 //
 
 export function handleGetConfiguration() {
-    log.debug('Config.handleGetConfiguration');
+    log.debug('handleGetConfiguration');
 
     return Config.data;
 }
 
 export function handleGetLocalConfiguration() {
-    log.debug('Config.handleGetLocalConfiguration');
+    log.debug('handleGetLocalConfiguration');
 
     return {
         ...Config.localData,
@@ -40,7 +43,7 @@ export function handleGetLocalConfiguration() {
 }
 
 export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []) {
-    log.debug('Config.updateConfiguration', properties);
+    log.debug('updateConfiguration', properties);
 
     if (properties.length) {
         const newData = properties.reduce((obj, data) => {
@@ -58,15 +61,12 @@ export function handleUpdateTheme() {
 }
 
 export function handleConfigUpdate(newConfig: CombinedConfig) {
-    if (log.transports.file.level !== newConfig.logLevel) {
-        log.error('Log level set to:', newConfig.logLevel);
-    }
     if (newConfig.logLevel) {
-        setLoggingLevel(newConfig.logLevel as LogLevel);
+        setLoggingLevel(newConfig.logLevel as LevelOption);
     }
 
-    log.debug('App.Config.handleConfigUpdate');
-    log.silly('App.Config.handleConfigUpdate', newConfig);
+    log.debug('handleConfigUpdate');
+    log.silly('handleConfigUpdate', newConfig);
 
     if (!newConfig) {
         return;
@@ -107,7 +107,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 }
 
 export function handleDarkModeChange(darkMode: boolean) {
-    log.debug('App.Config.handleDarkModeChange', darkMode);
+    log.debug('handleDarkModeChange', darkMode);
 
     refreshTrayImages(Config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);

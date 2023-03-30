@@ -1,6 +1,5 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import log from 'electron-log';
 import {app, BrowserView, dialog, ipcMain, IpcMainEvent} from 'electron';
 
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
@@ -27,6 +26,7 @@ import {
     UNREAD_RESULT,
 } from 'common/communication';
 import Config from 'common/config';
+import logger from 'common/log';
 import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -45,6 +45,7 @@ import modalManager from './modalManager';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
+const log = logger.withPrefix('ViewManager');
 
 enum LoadingScreenState {
     VISIBLE = 1,
@@ -91,7 +92,6 @@ export class ViewManager {
         if (this.currentView) {
             return this.views.get(this.currentView);
         }
-
         return undefined;
     }
 
@@ -104,7 +104,7 @@ export class ViewManager {
     }
 
     showById = (tabId: string) => {
-        log.debug('viewManager.showById', tabId);
+        this.getViewLogger(tabId).debug('showById', tabId);
 
         const newView = this.views.get(tabId);
         if (newView) {
@@ -132,16 +132,16 @@ export class ViewManager {
             if (newView.isReady()) {
                 ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.id);
             } else {
-                log.warn(`couldn't show ${tabId}, not ready`);
+                this.getViewLogger(tabId).warn(`couldn't show ${tabId}, not ready`);
             }
         } else {
-            log.warn(`Couldn't find a view with name: ${tabId}`);
+            this.getViewLogger(tabId).warn(`Couldn't find a view with name: ${tabId}`);
         }
         modalManager.showModal();
     }
 
     focusCurrentView = () => {
-        log.debug('viewManager.focusCurrentView');
+        log.debug('focusCurrentView');
 
         if (modalManager.isModalDisplayed()) {
             modalManager.focusCurrentModal();
@@ -190,7 +190,7 @@ export class ViewManager {
                 } else {
                     const view = this.views.get(tabView.id);
                     if (!view) {
-                        log.error(`Couldn't find a view matching the name ${tabView.id}`);
+                        log.error(`Couldn't find a view matching the id ${tabView.id}`);
                         return;
                     }
 
@@ -216,14 +216,14 @@ export class ViewManager {
     };
 
     private deeplinkSuccess = (viewId: string) => {
-        log.debug('viewManager.deeplinkSuccess', viewId);
+        this.getViewLogger(viewId).debug('deeplinkSuccess');
 
         this.showById(viewId);
         this.views.get(viewId)?.removeListener(LOAD_FAILED, this.deeplinkFailed);
     };
 
     private deeplinkFailed = (viewId: string, err: string, url: string) => {
-        log.error(`[${viewId}] failed to load deeplink ${url}: ${err}`);
+        this.getViewLogger(viewId).error(`failed to load deeplink ${url}`, err);
         this.views.get(viewId)?.removeListener(LOAD_SUCCESS, this.deeplinkSuccess);
     }
 
@@ -271,7 +271,7 @@ export class ViewManager {
     }
 
     private showInitial = () => {
-        log.verbose('viewManager.showInitial');
+        log.verbose('showInitial');
 
         if (ServerManager.hasServers()) {
             const lastActiveServer = ServerManager.getCurrentServer();
@@ -288,7 +288,7 @@ export class ViewManager {
      */
 
     private activateView = (viewId: string) => {
-        log.debug('viewManager.activateView', viewId);
+        this.getViewLogger(viewId).debug('activateView');
 
         if (this.currentView === viewId) {
             this.showById(this.currentView);
@@ -296,7 +296,7 @@ export class ViewManager {
     }
 
     private finishLoading = (viewId: string) => {
-        log.debug('viewManager.finishLoading', viewId);
+        this.getViewLogger(viewId).debug('finishLoading');
 
         if (this.currentView === viewId) {
             this.showById(this.currentView);
@@ -305,7 +305,7 @@ export class ViewManager {
     }
 
     private failLoading = (viewId: string) => {
-        log.debug('viewManager.failLoading', viewId);
+        this.getViewLogger(viewId).debug('failLoading');
 
         this.fadeLoadingScreen();
         if (this.currentView === viewId) {
@@ -314,7 +314,7 @@ export class ViewManager {
     }
 
     private showURLView = (url: URL | string) => {
-        log.silly('viewManager.showURLView', url);
+        log.silly('showURLView', url);
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -367,7 +367,7 @@ export class ViewManager {
                     height: URL_VIEW_HEIGHT,
                 };
 
-                log.silly('showURLView setBounds', boundaries, bounds);
+                log.silly('showURLView.setBounds', boundaries, bounds);
                 urlView.setBounds(bounds);
             };
 
@@ -467,7 +467,7 @@ export class ViewManager {
      * close, open, or reload tabs, taking care to reuse tabs and
      * preserve focus on the currently selected tab. */
     private handleReloadConfiguration = () => {
-        log.debug('viewManager.handleReloadConfiguration');
+        log.debug('handleReloadConfiguration');
 
         const currentTabId: string | undefined = this.views.get(this.currentView as string)?.tab.id;
 
@@ -545,7 +545,7 @@ export class ViewManager {
     }
 
     private handleBrowserHistoryPush = (e: IpcMainEvent, viewId: string, pathName: string) => {
-        log.debug('WindowManager.handleBrowserHistoryPush', {viewId, pathName});
+        log.debug('handleBrowserHistoryPush', {viewId, pathName});
 
         const currentView = this.getView(viewId);
         const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
@@ -577,7 +577,7 @@ export class ViewManager {
     }
 
     private handleLoadingScreenAnimationFinished = () => {
-        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
+        log.debug('handleLoadingScreenAnimationFinished');
 
         if (this.loadingScreen && this.loadingScreenState !== LoadingScreenState.HIDDEN) {
             this.loadingScreenState = LoadingScreenState.HIDDEN;
@@ -590,7 +590,7 @@ export class ViewManager {
     }
 
     private handleReactAppInitialized = (e: IpcMainEvent, viewId: string) => {
-        log.debug('WindowManager.handleReactAppInitialized', viewId);
+        log.debug('handleReactAppInitialized', viewId);
 
         const view = this.views.get(viewId);
         if (view) {
@@ -602,7 +602,7 @@ export class ViewManager {
     }
 
     private handleReloadCurrentView = () => {
-        log.debug('WindowManager.handleReloadCurrentView');
+        log.debug('handleReloadCurrentView');
 
         const view = this.getCurrentView();
         if (!view) {
@@ -615,7 +615,7 @@ export class ViewManager {
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
     private handleFaviconIsUnread = (e: Event, favicon: string, viewId: string, result: boolean) => {
-        log.silly('MattermostView.handleFaviconIsUnread', {favicon, viewId, result});
+        log.silly('handleFaviconIsUnread', {favicon, viewId, result});
 
         appState.updateUnreads(viewId, result);
     }
@@ -639,6 +639,10 @@ export class ViewManager {
             this.showById(id);
         });
         ipcMain.emit(OPEN_TAB, null, tab.id);
+    }
+
+    private getViewLogger = (viewId: string) => {
+        return ServerManager.getViewLog(viewId, 'ViewManager');
     }
 }
 

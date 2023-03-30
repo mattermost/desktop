@@ -4,9 +4,8 @@
 import events from 'events';
 import {ipcMain} from 'electron';
 
-import log from 'electron-log';
-
 import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE, SESSION_EXPIRED, UPDATE_DROPDOWN_MENTIONS} from 'common/communication';
+import ServerManager from 'common/servers/serverManager';
 
 import WindowManager from './windows/windowManager';
 
@@ -23,7 +22,7 @@ const emitMentions = (viewId: string) => {
     const isExpired = getIsExpired(viewId);
 
     WindowManager.sendToRenderer(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
-    log.silly('AppState.emitMentions', {viewId, isExpired, newMentions, newUnreads});
+    ServerManager.getViewLog(viewId, 'AppState').silly('emitMentions', {isExpired, newMentions, newUnreads});
     emitStatus();
 };
 
@@ -121,7 +120,7 @@ const setSessionExpired = (viewId: string, expired: boolean) => {
 
 ipcMain.on(SESSION_EXPIRED, (event, isExpired, viewId) => {
     if (isExpired) {
-        log.debug('SESSION_EXPIRED', {isExpired, viewId});
+        ServerManager.getViewLog(viewId, 'AppState').debug('SESSION_EXPIRED', isExpired);
     }
     setSessionExpired(viewId, isExpired);
 });

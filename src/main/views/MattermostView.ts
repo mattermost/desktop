@@ -3,11 +3,9 @@
 
 import {BrowserView, app, BrowserWindow} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
-import log from 'electron-log';
 
 import {EventEmitter} from 'events';
 
-import Util from 'common/utils/util';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 import {
@@ -81,7 +79,7 @@ export class MattermostView extends EventEmitter {
         this.view = new BrowserView(this.options);
         this.resetLoadingStatus();
 
-        log.verbose(`BrowserView created for server ${this.id}`);
+        this.log.verbose('MattermostView created');
 
         this.view.webContents.on('did-finish-load', this.handleDidFinishLoad);
         this.view.webContents.on('page-title-updated', this.handleTitleUpdate);
@@ -104,6 +102,9 @@ export class MattermostView extends EventEmitter {
         ServerManager.on(SERVERS_URL_MODIFIED, this.handleServerWasModified);
     }
 
+    private get log() {
+        return ServerManager.getViewLog(this.id, 'MattermostView');
+    }
     get id() {
         return this.tab.id;
     }
@@ -142,7 +143,7 @@ export class MattermostView extends EventEmitter {
                 this.view.webContents.goToOffset(offset);
                 this.updateHistoryButton();
             } catch (error) {
-                log.error(error);
+                this.log.error(error);
                 this.reload();
             }
         }
@@ -179,19 +180,19 @@ export class MattermostView extends EventEmitter {
             if (parsedURL) {
                 loadURL = parsedURL.toString();
             } else {
-                log.error('Cannot parse provided url, using current server url', someURL);
+                this.log.error('Cannot parse provided url, using current server url', someURL);
                 loadURL = this.tab.url.toString();
             }
         } else {
             loadURL = this.tab.url.toString();
         }
-        log.verbose(`[${Util.shorten(this.id)}] Loading ${loadURL}`);
+        this.log.verbose(`Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
                 WindowManager.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                 this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
-                log.info(`[${Util.shorten(this.id)}] Invalid certificate, stop retrying until the user decides what to do: ${err}.`);
+                this.log.info('Invalid certificate, stop retrying until the user decides what to do.', err);
                 this.status = Status.ERROR;
                 return;
             }
@@ -287,7 +288,7 @@ export class MattermostView extends EventEmitter {
         this.status = Status.READY;
 
         if (timedout) {
-            log.info(`${this.id} timeout expired will show the browserview`);
+            this.log.verbose('timeout expired will show the browserview');
             this.emit(LOADSCREEN_END, this.id);
         }
         clearTimeout(this.removeLoading);
@@ -314,7 +315,7 @@ export class MattermostView extends EventEmitter {
         if (this.view.webContents) {
             this.view.webContents.focus();
         } else {
-            log.warn('trying to focus the browserview, but it doesn\'t yet have webcontents.');
+            this.log.warn('trying to focus the browserview, but it doesn\'t yet have webcontents.');
         }
     }
 
@@ -343,7 +344,7 @@ export class MattermostView extends EventEmitter {
     };
 
     private handleInputEvents = (_: Event, input: Input) => {
-        log.silly('MattermostView.handleInputEvents', {tabName: this.id, input});
+        this.log.silly('handleInputEvents', input);
 
         this.registerAltKeyPressed(input);
 
@@ -369,19 +370,18 @@ export class MattermostView extends EventEmitter {
         try {
             this.view.webContents.send(IS_UNREAD, favicon, this.id);
         } catch (err: any) {
-            log.error(`There was an error trying to request the unread state: ${err}`);
-            log.error(err.stack);
+            this.log.error('There was an error trying to request the unread state', err);
         }
     }
 
     private handleTitleUpdate = (e: Event, title: string) => {
-        log.debug('MattermostView.handleTitleUpdate', {tabName: this.id, title});
+        this.log.debug('handleTitleUpdate', title);
 
         this.updateMentionsFromTitle(title);
     }
 
     private handleFaviconUpdate = (e: Event, favicons: string[]) => {
-        log.silly('MattermostView.handleFaviconUpdate', {tabName: this.id, favicons});
+        this.log.silly('handleFaviconUpdate', favicons);
 
         // if unread state is stored for that favicon, retrieve value.
         // if not, get related info from preload and store it for future changes
@@ -405,7 +405,7 @@ export class MattermostView extends EventEmitter {
                 } else {
                     WindowManager.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
-                    log.info(`[${Util.shorten(this.id)}] Couldn't establish a connection with ${loadURL}: ${err}. Will continue to retry in the background.`);
+                    this.log.info(`Couldn't establish a connection with ${loadURL}, will continue to retry in the background`, err);
                     this.status = Status.ERROR;
                     this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
                 }
@@ -429,12 +429,12 @@ export class MattermostView extends EventEmitter {
     private loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         WindowManager.sendToRenderer(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
-        log.info(`[${Util.shorten(this.id)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
+        this.log.info(`failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     }
 
     private loadSuccess = (loadURL: string) => {
         return () => {
-            log.verbose(`[${Util.shorten(this.id)}] finished loading ${loadURL}`);
+            this.log.verbose(`finished loading ${loadURL}`);
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.id);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === Status.LOADING) {
@@ -453,7 +453,7 @@ export class MattermostView extends EventEmitter {
      */
 
     private handleDidFinishLoad = () => {
-        log.debug('MattermostView.did-finish-load', this.tab.id);
+        this.log.debug('did-finish-load', this.tab.id);
 
         // wait for screen to truly finish loading before sending the message down
         const timeout = setInterval(() => {
@@ -466,28 +466,28 @@ export class MattermostView extends EventEmitter {
                     this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.id, this.tab.shouldNotify);
                     clearTimeout(timeout);
                 } catch (e) {
-                    log.error('failed to send view options to view', this.id);
+                    this.log.error('failed to send view options to view');
                 }
             }
         }, 100);
     }
 
     private handleDidNavigate = (event: Event, url: string) => {
-        log.debug('MattermostView.handleDidNavigate', {tabName: this.id, url});
+        this.log.debug('handleDidNavigate', url);
 
         if (shouldHaveBackBar(this.tab.url || '', url)) {
             this.setBounds(getWindowBoundaries(this.window, true));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, true);
-            log.info('show back button');
+            this.log.debug('show back button');
         } else {
             this.setBounds(getWindowBoundaries(this.window));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
-            log.info('hide back button');
+            this.log.debug('hide back button');
         }
     }
 
     private handleUpdateTarget = (e: Event, url: string) => {
-        log.silly('MattermostView.handleUpdateTarget', {tabName: this.id, url});
+        this.log.silly('handleUpdateTarget', url);
         if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
         } else {
