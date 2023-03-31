@@ -399,7 +399,11 @@ describe('main/windows/callsWidgetWindow', () => {
 
     it('onPopOutCreate - should attach correct listeners and should prevent redirects', () => {
         let redirectListener;
+        let closedListener;
         const popOut = {
+            on: (event, listener) => {
+                closedListener = listener;
+            },
             webContents: {
                 on: (event, listener) => {
                     redirectListener = listener;
@@ -417,6 +421,9 @@ describe('main/windows/callsWidgetWindow', () => {
         const event = {preventDefault: jest.fn()};
         redirectListener(event);
         expect(event.preventDefault).toHaveBeenCalled();
+
+        closedListener();
+        expect(callsWidgetWindow.popOut).not.toBeDefined();
     });
 
     it('getURL', () => {

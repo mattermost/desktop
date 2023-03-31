@@ -291,6 +291,10 @@ export class CallsWidgetWindow {
             // Note for the future: the code from https://github.com/mattermost/desktop/pull/2580 will not work for us.
             event.preventDefault();
         });
+
+        this.popOut.on('closed', () => {
+            delete this.popOut;
+        });
     }
 
     /************************
