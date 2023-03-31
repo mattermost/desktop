@@ -11,6 +11,7 @@ import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
 import ServerManager from 'common/servers/serverManager';
 
+import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import WindowManager from 'main/windows/windowManager';
 import ViewManager from 'main/views/viewManager';
 
@@ -86,7 +87,7 @@ export class WebContentsEventManager {
                 return;
             }
 
-            const callID = WindowManager.callsWidgetWindow?.getCallID();
+            const callID = CallsWidgetWindow.callID;
             if (serverURL && callID && urlUtils.isCallsPopOutURL(serverURL, parsedURL, callID)) {
                 return;
             }

@@ -3,33 +3,17 @@
 
 /* eslint-disable max-lines */
 
-import {BrowserWindow, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
-
-import {
-    CallsJoinCallMessage,
-    CallsErrorMessage,
-    CallsLinkClickMessage,
-    CallsEventHandler,
-} from 'types/calls';
+import {BrowserWindow, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
 import {
     MAXIMIZE_CHANGE,
     HISTORY,
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
-    BROWSER_HISTORY_PUSH,
     GET_VIEW_ID,
     GET_VIEW_WEBCONTENTS_ID,
     RESIZE_MODAL,
-    DISPATCH_GET_DESKTOP_SOURCES,
-    DESKTOP_SOURCES_RESULT,
     VIEW_FINISHED_RESIZING,
-    CALLS_JOIN_CALL,
-    CALLS_LEAVE_CALL,
-    DESKTOP_SOURCES_MODAL_REQUEST,
-    CALLS_WIDGET_CHANNEL_LINK_CLICK,
-    CALLS_ERROR,
-    CALLS_LINK_CLICK,
     SERVERS_UPDATE,
     WINDOW_CLOSE,
     WINDOW_MAXIMIZE,
@@ -45,8 +29,6 @@ import ServerManager from 'common/servers/serverManager';
 import {
     getAdjustedWindowBoundaries,
     shouldHaveBackBar,
-    resetScreensharePermissionsMacOS,
-    openScreensharePermissionsSettingsMacOS,
 } from '../utils';
 
 import ViewManager from '../views/viewManager';
@@ -64,12 +46,9 @@ import SettingsWindow from './settingsWindow';
 const log = logger.withPrefix('WindowManager');
 
 export class WindowManager {
-    callsWidgetWindow?: CallsWidgetWindow;
-
     private teamDropdown?: TeamDropdownView;
     private downloadsDropdown?: DownloadsDropdownView;
     private downloadsDropdownMenu?: DownloadsDropdownMenuView;
-    private missingScreensharePermissions?: boolean;
 
     private isResizing: boolean;
 
@@ -86,15 +65,6 @@ export class WindowManager {
         ipcMain.on(WINDOW_MINIMIZE, this.handleMinimize);
         ipcMain.on(WINDOW_RESTORE, this.handleRestore);
         ipcMain.on(DOUBLE_CLICK_ON_WINDOW, this.handleDoubleClick);
-
-        // Calls handlers
-        ipcMain.on(DISPATCH_GET_DESKTOP_SOURCES, this.genCallsEventHandler(this.handleGetDesktopSources));
-        ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.genCallsEventHandler(this.handleDesktopSourcesModalRequest));
-        ipcMain.on(CALLS_JOIN_CALL, this.genCallsEventHandler(this.createCallsWidgetWindow));
-        ipcMain.on(CALLS_LEAVE_CALL, this.genCallsEventHandler(this.handleCallsLeave));
-        ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.genCallsEventHandler(this.handleCallsWidgetChannelLinkClick));
-        ipcMain.on(CALLS_ERROR, this.genCallsEventHandler(this.handleCallsError));
-        ipcMain.on(CALLS_LINK_CLICK, this.genCallsEventHandler(this.handleCallsLinkClick));
 
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
     }
@@ -236,8 +206,8 @@ export class WindowManager {
      */
 
     getServerURLFromWebContentsId = (id: number) => {
-        if (this.callsWidgetWindow && (id === this.callsWidgetWindow.getWebContentsId() || id === this.callsWidgetWindow.getPopOutWebContentsId())) {
-            return this.callsWidgetWindow.getURL();
+        if (CallsWidgetWindow.isCallsWidget(id)) {
+            return CallsWidgetWindow.getURL();
         }
 
         return ViewManager.getViewByWebContentsId(id)?.tab.server.url;
@@ -476,160 +446,6 @@ export class WindowManager {
                 win.maximize();
             }
             break;
-        }
-    }
-
-    /************************
-     * CALLS WIDGET HANDLERS
-     ************************/
-
-    private genCallsEventHandler = (handler: CallsEventHandler) => {
-        return (event: IpcMainEvent, viewId: string, msg?: any) => {
-            if (this.callsWidgetWindow && !this.callsWidgetWindow.isAllowedEvent(event)) {
-                log.warn('genCallsEventHandler', 'Disallowed calls event');
-                return;
-            }
-            handler(viewId, msg);
-        };
-    }
-
-    private handleGetDesktopSources = async (viewId: string, opts: Electron.SourcesOptions) => {
-        const viewLogger = ServerManager.getViewLog(viewId, 'WindowManager');
-        viewLogger.debug('handleGetDesktopSources', opts);
-
-        const view = ViewManager.getView(viewId);
-        if (!view) {
-            viewLogger.error('handleGetDesktopSources: view not found');
-            return Promise.resolve();
-        }
-
-        if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
-            try {
-                // If permissions are missing we reset them so that the system
-                // prompt can be showed.
-                await resetScreensharePermissionsMacOS();
-
-                // We only open the system settings if permissions were already missing since
-                // on the first attempt to get the sources the OS will correctly show a prompt.
-                if (this.missingScreensharePermissions) {
-                    await openScreensharePermissionsSettingsMacOS();
-                }
-                this.missingScreensharePermissions = true;
-            } catch (err) {
-                viewLogger.error('failed to reset screen sharing permissions', err);
-            }
-        }
-
-        const screenPermissionsErrMsg = {err: 'screen-permissions'};
-
-        return desktopCapturer.getSources(opts).then((sources) => {
-            let hasScreenPermissions = true;
-            if (systemPreferences.getMediaAccessStatus) {
-                const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
-                viewLogger.debug('screenPermissions', screenPermissions);
-                if (screenPermissions === 'denied') {
-                    viewLogger.info('no screen sharing permissions');
-                    hasScreenPermissions = false;
-                }
-            }
-
-            if (!hasScreenPermissions || !sources.length) {
-                viewLogger.info('missing screen permissions');
-                view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
-                this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
-                return;
-            }
-
-            const message = sources.map((source) => {
-                return {
-                    id: source.id,
-                    name: source.name,
-                    thumbnailURL: source.thumbnail.toDataURL(),
-                };
-            });
-
-            if (message.length > 0) {
-                view.sendToRenderer(DESKTOP_SOURCES_RESULT, message);
-            }
-        }).catch((err) => {
-            viewLogger.error('desktopCapturer.getSources failed', err);
-
-            view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
-            this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
-        });
-    }
-
-    private createCallsWidgetWindow = async (viewId: string, msg: CallsJoinCallMessage) => {
-        ServerManager.getViewLog(viewId, 'WindowManager').debug('createCallsWidgetWindow');
-        if (this.callsWidgetWindow) {
-            // trying to join again the call we are already in should not be allowed.
-            if (this.callsWidgetWindow.getCallID() === msg.callID) {
-                return;
-            }
-
-            // to switch from one call to another we need to wait for the existing
-            // window to be fully closed.
-            await this.callsWidgetWindow.close();
-        }
-        const currentView = ViewManager.getView(viewId);
-        if (!currentView) {
-            ServerManager.getViewLog(viewId, 'WindowManager').error('unable to create calls widget window: currentView is missing');
-            return;
-        }
-
-        this.callsWidgetWindow = new CallsWidgetWindow(MainWindow.get()!, currentView, {
-            callID: msg.callID,
-            title: msg.title,
-            rootID: msg.rootID,
-            channelURL: msg.channelURL,
-        });
-
-        this.callsWidgetWindow.on('closed', () => delete this.callsWidgetWindow);
-    }
-
-    private handleDesktopSourcesModalRequest = () => {
-        log.debug('handleDesktopSourcesModalRequest');
-
-        if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerId());
-            MainWindow.get()?.focus();
-            this.callsWidgetWindow.getMainView().sendToRenderer(DESKTOP_SOURCES_MODAL_REQUEST);
-        }
-    }
-
-    private handleCallsLeave = () => {
-        log.debug('handleCallsLeave');
-
-        this.callsWidgetWindow?.close();
-    }
-
-    private handleCallsWidgetChannelLinkClick = () => {
-        log.debug('handleCallsWidgetChannelLinkClick');
-
-        if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerId());
-            MainWindow.get()?.focus();
-            this.callsWidgetWindow.getMainView().sendToRenderer(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
-        }
-    }
-
-    private handleCallsError = (_: string, msg: CallsErrorMessage) => {
-        log.debug('handleCallsError', msg);
-
-        if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerId());
-            MainWindow.get()?.focus();
-            this.callsWidgetWindow.getMainView().sendToRenderer(CALLS_ERROR, msg);
-        }
-    }
-
-    private handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
-        log.debug('handleCallsLinkClick with linkURL', msg.link);
-
-        if (this.callsWidgetWindow) {
-            this.switchServer(this.callsWidgetWindow.getServerId());
-            MainWindow.get()?.focus();
-            this.callsWidgetWindow.getMainView().sendToRenderer(BROWSER_HISTORY_PUSH, msg.link);
         }
     }
 

@@ -25,6 +25,7 @@ jest.mock('electron', () => ({
 jest.mock('main/contextMenu', () => jest.fn());
 
 jest.mock('../allowProtocolDialog', () => ({}));
+jest.mock('main/windows/callsWidgetWindow', () => ({}));
 jest.mock('main/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
 }));
