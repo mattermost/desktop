@@ -48,6 +48,7 @@ jest.mock('../appState', () => ({
     updateMentions: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({
+    addWebContentsEventListeners: jest.fn(),
     removeWebContentsListeners: jest.fn(),
 }));
 jest.mock('../contextMenu', () => jest.fn());
