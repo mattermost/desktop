@@ -90,6 +90,8 @@ export class MattermostView extends EventEmitter {
             this.view.webContents.on('before-input-event', this.handleInputEvents);
         }
 
+        WebContentsEventManager.addWebContentsEventListeners(this.view.webContents);
+
         this.contextMenu = new ContextMenu({}, this.view);
         this.maxRetries = MAX_SERVER_RETRIES;
 
