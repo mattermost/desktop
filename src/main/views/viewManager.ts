@@ -1,13 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {app, BrowserView, dialog, ipcMain, IpcMainEvent} from 'electron';
+import {BrowserView, dialog, ipcMain, IpcMainEvent} from 'electron';
 
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
     UPDATE_TARGET_URL,
     LOAD_SUCCESS,
     LOAD_FAILED,
-    TOGGLE_LOADING_SCREEN_VISIBILITY,
     LOADSCREEN_END,
     SET_ACTIVE_VIEW,
     OPEN_TAB,
@@ -15,10 +14,8 @@ import {
     UPDATE_LAST_ACTIVE,
     UPDATE_URL_VIEW_WIDTH,
     MAIN_WINDOW_SHOWN,
-    DARK_MODE_CHANGE,
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
-    LOADING_SCREEN_ANIMATION_FINISHED,
     BROWSER_HISTORY_BUTTON,
     APP_LOGGED_OUT,
     APP_LOGGED_IN,
@@ -36,22 +33,17 @@ import {TabView, TAB_MESSAGING} from 'common/tabs/TabView';
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
+import {getLocalURLString, getLocalPreload} from '../utils';
 
 import * as appState from '../appState';
 
 import {MattermostView} from './MattermostView';
 import modalManager from './modalManager';
+import LoadingScreen from './loadingScreen';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
 const log = logger.withPrefix('ViewManager');
-
-enum LoadingScreenState {
-    VISIBLE = 1,
-    FADING = 2,
-    HIDDEN = 3,
-}
 
 export class ViewManager {
     private closedViews: Map<string, {srv: MattermostServer; tab: TabView}>;
@@ -59,16 +51,12 @@ export class ViewManager {
     private currentView?: string;
 
     private urlViewCancel?: () => void;
-    private loadingScreen?: BrowserView;
-    private loadingScreenState: LoadingScreenState;
 
     constructor() {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.closedViews = new Map();
-        this.loadingScreenState = LoadingScreenState.HIDDEN;
 
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
-        ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
         ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
         ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
@@ -80,6 +68,7 @@ export class ViewManager {
     }
 
     init = () => {
+        LoadingScreen.show();
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
         this.showInitial();
     }
@@ -123,7 +112,7 @@ export class ViewManager {
             if (!newView.isErrored()) {
                 newView.show();
                 if (newView.needsLoadingScreen()) {
-                    this.showLoadingScreen();
+                    LoadingScreen.show();
                 }
             }
             hidePrevious?.();
@@ -157,7 +146,7 @@ export class ViewManager {
     reload = () => {
         const currentView = this.getCurrentView();
         if (currentView) {
-            this.showLoadingScreen();
+            LoadingScreen.show();
             currentView.reload();
         }
     }
@@ -265,9 +254,6 @@ export class ViewManager {
         if (this.closedViews.has(view.id)) {
             this.closedViews.delete(view.id);
         }
-        if (!this.loadingScreen) {
-            this.createLoadingScreen();
-        }
     }
 
     private showInitial = () => {
@@ -300,14 +286,14 @@ export class ViewManager {
 
         if (this.currentView === viewId) {
             this.showById(this.currentView);
-            this.fadeLoadingScreen();
+            LoadingScreen.fade();
         }
     }
 
     private failLoading = (viewId: string) => {
         this.getViewLogger(viewId).debug('failLoading');
 
-        this.fadeLoadingScreen();
+        LoadingScreen.fade();
         if (this.currentView === viewId) {
             this.getCurrentView()?.hide();
         }
@@ -381,80 +367,6 @@ export class ViewManager {
                 ipcMain.removeListener(UPDATE_URL_VIEW_WIDTH, adjustWidth);
                 hideView();
             };
-        }
-    }
-
-    /**
-     * Loading Screen
-     */
-
-    setLoadingScreenBounds = () => {
-        if (this.loadingScreen) {
-            const mainWindow = MainWindow.get();
-            if (!mainWindow) {
-                return;
-            }
-            this.loadingScreen.setBounds(getWindowBoundaries(mainWindow));
-        }
-    }
-
-    updateLoadingScreenDarkMode = (darkMode: boolean) => {
-        if (this.loadingScreen) {
-            this.loadingScreen.webContents.send(DARK_MODE_CHANGE, darkMode);
-        }
-    }
-
-    isLoadingScreenHidden = () => {
-        return this.loadingScreenState === LoadingScreenState.HIDDEN;
-    }
-
-    private showLoadingScreen = () => {
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            return;
-        }
-
-        if (!this.loadingScreen) {
-            this.createLoadingScreen();
-        }
-
-        this.loadingScreenState = LoadingScreenState.VISIBLE;
-
-        if (this.loadingScreen?.webContents.isLoading()) {
-            this.loadingScreen.webContents.once('did-finish-load', () => {
-                this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-            });
-        } else {
-            this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-        }
-
-        if (mainWindow.getBrowserViews().includes(this.loadingScreen!)) {
-            mainWindow.setTopBrowserView(this.loadingScreen!);
-        } else {
-            mainWindow.addBrowserView(this.loadingScreen!);
-        }
-
-        this.setLoadingScreenBounds();
-    }
-
-    private createLoadingScreen = () => {
-        const preload = getLocalPreload('desktopAPI.js');
-        this.loadingScreen = new BrowserView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
-        const localURL = getLocalURLString('loadingScreen.html');
-        this.loadingScreen.webContents.loadURL(localURL);
-    }
-
-    private fadeLoadingScreen = () => {
-        if (this.loadingScreen && this.loadingScreenState === LoadingScreenState.VISIBLE) {
-            this.loadingScreenState = LoadingScreenState.FADING;
-            this.loadingScreen.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
         }
     }
 
@@ -576,19 +488,6 @@ export class ViewManager {
         this.getView(viewId)?.updateHistoryButton();
     }
 
-    private handleLoadingScreenAnimationFinished = () => {
-        log.debug('handleLoadingScreenAnimationFinished');
-
-        if (this.loadingScreen && this.loadingScreenState !== LoadingScreenState.HIDDEN) {
-            this.loadingScreenState = LoadingScreenState.HIDDEN;
-            MainWindow.get()?.removeBrowserView(this.loadingScreen);
-        }
-
-        if (process.env.NODE_ENV === 'test') {
-            app.emit('e2e-app-loaded');
-        }
-    }
-
     private handleReactAppInitialized = (e: IpcMainEvent, viewId: string) => {
         log.debug('handleReactAppInitialized', viewId);
 
@@ -596,7 +495,7 @@ export class ViewManager {
         if (view) {
             view.setInitialized();
             if (this.getCurrentView() === view) {
-                this.fadeLoadingScreen();
+                LoadingScreen.fade();
             }
         }
     }

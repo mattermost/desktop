@@ -12,6 +12,7 @@ import ServerManager from 'common/servers/serverManager';
 import {getAdjustedWindowBoundaries} from 'main/utils';
 
 import ViewManager from '../views/viewManager';
+import LoadingScreen from '../views/loadingScreen';
 
 import {WindowManager} from './windowManager';
 import MainWindow from './mainWindow';
@@ -59,13 +60,15 @@ jest.mock('../views/viewManager', () => ({
     showById: jest.fn(),
     getCurrentView: jest.fn(),
     getView: jest.fn(),
-    isLoadingScreenHidden: jest.fn(),
     isViewClosed: jest.fn(),
     openClosedTab: jest.fn(),
-    setLoadingScreenBounds: jest.fn(),
     handleDeepLink: jest.fn(),
 }));
 jest.mock('../CriticalErrorHandler', () => jest.fn());
+jest.mock('../views/loadingScreen', () => ({
+    isHidden: jest.fn(),
+    setBounds: jest.fn(),
+}));
 jest.mock('../views/teamDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
@@ -190,7 +193,7 @@ describe('main/windows/windowManager', () => {
 
         it('should update loading screen and team dropdown bounds', () => {
             windowManager.handleResizeMainWindow();
-            expect(ViewManager.setLoadingScreenBounds).toHaveBeenCalled();
+            expect(LoadingScreen.setBounds).toHaveBeenCalled();
             expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
         });
 
@@ -247,13 +250,13 @@ describe('main/windows/windowManager', () => {
         it('should update loading screen and team dropdown bounds', () => {
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
-            expect(ViewManager.setLoadingScreenBounds).toHaveBeenCalled();
+            expect(LoadingScreen.setBounds).toHaveBeenCalled();
             expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
         });
 
         it('should not resize if the app is already resizing', () => {
             windowManager.isResizing = true;
-            ViewManager.isLoadingScreenHidden.mockReturnValue(true);
+            LoadingScreen.isHidden.mockReturnValue(true);
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
             expect(event.preventDefault).toHaveBeenCalled();

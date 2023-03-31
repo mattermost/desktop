@@ -32,6 +32,7 @@ import {
 } from '../utils';
 
 import ViewManager from '../views/viewManager';
+import LoadingScreen from '../views/loadingScreen';
 import {MattermostView} from '../views/MattermostView';
 import TeamDropdownView from '../views/teamDropdownView';
 import DownloadsDropdownView from '../views/downloadsDropdownView';
@@ -278,14 +279,14 @@ export class WindowManager {
             return;
         }
 
-        if (this.isResizing && ViewManager.isLoadingScreenHidden() && ViewManager.getCurrentView()) {
+        if (this.isResizing && LoadingScreen.isHidden() && ViewManager.getCurrentView()) {
             log.debug('prevented resize');
             event.preventDefault();
             return;
         }
 
         this.throttledWillResize(newBounds);
-        ViewManager.setLoadingScreenBounds();
+        LoadingScreen.setBounds();
         this.teamDropdown?.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
         this.downloadsDropdownMenu?.updateWindowBounds();
@@ -323,7 +324,7 @@ export class WindowManager {
         // Another workaround since the window doesn't update properly under Linux for some reason
         // See above comment
         setTimeout(this.setCurrentViewBounds, 10, bounds);
-        ViewManager.setLoadingScreenBounds();
+        LoadingScreen.setBounds();
         this.teamDropdown?.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
         this.downloadsDropdownMenu?.updateWindowBounds();

@@ -14,12 +14,12 @@ import {
 import urlUtils from 'common/utils/url';
 import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
-import WindowManager from './windowManager';
+import WindowManager from 'main/windows/windowManager';
 import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
 } from 'main/utils';
-import WebContentsEventManager from '../views/webContentEvents';
+import WebContentsEventManager from 'main/views/webContentEvents';
 
 import {CallsWidgetWindow} from './callsWidgetWindow';
 
