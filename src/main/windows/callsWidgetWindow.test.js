@@ -531,6 +531,23 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(popOut.webContents.on).toHaveBeenCalledWith('will-redirect', widgetWindow.onWillRedirect);
         });
 
+        it('onPopOutClosed', () => {
+            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+            expect(widgetWindow.popOut).toBeNull();
+
+            const popOut = new EventEmitter();
+            popOut.webContents = {
+                on: jest.fn(),
+                id: 'webContentsId',
+            };
+
+            widgetWindow.onPopOutCreate(popOut);
+            expect(widgetWindow.popOut).toBe(popOut);
+
+            popOut.emit('closed');
+            expect(widgetWindow.popOut).toBeNull();
+        });
+
         it('getWebContentsId', () => {
             baseWindow.webContents = {
                 ...baseWindow.webContents,
