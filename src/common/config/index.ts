@@ -8,7 +8,6 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 import {ipcMain, nativeTheme, app} from 'electron';
-import log from 'electron-log';
 
 import {
     AnyConfig,
@@ -24,6 +23,7 @@ import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGU
 
 import {configPath} from 'main/constants';
 import * as Validator from 'main/Validator';
+import logger from 'common/log';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
 
@@ -32,6 +32,8 @@ import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
 import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
 import migrateConfigItems from './migrationPreferences';
+
+const log = logger.withPrefix('Config');
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config
@@ -159,7 +161,7 @@ export class Config extends EventEmitter {
      * @param {*} data value to save for provided key
      */
     set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
-        log.debug('Config.set');
+        log.debug('set');
         this.setMultiple({[key]: data});
     }
 
@@ -183,7 +185,7 @@ export class Config extends EventEmitter {
      * @param {array} properties an array of config properties to save
      */
     setMultiple = (newData: Partial<ConfigType>) => {
-        log.debug('Config.setMultiple', newData);
+        log.debug('setMultiple', newData);
 
         this.localConfigData = Object.assign({}, this.localConfigData, newData);
         if (newData.teams && this.localConfigData) {

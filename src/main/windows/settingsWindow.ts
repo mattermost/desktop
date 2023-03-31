@@ -2,12 +2,14 @@
 // See LICENSE.txt for license information.
 
 import {BrowserWindow} from 'electron';
-import log from 'electron-log';
 
 import Config from 'common/config';
+import logger from 'common/log';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
+
+const log = logger.withPrefix('SettingsWindow');
 
 export function createSettingsWindow(mainWindow: BrowserWindow, withDevTools: boolean) {
     const preload = getLocalPreload('desktopAPI.js');

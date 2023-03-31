@@ -8,9 +8,12 @@ import os from 'os';
 import path from 'path';
 
 import {app, BrowserWindow, dialog} from 'electron';
-import log from 'electron-log';
+
+import logger from 'common/log';
 
 import {localizeMessage} from 'main/i18nManager';
+
+const log = logger.withPrefix('CriticalErrorHandler');
 
 function createErrorReport(err: Error) {
     // eslint-disable-next-line no-undef

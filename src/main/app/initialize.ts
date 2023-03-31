@@ -6,7 +6,6 @@ import path from 'path';
 import {app, ipcMain, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
-import log from 'electron-log';
 
 import {
     SWITCH_SERVER,
@@ -38,6 +37,7 @@ import {
     OPEN_APP_MENU,
 } from 'common/communication';
 import Config from 'common/config';
+import logger from 'common/log';
 import urlUtils from 'common/utils/url';
 
 import AllowProtocolDialog from 'main/allowProtocolDialog';
@@ -100,6 +100,8 @@ import {
 } from './utils';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
+
+const log = logger.withPrefix('App.Initialize');
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -300,7 +302,7 @@ function initializeAfterAppReady() {
     if (typeof Config.canUpgrade === 'undefined') {
         // windows might not be ready, so we have to wait until it is
         Config.once('update', () => {
-            log.debug('Initialize.checkForUpdates');
+            log.debug('checkForUpdates');
             if (Config.canUpgrade && Config.autoCheckForUpdates) {
                 setTimeout(() => {
                     updateManager.checkForUpdates(false);
@@ -348,7 +350,7 @@ function initializeAfterAppReady() {
 
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
-        log.debug('Initialize.UserActivityMonitor.on(status)', status);
+        log.debug('UserActivityMonitor.on(status)', status);
         WindowManager.sendToMattermostViews(USER_ACTIVITY_UPDATE, status);
     });
 

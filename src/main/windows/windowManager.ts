@@ -5,7 +5,6 @@
 import path from 'path';
 
 import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
-import log from 'electron-log';
 
 import {
     CallsJoinCallMessage,
@@ -40,6 +39,7 @@ import {
     CALLS_ERROR,
     CALLS_LINK_CLICK,
 } from 'common/communication';
+import logger from 'common/log';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
@@ -69,6 +69,8 @@ import createMainWindow from './mainWindow';
 import CallsWidgetWindow from './callsWidgetWindow';
 
 // singleton module to manage application's windows
+
+const log = logger.withPrefix('WindowManager');
 
 export class WindowManager {
     assetsDir: string;
@@ -120,7 +122,7 @@ export class WindowManager {
     genCallsEventHandler = (handler: CallsEventHandler) => {
         return (event: IpcMainEvent, viewName: string, msg?: any) => {
             if (this.callsWidgetWindow && !this.callsWidgetWindow.isAllowedEvent(event)) {
-                log.warn('WindowManager.genCallsEventHandler', 'Disallowed calls event');
+                log.warn('genCallsEventHandler', 'Disallowed calls event');
                 return;
             }
             handler(viewName, msg);
@@ -128,7 +130,7 @@ export class WindowManager {
     }
 
     createCallsWidgetWindow = async (viewName: string, msg: CallsJoinCallMessage) => {
-        log.debug('WindowManager.createCallsWidgetWindow');
+        log.debug('createCallsWidgetWindow');
         if (this.callsWidgetWindow) {
             // trying to join again the call we are already in should not be allowed.
             if (this.callsWidgetWindow.getCallID() === msg.callID) {
@@ -156,7 +158,7 @@ export class WindowManager {
     }
 
     handleDesktopSourcesModalRequest = () => {
-        log.debug('WindowManager.handleDesktopSourcesModalRequest');
+        log.debug('handleDesktopSourcesModalRequest');
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
@@ -166,7 +168,7 @@ export class WindowManager {
     }
 
     handleCallsWidgetChannelLinkClick = () => {
-        log.debug('WindowManager.handleCallsWidgetChannelLinkClick');
+        log.debug('handleCallsWidgetChannelLinkClick');
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
@@ -176,7 +178,7 @@ export class WindowManager {
     }
 
     handleCallsError = (_: string, msg: CallsErrorMessage) => {
-        log.debug('WindowManager.handleCallsError', msg);
+        log.debug('handleCallsError', msg);
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
@@ -186,7 +188,7 @@ export class WindowManager {
     }
 
     handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
-        log.debug('WindowManager.handleCallsLinkClick with linkURL', msg.link);
+        log.debug('handleCallsLinkClick with linkURL', msg.link);
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
@@ -196,13 +198,13 @@ export class WindowManager {
     }
 
     handleCallsLeave = () => {
-        log.debug('WindowManager.handleCallsLeave');
+        log.debug('handleCallsLeave');
 
         this.callsWidgetWindow?.close();
     }
 
     showSettingsWindow = () => {
-        log.debug('WindowManager.showSettingsWindow');
+        log.debug('showSettingsWindow');
 
         if (this.settingsWindow) {
             this.settingsWindow.show();
@@ -220,7 +222,7 @@ export class WindowManager {
     }
 
     showMainWindow = (deeplinkingURL?: string | URL) => {
-        log.debug('WindowManager.showMainWindow', deeplinkingURL);
+        log.debug('showMainWindow', deeplinkingURL);
 
         if (this.mainWindow) {
             if (this.mainWindow.isVisible()) {
@@ -311,7 +313,7 @@ export class WindowManager {
     isResizing = false;
 
     handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
-        log.silly('WindowManager.handleWillResizeMainWindow');
+        log.silly('handleWillResizeMainWindow');
 
         if (!(this.viewManager && this.mainWindow)) {
             return;
@@ -341,7 +343,7 @@ export class WindowManager {
     }
 
     handleResizedMainWindow = () => {
-        log.silly('WindowManager.handleResizedMainWindow');
+        log.silly('handleResizedMainWindow');
 
         if (this.mainWindow) {
             const bounds = this.getBounds();
@@ -359,14 +361,14 @@ export class WindowManager {
     }
 
     private throttledWillResize = (newBounds: Electron.Rectangle) => {
-        log.silly('WindowManager.throttledWillResize', {newBounds});
+        log.silly('throttledWillResize', {newBounds});
 
         this.isResizing = true;
         this.setCurrentViewBounds(newBounds);
     }
 
     handleResizeMainWindow = () => {
-        log.silly('WindowManager.handleResizeMainWindow');
+        log.silly('handleResizeMainWindow');
 
         if (!(this.viewManager && this.mainWindow)) {
             return;
@@ -388,7 +390,7 @@ export class WindowManager {
     };
 
     setCurrentViewBounds = (bounds: {width: number; height: number}) => {
-        log.debug('WindowManager.setCurrentViewBounds', {bounds});
+        log.debug('setCurrentViewBounds', {bounds});
 
         const currentView = this.viewManager?.getCurrentView();
         if (currentView) {
@@ -607,7 +609,7 @@ export class WindowManager {
     }
 
     switchServer = (serverName: string, waitForViewToExist = false) => {
-        log.debug('windowManager.switchServer');
+        log.debug('switchServer');
         this.showMainWindow();
         const server = Config.teams.find((team) => team.name === serverName);
         if (!server) {
@@ -635,14 +637,14 @@ export class WindowManager {
     }
 
     switchTab = (serverName: string, tabName: string) => {
-        log.debug('windowManager.switchTab');
+        log.debug('switchTab');
         this.showMainWindow();
         const tabViewName = getTabViewName(serverName, tabName);
         this.viewManager?.showByName(tabViewName);
     }
 
     focusBrowserView = () => {
-        log.debug('WindowManager.focusBrowserView');
+        log.debug('focusBrowserView');
 
         if (this.viewManager) {
             this.viewManager.focus();
@@ -671,7 +673,7 @@ export class WindowManager {
     }
 
     handleReactAppInitialized = (e: IpcMainEvent, view: string) => {
-        log.debug('WindowManager.handleReactAppInitialized', view);
+        log.debug('handleReactAppInitialized', view);
 
         if (this.viewManager) {
             this.viewManager.setServerInitialized(view);
@@ -679,7 +681,7 @@ export class WindowManager {
     }
 
     handleLoadingScreenAnimationFinished = () => {
-        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
+        log.debug('handleLoadingScreenAnimationFinished');
 
         if (this.viewManager) {
             this.viewManager.hideLoadingScreen();
@@ -748,7 +750,7 @@ export class WindowManager {
     }
 
     handleHistory = (event: IpcMainEvent, offset: number) => {
-        log.debug('WindowManager.handleHistory', offset);
+        log.debug('handleHistory', offset);
 
         if (this.viewManager) {
             const activeView = this.viewManager.getCurrentView();
@@ -801,7 +803,7 @@ export class WindowManager {
     }
 
     handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
-        log.debug('WindowManager.handleBrowserHistoryPush', {viewName, pathName});
+        log.debug('handleBrowserHistoryPush', {viewName, pathName});
 
         const currentView = this.viewManager?.views.get(viewName);
         const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
@@ -829,7 +831,7 @@ export class WindowManager {
     }
 
     handleBrowserHistoryButton = (e: IpcMainEvent, viewName: string) => {
-        log.debug('WindowManager.handleBrowserHistoryButton', viewName);
+        log.debug('handleBrowserHistoryButton', viewName);
 
         const currentView = this.viewManager?.views.get(viewName);
         if (currentView) {
@@ -848,7 +850,7 @@ export class WindowManager {
     }
 
     handleAppLoggedIn = (event: IpcMainEvent, viewName: string) => {
-        log.debug('WindowManager.handleAppLoggedIn', viewName);
+        log.debug('handleAppLoggedIn', viewName);
 
         const view = this.viewManager?.views.get(viewName);
         if (view && !view.isLoggedIn) {
@@ -858,7 +860,7 @@ export class WindowManager {
     }
 
     handleAppLoggedOut = (event: IpcMainEvent, viewName: string) => {
-        log.debug('WindowManager.handleAppLoggedOut', viewName);
+        log.debug('handleAppLoggedOut', viewName);
 
         const view = this.viewManager?.views.get(viewName);
         if (view && view.isLoggedIn) {
@@ -875,11 +877,11 @@ export class WindowManager {
     }
 
     handleGetDesktopSources = async (viewName: string, opts: Electron.SourcesOptions) => {
-        log.debug('WindowManager.handleGetDesktopSources', {viewName, opts});
+        log.debug('handleGetDesktopSources', {viewName, opts});
 
         const view = this.viewManager?.views.get(viewName);
         if (!view) {
-            log.error('WindowManager.handleGetDesktopSources: view not found');
+            log.error('handleGetDesktopSources: view not found');
             return Promise.resolve();
         }
 
@@ -940,7 +942,7 @@ export class WindowManager {
     }
 
     handleReloadCurrentView = () => {
-        log.debug('WindowManager.handleReloadCurrentView');
+        log.debug('handleReloadCurrentView');
 
         const view = this.viewManager?.getCurrentView();
         if (!view) {
