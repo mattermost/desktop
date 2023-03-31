@@ -6,12 +6,12 @@ import fs from 'fs';
 import os from 'os';
 
 import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, globalShortcut, ipcMain, screen} from 'electron';
-import log from 'electron-log';
 
 import {SavedWindowState} from 'types/mainWindow';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
 import Config from 'common/config';
+import logger from 'common/log';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 
@@ -21,6 +21,8 @@ import {localizeMessage} from 'main/i18nManager';
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
+
+const log = logger.withPrefix('MainWindow');
 
 function saveWindowState(file: string, window: BrowserWindow) {
     const windowState: SavedWindowState = {
@@ -139,7 +141,7 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
     });
 
     mainWindow.on('close', (event) => {
-        log.debug('MainWindow.on.close');
+        log.debug('on.close');
 
         if (global.willAppQuit) { // when [Ctrl|Cmd]+Q
             saveWindowState(boundsInfoPath, mainWindow);

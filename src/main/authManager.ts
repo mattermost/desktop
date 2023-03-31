@@ -1,11 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import {AuthenticationResponseDetails, AuthInfo, WebContents} from 'electron';
-import log from 'electron-log';
 
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
 
+import logger from 'common/log';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
@@ -14,6 +14,7 @@ import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
 import WindowManager from 'main/windows/windowManager';
 
+const log = logger.withPrefix('AuthManager');
 const preload = getLocalPreload('desktopAPI.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
 const permissionModalHtml = getLocalURLString('permissionModal.html');
@@ -31,7 +32,7 @@ export class AuthManager {
     }
 
     handleAppLogin = (event: Event, webContents: WebContents, request: AuthenticationResponseDetails, authInfo: AuthInfo, callback?: (username?: string, password?: string) => void) => {
-        log.verbose('AuthManager.handleAppLogin', {request, authInfo});
+        log.verbose('handleAppLogin', {request, authInfo});
 
         event.preventDefault();
         const parsedURL = urlUtils.parseURL(request.url);

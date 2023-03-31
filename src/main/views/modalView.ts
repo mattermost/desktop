@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {BrowserView, BrowserWindow} from 'electron';
-import log from 'electron-log';
+
+import logger from 'common/log';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries} from '../utils';
@@ -30,7 +31,7 @@ export class ModalView<T, T2> {
         this.key = key;
         this.html = html;
         this.data = data;
-        log.info(`preloading with ${preload}`);
+        this.log.info(`preloading with ${preload}`);
         this.view = new BrowserView({webPreferences: {
             preload,
 
@@ -48,11 +49,15 @@ export class ModalView<T, T2> {
         try {
             this.view.webContents.loadURL(this.html);
         } catch (e) {
-            log.error('there was an error loading the modal:');
-            log.error(e);
+            this.log.error('there was an error loading the modal:');
+            this.log.error(e);
         }
 
         this.contextMenu = new ContextMenu({}, this.view);
+    }
+
+    private get log() {
+        return logger.withPrefix('ModalView', this.key);
     }
 
     show = (win?: BrowserWindow, withDevTools?: boolean) => {
@@ -84,7 +89,7 @@ export class ModalView<T, T2> {
         }
 
         if (withDevTools) {
-            log.info(`showing dev tools for ${this.key}`);
+            this.log.info(`showing dev tools for ${this.key}`);
             this.view.webContents.openDevTools({mode: 'detach'});
         }
     }

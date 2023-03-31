@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 
 import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
-import log from 'electron-log';
 
 import {Team, TeamWithIndex} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
+import logger from 'common/log';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import {ping} from 'common/utils/requests';
 
@@ -19,8 +19,10 @@ import WindowManager from 'main/windows/windowManager';
 import {handleAppBeforeQuit} from './app';
 import {updateServerInfos} from './utils';
 
+const log = logger.withPrefix('App.Intercom');
+
 export function handleReloadConfig() {
-    log.debug('Intercom.handleReloadConfig');
+    log.debug('handleReloadConfig');
 
     Config.reload();
     WindowManager.handleUpdateConfig();
@@ -41,17 +43,17 @@ export function handleQuit(e: IpcMainEvent, reason: string, stack: string) {
 }
 
 export function handleSwitchServer(event: IpcMainEvent, serverName: string) {
-    log.silly('Intercom.handleSwitchServer', serverName);
+    log.silly('handleSwitchServer', serverName);
     WindowManager.switchServer(serverName);
 }
 
 export function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.silly('Intercom.handleSwitchTab', {serverName, tabName});
+    log.silly('handleSwitchTab', {serverName, tabName});
     WindowManager.switchTab(serverName, tabName);
 }
 
 export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.debug('Intercom.handleCloseTab', {serverName, tabName});
+    log.debug('handleCloseTab', {serverName, tabName});
 
     const teams = Config.teams;
     teams.forEach((team) => {
@@ -69,7 +71,7 @@ export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName:
 }
 
 export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.debug('Intercom.handleOpenTab', {serverName, tabName});
+    log.debug('IhandleOpenTab', {serverName, tabName});
 
     const teams = Config.teams;
     teams.forEach((team) => {
@@ -86,7 +88,7 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
 }
 
 export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
-    log.debug('Intercom.handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
+    log.debug('handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
 
     if (showWelcomeScreen) {
         handleWelcomeScreenModal();
@@ -123,7 +125,7 @@ export function handleMainWindowIsShown() {
 
     const mainWindow = WindowManager.getMainWindow();
 
-    log.debug('intercom.handleMainWindowIsShown', {configTeams: Config.teams, showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
+    log.debug('handleMainWindowIsShown', {configTeams: Config.teams, showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
         handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
     } else {
@@ -134,7 +136,7 @@ export function handleMainWindowIsShown() {
 }
 
 export function handleNewServerModal() {
-    log.debug('Intercom.handleNewServerModal');
+    log.debug('handleNewServerModal');
 
     const html = getLocalURLString('newServer.html');
 
@@ -166,7 +168,7 @@ export function handleNewServerModal() {
 }
 
 export function handleEditServerModal(e: IpcMainEvent, name: string) {
-    log.debug('Intercom.handleEditServerModal', name);
+    log.debug('handleEditServerModal', name);
 
     const html = getLocalURLString('editServer.html');
 
@@ -208,7 +210,7 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
 }
 
 export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
-    log.debug('Intercom.handleRemoveServerModal', name);
+    log.debug('handleRemoveServerModal', name);
 
     const html = getLocalURLString('removeServer.html');
 
@@ -248,7 +250,7 @@ export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
 }
 
 export function handleWelcomeScreenModal() {
-    log.debug('Intercom.handleWelcomeScreenModal');
+    log.debug('handleWelcomeScreenModal');
 
     const html = getLocalURLString('welcomeScreen.html');
 
@@ -280,12 +282,12 @@ export function handleWelcomeScreenModal() {
 }
 
 export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
-    log.debug('Intercom.handleMentionNotification', {title, body, channel, teamId, url, silent, data});
+    log.debug('handleMentionNotification', {title, body, channel, teamId, url, silent, data});
     displayMention(title, body, channel, teamId, url, silent, event.sender, data);
 }
 
 export function handleOpenAppMenu() {
-    log.debug('Intercom.handleOpenAppMenu');
+    log.debug('handleOpenAppMenu');
 
     const windowMenu = Menu.getApplicationMenu();
     if (!windowMenu) {
@@ -300,7 +302,7 @@ export function handleOpenAppMenu() {
 }
 
 export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom: string) {
-    log.debug('Intercom.handleSelectDownload', startFrom);
+    log.debug('handleSelectDownload', startFrom);
 
     const message = 'Specify the folder where files will download';
     const result = await dialog.showOpenDialog({defaultPath: startFrom || Config.downloadLocation,
@@ -311,7 +313,7 @@ export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom:
 }
 
 export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
-    log.debug('Intercom.handleUpdateLastActive', {serverName, viewName});
+    log.debug('handleUpdateLastActive', {serverName, viewName});
 
     const teams = Config.teams;
     teams.forEach((team) => {

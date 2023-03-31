@@ -3,15 +3,16 @@
 // See LICENSE.txt for license information.
 
 import {app} from 'electron';
-import log from 'electron-log';
 
 import {UPDATE_BADGE} from 'common/communication';
+import logger from 'common/log';
 
 import {localizeMessage} from 'main/i18nManager';
 
 import WindowManager from './windows/windowManager';
 import * as AppState from './appState';
 
+const log = logger.withPrefix('Badge');
 const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
@@ -52,7 +53,7 @@ function showBadgeLinux(sessionExpired: boolean, mentionCount: number) {
 }
 
 function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
-    log.silly('Badge.showBadge', {sessionExpired, mentionCount, showUnreadBadge});
+    log.silly('showBadge', {sessionExpired, mentionCount, showUnreadBadge});
 
     switch (process.platform) {
     case 'win32':

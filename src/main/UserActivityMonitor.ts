@@ -4,7 +4,10 @@
 import {EventEmitter} from 'events';
 
 import {app, powerMonitor} from 'electron';
-import log from 'electron-log';
+
+import logger from 'common/log';
+
+const log = logger.withPrefix('UserActivityMonitor');
 
 /**
  * Monitors system idle time, listens for system events and fires status updates as needed
