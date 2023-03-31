@@ -243,12 +243,19 @@ export default class CallsWidgetWindow extends EventEmitter {
 
     private onPopOutCreate = (win: BrowserWindow) => {
         this.popOut = win;
+        this.popOut.on('closed', this.onPopOutClosed);
 
         // Let the webContentsEventManager handle links that try to open a new window.
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
 
         // Need to capture and handle redirects for security.
         this.popOut.webContents.on('will-redirect', this.onWillRedirect);
+    }
+
+    private onPopOutClosed = () => {
+        log.debug('CallsWidgetWindow.onPopOutClosed');
+        this.popOut?.removeAllListeners('closed');
+        this.popOut = null;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -273,7 +280,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     public getPopOutWebContentsId() {
-        return this.popOut?.webContents.id;
+        return this.popOut?.webContents?.id;
     }
 
     public getURL() {
