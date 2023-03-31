@@ -11,8 +11,8 @@ import {localizeMessage} from 'main/i18nManager';
 
 import buildConfig from 'common/config/buildConfig';
 import log from 'common/log';
+import * as Validator from 'common/Validator';
 
-import * as Validator from './Validator';
 import WindowManager from './windows/windowManager';
 import {allowedProtocolFile} from './constants';
 

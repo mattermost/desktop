@@ -38,7 +38,7 @@ jest.mock('common/config/buildConfig', () => ({
     ],
 }));
 
-jest.mock('./Validator', () => ({
+jest.mock('common/Validator', () => ({
     validateAllowedProtocols: (protocols) => protocols,
 }));
 

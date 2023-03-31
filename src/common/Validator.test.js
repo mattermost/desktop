@@ -5,7 +5,7 @@
 
 import * as Validator from './Validator';
 
-describe('main/Validator', () => {
+describe('common/Validator', () => {
     describe('validateV0ConfigData', () => {
         const config = {url: 'http://server-1.com'};
 
