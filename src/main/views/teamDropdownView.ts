@@ -101,21 +101,23 @@ export default class TeamDropdownView {
         this.updateDropdown();
     }
 
+    private reduceNotifications = <T>(items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
+        return [...items.keys()].reduce((map, key) => {
+            const view = ServerManager.getTab(key);
+            if (!view) {
+                return map;
+            }
+            map.set(view.server.id, modifier(map.get(view.server.id), items.get(key)));
+            return map;
+        }, new Map());
+    }
+
     updateMentions = (expired: Map<string, boolean>, mentions: Map<string, number>, unreads: Map<string, boolean>) => {
         log.silly('updateMentions', {expired, mentions, unreads});
 
-        // TODO
-        // const {sessionExpired, hasUnreads, mentionCount} = team.tabs.reduce((counts, tab) => {
-        //     const tabName = getTabViewName(team.name, tab.name);
-        //     counts.sessionExpired = this.state.expired?.get(tabName) || counts.sessionExpired;
-        //     counts.hasUnreads = this.state.unreads?.get(tabName) || counts.hasUnreads;
-        //     counts.mentionCount += this.state.mentions?.get(tabName) || 0;
-        //     return counts;
-        // }, {sessionExpired: false, hasUnreads: false, mentionCount: 0});
-
-        this.unreads = unreads;
-        this.mentions = mentions;
-        this.expired = expired;
+        this.unreads = this.reduceNotifications(unreads, (base, value) => base || value || false);
+        this.mentions = this.reduceNotifications(mentions, (base, value) => (base ?? 0) + (value ?? 0));
+        this.expired = this.reduceNotifications(expired, (base, value) => base || value || false);
         this.updateDropdown();
     }
 
