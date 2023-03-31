@@ -2,25 +2,21 @@
 // See LICENSE.txt for license information.
 
 import {EventEmitter} from 'events';
-import {BrowserWindow, Rectangle, ipcMain, IpcMainEvent} from 'electron';
+import {BrowserWindow, ipcMain, IpcMainEvent, Rectangle} from 'electron';
 import log from 'electron-log';
 
 import {
-    CallsWidgetWindowConfig,
+    CallsJoinedCallMessage,
     CallsWidgetResizeMessage,
     CallsWidgetShareScreenMessage,
-    CallsJoinedCallMessage,
+    CallsWidgetWindowConfig,
 } from 'types/calls';
 
 import {MattermostView} from 'main/views/MattermostView';
 
 import {getLocalPreload} from 'main/utils';
 
-import {
-    MINIMUM_CALLS_WIDGET_WIDTH,
-    MINIMUM_CALLS_WIDGET_HEIGHT,
-    CALLS_PLUGIN_ID,
-} from 'common/utils/constants';
+import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import urlUtils, {getFormattedPathName} from 'common/utils/url';
 import {
@@ -231,7 +227,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         this.setBounds(initialBounds);
     }
 
-    private onPopOutOpen = ({url}: {url: string}) => {
+    private onPopOutOpen = ({url}: { url: string }) => {
         if (urlUtils.isCallsPopOutURL(this.mainView.serverInfo.server.url, url, this.config.callID)) {
             return {
                 action: 'allow' as const,
@@ -248,8 +244,18 @@ export default class CallsWidgetWindow extends EventEmitter {
     private onPopOutCreate = (win: BrowserWindow) => {
         this.popOut = win;
 
-        // Let the webContentsEventManager handle links that try to open a new window
+        // Let the webContentsEventManager handle links that try to open a new window.
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
+
+        // Need to capture and handle redirects for security.
+        this.popOut.webContents.on('will-redirect', this.onWillRedirect);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private onWillRedirect = (event: Event, url: string) => {
+        // There's no reason we would allow a redirect from the call's popout. Eventually we may, so revise then.
+        // Note for the future: the code from https://github.com/mattermost/desktop/pull/2580 will not work for us.
+        event.preventDefault();
     }
 
     private onPopOutFocus = () => {
