@@ -189,9 +189,9 @@ describe('main/views/viewManager', () => {
                 urlTypeTuple: tuple(`http://${srv.name}.com/`, tabName),
                 url: new URL(`http://${srv.name}.com`),
             }));
-            MattermostServer.mockImplementation((name, url) => ({
-                name,
-                url: new URL(url),
+            MattermostServer.mockImplementation((server) => ({
+                name: server.name,
+                url: new URL(server.url),
             }));
             const onceFn = jest.fn();
             const loadFn = jest.fn();
@@ -727,9 +727,9 @@ describe('main/views/viewManager', () => {
         };
 
         beforeEach(() => {
-            MattermostServer.mockImplementation((name, url) => ({
-                name,
-                url: new URL(url),
+            MattermostServer.mockImplementation((server) => ({
+                name: server.name,
+                url: new URL(server.url),
             }));
             equalUrlsIgnoringSubpath.mockImplementation((url1, url2) => `${url1}`.startsWith(`${url2}`));
         });

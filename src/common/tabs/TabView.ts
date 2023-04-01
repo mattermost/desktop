@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Team} from 'types/config';
+import {FullTeam} from 'types/config';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
 
@@ -12,7 +12,9 @@ export type TabType = typeof TAB_MESSAGING | typeof TAB_FOCALBOARD | typeof TAB_
 export type TabTuple = [string, TabType];
 
 export interface TabView {
+    id: string;
     server: MattermostServer;
+    isOpen?: boolean;
 
     get name(): string;
     get type(): TabType;
@@ -21,25 +23,29 @@ export interface TabView {
     get urlTypeTuple(): TabTuple;
 }
 
-export function getDefaultTeamWithTabsFromTeam(team: Team) {
+export function getDefaultTeamWithTabsFromTeam(team: FullTeam) {
     return {
         ...team,
-        tabs: [
-            {
-                name: TAB_MESSAGING,
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: TAB_FOCALBOARD,
-                order: 1,
-            },
-            {
-                name: TAB_PLAYBOOKS,
-                order: 2,
-            },
-        ],
+        tabs: getDefaultTabs(),
     };
+}
+
+export function getDefaultTabs() {
+    return [
+        {
+            name: TAB_MESSAGING,
+            order: 0,
+            isOpen: true,
+        },
+        {
+            name: TAB_FOCALBOARD,
+            order: 1,
+        },
+        {
+            name: TAB_PLAYBOOKS,
+            order: 2,
+        },
+    ];
 }
 
 export function getTabDisplayName(tabType: TabType) {
