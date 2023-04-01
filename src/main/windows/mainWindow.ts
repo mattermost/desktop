@@ -3,13 +3,15 @@
 
 import fs from 'fs';
 
+import path from 'path';
+
 import os from 'os';
 
-import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, globalShortcut, ipcMain, screen} from 'electron';
+import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, globalShortcut, Input, ipcMain, screen} from 'electron';
 
 import {SavedWindowState} from 'types/mainWindow';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU} from 'common/communication';
 import Config from 'common/config';
 import logger from 'common/log';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
@@ -17,58 +19,127 @@ import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
 
 import {boundsInfoPath} from 'main/constants';
+import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import {localizeMessage} from 'main/i18nManager';
 
 import ContextMenu from '../contextMenu';
-import {getLocalPreload, getLocalURLString} from '../utils';
+import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
 
 const log = logger.withPrefix('MainWindow');
 
-function saveWindowState(file: string, window: BrowserWindow) {
-    const windowState: SavedWindowState = {
-        ...window.getBounds(),
-        maximized: window.isMaximized(),
-        fullscreen: window.isFullScreen(),
-    };
-    try {
-        fs.writeFileSync(file, JSON.stringify(windowState));
-    } catch (e) {
-    // [Linux] error happens only when the window state is changed before the config dir is created.
-        log.error(e);
-    }
-}
+export class MainWindow {
+    private win?: BrowserWindow;
 
-function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
-    return container.x <= rect.x && container.y <= rect.y && container.width >= rect.width && container.height >= rect.height;
-}
+    private savedWindowState: SavedWindowState;
+    private ready: boolean;
 
-function isFramelessWindow() {
-    return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
-}
+    constructor() {
+        // Create the browser window.
+        this.ready = false;
+        this.savedWindowState = this.getSavedWindowState();
 
-function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean}) {
-    // Create the browser window.
-    const preload = getLocalPreload('desktopAPI.js');
-    let savedWindowState: any;
-    try {
-        savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
-        savedWindowState = Validator.validateBoundsInfo(savedWindowState);
-        if (!savedWindowState) {
-            throw new Error('Provided bounds info file does not validate, using defaults instead.');
-        }
-        const matchingScreen = screen.getDisplayMatching(savedWindowState);
-        if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
-            throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
-        }
-    } catch (e) {
-    // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
-        savedWindowState = {width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT};
+        ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
     }
 
-    const {maximized: windowIsMaximized} = savedWindowState;
+    init = () => {
+        const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, this.savedWindowState, {
+            title: app.name,
+            fullscreenable: true,
+            show: false, // don't start the window until it is ready and only if it isn't hidden
+            paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
+            minWidth: MINIMUM_WINDOW_WIDTH,
+            minHeight: MINIMUM_WINDOW_HEIGHT,
+            frame: !this.isFramelessWindow(),
+            fullscreen: this.shouldStartFullScreen(),
+            titleBarStyle: 'hidden' as const,
+            trafficLightPosition: {x: 12, y: 12},
+            backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
+            webPreferences: {
+                disableBlinkFeatures: 'Auxclick',
+                preload: getLocalPreload('desktopAPI.js'),
+                spellcheck: typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker,
+            },
+        });
 
-    const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
-    const isFullScreen = () => {
+        if (process.platform === 'linux') {
+            windowOptions.icon = path.join(path.resolve(app.getAppPath(), 'assets'), 'linux', 'app_icon.png');
+        }
+
+        this.win = new BrowserWindow(windowOptions);
+        this.win.setMenuBarVisibility(false);
+
+        if (!this.win) {
+            log.error('unable to create main window');
+            app.quit();
+            return;
+        }
+
+        const localURL = getLocalURLString('index.html');
+        this.win.loadURL(localURL).catch(
+            (reason) => {
+                log.error('failed to load', reason);
+            });
+        this.win.once('ready-to-show', () => {
+            if (!this.win) {
+                return;
+            }
+            this.win.webContents.zoomLevel = 0;
+
+            if (Config.hideOnStart === false) {
+                this.win.show();
+                if (this.savedWindowState.maximized) {
+                    this.win.maximize();
+                }
+            }
+
+            this.ready = true;
+        });
+
+        this.win.once('restore', () => {
+            this.win?.restore();
+        });
+
+        this.win.on('close', this.onClose);
+        this.win.on('closed', this.onClosed);
+        this.win.on('focus', this.onFocus);
+        this.win.on('blur', this.onBlur);
+        this.win.on('unresponsive', this.onUnresponsive);
+
+        this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
+
+        // Should not allow the main window to generate a window of its own
+        this.win.webContents.setWindowOpenHandler(() => ({action: 'deny'}));
+        if (process.env.MM_DEBUG_SETTINGS) {
+            this.win.webContents.openDevTools({mode: 'detach'});
+        }
+
+        const contextMenu = new ContextMenu({}, this.win);
+        contextMenu.reload();
+    }
+
+    get isReady() {
+        return this.ready;
+    }
+
+    get = (ensureCreated?: boolean) => {
+        if (ensureCreated && !this.win) {
+            this.init();
+        }
+        return this.win;
+    }
+
+    getBounds = () => {
+        return this.win?.getContentBounds();
+    }
+
+    focusThreeDotMenu = () => {
+        if (this.win) {
+            this.win.webContents.focus();
+            this.win.webContents.send(FOCUS_THREE_DOT_MENU);
+        }
+    }
+
+    private shouldStartFullScreen = () => {
         if (global?.args?.fullscreen !== undefined) {
             return global.args.fullscreen;
         }
@@ -76,75 +147,94 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
         if (Config.startInFullscreen) {
             return Config.startInFullscreen;
         }
-        return options.fullscreen || savedWindowState.fullscreen || false;
-    };
-
-    const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, savedWindowState, {
-        title: app.name,
-        fullscreenable: true,
-        show: false, // don't start the window until it is ready and only if it isn't hidden
-        paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
-        minWidth: MINIMUM_WINDOW_WIDTH,
-        minHeight: MINIMUM_WINDOW_HEIGHT,
-        frame: !isFramelessWindow(),
-        fullscreen: isFullScreen(),
-        titleBarStyle: 'hidden' as const,
-        trafficLightPosition: {x: 12, y: 12},
-        backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-        webPreferences: {
-            disableBlinkFeatures: 'Auxclick',
-            preload,
-            spellcheck,
-        },
-    });
-
-    if (process.platform === 'linux') {
-        windowOptions.icon = options.linuxAppIcon;
+        return this.savedWindowState.fullscreen || false;
     }
 
-    const mainWindow = new BrowserWindow(windowOptions);
-    mainWindow.setMenuBarVisibility(false);
-
-    try {
-        ipcMain.handle(GET_FULL_SCREEN_STATUS, () => mainWindow.isFullScreen());
-    } catch (e) {
-        log.error('Tried to register second handler, skipping');
+    private isFramelessWindow = () => {
+        return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
     }
 
-    const localURL = getLocalURLString('index.html');
-    mainWindow.loadURL(localURL).catch(
-        (reason) => {
-            log.error(`Main window failed to load: ${reason}`);
-        });
-    mainWindow.once('ready-to-show', () => {
-        mainWindow.webContents.zoomLevel = 0;
+    private getSavedWindowState = () => {
+        let savedWindowState: any;
+        try {
+            savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
+            savedWindowState = Validator.validateBoundsInfo(savedWindowState);
+            if (!savedWindowState) {
+                throw new Error('Provided bounds info file does not validate, using defaults instead.');
+            }
+            const matchingScreen = screen.getDisplayMatching(savedWindowState);
+            if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
+                throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
+            }
+        } catch (e) {
+        // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
+            savedWindowState = {width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT};
+        }
+        return savedWindowState;
+    }
 
-        if (Config.hideOnStart === false) {
-            mainWindow.show();
-            if (windowIsMaximized) {
-                mainWindow.maximize();
+    private saveWindowState = (file: string, window: BrowserWindow) => {
+        const windowState: SavedWindowState = {
+            ...window.getBounds(),
+            maximized: window.isMaximized(),
+            fullscreen: window.isFullScreen(),
+        };
+        try {
+            fs.writeFileSync(file, JSON.stringify(windowState));
+        } catch (e) {
+        // [Linux] error happens only when the window state is changed before the config dir is created.
+            log.error('failed to save window state', e);
+        }
+    }
+
+    private onBeforeInputEvent = (event: Event, input: Input) => {
+        // Register keyboard shortcuts
+        // Add Alt+Cmd+(Right|Left) as alternative to switch between servers
+        if (this.win && process.platform === 'darwin') {
+            if (input.alt && input.meta) {
+                if (input.key === 'ArrowRight') {
+                    this.win.webContents.send(SELECT_NEXT_TAB);
+                }
+                if (input.key === 'ArrowLeft') {
+                    this.win.webContents.send(SELECT_PREVIOUS_TAB);
+                }
             }
         }
-    });
+    }
 
-    mainWindow.once('restore', () => {
-        mainWindow.restore();
-    });
+    private onFocus = () => {
+        // Only add shortcuts when window is in focus
+        if (process.platform === 'linux') {
+            globalShortcut.registerAll(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], () => {
+                // do nothing because we want to supress the menu popping up
+            });
+        }
+    }
 
-    // App should save bounds when a window is closed.
-    // However, 'close' is not fired in some situations(shutdown, ctrl+c)
-    // because main process is killed in such situations.
-    // 'blur' event was effective in order to avoid this.
-    // Ideally, app should detect that OS is shutting down.
-    mainWindow.on('blur', () => {
-        saveWindowState(boundsInfoPath, mainWindow);
-    });
+    private onBlur = () => {
+        if (!this.win) {
+            return;
+        }
 
-    mainWindow.on('close', (event) => {
-        log.debug('on.close');
+        globalShortcut.unregisterAll();
+
+        // App should save bounds when a window is closed.
+        // However, 'close' is not fired in some situations(shutdown, ctrl+c)
+        // because main process is killed in such situations.
+        // 'blur' event was effective in order to avoid this.
+        // Ideally, app should detect that OS is shutting down.
+        this.saveWindowState(boundsInfoPath, this.win);
+    }
+
+    private onClose = (event: Event) => {
+        log.debug('MainWindow.on.close');
+
+        if (!this.win) {
+            return;
+        }
 
         if (global.willAppQuit) { // when [Ctrl|Cmd]+Q
-            saveWindowState(boundsInfoPath, mainWindow);
+            this.saveWindowState(boundsInfoPath, this.win);
         } else { // Minimize or hide the window for close button.
             event.preventDefault();
             function hideWindow(window: BrowserWindow) {
@@ -156,9 +246,9 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
             case 'linux':
                 if (Config.minimizeToTray) {
                     if (Config.alwaysMinimize) {
-                        hideWindow(mainWindow);
+                        hideWindow(this.win);
                     } else {
-                        dialog.showMessageBox(mainWindow, {
+                        dialog.showMessageBox(this.win, {
                             title: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.title', 'Minimize to Tray'),
                             message: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.message', '{appName} will continue to run in the system tray. This can be disabled in Settings.', {appName: app.name}),
                             type: 'info',
@@ -166,13 +256,13 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
                             checkboxLabel: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel', 'Don\'t show again'),
                         }).then((result: {response: number; checkboxChecked: boolean}) => {
                             Config.set('alwaysMinimize', result.checkboxChecked);
-                            hideWindow(mainWindow);
+                            hideWindow(this.win!);
                         });
                     }
                 } else if (Config.alwaysClose) {
                     app.quit();
                 } else {
-                    dialog.showMessageBox(mainWindow, {
+                    dialog.showMessageBox(this.win, {
                         title: localizeMessage('main.windows.mainWindow.closeApp.dialog.title', 'Close Application'),
                         message: localizeMessage('main.windows.mainWindow.closeApp.dialog.message', 'Are you sure you want to quit?'),
                         detail: localizeMessage('main.windows.mainWindow.closeApp.dialog.detail', 'You will no longer receive notifications for messages. If you want to leave {appName} running in the system tray, you can enable this in Settings.', {appName: app.name}),
@@ -193,11 +283,11 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
                 break;
             case 'darwin':
                 // need to leave fullscreen first, then hide the window
-                if (mainWindow.isFullScreen()) {
-                    mainWindow.once('leave-full-screen', () => {
+                if (this.win.isFullScreen()) {
+                    this.win.once('leave-full-screen', () => {
                         app.hide();
                     });
-                    mainWindow.setFullScreen(false);
+                    this.win.setFullScreen(false);
                 } else {
                     app.hide();
                 }
@@ -205,39 +295,19 @@ function createMainWindow(options: {linuxAppIcon: string; fullscreen?: boolean})
             default:
             }
         }
-    });
+    }
 
-    // Register keyboard shortcuts
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-    // Add Alt+Cmd+(Right|Left) as alternative to switch between servers
-        if (process.platform === 'darwin') {
-            if (input.alt && input.meta) {
-                if (input.key === 'ArrowRight') {
-                    mainWindow.webContents.send(SELECT_NEXT_TAB);
-                }
-                if (input.key === 'ArrowLeft') {
-                    mainWindow.webContents.send(SELECT_PREVIOUS_TAB);
-                }
-            }
-        }
-    });
+    private onClosed = () => {
+        log.verbose('main window closed');
+        delete this.win;
+        this.ready = false;
+    }
 
-    // Only add shortcuts when window is in focus
-    mainWindow.on('focus', () => {
-        if (process.platform === 'linux') {
-            globalShortcut.registerAll(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], () => {
-                // do nothing because we want to supress the menu popping up
-            });
-        }
-    });
-    mainWindow.on('blur', () => {
-        globalShortcut.unregisterAll();
-    });
-
-    const contextMenu = new ContextMenu({}, mainWindow);
-    contextMenu.reload();
-
-    return mainWindow;
+    private onUnresponsive = () => {
+        CriticalErrorHandler.setMainWindow(this.win!);
+        CriticalErrorHandler.windowUnresponsiveHandler();
+    }
 }
 
-export default createMainWindow;
+const mainWindow = new MainWindow();
+export default mainWindow;

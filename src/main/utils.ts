@@ -18,6 +18,10 @@ import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT} from
 import UrlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 
+export function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
+    return container.x <= rect.x && container.y <= rect.y && container.width >= rect.width && container.height >= rect.height;
+}
+
 export function shouldBeHiddenOnStartup(parsedArgv: Args) {
     if (parsedArgv.hidden) {
         return true;
