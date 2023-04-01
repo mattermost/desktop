@@ -4,7 +4,7 @@
 /* eslint-disable max-lines */
 'use strict';
 
-import {app, systemPreferences, desktopCapturer} from 'electron';
+import {systemPreferences, desktopCapturer} from 'electron';
 
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
@@ -17,7 +17,7 @@ import {
 } from 'main/utils';
 
 import {WindowManager} from './windowManager';
-import createMainWindow from './mainWindow';
+import MainWindow from './mainWindow';
 import {createSettingsWindow} from './settingsWindow';
 
 import CallsWidgetWindow from './callsWidgetWindow';
@@ -80,7 +80,10 @@ jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
 jest.mock('./settingsWindow', () => ({
     createSettingsWindow: jest.fn(),
 }));
-jest.mock('./mainWindow', () => jest.fn());
+jest.mock('./mainWindow', () => ({
+    get: jest.fn(),
+    focus: jest.fn(),
+}));
 jest.mock('../downloadsManager', () => ({
     getDownloads: () => {},
 }));
@@ -146,56 +149,38 @@ describe('main/windows/windowManager', () => {
         };
         windowManager.initializeViewManager = jest.fn();
 
+        const mainWindow = {
+            visible: false,
+            isVisible: () => mainWindow.visible,
+            show: jest.fn(),
+            focus: jest.fn(),
+            on: jest.fn(),
+            once: jest.fn(),
+            webContents: {
+                setWindowOpenHandler: jest.fn(),
+            },
+        };
+
+        beforeEach(() => {
+            mainWindow.show.mockImplementation(() => {
+                mainWindow.visible = true;
+            });
+            MainWindow.get.mockReturnValue(mainWindow);
+        });
+
         afterEach(() => {
-            delete windowManager.mainWindow;
+            jest.resetAllMocks();
         });
 
         it('should show main window if it exists and focus it if it is already visible', () => {
-            windowManager.mainWindow = {
-                visible: false,
-                isVisible: () => windowManager.mainWindow.visible,
-                show: jest.fn().mockImplementation(() => {
-                    windowManager.mainWindow.visible = true;
-                }),
-                focus: jest.fn(),
-            };
+            windowManager.showMainWindow();
+            expect(mainWindow.show).toHaveBeenCalled();
 
             windowManager.showMainWindow();
-            expect(windowManager.mainWindow.show).toHaveBeenCalled();
-
-            windowManager.showMainWindow();
-            expect(windowManager.mainWindow.focus).toHaveBeenCalled();
-        });
-
-        it('should quit the app when the main window fails to create', () => {
-            windowManager.showMainWindow();
-            expect(app.quit).toHaveBeenCalled();
-        });
-
-        it('should create the main window and add listeners', () => {
-            const window = {
-                on: jest.fn(),
-                once: jest.fn(),
-                webContents: {
-                    setWindowOpenHandler: jest.fn(),
-                },
-            };
-            createMainWindow.mockReturnValue(window);
-            windowManager.showMainWindow();
-            expect(windowManager.mainWindow).toBe(window);
-            expect(window.on).toHaveBeenCalled();
-            expect(window.webContents.setWindowOpenHandler).toHaveBeenCalled();
+            expect(mainWindow.focus).toHaveBeenCalled();
         });
 
         it('should open deep link when provided', () => {
-            const window = {
-                on: jest.fn(),
-                once: jest.fn(),
-                webContents: {
-                    setWindowOpenHandler: jest.fn(),
-                },
-            };
-            createMainWindow.mockReturnValue(window);
             windowManager.showMainWindow('mattermost://server-1.com/subpath');
             expect(windowManager.viewManager.handleDeepLink).toHaveBeenCalledWith('mattermost://server-1.com/subpath');
         });
@@ -218,7 +203,7 @@ describe('main/windows/windowManager', () => {
             getCurrentView: () => view,
             setLoadingScreenBounds: jest.fn(),
         };
-        windowManager.mainWindow = {
+        const mainWindow = {
             getContentBounds: () => ({width: 800, height: 600}),
             getSize: () => [1000, 900],
         };
@@ -227,6 +212,7 @@ describe('main/windows/windowManager', () => {
         };
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(mainWindow);
             jest.useFakeTimers();
             getAdjustedWindowBoundaries.mockImplementation((width, height) => ({width, height}));
         });
@@ -281,15 +267,16 @@ describe('main/windows/windowManager', () => {
             setLoadingScreenBounds: jest.fn(),
             loadingScreenState: 3,
         };
-        windowManager.mainWindow = {
-            getContentBounds: () => ({width: 1000, height: 900}),
-            getSize: () => [1000, 900],
-        };
         windowManager.teamDropdown = {
             updateWindowBounds: jest.fn(),
         };
+        const mainWindow = {
+            getContentBounds: () => ({width: 1000, height: 900}),
+            getSize: () => [1000, 900],
+        };
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(mainWindow);
             getAdjustedWindowBoundaries.mockImplementation((width, height) => ({width, height}));
         });
 
@@ -333,12 +320,13 @@ describe('main/windows/windowManager', () => {
                 },
             },
         };
-        windowManager.mainWindow = {
+        const mainWindow = {
             getContentBounds: () => ({width: 800, height: 600}),
             getSize: () => [1000, 900],
         };
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(mainWindow);
             getAdjustedWindowBoundaries.mockImplementation((width, height) => ({width, height}));
         });
 
@@ -392,7 +380,7 @@ describe('main/windows/windowManager', () => {
 
     describe('restoreMain', () => {
         const windowManager = new WindowManager();
-        windowManager.mainWindow = {
+        const mainWindow = {
             isVisible: jest.fn(),
             isMinimized: jest.fn(),
             restore: jest.fn(),
@@ -400,29 +388,33 @@ describe('main/windows/windowManager', () => {
             focus: jest.fn(),
         };
 
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(mainWindow);
+        });
+
         afterEach(() => {
             jest.resetAllMocks();
             delete windowManager.settingsWindow;
         });
 
         it('should restore main window if minimized', () => {
-            windowManager.mainWindow.isMinimized.mockReturnValue(true);
+            mainWindow.isMinimized.mockReturnValue(true);
             windowManager.restoreMain();
-            expect(windowManager.mainWindow.restore).toHaveBeenCalled();
+            expect(mainWindow.restore).toHaveBeenCalled();
         });
 
         it('should show main window if not visible or minimized', () => {
-            windowManager.mainWindow.isVisible.mockReturnValue(false);
-            windowManager.mainWindow.isMinimized.mockReturnValue(false);
+            mainWindow.isVisible.mockReturnValue(false);
+            mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
-            expect(windowManager.mainWindow.show).toHaveBeenCalled();
+            expect(mainWindow.show).toHaveBeenCalled();
         });
 
         it('should focus main window if visible and not minimized', () => {
-            windowManager.mainWindow.isVisible.mockReturnValue(true);
-            windowManager.mainWindow.isMinimized.mockReturnValue(false);
+            mainWindow.isVisible.mockReturnValue(true);
+            mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
-            expect(windowManager.mainWindow.focus).toHaveBeenCalled();
+            expect(mainWindow.focus).toHaveBeenCalled();
         });
 
         it('should focus settings window regardless of main window state if it exists', () => {
@@ -430,104 +422,29 @@ describe('main/windows/windowManager', () => {
                 focus: jest.fn(),
             };
 
-            windowManager.mainWindow.isVisible.mockReturnValue(false);
-            windowManager.mainWindow.isMinimized.mockReturnValue(false);
+            mainWindow.isVisible.mockReturnValue(false);
+            mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
             expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
             windowManager.settingsWindow.focus.mockClear();
 
-            windowManager.mainWindow.isVisible.mockReturnValue(true);
-            windowManager.mainWindow.isMinimized.mockReturnValue(false);
+            mainWindow.isVisible.mockReturnValue(true);
+            mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
             expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
             windowManager.settingsWindow.focus.mockClear();
 
-            windowManager.mainWindow.isVisible.mockReturnValue(false);
-            windowManager.mainWindow.isMinimized.mockReturnValue(true);
+            mainWindow.isVisible.mockReturnValue(false);
+            mainWindow.isMinimized.mockReturnValue(true);
             windowManager.restoreMain();
             expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
             windowManager.settingsWindow.focus.mockClear();
 
-            windowManager.mainWindow.isVisible.mockReturnValue(true);
-            windowManager.mainWindow.isMinimized.mockReturnValue(true);
+            mainWindow.isVisible.mockReturnValue(true);
+            mainWindow.isMinimized.mockReturnValue(true);
             windowManager.restoreMain();
             expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
             windowManager.settingsWindow.focus.mockClear();
-        });
-    });
-
-    describe('flashFrame', () => {
-        const windowManager = new WindowManager();
-        windowManager.mainWindow = {
-            flashFrame: jest.fn(),
-        };
-        windowManager.settingsWindow = {
-            flashFrame: jest.fn(),
-        };
-
-        beforeEach(() => {
-            Config.notifications = {};
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-            Config.notifications = {};
-        });
-
-        it('linux/windows - should not flash frame when config item is not set', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'linux',
-            });
-            windowManager.flashFrame(true);
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(windowManager.mainWindow.flashFrame).not.toBeCalled();
-            expect(windowManager.settingsWindow.flashFrame).not.toBeCalled();
-        });
-
-        it('linux/windows - should flash frame when config item is set', () => {
-            Config.notifications = {
-                flashWindow: true,
-            };
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'linux',
-            });
-            windowManager.flashFrame(true);
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(windowManager.mainWindow.flashFrame).toBeCalledWith(true);
-        });
-
-        it('mac - should not bounce icon when config item is not set', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-            windowManager.flashFrame(true);
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(app.dock.bounce).not.toBeCalled();
-        });
-
-        it('mac - should bounce icon when config item is set', () => {
-            Config.notifications = {
-                bounceIcon: true,
-                bounceIconType: 'critical',
-            };
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-            windowManager.flashFrame(true);
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(app.dock.bounce).toHaveBeenCalledWith('critical');
         });
     });
 
@@ -569,13 +486,13 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should maximize when not maximized and vice versa', () => {
-            windowManager.mainWindow = mainWindow;
+            MainWindow.get.mockReturnValue(mainWindow);
 
-            windowManager.mainWindow.isMaximized.mockReturnValue(false);
+            mainWindow.isMaximized.mockReturnValue(false);
             windowManager.handleDoubleClick();
             expect(mainWindow.maximize).toHaveBeenCalled();
 
-            windowManager.mainWindow.isMaximized.mockReturnValue(true);
+            mainWindow.isMaximized.mockReturnValue(true);
             windowManager.handleDoubleClick();
             expect(mainWindow.unmaximize).toHaveBeenCalled();
         });
@@ -585,7 +502,6 @@ describe('main/windows/windowManager', () => {
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
-            windowManager.flashFrame(true);
 
             systemPreferences.getUserDefault.mockReturnValue('Minimize');
             windowManager.settingsWindow = settingsWindow;
@@ -1418,10 +1334,10 @@ describe('main/windows/windowManager', () => {
 
     describe('handleCallsError', () => {
         const windowManager = new WindowManager();
-        windowManager.switchServer = jest.fn();
-        windowManager.mainWindow = {
+        const mainWindow = {
             focus: jest.fn(),
         };
+        windowManager.switchServer = jest.fn();
 
         beforeEach(() => {
             CallsWidgetWindow.mockImplementation(() => {
@@ -1436,6 +1352,7 @@ describe('main/windows/windowManager', () => {
                     }),
                 };
             });
+            MainWindow.get.mockReturnValue(mainWindow);
         });
 
         afterEach(() => {
@@ -1447,7 +1364,7 @@ describe('main/windows/windowManager', () => {
             windowManager.callsWidgetWindow = new CallsWidgetWindow();
             windowManager.handleCallsError('', {err: 'client-error'});
             expect(windowManager.switchServer).toHaveBeenCalledWith('server-2');
-            expect(windowManager.mainWindow.focus).toHaveBeenCalled();
+            expect(mainWindow.focus).toHaveBeenCalled();
             expect(windowManager.callsWidgetWindow.getMainView().view.webContents.send).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
         });
     });

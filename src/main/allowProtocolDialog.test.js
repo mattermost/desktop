@@ -6,7 +6,7 @@ import fs from 'fs';
 
 import {shell, dialog} from 'electron';
 
-import WindowManager from './windows/windowManager';
+import MainWindow from './windows/mainWindow';
 
 import {AllowProtocolDialog} from './allowProtocolDialog';
 
@@ -42,8 +42,8 @@ jest.mock('./Validator', () => ({
     validateAllowedProtocols: (protocols) => protocols,
 }));
 
-jest.mock('./windows/windowManager', () => ({
-    getMainWindow: jest.fn(),
+jest.mock('./windows/mainWindow', () => ({
+    get: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -117,7 +117,7 @@ describe('main/allowProtocolDialog', () => {
         });
 
         it('should not open message box if main window is missing', () => {
-            WindowManager.getMainWindow.mockImplementation(() => null);
+            MainWindow.get.mockImplementation(() => null);
             allowProtocolDialog.handleDialogEvent('mattermost:', 'mattermost://community.mattermost.com');
             expect(shell.openExternal).not.toBeCalled();
             expect(dialog.showMessageBox).not.toBeCalled();
@@ -125,7 +125,7 @@ describe('main/allowProtocolDialog', () => {
 
         describe('main window not null', () => {
             beforeEach(() => {
-                WindowManager.getMainWindow.mockImplementation(() => ({}));
+                MainWindow.get.mockImplementation(() => ({}));
             });
 
             it('should open the window but not save when clicking Yes', async () => {

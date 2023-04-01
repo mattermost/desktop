@@ -12,6 +12,7 @@ import CertificateStore from 'main/certificateStore';
 import {localizeMessage} from 'main/i18nManager';
 import {destroyTray} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {getDeeplinkingURL, openDeepLink, resizeScreen} from './utils';
 
@@ -115,7 +116,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         certificateErrorCallbacks.set(errorID, callback);
 
         // TODO: should we move this to window manager or provide a handler for dialogs?
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }

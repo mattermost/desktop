@@ -1,6 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
+import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
 import log from 'electron-log';
 
@@ -30,6 +30,7 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
+import MainWindow from 'main/windows/mainWindow';
 
 export default class DownloadsDropdownMenuView {
     open: boolean;
@@ -38,17 +39,15 @@ export default class DownloadsDropdownMenuView {
     item?: DownloadedItem;
     coordinates?: CoordinatesToJsonType;
     darkMode: boolean;
-    window: BrowserWindow;
-    windowBounds: Electron.Rectangle;
+    windowBounds?: Electron.Rectangle;
 
-    constructor(window: BrowserWindow, darkMode: boolean) {
+    constructor(darkMode: boolean) {
         this.open = false;
         this.item = undefined;
         this.coordinates = undefined;
-        this.window = window;
         this.darkMode = darkMode;
 
-        this.windowBounds = this.window.getContentBounds();
+        this.windowBounds = MainWindow.getBounds();
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
 
         const preload = getLocalPreload('desktopAPI.js');
@@ -62,7 +61,7 @@ export default class DownloadsDropdownMenuView {
         }});
 
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdownMenu.html'));
-        this.window.addBrowserView(this.view);
+        MainWindow.get()?.addBrowserView(this.view);
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
@@ -98,9 +97,12 @@ export default class DownloadsDropdownMenuView {
     updateWindowBounds = () => {
         log.debug('DownloadsDropdownMenuView.updateWindowBounds');
 
-        this.windowBounds = this.window.getContentBounds();
-        this.updateDownloadsDropdownMenu();
-        this.repositionDownloadsDropdownMenu();
+        const mainWindow = MainWindow.get();
+        if (mainWindow) {
+            this.windowBounds = mainWindow.getContentBounds();
+            this.updateDownloadsDropdownMenu();
+            this.repositionDownloadsDropdownMenu();
+        }
     }
 
     updateDownloadsDropdownMenu = () => {
@@ -131,7 +133,7 @@ export default class DownloadsDropdownMenuView {
         this.item = item;
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
         this.view.setBounds(this.bounds);
-        this.window.setTopBrowserView(this.view);
+        MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
         this.updateDownloadsDropdownMenu();
     }
@@ -192,7 +194,7 @@ export default class DownloadsDropdownMenuView {
     }
 
     getX = () => {
-        const result = (this.windowBounds.width - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) + (this.coordinates?.x || 0) + (this.coordinates?.width || 0);
+        const result = (this.windowBounds!.width - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) + (this.coordinates?.x || 0) + (this.coordinates?.width || 0);
         if (result <= DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) {
             return 0;
         }

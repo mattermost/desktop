@@ -56,6 +56,7 @@ import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -344,7 +345,7 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    CriticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
+    CriticalErrorHandler.setMainWindow(MainWindow.get()!);
 
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
@@ -396,7 +397,7 @@ function initializeAfterAppReady() {
         }
 
         // is the request coming from the renderer?
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (mainWindow && webContents.id === mainWindow.webContents.id) {
             callback(true);
             return;

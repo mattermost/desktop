@@ -13,6 +13,7 @@ import modalManager from 'main/views/modalManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
 import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 
 const preload = getLocalPreload('desktopAPI.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
@@ -52,7 +53,7 @@ export class AuthManager {
     }
 
     popLoginModal = (request: AuthenticationResponseDetails, authInfo: AuthInfo) => {
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }
@@ -71,7 +72,7 @@ export class AuthManager {
     }
 
     popPermissionModal = (request: AuthenticationResponseDetails, authInfo: AuthInfo, permission: PermissionType) => {
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }

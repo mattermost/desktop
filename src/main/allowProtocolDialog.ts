@@ -13,7 +13,7 @@ import {localizeMessage} from 'main/i18nManager';
 import buildConfig from 'common/config/buildConfig';
 
 import * as Validator from './Validator';
-import WindowManager from './windows/windowManager';
+import MainWindow from './windows/mainWindow';
 import {allowedProtocolFile} from './constants';
 
 export class AllowProtocolDialog {
@@ -47,7 +47,7 @@ export class AllowProtocolDialog {
             shell.openExternal(URL);
             return;
         }
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }

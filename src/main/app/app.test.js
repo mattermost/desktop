@@ -4,6 +4,7 @@
 import {app, dialog} from 'electron';
 
 import CertificateStore from 'main/certificateStore';
+import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
@@ -45,12 +46,14 @@ jest.mock('main/i18nManager', () => ({
 }));
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
-    getMainWindow: jest.fn(),
     getViewNameByWebContentsId: jest.fn(),
     getServerNameByWebContentsId: jest.fn(),
     viewManager: {
         views: new Map(),
     },
+}));
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
 }));
 
 describe('main/app/app', () => {
@@ -103,7 +106,7 @@ describe('main/app/app', () => {
         const certificate = {};
 
         beforeEach(() => {
-            WindowManager.getMainWindow.mockReturnValue(mainWindow);
+            MainWindow.get.mockReturnValue(mainWindow);
             WindowManager.getServerNameByWebContentsId.mockReturnValue('test-team');
         });
 
