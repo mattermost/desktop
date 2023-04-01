@@ -14,6 +14,7 @@ import {
     AnyConfig,
     BuildConfig,
     CombinedConfig,
+    ConfigTeam,
     Config as ConfigType,
     LocalConfiguration,
     RegistryConfig as RegistryConfigType,
@@ -201,6 +202,14 @@ export class Config extends EventEmitter {
         this.reload();
     }
 
+    setServers = (servers: ConfigTeam[], lastActiveTeam?: number) => {
+        log.debug('setServers', servers, lastActiveTeam);
+
+        this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveTeam ?? this.localConfigData?.lastActiveTeam});
+        this.regenerateCombinedConfigData();
+        this.saveLocalConfigData();
+    }
+
     /**
      * Used to replace the existing config data with new config data
      *
@@ -275,7 +284,7 @@ export class Config extends EventEmitter {
         return this.combinedData?.darkMode ?? defaultPreferences.darkMode;
     }
     get localTeams() {
-        return this.localConfigData?.teams ?? defaultPreferences.version;
+        return this.localConfigData?.teams ?? defaultPreferences.teams;
     }
     get enableHardwareAcceleration() {
         return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;

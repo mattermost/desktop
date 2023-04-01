@@ -8,7 +8,7 @@ import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDra
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 import classNames from 'classnames';
 
-import {Tab} from 'types/config';
+import {ConfigTab} from 'types/config';
 
 import {getTabViewName, TabType, canCloseTab, getTabDisplayName} from 'common/tabs/TabView';
 
@@ -19,7 +19,7 @@ type Props = {
     isDarkMode: boolean;
     onSelect: (name: string, index: number) => void;
     onCloseTab: (name: string) => void;
-    tabs: Tab[];
+    tabs: ConfigTab[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
     mentionCounts: Record<string, number>;

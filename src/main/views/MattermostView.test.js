@@ -48,7 +48,7 @@ jest.mock('../utils', () => ({
     shouldHaveBackBar: jest.fn(),
 }));
 
-const server = new MattermostServer('server_name', 'http://server-1.com');
+const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
 const tabView = new MessagingTabView(server);
 
 describe('main/views/MattermostView', () => {

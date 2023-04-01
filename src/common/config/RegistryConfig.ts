@@ -7,7 +7,7 @@ import log from 'electron-log';
 import WindowsRegistry from 'winreg';
 import WindowsRegistryUTF8 from 'winreg-utf8';
 
-import {RegistryConfig as RegistryConfigType, Team} from 'types/config';
+import {RegistryConfig as RegistryConfigType, FullTeam} from 'types/config';
 
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
@@ -76,7 +76,7 @@ export default class RegistryConfig extends EventEmitter {
    */
     async getServersListFromRegistry() {
         const defaultServers = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-        return defaultServers.flat(2).reduce((servers: Team[], server, index) => {
+        return defaultServers.flat(2).reduce((servers: FullTeam[], server, index) => {
             if (server) {
                 servers.push({
                     name: (server as WindowsRegistry.RegistryItem).name,

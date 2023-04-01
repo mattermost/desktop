@@ -7,7 +7,7 @@ import {FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
 
-import {Team, TeamWithTabs, TeamWithTabsAndGpo} from 'types/config';
+import {FullTeam, TeamWithTabs, TeamWithTabsAndGpo} from 'types/config';
 
 import {getTabViewName} from 'common/tabs/TabView';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
@@ -83,7 +83,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         });
     }
 
-    selectServer = (team: Team) => {
+    selectServer = (team: FullTeam) => {
         return () => {
             window.desktop.serverDropdown.switchServer(team.name);
             this.closeMenu();
@@ -106,7 +106,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         this.closeMenu();
     }
 
-    isActiveTeam = (team: Team) => {
+    isActiveTeam = (team: FullTeam) => {
         return team.name === this.state.activeTeam;
     }
 
@@ -139,7 +139,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         tabOrder.forEach((t, order) => {
             teams[t.index].order = order;
         });
-        this.setState({teams, orderedTeams: teams.concat().sort((a: Team, b: Team) => a.order - b.order), isAnyDragging: false});
+        this.setState({teams, orderedTeams: teams.concat().sort((a: FullTeam, b: FullTeam) => a.order - b.order), isAnyDragging: false});
         window.desktop.updateTeams(teams);
     }
 

@@ -3,26 +3,36 @@
 
 export type Tab = {
     name: string;
-    order: number;
     isOpen?: boolean;
 }
 
 export type Team = {
     name: string;
-    order: number;
     url: string;
+}
+
+export type FullTeam = Team & {
+    order: number;
     lastActiveTab?: number;
 }
 
-export type TeamWithIndex = Team & {index: number};
-export type TeamWithTabs = Team & {tabs: Tab[]};
+export type ConfigTab = Tab & {
+    order: number;
+}
+
+export type ConfigTeam = FullTeam & {
+    tabs: ConfigTab[];
+}
+
+export type TeamWithIndex = FullTeam & {index: number};
+export type TeamWithTabs = ConfigTeam & {tabs: Tab[]};
 export type TeamWithTabsAndGpo = TeamWithTabs & {isGpo?: boolean};
 
 export type Config = ConfigV3;
 
 export type ConfigV3 = {
     version: 3;
-    teams: TeamWithTabs[];
+    teams: ConfigTeam[];
     showTrayIcon: boolean;
     trayIconTheme: string;
     minimizeToTray: boolean;
@@ -101,7 +111,7 @@ export type ConfigV0 = {version: 0; url: string};
 export type AnyConfig = ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
 
 export type BuildConfig = {
-    defaultTeams?: Team[];
+    defaultTeams?: FullTeam[];
     helpLink: string;
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
@@ -110,7 +120,7 @@ export type BuildConfig = {
 }
 
 export type RegistryConfig = {
-    teams: Team[];
+    teams: FullTeam[];
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
 }
