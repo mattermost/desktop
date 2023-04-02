@@ -12,7 +12,6 @@ import {
     UPDATE_TARGET_URL,
     LOAD_SUCCESS,
     LOAD_FAILED,
-    TOGGLE_LOADING_SCREEN_VISIBILITY,
     LOADSCREEN_END,
     SET_ACTIVE_VIEW,
     OPEN_TAB,
@@ -20,7 +19,6 @@ import {
     UPDATE_LAST_ACTIVE,
     UPDATE_URL_VIEW_WIDTH,
     MAIN_WINDOW_SHOWN,
-    DARK_MODE_CHANGE,
 } from 'common/communication';
 import Config from 'common/config';
 import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
@@ -34,20 +32,15 @@ import PlaybooksTabView from 'common/tabs/PlaybooksTabView';
 import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
 
-import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
+import {getLocalURLString, getLocalPreload} from '../utils';
 
 import {MattermostView} from './MattermostView';
 import modalManager from './modalManager';
 import WebContentsEventManager from './webContentEvents';
+import LoadingScreen from './loadingScreen';
 
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
-
-export enum LoadingScreenState {
-    VISIBLE = 1,
-    FADING = 2,
-    HIDDEN = 3,
-}
 
 export class ViewManager {
     lastActiveServer?: number;
@@ -58,8 +51,6 @@ export class ViewManager {
     urlView?: BrowserView;
     urlViewCancel?: () => void;
     mainWindow: BrowserWindow;
-    loadingScreen?: BrowserView;
-    loadingScreenState: LoadingScreenState;
 
     constructor(mainWindow: BrowserWindow) {
         this.lastActiveServer = Config.lastActiveTeam;
@@ -67,7 +58,6 @@ export class ViewManager {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.mainWindow = mainWindow;
         this.closedViews = new Map();
-        this.loadingScreenState = LoadingScreenState.HIDDEN;
     }
 
     updateMainWindow = (mainWindow: BrowserWindow) => {
@@ -99,9 +89,6 @@ export class ViewManager {
         this.views.set(view.name, view);
         if (this.closedViews.has(view.name)) {
             this.closedViews.delete(view.name);
-        }
-        if (!this.loadingScreen) {
-            this.createLoadingScreen();
         }
     }
 
@@ -245,7 +232,7 @@ export class ViewManager {
             if (!newView.isErrored()) {
                 newView.show();
                 if (newView.needsLoadingScreen()) {
-                    this.showLoadingScreen();
+                    LoadingScreen.show();
                 }
             }
             newView.window.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.name, newView.tab.type);
@@ -293,7 +280,7 @@ export class ViewManager {
         const view = this.views.get(server);
         if (view && this.getCurrentView() === view) {
             this.showByName(this.currentView!);
-            this.fadeLoadingScreen();
+            LoadingScreen.fade();
         }
     }
 
@@ -317,7 +304,7 @@ export class ViewManager {
     failLoading = (tabName: string) => {
         log.debug('viewManager.failLoading', tabName);
 
-        this.fadeLoadingScreen();
+        LoadingScreen.fade();
         if (this.currentView === tabName) {
             this.getCurrentView()?.hide();
         }
@@ -420,77 +407,13 @@ export class ViewManager {
         }
     }
 
-    setLoadingScreenBounds = () => {
-        if (this.loadingScreen) {
-            this.loadingScreen.setBounds(getWindowBoundaries(this.mainWindow));
-        }
-    }
-
-    createLoadingScreen = () => {
-        const preload = getLocalPreload('desktopAPI.js');
-        this.loadingScreen = new BrowserView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
-        const localURL = getLocalURLString('loadingScreen.html');
-        this.loadingScreen.webContents.loadURL(localURL);
-    }
-
-    showLoadingScreen = () => {
-        if (!this.loadingScreen) {
-            this.createLoadingScreen();
-        }
-
-        this.loadingScreenState = LoadingScreenState.VISIBLE;
-
-        if (this.loadingScreen?.webContents.isLoading()) {
-            this.loadingScreen.webContents.once('did-finish-load', () => {
-                this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-            });
-        } else {
-            this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-        }
-
-        if (this.mainWindow.getBrowserViews().includes(this.loadingScreen!)) {
-            this.mainWindow.setTopBrowserView(this.loadingScreen!);
-        } else {
-            this.mainWindow.addBrowserView(this.loadingScreen!);
-        }
-
-        this.setLoadingScreenBounds();
-    }
-
-    fadeLoadingScreen = () => {
-        if (this.loadingScreen && this.loadingScreenState === LoadingScreenState.VISIBLE) {
-            this.loadingScreenState = LoadingScreenState.FADING;
-            this.loadingScreen.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
-        }
-    }
-
-    hideLoadingScreen = () => {
-        if (this.loadingScreen && this.loadingScreenState !== LoadingScreenState.HIDDEN) {
-            this.loadingScreenState = LoadingScreenState.HIDDEN;
-            this.mainWindow.removeBrowserView(this.loadingScreen);
-        }
-    }
-
     setServerInitialized = (server: string) => {
         const view = this.views.get(server);
         if (view) {
             view.setInitialized();
             if (this.getCurrentView() === view) {
-                this.fadeLoadingScreen();
+                LoadingScreen.fade();
             }
-        }
-    }
-
-    updateLoadingScreenDarkMode = (darkMode: boolean) => {
-        if (this.loadingScreen) {
-            this.loadingScreen.webContents.send(DARK_MODE_CHANGE, darkMode);
         }
     }
 
