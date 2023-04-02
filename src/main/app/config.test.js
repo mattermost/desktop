@@ -44,6 +44,7 @@ jest.mock('main/badge', () => ({
 jest.mock('main/tray/tray', () => ({
     refreshTrayImages: jest.fn(),
 }));
+jest.mock('main/views/loadingScreen', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     handleUpdateConfig: jest.fn(),
     sendToRenderer: jest.fn(),
