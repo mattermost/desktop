@@ -75,6 +75,7 @@ jest.mock('../CriticalErrorHandler', () => jest.fn());
 jest.mock('../views/loadingScreen', () => ({
     isHidden: jest.fn(),
     setBounds: jest.fn(),
+    setMainWindow: jest.fn(),
 }));
 jest.mock('../views/teamDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownView', () => jest.fn());
