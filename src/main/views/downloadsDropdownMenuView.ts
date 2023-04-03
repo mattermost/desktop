@@ -199,7 +199,7 @@ export default class DownloadsDropdownMenuView {
     }
 
     getX = () => {
-        const result = (this.windowBounds!.width - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) + (this.coordinates?.x || 0) + (this.coordinates?.width || 0);
+        const result = (this.windowBounds.width - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) + (this.coordinates?.x || 0) + (this.coordinates?.width || 0);
         if (result <= DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) {
             return 0;
         }

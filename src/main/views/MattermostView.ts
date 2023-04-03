@@ -224,6 +224,11 @@ export class MattermostView extends EventEmitter {
 
     loadSuccess = (loadURL: string) => {
         return () => {
+            const mainWindow = MainWindow.get();
+            if (!mainWindow) {
+                return;
+            }
+
             log.verbose(`[${Util.shorten(this.tab.name)}] finished loading ${loadURL}`);
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.tab.name);
             this.maxRetries = MAX_SERVER_RETRIES;
@@ -235,7 +240,7 @@ export class MattermostView extends EventEmitter {
             this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
-            this.setBounds(getWindowBoundaries(MainWindow.get()!, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
+            this.setBounds(getWindowBoundaries(mainWindow, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
         };
     }
 
