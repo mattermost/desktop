@@ -27,6 +27,7 @@ import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
 import {setTrayMenu} from 'main/tray/tray';
+import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {mainProtocol} from './initialize';
@@ -108,7 +109,7 @@ export function handleUpdateMenuEvent() {
     const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', () => {
-        WindowManager.focusBrowserView();
+        ViewManager.focusCurrentView();
         WindowManager.sendToRenderer(APP_MENU_WILL_CLOSE);
     });
 

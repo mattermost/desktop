@@ -12,6 +12,7 @@ import Config from 'common/config';
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
 import {refreshTrayImages} from 'main/tray/tray';
+import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleMainWindowIsShown} from './intercom';
@@ -36,8 +37,8 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         return;
     }
 
-    WindowManager.handleUpdateConfig();
     if (app.isReady()) {
+        ViewManager.reloadConfiguration();
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
@@ -78,7 +79,7 @@ export function handleDarkModeChange(darkMode: boolean) {
 
     refreshTrayImages(Config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
-    WindowManager.updateLoadingScreenDarkMode(darkMode);
+    ViewManager.updateLoadingScreenDarkMode(darkMode);
 
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
 }

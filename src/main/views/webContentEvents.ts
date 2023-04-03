@@ -18,6 +18,7 @@ import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
 
 import {MattermostView} from './MattermostView';
+import ViewManager from './viewManager';
 
 type CustomLogin = {
     inProgress: boolean;
@@ -241,7 +242,7 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            const otherServerURL = WindowManager.viewManager?.getViewByURL(parsedURL);
+            const otherServerURL = ViewManager.getViewByURL(parsedURL);
             if (otherServerURL && urlUtils.isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
                 WindowManager.showMainWindow(parsedURL);
                 return {action: 'deny'};

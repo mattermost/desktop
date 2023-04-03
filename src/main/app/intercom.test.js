@@ -29,6 +29,7 @@ jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
     getLocalURLString: jest.fn(),
 }));
+jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/views/modalManager', () => ({
     addModal: jest.fn(),
 }));

@@ -14,6 +14,7 @@ import {ping} from 'common/utils/requests';
 import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
+import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleAppBeforeQuit} from './app';
@@ -23,7 +24,7 @@ export function handleReloadConfig() {
     log.debug('Intercom.handleReloadConfig');
 
     Config.reload();
-    WindowManager.handleUpdateConfig();
+    ViewManager.reloadConfiguration();
 }
 
 export function handleAppVersion() {

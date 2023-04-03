@@ -49,6 +49,11 @@ jest.mock('macos-notification-state', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
+jest.mock('main/diagnostics', () => ({}));
+jest.mock('main/downloadsManager', () => ({
+    hasDownloads: jest.fn(),
+}));
+jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     getCurrentTeamName: jest.fn(),
     sendToRenderer: jest.fn(),

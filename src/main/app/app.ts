@@ -5,13 +5,13 @@ import {app, BrowserWindow, Event, dialog, WebContents, Certificate, Details} fr
 import log from 'electron-log';
 
 import urlUtils from 'common/utils/url';
-import Config from 'common/config';
 
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
 import {localizeMessage} from 'main/i18nManager';
 import {destroyTray} from 'main/tray/tray';
 import WindowManager from 'main/windows/windowManager';
+import ViewManager from 'main/views/viewManager';
 
 import {getDeeplinkingURL, openDeepLink, resizeScreen} from './utils';
 
@@ -92,10 +92,9 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     // update the callback
         const errorID = `${origin}:${error}`;
 
-        const serverName = WindowManager.getServerNameByWebContentsId(webContents.id);
-        const server = Config.teams.find((team) => team.name === serverName);
-        if (server) {
-            const serverURL = urlUtils.parseURL(server.url);
+        const view = ViewManager.getViewByWebContentsId(webContents.id);
+        if (view?.tab.server) {
+            const serverURL = urlUtils.parseURL(view.tab.server.url);
             if (serverURL && serverURL.origin !== origin) {
                 log.warn(`Ignoring certificate for unmatched origin ${origin}, will not trust`);
                 callback(false);
@@ -156,10 +155,8 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
                 CertificateStore.save();
                 certificateErrorCallbacks.get(errorID)(true);
 
-                const viewName = WindowManager.getViewNameByWebContentsId(webContents.id);
-                if (viewName) {
-                    const view = WindowManager.viewManager?.views.get(viewName);
-                    view?.load(url);
+                if (view) {
+                    view.load(url);
                 } else {
                     webContents.loadURL(url);
                 }

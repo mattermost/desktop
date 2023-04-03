@@ -164,6 +164,10 @@ jest.mock('main/windows/windowManager', () => ({
     getServerNameByWebContentsId: jest.fn(),
     getServerURLFromWebContentsId: jest.fn(),
 }));
+jest.mock('main/views/viewManager', () => ({
+    get: jest.fn(),
+    sendToAllViews: jest.fn(),
+}));
 const originalProcess = process;
 describe('main/app/initialize', () => {
     beforeAll(() => {

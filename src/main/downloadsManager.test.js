@@ -79,6 +79,7 @@ jest.mock('macos-notification-state', () => ({
 jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
+jest.mock('main/views/viewManager', () => ({}));
 jest.mock('common/config', () => {
     const original = jest.requireActual('common/config');
     return {

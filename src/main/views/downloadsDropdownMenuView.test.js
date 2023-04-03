@@ -50,6 +50,7 @@ jest.mock('electron', () => {
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
+jest.mock('main/downloadsManager', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
