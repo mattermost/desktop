@@ -31,16 +31,32 @@ export default class DownloadsDropdownView {
     bounds?: Electron.Rectangle;
     darkMode: boolean;
     downloads: DownloadedItems;
-    item: DownloadedItem | undefined;
+    item?: DownloadedItem;
     view: BrowserView;
-    windowBounds?: Electron.Rectangle;
+    windowBounds: Electron.Rectangle;
 
     constructor(downloads: DownloadedItems, darkMode: boolean) {
         this.downloads = downloads;
         this.darkMode = darkMode;
-        this.item = undefined;
 
-        this.windowBounds = MainWindow.getBounds();
+        ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
+        ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
+        ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
+        ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
+        ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
+        ipcMain.on(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, this.handleReceivedDownloadsDropdownSize);
+        ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
+        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
+        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
+        ipcMain.handle(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, this.getDownloadImageThumbnailLocation);
+
+        const mainWindow = MainWindow.get();
+        const windowBounds = MainWindow.getBounds();
+        if (!(mainWindow && windowBounds)) {
+            throw new Error('Cannot initialize downloadsDropdownView, missing MainWindow');
+        }
+
+        this.windowBounds = windowBounds;
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
 
         const preload = getLocalPreload('desktopAPI.js');
@@ -54,20 +70,8 @@ export default class DownloadsDropdownView {
         }});
 
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
-        MainWindow.get()?.addBrowserView(this.view);
-
         this.view.webContents.session.webRequest.onHeadersReceived(downloadsManager.webRequestOnHeadersReceivedHandler);
-
-        ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
-        ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
-        ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
-        ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
-        ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
-        ipcMain.on(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, this.handleReceivedDownloadsDropdownSize);
-        ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
-        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
-        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
-        ipcMain.handle(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, this.getDownloadImageThumbnailLocation);
+        mainWindow.addBrowserView(this.view);
     }
 
     updateDownloads = (event: IpcMainEvent, downloads: DownloadedItems) => {
@@ -154,7 +158,7 @@ export default class DownloadsDropdownView {
     getBounds = (width: number, height: number) => {
         // Must always use integers
         return {
-            x: this.getX(this.windowBounds!.width),
+            x: this.getX(this.windowBounds.width),
             y: this.getY(),
             width: Math.round(width),
             height: Math.round(height),

@@ -240,16 +240,21 @@ export class MattermostView extends EventEmitter {
     }
 
     show = (requestedVisibility?: boolean) => {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
+        }
+
         this.hasBeenShown = true;
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
-            MainWindow.get()?.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(MainWindow.get()!, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
+            mainWindow.addBrowserView(this.view);
+            this.setBounds(getWindowBoundaries(mainWindow, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
             if (this.status === Status.READY) {
                 this.focus();
             }
         } else if (!request && this.isVisible) {
-            MainWindow.get()?.removeBrowserView(this.view);
+            mainWindow.removeBrowserView(this.view);
         }
         this.isVisible = request;
     }

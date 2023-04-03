@@ -139,8 +139,7 @@ jest.mock('main/badge', () => ({
 }));
 jest.mock('main/certificateManager', () => ({}));
 jest.mock('main/CriticalErrorHandler', () => ({
-    processUncaughtExceptionHandler: jest.fn(),
-    setMainWindow: jest.fn(),
+    init: jest.fn(),
 }));
 jest.mock('main/notifications', () => ({
     displayDownloadCompleted: jest.fn(),

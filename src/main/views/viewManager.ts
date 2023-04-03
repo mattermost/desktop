@@ -418,9 +418,11 @@ export class ViewManager {
     }
 
     setLoadingScreenBounds = () => {
-        if (this.loadingScreen) {
-            this.loadingScreen.setBounds(getWindowBoundaries(MainWindow.get()!));
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
         }
+        this.loadingScreen?.setBounds(getWindowBoundaries(mainWindow));
     }
 
     createLoadingScreen = () => {

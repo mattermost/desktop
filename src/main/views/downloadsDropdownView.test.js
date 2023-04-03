@@ -64,8 +64,6 @@ jest.mock('electron', () => {
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     getBounds: jest.fn(),
-    addBrowserView: jest.fn(),
-    setTopBrowserView: jest.fn(),
 }));
 jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
@@ -73,6 +71,7 @@ jest.mock('main/windows/windowManager', () => ({
 
 describe('main/views/DownloadsDropdownView', () => {
     beforeEach(() => {
+        MainWindow.get.mockReturnValue({addBrowserView: jest.fn(), setTopBrowserView: jest.fn()});
         getDarwinDoNotDisturb.mockReturnValue(false);
     });
     describe('getBounds', () => {

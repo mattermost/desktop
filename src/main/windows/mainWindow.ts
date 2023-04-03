@@ -18,12 +18,13 @@ import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINI
 import Utils from 'common/utils/util';
 
 import {boundsInfoPath} from 'main/constants';
-import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import {localizeMessage} from 'main/i18nManager';
 
 import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
+
+const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
 
 export class MainWindow {
     private win?: BrowserWindow;
@@ -67,9 +68,7 @@ export class MainWindow {
         this.win.setMenuBarVisibility(false);
 
         if (!this.win) {
-            log.error('unable to create main window');
-            app.quit();
-            return;
+            throw new Error('unable to create main window');
         }
 
         const localURL = getLocalURLString('index.html');
@@ -203,7 +202,7 @@ export class MainWindow {
     private onFocus = () => {
         // Only add shortcuts when window is in focus
         if (process.platform === 'linux') {
-            globalShortcut.registerAll(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], () => {
+            globalShortcut.registerAll(ALT_MENU_KEYS, () => {
                 // do nothing because we want to supress the menu popping up
             });
         }
@@ -302,8 +301,24 @@ export class MainWindow {
     }
 
     private onUnresponsive = () => {
-        CriticalErrorHandler.setMainWindow(this.win!);
-        CriticalErrorHandler.windowUnresponsiveHandler();
+        if (!this.win) {
+            throw new Error('BrowserWindow \'unresponsive\' event has been emitted');
+        }
+        dialog.showMessageBox(this.win, {
+            type: 'warning',
+            title: app.name,
+            message: localizeMessage('main.CriticalErrorHandler.unresponsive.dialog.message', 'The window is no longer responsive.\nDo you wait until the window becomes responsive again?'),
+            buttons: [
+                localizeMessage('label.no', 'No'),
+                localizeMessage('label.yes', 'Yes'),
+            ],
+            defaultId: 0,
+        }).then(({response}) => {
+            if (response === 0) {
+                log.error('BrowserWindow \'unresponsive\' event has been emitted');
+                app.relaunch();
+            }
+        });
     }
 }
 

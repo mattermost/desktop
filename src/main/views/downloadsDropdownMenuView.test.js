@@ -56,8 +56,6 @@ jest.mock('main/downloadsManager', () => ({}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     getBounds: jest.fn(),
-    addBrowserView: jest.fn(),
-    setTopBrowserView: jest.fn(),
 }));
 jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
@@ -70,6 +68,7 @@ jest.mock('fs', () => ({
 
 describe('main/views/DownloadsDropdownMenuView', () => {
     beforeEach(() => {
+        MainWindow.get.mockReturnValue({addBrowserView: jest.fn(), setTopBrowserView: jest.fn()});
         MainWindow.getBounds.mockReturnValue({width: 800, height: 600, x: 0, y: 0});
         getDarwinDoNotDisturb.mockReturnValue(false);
     });

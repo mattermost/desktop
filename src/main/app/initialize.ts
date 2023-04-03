@@ -107,7 +107,7 @@ export const mainProtocol = protocols?.[0]?.schemes?.[0];
  * Main entry point for the application, ensures that everything initializes in the proper order
  */
 export async function initialize() {
-    process.on('uncaughtException', CriticalErrorHandler.processUncaughtExceptionHandler.bind(CriticalErrorHandler));
+    CriticalErrorHandler.init();
     global.willAppQuit = false;
 
     // initialization that can run before the app is ready
@@ -345,8 +345,6 @@ function initializeAfterAppReady() {
     initCookieManager(defaultSession);
 
     WindowManager.showMainWindow(deeplinkingURL);
-
-    CriticalErrorHandler.setMainWindow(MainWindow.get()!);
 
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {

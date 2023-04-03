@@ -28,6 +28,7 @@ jest.mock('electron', () => ({
         getPath: jest.fn(),
         hide: jest.fn(),
         quit: jest.fn(),
+        relaunch: jest.fn(),
     },
     dialog: {
         showMessageBox: jest.fn(),
@@ -465,6 +466,22 @@ describe('main/windows/mainWindow', () => {
                 value: originalPlatform,
             });
             expect(globalShortcut.registerAll).toHaveBeenCalledWith(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], expect.any(Function));
+        });
+    });
+
+    describe('onUnresponsive', () => {
+        const mainWindow = new MainWindow();
+
+        beforeEach(() => {
+            mainWindow.win = {};
+        });
+
+        it('should call app.relaunch when user elects not to wait', async () => {
+            const promise = Promise.resolve({response: 0});
+            dialog.showMessageBox.mockImplementation(() => promise);
+            mainWindow.onUnresponsive();
+            await promise;
+            expect(app.relaunch).toBeCalled();
         });
     });
 });

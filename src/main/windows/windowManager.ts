@@ -367,7 +367,8 @@ export class WindowManager {
 
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
     sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
-        if (!MainWindow.get() || !MainWindow.isReady) {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow || !MainWindow.isReady) {
             if (maxRetries > 0) {
                 log.info(`Can't send ${channel}, will retry`);
                 setTimeout(() => {
@@ -378,7 +379,7 @@ export class WindowManager {
             }
             return;
         }
-        MainWindow.get()?.webContents.send(channel, ...args);
+        mainWindow.webContents.send(channel, ...args);
         SettingsWindow.get()?.webContents.send(channel, ...args);
     }
 
@@ -401,13 +402,12 @@ export class WindowManager {
 
     restoreMain = () => {
         log.info('restoreMain');
-        if (!MainWindow.get()) {
-            this.showMainWindow();
-        }
-        const mainWindow = MainWindow.get();
+
+        const mainWindow = MainWindow.get(true);
         if (!mainWindow) {
             throw new Error('Main window does not exist');
         }
+
         if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
             if (mainWindow.isMinimized()) {
                 mainWindow.restore();

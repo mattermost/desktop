@@ -35,33 +35,17 @@ import MainWindow from 'main/windows/mainWindow';
 export default class DownloadsDropdownMenuView {
     open: boolean;
     view: BrowserView;
-    bounds?: Electron.Rectangle;
+    bounds: Electron.Rectangle;
     item?: DownloadedItem;
     coordinates?: CoordinatesToJsonType;
     darkMode: boolean;
-    windowBounds?: Electron.Rectangle;
+    windowBounds: Electron.Rectangle;
 
     constructor(darkMode: boolean) {
         this.open = false;
         this.item = undefined;
         this.coordinates = undefined;
         this.darkMode = darkMode;
-
-        this.windowBounds = MainWindow.getBounds();
-        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
-
-        const preload = getLocalPreload('desktopAPI.js');
-        this.view = new BrowserView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
-
-        this.view.webContents.loadURL(getLocalURLString('downloadsDropdownMenu.html'));
-        MainWindow.get()?.addBrowserView(this.view);
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
@@ -73,6 +57,27 @@ export default class DownloadsDropdownMenuView {
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, this.cancelDownload);
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, this.clearFile);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, this.updateItem);
+
+        const mainWindow = MainWindow.get();
+        const windowBounds = MainWindow.getBounds();
+        if (!(mainWindow && windowBounds)) {
+            throw new Error('Cannot initialize downloadsDropdownMenuView, missing MainWindow');
+        }
+
+        this.windowBounds = windowBounds;
+        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
+
+        const preload = getLocalPreload('desktopAPI.js');
+        this.view = new BrowserView({webPreferences: {
+            preload,
+
+            // Workaround for this issue: https://github.com/electron/electron/issues/30993
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            transparent: true,
+        }});
+        this.view.webContents.loadURL(getLocalURLString('downloadsDropdownMenu.html'));
+        mainWindow.addBrowserView(this.view);
     }
 
     updateItem = (event: IpcMainEvent, item: DownloadedItem) => {
