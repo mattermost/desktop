@@ -52,6 +52,7 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
+import SettingsWindow from 'main/windows/settingsWindow';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
@@ -259,7 +260,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
     ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
-    ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
+    ipcMain.on(SHOW_SETTINGS_WINDOW, SettingsWindow.show);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);

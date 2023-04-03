@@ -18,8 +18,7 @@ import {
 
 import {WindowManager} from './windowManager';
 import MainWindow from './mainWindow';
-import {createSettingsWindow} from './settingsWindow';
-
+import SettingsWindow from './settingsWindow';
 import CallsWidgetWindow from './callsWidgetWindow';
 
 jest.mock('path', () => ({
@@ -78,7 +77,8 @@ jest.mock('../views/teamDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
 jest.mock('./settingsWindow', () => ({
-    createSettingsWindow: jest.fn(),
+    show: jest.fn(),
+    get: jest.fn(),
 }));
 jest.mock('./mainWindow', () => ({
     get: jest.fn(),
@@ -104,40 +104,6 @@ describe('main/windows/windowManager', () => {
         it('should reload config', () => {
             windowManager.handleUpdateConfig();
             expect(windowManager.viewManager.reloadConfiguration).toHaveBeenCalled();
-        });
-    });
-
-    describe('showSettingsWindow', () => {
-        const windowManager = new WindowManager();
-        windowManager.showMainWindow = jest.fn();
-
-        afterEach(() => {
-            jest.resetAllMocks();
-            delete windowManager.settingsWindow;
-            delete windowManager.mainWindow;
-        });
-
-        it('should show settings window if it exists', () => {
-            const settingsWindow = {show: jest.fn()};
-            windowManager.settingsWindow = settingsWindow;
-            windowManager.showSettingsWindow();
-            expect(settingsWindow.show).toHaveBeenCalled();
-        });
-
-        it('should create windows if they dont exist and delete the settings window when it is closed', () => {
-            let callback;
-            createSettingsWindow.mockReturnValue({on: (event, cb) => {
-                if (event === 'closed') {
-                    callback = cb;
-                }
-            }});
-            windowManager.showSettingsWindow();
-            expect(windowManager.showMainWindow).toHaveBeenCalled();
-            expect(createSettingsWindow).toHaveBeenCalled();
-            expect(windowManager.settingsWindow).toBeDefined();
-
-            callback();
-            expect(windowManager.settingsWindow).toBeUndefined();
         });
     });
 
@@ -418,33 +384,32 @@ describe('main/windows/windowManager', () => {
         });
 
         it('should focus settings window regardless of main window state if it exists', () => {
-            windowManager.settingsWindow = {
-                focus: jest.fn(),
-            };
+            const settingsWindow = {focus: jest.fn()};
+            SettingsWindow.get.mockReturnValue(settingsWindow);
 
             mainWindow.isVisible.mockReturnValue(false);
             mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
-            expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
-            windowManager.settingsWindow.focus.mockClear();
+            expect(settingsWindow.focus).toHaveBeenCalled();
+            settingsWindow.focus.mockClear();
 
             mainWindow.isVisible.mockReturnValue(true);
             mainWindow.isMinimized.mockReturnValue(false);
             windowManager.restoreMain();
-            expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
-            windowManager.settingsWindow.focus.mockClear();
+            expect(settingsWindow.focus).toHaveBeenCalled();
+            settingsWindow.focus.mockClear();
 
             mainWindow.isVisible.mockReturnValue(false);
             mainWindow.isMinimized.mockReturnValue(true);
             windowManager.restoreMain();
-            expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
-            windowManager.settingsWindow.focus.mockClear();
+            expect(settingsWindow.focus).toHaveBeenCalled();
+            settingsWindow.focus.mockClear();
 
             mainWindow.isVisible.mockReturnValue(true);
             mainWindow.isMinimized.mockReturnValue(true);
             windowManager.restoreMain();
-            expect(windowManager.settingsWindow.focus).toHaveBeenCalled();
-            windowManager.settingsWindow.focus.mockClear();
+            expect(settingsWindow.focus).toHaveBeenCalled();
+            settingsWindow.focus.mockClear();
         });
     });
 
@@ -504,13 +469,13 @@ describe('main/windows/windowManager', () => {
             });
 
             systemPreferences.getUserDefault.mockReturnValue('Minimize');
-            windowManager.settingsWindow = settingsWindow;
+            SettingsWindow.get.mockReturnValue(settingsWindow);
 
-            windowManager.settingsWindow.isMinimized.mockReturnValue(false);
+            settingsWindow.isMinimized.mockReturnValue(false);
             windowManager.handleDoubleClick(null, 'settings');
             expect(settingsWindow.minimize).toHaveBeenCalled();
 
-            windowManager.settingsWindow.isMinimized.mockReturnValue(true);
+            settingsWindow.isMinimized.mockReturnValue(true);
             windowManager.handleDoubleClick(null, 'settings');
             expect(settingsWindow.restore).toHaveBeenCalled();
 
