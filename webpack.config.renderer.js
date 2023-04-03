@@ -14,7 +14,7 @@ const {merge} = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 
-const WEBSERVER_PORT = process.env.WEBSERVER_PORT ?? 9001;
+const WEBSERVER_PORT = process.env.WEBSERVER_PORT ?? 9065;
 
 module.exports = merge(base, {
     entry: {
