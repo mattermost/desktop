@@ -4,20 +4,20 @@
 'use strict';
 
 import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
-import {CombinedConfig} from 'types/config';
 
 import WindowManager from 'main/windows/windowManager';
 import {localizeMessage} from 'main/i18nManager';
+import ServerManager from 'common/servers/serverManager';
 import SettingsWindow from 'main/windows/settingsWindow';
 
-export function createTemplate(config: CombinedConfig) {
-    const teams = config.teams;
+export function createTemplate() {
+    const teams = ServerManager.getOrderedServers();
     const template = [
-        ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team) => {
+        ...teams.slice(0, 9).map((team) => {
             return {
                 label: team.name.length > 50 ? `${team.name.slice(0, 50)}...` : team.name,
                 click: () => {
-                    WindowManager.switchServer(team.name);
+                    WindowManager.switchServer(team.id);
                 },
             };
         }), {
@@ -36,7 +36,7 @@ export function createTemplate(config: CombinedConfig) {
     return template;
 }
 
-export function createMenu(config: CombinedConfig) {
+export function createMenu() {
     // Electron is enforcing certain variables that it doesn't need
-    return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
+    return Menu.buildFromTemplate(createTemplate() as Array<MenuItemConstructorOptions | MenuItem>);
 }

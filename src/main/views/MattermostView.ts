@@ -1,12 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app} from 'electron';
+import {BrowserView, app, BrowserWindow} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 
 import {EventEmitter} from 'events';
 
-import Util from 'common/utils/util';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 import {
@@ -19,22 +18,21 @@ import {
     SET_VIEW_OPTIONS,
     LOADSCREEN_END,
     BROWSER_HISTORY_BUTTON,
+    SERVERS_URL_MODIFIED,
 } from 'common/communication';
-import {MattermostServer} from 'common/servers/MattermostServer';
-import {TabView, TabTuple} from 'common/tabs/TabView';
-import logger from 'common/log';
+import ServerManager from 'common/servers/serverManager';
+import {TabView} from 'common/tabs/TabView';
 
-import {ServerInfo} from 'main/server/serverInfo';
+import MainWindow from 'main/windows/mainWindow';
+import WindowManager from 'main/windows/windowManager';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
-import MainWindow from '../windows/mainWindow';
-import WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 
 import WebContentsEventManager from './webContentEvents';
 
-export enum Status {
+enum Status {
     LOADING,
     READY,
     WAITING_MM,
@@ -42,33 +40,28 @@ export enum Status {
 }
 
 const MENTIONS_GROUP = 2;
-const log = logger.withPrefix('MattermostView');
+const titleParser = /(\((\d+)\) )?(\* )?/g;
 
 export class MattermostView extends EventEmitter {
     tab: TabView;
-    view: BrowserView;
     isVisible: boolean;
-    isLoggedIn: boolean;
-    isAtRoot: boolean;
-    options: BrowserViewConstructorOptions;
-    serverInfo: ServerInfo;
 
-    removeLoading?: number;
-
-    currentFavicon?: string;
-    hasBeenShown: boolean;
-    contextMenu: ContextMenu;
-
-    status?: Status;
-    retryLoad?: NodeJS.Timeout;
-    maxRetries: number;
-
+    private view: BrowserView;
+    private window: BrowserWindow;
+    private loggedIn: boolean;
+    private atRoot: boolean;
+    private options: BrowserViewConstructorOptions;
+    private removeLoading?: number;
+    private contextMenu: ContextMenu;
+    private status?: Status;
+    private retryLoad?: NodeJS.Timeout;
+    private maxRetries: number;
     private altPressStatus: boolean;
 
-    constructor(tab: TabView, serverInfo: ServerInfo, options: BrowserViewConstructorOptions) {
+    constructor(tab: TabView, win: BrowserWindow, options: BrowserViewConstructorOptions) {
         super();
         this.tab = tab;
-        this.serverInfo = serverInfo;
+        this.window = win;
 
         const preload = getLocalPreload('preload.js');
         this.options = Object.assign({}, options);
@@ -81,38 +74,23 @@ export class MattermostView extends EventEmitter {
             ...options.webPreferences,
         };
         this.isVisible = false;
-        this.isLoggedIn = false;
-        this.isAtRoot = true;
+        this.loggedIn = false;
+        this.atRoot = true;
         this.view = new BrowserView(this.options);
         this.resetLoadingStatus();
 
-        log.verbose(`BrowserView created for server ${this.tab.name}`);
+        this.log.verbose('MattermostView created');
 
-        this.hasBeenShown = false;
-
+        this.view.webContents.on('did-finish-load', this.handleDidFinishLoad);
+        this.view.webContents.on('page-title-updated', this.handleTitleUpdate);
+        this.view.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
+        this.view.webContents.on('update-target-url', this.handleUpdateTarget);
+        this.view.webContents.on('did-navigate', this.handleDidNavigate);
         if (process.platform !== 'darwin') {
             this.view.webContents.on('before-input-event', this.handleInputEvents);
         }
 
-        this.view.webContents.on('did-finish-load', () => {
-            log.debug('did-finish-load', this.tab.name);
-
-            // wait for screen to truly finish loading before sending the message down
-            const timeout = setInterval(() => {
-                if (!this.view.webContents) {
-                    return;
-                }
-
-                if (!this.view.webContents.isLoading()) {
-                    try {
-                        this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
-                        clearTimeout(timeout);
-                    } catch (e) {
-                        log.error('failed to send view options to view', this.tab.name);
-                    }
-                }
-            }, 100);
-        });
+        WebContentsEventManager.addWebContentsEventListeners(this.view.webContents);
 
         this.contextMenu = new ContextMenu({}, this.view);
         this.maxRetries = MAX_SERVER_RETRIES;
@@ -122,38 +100,75 @@ export class MattermostView extends EventEmitter {
         MainWindow.get()?.on('blur', () => {
             this.altPressStatus = false;
         });
+
+        ServerManager.on(SERVERS_URL_MODIFIED, this.handleServerWasModified);
     }
 
-    // use the same name as the server
-    // TODO: we'll need unique identifiers if we have multiple instances of the same server in different tabs (1:N relationships)
-    get name() {
-        return this.tab.name;
+    private get log() {
+        return ServerManager.getViewLog(this.id, 'MattermostView');
     }
-
-    get urlTypeTuple(): TabTuple {
-        return this.tab.urlTypeTuple;
+    get id() {
+        return this.tab.id;
     }
-
+    get isAtRoot() {
+        return this.atRoot;
+    }
+    get isLoggedIn() {
+        return this.loggedIn;
+    }
+    get currentURL() {
+        return this.view.webContents.getURL();
+    }
     get webContentsId() {
         return this.view.webContents.id;
     }
 
-    sendToRenderer = (channel: string, ...args: any[]) => {
-        this.view.webContents.send(channel, ...args);
-    }
-
-    updateServerInfo = (srv: MattermostServer) => {
-        this.tab.server = srv;
-        this.serverInfo = new ServerInfo(srv);
-        this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.name, this.tab.shouldNotify);
-    }
-
-    resetLoadingStatus = () => {
-        if (this.status !== Status.LOADING) { // if it's already loading, don't touch anything
-            delete this.retryLoad;
-            this.status = Status.LOADING;
-            this.maxRetries = MAX_SERVER_RETRIES;
+    onLogin = (loggedIn: boolean) => {
+        if (this.isLoggedIn === loggedIn) {
+            return;
         }
+
+        this.loggedIn = loggedIn;
+
+        // If we're logging in from a different tab, force a reload
+        if (loggedIn &&
+            this.currentURL !== this.tab.url.toString() &&
+            !this.currentURL.startsWith(this.tab.url.toString())
+        ) {
+            this.reload();
+        }
+    }
+
+    goToOffset = (offset: number) => {
+        if (this.view.webContents.canGoToOffset(offset)) {
+            try {
+                this.view.webContents.goToOffset(offset);
+                this.updateHistoryButton();
+            } catch (error) {
+                this.log.error(error);
+                this.reload();
+            }
+        }
+    }
+
+    updateHistoryButton = () => {
+        if (urlUtils.parseURL(this.currentURL)?.toString() === this.tab.url.toString()) {
+            this.view.webContents.clearHistory();
+            this.atRoot = true;
+        } else {
+            this.atRoot = false;
+        }
+        this.view.webContents.send(BROWSER_HISTORY_BUTTON, this.view.webContents.canGoBack(), this.view.webContents.canGoForward());
+    }
+
+    updateTabView = (tab: TabView) => {
+        let reload;
+        if (tab.url.toString() !== this.tab.url.toString()) {
+            reload = () => this.reload();
+        }
+        this.tab = tab;
+        this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.id, this.tab.shouldNotify);
+        reload?.();
     }
 
     load = (someURL?: URL | string) => {
@@ -167,19 +182,19 @@ export class MattermostView extends EventEmitter {
             if (parsedURL) {
                 loadURL = parsedURL.toString();
             } else {
-                log.error('Cannot parse provided url, using current server url', someURL);
+                this.log.error('Cannot parse provided url, using current server url', someURL);
                 loadURL = this.tab.url.toString();
             }
         } else {
             loadURL = this.tab.url.toString();
         }
-        log.verbose(`[${Util.shorten(this.tab.name)}] Loading ${loadURL}`);
+        this.log.verbose(`Loading ${loadURL}`);
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
-                WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
-                this.emit(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
-                log.info(`[${Util.shorten(this.tab.name)}] Invalid certificate, stop retrying until the user decides what to do: ${err}.`);
+                WindowManager.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                this.log.info('Invalid certificate, stop retrying until the user decides what to do.', err);
                 this.status = Status.ERROR;
                 return;
             }
@@ -191,75 +206,23 @@ export class MattermostView extends EventEmitter {
         });
     }
 
-    retry = (loadURL: string) => {
-        return () => {
-            // window was closed while retrying
-            if (!this.view || !this.view.webContents) {
-                return;
-            }
-            const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
-            loading.then(this.loadSuccess(loadURL)).catch((err) => {
-                if (this.maxRetries-- > 0) {
-                    this.loadRetry(loadURL, err);
-                } else {
-                    WindowManager.sendToRenderer(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
-                    this.emit(LOAD_FAILED, this.tab.name, err.toString(), loadURL.toString());
-                    log.info(`[${Util.shorten(this.tab.name)}] Couldn't establish a connection with ${loadURL}: ${err}. Will continue to retry in the background.`);
-                    this.status = Status.ERROR;
-                    this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
-                }
-            });
-        };
-    }
-
-    retryInBackground = (loadURL: string) => {
-        return () => {
-            // window was closed while retrying
-            if (!this.view || !this.view.webContents) {
-                return;
-            }
-            const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
-            loading.then(this.loadSuccess(loadURL)).catch(() => {
-                this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
-            });
-        };
-    }
-
-    loadRetry = (loadURL: string, err: Error) => {
-        this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
-        WindowManager.sendToRenderer(LOAD_RETRY, this.tab.name, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
-        log.info(`[${Util.shorten(this.tab.name)}] failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
-    }
-
-    loadSuccess = (loadURL: string) => {
-        return () => {
-            log.verbose(`[${Util.shorten(this.tab.name)}] finished loading ${loadURL}`);
-            WindowManager.sendToRenderer(LOAD_SUCCESS, this.tab.name);
-            this.maxRetries = MAX_SERVER_RETRIES;
-            if (this.status === Status.LOADING) {
-                this.updateMentionsFromTitle(this.view.webContents.getTitle());
-                this.findUnreadState(null);
-            }
-            this.status = Status.WAITING_MM;
-            this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
-            this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
-            this.setBounds(getWindowBoundaries(MainWindow.get()!, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
-        };
-    }
-
-    show = (requestedVisibility?: boolean) => {
-        this.hasBeenShown = true;
-        const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
-        if (request && !this.isVisible) {
-            MainWindow.get()?.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(MainWindow.get()!, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
+    show = () => {
+        if (!this.isVisible) {
+            this.isVisible = true;
+            this.window.addBrowserView(this.view);
+            this.window.setTopBrowserView(this.view);
+            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.tab.url || '', this.currentURL)));
             if (this.status === Status.READY) {
                 this.focus();
             }
-        } else if (!request && this.isVisible) {
-            MainWindow.get()?.removeBrowserView(this.view);
         }
-        this.isVisible = request;
+    }
+
+    hide = () => {
+        if (this.isVisible) {
+            this.isVisible = false;
+            this.window.removeBrowserView(this.view);
+        }
     }
 
     reload = () => {
@@ -267,32 +230,12 @@ export class MattermostView extends EventEmitter {
         this.load();
     }
 
-    hide = () => this.show(false);
+    getBounds = () => {
+        return this.view.getBounds();
+    }
 
     openFind = () => {
         this.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
-    }
-
-    goToOffset = (offset: number) => {
-        if (this.view.webContents.canGoToOffset(offset)) {
-            try {
-                this.view.webContents.goToOffset(offset);
-                this.updateHistoryButton();
-            } catch (error) {
-                log.error(error);
-                this.reload();
-            }
-        }
-    }
-
-    updateHistoryButton = () => {
-        if (urlUtils.parseURL(this.view.webContents.getURL())?.toString() === this.tab.url.toString()) {
-            this.view.webContents.clearHistory();
-            this.isAtRoot = true;
-        } else {
-            this.isAtRoot = false;
-        }
-        this.view.webContents.send(BROWSER_HISTORY_BUTTON, this.view.webContents.canGoBack(), this.view.webContents.canGoForward());
     }
 
     setBounds = (boundaries: Electron.Rectangle) => {
@@ -300,9 +243,11 @@ export class MattermostView extends EventEmitter {
     }
 
     destroy = () => {
-        WebContentsEventManager.removeWebContentsListeners(this.view.webContents.id);
-        appState.updateMentions(this.tab.name, 0, false);
-        MainWindow.get()?.removeBrowserView(this.view);
+        WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
+        appState.updateMentions(this.id, 0, false);
+        if (this.window) {
+            this.window.removeBrowserView(this.view);
+        }
 
         // workaround to eliminate zombie processes
         // https://github.com/mattermost/desktop/pull/1519
@@ -317,13 +262,19 @@ export class MattermostView extends EventEmitter {
         if (this.removeLoading) {
             clearTimeout(this.removeLoading);
         }
+
+        this.contextMenu.dispose();
     }
 
-    focus = () => {
-        if (this.view.webContents) {
-            this.view.webContents.focus();
-        } else {
-            log.warn('trying to focus the browserview, but it doesn\'t yet have webcontents.');
+    /**
+     * Status hooks
+     */
+
+    resetLoadingStatus = () => {
+        if (this.status !== Status.LOADING) { // if it's already loading, don't touch anything
+            delete this.retryLoad;
+            this.status = Status.LOADING;
+            this.maxRetries = MAX_SERVER_RETRIES;
         }
     }
 
@@ -343,24 +294,40 @@ export class MattermostView extends EventEmitter {
         this.status = Status.READY;
 
         if (timedout) {
-            log.info(`${this.tab.name} timeout expired will show the browserview`);
-            this.emit(LOADSCREEN_END, this.tab.name);
+            this.log.verbose('timeout expired will show the browserview');
+            this.emit(LOADSCREEN_END, this.id);
         }
         clearTimeout(this.removeLoading);
         delete this.removeLoading;
-    }
-
-    isInitialized = () => {
-        return this.status === Status.READY;
     }
 
     openDevTools = () => {
         this.view.webContents.openDevTools({mode: 'detach'});
     }
 
-    getWebContents = () => {
-        return this.view.webContents;
+    /**
+     * WebContents hooks
+     */
+
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.view.webContents.send(channel, ...args);
     }
+
+    isDestroyed = () => {
+        return this.view.webContents.isDestroyed();
+    }
+
+    focus = () => {
+        if (this.view.webContents) {
+            this.view.webContents.focus();
+        } else {
+            this.log.warn('trying to focus the browserview, but it doesn\'t yet have webcontents.');
+        }
+    }
+
+    /**
+     * ALT key handling for the 3-dot menu (Windows/Linux)
+     */
 
     private registerAltKeyPressed = (input: Input) => {
         const isAltPressed = input.key === 'Alt' && input.alt === true && input.control === false && input.shift === false && input.meta === false;
@@ -378,8 +345,8 @@ export class MattermostView extends EventEmitter {
         return input.type === 'keyUp' && this.altPressStatus === true;
     };
 
-    handleInputEvents = (_: Event, input: Input) => {
-        log.silly('handleInputEvents', {tabName: this.tab.name, input});
+    private handleInputEvents = (_: Event, input: Input) => {
+        this.log.silly('handleInputEvents', input);
 
         this.registerAltKeyPressed(input);
 
@@ -388,22 +355,141 @@ export class MattermostView extends EventEmitter {
         }
     }
 
-    handleDidNavigate = (event: Event, url: string) => {
-        log.debug('handleDidNavigate', {tabName: this.tab.name, url});
+    /**
+     * Unreads/mentions handlers
+     */
+
+    private updateMentionsFromTitle = (title: string) => {
+        const resultsIterator = title.matchAll(titleParser);
+        const results = resultsIterator.next(); // we are only interested in the first set
+        const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
+
+        appState.updateMentions(this.id, mentions);
+    }
+
+    // if favicon is null, it will affect appState, but won't be memoized
+    private findUnreadState = (favicon: string | null) => {
+        try {
+            this.view.webContents.send(IS_UNREAD, favicon, this.id);
+        } catch (err: any) {
+            this.log.error('There was an error trying to request the unread state', err);
+        }
+    }
+
+    private handleTitleUpdate = (e: Event, title: string) => {
+        this.log.debug('handleTitleUpdate', title);
+
+        this.updateMentionsFromTitle(title);
+    }
+
+    private handleFaviconUpdate = (e: Event, favicons: string[]) => {
+        this.log.silly('handleFaviconUpdate', favicons);
+
+        // if unread state is stored for that favicon, retrieve value.
+        // if not, get related info from preload and store it for future changes
+        this.findUnreadState(favicons[0]);
+    }
+
+    /**
+     * Loading/retry logic
+     */
+
+    private retry = (loadURL: string) => {
+        return () => {
+            // window was closed while retrying
+            if (!this.view || !this.view.webContents) {
+                return;
+            }
+            const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+            loading.then(this.loadSuccess(loadURL)).catch((err) => {
+                if (this.maxRetries-- > 0) {
+                    this.loadRetry(loadURL, err);
+                } else {
+                    WindowManager.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                    this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                    this.log.info(`Couldn't establish a connection with ${loadURL}, will continue to retry in the background`, err);
+                    this.status = Status.ERROR;
+                    this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
+                }
+            });
+        };
+    }
+
+    private retryInBackground = (loadURL: string) => {
+        return () => {
+            // window was closed while retrying
+            if (!this.view || !this.view.webContents) {
+                return;
+            }
+            const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+            loading.then(this.loadSuccess(loadURL)).catch(() => {
+                this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
+            });
+        };
+    }
+
+    private loadRetry = (loadURL: string, err: Error) => {
+        this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
+        WindowManager.sendToRenderer(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
+        this.log.info(`failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
+    }
+
+    private loadSuccess = (loadURL: string) => {
+        return () => {
+            this.log.verbose(`finished loading ${loadURL}`);
+            WindowManager.sendToRenderer(LOAD_SUCCESS, this.id);
+            this.maxRetries = MAX_SERVER_RETRIES;
+            if (this.status === Status.LOADING) {
+                this.updateMentionsFromTitle(this.view.webContents.getTitle());
+                this.findUnreadState(null);
+            }
+            this.status = Status.WAITING_MM;
+            this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
+            this.emit(LOAD_SUCCESS, this.id, loadURL);
+            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.tab.url || '', this.currentURL)));
+        };
+    }
+
+    /**
+     * WebContents event handlers
+     */
+
+    private handleDidFinishLoad = () => {
+        this.log.debug('did-finish-load', this.tab.id);
+
+        // wait for screen to truly finish loading before sending the message down
+        const timeout = setInterval(() => {
+            if (!this.view.webContents) {
+                return;
+            }
+
+            if (!this.view.webContents.isLoading()) {
+                try {
+                    this.view.webContents.send(SET_VIEW_OPTIONS, this.tab.id, this.tab.shouldNotify);
+                    clearTimeout(timeout);
+                } catch (e) {
+                    this.log.error('failed to send view options to view');
+                }
+            }
+        }, 100);
+    }
+
+    private handleDidNavigate = (event: Event, url: string) => {
+        this.log.debug('handleDidNavigate', url);
 
         if (shouldHaveBackBar(this.tab.url || '', url)) {
             this.setBounds(getWindowBoundaries(MainWindow.get()!, true));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, true);
-            log.info('show back button');
+            this.log.debug('show back button');
         } else {
             this.setBounds(getWindowBoundaries(MainWindow.get()!));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
-            log.info('hide back button');
+            this.log.debug('hide back button');
         }
     }
 
-    handleUpdateTarget = (e: Event, url: string) => {
-        log.silly('handleUpdateTarget', {tabName: this.tab.name, url});
+    private handleUpdateTarget = (e: Event, url: string) => {
+        this.log.silly('handleUpdateTarget', url);
         if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
         } else {
@@ -411,38 +497,9 @@ export class MattermostView extends EventEmitter {
         }
     }
 
-    titleParser = /(\((\d+)\) )?(\* )?/g
-
-    handleTitleUpdate = (e: Event, title: string) => {
-        log.debug('handleTitleUpdate', {tabName: this.tab.name, title});
-
-        this.updateMentionsFromTitle(title);
-    }
-
-    updateMentionsFromTitle = (title: string) => {
-        const resultsIterator = title.matchAll(this.titleParser);
-        const results = resultsIterator.next(); // we are only interested in the first set
-        const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
-
-        appState.updateMentions(this.tab.name, mentions);
-    }
-
-    handleFaviconUpdate = (e: Event, favicons: string[]) => {
-        log.silly('handleFaviconUpdate', {tabName: this.tab.name, favicons});
-
-        // if unread state is stored for that favicon, retrieve value.
-        // if not, get related info from preload and store it for future changes
-        this.currentFavicon = favicons[0];
-        this.findUnreadState(favicons[0]);
-    }
-
-    // if favicon is null, it will affect appState, but won't be memoized
-    findUnreadState = (favicon: string | null) => {
-        try {
-            this.view.webContents.send(IS_UNREAD, favicon, this.tab.name);
-        } catch (err: any) {
-            log.error(`There was an error trying to request the unread state: ${err}`);
-            log.error(err.stack);
+    private handleServerWasModified = (serverIds: string) => {
+        if (serverIds.includes(this.tab.server.id)) {
+            this.reload();
         }
     }
 }

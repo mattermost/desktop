@@ -137,7 +137,7 @@ describe('Add Server Modal', function desc() {
             const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
             savedConfig.teams.should.deep.contain({
                 name: 'TestTeam',
-                url: 'http://example.org',
+                url: 'http://example.org/',
                 order: 2,
                 tabs: [
                     {

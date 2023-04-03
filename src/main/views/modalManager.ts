@@ -17,7 +17,6 @@ import {
     GET_MODAL_UNCLOSEABLE,
     RESIZE_MODAL,
 } from 'common/communication';
-import Config from 'common/config';
 import logger from 'common/log';
 
 import {getAdjustedWindowBoundaries} from 'main/utils';
@@ -91,7 +90,7 @@ export class ModalManager {
             if (index === 0) {
                 WindowManager.sendToRenderer(MODAL_OPEN);
                 modal.show(undefined, Boolean(withDevTools));
-                WebContentsEventManager.addWebContentsEventListeners(modal.view.webContents, () => Config.teams.concat());
+                WebContentsEventManager.addWebContentsEventListeners(modal.view.webContents);
             } else {
                 WindowManager.sendToRenderer(MODAL_CLOSE);
                 modal.hide();

@@ -7,7 +7,7 @@ import 'renderer/css/modals.css';
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
-import {TeamWithIndex} from 'types/config';
+import {MattermostTeam} from 'types/config';
 
 import IntlProvider from 'renderer/intl_provider';
 
@@ -18,21 +18,21 @@ import setupDarkMode from '../darkMode';
 setupDarkMode();
 
 type ModalInfo = {
-    team: TeamWithIndex;
-    currentTeams: TeamWithIndex[];
+    team: MattermostTeam;
+    currentTeams: MattermostTeam[];
 };
 
 const onClose = () => {
     window.desktop.modals.cancelModal();
 };
 
-const onSave = (data: TeamWithIndex) => {
+const onSave = (data: MattermostTeam) => {
     window.desktop.modals.finishModal(data);
 };
 
 const EditServerModalWrapper: React.FC = () => {
-    const [server, setServer] = useState<TeamWithIndex>();
-    const [currentTeams, setCurrentTeams] = useState<TeamWithIndex[]>();
+    const [server, setServer] = useState<MattermostTeam>();
+    const [currentTeams, setCurrentTeams] = useState<MattermostTeam[]>();
 
     useEffect(() => {
         window.desktop.modals.getModalInfo<ModalInfo>().then(({team, currentTeams}) => {

@@ -3,32 +3,23 @@
 
 import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 
-import {Team, TeamWithIndex} from 'types/config';
+import {Team, MattermostTeam} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
 import logger from 'common/log';
-import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
+import ServerManager from 'common/servers/serverManager';
 import ModalManager from 'main/views/modalManager';
-import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {handleAppBeforeQuit} from './app';
-import {updateServerInfos} from './utils';
 
 const log = logger.withPrefix('App.Intercom');
-
-export function handleReloadConfig() {
-    log.debug('handleReloadConfig');
-
-    Config.reload();
-    ViewManager.reloadConfiguration();
-}
 
 export function handleAppVersion() {
     return {
@@ -44,52 +35,50 @@ export function handleQuit(e: IpcMainEvent, reason: string, stack: string) {
     app.quit();
 }
 
-export function handleSwitchServer(event: IpcMainEvent, serverName: string) {
-    log.silly('handleSwitchServer', serverName);
-    WindowManager.switchServer(serverName);
+export function handleSwitchServer(event: IpcMainEvent, serverId: string) {
+    log.silly('handleSwitchServer', serverId);
+    WindowManager.switchServer(serverId);
 }
 
-export function handleSwitchTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.silly('handleSwitchTab', {serverName, tabName});
-    WindowManager.switchTab(serverName, tabName);
+export function handleSwitchTab(event: IpcMainEvent, tabId: string) {
+    log.silly('handleSwitchTab', {tabId});
+    WindowManager.switchTab(tabId);
 }
 
-export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.debug('handleCloseTab', {serverName, tabName});
+export function handleCloseTab(event: IpcMainEvent, tabId: string) {
+    log.debug('handleCloseTab', {tabId});
 
-    const teams = Config.teams;
-    teams.forEach((team) => {
-        if (team.name === serverName) {
-            team.tabs.forEach((tab) => {
-                if (tab.name === tabName) {
-                    tab.isOpen = false;
-                }
-            });
-        }
-    });
-    const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
-    WindowManager.switchTab(serverName, nextTab);
-    Config.set('teams', teams);
+    const tab = ServerManager.getTab(tabId);
+    if (!tab) {
+        return;
+    }
+    ServerManager.toggleTab(tabId, false);
+    const nextTab = ServerManager.getLastActiveTabForServer(tab.server.id);
+    WindowManager.switchTab(nextTab.id);
 }
 
-export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.debug('IhandleOpenTab', {serverName, tabName});
+export function handleOpenTab(event: IpcMainEvent, tabId: string) {
+    log.debug('handleOpenTab', {tabId});
 
-    const teams = Config.teams;
-    teams.forEach((team) => {
-        if (team.name === serverName) {
-            team.tabs.forEach((tab) => {
-                if (tab.name === tabName) {
-                    tab.isOpen = true;
-                }
-            });
-        }
-    });
-    WindowManager.switchTab(serverName, tabName);
-    Config.set('teams', teams);
+    ServerManager.toggleTab(tabId, true);
+    WindowManager.switchTab(tabId);
 }
 
-export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
+export function handleGetOrderedServers() {
+    return ServerManager.getOrderedServers().map((srv) => srv.toMattermostTeam());
+}
+
+export function handleGetOrderedTabsForServer(event: IpcMainInvokeEvent, serverId: string) {
+    return ServerManager.getOrderedTabsForServer(serverId).map((tab) => tab.toMattermostTab());
+}
+
+export function handleGetLastActive() {
+    const server = ServerManager.getCurrentServer();
+    const tab = ServerManager.getLastActiveTabForServer(server.id);
+    return {server: server.id, tab: tab.id};
+}
+
+function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
     log.debug('handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
 
     if (showWelcomeScreen) {
@@ -117,8 +106,8 @@ export function handleMainWindowIsShown() {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const showWelcomeScreen = () => !(Boolean(__SKIP_ONBOARDING_SCREENS__) || Config.teams.length);
-    const showNewServerModal = () => Config.teams.length === 0;
+    const showWelcomeScreen = () => !(Boolean(__SKIP_ONBOARDING_SCREENS__) || ServerManager.hasServers());
+    const showNewServerModal = () => !ServerManager.hasServers();
 
     /**
      * The 2 lines above need to be functions, otherwise the mainWindow.once() callback from previous
@@ -127,7 +116,7 @@ export function handleMainWindowIsShown() {
 
     const mainWindow = MainWindow.get();
 
-    log.debug('handleMainWindowIsShown', {configTeams: Config.teams, showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
+    log.debug('handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
         handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
     } else {
@@ -148,16 +137,11 @@ export function handleNewServerModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('newServer', html, preload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
+    const modalPromise = ModalManager.addModal<MattermostTeam[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team) => team.toMattermostTeam()), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = Config.teams;
-            const order = teams.length;
-            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
-            teams.push(newTeam);
-            Config.set('teams', teams);
-            updateServerInfos([newTeam]);
-            WindowManager.switchServer(newTeam.name, true);
+            const newTeam = ServerManager.addServer(data);
+            WindowManager.switchServer(newTeam.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -169,8 +153,8 @@ export function handleNewServerModal() {
     }
 }
 
-export function handleEditServerModal(e: IpcMainEvent, name: string) {
-    log.debug('handleEditServerModal', name);
+export function handleEditServerModal(e: IpcMainEvent, id: string) {
+    log.debug('handleEditServerModal', id);
 
     const html = getLocalURLString('editServer.html');
 
@@ -180,27 +164,21 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
     if (!mainWindow) {
         return;
     }
-    const serverIndex = Config.teams.findIndex((team) => team.name === name);
-    if (serverIndex < 0) {
+    const server = ServerManager.getServer(id);
+    if (!server) {
         return;
     }
-    const modalPromise = ModalManager.addModal<{currentTeams: TeamWithIndex[]; team: TeamWithIndex}, Team>(
+    const modalPromise = ModalManager.addModal<{currentTeams: MattermostTeam[]; team: MattermostTeam}, Team>(
         'editServer',
         html,
         preload,
         {
-            currentTeams: Config.teams.map((team, index) => ({...team, index})),
-            team: {...Config.teams[serverIndex], index: serverIndex},
+            currentTeams: ServerManager.getAllServers().map((team) => team.toMattermostTeam()),
+            team: server.toMattermostTeam(),
         },
         mainWindow);
     if (modalPromise) {
-        modalPromise.then((data) => {
-            const teams = Config.teams;
-            teams[serverIndex].name = data.name;
-            teams[serverIndex].url = data.url;
-            Config.set('teams', teams);
-            updateServerInfos([teams[serverIndex]]);
-        }).catch((e) => {
+        modalPromise.then((data) => ServerManager.editServer(id, data)).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
                 log.error(`there was an error in the edit server modal: ${e}`);
@@ -211,34 +189,26 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
     }
 }
 
-export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
-    log.debug('handleRemoveServerModal', name);
+export function handleRemoveServerModal(e: IpcMainEvent, id: string) {
+    log.debug('handleRemoveServerModal', id);
 
     const html = getLocalURLString('removeServer.html');
 
     const preload = getLocalPreload('desktopAPI.js');
 
+    const server = ServerManager.getServer(id);
+    if (!server) {
+        return;
+    }
     const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<string, boolean>('removeServer', html, preload, name, mainWindow);
+    const modalPromise = ModalManager.addModal<string, boolean>('removeServer', html, preload, server.name, mainWindow);
     if (modalPromise) {
         modalPromise.then((remove) => {
             if (remove) {
-                const teams = Config.teams;
-                const removedTeam = teams.findIndex((team) => team.name === name);
-                if (removedTeam < 0) {
-                    return;
-                }
-                const removedOrder = teams[removedTeam].order;
-                teams.splice(removedTeam, 1);
-                teams.forEach((value) => {
-                    if (value.order > removedOrder) {
-                        value.order--;
-                    }
-                });
-                Config.set('teams', teams);
+                ServerManager.removeServer(server.id);
             }
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -262,16 +232,11 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<TeamWithIndex[], Team>('welcomeScreen', html, preload, Config.teams.map((team, index) => ({...team, index})), mainWindow, Config.teams.length === 0);
+    const modalPromise = ModalManager.addModal<MattermostTeam[], MattermostTeam>('welcomeScreen', html, preload, ServerManager.getAllServers().map((team) => team.toMattermostTeam()), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
-            const teams = Config.teams;
-            const order = teams.length;
-            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
-            teams.push(newTeam);
-            Config.set('teams', teams);
-            updateServerInfos([newTeam]);
-            WindowManager.switchServer(newTeam.name, true);
+            const newTeam = ServerManager.addServer(data);
+            WindowManager.switchServer(newTeam.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -314,20 +279,10 @@ export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom:
     return result.filePaths[0];
 }
 
-export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, viewName: string) {
-    log.debug('handleUpdateLastActive', {serverName, viewName});
+export function handleUpdateLastActive(event: IpcMainEvent, tabId: string) {
+    log.debug('handleUpdateLastActive', {tabId});
 
-    const teams = Config.teams;
-    teams.forEach((team) => {
-        if (team.name === serverName) {
-            const viewOrder = team?.tabs.find((tab) => tab.name === viewName)?.order || 0;
-            team.lastActiveTab = viewOrder;
-        }
-    });
-    Config.setMultiple({
-        teams,
-        lastActiveTeam: teams.find((team) => team.name === serverName)?.order || 0,
-    });
+    ServerManager.updateLastActive(tabId);
 }
 
 export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {

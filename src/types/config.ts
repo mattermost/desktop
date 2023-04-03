@@ -11,22 +11,24 @@ export type Team = {
     url: string;
 }
 
-export type FullTeam = Team & {
-    order: number;
-    lastActiveTab?: number;
-}
-
 export type ConfigTab = Tab & {
     order: number;
 }
 
-export type ConfigTeam = FullTeam & {
+export type ConfigTeam = Team & {
+    order: number;
+    lastActiveTab?: number;
     tabs: ConfigTab[];
 }
 
-export type TeamWithIndex = FullTeam & {index: number};
-export type TeamWithTabs = ConfigTeam & {tabs: Tab[]};
-export type TeamWithTabsAndGpo = TeamWithTabs & {isGpo?: boolean};
+export type MattermostTeam = Team & {
+    id?: string;
+    isPredefined?: boolean;
+}
+
+export type MattermostTab = Tab & {
+    id?: string;
+}
 
 export type Config = ConfigV3;
 
@@ -111,7 +113,7 @@ export type ConfigV0 = {version: 0; url: string};
 export type AnyConfig = ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
 
 export type BuildConfig = {
-    defaultTeams?: FullTeam[];
+    defaultTeams?: Team[];
     helpLink: string;
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
@@ -120,13 +122,12 @@ export type BuildConfig = {
 }
 
 export type RegistryConfig = {
-    teams: FullTeam[];
+    teams: Team[];
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
 }
 
-export type CombinedConfig = ConfigV3 & BuildConfig & {
-    registryTeams: Team[];
+export type CombinedConfig = Omit<ConfigV3, 'teams'> & Omit<BuildConfig, 'defaultTeams'> & {
     appName: string;
     useNativeWindow: boolean;
 }

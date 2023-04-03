@@ -62,6 +62,7 @@ jest.mock('electron', () => {
     };
 });
 jest.mock('main/downloadsManager', () => ({
+    getDownloads: jest.fn(),
     onOpen: jest.fn(),
     onClose: jest.fn(),
 }));

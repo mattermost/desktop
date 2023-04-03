@@ -9,17 +9,16 @@ import urlUtils from 'common/utils/url';
 
 import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
+import ServerManager from 'common/servers/serverManager';
 
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import WindowManager from 'main/windows/windowManager';
+import ViewManager from 'main/views/viewManager';
 
 import {protocols} from '../../../electron-builder.json';
 
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
-
-import {MattermostView} from './MattermostView';
-import ViewManager from './viewManager';
 
 type CustomLogin = {
     inProgress: boolean;
@@ -38,6 +37,12 @@ export class WebContentsEventManager {
     }
 
     private log = (webContentsId?: number) => {
+        if (webContentsId) {
+            const view = ViewManager.getViewByWebContentsId(webContentsId);
+            if (view) {
+                return ServerManager.getViewLog(view.id, 'WebContentsEventManager');
+            }
+        }
         return logger.withPrefix('WebContentsEventManager', String(webContentsId));
     }
 
@@ -56,7 +61,7 @@ export class WebContentsEventManager {
         return WindowManager.getServerURLFromWebContentsId(webContentsId);
     }
 
-    generateWillNavigate = (webContentsId: number) => {
+    private generateWillNavigate = (webContentsId: number) => {
         return (event: Event, url: string) => {
             this.log(webContentsId).debug('will-navigate', url);
 
@@ -92,9 +97,9 @@ export class WebContentsEventManager {
         };
     };
 
-    generateDidStartNavigation = (webContentsId: number) => {
+    private generateDidStartNavigation = (webContentsId: number) => {
         return (event: Event, url: string) => {
-            this.log(webContentsId).debug('did-start-navigation', {webContentsId, url});
+            this.log(webContentsId).debug('did-start-navigation', url);
 
             const parsedURL = urlUtils.parseURL(url)!;
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
@@ -111,12 +116,12 @@ export class WebContentsEventManager {
         };
     };
 
-    denyNewWindow = (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
+    private denyNewWindow = (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
         this.log().warn(`Prevented popup window to open a new window to ${details.url}.`);
         return {action: 'deny'};
     };
 
-    generateNewWindowListener = (webContentsId: number, spellcheck?: boolean) => {
+    private generateNewWindowListener = (webContentsId: number, spellcheck?: boolean) => {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
             this.log(webContentsId).debug('new-window', details.url);
 
@@ -196,7 +201,7 @@ export class WebContentsEventManager {
                     this.popupWindow = {
                         win: new BrowserWindow({
                             backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
-                            //parent: WindowManager.getMainWindow(),
+                            //parent: MainWindow.get(),
                             show: false,
                             center: true,
                             webPreferences: {
@@ -247,7 +252,7 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            const otherServerURL = ViewManager.getViewByURL(parsedURL);
+            const otherServerURL = ServerManager.lookupTabByURL(parsedURL);
             if (otherServerURL && urlUtils.isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
                 WindowManager.showMainWindow(parsedURL);
                 return {action: 'deny'};
@@ -263,24 +268,6 @@ export class WebContentsEventManager {
         if (this.listeners[id]) {
             this.listeners[id]();
         }
-    };
-
-    addMattermostViewEventListeners = (mmview: MattermostView) => {
-        this.addWebContentsEventListeners(
-            mmview.view.webContents,
-            (contents: WebContents) => {
-                contents.on('page-title-updated', mmview.handleTitleUpdate);
-                contents.on('page-favicon-updated', mmview.handleFaviconUpdate);
-                contents.on('update-target-url', mmview.handleUpdateTarget);
-                contents.on('did-navigate', mmview.handleDidNavigate);
-            },
-            (contents: WebContents) => {
-                contents.removeListener('page-title-updated', mmview.handleTitleUpdate);
-                contents.removeListener('page-favicon-updated', mmview.handleFaviconUpdate);
-                contents.removeListener('update-target-url', mmview.handleUpdateTarget);
-                contents.removeListener('did-navigate', mmview.handleDidNavigate);
-            },
-        );
     };
 
     addWebContentsEventListeners = (

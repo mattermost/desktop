@@ -18,6 +18,7 @@ import {
     GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
 } from 'common/communication';
+import Config from 'common/config';
 import logger from 'common/log';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
@@ -36,9 +37,9 @@ export default class DownloadsDropdownView {
     view: BrowserView;
     windowBounds?: Electron.Rectangle;
 
-    constructor(downloads: DownloadedItems, darkMode: boolean) {
-        this.downloads = downloads;
-        this.darkMode = darkMode;
+    constructor() {
+        this.downloads = downloadsManager.getDownloads();
+        this.darkMode = Config.darkMode;
         this.item = undefined;
 
         this.windowBounds = MainWindow.getBounds();

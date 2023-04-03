@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, ipcMain} from 'electron';
+import {app, ipcMain, nativeTheme} from 'electron';
 
-import {CombinedConfig} from 'types/config';
+import {CombinedConfig, Config as ConfigType} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
@@ -13,18 +13,51 @@ import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
 import {refreshTrayImages} from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
-import ViewManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleMainWindowIsShown} from './intercom';
-import {handleUpdateMenuEvent, updateServerInfos, updateSpellCheckerLocales} from './utils';
+import {handleUpdateMenuEvent, updateSpellCheckerLocales} from './utils';
 
 const log = logger.withPrefix('App.Config');
 
 //
 // config event handlers
 //
+
+export function handleGetConfiguration() {
+    log.debug('handleGetConfiguration');
+
+    return Config.data;
+}
+
+export function handleGetLocalConfiguration() {
+    log.debug('handleGetLocalConfiguration');
+
+    return {
+        ...Config.localData,
+        appName: app.name,
+        enableServerManagement: Config.enableServerManagement,
+        canUpgrade: Config.canUpgrade,
+    };
+}
+
+export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []) {
+    log.debug('updateConfiguration', properties);
+
+    if (properties.length) {
+        const newData = properties.reduce((obj, data) => {
+            (obj as any)[data.key] = data.data;
+            return obj;
+        }, {} as Partial<ConfigType>);
+        Config.setMultiple(newData);
+    }
+}
+
+export function handleUpdateTheme() {
+    log.debug('Config.handleUpdateTheme');
+
+    Config.set('darkMode', nativeTheme.shouldUseDarkColors);
+}
 
 export function handleConfigUpdate(newConfig: CombinedConfig) {
     if (newConfig.logLevel) {
@@ -39,9 +72,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     }
 
     if (app.isReady()) {
-        if (MainWindow.get()) {
-            ViewManager.reloadConfiguration();
-        }
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
@@ -65,8 +95,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         });
     }
 
-    updateServerInfos(newConfig.teams);
-    WindowManager.initializeCurrentServerName();
     handleMainWindowIsShown();
 
     handleUpdateMenuEvent();
