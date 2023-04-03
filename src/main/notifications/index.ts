@@ -12,6 +12,7 @@ import {PLAY_SOUND} from 'common/communication';
 import logger from 'common/log';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
+import ViewManager from '../views/viewManager';
 import MainWindow from '../windows/mainWindow';
 import WindowManager from '../windows/windowManager';
 
@@ -37,7 +38,11 @@ export function displayMention(title: string, body: string, channel: {id: string
         return;
     }
 
-    const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
+    const view = ViewManager.getViewByWebContentsId(webcontents.id);
+    if (!view) {
+        return;
+    }
+    const serverName = view.tab.server.name;
 
     const options = {
         title: `${serverName}: ${title}`,

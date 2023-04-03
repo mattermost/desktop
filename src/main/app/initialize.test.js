@@ -166,6 +166,10 @@ jest.mock('main/windows/windowManager', () => ({
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
 }));
+jest.mock('main/views/viewManager', () => ({
+    get: jest.fn(),
+    sendToAllViews: jest.fn(),
+}));
 const originalProcess = process;
 describe('main/app/initialize', () => {
     beforeAll(() => {

@@ -22,6 +22,7 @@ import logger from 'common/log';
 
 import {getAdjustedWindowBoundaries} from 'main/utils';
 import WebContentsEventManager from 'main/views/webContentEvents';
+import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
 
 import {ModalView} from './modalView';
@@ -115,7 +116,7 @@ export class ModalManager {
             this.showModal();
         } else {
             WindowManager.sendToRenderer(MODAL_CLOSE);
-            WindowManager.focusBrowserView();
+            ViewManager.focusCurrentView();
         }
     }
 

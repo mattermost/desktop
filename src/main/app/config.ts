@@ -13,6 +13,8 @@ import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
 import {refreshTrayImages} from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
+import ViewManager from 'main/views/viewManager';
+import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleMainWindowIsShown} from './intercom';
@@ -36,8 +38,10 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         return;
     }
 
-    WindowManager.handleUpdateConfig();
     if (app.isReady()) {
+        if (MainWindow.get()) {
+            ViewManager.reloadConfiguration();
+        }
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 

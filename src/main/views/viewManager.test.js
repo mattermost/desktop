@@ -7,7 +7,8 @@
 import {dialog, ipcMain} from 'electron';
 import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
-import {LOAD_SUCCESS, MAIN_WINDOW_SHOWN, BROWSER_HISTORY_PUSH} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN} from 'common/communication';
+import Config from 'common/config';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getTabViewName} from 'common/tabs/TabView';
 import {equalUrlsIgnoringSubpath} from 'common/utils/url';
@@ -28,9 +29,12 @@ jest.mock('electron', () => ({
     ipcMain: {
         emit: jest.fn(),
         on: jest.fn(),
+        handle: jest.fn(),
     },
 }));
-
+jest.mock('common/config', () => ({
+    teams: [],
+}));
 jest.mock('common/tabs/TabView', () => ({
     getTabViewName: jest.fn((a, b) => `${a}-${b}`),
     TAB_MESSAGING: 'tab',
@@ -41,6 +45,9 @@ jest.mock('common/servers/MattermostServer', () => ({
 }));
 
 jest.mock('common/utils/url', () => ({
+    isTeamUrl: jest.fn(),
+    isAdminUrl: jest.fn(),
+    cleanPathName: jest.fn(),
     parseURL: (url) => {
         try {
             return new URL(url);
@@ -76,6 +83,7 @@ jest.mock('./modalManager', () => ({
     showModal: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({}));
+jest.mock('../appState', () => ({}));
 
 describe('main/views/viewManager', () => {
     describe('loadView', () => {
@@ -122,12 +130,11 @@ describe('main/views/viewManager', () => {
         });
     });
 
-    describe('reloadViewIfNeeded', () => {
+    describe('handleAppLoggedIn', () => {
         const viewManager = new ViewManager({});
 
         afterEach(() => {
             jest.resetAllMocks();
-            viewManager.views = new Map();
         });
 
         it('should reload view when URL is not on subpath of original server URL', () => {
@@ -143,7 +150,7 @@ describe('main/views/viewManager', () => {
                 },
             };
             viewManager.views.set('view1', view);
-            viewManager.reloadViewIfNeeded('view1');
+            viewManager.handleAppLoggedIn({}, 'view1');
             expect(view.load).toHaveBeenCalledWith(new URL('http://server-1.com/'));
         });
 
@@ -160,7 +167,7 @@ describe('main/views/viewManager', () => {
                 },
             };
             viewManager.views.set('view1', view);
-            viewManager.reloadViewIfNeeded('view1');
+            viewManager.handleAppLoggedIn({}, 'view1');
             expect(view.load).not.toHaveBeenCalled();
         });
 
@@ -177,7 +184,7 @@ describe('main/views/viewManager', () => {
                 },
             };
             viewManager.views.set('view1', view);
-            viewManager.reloadViewIfNeeded('view1');
+            viewManager.handleAppLoggedIn({}, 'view1');
             expect(view.load).not.toHaveBeenCalled();
         });
     });
@@ -228,14 +235,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should recycle existing views', () => {
-            const makeSpy = jest.spyOn(viewManager, 'makeView');
-            const view = new MattermostView({
-                name: 'server1-tab1',
-                urlTypeTuple: tuple(new URL('http://server1.com').href, 'tab1'),
-                server: 'server1',
-            });
-            viewManager.views.set('server1-tab1', view);
-            viewManager.reloadConfiguration([
+            Config.teams = [
                 {
                     name: 'server1',
                     url: 'http://server1.com',
@@ -247,14 +247,22 @@ describe('main/views/viewManager', () => {
                         },
                     ],
                 },
-            ]);
+            ];
+            const makeSpy = jest.spyOn(viewManager, 'makeView');
+            const view = new MattermostView({
+                name: 'server1-tab1',
+                urlTypeTuple: tuple(new URL('http://server1.com').href, 'tab1'),
+                server: 'server1',
+            });
+            viewManager.views.set('server1-tab1', view);
+            viewManager.reloadConfiguration();
             expect(viewManager.views.get('server1-tab1')).toBe(view);
             expect(makeSpy).not.toHaveBeenCalled();
             makeSpy.mockRestore();
         });
 
         it('should close tabs that arent open', () => {
-            viewManager.reloadConfiguration([
+            Config.teams = [
                 {
                     name: 'server1',
                     url: 'http://server1.com',
@@ -266,13 +274,14 @@ describe('main/views/viewManager', () => {
                         },
                     ],
                 },
-            ]);
+            ];
+            viewManager.reloadConfiguration();
             expect(viewManager.closedViews.has('server1-tab1')).toBe(true);
         });
 
         it('should create new views for new tabs', () => {
             const makeSpy = jest.spyOn(viewManager, 'makeView');
-            viewManager.reloadConfiguration([
+            Config.teams = [
                 {
                     name: 'server1',
                     url: 'http://server1.com',
@@ -284,7 +293,8 @@ describe('main/views/viewManager', () => {
                         },
                     ],
                 },
-            ]);
+            ];
+            viewManager.reloadConfiguration();
             expect(makeSpy).toHaveBeenCalledWith(
                 {
                     name: 'server1',
@@ -316,7 +326,7 @@ describe('main/views/viewManager', () => {
             };
             viewManager.currentView = 'server1-tab1';
             viewManager.views.set('server1-tab1', view);
-            viewManager.reloadConfiguration([
+            Config.teams = [
                 {
                     name: 'server1',
                     url: 'http://server1.com',
@@ -328,7 +338,8 @@ describe('main/views/viewManager', () => {
                         },
                     ],
                 },
-            ]);
+            ];
+            viewManager.reloadConfiguration();
             expect(viewManager.showByName).toHaveBeenCalledWith('server1-tab1');
         });
 
@@ -345,7 +356,7 @@ describe('main/views/viewManager', () => {
             };
             viewManager.currentView = 'server1-tab1';
             viewManager.views.set('server1-tab1', view);
-            viewManager.reloadConfiguration([
+            Config.teams = [
                 {
                     name: 'server2',
                     url: 'http://server2.com',
@@ -357,7 +368,8 @@ describe('main/views/viewManager', () => {
                         },
                     ],
                 },
-            ]);
+            ];
+            viewManager.reloadConfiguration();
             expect(viewManager.showInitial).toBeCalled();
         });
 
@@ -371,7 +383,7 @@ describe('main/views/viewManager', () => {
                 destroy: jest.fn(),
             };
             viewManager.views.set('server1-tab1', view);
-            viewManager.reloadConfiguration([
+            Config.teams = [
                 {
                     name: 'server2',
                     url: 'http://server2.com',
@@ -383,65 +395,64 @@ describe('main/views/viewManager', () => {
                         },
                     ],
                 },
-            ]);
+            ];
+            viewManager.reloadConfiguration();
             expect(view.destroy).toBeCalled();
             expect(viewManager.showInitial).toBeCalled();
         });
     });
 
     describe('showInitial', () => {
-        const teams = [{
-            name: 'server-1',
-            order: 1,
-            tabs: [
-                {
-                    name: 'tab-1',
-                    order: 0,
-                    isOpen: false,
-                },
-                {
-                    name: 'tab-2',
-                    order: 2,
-                    isOpen: true,
-                },
-                {
-                    name: 'tab-3',
-                    order: 1,
-                    isOpen: true,
-                },
-            ],
-        }, {
-            name: 'server-2',
-            order: 0,
-            tabs: [
-                {
-                    name: 'tab-1',
-                    order: 0,
-                    isOpen: false,
-                },
-                {
-                    name: 'tab-2',
-                    order: 2,
-                    isOpen: true,
-                },
-                {
-                    name: 'tab-3',
-                    order: 1,
-                    isOpen: true,
-                },
-            ],
-        }];
         const viewManager = new ViewManager({});
-        viewManager.getServers = () => teams.concat();
 
         beforeEach(() => {
+            Config.teams = [{
+                name: 'server-1',
+                order: 1,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'tab-3',
+                        order: 1,
+                        isOpen: true,
+                    },
+                ],
+            }, {
+                name: 'server-2',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'tab-3',
+                        order: 1,
+                        isOpen: true,
+                    },
+                ],
+            }];
             viewManager.showByName = jest.fn();
             getTabViewName.mockImplementation((server, tab) => `${server}_${tab}`);
         });
 
         afterEach(() => {
             jest.resetAllMocks();
-            viewManager.getServers = () => teams;
             delete viewManager.lastActiveServer;
         });
 
@@ -457,7 +468,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should show last active tab of first server', () => {
-            viewManager.getServers = () => [{
+            Config.teams = [{
                 name: 'server-1',
                 order: 1,
                 tabs: [
@@ -504,7 +515,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should show next tab when last active tab is closed', () => {
-            viewManager.getServers = () => [{
+            Config.teams = [{
                 name: 'server-1',
                 order: 1,
                 tabs: [
@@ -556,7 +567,7 @@ describe('main/views/viewManager', () => {
                     send: jest.fn(),
                 },
             };
-            viewManager.getServers = () => [];
+            Config.teams = [];
             viewManager.showInitial();
             expect(ipcMain.emit).toHaveBeenCalledWith(MAIN_WINDOW_SHOWN);
         });
@@ -657,8 +668,8 @@ describe('main/views/viewManager', () => {
     });
 
     describe('getViewByURL', () => {
-        const viewManager = new ViewManager({});
-        viewManager.getServers = () => [
+        const viewManager = new ViewManager();
+        const servers = [
             {
                 name: 'server-1',
                 url: 'http://server-1.com',
@@ -699,6 +710,7 @@ describe('main/views/viewManager', () => {
         };
 
         beforeEach(() => {
+            Config.teams = servers.concat();
             MattermostServer.mockImplementation((server) => ({
                 name: server.name,
                 url: new URL(server.url),
