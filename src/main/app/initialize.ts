@@ -57,6 +57,7 @@ import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import ViewManager from 'main/views/viewManager';
+import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -405,16 +406,9 @@ function initializeAfterAppReady() {
             return;
         }
 
-        const callsWidgetWindow = WindowManager.callsWidgetWindow;
-        if (callsWidgetWindow) {
-            if (webContents.id === callsWidgetWindow.win.webContents.id) {
-                callback(true);
-                return;
-            }
-            if (callsWidgetWindow.popOut && webContents.id === callsWidgetWindow.popOut.webContents.id) {
-                callback(true);
-                return;
-            }
+        if (CallsWidgetWindow.isCallsWidget(webContents.id)) {
+            callback(true);
+            return;
         }
 
         const requestingURL = webContents.getURL();
