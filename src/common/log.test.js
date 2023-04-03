@@ -3,7 +3,7 @@
 
 import log from 'electron-log';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import Util from 'common/utils/util';
 
 jest.unmock('common/log');
@@ -18,6 +18,8 @@ jest.mock('common/utils/util', () => ({
 
 describe('common/log', () => {
     describe('withPrefix', () => {
+        const logger = new Logger();
+
         beforeEach(() => {
             Util.shorten.mockImplementation((string) => {
                 const maxLength = 20;

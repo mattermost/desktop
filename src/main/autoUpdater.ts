@@ -29,7 +29,6 @@ const NEXT_NOTIFY = 86400000; // 24 hours
 const NEXT_CHECK = 3600000; // 1 hour
 
 const log = logger.withPrefix('UpdateManager');
-logger.transports.file.level = 'info';
 autoUpdater.logger = logger;
 autoUpdater.autoDownload = false;
 autoUpdater.disableWebInstaller = true;

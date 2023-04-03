@@ -5,40 +5,50 @@ import log, {LevelOption, LogFunctions} from 'electron-log';
 
 import Util from 'common/utils/util';
 
-const logFunctions = {
-    error: log.error,
-    warn: log.warn,
-    info: log.info,
-    verbose: log.verbose,
-    debug: log.debug,
-    silly: log.silly,
-    log: log.log,
-} as LogFunctions;
+export class Logger {
+    error = log.error;
+    warn = log.warn;
+    info = log.info;
+    verbose = log.verbose;
+    debug = log.debug;
+    silly = log.silly;
+    log = log.log;
 
-const appendToLog = (...params: any[]): LogFunctions => {
-    const functionKeys = Object.keys(logFunctions) as Array<keyof LogFunctions>;
-    return functionKeys.reduce((funcs, key) => {
-        const func = logFunctions[key];
-        funcs[key] = (...args: any[]) => func(...params, ...args);
-        return funcs;
-    }, {} as LogFunctions);
-};
-
-const withPrefix = (...prefixes: string[]) => {
-    return appendToLog(...prefixes.map((prefix) => `[${Util.shorten(prefix)}]`));
-};
-
-export const setLoggingLevel = (level: string) => {
-    if (log.transports.file.level === level) {
-        return;
+    private get logFunctions() {
+        return {
+            error: this.error,
+            warn: this.warn,
+            info: this.info,
+            verbose: this.verbose,
+            debug: this.debug,
+            silly: this.silly,
+            log: this.log,
+        } as LogFunctions;
     }
-    withPrefix('Logger').error('Log level set to:', level);
 
-    log.transports.console.level = level as LevelOption;
-    log.transports.file.level = level as LevelOption;
-};
+    private appendToLog = (...params: any[]): LogFunctions => {
+        const functionKeys = Object.keys(this.logFunctions) as Array<keyof LogFunctions>;
+        return functionKeys.reduce((funcs, key) => {
+            const func = this.logFunctions[key];
+            funcs[key] = (...args: any[]) => func(...params, ...args);
+            return funcs;
+        }, {} as LogFunctions);
+    };
 
-export default {
-    ...log,
-    withPrefix,
-};
+    withPrefix = (...prefixes: string[]) => {
+        return this.appendToLog(...prefixes.map((prefix) => `[${Util.shorten(prefix)}]`));
+    };
+
+    setLoggingLevel = (level: string) => {
+        if (log.transports.file.level === level) {
+            return;
+        }
+        this.withPrefix('Logger').error('Log level set to:', level);
+
+        log.transports.console.level = level as LevelOption;
+        log.transports.file.level = level as LevelOption;
+    };
+}
+
+const logger = new Logger();
+export default logger;

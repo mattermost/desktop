@@ -7,7 +7,7 @@ import {CombinedConfig} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
-import logger, {setLoggingLevel} from 'common/log';
+import logger from 'common/log';
 
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
@@ -25,7 +25,7 @@ const log = logger.withPrefix('App.Config');
 
 export function handleConfigUpdate(newConfig: CombinedConfig) {
     if (newConfig.logLevel) {
-        setLoggingLevel(newConfig.logLevel);
+        logger.setLoggingLevel(newConfig.logLevel);
     }
 
     log.debug('handleConfigUpdate');
