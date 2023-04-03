@@ -163,6 +163,9 @@ jest.mock('main/windows/windowManager', () => ({
     getServerNameByWebContentsId: jest.fn(),
     getServerURLFromWebContentsId: jest.fn(),
 }));
+jest.mock('main/windows/settingsWindow', () => ({
+    show: jest.fn(),
+}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
 }));

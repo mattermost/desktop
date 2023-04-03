@@ -53,10 +53,10 @@ import TeamDropdownView from '../views/teamDropdownView';
 import DownloadsDropdownView from '../views/downloadsDropdownView';
 import DownloadsDropdownMenuView from '../views/downloadsDropdownMenuView';
 
-import {createSettingsWindow} from './settingsWindow';
 import MainWindow from './mainWindow';
 
 import CallsWidgetWindow from './callsWidgetWindow';
+import SettingsWindow from './settingsWindow';
 
 // singleton module to manage application's windows
 
@@ -65,7 +65,6 @@ const log = logger.withPrefix('WindowManager');
 export class WindowManager {
     assetsDir: string;
 
-    settingsWindow?: BrowserWindow;
     callsWidgetWindow?: CallsWidgetWindow;
     teamDropdown?: TeamDropdownView;
     downloadsDropdown?: DownloadsDropdownView;
@@ -173,24 +172,6 @@ export class WindowManager {
         log.debug('handleCallsLeave');
 
         this.callsWidgetWindow?.close();
-    }
-
-    showSettingsWindow = () => {
-        log.debug('showSettingsWindow');
-
-        if (this.settingsWindow) {
-            this.settingsWindow.show();
-        } else {
-            if (!MainWindow.get()) {
-                this.showMainWindow();
-            }
-            const withDevTools = Boolean(process.env.MM_DEBUG_SETTINGS) || false;
-
-            this.settingsWindow = createSettingsWindow(MainWindow.get()!, withDevTools);
-            this.settingsWindow.on('closed', () => {
-                delete this.settingsWindow;
-            });
-        }
     }
 
     showMainWindow = (deeplinkingURL?: string | URL) => {
@@ -369,13 +350,7 @@ export class WindowManager {
             return;
         }
         MainWindow.get()?.webContents.send(channel, ...args);
-        if (this.settingsWindow && this.settingsWindow.isVisible()) {
-            try {
-                this.settingsWindow.webContents.send(channel, ...args);
-            } catch (e) {
-                log.error(`There was an error while trying to communicate with the renderer: ${e}`);
-            }
-        }
+        SettingsWindow.get()?.webContents.send(channel, ...args);
     }
 
     sendToRenderer = (channel: string, ...args: unknown[]) => {
@@ -384,9 +359,7 @@ export class WindowManager {
 
     sendToAll = (channel: string, ...args: unknown[]) => {
         this.sendToRenderer(channel, ...args);
-        if (this.settingsWindow) {
-            this.settingsWindow.webContents.send(channel, ...args);
-        }
+        SettingsWindow.get()?.webContents.send(channel, ...args);
 
         // TODO: should we include popups?
     }
@@ -406,14 +379,14 @@ export class WindowManager {
             } else {
                 mainWindow.show();
             }
-            const settingsWindow = this.settingsWindow;
+            const settingsWindow = SettingsWindow.get();
             if (settingsWindow) {
                 settingsWindow.focus();
             } else {
                 mainWindow.focus();
             }
-        } else if (this.settingsWindow) {
-            this.settingsWindow.focus();
+        } else if (SettingsWindow.get()) {
+            SettingsWindow.get()?.focus();
         } else {
             mainWindow.focus();
         }
@@ -426,7 +399,7 @@ export class WindowManager {
         if (process.platform === 'darwin') {
             action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
         }
-        const win = (windowType === 'settings') ? this.settingsWindow : MainWindow.get();
+        const win = (windowType === 'settings') ? SettingsWindow.get() : MainWindow.get();
         if (!win) {
             return;
         }

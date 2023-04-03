@@ -1,42 +1,73 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow} from 'electron';
+import {BrowserWindow, ipcMain} from 'electron';
 
+import {SHOW_SETTINGS_WINDOW} from 'common/communication';
 import Config from 'common/config';
-import logger from 'common/log';
+import log from 'common/log';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
-const log = logger.withPrefix('SettingsWindow');
+import MainWindow from './mainWindow';
 
-export function createSettingsWindow(mainWindow: BrowserWindow, withDevTools: boolean) {
-    const preload = getLocalPreload('desktopAPI.js');
-    const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
-    const settingsWindow = new BrowserWindow({
-        parent: mainWindow,
-        title: 'Desktop App Settings',
-        fullscreen: false,
-        webPreferences: {
-            preload,
-            spellcheck,
-        }});
+export class SettingsWindow {
+    private win?: BrowserWindow;
 
-    const contextMenu = new ContextMenu({}, settingsWindow);
-    contextMenu.reload();
-
-    const localURL = getLocalURLString('settings.html');
-    settingsWindow.setMenuBarVisibility(false);
-    settingsWindow.loadURL(localURL).catch(
-        (reason) => {
-            log.error(`Settings window failed to load: ${reason}`);
-            log.info(process.env);
-        });
-    settingsWindow.show();
-
-    if (withDevTools) {
-        settingsWindow.webContents.openDevTools({mode: 'detach'});
+    constructor() {
+        ipcMain.on(SHOW_SETTINGS_WINDOW, this.show);
     }
-    return settingsWindow;
+
+    show = () => {
+        if (this.win) {
+            this.win.show();
+        } else {
+            this.create();
+        }
+    }
+
+    get = () => {
+        return this.win;
+    }
+
+    private create = () => {
+        const mainWindow = MainWindow.get(true);
+        if (!mainWindow) {
+            return;
+        }
+
+        const preload = getLocalPreload('desktopAPI.js');
+        const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
+        this.win = new BrowserWindow({
+            parent: mainWindow,
+            title: 'Desktop App Settings',
+            fullscreen: false,
+            webPreferences: {
+                preload,
+                spellcheck,
+            }});
+
+        const contextMenu = new ContextMenu({}, this.win);
+        contextMenu.reload();
+
+        const localURL = getLocalURLString('settings.html');
+        this.win.setMenuBarVisibility(false);
+        this.win.loadURL(localURL).catch(
+            (reason) => {
+                log.error('failed to load', reason);
+            });
+        this.win.show();
+
+        if (Boolean(process.env.MM_DEBUG_SETTINGS) || false) {
+            this.win.webContents.openDevTools({mode: 'detach'});
+        }
+
+        this.win.on('closed', () => {
+            delete this.win;
+        });
+    }
 }
+
+const settingsWindow = new SettingsWindow();
+export default settingsWindow;
