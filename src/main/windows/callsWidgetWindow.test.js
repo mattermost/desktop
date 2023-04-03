@@ -1,8 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {EventEmitter} from 'events';
-import {BrowserWindow} from 'electron';
+/* eslint-disable max-lines */
+
+import {BrowserWindow, desktopCapturer, systemPreferences} from 'electron';
 
 import {CALLS_WIDGET_SHARE_SCREEN, CALLS_JOINED_CALL} from 'common/communication';
 import {
@@ -10,10 +11,17 @@ import {
     MINIMUM_CALLS_WIDGET_HEIGHT,
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
+import urlUtils from 'common/utils/url';
+import MainWindow from 'main/windows/mainWindow';
+import ViewManager from 'main/views/viewManager';
+import WindowManager from 'main/windows/windowManager';
+import {
+    resetScreensharePermissionsMacOS,
+    openScreensharePermissionsSettingsMacOS,
+} from 'main/utils';
+import WebContentsEventManager from 'main/views/webContentEvents';
 
-import WebContentsEventManager from '../views/webContentEvents';
-
-import CallsWidgetWindow from './callsWidgetWindow';
+import {CallsWidgetWindow} from './callsWidgetWindow';
 
 jest.mock('electron', () => ({
     app: {
@@ -25,107 +33,504 @@ jest.mock('electron', () => ({
         off: jest.fn(),
         handle: jest.fn(),
     },
+    desktopCapturer: {
+        getSources: jest.fn(),
+    },
+    systemPreferences: {
+        getUserDefault: jest.fn(),
+        getMediaAccessStatus: jest.fn(() => 'granted'),
+    },
 }));
 
 jest.mock('../views/webContentEvents', () => ({
     addWebContentsEventListeners: jest.fn(),
 }));
 
-jest.mock('common/utils/url', () => {
-    const originalModule = jest.requireActual('common/utils/url');
-    return {
-        ...originalModule,
-        ...originalModule.default,
-    };
-});
+jest.mock('common/utils/url', () => ({
+    isCallsPopOutURL: jest.fn(),
+    getFormattedPathName: jest.fn(),
+    parseURL: jest.fn(),
+}));
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+    focus: jest.fn(),
+}));
+jest.mock('main/windows/windowManager', () => ({
+    switchServer: jest.fn(),
+}));
+jest.mock('main/views/viewManager', () => ({
+    getView: jest.fn(),
+}));
+jest.mock('../utils', () => ({
+    openScreensharePermissionsSettingsMacOS: jest.fn(),
+    resetScreensharePermissionsMacOS: jest.fn(),
+    getLocalPreload: jest.fn(),
+}));
 
 describe('main/windows/callsWidgetWindow', () => {
-    describe('create CallsWidgetWindow', () => {
-        const widgetConfig = {
-            callID: 'test-call-id',
-            title: '',
-            channelURL: '/team/channel_id',
+    describe('onShow', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.win = {
+            focus: jest.fn(),
+            setVisibleOnAllWorkspaces: jest.fn(),
+            setAlwaysOnTop: jest.fn(),
+            getBounds: jest.fn(),
+            setBounds: jest.fn(),
+            setMenuBarVisibility: jest.fn(),
+            webContents: {
+                openDevTools: jest.fn(),
+            },
         };
-
         const mainWindow = {
             getBounds: jest.fn(),
         };
 
-        const mainView = {
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                    id: 'mainViewID',
-                },
-            },
-            serverInfo: {
-                server: {
-                    name: 'test-server-name',
-                    url: new URL('http://localhost:8065'),
-                },
-            },
-            getWebContents: () => ({
-                id: 'mainViewID',
-            }),
-        };
+        beforeEach(() => {
+            mainWindow.getBounds.mockReturnValue({
+                x: 0,
+                y: 0,
+                width: 1280,
+                height: 720,
+            });
+            callsWidgetWindow.win.getBounds.mockReturnValue({
+                x: 0,
+                y: 0,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT,
+            });
+            MainWindow.get.mockReturnValue(mainWindow);
+        });
 
-        const baseWindow = new EventEmitter();
-        baseWindow.loadURL = jest.fn();
-        baseWindow.focus = jest.fn();
-        baseWindow.setVisibleOnAllWorkspaces = jest.fn();
-        baseWindow.setAlwaysOnTop = jest.fn();
-        baseWindow.setBackgroundColor = jest.fn();
-        baseWindow.setMenuBarVisibility = jest.fn();
-        baseWindow.webContents = {
-            setWindowOpenHandler: jest.fn(),
+        it('should call certain functions upon showing the window', () => {
+            callsWidgetWindow.onShow();
+            expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalled();
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({
+                x: 12,
+                y: 618,
+                width: MINIMUM_CALLS_WIDGET_WIDTH,
+                height: MINIMUM_CALLS_WIDGET_HEIGHT,
+            });
+        });
+
+        it('should open dev tools when environment variable is set', async () => {
+            const originalEnv = process.env;
+            Object.defineProperty(process, 'env', {
+                value: {
+                    MM_DEBUG_CALLS_WIDGET: 'true',
+                },
+            });
+            callsWidgetWindow.onShow();
+            expect(callsWidgetWindow.win.webContents.openDevTools).toHaveBeenCalled();
+            Object.defineProperty(process, 'env', {
+                value: originalEnv,
+            });
+        });
+    });
+
+    describe('close', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.win = {
             on: jest.fn(),
+            close: jest.fn(),
+            isDestroyed: jest.fn(),
         };
-        baseWindow.isDestroyed = jest.fn(() => false);
 
         beforeEach(() => {
-            baseWindow.setBounds = jest.fn();
-
-            mainWindow.getBounds.mockImplementation(() => {
-                return {
-                    x: 0,
-                    y: 0,
-                    width: 1280,
-                    height: 720,
-                };
+            let closedListener;
+            callsWidgetWindow.win.on.mockImplementation((event, listener) => {
+                closedListener = listener;
             });
-
-            baseWindow.getBounds = jest.fn(() => {
-                return {
-                    x: 0,
-                    y: 0,
-                    width: MINIMUM_CALLS_WIDGET_WIDTH,
-                    height: MINIMUM_CALLS_WIDGET_HEIGHT,
-                };
-            });
-
-            baseWindow.show = jest.fn(() => {
-                baseWindow.emit('show');
-            });
-
-            baseWindow.close = jest.fn(() => {
-                baseWindow.emit('closed');
-            });
-
-            baseWindow.loadURL.mockImplementation(() => ({
-                catch: jest.fn(),
-            }));
-            BrowserWindow.mockImplementation(() => baseWindow);
+            callsWidgetWindow.win.close.mockImplementation(() => closedListener());
         });
 
         afterEach(() => {
-            jest.resetAllMocks();
-            baseWindow.removeAllListeners('show');
-            baseWindow.removeAllListeners('ready-to-show');
+            jest.clearAllMocks();
         });
 
-        it('verify initial configuration', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow).toBeDefined();
+        it('should close window', async () => {
+            await callsWidgetWindow.close();
+            expect(callsWidgetWindow.win.close).toHaveBeenCalled();
+        });
+
+        it('should not close if already destroyed', async () => {
+            callsWidgetWindow.win.isDestroyed.mockReturnValue(true);
+            await callsWidgetWindow.close();
+            expect(callsWidgetWindow.win.close).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleResize', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.win = {
+            getBounds: jest.fn(),
+            webContents: {
+                id: 'windowID',
+                getZoomFactor: jest.fn(),
+            },
+        };
+        callsWidgetWindow.setBounds = jest.fn();
+        const bounds = {
+            x: 12,
+            y: 720,
+            width: MINIMUM_CALLS_WIDGET_WIDTH,
+            height: MINIMUM_CALLS_WIDGET_HEIGHT,
+        };
+
+        beforeEach(() => {
+            callsWidgetWindow.win.getBounds.mockReturnValue(bounds);
+            callsWidgetWindow.win.webContents.getZoomFactor.mockReturnValue(1.0);
+        });
+
+        it('should resize correctly', () => {
+            callsWidgetWindow.handleResize({
+                sender: {id: 'windowID'},
+            }, 'widget', {
+                element: 'calls-widget',
+                width: 300,
+                height: 100,
+            });
+            expect(callsWidgetWindow.setBounds).toHaveBeenCalledWith({
+                x: 12,
+                y: 720 - (100 - MINIMUM_CALLS_WIDGET_HEIGHT),
+                width: 300,
+                height: 100,
+            });
+        });
+
+        it('should resize correctly at 2x zoom', () => {
+            callsWidgetWindow.win.webContents.getZoomFactor.mockReturnValue(2.0);
+            callsWidgetWindow.handleResize({
+                sender: {id: 'windowID'},
+            }, 'widget', {
+                element: 'calls-widget',
+                width: 300,
+                height: 100,
+            });
+            expect(callsWidgetWindow.setBounds).toHaveBeenCalledWith({
+                x: 12,
+                y: 720 - (200 - MINIMUM_CALLS_WIDGET_HEIGHT),
+                width: 600,
+                height: 200,
+            });
+        });
+
+        it('should resize correctly at 0.5x zoom', () => {
+            callsWidgetWindow.win.webContents.getZoomFactor.mockReturnValue(0.5);
+            callsWidgetWindow.handleResize({
+                sender: {id: 'windowID'},
+            }, 'widget', {
+                element: 'calls-widget',
+                width: 300,
+                height: 100,
+            });
+            expect(callsWidgetWindow.setBounds).toHaveBeenCalledWith({
+                x: 12,
+                y: 720 - (50 - MINIMUM_CALLS_WIDGET_HEIGHT),
+                width: 150,
+                height: 50,
+            });
+        });
+    });
+
+    describe('getWidgetURL', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        beforeEach(() => {
+            urlUtils.parseURL.mockImplementation((url) => new URL(url));
+            urlUtils.getFormattedPathName.mockImplementation((pn) => {
+                return pn.endsWith('/') ? pn.toLowerCase() : `${pn.toLowerCase()}/`;
+            });
+            callsWidgetWindow.options = {
+                callID: 'test-call-id',
+                channelURL: '/team/channel_id',
+                title: 'call test title #/&',
+            };
+            callsWidgetWindow.mainView = {
+                tab: {
+                    server: {
+                        url: new URL('http://localhost:8065'),
+                    },
+                },
+            };
+        });
+
+        it('getWidgetURL', () => {
+            const expected = `http://localhost:8065/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=test-call-id&title=call+test+title+%23%2F%26`;
+            expect(callsWidgetWindow.getWidgetURL()).toBe(expected);
+        });
+
+        it('getWidgetURL - under subpath', () => {
+            callsWidgetWindow.mainView = {
+                tab: {
+                    server: {
+                        url: new URL('http://localhost:8065/subpath'),
+                    },
+                },
+            };
+
+            const expected = `http://localhost:8065/subpath/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=test-call-id&title=call+test+title+%23%2F%26`;
+            expect(callsWidgetWindow.getWidgetURL()).toBe(expected);
+        });
+
+        it('getWidgetURL - with rootID', () => {
+            callsWidgetWindow.options = {
+                ...callsWidgetWindow.options,
+                rootID: 'call_thread_id',
+            };
+            const expected = `http://localhost:8065/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=test-call-id&title=call+test+title+%23%2F%26&root_id=call_thread_id`;
+            expect(callsWidgetWindow.getWidgetURL()).toBe(expected);
+        });
+    });
+
+    it('handleShareScreen', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.isAllowedEvent = jest.fn();
+        callsWidgetWindow.win = {
+            webContents: {
+                id: 'goodID',
+                send: jest.fn(),
+            },
+        };
+        const message = {
+            callID: 'test-call-id',
+        };
+
+        callsWidgetWindow.isAllowedEvent.mockReturnValue(false);
+        callsWidgetWindow.handleShareScreen({
+            sender: {id: 'badID'},
+        }, message);
+        expect(callsWidgetWindow.win.webContents.send).not.toHaveBeenCalled();
+
+        callsWidgetWindow.isAllowedEvent.mockReturnValue(true);
+        callsWidgetWindow.handleShareScreen({
+            sender: {id: 'goodID'},
+        }, 'widget', message);
+        expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, message);
+    });
+
+    it('handleJoinedCall', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.isAllowedEvent = jest.fn();
+        callsWidgetWindow.mainView = {
+            webContentsId: 'goodID',
+            sendToRenderer: jest.fn(),
+        };
+        const message = {
+            callID: 'test-call-id',
+        };
+
+        callsWidgetWindow.isAllowedEvent.mockReturnValue(false);
+        callsWidgetWindow.handleJoinedCall({
+            sender: {id: 'badID'},
+        }, 'widget', message);
+        expect(callsWidgetWindow.mainView.sendToRenderer).not.toHaveBeenCalled();
+
+        callsWidgetWindow.isAllowedEvent.mockReturnValue(true);
+        callsWidgetWindow.handleJoinedCall({
+            sender: {id: 'goodID'},
+        }, 'widget', message);
+        expect(callsWidgetWindow.mainView.sendToRenderer).toHaveBeenCalledWith(CALLS_JOINED_CALL, message);
+    });
+
+    describe('onPopOutOpen', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        beforeEach(() => {
+            callsWidgetWindow.options = {callID: 'id'};
+            callsWidgetWindow.mainView = {
+                tab: {
+                    server: {
+                        url: new URL('http://localhost:8065'),
+                    },
+                },
+            };
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+            delete callsWidgetWindow.options;
+            delete callsWidgetWindow.mainView;
+        });
+
+        it('should deny opening if there is no call attached', () => {
+            delete callsWidgetWindow.options;
+            delete callsWidgetWindow.mainView;
+            expect(callsWidgetWindow.onPopOutOpen({url: 'http://localhost:8065/popouturl'})).toHaveProperty('action', 'deny');
+        });
+
+        it('should pop out and make sure menu bar is disabled', () => {
+            urlUtils.isCallsPopOutURL.mockReturnValue(true);
+            expect(callsWidgetWindow.onPopOutOpen({url: 'http://localhost:8065/popouturl'})).toHaveProperty('action', 'allow');
+            expect(callsWidgetWindow.onPopOutOpen({url: 'http://localhost:8065/popouturl'}).overrideBrowserWindowOptions).toHaveProperty('autoHideMenuBar', true);
+        });
+
+        it('should not pop out when the URL does not match the calls popout URL', () => {
+            urlUtils.isCallsPopOutURL.mockReturnValue(false);
+            expect(callsWidgetWindow.onPopOutOpen({url: 'http://localhost:8065/notpopouturl'})).toHaveProperty('action', 'deny');
+        });
+    });
+
+    describe('handlePopOutFocus', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.popOut = {
+            isMinimized: jest.fn(),
+            restore: jest.fn(),
+            focus: jest.fn(),
+        };
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should focus only if not minimized', () => {
+            callsWidgetWindow.popOut.isMinimized.mockReturnValue(false);
+            callsWidgetWindow.handlePopOutFocus();
+            expect(callsWidgetWindow.popOut.restore).not.toBeCalled();
+            expect(callsWidgetWindow.popOut.focus).toBeCalled();
+        });
+
+        it('should focus only if not minimized', () => {
+            callsWidgetWindow.popOut.isMinimized.mockReturnValue(true);
+            callsWidgetWindow.handlePopOutFocus();
+            expect(callsWidgetWindow.popOut.restore).toBeCalled();
+            expect(callsWidgetWindow.popOut.focus).toBeCalled();
+        });
+    });
+
+    it('onPopOutCreate - should attach correct listeners and should prevent redirects', () => {
+        let redirectListener;
+        let closedListener;
+        const popOut = {
+            on: (event, listener) => {
+                closedListener = listener;
+            },
+            webContents: {
+                on: (event, listener) => {
+                    redirectListener = listener;
+                },
+                id: 'webContentsId',
+            },
+        };
+
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.onPopOutCreate(popOut);
+        expect(callsWidgetWindow.popOut).toBe(popOut);
+        expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
+        expect(redirectListener).toBeDefined();
+
+        const event = {preventDefault: jest.fn()};
+        redirectListener(event);
+        expect(event.preventDefault).toHaveBeenCalled();
+
+        closedListener();
+        expect(callsWidgetWindow.popOut).not.toBeDefined();
+    });
+
+    it('getURL', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.win = {
+            webContents: {
+                getURL: () => 'http://localhost:8065/',
+            },
+        };
+        urlUtils.parseURL.mockImplementation((url) => new URL(url));
+        expect(callsWidgetWindow.getURL().toString()).toBe('http://localhost:8065/');
+    });
+
+    describe('isAllowedEvent', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = {
+            webContentsId: 'mainViewID',
+        };
+        callsWidgetWindow.win = {
+            webContents: {
+                id: 'windowID',
+            },
+        };
+
+        it('should not allow on unknown sender id', () => {
+            expect(callsWidgetWindow.isAllowedEvent({
+                sender: {
+                    id: 'senderID',
+                },
+            })).toEqual(false);
+        });
+
+        it('should allow on attached browser view', () => {
+            expect(callsWidgetWindow.isAllowedEvent({
+                sender: {
+                    id: 'mainViewID',
+                },
+            })).toEqual(true);
+        });
+
+        it('should allow on widget window', () => {
+            expect(callsWidgetWindow.isAllowedEvent({
+                sender: {
+                    id: 'windowID',
+                },
+            })).toEqual(true);
+        });
+    });
+
+    it('onNavigate', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.getWidgetURL = () => 'http://localhost:8065';
+        const ev = {preventDefault: jest.fn()};
+
+        callsWidgetWindow.onNavigate(ev, 'http://localhost:8065');
+        expect(ev.preventDefault).not.toHaveBeenCalled();
+
+        callsWidgetWindow.onNavigate(ev, 'http://localhost:8065/invalid/url');
+        expect(ev.preventDefault).toHaveBeenCalledTimes(1);
+    });
+
+    describe('handleCreateCallsWidgetWindow', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.close = jest.fn();
+        callsWidgetWindow.getWidgetURL = jest.fn();
+        const view = {
+            name: 'server-1_tab-messaging',
+            serverInfo: {
+                server: {
+                    url: new URL('http://server-1.com'),
+                },
+            },
+        };
+        const browserWindow = {
+            on: jest.fn(),
+            once: jest.fn(),
+            loadURL: jest.fn().mockReturnValue(Promise.resolve()),
+            webContents: {
+                setWindowOpenHandler: jest.fn(),
+                on: jest.fn(),
+                id: 1,
+                openDevTools: jest.fn(),
+            },
+        };
+
+        beforeEach(() => {
+            BrowserWindow.mockReturnValue(browserWindow);
+            callsWidgetWindow.close.mockReturnValue(Promise.resolve());
+            ViewManager.getView.mockReturnValue(view);
+        });
+
+        afterEach(() => {
+            delete callsWidgetWindow.win;
+            delete callsWidgetWindow.mainView;
+            delete callsWidgetWindow.options;
+
+            jest.resetAllMocks();
+        });
+
+        it('should create calls widget window', async () => {
+            expect(callsWidgetWindow.win).toBeUndefined();
+            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
+            expect(callsWidgetWindow.win).toBeDefined();
+        });
+
+        it('should create with correct initial configuration', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
                 height: MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -139,484 +544,404 @@ describe('main/windows/callsWidgetWindow', () => {
             }));
         });
 
-        it('showing window', () => {
-            baseWindow.show = jest.fn(() => {
-                baseWindow.emit('show');
+        it('should catch error when failing to load the URL', async () => {
+            const error = new Error('failed to load URL');
+            const promise = Promise.reject(error);
+            BrowserWindow.mockReturnValue({
+                ...browserWindow,
+                loadURL: jest.fn().mockReturnValue(promise),
             });
 
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            widgetWindow.win.emit('ready-to-show');
-
-            expect(widgetWindow.win.show).toHaveBeenCalled();
-            expect(widgetWindow.win.setAlwaysOnTop).toHaveBeenCalled();
-            expect(widgetWindow.win.setBounds).toHaveBeenCalledWith({
-                x: 12,
-                y: 618,
-                width: MINIMUM_CALLS_WIDGET_WIDTH,
-                height: MINIMUM_CALLS_WIDGET_HEIGHT,
-            });
+            await expect(promise).rejects.toThrow(error);
         });
 
-        it('loadURL error', () => {
-            baseWindow.show = jest.fn(() => {
-                baseWindow.emit('show');
-            });
-
-            baseWindow.loadURL = jest.fn(() => {
-                return Promise.reject(new Error('failed to load URL'));
-            });
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.win.loadURL).toHaveBeenCalled();
+        it('should not create a new window if call is the same', async () => {
+            const window = {webContents: {id: 2}};
+            callsWidgetWindow.win = window;
+            callsWidgetWindow.options = {callID: 'test'};
+            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
+            expect(callsWidgetWindow.win).toEqual(window);
         });
 
-        it('open devTools', () => {
-            process.env.MM_DEBUG_CALLS_WIDGET = 'true';
-
-            baseWindow.show = jest.fn(() => {
-                baseWindow.emit('show');
-            });
-
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                openDevTools: jest.fn(),
-            };
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            widgetWindow.win.emit('ready-to-show');
-
-            expect(widgetWindow.win.webContents.openDevTools).toHaveBeenCalled();
+        it('should create a new window if switching calls', async () => {
+            const window = {webContents: {id: 2}};
+            callsWidgetWindow.win = window;
+            callsWidgetWindow.getCallID = jest.fn(() => 'test');
+            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_tab-messaging', {callID: 'test2'});
+            expect(callsWidgetWindow.win).not.toEqual(window);
         });
+    });
 
-        it('closing window', async () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-
-            await widgetWindow.close();
-
-            expect(widgetWindow.win.close).toHaveBeenCalled();
-            expect(widgetWindow.win.isDestroyed).toHaveBeenCalled();
-        });
-
-        it('closing window - already closed', async () => {
-            baseWindow.isDestroyed = jest.fn().mockReturnValue(true);
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-
-            await widgetWindow.close();
-
-            expect(widgetWindow.win.isDestroyed).toHaveBeenCalled();
-            expect(widgetWindow.win.close).not.toHaveBeenCalled();
-        });
-
-        it('resize', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                id: 'windowID',
-            };
-
-            let winBounds = {
-                x: 0,
-                y: 0,
-                width: MINIMUM_CALLS_WIDGET_WIDTH,
-                height: MINIMUM_CALLS_WIDGET_HEIGHT,
-            };
-            baseWindow.getBounds = jest.fn(() => {
-                return winBounds;
-            });
-
-            baseWindow.setBounds = jest.fn((bounds) => {
-                winBounds = bounds;
-            });
-
-            baseWindow.show = jest.fn(() => {
-                baseWindow.emit('show');
-            });
-
-            expect(baseWindow.setBounds).not.toHaveBeenCalled();
-
-            baseWindow.webContents.getZoomFactor = jest.fn(() => 1.0);
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            widgetWindow.win.emit('ready-to-show');
-
-            expect(baseWindow.setBounds).toHaveBeenCalledTimes(1);
-
-            expect(baseWindow.setBounds).toHaveBeenCalledWith({
-                x: 12,
-                y: 720 - MINIMUM_CALLS_WIDGET_HEIGHT - 12,
-                width: MINIMUM_CALLS_WIDGET_WIDTH,
-                height: MINIMUM_CALLS_WIDGET_HEIGHT,
-            });
-
-            widgetWindow.onResize({
-                sender: {
-                    id: 'badID',
-                },
+    describe('handleGetDesktopSources', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.win = {
+            webContents: {
+                send: jest.fn(),
             },
-            'widget',
+        };
+        const teams = [
             {
-                element: 'calls-widget',
-                width: 300,
-                height: 100,
-            });
-            expect(baseWindow.webContents.getZoomFactor).not.toHaveBeenCalled();
-
-            widgetWindow.onResize({
-                sender: baseWindow.webContents,
+                name: 'server-1',
+                order: 1,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+            }, {
+                name: 'server-2',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 2,
             },
-            'widget',
-            {
-                element: 'calls-widget',
-                width: 300,
-                height: 100,
+        ];
+        const map = teams.reduce((arr, item) => {
+            item.tabs.forEach((tab) => {
+                arr.push([`${item.name}_${tab.name}`, {
+                    sendToRenderer: jest.fn(),
+                }]);
             });
+            return arr;
+        }, []);
+        const views = new Map(map);
 
-            expect(baseWindow.setBounds).toHaveBeenCalledWith({
-                x: 12,
-                y: 720 - 100 - 12,
-                width: 300,
-                height: 100,
-            });
+        beforeEach(() => {
+            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
         });
 
-        it('zoom', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                id: 'windowID',
-            };
-
-            let winBounds = {
-                x: 0,
-                y: 0,
-                width: MINIMUM_CALLS_WIDGET_WIDTH,
-                height: MINIMUM_CALLS_WIDGET_HEIGHT,
-            };
-            baseWindow.getBounds = jest.fn(() => {
-                return winBounds;
-            });
-
-            baseWindow.setBounds = jest.fn((bounds) => {
-                winBounds = bounds;
-            });
-
-            baseWindow.webContents.getZoomFactor = jest.fn(() => 1.0);
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            widgetWindow.win.emit('ready-to-show');
-
-            expect(baseWindow.setBounds).toHaveBeenCalledTimes(1);
-            expect(baseWindow.webContents.getZoomFactor).toHaveBeenCalledTimes(0);
-
-            baseWindow.webContents.getZoomFactor = jest.fn(() => 2.0);
-            widgetWindow.onResize({
-                sender: baseWindow.webContents,
-            }, 'widget', {
-                element: 'calls-widget',
-                width: 300,
-                height: 100,
-            });
-            expect(baseWindow.webContents.getZoomFactor).toHaveBeenCalledTimes(1);
-            expect(baseWindow.setBounds).toHaveBeenCalledWith({
-                x: 12,
-                y: 720 - 200 - 12,
-                width: 600,
-                height: 200,
-            });
-
-            baseWindow.webContents.getZoomFactor = jest.fn(() => 0.5);
-
-            widgetWindow.onResize({
-                sender: baseWindow.webContents,
-            }, 'widget', {
-                element: 'calls-widget',
-                width: 300,
-                height: 100,
-            });
-            expect(baseWindow.webContents.getZoomFactor).toHaveBeenCalledTimes(1);
-            expect(baseWindow.setBounds).toHaveBeenCalledWith({
-                x: 12,
-                y: 720 - 50 - 12,
-                width: 150,
-                height: 50,
-            });
+        afterEach(() => {
+            jest.resetAllMocks();
+            callsWidgetWindow.missingScreensharePermissions = undefined;
         });
 
-        it('getServerName', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.getServerName()).toBe('test-server-name');
-        });
-
-        it('getChannelURL', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.getChannelURL()).toBe('/team/channel_id');
-        });
-
-        it('getChannelURL', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.getCallID()).toBe('test-call-id');
-        });
-
-        it('getWidgetURL', () => {
-            const config = {
-                ...widgetConfig,
-                title: 'call test title #/&',
-            };
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, config);
-            const expected = `${mainView.serverInfo.server.url}plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
-            expect(widgetWindow.getWidgetURL()).toBe(expected);
-        });
-
-        it('getWidgetURL - under subpath', () => {
-            const config = {
-                ...widgetConfig,
-                title: 'call test title #/&',
-            };
-
-            const view = {
-                serverInfo: {
-                    server: {
-                        url: new URL('http://localhost:8065/subpath'),
+        it('should send sources back', async () => {
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
                     },
                 },
-            };
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, view, config);
-            const expected = `${view.serverInfo.server.url}/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&title=call+test+title+%23%2F%26`;
-            expect(widgetWindow.getWidgetURL()).toBe(expected);
-        });
-
-        it('getWidgetURL - with rootID', () => {
-            const config = {
-                ...widgetConfig,
-                rootID: 'call_thread_id',
-            };
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, config);
-            const expected = `${mainView.serverInfo.server.url}plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=${config.callID}&root_id=call_thread_id`;
-            expect(widgetWindow.getWidgetURL()).toBe(expected);
-        });
-
-        it('onShareScreen', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                send: jest.fn(),
-                id: 'windowID',
-            };
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            const message = {
-                sourceID: 'test-source-id',
-                withAudio: false,
-            };
-
-            widgetWindow.onShareScreen({
-                sender: {id: 'badID'},
-            }, '', message);
-            expect(widgetWindow.win.webContents.send).not.toHaveBeenCalled();
-
-            widgetWindow.onShareScreen({
-                sender: baseWindow.webContents,
-            }, '', message);
-            expect(widgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, message);
-        });
-
-        it('onJoinedCall', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                send: jest.fn(),
-                id: 'windowID',
-            };
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            const message = {
-                callID: 'test-call-id',
-            };
-
-            widgetWindow.onJoinedCall({
-                sender: {id: 'badID'},
-            }, message);
-            expect(widgetWindow.mainView.view.webContents.send).not.toHaveBeenCalled();
-
-            widgetWindow.onJoinedCall({
-                sender: baseWindow.webContents,
-            }, 'widget', message);
-            expect(widgetWindow.mainView.view.webContents.send).toHaveBeenCalledWith(CALLS_JOINED_CALL, message);
-        });
-
-        it('menubar disabled on popout', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            const popOutURL = 'http://localhost:8065/team/com.mattermost.calls/expanded/test-call-id';
-            expect(widgetWindow.onPopOutOpen({url: popOutURL})).toHaveProperty('action', 'allow');
-            expect(widgetWindow.onPopOutOpen({url: popOutURL}).overrideBrowserWindowOptions).toHaveProperty('autoHideMenuBar', true);
-        });
-
-        it('wrong popout url disabled', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            const popOutURL = 'http://localhost/team/com.mattermost.calls/expanded/test-call-id';
-            expect(widgetWindow.onPopOutOpen({url: popOutURL})).toHaveProperty('action', 'deny');
-        });
-
-        it('popout redirects are disabled', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-
-            const ev = {preventDefault: jest.fn()};
-
-            const redirectURL = 'http://localhost:8065/login/sso/saml?redirect_to=https://google.com';
-            widgetWindow.onWillRedirect(ev, redirectURL);
-            expect(ev.preventDefault).toHaveBeenCalled();
-        });
-
-        it('onPopOutFocus', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                send: jest.fn(),
-            };
-
-            baseWindow.restore = jest.fn();
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-
-            expect(baseWindow.webContents.setWindowOpenHandler).toHaveBeenCalledWith(widgetWindow.onPopOutOpen);
-            expect(baseWindow.webContents.on).toHaveBeenCalledWith('did-create-window', widgetWindow.onPopOutCreate);
-
-            expect(widgetWindow.popOut).toBeNull();
-
-            const popOut = new EventEmitter();
-            popOut.webContents = {
-                on: jest.fn(),
-                id: 'webContentsId',
-            };
-            popOut.focus = jest.fn();
-            popOut.restore = jest.fn();
-            popOut.isMinimized = jest.fn().mockReturnValue(false);
-
-            widgetWindow.onPopOutFocus();
-            expect(popOut.focus).not.toHaveBeenCalled();
-            expect(popOut.restore).not.toHaveBeenCalled();
-
-            widgetWindow.onPopOutCreate(popOut);
-            expect(widgetWindow.popOut).toBe(popOut);
-
-            widgetWindow.onPopOutFocus();
-            expect(popOut.focus).toHaveBeenCalled();
-            expect(popOut.restore).not.toHaveBeenCalled();
-
-            popOut.isMinimized = jest.fn().mockReturnValue(true);
-            widgetWindow.onPopOutFocus();
-            expect(popOut.focus).toHaveBeenCalled();
-            expect(popOut.restore).toHaveBeenCalled();
-        });
-
-        it('onPopOutCreate', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                send: jest.fn(),
-            };
-
-            baseWindow.restore = jest.fn();
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-
-            expect(baseWindow.webContents.setWindowOpenHandler).toHaveBeenCalledWith(widgetWindow.onPopOutOpen);
-            expect(baseWindow.webContents.on).toHaveBeenCalledWith('did-create-window', widgetWindow.onPopOutCreate);
-            expect(widgetWindow.popOut).toBeNull();
-
-            const popOut = new EventEmitter();
-            popOut.webContents = {
-                on: jest.fn(),
-                id: 'webContentsId',
-            };
-
-            widgetWindow.onPopOutCreate(popOut);
-            expect(widgetWindow.popOut).toBe(popOut);
-            expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
-            expect(popOut.webContents.on).toHaveBeenCalledWith('will-redirect', widgetWindow.onWillRedirect);
-        });
-
-        it('onPopOutClosed', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.popOut).toBeNull();
-
-            const popOut = new EventEmitter();
-            popOut.webContents = {
-                on: jest.fn(),
-                id: 'webContentsId',
-            };
-
-            widgetWindow.onPopOutCreate(popOut);
-            expect(widgetWindow.popOut).toBe(popOut);
-
-            popOut.emit('closed');
-            expect(widgetWindow.popOut).toBeNull();
-        });
-
-        it('getWebContentsId', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                id: 'testID',
-            };
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.getWebContentsId()).toBe('testID');
-        });
-
-        it('getURL', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                id: 'testID',
-                getURL: jest.fn(() => 'http://localhost:8065/'),
-            };
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.getURL().toString()).toBe('http://localhost:8065/');
-        });
-
-        it('getMainView', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.getMainView()).toEqual(mainView);
-        });
-
-        it('isAllowedEvent', () => {
-            baseWindow.webContents = {
-                ...baseWindow.webContents,
-                id: 'windowID',
-            };
-
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            expect(widgetWindow.isAllowedEvent({
-                sender: {
-                    id: 'senderID',
+                {
+                    id: 'window0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
                 },
-            })).toEqual(false);
+            ]);
 
-            expect(widgetWindow.isAllowedEvent({
-                sender: widgetWindow.mainView.view.webContents,
-            })).toEqual(true);
+            await callsWidgetWindow.handleGetDesktopSources('server-1_tab-1', null);
 
-            expect(widgetWindow.isAllowedEvent({
-                sender: baseWindow.webContents,
-            })).toEqual(true);
-        });
-
-        it('getPopOutWebContentsId', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
-            widgetWindow.popOut = {
-                webContents: {
-                    id: 'popOutID',
+            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('desktop-sources-result', [
+                {
+                    id: 'screen0',
                 },
-            };
-            expect(widgetWindow.getPopOutWebContentsId()).toBe('popOutID');
+                {
+                    id: 'window0',
+                },
+            ]);
         });
 
-        it('onNavigate', () => {
-            const widgetWindow = new CallsWidgetWindow(mainWindow, mainView, widgetConfig);
+        it('should send error with no sources', async () => {
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
+            await callsWidgetWindow.handleGetDesktopSources('server-2_tab-1', null);
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+            expect(views.get('server-2_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
+        });
 
-            const ev = {preventDefault: jest.fn()};
+        it('should send error with no permissions', async () => {
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+            ]);
+            jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            widgetWindow.onNavigate(ev, widgetWindow.getWidgetURL());
-            expect(ev.preventDefault).not.toHaveBeenCalled();
+            await callsWidgetWindow.handleGetDesktopSources('server-1_tab-1', null);
 
-            widgetWindow.onNavigate(ev, 'http://localhost:8065/invalid/url');
-            expect(ev.preventDefault).toHaveBeenCalledTimes(1);
+            expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledTimes(1);
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
+        });
+
+        it('macos - no permissions', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+            ]);
+            jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
+
+            await callsWidgetWindow.handleGetDesktopSources('server-1_tab-1', null);
+
+            expect(callsWidgetWindow.missingScreensharePermissions).toBe(true);
+            expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(1);
+            expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(0);
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
+                err: 'screen-permissions',
+            });
+
+            await callsWidgetWindow.handleGetDesktopSources('server-1_tab-1', null);
+
+            expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(2);
+            expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(1);
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+    });
+
+    describe('handleDesktopSourcesModalRequest', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = {
+            tab: {
+                server: {
+                    id: 'server-1',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        const teams = [
+            {
+                name: 'server-1',
+                order: 1,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+            }, {
+                name: 'server-2',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 2,
+            },
+        ];
+        const map = teams.reduce((arr, item) => {
+            item.tabs.forEach((tab) => {
+                arr.push([`${item.name}_${tab.name}`, {}]);
+            });
+            return arr;
+        }, []);
+        const views = new Map(map);
+
+        beforeEach(() => {
+            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should switch server', () => {
+            callsWidgetWindow.handleDesktopSourcesModalRequest();
+            expect(WindowManager.switchServer).toHaveBeenCalledWith('server-1');
+        });
+    });
+
+    describe('handleCallsWidgetChannelLinkClick', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = {
+            tab: {
+                server: {
+                    id: 'server-2',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        callsWidgetWindow.getChannelURL = jest.fn();
+        const teams = [
+            {
+                name: 'server-1',
+                order: 1,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+            }, {
+                name: 'server-2',
+                order: 0,
+                tabs: [
+                    {
+                        name: 'tab-1',
+                        order: 0,
+                        isOpen: false,
+                    },
+                    {
+                        name: 'tab-2',
+                        order: 2,
+                        isOpen: true,
+                    },
+                ],
+                lastActiveTab: 2,
+            },
+        ];
+        const map = teams.reduce((arr, item) => {
+            item.tabs.forEach((tab) => {
+                arr.push([`${item.name}_${tab.name}`, {}]);
+            });
+            return arr;
+        }, []);
+        const views = new Map(map);
+
+        beforeEach(() => {
+            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should switch server', () => {
+            callsWidgetWindow.handleCallsWidgetChannelLinkClick();
+            expect(WindowManager.switchServer).toHaveBeenCalledWith('server-2');
+        });
+    });
+
+    describe('handleCallsError', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = {
+            tab: {
+                server: {
+                    id: 'server-2',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        const focus = jest.fn();
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue({focus});
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should focus view and propagate error to main view', () => {
+            callsWidgetWindow.handleCallsError('', {err: 'client-error'});
+            expect(WindowManager.switchServer).toHaveBeenCalledWith('server-2');
+            expect(focus).toHaveBeenCalled();
+            expect(callsWidgetWindow.mainView.sendToRenderer).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
+        });
+    });
+
+    describe('handleCallsLinkClick', () => {
+        const view = {
+            tab: {
+                server: {
+                    id: 'server-1',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = view;
+
+        beforeEach(() => {
+            ViewManager.getView.mockReturnValue(view);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should pass through the click link to browser history push', () => {
+            callsWidgetWindow.handleCallsLinkClick('', {link: '/other/subpath'});
+            expect(WindowManager.switchServer).toHaveBeenCalledWith('server-1');
+            expect(view.sendToRenderer).toBeCalledWith('browser-history-push', '/other/subpath');
+        });
+    });
+
+    describe('genCallsEventHandler', () => {
+        const handler = jest.fn();
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should not call handler if source is not allowed', () => {
+            const callsWidgetWindow = new CallsWidgetWindow();
+            callsWidgetWindow.isAllowedEvent = () => false;
+            callsWidgetWindow.genCallsEventHandler(handler)();
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should call handler if source is allowed', () => {
+            const callsWidgetWindow = new CallsWidgetWindow();
+            callsWidgetWindow.isAllowedEvent = () => true;
+            callsWidgetWindow.genCallsEventHandler(handler)();
+            expect(handler).toHaveBeenCalledTimes(1);
         });
     });
 });

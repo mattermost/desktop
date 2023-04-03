@@ -134,6 +134,14 @@ export class MattermostView extends EventEmitter {
         return this.tab.urlTypeTuple;
     }
 
+    get webContentsId() {
+        return this.view.webContents.id;
+    }
+
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.view.webContents.send(channel, ...args);
+    }
+
     updateServerInfo = (srv: MattermostServer) => {
         this.tab.server = srv;
         this.serverInfo = new ServerInfo(srv);
