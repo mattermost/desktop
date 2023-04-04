@@ -11,8 +11,8 @@ import log from 'electron-log';
 import {localizeMessage} from 'main/i18nManager';
 
 import buildConfig from 'common/config/buildConfig';
+import * as Validator from 'common/Validator';
 
-import * as Validator from './Validator';
 import MainWindow from './windows/mainWindow';
 import {allowedProtocolFile} from './constants';
 

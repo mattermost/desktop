@@ -12,8 +12,8 @@ import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
 
 import {UPDATE_PATHS} from 'common/communication';
 import urlUtils from 'common/utils/url';
+import * as Validator from 'common/Validator';
 
-import * as Validator from './Validator';
 import {trustedOriginsStoreFile} from './constants';
 
 export class TrustedOriginsStore {
