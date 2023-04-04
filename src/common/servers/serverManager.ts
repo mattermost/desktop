@@ -5,7 +5,7 @@ import EventEmitter from 'events';
 
 import log from 'electron-log';
 
-import {Team, ConfigTeam, ConfigTab} from 'types/config';
+import {Team, ConfigServer, ConfigTab} from 'types/config';
 import {RemoteInfo} from 'types/server';
 
 import Config from 'common/config';
@@ -171,7 +171,12 @@ export class ServerManager extends EventEmitter {
 
     addServer = (server: Team) => {
         const newServer = new MattermostServer(server, false);
+
+        if (this.servers.has(newServer.id)) {
+            throw new Error('ID Collision detected. Cannot add server.');
+        }
         this.servers.set(newServer.id, newServer);
+
         this.serverOrder.push(newServer.id);
         const tabOrder: string[] = [];
         getDefaultTabs().forEach((tab) => {
@@ -181,6 +186,7 @@ export class ServerManager extends EventEmitter {
         });
         this.tabOrder.set(newServer.id, tabOrder);
 
+        // Emit this event whenever we update a server URL to ensure remote info is fetched
         this.emit(SERVERS_URL_MODIFIED, [newServer.id]);
         this.persistServers();
         return newServer;
@@ -194,6 +200,7 @@ export class ServerManager extends EventEmitter {
 
         let urlModified;
         if (existingServer.url.toString() !== urlUtils.parseURL(server.url)?.toString()) {
+            // Emit this event whenever we update a server URL to ensure remote info is fetched
             urlModified = () => this.emit(SERVERS_URL_MODIFIED, [serverId]);
         }
         existingServer.name = server.name;
@@ -225,7 +232,7 @@ export class ServerManager extends EventEmitter {
         this.persistServers();
     }
 
-    toggleTab = (tabId: string, isOpen: boolean) => {
+    setTabIsOpen = (tabId: string, isOpen: boolean) => {
         const tab = this.tabs.get(tabId);
         if (!tab) {
             return;
@@ -245,6 +252,10 @@ export class ServerManager extends EventEmitter {
         this.currentServerId = tab.server.id;
 
         const serverOrder = this.serverOrder.findIndex((srv) => srv === tab.server.id);
+        if (serverOrder < 0) {
+            throw new Error('Server order corrupt, ID not found.');
+        }
+
         this.persistServers(serverOrder);
     }
 
@@ -281,7 +292,7 @@ export class ServerManager extends EventEmitter {
         });
     }
 
-    private initServer = (team: ConfigTeam, isPredefined: boolean) => {
+    private initServer = (team: ConfigServer, isPredefined: boolean) => {
         const server = new MattermostServer(team, isPredefined);
         this.servers.set(server.id, server);
 
@@ -319,8 +330,13 @@ export class ServerManager extends EventEmitter {
         this.emit(SERVERS_UPDATE);
 
         const localServers = [...this.servers.values()].
-            filter((server) => !server.isPredefined).
-            map((server) => this.toConfigTeam(server));
+            reduce((servers, srv) => {
+                if (srv.isPredefined) {
+                    return servers;
+                }
+                servers.push(this.toConfigServer(srv));
+                return servers;
+            }, [] as ConfigServer[]);
         await Config.setServers(localServers, lastActiveTeam);
     }
 
@@ -335,7 +351,7 @@ export class ServerManager extends EventEmitter {
         return lastActiveTab;
     }
 
-    private toConfigTeam = (server: MattermostServer): ConfigTeam => {
+    private toConfigServer = (server: MattermostServer): ConfigServer => {
         return {
             name: server.name,
             url: `${server.url}`,

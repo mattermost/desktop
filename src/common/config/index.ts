@@ -14,7 +14,7 @@ import {
     AnyConfig,
     BuildConfig,
     CombinedConfig,
-    ConfigTeam,
+    ConfigServer,
     Config as ConfigType,
     LocalConfiguration,
     RegistryConfig as RegistryConfigType,
@@ -203,7 +203,7 @@ export class Config extends EventEmitter {
         this.reload();
     }
 
-    setServers = (servers: ConfigTeam[], lastActiveTeam?: number) => {
+    setServers = (servers: ConfigServer[], lastActiveTeam?: number) => {
         log.debug('setServers', servers, lastActiveTeam);
 
         this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveTeam ?? this.localConfigData?.lastActiveTeam});

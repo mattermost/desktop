@@ -20,19 +20,19 @@ export type ConfigTab = Tab & {
     order: number;
 }
 
-export type ConfigTeam = FullTeam & {
+export type ConfigServer = FullTeam & {
     tabs: ConfigTab[];
 }
 
 export type TeamWithIndex = FullTeam & {index: number};
-export type TeamWithTabs = ConfigTeam & {tabs: Tab[]};
+export type TeamWithTabs = ConfigServer & {tabs: Tab[]};
 export type TeamWithTabsAndGpo = TeamWithTabs & {isGpo?: boolean};
 
 export type Config = ConfigV3;
 
 export type ConfigV3 = {
     version: 3;
-    teams: ConfigTeam[];
+    teams: ConfigServer[];
     showTrayIcon: boolean;
     trayIconTheme: string;
     minimizeToTray: boolean;
