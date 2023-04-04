@@ -60,9 +60,11 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         });
     }
 
-    updateServerInfos(newConfig.teams);
-    WindowManager.initializeCurrentServerName();
-    handleMainWindowIsShown();
+    if (app.isReady()) {
+        updateServerInfos(newConfig.teams);
+        WindowManager.initializeCurrentServerName();
+        handleMainWindowIsShown();
+    }
 
     handleUpdateMenuEvent();
     if (newConfig.trayIconTheme) {

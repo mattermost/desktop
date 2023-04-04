@@ -1,6 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
+import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
 import {CombinedConfig} from 'types/config';
 import {CoordinatesToJsonType, DownloadedItem, DownloadsMenuOpenEventPayload} from 'types/downloads';
@@ -29,41 +29,24 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
+import MainWindow from 'main/windows/mainWindow';
 
 const log = logger.withPrefix('DownloadsDropdownMenuView');
 
 export default class DownloadsDropdownMenuView {
     open: boolean;
     view: BrowserView;
-    bounds?: Electron.Rectangle;
+    bounds: Electron.Rectangle;
     item?: DownloadedItem;
     coordinates?: CoordinatesToJsonType;
     darkMode: boolean;
-    window: BrowserWindow;
     windowBounds: Electron.Rectangle;
 
-    constructor(window: BrowserWindow, darkMode: boolean) {
+    constructor(darkMode: boolean) {
         this.open = false;
         this.item = undefined;
         this.coordinates = undefined;
-        this.window = window;
         this.darkMode = darkMode;
-
-        this.windowBounds = this.window.getContentBounds();
-        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
-
-        const preload = getLocalPreload('desktopAPI.js');
-        this.view = new BrowserView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
-
-        this.view.webContents.loadURL(getLocalURLString('downloadsDropdownMenu.html'));
-        this.window.addBrowserView(this.view);
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
@@ -75,6 +58,27 @@ export default class DownloadsDropdownMenuView {
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, this.cancelDownload);
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, this.clearFile);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, this.updateItem);
+
+        const mainWindow = MainWindow.get();
+        const windowBounds = MainWindow.getBounds();
+        if (!(mainWindow && windowBounds)) {
+            throw new Error('Cannot initialize downloadsDropdownMenuView, missing MainWindow');
+        }
+
+        this.windowBounds = windowBounds;
+        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
+
+        const preload = getLocalPreload('desktopAPI.js');
+        this.view = new BrowserView({webPreferences: {
+            preload,
+
+            // Workaround for this issue: https://github.com/electron/electron/issues/30993
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            transparent: true,
+        }});
+        this.view.webContents.loadURL(getLocalURLString('downloadsDropdownMenu.html'));
+        mainWindow.addBrowserView(this.view);
     }
 
     updateItem = (event: IpcMainEvent, item: DownloadedItem) => {
@@ -99,9 +103,12 @@ export default class DownloadsDropdownMenuView {
     updateWindowBounds = () => {
         log.debug('updateWindowBounds');
 
-        this.windowBounds = this.window.getContentBounds();
-        this.updateDownloadsDropdownMenu();
-        this.repositionDownloadsDropdownMenu();
+        const mainWindow = MainWindow.get();
+        if (mainWindow) {
+            this.windowBounds = mainWindow.getContentBounds();
+            this.updateDownloadsDropdownMenu();
+            this.repositionDownloadsDropdownMenu();
+        }
     }
 
     updateDownloadsDropdownMenu = () => {
@@ -132,7 +139,7 @@ export default class DownloadsDropdownMenuView {
         this.item = item;
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
         this.view.setBounds(this.bounds);
-        this.window.setTopBrowserView(this.view);
+        MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
         this.updateDownloadsDropdownMenu();
     }

@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app, ipcMain, BrowserWindow} from 'electron';
+import {BrowserView, app, ipcMain} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 
 import {EventEmitter} from 'events';
@@ -25,6 +25,8 @@ import {TabView, TabTuple} from 'common/tabs/TabView';
 import logger from 'common/log';
 
 import {ServerInfo} from 'main/server/serverInfo';
+import MainWindow from 'main/windows/mainWindow';
+
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
 import WindowManager from '../windows/windowManager';
@@ -44,7 +46,6 @@ const log = logger.withPrefix('MattermostView');
 
 export class MattermostView extends EventEmitter {
     tab: TabView;
-    window: BrowserWindow;
     view: BrowserView;
     isVisible: boolean;
     isLoggedIn: boolean;
@@ -64,10 +65,9 @@ export class MattermostView extends EventEmitter {
 
     private altPressStatus: boolean;
 
-    constructor(tab: TabView, serverInfo: ServerInfo, win: BrowserWindow, options: BrowserViewConstructorOptions) {
+    constructor(tab: TabView, serverInfo: ServerInfo, options: BrowserViewConstructorOptions) {
         super();
         this.tab = tab;
-        this.window = win;
         this.serverInfo = serverInfo;
 
         const preload = getLocalPreload('preload.js');
@@ -119,7 +119,7 @@ export class MattermostView extends EventEmitter {
 
         this.altPressStatus = false;
 
-        this.window.on('blur', () => {
+        MainWindow.get()?.on('blur', () => {
             this.altPressStatus = false;
         });
     }
@@ -225,6 +225,11 @@ export class MattermostView extends EventEmitter {
 
     loadSuccess = (loadURL: string) => {
         return () => {
+            const mainWindow = MainWindow.get();
+            if (!mainWindow) {
+                return;
+            }
+
             log.verbose(`[${Util.shorten(this.tab.name)}] finished loading ${loadURL}`);
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.tab.name);
             this.maxRetries = MAX_SERVER_RETRIES;
@@ -236,21 +241,26 @@ export class MattermostView extends EventEmitter {
             this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.tab.name, loadURL);
-            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
+            this.setBounds(getWindowBoundaries(mainWindow, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
         };
     }
 
     show = (requestedVisibility?: boolean) => {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
+        }
+
         this.hasBeenShown = true;
         const request = typeof requestedVisibility === 'undefined' ? true : requestedVisibility;
         if (request && !this.isVisible) {
-            this.window.addBrowserView(this.view);
-            this.setBounds(getWindowBoundaries(this.window, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
+            mainWindow.addBrowserView(this.view);
+            this.setBounds(getWindowBoundaries(mainWindow, shouldHaveBackBar(this.tab.url || '', this.view.webContents.getURL())));
             if (this.status === Status.READY) {
                 this.focus();
             }
         } else if (!request && this.isVisible) {
-            this.window.removeBrowserView(this.view);
+            mainWindow.removeBrowserView(this.view);
         }
         this.isVisible = request;
     }
@@ -269,9 +279,7 @@ export class MattermostView extends EventEmitter {
     destroy = () => {
         WebContentsEventManager.removeWebContentsListeners(this.view.webContents.id);
         appState.updateMentions(this.tab.name, 0, false);
-        if (this.window) {
-            this.window.removeBrowserView(this.view);
-        }
+        MainWindow.get()?.removeBrowserView(this.view);
 
         // workaround to eliminate zombie processes
         // https://github.com/mattermost/desktop/pull/1519
@@ -353,7 +361,7 @@ export class MattermostView extends EventEmitter {
         this.registerAltKeyPressed(input);
 
         if (this.isAltKeyReleased(input)) {
-            WindowManager.focusThreeDotMenu();
+            MainWindow.focusThreeDotMenu();
         }
     }
 
@@ -361,11 +369,11 @@ export class MattermostView extends EventEmitter {
         log.debug('handleDidNavigate', {tabName: this.tab.name, url});
 
         if (shouldHaveBackBar(this.tab.url || '', url)) {
-            this.setBounds(getWindowBoundaries(this.window, true));
+            this.setBounds(getWindowBoundaries(MainWindow.get()!, true));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, true);
             log.info('show back button');
         } else {
-            this.setBounds(getWindowBoundaries(this.window));
+            this.setBounds(getWindowBoundaries(MainWindow.get()!));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
             log.info('hide back button');
         }

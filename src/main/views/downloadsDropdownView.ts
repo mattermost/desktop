@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {BrowserView, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
 import {CombinedConfig} from 'types/config';
 import {DownloadedItem, DownloadedItems} from 'types/downloads';
@@ -24,6 +24,7 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
+import MainWindow from 'main/windows/mainWindow';
 
 const log = logger.withPrefix('DownloadsDropdownView');
 
@@ -31,18 +32,32 @@ export default class DownloadsDropdownView {
     bounds?: Electron.Rectangle;
     darkMode: boolean;
     downloads: DownloadedItems;
-    item: DownloadedItem | undefined;
+    item?: DownloadedItem;
     view: BrowserView;
-    window: BrowserWindow;
     windowBounds: Electron.Rectangle;
 
-    constructor(window: BrowserWindow, downloads: DownloadedItems, darkMode: boolean) {
+    constructor(downloads: DownloadedItems, darkMode: boolean) {
         this.downloads = downloads;
-        this.window = window;
         this.darkMode = darkMode;
-        this.item = undefined;
 
-        this.windowBounds = this.window.getContentBounds();
+        ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
+        ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
+        ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
+        ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
+        ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
+        ipcMain.on(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, this.handleReceivedDownloadsDropdownSize);
+        ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
+        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
+        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
+        ipcMain.handle(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, this.getDownloadImageThumbnailLocation);
+
+        const mainWindow = MainWindow.get();
+        const windowBounds = MainWindow.getBounds();
+        if (!(mainWindow && windowBounds)) {
+            throw new Error('Cannot initialize downloadsDropdownView, missing MainWindow');
+        }
+
+        this.windowBounds = windowBounds;
         this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
 
         const preload = getLocalPreload('desktopAPI.js');
@@ -56,20 +71,8 @@ export default class DownloadsDropdownView {
         }});
 
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
-        this.window.addBrowserView(this.view);
-
         this.view.webContents.session.webRequest.onHeadersReceived(downloadsManager.webRequestOnHeadersReceivedHandler);
-
-        ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
-        ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
-        ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
-        ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
-        ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
-        ipcMain.on(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, this.handleReceivedDownloadsDropdownSize);
-        ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
-        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
-        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
-        ipcMain.handle(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, this.getDownloadImageThumbnailLocation);
+        mainWindow.addBrowserView(this.view);
     }
 
     updateDownloads = (event: IpcMainEvent, downloads: DownloadedItems) => {
@@ -100,9 +103,12 @@ export default class DownloadsDropdownView {
     updateWindowBounds = () => {
         log.debug('updateWindowBounds');
 
-        this.windowBounds = this.window.getContentBounds();
-        this.updateDownloadsDropdown();
-        this.repositionDownloadsDropdown();
+        const mainWindow = MainWindow.get();
+        if (mainWindow) {
+            this.windowBounds = mainWindow.getContentBounds();
+            this.updateDownloadsDropdown();
+            this.repositionDownloadsDropdown();
+        }
     }
 
     updateDownloadsDropdown = () => {
@@ -125,7 +131,7 @@ export default class DownloadsDropdownView {
         }
 
         this.view.setBounds(this.bounds);
-        this.window.setTopBrowserView(this.view);
+        MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
         downloadsManager.onOpen();
         WindowManager.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
@@ -173,7 +179,7 @@ export default class DownloadsDropdownView {
     }
 
     repositionDownloadsDropdown = () => {
-        if (!this.bounds) {
+        if (!(this.bounds && this.windowBounds)) {
             return;
         }
         this.bounds = {

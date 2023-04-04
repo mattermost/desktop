@@ -7,6 +7,7 @@ import {LOAD_FAILED, TOGGLE_BACK_BUTTON, UPDATE_TARGET_URL} from 'common/communi
 import {MattermostServer} from 'common/servers/MattermostServer';
 import MessagingTabView from 'common/tabs/MessagingTabView';
 
+import MainWindow from '../windows/mainWindow';
 import * as WindowManager from '../windows/windowManager';
 import * as appState from '../appState';
 import Utils from '../utils';
@@ -30,9 +31,12 @@ jest.mock('electron', () => ({
     },
 }));
 
+jest.mock('../windows/mainWindow', () => ({
+    focusThreeDotMenu: jest.fn(),
+    get: jest.fn(),
+}));
 jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
-    focusThreeDotMenu: jest.fn(),
 }));
 jest.mock('../appState', () => ({
     updateMentions: jest.fn(),
@@ -54,9 +58,10 @@ const tabView = new MessagingTabView(server);
 describe('main/views/MattermostView', () => {
     describe('load', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
             mattermostView.loadSuccess = jest.fn();
             mattermostView.loadRetry = jest.fn();
         });
@@ -112,11 +117,12 @@ describe('main/views/MattermostView', () => {
 
     describe('retry', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
         const retryInBackgroundFn = jest.fn();
 
         beforeEach(() => {
             jest.useFakeTimers();
+            MainWindow.get.mockReturnValue(window);
             mattermostView.view.webContents.loadURL.mockImplementation(() => Promise.resolve());
             mattermostView.loadSuccess = jest.fn();
             mattermostView.loadRetry = jest.fn();
@@ -175,10 +181,11 @@ describe('main/views/MattermostView', () => {
 
     describe('loadSuccess', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
+            MainWindow.get.mockReturnValue(window);
             mattermostView.emit = jest.fn();
             mattermostView.setBounds = jest.fn();
             mattermostView.setInitialized = jest.fn();
@@ -202,10 +209,11 @@ describe('main/views/MattermostView', () => {
 
     describe('show', () => {
         const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn(), on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
+            MainWindow.get.mockReturnValue(window);
             mattermostView.setBounds = jest.fn();
             mattermostView.focus = jest.fn();
         });
@@ -253,9 +261,10 @@ describe('main/views/MattermostView', () => {
 
     describe('destroy', () => {
         const window = {removeBrowserView: jest.fn(), on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
             mattermostView.view.webContents.destroy = jest.fn();
         });
 
@@ -280,17 +289,18 @@ describe('main/views/MattermostView', () => {
 
     describe('handleInputEvents', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
 
         it('should open three dot menu on pressing Alt', () => {
+            MainWindow.get.mockReturnValue(window);
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown', alt: true, shift: false, control: false, meta: false});
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyUp'});
-            expect(WindowManager.focusThreeDotMenu).toHaveBeenCalled();
+            expect(MainWindow.focusThreeDotMenu).toHaveBeenCalled();
         });
 
         it('should not open three dot menu on holding Alt', () => {
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown'});
-            expect(WindowManager.focusThreeDotMenu).not.toHaveBeenCalled();
+            expect(MainWindow.focusThreeDotMenu).not.toHaveBeenCalled();
         });
 
         it('should not open three dot menu on Alt as key combp', () => {
@@ -298,15 +308,16 @@ describe('main/views/MattermostView', () => {
             mattermostView.handleInputEvents(null, {key: 'F', type: 'keyDown'});
             mattermostView.handleInputEvents(null, {key: 'F', type: 'keyUp'});
             mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyUp'});
-            expect(WindowManager.focusThreeDotMenu).not.toHaveBeenCalled();
+            expect(MainWindow.focusThreeDotMenu).not.toHaveBeenCalled();
         });
     });
 
     describe('handleDidNavigate', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
             mattermostView.setBounds = jest.fn();
         });
 
@@ -325,9 +336,10 @@ describe('main/views/MattermostView', () => {
 
     describe('handleUpdateTarget', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
 
         beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
             mattermostView.emit = jest.fn();
         });
 
@@ -355,8 +367,7 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('updateMentionsFromTitle', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, window, {});
+        const mattermostView = new MattermostView(tabView, {}, {});
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
