@@ -314,11 +314,8 @@ export class ServerManager extends EventEmitter {
     }
 
     private getFirstOpenTabForServer = (serverId: string) => {
-        const tabOrder = this.tabOrder.get(serverId);
-        if (!tabOrder) {
-            throw new Error(`Cannot find tabs for server id ${serverId}`);
-        }
-        const openTabs = this.getOrderedTabsForServer(serverId).filter((tab) => tab.isOpen);
+        const tabOrder = this.getOrderedTabsForServer(serverId);
+        const openTabs = tabOrder.filter((tab) => tab.isOpen);
         const firstTab = openTabs[0];
         if (!firstTab) {
             throw new Error(`No tabs open for server id ${serverId}`);
