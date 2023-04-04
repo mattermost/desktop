@@ -8,6 +8,7 @@ import {CombinedConfig} from 'types/config';
 
 import WindowManager from 'main/windows/windowManager';
 import {localizeMessage} from 'main/i18nManager';
+import SettingsWindow from 'main/windows/settingsWindow';
 
 export function createTemplate(config: CombinedConfig) {
     const teams = config.teams;
@@ -24,7 +25,7 @@ export function createTemplate(config: CombinedConfig) {
         }, {
             label: process.platform === 'darwin' ? localizeMessage('main.menus.tray.preferences', 'Preferences...') : localizeMessage('main.menus.tray.settings', 'Settings'),
             click: () => {
-                WindowManager.showSettingsWindow();
+                SettingsWindow.show();
             },
         }, {
             type: 'separator',

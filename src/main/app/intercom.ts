@@ -16,6 +16,7 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {handleAppBeforeQuit} from './app';
 import {updateServerInfos} from './utils';
@@ -122,7 +123,7 @@ export function handleMainWindowIsShown() {
      * calls of this function will notification re-evaluate the booleans passed to "handleShowOnboardingScreens".
     */
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
 
     log.debug('intercom.handleMainWindowIsShown', {configTeams: Config.teams, showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
@@ -141,7 +142,7 @@ export function handleNewServerModal() {
 
     const preload = getLocalPreload('desktopAPI.js');
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
@@ -173,7 +174,7 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
 
     const preload = getLocalPreload('desktopAPI.js');
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
@@ -215,7 +216,7 @@ export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
 
     const preload = getLocalPreload('desktopAPI.js');
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
@@ -255,7 +256,7 @@ export function handleWelcomeScreenModal() {
 
     const preload = getLocalPreload('desktopAPI.js');
 
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (!mainWindow) {
         return;
     }
@@ -294,7 +295,7 @@ export function handleOpenAppMenu() {
         return;
     }
     windowMenu.popup({
-        window: WindowManager.getMainWindow(),
+        window: MainWindow.get(),
         x: 18,
         y: 18,
     });

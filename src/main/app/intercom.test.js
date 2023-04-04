@@ -5,6 +5,7 @@ import Config from 'common/config';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 
 import {getLocalURLString, getLocalPreload} from 'main/utils';
+import MainWindow from 'main/windows/mainWindow';
 import ModalManager from 'main/views/modalManager';
 import WindowManager from 'main/windows/windowManager';
 
@@ -34,9 +35,11 @@ jest.mock('main/views/modalManager', () => ({
     addModal: jest.fn(),
 }));
 jest.mock('main/windows/windowManager', () => ({
-    getMainWindow: jest.fn(),
     switchServer: jest.fn(),
     switchTab: jest.fn(),
+}));
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
 }));
 
 jest.mock('./app', () => ({}));
@@ -112,7 +115,7 @@ describe('main/app/intercom', () => {
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
-            WindowManager.getMainWindow.mockReturnValue({});
+            MainWindow.get.mockReturnValue({});
 
             Config.set.mockImplementation((name, value) => {
                 Config[name] = value;
@@ -151,7 +154,7 @@ describe('main/app/intercom', () => {
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
-            WindowManager.getMainWindow.mockReturnValue({});
+            MainWindow.get.mockReturnValue({});
 
             Config.set.mockImplementation((name, value) => {
                 Config[name] = value;
@@ -194,7 +197,7 @@ describe('main/app/intercom', () => {
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
-            WindowManager.getMainWindow.mockReturnValue({});
+            MainWindow.get.mockReturnValue({});
 
             Config.set.mockImplementation((name, value) => {
                 Config[name] = value;
@@ -243,7 +246,7 @@ describe('main/app/intercom', () => {
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
-            WindowManager.getMainWindow.mockReturnValue({});
+            MainWindow.get.mockReturnValue({});
 
             Config.set.mockImplementation((name, value) => {
                 Config[name] = value;
@@ -264,7 +267,7 @@ describe('main/app/intercom', () => {
         it('MM-48079 should not show onboarding screen or server screen if GPO server is pre-configured', () => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
-            WindowManager.getMainWindow.mockReturnValue({
+            MainWindow.get.mockReturnValue({
                 isVisible: () => true,
             });
 

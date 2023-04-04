@@ -4,7 +4,7 @@
 import {app, dialog} from 'electron';
 
 import CertificateStore from 'main/certificateStore';
-import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
 
 import {handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
@@ -39,7 +39,7 @@ jest.mock('main/i18nManager', () => ({
 }));
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
-    getMainWindow: jest.fn(),
+    showMainWindow: jest.fn(),
 }));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
@@ -47,6 +47,9 @@ jest.mock('main/windows/mainWindow', () => ({
 jest.mock('main/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
+}));
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
 }));
 
 describe('main/app/app', () => {
@@ -107,7 +110,7 @@ describe('main/app/app', () => {
         };
 
         beforeEach(() => {
-            WindowManager.getMainWindow.mockReturnValue(mainWindow);
+            MainWindow.get.mockReturnValue(mainWindow);
             ViewManager.getViewByWebContentsId.mockReturnValue(view);
         });
 

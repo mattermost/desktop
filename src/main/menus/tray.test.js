@@ -9,6 +9,7 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
+jest.mock('main/windows/settingsWindow', () => ({}));
 jest.mock('main/windows/windowManager', () => ({}));
 
 describe('main/menus/tray', () => {

@@ -4,16 +4,18 @@
 'use strict';
 import cp from 'child_process';
 
-import {Notification, shell} from 'electron';
+import {Notification, shell, app} from 'electron';
 
 import {getFocusAssist} from 'windows-focus-assist';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {PLAY_SOUND} from 'common/communication';
+import Config from 'common/config';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {localizeMessage} from 'main/i18nManager';
 
+import MainWindow from '../windows/mainWindow';
 import WindowManager from '../windows/windowManager';
 
 import getLinuxDoNotDisturb from './dnd-linux';
@@ -55,6 +57,9 @@ jest.mock('electron', () => {
     return {
         app: {
             getAppPath: () => '/path/to/app',
+            dock: {
+                bounce: jest.fn(),
+            },
         },
         Notification: NotificationMock,
         shell: {
@@ -80,6 +85,9 @@ jest.mock('../views/viewManager', () => ({
         },
     }),
 }));
+jest.mock('../windows/mainWindow', () => ({
+    get: jest.fn(),
+}));
 jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
     flashFrame: jest.fn(),
@@ -90,12 +98,25 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
+jest.mock('common/config', () => ({}));
+
 describe('main/notifications', () => {
     describe('displayMention', () => {
+        const mainWindow = {
+            flashFrame: jest.fn(),
+        };
+
         beforeEach(() => {
             Notification.isSupported.mockImplementation(() => true);
             getFocusAssist.mockReturnValue({value: false});
             getDarwinDoNotDisturb.mockReturnValue(false);
+            Config.notifications = {};
+            MainWindow.get.mockReturnValue(mainWindow);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.notifications = {};
         });
 
         it('should do nothing when Notification is not supported', () => {
@@ -228,11 +249,108 @@ describe('main/notifications', () => {
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
-            expect(WindowManager.switchTab).toHaveBeenCalledWith('server_name', TAB_MESSAGING);
+            expect(WindowManager.switchTab).toBeCalledWith('server_name', TAB_MESSAGING);
+        });
+
+        it('linux/windows - should not flash frame when config item is not set', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            displayMention(
+                'click_test',
+                'mention_click_body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1, send: jest.fn()},
+                {},
+            );
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(mainWindow.flashFrame).not.toBeCalled();
+        });
+
+        it('linux/windows - should flash frame when config item is set', () => {
+            Config.notifications = {
+                flashWindow: true,
+            };
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            displayMention(
+                'click_test',
+                'mention_click_body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1, send: jest.fn()},
+                {},
+            );
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(mainWindow.flashFrame).toBeCalledWith(true);
+        });
+
+        it('mac - should not bounce icon when config item is not set', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+            displayMention(
+                'click_test',
+                'mention_click_body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1, send: jest.fn()},
+                {},
+            );
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(app.dock.bounce).not.toBeCalled();
+        });
+
+        it('mac - should bounce icon when config item is set', () => {
+            Config.notifications = {
+                bounceIcon: true,
+                bounceIconType: 'critical',
+            };
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+            displayMention(
+                'click_test',
+                'mention_click_body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1, send: jest.fn()},
+                {},
+            );
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(app.dock.bounce).toHaveBeenCalledWith('critical');
         });
     });
 
     describe('displayDownloadCompleted', () => {
+        beforeEach(() => {
+            Notification.isSupported.mockImplementation(() => true);
+            getFocusAssist.mockReturnValue({value: false});
+            getDarwinDoNotDisturb.mockReturnValue(false);
+        });
+
         it('should open file when clicked', () => {
             getDarwinDoNotDisturb.mockReturnValue(false);
             localizeMessage.mockReturnValue('test_filename');

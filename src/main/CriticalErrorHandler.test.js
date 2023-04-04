@@ -42,30 +42,10 @@ jest.mock('main/i18nManager', () => ({
 
 describe('main/CriticalErrorHandler', () => {
     const criticalErrorHandler = new CriticalErrorHandler();
-    beforeEach(() => {
-        criticalErrorHandler.setMainWindow({});
-    });
-
-    describe('windowUnresponsiveHandler', () => {
-        it('should do nothing when mainWindow is null', () => {
-            criticalErrorHandler.setMainWindow(null);
-            criticalErrorHandler.windowUnresponsiveHandler();
-            expect(dialog.showMessageBox).not.toBeCalled();
-        });
-
-        it('should call app.relaunch when user elects not to wait', async () => {
-            const promise = Promise.resolve({response: 0});
-            dialog.showMessageBox.mockImplementation(() => promise);
-            criticalErrorHandler.windowUnresponsiveHandler();
-            await promise;
-            expect(app.relaunch).toBeCalled();
-        });
-    });
 
     describe('processUncaughtExceptionHandler', () => {
         beforeEach(() => {
             app.isReady.mockImplementation(() => true);
-            criticalErrorHandler.setMainWindow({isVisible: true});
         });
 
         it('should throw error if app is not ready', () => {
@@ -73,16 +53,6 @@ describe('main/CriticalErrorHandler', () => {
             expect(() => {
                 criticalErrorHandler.processUncaughtExceptionHandler(new Error('test'));
             }).toThrow(Error);
-            expect(dialog.showMessageBox).not.toBeCalled();
-        });
-
-        it('should do nothing if main window is null or not visible', () => {
-            criticalErrorHandler.setMainWindow(null);
-            criticalErrorHandler.processUncaughtExceptionHandler(new Error('test'));
-            expect(dialog.showMessageBox).not.toBeCalled();
-
-            criticalErrorHandler.setMainWindow({isVisible: false});
-            criticalErrorHandler.processUncaughtExceptionHandler(new Error('test'));
             expect(dialog.showMessageBox).not.toBeCalled();
         });
 

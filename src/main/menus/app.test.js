@@ -58,6 +58,7 @@ jest.mock('main/windows/windowManager', () => ({
     getCurrentTeamName: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
+jest.mock('main/windows/settingsWindow', () => ({}));
 jest.mock('common/tabs/TabView', () => ({
     getTabDisplayName: (name) => name,
 }));

@@ -29,6 +29,7 @@ import {ServerInfo} from 'main/server/serverInfo';
 import {setTrayMenu} from 'main/tray/tray';
 import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {mainProtocol} from './initialize';
 
@@ -141,7 +142,7 @@ export function wasUpdated(lastAppVersion?: string) {
 
 export function clearAppCache() {
     // TODO: clear cache on browserviews, not in the renderer.
-    const mainWindow = WindowManager.getMainWindow();
+    const mainWindow = MainWindow.get();
     if (mainWindow) {
         mainWindow.webContents.session.clearCache().then(mainWindow.reload);
     } else {
