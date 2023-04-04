@@ -16,6 +16,7 @@ import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
 import downloadsManager from 'main/downloadsManager';
 import Diagnostics from 'main/diagnostics';
+import SettingsWindow from 'main/windows/settingsWindow';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -43,7 +44,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: settingsLabel,
         accelerator: 'CmdOrCtrl+,',
         click() {
-            WindowManager.showSettingsWindow();
+            SettingsWindow.show();
         },
     });
 

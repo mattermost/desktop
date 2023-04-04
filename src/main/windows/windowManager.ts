@@ -4,7 +4,7 @@
 /* eslint-disable max-lines */
 import path from 'path';
 
-import {app, BrowserWindow, nativeImage, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
+import {app, BrowserWindow, systemPreferences, ipcMain, IpcMainEvent, IpcMainInvokeEvent, desktopCapturer} from 'electron';
 import log from 'electron-log';
 
 import {
@@ -55,7 +55,6 @@ import {
 } from '../utils';
 
 import {ViewManager, LoadingScreenState} from '../views/viewManager';
-import CriticalErrorHandler from '../CriticalErrorHandler';
 
 import TeamDropdownView from '../views/teamDropdownView';
 import DownloadsDropdownView from '../views/downloadsDropdownView';
@@ -63,19 +62,16 @@ import DownloadsDropdownMenuView from '../views/downloadsDropdownMenuView';
 
 import downloadsManager from 'main/downloadsManager';
 
-import {createSettingsWindow} from './settingsWindow';
-import createMainWindow from './mainWindow';
+import MainWindow from './mainWindow';
 
 import CallsWidgetWindow from './callsWidgetWindow';
+import SettingsWindow from './settingsWindow';
 
 // singleton module to manage application's windows
 
 export class WindowManager {
     assetsDir: string;
 
-    mainWindow?: BrowserWindow;
-    mainWindowReady: boolean;
-    settingsWindow?: BrowserWindow;
     callsWidgetWindow?: CallsWidgetWindow;
     viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
@@ -85,7 +81,6 @@ export class WindowManager {
     missingScreensharePermissions?: boolean;
 
     constructor() {
-        this.mainWindowReady = false;
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
         ipcMain.on(HISTORY, this.handleHistory);
@@ -145,7 +140,7 @@ export class WindowManager {
             return;
         }
 
-        this.callsWidgetWindow = new CallsWidgetWindow(this.mainWindow!, currentView, {
+        this.callsWidgetWindow = new CallsWidgetWindow(MainWindow.get()!, currentView, {
             callID: msg.callID,
             title: msg.title,
             rootID: msg.rootID,
@@ -160,7 +155,7 @@ export class WindowManager {
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
-            this.mainWindow?.focus();
+            MainWindow.get()?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
         }
     }
@@ -170,7 +165,7 @@ export class WindowManager {
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
-            this.mainWindow?.focus();
+            MainWindow.get()?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
         }
     }
@@ -180,7 +175,7 @@ export class WindowManager {
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
-            this.mainWindow?.focus();
+            MainWindow.get()?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
         }
     }
@@ -190,7 +185,7 @@ export class WindowManager {
 
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
-            this.mainWindow?.focus();
+            MainWindow.get()?.focus();
             this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
         }
     }
@@ -201,100 +196,49 @@ export class WindowManager {
         this.callsWidgetWindow?.close();
     }
 
-    showSettingsWindow = () => {
-        log.debug('WindowManager.showSettingsWindow');
-
-        if (this.settingsWindow) {
-            this.settingsWindow.show();
-        } else {
-            if (!this.mainWindow) {
-                this.showMainWindow();
-            }
-            const withDevTools = Boolean(process.env.MM_DEBUG_SETTINGS) || false;
-
-            this.settingsWindow = createSettingsWindow(this.mainWindow!, withDevTools);
-            this.settingsWindow.on('closed', () => {
-                delete this.settingsWindow;
-            });
-        }
-    }
-
     showMainWindow = (deeplinkingURL?: string | URL) => {
         log.debug('WindowManager.showMainWindow', deeplinkingURL);
 
-        if (this.mainWindow) {
-            if (this.mainWindow.isVisible()) {
-                this.mainWindow.focus();
+        const mainWindow = MainWindow.get();
+        if (mainWindow) {
+            if (mainWindow.isVisible()) {
+                mainWindow.focus();
             } else {
-                this.mainWindow.show();
+                mainWindow.show();
             }
         } else {
-            this.mainWindowReady = false;
-            this.mainWindow = createMainWindow({
-                linuxAppIcon: path.join(this.assetsDir, 'linux', 'app_icon.png'),
-            });
-
-            if (!this.mainWindow) {
-                log.error('unable to create main window');
-                app.quit();
-                return;
-            }
-
-            this.mainWindow.once('ready-to-show', () => {
-                this.mainWindowReady = true;
-            });
-
-            // window handlers
-            this.mainWindow.on('closed', () => {
-                log.warn('main window closed');
-                delete this.mainWindow;
-                this.mainWindowReady = false;
-            });
-            this.mainWindow.on('unresponsive', () => {
-                CriticalErrorHandler.setMainWindow(this.mainWindow!);
-                CriticalErrorHandler.windowUnresponsiveHandler();
-            });
-            this.mainWindow.on('maximize', this.handleMaximizeMainWindow);
-            this.mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);
-            if (process.platform !== 'darwin') {
-                this.mainWindow.on('resize', this.handleResizeMainWindow);
-            }
-            this.mainWindow.on('will-resize', this.handleWillResizeMainWindow);
-            this.mainWindow.on('resized', this.handleResizedMainWindow);
-            this.mainWindow.on('focus', this.focusBrowserView);
-            this.mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
-            this.mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
-
-            // Should not allow the main window to generate a window of its own
-            this.mainWindow.webContents.setWindowOpenHandler(() => ({action: 'deny'}));
-
-            if (process.env.MM_DEBUG_SETTINGS) {
-                this.mainWindow.webContents.openDevTools({mode: 'detach'});
-            }
-
-            if (this.viewManager) {
-                this.viewManager.updateMainWindow(this.mainWindow);
-            }
-
-            this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
-            this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, downloadsManager.getDownloads(), Config.darkMode);
-            this.downloadsDropdownMenu = new DownloadsDropdownMenuView(this.mainWindow, Config.darkMode);
+            this.createMainWindow();
         }
-        this.initializeViewManager();
 
         if (deeplinkingURL) {
-            this.viewManager!.handleDeepLink(deeplinkingURL);
+            this.viewManager?.handleDeepLink(deeplinkingURL);
         }
     }
 
-    getMainWindow = (ensureCreated?: boolean) => {
-        if (ensureCreated && !this.mainWindow) {
-            this.showMainWindow();
+    private createMainWindow = () => {
+        const mainWindow = MainWindow.get(true);
+        if (!mainWindow) {
+            return;
         }
-        return this.mainWindow;
-    }
 
-    on = this.mainWindow?.on;
+        // window handlers
+        mainWindow.on('maximize', this.handleMaximizeMainWindow);
+        mainWindow.on('unmaximize', this.handleUnmaximizeMainWindow);
+        if (process.platform !== 'darwin') {
+            mainWindow.on('resize', this.handleResizeMainWindow);
+        }
+        mainWindow.on('will-resize', this.handleWillResizeMainWindow);
+        mainWindow.on('resized', this.handleResizedMainWindow);
+        mainWindow.on('focus', this.focusBrowserView);
+        mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
+        mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
+
+        this.teamDropdown = new TeamDropdownView(Config.teams, Config.darkMode, Config.enableServerManagement);
+        this.downloadsDropdown = new DownloadsDropdownView(downloadsManager.getDownloads(), Config.darkMode);
+        this.downloadsDropdownMenu = new DownloadsDropdownMenuView(Config.darkMode);
+
+        this.initializeViewManager();
+    }
 
     handleMaximizeMainWindow = () => {
         this.downloadsDropdown?.updateWindowBounds();
@@ -313,7 +257,7 @@ export class WindowManager {
     handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
         log.silly('WindowManager.handleWillResizeMainWindow');
 
-        if (!(this.viewManager && this.mainWindow)) {
+        if (!(this.viewManager && MainWindow.get())) {
             return;
         }
 
@@ -343,7 +287,7 @@ export class WindowManager {
     handleResizedMainWindow = () => {
         log.silly('WindowManager.handleResizedMainWindow');
 
-        if (this.mainWindow) {
+        if (MainWindow.get()) {
             const bounds = this.getBounds();
             this.throttledWillResize(bounds);
             ipcMain.emit(RESIZE_MODAL, null, bounds);
@@ -368,7 +312,7 @@ export class WindowManager {
     handleResizeMainWindow = () => {
         log.silly('WindowManager.handleResizeMainWindow');
 
-        if (!(this.viewManager && this.mainWindow)) {
+        if (!(this.viewManager && MainWindow.get())) {
             return;
         }
         if (this.isResizing) {
@@ -405,15 +349,16 @@ export class WindowManager {
     private getBounds = () => {
         let bounds;
 
-        if (this.mainWindow) {
+        const mainWindow = MainWindow.get();
+        if (mainWindow) {
             // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
             // https://github.com/electron/electron/issues/28699
             // https://github.com/electron/electron/issues/28106
             if (process.platform === 'linux') {
-                const size = this.mainWindow.getSize();
+                const size = mainWindow.getSize();
                 bounds = {width: size[0], height: size[1]};
             } else {
-                bounds = this.mainWindow.getContentBounds();
+                bounds = mainWindow.getContentBounds();
             }
         }
 
@@ -422,7 +367,8 @@ export class WindowManager {
 
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
     sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
-        if (!this.mainWindow || !this.mainWindowReady) {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow || !MainWindow.isReady) {
             if (maxRetries > 0) {
                 log.info(`Can't send ${channel}, will retry`);
                 setTimeout(() => {
@@ -433,14 +379,8 @@ export class WindowManager {
             }
             return;
         }
-        this.mainWindow!.webContents.send(channel, ...args);
-        if (this.settingsWindow && this.settingsWindow.isVisible()) {
-            try {
-                this.settingsWindow.webContents.send(channel, ...args);
-            } catch (e) {
-                log.error(`There was an error while trying to communicate with the renderer: ${e}`);
-            }
-        }
+        mainWindow.webContents.send(channel, ...args);
+        SettingsWindow.get()?.webContents.send(channel, ...args);
     }
 
     sendToRenderer = (channel: string, ...args: unknown[]) => {
@@ -449,9 +389,7 @@ export class WindowManager {
 
     sendToAll = (channel: string, ...args: unknown[]) => {
         this.sendToRenderer(channel, ...args);
-        if (this.settingsWindow) {
-            this.settingsWindow.webContents.send(channel, ...args);
-        }
+        SettingsWindow.get()?.webContents.send(channel, ...args);
 
         // TODO: should we include popups?
     }
@@ -464,101 +402,29 @@ export class WindowManager {
 
     restoreMain = () => {
         log.info('restoreMain');
-        if (!this.mainWindow) {
-            this.showMainWindow();
+
+        const mainWindow = MainWindow.get(true);
+        if (!mainWindow) {
+            throw new Error('Main window does not exist');
         }
-        if (!this.mainWindow!.isVisible() || this.mainWindow!.isMinimized()) {
-            if (this.mainWindow!.isMinimized()) {
-                this.mainWindow!.restore();
+
+        if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
+            if (mainWindow.isMinimized()) {
+                mainWindow.restore();
             } else {
-                this.mainWindow!.show();
+                mainWindow.show();
             }
-            if (this.settingsWindow) {
-                this.settingsWindow.focus();
+            const settingsWindow = SettingsWindow.get();
+            if (settingsWindow) {
+                settingsWindow.focus();
             } else {
-                this.mainWindow!.focus();
+                mainWindow.focus();
             }
-        } else if (this.settingsWindow) {
-            this.settingsWindow.focus();
+        } else if (SettingsWindow.get()) {
+            SettingsWindow.get()?.focus();
         } else {
-            this.mainWindow!.focus();
+            mainWindow.focus();
         }
-    }
-
-    flashFrame = (flash: boolean) => {
-        if (process.platform === 'linux' || process.platform === 'win32') {
-            if (Config.notifications.flashWindow) {
-                this.mainWindow?.flashFrame(flash);
-            }
-        }
-        if (process.platform === 'darwin' && Config.notifications.bounceIcon) {
-            app.dock.bounce(Config.notifications.bounceIconType);
-        }
-    }
-
-    drawBadge = (text: string, small: boolean) => {
-        const scale = 2; // should rely display dpi
-        const size = (small ? 20 : 16) * scale;
-        const canvas = document.createElement('canvas');
-        canvas.setAttribute('width', `${size}`);
-        canvas.setAttribute('height', `${size}`);
-        const ctx = canvas.getContext('2d');
-
-        if (!ctx) {
-            log.error('Could not create canvas context');
-            return null;
-        }
-
-        // circle
-        ctx.fillStyle = '#FF1744'; // Material Red A400
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // text
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = (11 * scale) + 'px sans-serif';
-        ctx.fillText(text, size / 2, size / 2, size);
-
-        return canvas.toDataURL();
-    }
-
-    createDataURL = (text: string, small: boolean) => {
-        const win = this.mainWindow;
-        if (!win) {
-            return null;
-        }
-
-        // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
-        const safeSmall = Boolean(small);
-        const code = `
-        window.drawBadge = ${this.drawBadge};
-        window.drawBadge('${text || ''}', ${safeSmall});
-      `;
-        return win.webContents.executeJavaScript(code);
-    }
-
-    setOverlayIcon = async (badgeText: string | undefined, description: string, small: boolean) => {
-        if (process.platform === 'win32') {
-            let overlay = null;
-            if (this.mainWindow) {
-                if (badgeText) {
-                    try {
-                        const dataUrl = await this.createDataURL(badgeText, small);
-                        overlay = nativeImage.createFromDataURL(dataUrl);
-                    } catch (err) {
-                        log.error(`Couldn't generate a badge: ${err}`);
-                    }
-                }
-                this.mainWindow.setOverlayIcon(overlay, description);
-            }
-        }
-    }
-
-    isMainWindow = (window: BrowserWindow) => {
-        return this.mainWindow && this.mainWindow === window;
     }
 
     handleDoubleClick = (e: IpcMainEvent, windowType?: string) => {
@@ -568,7 +434,7 @@ export class WindowManager {
         if (process.platform === 'darwin') {
             action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
         }
-        const win = (windowType === 'settings') ? this.settingsWindow : this.mainWindow;
+        const win = (windowType === 'settings') ? SettingsWindow.get() : MainWindow.get();
         if (!win) {
             return;
         }
@@ -592,8 +458,8 @@ export class WindowManager {
     }
 
     initializeViewManager = () => {
-        if (!this.viewManager && Config && this.mainWindow) {
-            this.viewManager = new ViewManager(this.mainWindow);
+        if (!this.viewManager && Config) {
+            this.viewManager = new ViewManager();
             this.viewManager.load();
             this.viewManager.showInitial();
             this.initializeCurrentServerName();
@@ -658,10 +524,8 @@ export class WindowManager {
     }
 
     focusThreeDotMenu = () => {
-        if (this.mainWindow) {
-            this.mainWindow.webContents.focus();
-            this.mainWindow.webContents.send(FOCUS_THREE_DOT_MENU);
-        }
+        MainWindow.get()?.webContents.focus();
+        MainWindow.get()?.webContents.send(FOCUS_THREE_DOT_MENU);
     }
 
     handleLoadingScreenDataRequest = () => {

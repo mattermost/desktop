@@ -1,8 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+
+import {BrowserView, dialog, ipcMain, IpcMainEvent} from 'electron';
 import log from 'electron-log';
-import {BrowserView, BrowserWindow, dialog, ipcMain, IpcMainEvent} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
+
 import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
 import {Tab, TeamWithTabs} from 'types/config';
@@ -33,6 +35,7 @@ import PlaybooksTabView from 'common/tabs/PlaybooksTabView';
 
 import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
+import MainWindow from 'main/windows/mainWindow';
 
 import {getLocalURLString, getLocalPreload, getWindowBoundaries} from '../utils';
 
@@ -57,21 +60,15 @@ export class ViewManager {
     currentView?: string;
     urlView?: BrowserView;
     urlViewCancel?: () => void;
-    mainWindow: BrowserWindow;
     loadingScreen?: BrowserView;
     loadingScreenState: LoadingScreenState;
 
-    constructor(mainWindow: BrowserWindow) {
+    constructor() {
         this.lastActiveServer = Config.lastActiveTeam;
         this.viewOptions = {webPreferences: {spellcheck: Config.useSpellChecker}};
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
-        this.mainWindow = mainWindow;
         this.closedViews = new Map();
         this.loadingScreenState = LoadingScreenState.HIDDEN;
-    }
-
-    updateMainWindow = (mainWindow: BrowserWindow) => {
-        this.mainWindow = mainWindow;
     }
 
     getServers = () => {
@@ -86,7 +83,7 @@ export class ViewManager {
 
     makeView = (srv: MattermostServer, serverInfo: ServerInfo, tab: Tab, url?: string): MattermostView => {
         const tabView = this.getServerView(srv, tab.name);
-        const view = new MattermostView(tabView, serverInfo, this.mainWindow, this.viewOptions);
+        const view = new MattermostView(tabView, serverInfo, this.viewOptions);
         view.once(LOAD_SUCCESS, this.activateView);
         view.load(url);
         view.on(UPDATE_TARGET_URL, this.showURLView);
@@ -186,7 +183,7 @@ export class ViewManager {
                 this.currentView = undefined;
                 this.showInitial();
             } else {
-                this.mainWindow.webContents.send(SET_ACTIVE_VIEW);
+                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
             }
         }
 
@@ -196,7 +193,7 @@ export class ViewManager {
             if (view) {
                 this.currentView = view.name;
                 this.showByName(view.name);
-                this.mainWindow.webContents.send(SET_ACTIVE_VIEW, view.tab.server.name, view.tab.type);
+                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.tab.server.name, view.tab.type);
             }
         } else {
             this.showInitial();
@@ -221,7 +218,7 @@ export class ViewManager {
                 }
             }
         } else {
-            this.mainWindow.webContents.send(SET_ACTIVE_VIEW, null, null);
+            MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, null, null);
             ipcMain.emit(MAIN_WINDOW_SHOWN);
         }
     }
@@ -248,7 +245,7 @@ export class ViewManager {
                     this.showLoadingScreen();
                 }
             }
-            newView.window.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.name, newView.tab.type);
+            MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.name, newView.tab.type);
             ipcMain.emit(SET_ACTIVE_VIEW, true, newView.tab.server.name, newView.tab.type);
             if (newView.isReady()) {
                 ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.server.name, newView.tab.type);
@@ -375,13 +372,13 @@ export class ViewManager {
             const query = new Map([['url', urlString]]);
             const localURL = getLocalURLString('urlView.html', query);
             urlView.webContents.loadURL(localURL);
-            this.mainWindow.addBrowserView(urlView);
-            const boundaries = this.views.get(this.currentView || '')?.view.getBounds() ?? this.mainWindow.getBounds();
+            MainWindow.get()?.addBrowserView(urlView);
+            const boundaries = this.views.get(this.currentView || '')?.view.getBounds() ?? MainWindow.get()!.getBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
                 try {
-                    this.mainWindow.removeBrowserView(urlView);
+                    MainWindow.get()?.removeBrowserView(urlView);
                 } catch (e) {
                     log.error('Failed to remove URL view', e);
                 }
@@ -421,9 +418,11 @@ export class ViewManager {
     }
 
     setLoadingScreenBounds = () => {
-        if (this.loadingScreen) {
-            this.loadingScreen.setBounds(getWindowBoundaries(this.mainWindow));
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
         }
+        this.loadingScreen?.setBounds(getWindowBoundaries(mainWindow));
     }
 
     createLoadingScreen = () => {
@@ -441,6 +440,11 @@ export class ViewManager {
     }
 
     showLoadingScreen = () => {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
+        }
+
         if (!this.loadingScreen) {
             this.createLoadingScreen();
         }
@@ -455,10 +459,10 @@ export class ViewManager {
             this.loadingScreen!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
         }
 
-        if (this.mainWindow.getBrowserViews().includes(this.loadingScreen!)) {
-            this.mainWindow.setTopBrowserView(this.loadingScreen!);
+        if (mainWindow.getBrowserViews().includes(this.loadingScreen!)) {
+            mainWindow.setTopBrowserView(this.loadingScreen!);
         } else {
-            this.mainWindow.addBrowserView(this.loadingScreen!);
+            mainWindow.addBrowserView(this.loadingScreen!);
         }
 
         this.setLoadingScreenBounds();
@@ -474,7 +478,7 @@ export class ViewManager {
     hideLoadingScreen = () => {
         if (this.loadingScreen && this.loadingScreenState !== LoadingScreenState.HIDDEN) {
             this.loadingScreenState = LoadingScreenState.HIDDEN;
-            this.mainWindow.removeBrowserView(this.loadingScreen);
+            MainWindow.get()?.removeBrowserView(this.loadingScreen);
         }
     }
 

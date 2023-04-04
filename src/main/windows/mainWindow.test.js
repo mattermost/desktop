@@ -10,21 +10,24 @@ import {BrowserWindow, screen, app, globalShortcut, dialog} from 'electron';
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constants';
-
-import ContextMenu from '../contextMenu';
 import * as Validator from 'common/Validator';
 
-import createMainWindow from './mainWindow';
+import ContextMenu from '../contextMenu';
+import {isInsideRectangle} from '../utils';
+import {MainWindow} from './mainWindow';
 
 jest.mock('path', () => ({
     join: jest.fn(),
+    resolve: jest.fn(),
 }));
 
 jest.mock('electron', () => ({
     app: {
+        getAppPath: jest.fn(),
         getPath: jest.fn(),
         hide: jest.fn(),
         quit: jest.fn(),
+        relaunch: jest.fn(),
     },
     dialog: {
         showMessageBox: jest.fn(),
@@ -65,6 +68,7 @@ jest.mock('common/Validator', () => ({
 jest.mock('../contextMenu', () => jest.fn());
 
 jest.mock('../utils', () => ({
+    isInsideRectangle: jest.fn(),
     getLocalPreload: jest.fn(),
     getLocalURLString: jest.fn(),
 }));
@@ -76,7 +80,7 @@ jest.mock('main/i18nManager', () => ({
 'use strict';
 
 describe('main/windows/mainWindow', () => {
-    describe('createMainWindow', () => {
+    describe('init', () => {
         const baseWindow = {
             setMenuBarVisibility: jest.fn(),
             loadURL: jest.fn(),
@@ -90,6 +94,7 @@ describe('main/windows/mainWindow', () => {
             webContents: {
                 on: jest.fn(),
                 send: jest.fn(),
+                setWindowOpenHandler: jest.fn(),
             },
             isMaximized: jest.fn(),
             isFullScreen: jest.fn(),
@@ -104,6 +109,7 @@ describe('main/windows/mainWindow', () => {
             fs.readFileSync.mockImplementation(() => '{"x":400,"y":300,"width":1280,"height":700,"maximized":false,"fullscreen":false}');
             path.join.mockImplementation(() => 'anyfile.txt');
             screen.getDisplayMatching.mockImplementation(() => ({bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            isInsideRectangle.mockReturnValue(true);
             Validator.validateBoundsInfo.mockImplementation((data) => data);
             ContextMenu.mockImplementation(() => ({
                 reload: jest.fn(),
@@ -115,7 +121,8 @@ describe('main/windows/mainWindow', () => {
         });
 
         it('should set window size using bounds read from file', () => {
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 x: 400,
                 y: 300,
@@ -126,16 +133,10 @@ describe('main/windows/mainWindow', () => {
             }));
         });
 
-        it('should open in fullscreen if fullscreen set to true', () => {
-            createMainWindow({fullscreen: true});
-            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
-                fullscreen: true,
-            }));
-        });
-
         it('should set default window size when failing to read bounds from file', () => {
             fs.readFileSync.mockImplementation(() => 'just a bunch of garbage');
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: DEFAULT_WINDOW_WIDTH,
                 height: DEFAULT_WINDOW_HEIGHT,
@@ -145,24 +146,12 @@ describe('main/windows/mainWindow', () => {
         it('should set default window size when bounds are outside the normal screen', () => {
             fs.readFileSync.mockImplementation(() => '{"x":-400,"y":-300,"width":1280,"height":700,"maximized":false,"fullscreen":false}');
             screen.getDisplayMatching.mockImplementation(() => ({bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
-            createMainWindow({});
+            isInsideRectangle.mockReturnValue(false);
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: DEFAULT_WINDOW_WIDTH,
                 height: DEFAULT_WINDOW_HEIGHT,
-            }));
-        });
-
-        it('should set linux app icon', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'linux',
-            });
-            createMainWindow({linuxAppIcon: 'linux-icon.png'});
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
-                icon: 'linux-icon.png',
             }));
         });
 
@@ -178,7 +167,8 @@ describe('main/windows/mainWindow', () => {
             BrowserWindow.mockImplementation(() => window);
             fs.readFileSync.mockImplementation(() => '{"x":400,"y":300,"width":1280,"height":700,"maximized":true,"fullscreen":false}');
             Config.hideOnStart = false;
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             expect(window.webContents.zoomLevel).toStrictEqual(0);
             expect(window.maximize).toBeCalled();
         });
@@ -195,7 +185,8 @@ describe('main/windows/mainWindow', () => {
             BrowserWindow.mockImplementation(() => window);
             fs.readFileSync.mockImplementation(() => '{"x":400,"y":300,"width":1280,"height":700,"maximized":true,"fullscreen":false}');
             Config.hideOnStart = true;
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             expect(window.show).not.toHaveBeenCalled();
         });
 
@@ -210,7 +201,8 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({}, {});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             global.willAppQuit = false;
             expect(fs.writeFileSync).toHaveBeenCalled();
         });
@@ -231,7 +223,8 @@ describe('main/windows/mainWindow', () => {
             BrowserWindow.mockImplementation(() => window);
             Config.minimizeToTray = true;
             Config.alwaysMinimize = true;
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             Config.minimizeToTray = false;
             Config.alwaysMinimize = false;
             Object.defineProperty(process, 'platform', {
@@ -255,7 +248,8 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             Config.alwaysClose = true;
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             Config.alwaysClose = false;
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -278,11 +272,13 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             dialog.showMessageBox.mockResolvedValue({response: 1});
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             expect(app.quit).not.toHaveBeenCalled();
             const promise = Promise.resolve({response: 0});
             dialog.showMessageBox.mockImplementation(() => promise);
-            createMainWindow({});
+            const mainWindow2 = new MainWindow();
+            mainWindow2.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -306,7 +302,8 @@ describe('main/windows/mainWindow', () => {
             BrowserWindow.mockImplementation(() => window);
             Config.minimizeToTray = true;
             Config.alwaysMinimize = true;
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             Config.minimizeToTray = false;
             Config.alwaysMinimize = false;
             Object.defineProperty(process, 'platform', {
@@ -330,7 +327,8 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             Config.alwaysClose = true;
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             Config.alwaysClose = false;
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -353,11 +351,13 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             dialog.showMessageBox.mockResolvedValue({response: 1});
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             expect(app.quit).not.toHaveBeenCalled();
             const promise = Promise.resolve({response: 0});
             dialog.showMessageBox.mockImplementation(() => promise);
-            createMainWindow({});
+            const mainWindow2 = new MainWindow();
+            mainWindow2.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -379,7 +379,8 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -407,7 +408,8 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -434,7 +436,8 @@ describe('main/windows/mainWindow', () => {
                 },
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -456,11 +459,28 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            createMainWindow({});
+            const mainWindow = new MainWindow();
+            mainWindow.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
             expect(globalShortcut.registerAll).toHaveBeenCalledWith(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], expect.any(Function));
+        });
+    });
+
+    describe('onUnresponsive', () => {
+        const mainWindow = new MainWindow();
+
+        beforeEach(() => {
+            mainWindow.win = {};
+        });
+
+        it('should call app.relaunch when user elects not to wait', async () => {
+            const promise = Promise.resolve({response: 0});
+            dialog.showMessageBox.mockImplementation(() => promise);
+            mainWindow.onUnresponsive();
+            await promise;
+            expect(app.relaunch).toBeCalled();
         });
     });
 });

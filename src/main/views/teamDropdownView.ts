@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
+import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
 import log from 'electron-log';
 
@@ -21,6 +21,7 @@ import * as AppState from '../appState';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import WindowManager from '../windows/windowManager';
+import MainWindow from '../windows/mainWindow';
 
 export default class TeamDropdownView {
     view: BrowserView;
@@ -33,18 +34,16 @@ export default class TeamDropdownView {
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
-    window: BrowserWindow;
-    windowBounds: Electron.Rectangle;
+    windowBounds?: Electron.Rectangle;
     isOpen: boolean;
 
-    constructor(window: BrowserWindow, teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
+    constructor(teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
         this.teams = this.addGpoToTeams(teams, []);
-        this.window = window;
         this.darkMode = darkMode;
         this.enableServerManagement = enableServerManagement;
         this.isOpen = false;
 
-        this.windowBounds = this.window.getContentBounds();
+        this.windowBounds = MainWindow.getBounds();
 
         const preload = getLocalPreload('desktopAPI.js');
         this.view = new BrowserView({webPreferences: {
@@ -57,7 +56,7 @@ export default class TeamDropdownView {
         }});
 
         this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
-        this.window.addBrowserView(this.view);
+        MainWindow.get()?.addBrowserView(this.view);
 
         ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_TEAMS_DROPDOWN, this.handleClose);
@@ -95,7 +94,7 @@ export default class TeamDropdownView {
     }
 
     updateWindowBounds = () => {
-        this.windowBounds = this.window.getContentBounds();
+        this.windowBounds = MainWindow.getBounds();
         this.updateDropdown();
     }
 
@@ -123,7 +122,7 @@ export default class TeamDropdownView {
             return;
         }
         this.view.setBounds(this.bounds);
-        this.window.setTopBrowserView(this.view);
+        MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
         WindowManager.sendToRenderer(OPEN_TEAMS_DROPDOWN);
         this.isOpen = true;
