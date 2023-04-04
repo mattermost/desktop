@@ -1,0 +1,49 @@
+name: release-mas
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-mas.[0-9]+"
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TERM: xterm
+
+jobs:
+  mac-app-store-preflight:
+    runs-on: macos-12
+    env:
+      MAS_PROFILE: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MAS_PROFILE }}
+      MACOS_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}
+      MACOS_API_KEY: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY }}
+      MACOS_API_ISSUER_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_ISSUER_ID }}
+      CSC_FOR_PULL_REQUEST: true
+      CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_KEY_PASSWORD}}
+      CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
+    steps:
+      - name: release/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: release/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: release/install-dependencies
+        run: |
+          brew install yq
+          npm ci
+      - name: release/copy-provisioning-profile
+        run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
+      - name: release/patch-version-number-for-MAS
+        run: ./scripts/patch_mas_version.sh
+      - name: release/test
+        uses: ./.github/actions/test
+      - name: release/package
+        run: npm run package:mas
+      - name: release/publish
+        run: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
