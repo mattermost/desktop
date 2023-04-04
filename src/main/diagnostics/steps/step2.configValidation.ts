@@ -6,7 +6,7 @@ import {ElectronLog} from 'electron-log';
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
 import Config from 'common/config';
-import * as Validator from 'main/Validator';
+import * as Validator from 'common/Validator';
 
 import DiagnosticsStep from '../DiagnosticStep';
 

@@ -14,11 +14,11 @@ import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS} from 'comm
 import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
+import * as Validator from 'common/Validator';
 
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 
-import * as Validator from '../Validator';
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
