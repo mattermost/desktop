@@ -47,6 +47,7 @@ jest.mock('main/tray/tray', () => ({
 jest.mock('main/views/viewManager', () => ({
     reloadConfiguration: jest.fn(),
 }));
+jest.mock('main/views/loadingScreen', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     handleUpdateConfig: jest.fn(),
     sendToRenderer: jest.fn(),

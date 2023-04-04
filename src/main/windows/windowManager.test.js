@@ -14,6 +14,7 @@ import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
 } from 'main/utils';
+import LoadingScreen from '../views/loadingScreen';
 
 import ViewManager from 'main/views/viewManager';
 
@@ -75,6 +76,10 @@ jest.mock('../views/viewManager', () => ({
     updateMainWindow: jest.fn(),
 }));
 jest.mock('../CriticalErrorHandler', () => jest.fn());
+jest.mock('../views/loadingScreen', () => ({
+    isHidden: jest.fn(),
+    setBounds: jest.fn(),
+}));
 jest.mock('../views/teamDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
@@ -173,7 +178,7 @@ describe('main/windows/windowManager', () => {
 
         it('should update loading screen and team dropdown bounds', () => {
             windowManager.handleResizeMainWindow();
-            expect(ViewManager.setLoadingScreenBounds).toHaveBeenCalled();
+            expect(LoadingScreen.setBounds).toHaveBeenCalled();
             expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
         });
 
@@ -232,12 +237,13 @@ describe('main/windows/windowManager', () => {
         it('should update loading screen and team dropdown bounds', () => {
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
-            expect(ViewManager.setLoadingScreenBounds).toHaveBeenCalled();
+            expect(LoadingScreen.setBounds).toHaveBeenCalled();
             expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
         });
 
         it('should not resize if the app is already resizing', () => {
             windowManager.isResizing = true;
+            LoadingScreen.isHidden.mockReturnValue(true);
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
             expect(event.preventDefault).toHaveBeenCalled();

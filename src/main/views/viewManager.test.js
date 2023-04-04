@@ -17,6 +17,7 @@ import MainWindow from 'main/windows/mainWindow';
 
 import {MattermostView} from './MattermostView';
 import {ViewManager} from './viewManager';
+import LoadingScreen from './loadingScreen';
 
 jest.mock('electron', () => ({
     app: {
@@ -64,7 +65,10 @@ jest.mock('main/i18nManager', () => ({
 jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
 }));
-
+jest.mock('main/views/loadingScreen', () => ({
+    show: jest.fn(),
+    fade: jest.fn(),
+}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
 }));
@@ -86,7 +90,6 @@ describe('main/views/viewManager', () => {
         const destroyFn = jest.fn();
 
         beforeEach(() => {
-            viewManager.createLoadingScreen = jest.fn();
             viewManager.showByName = jest.fn();
             viewManager.getServerView = jest.fn().mockImplementation((srv, tabName) => ({name: `${srv.name}-${tabName}`}));
             MattermostView.mockImplementation((tab) => ({
@@ -100,7 +103,6 @@ describe('main/views/viewManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            viewManager.loadingScreen = undefined;
             viewManager.closedViews = new Map();
             viewManager.views = new Map();
         });
@@ -225,7 +227,6 @@ describe('main/views/viewManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
-            delete viewManager.loadingScreen;
             delete viewManager.currentView;
             viewManager.closedViews = new Map();
             viewManager.views = new Map();
@@ -593,8 +594,6 @@ describe('main/views/viewManager', () => {
 
         beforeEach(() => {
             viewManager.getCurrentView = jest.fn();
-            viewManager.showLoadingScreen = jest.fn();
-            viewManager.fadeLoadingScreen = jest.fn();
         });
 
         afterEach(() => {
@@ -652,7 +651,7 @@ describe('main/views/viewManager', () => {
             view.needsLoadingScreen.mockImplementation(() => true);
             viewManager.views.set('view1', view);
             viewManager.showByName('view1');
-            expect(viewManager.showLoadingScreen).toHaveBeenCalled();
+            expect(LoadingScreen.show).toHaveBeenCalled();
         });
 
         it('should show the view when not errored', () => {
@@ -663,45 +662,6 @@ describe('main/views/viewManager', () => {
             viewManager.showByName('view1');
             expect(viewManager.currentView).toBe('view1');
             expect(view.show).toHaveBeenCalled();
-        });
-    });
-
-    describe('showLoadingScreen', () => {
-        const window = {
-            getBrowserViews: jest.fn(),
-            setTopBrowserView: jest.fn(),
-            addBrowserView: jest.fn(),
-        };
-        const viewManager = new ViewManager();
-        const loadingScreen = {webContents: {send: jest.fn(), isLoading: () => false}};
-        viewManager.mainWindow = window;
-
-        beforeEach(() => {
-            MainWindow.get.mockReturnValue(window);
-            viewManager.createLoadingScreen = jest.fn();
-            viewManager.setLoadingScreenBounds = jest.fn();
-            window.getBrowserViews.mockImplementation(() => []);
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-            delete viewManager.loadingScreen;
-        });
-
-        it('should create new loading screen if one doesnt exist and add it to the window', () => {
-            viewManager.createLoadingScreen.mockImplementation(() => {
-                viewManager.loadingScreen = loadingScreen;
-            });
-            viewManager.showLoadingScreen();
-            expect(viewManager.createLoadingScreen).toHaveBeenCalled();
-            expect(window.addBrowserView).toHaveBeenCalled();
-        });
-
-        it('should set the browser view as top if already exists and needs to be shown', () => {
-            viewManager.loadingScreen = loadingScreen;
-            window.getBrowserViews.mockImplementation(() => [loadingScreen]);
-            viewManager.showLoadingScreen();
-            expect(window.setTopBrowserView).toHaveBeenCalled();
         });
     });
 
