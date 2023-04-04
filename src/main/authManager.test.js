@@ -3,6 +3,7 @@
 'use strict';
 
 import {AuthManager} from 'main/authManager';
+import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
 import ModalManager from 'main/views/modalManager';
 
@@ -84,8 +85,11 @@ jest.mock('main/trustedOrigins', () => ({
     save: jest.fn(),
 }));
 
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn().mockImplementation(() => ({})),
+}));
+
 jest.mock('main/windows/windowManager', () => ({
-    getMainWindow: jest.fn().mockImplementation(() => ({})),
     getServerURLFromWebContentsId: jest.fn(),
 }));
 
@@ -151,7 +155,7 @@ describe('main/authManager', () => {
         const authManager = new AuthManager();
 
         it('should not pop modal when no main window exists', () => {
-            WindowManager.getMainWindow.mockImplementationOnce(() => null);
+            MainWindow.get.mockImplementationOnce(() => null);
             authManager.popLoginModal({url: 'http://anormalurl.com'}, {
                 isProxy: false,
                 host: 'anormalurl',
@@ -219,7 +223,7 @@ describe('main/authManager', () => {
         const authManager = new AuthManager();
 
         it('should not pop modal when no main window exists', () => {
-            WindowManager.getMainWindow.mockImplementationOnce(() => null);
+            MainWindow.get.mockImplementationOnce(() => null);
             authManager.popPermissionModal({url: 'http://anormalurl.com'}, {
                 isProxy: false,
                 host: 'anormalurl',

@@ -2,19 +2,77 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app} from 'electron';
+import {BrowserWindow, app, nativeImage} from 'electron';
 import log from 'electron-log';
 
 import {UPDATE_BADGE} from 'common/communication';
 
 import {localizeMessage} from 'main/i18nManager';
 
-import WindowManager from './windows/windowManager';
 import * as AppState from './appState';
+import MainWindow from './windows/mainWindow';
 
 const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
+
+/**
+     * Badge generation for Windows
+     */
+
+function drawBadge(text: string, small: boolean) {
+    const scale = 2; // should rely display dpi
+    const size = (small ? 20 : 16) * scale;
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('width', `${size}`);
+    canvas.setAttribute('height', `${size}`);
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        log.error('Could not create canvas context');
+        return null;
+    }
+
+    // circle
+    ctx.fillStyle = '#FF1744'; // Material Red A400
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // text
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = (11 * scale) + 'px sans-serif';
+    ctx.fillText(text, size / 2, size / 2, size);
+
+    return canvas.toDataURL();
+}
+
+function createDataURL(win: BrowserWindow, text: string, small: boolean) {
+    // since we don't have a document/canvas object in the main process, we use the webcontents from the window to draw.
+    const code = `
+    window.drawBadge = ${drawBadge};
+    window.drawBadge('${text || ''}', ${small});
+  `;
+    return win.webContents.executeJavaScript(code);
+}
+
+async function setOverlayIcon(badgeText: string | undefined, description: string, small: boolean) {
+    let overlay = null;
+    const mainWindow = MainWindow.get();
+    if (mainWindow) {
+        if (badgeText) {
+            try {
+                const dataUrl = await createDataURL(mainWindow, badgeText, small);
+                overlay = nativeImage.createFromDataURL(dataUrl);
+            } catch (err) {
+                log.error('Could not generate a badge:', err);
+            }
+        }
+        mainWindow.setOverlayIcon(overlay, description);
+    }
+}
 
 export function showBadgeWindows(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     let description = localizeMessage('main.badge.noUnreads', 'You have no unread messages');
@@ -29,7 +87,7 @@ export function showBadgeWindows(sessionExpired: boolean, mentionCount: number, 
         text = '•';
         description = localizeMessage('main.badge.sessionExpired', 'Session Expired: Please sign in to continue receiving notifications.');
     }
-    WindowManager.setOverlayIcon(text, description, mentionCount > 99);
+    setOverlayIcon(text, description, mentionCount > 99);
 }
 
 export function showBadgeOSX(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {

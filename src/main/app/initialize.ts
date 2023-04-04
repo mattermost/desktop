@@ -52,10 +52,12 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
+import SettingsWindow from 'main/windows/settingsWindow';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -105,7 +107,7 @@ export const mainProtocol = protocols?.[0]?.schemes?.[0];
  * Main entry point for the application, ensures that everything initializes in the proper order
  */
 export async function initialize() {
-    process.on('uncaughtException', CriticalErrorHandler.processUncaughtExceptionHandler.bind(CriticalErrorHandler));
+    CriticalErrorHandler.init();
     global.willAppQuit = false;
 
     // initialization that can run before the app is ready
@@ -258,7 +260,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
     ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
     ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
-    ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
+    ipcMain.on(SHOW_SETTINGS_WINDOW, SettingsWindow.show);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
@@ -344,8 +346,6 @@ function initializeAfterAppReady() {
 
     WindowManager.showMainWindow(deeplinkingURL);
 
-    CriticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
-
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
         log.debug('Initialize.UserActivityMonitor.on(status)', status);
@@ -396,7 +396,7 @@ function initializeAfterAppReady() {
         }
 
         // is the request coming from the renderer?
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (mainWindow && webContents.id === mainWindow.webContents.id) {
             callback(true);
             return;

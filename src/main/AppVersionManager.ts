@@ -8,10 +8,9 @@ import {AppState} from 'types/appState';
 
 import {UPDATE_PATHS} from 'common/communication';
 import JsonFileManager from 'common/JsonFileManager';
+import * as Validator from 'common/Validator';
 
 import {appVersionJson} from 'main/constants';
-
-import * as Validator from './Validator';
 
 export class AppVersionManager extends JsonFileManager<AppState> {
     constructor(file: string) {
