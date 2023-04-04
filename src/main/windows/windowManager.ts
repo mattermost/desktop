@@ -277,8 +277,6 @@ export class WindowManager {
             this.teamDropdown = new TeamDropdownView(this.mainWindow, Config.teams, Config.darkMode, Config.enableServerManagement);
             this.downloadsDropdown = new DownloadsDropdownView(this.mainWindow, downloadsManager.getDownloads(), Config.darkMode);
             this.downloadsDropdownMenu = new DownloadsDropdownMenuView(this.mainWindow, Config.darkMode);
-
-            LoadingScreen.setMainWindow(this.mainWindow);
         }
         this.initializeViewManager();
 

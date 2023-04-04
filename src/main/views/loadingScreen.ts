@@ -1,12 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, BrowserWindow, app, ipcMain} from 'electron';
-import log from 'electron-log';
+import {BrowserView, app, ipcMain} from 'electron';
 
 import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
+import logger from 'common/log';
 
 import {getLocalPreload, getLocalURLString, getWindowBoundaries} from 'main/utils';
+import MainWindow from 'main/windows/mainWindow';
 
 enum LoadingScreenState {
     VISIBLE = 1,
@@ -14,10 +15,11 @@ enum LoadingScreenState {
     HIDDEN = 3,
 }
 
+const log = logger.withPrefix('LoadingScreen');
+
 export class LoadingScreen {
     private view?: BrowserView;
     private state: LoadingScreenState;
-    private mainWindow?: BrowserWindow;
 
     constructor() {
         this.state = LoadingScreenState.HIDDEN;
@@ -30,11 +32,13 @@ export class LoadingScreen {
      */
 
     setBounds = () => {
-        if (!(this.view && this.mainWindow)) {
-            return;
+        if (this.view) {
+            const mainWindow = MainWindow.get();
+            if (!mainWindow) {
+                return;
+            }
+            this.view.setBounds(getWindowBoundaries(mainWindow));
         }
-
-        this.view.setBounds(getWindowBoundaries(this.mainWindow));
     }
 
     setDarkMode = (darkMode: boolean) => {
@@ -46,7 +50,8 @@ export class LoadingScreen {
     }
 
     show = () => {
-        if (!this.mainWindow) {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
             return;
         }
 
@@ -64,10 +69,10 @@ export class LoadingScreen {
             this.view!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
         }
 
-        if (this.mainWindow.getBrowserViews().includes(this.view!)) {
-            this.mainWindow.setTopBrowserView(this.view!);
+        if (mainWindow.getBrowserViews().includes(this.view!)) {
+            mainWindow.setTopBrowserView(this.view!);
         } else {
-            this.mainWindow.addBrowserView(this.view!);
+            mainWindow.addBrowserView(this.view!);
         }
 
         this.setBounds();
@@ -78,10 +83,6 @@ export class LoadingScreen {
             this.state = LoadingScreenState.FADING;
             this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
         }
-    }
-
-    setMainWindow = (mainWindow: BrowserWindow) => {
-        this.mainWindow = mainWindow;
     }
 
     private create = () => {
@@ -103,7 +104,7 @@ export class LoadingScreen {
 
         if (this.view && this.state !== LoadingScreenState.HIDDEN) {
             this.state = LoadingScreenState.HIDDEN;
-            this.mainWindow?.removeBrowserView(this.view);
+            MainWindow.get()?.removeBrowserView(this.view);
         }
 
         if (process.env.NODE_ENV === 'test') {

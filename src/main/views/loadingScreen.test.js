@@ -1,12 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import MainWindow from 'main/windows/mainWindow';
+
 import {LoadingScreen} from './loadingScreen';
 
 jest.mock('electron', () => ({
     ipcMain: {
         on: jest.fn(),
     },
+}));
+
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
 }));
 
 describe('main/views/loadingScreen', () => {
@@ -19,11 +25,11 @@ describe('main/views/loadingScreen', () => {
         const loadingScreen = new LoadingScreen();
         loadingScreen.create = jest.fn();
         loadingScreen.setBounds = jest.fn();
-        loadingScreen.mainWindow = mainWindow;
         const view = {webContents: {send: jest.fn(), isLoading: () => false}};
 
         beforeEach(() => {
             mainWindow.getBrowserViews.mockImplementation(() => []);
+            MainWindow.get.mockReturnValue(mainWindow);
         });
 
         afterEach(() => {
