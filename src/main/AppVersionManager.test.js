@@ -3,7 +3,7 @@
 
 import fs from 'fs';
 
-import * as Validator from 'main/Validator';
+import * as Validator from 'common/Validator';
 
 import {AppVersionManager} from './AppVersionManager';
 
@@ -18,7 +18,7 @@ jest.mock('fs', () => ({
     writeFile: jest.fn(),
 }));
 
-jest.mock('main/Validator', () => ({
+jest.mock('common/Validator', () => ({
     validateAppState: jest.fn(),
 }));
 

@@ -4,7 +4,7 @@
 
 import fs from 'fs';
 
-import {validateCertificateStore} from './Validator';
+import {validateCertificateStore} from 'common/Validator';
 
 import {CertificateStore} from './certificateStore';
 
@@ -21,7 +21,7 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('./Validator', () => ({
+jest.mock('common/Validator', () => ({
     validateCertificateStore: jest.fn(),
 }));
 

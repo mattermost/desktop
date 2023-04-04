@@ -12,8 +12,8 @@ import {ComparableCertificate} from 'types/certificate';
 import {UPDATE_PATHS} from 'common/communication';
 import log from 'common/log';
 import urlUtils from 'common/utils/url';
+import * as Validator from 'common/Validator';
 
-import * as Validator from './Validator';
 import {certificateStorePath} from './constants';
 
 function comparableCertificate(certificate: Certificate, dontTrust = false): ComparableCertificate {

@@ -19,7 +19,7 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('main/Validator', () => ({
+jest.mock('common/Validator', () => ({
     validateV0ConfigData: (configData) => (configData.version === 0 ? configData : null),
     validateV1ConfigData: (configData) => (configData.version === 1 ? configData : null),
     validateV2ConfigData: (configData) => (configData.version === 2 ? configData : null),

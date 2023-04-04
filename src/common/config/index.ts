@@ -20,12 +20,12 @@ import {
 } from 'types/config';
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
-
-import {configPath} from 'main/constants';
-import * as Validator from 'main/Validator';
+import * as Validator from 'common/Validator';
 import logger from 'common/log';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
+
+import {configPath} from 'main/constants';
 
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';
