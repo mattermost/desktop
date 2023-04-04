@@ -14,6 +14,7 @@ import * as Validator from 'common/Validator';
 
 import ContextMenu from '../contextMenu';
 import {isInsideRectangle} from '../utils';
+
 import {MainWindow} from './mainWindow';
 
 jest.mock('path', () => ({

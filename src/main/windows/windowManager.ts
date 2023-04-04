@@ -18,7 +18,6 @@ import {
     MAXIMIZE_CHANGE,
     HISTORY,
     REACT_APP_INITIALIZED,
-    LOADING_SCREEN_ANIMATION_FINISHED,
     FOCUS_THREE_DOT_MENU,
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
@@ -45,6 +44,7 @@ import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
 
+import downloadsManager from 'main/downloadsManager';
 import {MattermostView} from 'main/views/MattermostView';
 
 import {
@@ -54,13 +54,11 @@ import {
     openScreensharePermissionsSettingsMacOS,
 } from '../utils';
 
-import {ViewManager, LoadingScreenState} from '../views/viewManager';
-
+import {ViewManager} from '../views/viewManager';
+import LoadingScreen from '../views/loadingScreen';
 import TeamDropdownView from '../views/teamDropdownView';
 import DownloadsDropdownView from '../views/downloadsDropdownView';
 import DownloadsDropdownMenuView from '../views/downloadsDropdownMenuView';
-
-import downloadsManager from 'main/downloadsManager';
 
 import MainWindow from './mainWindow';
 
@@ -86,7 +84,6 @@ export class WindowManager {
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
-        ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleLoadingScreenAnimationFinished);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
         ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
         ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
@@ -270,14 +267,14 @@ export class WindowManager {
             return;
         }
 
-        if (this.isResizing && this.viewManager.loadingScreenState === LoadingScreenState.HIDDEN && this.viewManager.getCurrentView()) {
+        if (this.isResizing && LoadingScreen.isHidden() && this.viewManager.getCurrentView()) {
             log.debug('prevented resize');
             event.preventDefault();
             return;
         }
 
         this.throttledWillResize(newBounds);
-        this.viewManager?.setLoadingScreenBounds();
+        LoadingScreen.setBounds();
         this.teamDropdown?.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
         this.downloadsDropdownMenu?.updateWindowBounds();
@@ -324,7 +321,8 @@ export class WindowManager {
         // Another workaround since the window doesn't update properly under Linux for some reason
         // See above comment
         setTimeout(this.setCurrentViewBounds, 10, bounds);
-        this.viewManager.setLoadingScreenBounds();
+
+        LoadingScreen.setBounds();
         this.teamDropdown?.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
         this.downloadsDropdownMenu?.updateWindowBounds();
@@ -542,24 +540,6 @@ export class WindowManager {
         }
     }
 
-    handleLoadingScreenAnimationFinished = () => {
-        log.debug('WindowManager.handleLoadingScreenAnimationFinished');
-
-        if (this.viewManager) {
-            this.viewManager.hideLoadingScreen();
-        }
-
-        if (process.env.NODE_ENV === 'test') {
-            app.emit('e2e-app-loaded');
-        }
-    }
-
-    updateLoadingScreenDarkMode = (darkMode: boolean) => {
-        if (this.viewManager) {
-            this.viewManager.updateLoadingScreenDarkMode(darkMode);
-        }
-    }
-
     getViewNameByWebContentsId = (webContentsId: number) => {
         const view = this.viewManager?.findViewByWebContent(webContentsId);
         return view?.name;
@@ -599,7 +579,7 @@ export class WindowManager {
     reload = () => {
         const currentView = this.viewManager?.getCurrentView();
         if (currentView) {
-            this.viewManager?.showLoadingScreen();
+            LoadingScreen.show();
             currentView.reload();
         }
     }

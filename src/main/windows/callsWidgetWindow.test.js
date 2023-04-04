@@ -10,6 +10,7 @@ import {
     MINIMUM_CALLS_WIDGET_HEIGHT,
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
+
 import WebContentsEventManager from '../views/webContentEvents';
 
 import CallsWidgetWindow from './callsWidgetWindow';

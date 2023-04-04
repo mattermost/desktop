@@ -15,6 +15,7 @@ import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
 } from 'main/utils';
+import LoadingScreen from '../views/loadingScreen';
 
 import {WindowManager} from './windowManager';
 import MainWindow from './mainWindow';
@@ -68,11 +69,12 @@ jest.mock('../utils', () => ({
 }));
 jest.mock('../views/viewManager', () => ({
     ViewManager: jest.fn(),
-    LoadingScreenState: {
-        HIDDEN: 3,
-    },
 }));
 jest.mock('../CriticalErrorHandler', () => jest.fn());
+jest.mock('../views/loadingScreen', () => ({
+    isHidden: jest.fn(),
+    setBounds: jest.fn(),
+}));
 jest.mock('../views/teamDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
@@ -193,7 +195,7 @@ describe('main/windows/windowManager', () => {
 
         it('should update loading screen and team dropdown bounds', () => {
             windowManager.handleResizeMainWindow();
-            expect(windowManager.viewManager.setLoadingScreenBounds).toHaveBeenCalled();
+            expect(LoadingScreen.setBounds).toHaveBeenCalled();
             expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
         });
 
@@ -254,12 +256,13 @@ describe('main/windows/windowManager', () => {
         it('should update loading screen and team dropdown bounds', () => {
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
-            expect(windowManager.viewManager.setLoadingScreenBounds).toHaveBeenCalled();
+            expect(LoadingScreen.setBounds).toHaveBeenCalled();
             expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
         });
 
         it('should not resize if the app is already resizing', () => {
             windowManager.isResizing = true;
+            LoadingScreen.isHidden.mockReturnValue(true);
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
             expect(view.setBounds).not.toHaveBeenCalled();
