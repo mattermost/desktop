@@ -76,6 +76,7 @@ jest.mock('fs', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
+jest.mock('main/notifications', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));

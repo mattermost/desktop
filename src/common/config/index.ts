@@ -21,11 +21,12 @@ import {
 } from 'types/config';
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
+import * as Validator from 'common/Validator';
 
-import {configPath} from 'main/constants';
-import * as Validator from 'main/Validator';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
+
+import {configPath} from 'main/constants';
 
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import upgradeConfigData from './upgradePreferences';

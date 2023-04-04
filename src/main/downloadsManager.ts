@@ -28,6 +28,7 @@ import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
 import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
+import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import WindowManager from 'main/windows/windowManager';
@@ -35,7 +36,6 @@ import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromConten
 
 import appVersionManager from './AppVersionManager';
 import {downloadsJson} from './constants';
-import * as Validator from './Validator';
 
 export enum DownloadItemTypeEnum {
     FILE = 'file',

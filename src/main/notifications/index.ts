@@ -1,16 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {shell, Notification} from 'electron';
+import {app, shell, Notification} from 'electron';
 import log from 'electron-log';
 
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {MentionData} from 'types/notification';
 
+import Config from 'common/config';
 import {PLAY_SOUND} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
+import MainWindow from '../windows/mainWindow';
 import WindowManager from '../windows/windowManager';
 
 import {Mention} from './Mention';
@@ -61,7 +63,7 @@ export function displayMention(title: string, body: string, channel: {id: string
         if (notificationSound) {
             WindowManager.sendToRenderer(PLAY_SOUND, notificationSound);
         }
-        WindowManager.flashFrame(true);
+        flashFrame(true);
     });
 
     mention.on('click', () => {
@@ -89,7 +91,7 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
     const download = new DownloadNotification(fileName, serverName);
 
     download.on('show', () => {
-        WindowManager.flashFrame(true);
+        flashFrame(true);
     });
 
     download.on('click', () => {
@@ -152,4 +154,15 @@ function getDoNotDisturb() {
     }
 
     return false;
+}
+
+function flashFrame(flash: boolean) {
+    if (process.platform === 'linux' || process.platform === 'win32') {
+        if (Config.notifications.flashWindow) {
+            MainWindow.get()?.flashFrame(flash);
+        }
+    }
+    if (process.platform === 'darwin' && Config.notifications.bounceIcon) {
+        app.dock.bounce(Config.notifications.bounceIconType);
+    }
 }

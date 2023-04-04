@@ -8,8 +8,9 @@ import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 import {UPDATE_TRAY} from 'common/communication';
 
 import {localizeMessage} from 'main/i18nManager';
+import MainWindow from 'main/windows/mainWindow';
+import WindowManager from 'main/windows/windowManager';
 
-import WindowManager from '../windows/windowManager';
 import * as AppState from '../appState';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
@@ -85,9 +86,10 @@ export function setupTray(iconTheme: string) {
 
     trayIcon.setToolTip(app.name);
     trayIcon.on('click', () => {
-        if (WindowManager.mainWindow!.isVisible()) {
-            WindowManager.mainWindow!.blur(); // To move focus to the next top-level window in Windows
-            WindowManager.mainWindow!.hide();
+        const mainWindow = MainWindow.get(true)!;
+        if (mainWindow.isVisible()) {
+            mainWindow.blur(); // To move focus to the next top-level window in Windows
+            mainWindow.hide();
         } else {
             WindowManager.restoreMain();
         }

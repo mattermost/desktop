@@ -5,10 +5,9 @@ import {Certificate, WebContents} from 'electron';
 
 import {CertificateModalData} from 'types/certificate';
 
-import WindowManager from './windows/windowManager';
-
 import modalManager from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
+import MainWindow from './windows/mainWindow';
 
 const preload = getLocalPreload('desktopAPI.js');
 const html = getLocalURLString('certificateModal.html');
@@ -39,7 +38,7 @@ export class CertificateManager {
     }
 
     popCertificateModal = (url: string, list: Certificate[]) => {
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }

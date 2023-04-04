@@ -7,10 +7,12 @@
 import {dialog, ipcMain} from 'electron';
 import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
-import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN} from 'common/communication';
+import {LOAD_SUCCESS, MAIN_WINDOW_SHOWN, BROWSER_HISTORY_PUSH} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getTabViewName} from 'common/tabs/TabView';
 import {equalUrlsIgnoringSubpath} from 'common/utils/url';
+
+import MainWindow from 'main/windows/mainWindow';
 
 import {MattermostView} from './MattermostView';
 import {ViewManager} from './viewManager';
@@ -56,12 +58,13 @@ jest.mock('main/i18nManager', () => ({
 jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
 }));
-
 jest.mock('main/views/loadingScreen', () => ({
     show: jest.fn(),
     fade: jest.fn(),
 }));
-
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+}));
 jest.mock('./MattermostView', () => ({
     MattermostView: jest.fn(),
 }));
@@ -177,15 +180,18 @@ describe('main/views/viewManager', () => {
     });
 
     describe('reloadConfiguration', () => {
-        const viewManager = new ViewManager({});
+        const viewManager = new ViewManager();
 
         beforeEach(() => {
             viewManager.loadView = jest.fn();
             viewManager.showByName = jest.fn();
             viewManager.showInitial = jest.fn();
-            viewManager.mainWindow.webContents = {
-                send: jest.fn(),
+            const mainWindow = {
+                webContents: {
+                    send: jest.fn(),
+                },
             };
+            MainWindow.get.mockReturnValue(mainWindow);
 
             viewManager.getServerView = jest.fn().mockImplementation((srv, tabName) => ({
                 name: `${srv.name}-${tabName}`,
