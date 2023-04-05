@@ -5,7 +5,6 @@
 'use strict';
 
 import {dialog, ipcMain} from 'electron';
-import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
 
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN} from 'common/communication';
 import Config from 'common/config';
@@ -127,65 +126,6 @@ describe('main/views/viewManager', () => {
         });
     });
 
-    describe('handleAppLoggedIn', () => {
-        const viewManager = new ViewManager({});
-
-        afterEach(() => {
-            jest.resetAllMocks();
-        });
-
-        it('should reload view when URL is not on subpath of original server URL', () => {
-            const view = {
-                load: jest.fn(),
-                view: {
-                    webContents: {
-                        getURL: () => 'http://server-2.com/subpath',
-                    },
-                },
-                tab: {
-                    url: new URL('http://server-1.com/'),
-                },
-            };
-            viewManager.views.set('view1', view);
-            viewManager.handleAppLoggedIn({}, 'view1');
-            expect(view.load).toHaveBeenCalledWith(new URL('http://server-1.com/'));
-        });
-
-        it('should not reload if URLs are matching', () => {
-            const view = {
-                load: jest.fn(),
-                view: {
-                    webContents: {
-                        getURL: () => 'http://server-1.com/',
-                    },
-                },
-                tab: {
-                    url: new URL('http://server-1.com/'),
-                },
-            };
-            viewManager.views.set('view1', view);
-            viewManager.handleAppLoggedIn({}, 'view1');
-            expect(view.load).not.toHaveBeenCalled();
-        });
-
-        it('should not reload if URL is subpath of server URL', () => {
-            const view = {
-                load: jest.fn(),
-                view: {
-                    webContents: {
-                        getURL: () => 'http://server-1.com/subpath',
-                    },
-                },
-                tab: {
-                    url: new URL('http://server-1.com/'),
-                },
-            };
-            viewManager.views.set('view1', view);
-            viewManager.handleAppLoggedIn({}, 'view1');
-            expect(view.load).not.toHaveBeenCalled();
-        });
-    });
-
     describe('reloadConfiguration', () => {
         const viewManager = new ViewManager();
 
@@ -203,7 +143,6 @@ describe('main/views/viewManager', () => {
 
             viewManager.getServerView = jest.fn().mockImplementation((srv, tabName) => ({
                 name: `${srv.name}-${tabName}`,
-                urlTypeTuple: tuple(`http://${srv.name}.com/`, tabName),
                 url: new URL(`http://${srv.name}.com`),
             }));
             MattermostServer.mockImplementation((server) => ({
@@ -219,10 +158,10 @@ describe('main/views/viewManager', () => {
                 once: onceFn,
                 destroy: destroyFn,
                 name: tab.name,
-                urlTypeTuple: tab.urlTypeTuple,
                 updateServerInfo: jest.fn(),
                 tab,
             }));
+            getTabViewName.mockImplementation((a, b) => `${a}-${b}`);
         });
 
         afterEach(() => {
@@ -249,7 +188,6 @@ describe('main/views/viewManager', () => {
             const makeSpy = jest.spyOn(viewManager, 'makeView');
             const view = new MattermostView({
                 name: 'server1-tab1',
-                urlTypeTuple: tuple(new URL('http://server1.com').href, 'tab1'),
                 server: 'server1',
             });
             viewManager.views.set('server1-tab1', view);
@@ -303,7 +241,7 @@ describe('main/views/viewManager', () => {
                     name: 'tab1',
                     isOpen: true,
                 },
-                'http://server1.com/',
+                'http://server1.com',
             );
             makeSpy.mockRestore();
         });
@@ -318,7 +256,6 @@ describe('main/views/viewManager', () => {
                     name: 'server1-tab1',
                     url: new URL('http://server1.com'),
                 },
-                urlTypeTuple: tuple('http://server1.com/', 'tab1'),
                 destroy: jest.fn(),
                 updateServerInfo: jest.fn(),
             };
@@ -348,7 +285,6 @@ describe('main/views/viewManager', () => {
                     name: 'server1-tab1',
                     url: new URL('http://server1.com'),
                 },
-                urlTypeTuple: ['http://server.com/', 'tab1'],
                 destroy: jest.fn(),
                 updateServerInfo: jest.fn(),
             };
@@ -772,12 +708,8 @@ describe('main/views/viewManager', () => {
             resetLoadingStatus: jest.fn(),
             load: jest.fn(),
             once: jest.fn(),
-            isInitialized: jest.fn(),
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                },
-            },
+            isReady: jest.fn(),
+            sendToRenderer: jest.fn(),
             serverInfo: {
                 remoteInfo: {
                     serverVersion: '1.0.0',
@@ -819,10 +751,10 @@ describe('main/views/viewManager', () => {
                     },
                 },
             };
-            view.isInitialized.mockImplementation(() => true);
+            view.isReady.mockImplementation(() => true);
             viewManager.views.set('view1', view);
             viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
-            expect(view.view.webContents.send).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/deep/link?thing=yes');
+            expect(view.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/deep/link?thing=yes');
         });
 
         it('should throw error if view is missing', () => {

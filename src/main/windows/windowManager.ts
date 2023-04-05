@@ -15,7 +15,6 @@ import {
 
 import {
     MAXIMIZE_CHANGE,
-    HISTORY,
     FOCUS_THREE_DOT_MENU,
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
@@ -74,7 +73,6 @@ export class WindowManager {
     constructor() {
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
-        ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
@@ -133,7 +131,7 @@ export class WindowManager {
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             MainWindow.get()?.focus();
-            this.callsWidgetWindow.getMainView().view.webContents.send(DESKTOP_SOURCES_MODAL_REQUEST);
+            this.callsWidgetWindow.getMainView().sendToRenderer(DESKTOP_SOURCES_MODAL_REQUEST);
         }
     }
 
@@ -143,7 +141,7 @@ export class WindowManager {
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             MainWindow.get()?.focus();
-            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
+            this.callsWidgetWindow.getMainView().sendToRenderer(BROWSER_HISTORY_PUSH, this.callsWidgetWindow.getChannelURL());
         }
     }
 
@@ -153,7 +151,7 @@ export class WindowManager {
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             MainWindow.get()?.focus();
-            this.callsWidgetWindow.getMainView().view.webContents.send(CALLS_ERROR, msg);
+            this.callsWidgetWindow.getMainView().sendToRenderer(CALLS_ERROR, msg);
         }
     }
 
@@ -163,7 +161,7 @@ export class WindowManager {
         if (this.callsWidgetWindow) {
             this.switchServer(this.callsWidgetWindow.getServerName());
             MainWindow.get()?.focus();
-            this.callsWidgetWindow.getMainView().view.webContents.send(BROWSER_HISTORY_PUSH, msg.link);
+            this.callsWidgetWindow.getMainView().sendToRenderer(BROWSER_HISTORY_PUSH, msg.link);
         }
     }
 
@@ -314,7 +312,7 @@ export class WindowManager {
 
         const currentView = ViewManager.getCurrentView();
         if (currentView) {
-            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL()));
+            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.currentURL));
             this.setBoundsFunction(currentView, adjustedBounds);
         }
     }
@@ -520,27 +518,6 @@ export class WindowManager {
         }
     }
 
-    sendToFind = () => {
-        const currentView = ViewManager.getCurrentView();
-        if (currentView) {
-            currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
-        }
-    }
-
-    handleHistory = (event: IpcMainEvent, offset: number) => {
-        log.debug('handleHistory', offset);
-
-        const activeView = ViewManager.getCurrentView();
-        if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
-            try {
-                activeView.view.webContents.goToOffset(offset);
-            } catch (error) {
-                log.error(error);
-                activeView.load(activeView.tab.url);
-            }
-        }
-    }
-
     selectNextTab = () => {
         this.selectTab((order) => order + 1);
     }
@@ -627,7 +604,7 @@ export class WindowManager {
 
             if (!hasScreenPermissions || !sources.length) {
                 log.info('missing screen permissions');
-                view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+                view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
                 this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
                 return;
             }
@@ -641,12 +618,12 @@ export class WindowManager {
             });
 
             if (message.length > 0) {
-                view.view.webContents.send(DESKTOP_SOURCES_RESULT, message);
+                view.sendToRenderer(DESKTOP_SOURCES_RESULT, message);
             }
         }).catch((err) => {
             log.error('desktopCapturer.getSources failed', err);
 
-            view.view.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+            view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
             this.callsWidgetWindow?.win.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
         });
     }
