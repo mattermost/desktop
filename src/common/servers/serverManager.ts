@@ -11,7 +11,7 @@ import {
     SERVERS_URL_MODIFIED,
     SERVERS_UPDATE,
 } from 'common/communication';
-import {Logger} from 'common/log';
+import {Logger, getLevel} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS, TabView, getDefaultTabs} from 'common/tabs/TabView';
 import MessagingTabView from 'common/tabs/MessagingTabView';
@@ -436,7 +436,7 @@ export class ServerManager extends EventEmitter {
     }
 
     private includeId = (id: string, ...prefixes: string[]) => {
-        const shouldInclude = ['debug', 'silly'].includes(logger.transports.file.level as string);
+        const shouldInclude = ['debug', 'silly'].includes(getLevel());
         return shouldInclude ? [id, ...prefixes] : prefixes;
     };
 

@@ -29,6 +29,7 @@ jest.mock('common/log', () => {
             }),
         })),
         setLoggingLevel: jest.fn(),
+        getLevel: jest.fn(),
     };
 });
 

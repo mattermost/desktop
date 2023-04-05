@@ -15,6 +15,8 @@ export const setLoggingLevel = (level: string) => {
     log.transports.file.level = level as LevelOption;
 };
 
+export const getLevel = () => log.transports.file.level as string;
+
 export class Logger {
     private prefixes: string[];
 
