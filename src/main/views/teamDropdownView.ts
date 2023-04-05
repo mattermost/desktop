@@ -3,8 +3,6 @@
 
 import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
-import log from 'electron-log';
-
 import {CombinedConfig, Team, TeamWithTabs, TeamWithTabsAndGpo} from 'types/config';
 
 import {
@@ -17,11 +15,14 @@ import {
     RECEIVE_DROPDOWN_MENU_SIZE,
     SET_ACTIVE_VIEW,
 } from 'common/communication';
-import * as AppState from '../appState';
+import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
+import * as AppState from '../appState';
 import WindowManager from '../windows/windowManager';
 import MainWindow from '../windows/mainWindow';
+
+const log = new Logger('TeamDropdownView');
 
 export default class TeamDropdownView {
     view: BrowserView;
@@ -68,9 +69,8 @@ export default class TeamDropdownView {
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
-        log.silly('TeamDropdownView.config', {config});
+        log.silly('config', {config});
 
-        this.teams = this.addGpoToTeams(config.teams, config.registryTeams);
         this.darkMode = config.darkMode;
         this.enableServerManagement = config.enableServerManagement;
         this.hasGPOTeams = config.registryTeams && config.registryTeams.length > 0;
@@ -78,14 +78,14 @@ export default class TeamDropdownView {
     }
 
     updateActiveTeam = (event: IpcMainEvent, name: string) => {
-        log.silly('TeamDropdownView.updateActiveTeam', {name});
+        log.silly('updateActiveTeam', {name});
 
         this.activeTeam = name;
         this.updateDropdown();
     }
 
     updateMentions = (expired: Map<string, boolean>, mentions: Map<string, number>, unreads: Map<string, boolean>) => {
-        log.silly('TeamDropdownView.updateMentions', {expired, mentions, unreads});
+        log.silly('updateMentions', {expired, mentions, unreads});
 
         this.unreads = unreads;
         this.mentions = mentions;
@@ -99,7 +99,7 @@ export default class TeamDropdownView {
     }
 
     updateDropdown = () => {
-        log.silly('TeamDropdownView.updateDropdown');
+        log.silly('updateDropdown');
 
         this.view.webContents.send(
             UPDATE_TEAMS_DROPDOWN,
@@ -116,7 +116,7 @@ export default class TeamDropdownView {
     }
 
     handleOpen = () => {
-        log.debug('TeamDropdownView.handleOpen');
+        log.debug('handleOpen');
 
         if (!this.bounds) {
             return;
@@ -129,7 +129,7 @@ export default class TeamDropdownView {
     }
 
     handleClose = () => {
-        log.debug('TeamDropdownView.handleClose');
+        log.debug('handleClose');
 
         this.view.setBounds(this.getBounds(0, 0));
         WindowManager.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
@@ -137,7 +137,7 @@ export default class TeamDropdownView {
     }
 
     handleReceivedMenuSize = (event: IpcMainEvent, width: number, height: number) => {
-        log.silly('TeamDropdownView.handleReceivedMenuSize', {width, height});
+        log.silly('handleReceivedMenuSize', {width, height});
 
         this.bounds = this.getBounds(width, height);
         if (this.isOpen) {

@@ -4,9 +4,9 @@
 import path from 'path';
 
 import {dialog, ipcMain, app, nativeImage} from 'electron';
-import log from 'electron-log';
-
 import {autoUpdater, CancellationToken, ProgressInfo, UpdateInfo} from 'electron-updater';
+
+import {Logger} from 'common/log';
 
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
@@ -28,7 +28,7 @@ import Config from 'common/config';
 const NEXT_NOTIFY = 86400000; // 24 hours
 const NEXT_CHECK = 3600000; // 1 hour
 
-log.transports.file.level = 'info';
+const log = new Logger('UpdateManager');
 autoUpdater.logger = log;
 autoUpdater.autoDownload = false;
 autoUpdater.disableWebInstaller = true;
@@ -64,14 +64,14 @@ export class UpdateManager {
         this.cancellationToken = new CancellationToken();
 
         autoUpdater.on('error', (err: Error) => {
-            log.error(`[Mattermost] There was an error while trying to update: ${err}`);
+            log.error('There was an error while trying to update', err);
         });
 
         autoUpdater.on('update-available', (info: UpdateInfo) => {
             autoUpdater.removeListener('update-not-available', this.displayNoUpgrade);
             this.versionAvailable = info.version;
             ipcMain.emit(UPDATE_SHORTCUT_MENU);
-            log.info(`[Mattermost] available version ${info.version}`);
+            log.info('New version available:', info.version);
             this.notify();
         });
 
@@ -79,7 +79,7 @@ export class UpdateManager {
             this.versionDownloaded = info.version;
             this.downloadedInfo = info;
             ipcMain.emit(UPDATE_SHORTCUT_MENU);
-            log.info(`[Mattermost] downloaded version ${info.version}`);
+            log.info('Downloaded version', info.version);
             this.notifyDownloaded();
         });
 
@@ -88,7 +88,7 @@ export class UpdateManager {
         });
 
         ipcMain.on(CANCEL_UPGRADE, () => {
-            log.info('[Mattermost] User Canceled upgrade');
+            log.info('User Canceled upgrade');
         });
 
         ipcMain.on(CHECK_FOR_UPDATES, () => {
@@ -179,7 +179,7 @@ export class UpdateManager {
                 }
             }).catch((reason) => {
                 ipcMain.emit(NO_UPDATE_AVAILABLE);
-                log.error(`[Mattermost] Failed to check for updates: ${reason}`);
+                log.error('Failed to check for updates:', reason);
             });
             this.lastCheck = setTimeout(() => this.checkForUpdates(false), NEXT_CHECK);
         }

@@ -3,7 +3,6 @@
 
 import {BrowserView, app, ipcMain} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
-import log from 'electron-log';
 
 import {EventEmitter} from 'events';
 
@@ -23,6 +22,7 @@ import {
 } from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView, TabTuple} from 'common/tabs/TabView';
+import {Logger} from 'common/log';
 
 import {ServerInfo} from 'main/server/serverInfo';
 import MainWindow from 'main/windows/mainWindow';
@@ -42,6 +42,7 @@ export enum Status {
 }
 
 const MENTIONS_GROUP = 2;
+const log = new Logger('MattermostView');
 
 export class MattermostView extends EventEmitter {
     tab: TabView;
@@ -94,7 +95,7 @@ export class MattermostView extends EventEmitter {
         }
 
         this.view.webContents.on('did-finish-load', () => {
-            log.debug('MattermostView.did-finish-load', this.tab.name);
+            log.debug('did-finish-load', this.tab.name);
 
             // wait for screen to truly finish loading before sending the message down
             const timeout = setInterval(() => {
@@ -355,7 +356,7 @@ export class MattermostView extends EventEmitter {
     };
 
     handleInputEvents = (_: Event, input: Input) => {
-        log.silly('MattermostView.handleInputEvents', {tabName: this.tab.name, input});
+        log.silly('handleInputEvents', {tabName: this.tab.name, input});
 
         this.registerAltKeyPressed(input);
 
@@ -365,7 +366,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleDidNavigate = (event: Event, url: string) => {
-        log.debug('MattermostView.handleDidNavigate', {tabName: this.tab.name, url});
+        log.debug('handleDidNavigate', {tabName: this.tab.name, url});
 
         if (shouldHaveBackBar(this.tab.url || '', url)) {
             this.setBounds(getWindowBoundaries(MainWindow.get()!, true));
@@ -379,7 +380,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleUpdateTarget = (e: Event, url: string) => {
-        log.silly('MattermostView.handleUpdateTarget', {tabName: this.tab.name, url});
+        log.silly('handleUpdateTarget', {tabName: this.tab.name, url});
         if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL, url);
         } else {
@@ -390,7 +391,7 @@ export class MattermostView extends EventEmitter {
     titleParser = /(\((\d+)\) )?(\* )?/g
 
     handleTitleUpdate = (e: Event, title: string) => {
-        log.debug('MattermostView.handleTitleUpdate', {tabName: this.tab.name, title});
+        log.debug('handleTitleUpdate', {tabName: this.tab.name, title});
 
         this.updateMentionsFromTitle(title);
     }
@@ -404,7 +405,7 @@ export class MattermostView extends EventEmitter {
     }
 
     handleFaviconUpdate = (e: Event, favicons: string[]) => {
-        log.silly('MattermostView.handleFaviconUpdate', {tabName: this.tab.name, favicons});
+        log.silly('handleFaviconUpdate', {tabName: this.tab.name, favicons});
 
         // if unread state is stored for that favicon, retrieve value.
         // if not, get related info from preload and store it for future changes
@@ -425,7 +426,7 @@ export class MattermostView extends EventEmitter {
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
     handleFaviconIsUnread = (e: Event, favicon: string, viewName: string, result: boolean) => {
-        log.silly('MattermostView.handleFaviconIsUnread', {favicon, viewName, result});
+        log.silly('handleFaviconIsUnread', {favicon, viewName, result});
 
         if (this.tab && viewName === this.tab.name) {
             appState.updateUnreads(viewName, result);

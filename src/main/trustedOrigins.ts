@@ -6,15 +6,17 @@
 import fs from 'fs';
 
 import {ipcMain} from 'electron';
-import log from 'electron-log';
 
 import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
 
 import {UPDATE_PATHS} from 'common/communication';
+import {Logger} from 'common/log';
 import urlUtils from 'common/utils/url';
 import * as Validator from 'common/Validator';
 
 import {trustedOriginsStoreFile} from './constants';
+
+const log = new Logger('TrustedOriginsStore');
 
 export class TrustedOriginsStore {
     storeFile: string;
@@ -117,7 +119,7 @@ const trustedOriginsStore = new TrustedOriginsStore(trustedOriginsStoreFile);
 export default trustedOriginsStore;
 
 ipcMain.on(UPDATE_PATHS, () => {
-    log.debug('trustedOriginsStore.UPDATE_PATHS');
+    log.debug('UPDATE_PATHS');
     trustedOriginsStore.storeFile = trustedOriginsStoreFile;
     if (trustedOriginsStore.data) {
         trustedOriginsStore.load();
