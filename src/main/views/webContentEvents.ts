@@ -37,7 +37,10 @@ export class WebContentsEventManager {
     }
 
     private log = (webContentsId?: number) => {
-        return log.withPrefix(String(webContentsId));
+        if (webContentsId) {
+            return log.withPrefix(String(webContentsId));
+        }
+        return log;
     }
 
     private isTrustedPopupWindow = (webContentsId: number) => {
