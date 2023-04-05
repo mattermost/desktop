@@ -75,11 +75,20 @@ jest.mock('windows-focus-assist', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
+jest.mock('../views/viewManager', () => ({
+    getViewByWebContentsId: () => ({
+        id: 'server_id',
+        tab: {
+            server: {
+                name: 'server_name',
+            },
+        },
+    }),
+}));
 jest.mock('../windows/mainWindow', () => ({
     get: jest.fn(),
 }));
 jest.mock('../windows/windowManager', () => ({
-    getServerNameByWebContentsId: () => 'server_name',
     sendToRenderer: jest.fn(),
     flashFrame: jest.fn(),
     switchTab: jest.fn(),

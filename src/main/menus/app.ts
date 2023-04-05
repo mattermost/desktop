@@ -6,7 +6,7 @@
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, clipboard} from 'electron';
 import log from 'electron-log';
 
-import {BROWSER_HISTORY_BUTTON, OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {t} from 'common/utils/util';
 import {getTabDisplayName, TabType} from 'common/tabs/TabView';
 import {Config} from 'common/config';
@@ -16,6 +16,7 @@ import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
 import downloadsManager from 'main/downloadsManager';
 import Diagnostics from 'main/diagnostics';
+import ViewManager from 'main/views/viewManager';
 import SettingsWindow from 'main/windows/settingsWindow';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
@@ -126,20 +127,20 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: localizeMessage('main.menus.app.view.find', 'Find..'),
         accelerator: 'CmdOrCtrl+F',
         click() {
-            WindowManager.sendToFind();
+            ViewManager.sendToFind();
         },
     }, {
         label: localizeMessage('main.menus.app.view.reload', 'Reload'),
         accelerator: 'CmdOrCtrl+R',
         click() {
-            WindowManager.reload();
+            ViewManager.reload();
         },
     }, {
         label: localizeMessage('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
             session.defaultSession.clearCache();
-            WindowManager.reload();
+            ViewManager.reload();
         },
     }, {
         role: 'togglefullscreen',
@@ -193,7 +194,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }, {
         label: localizeMessage('main.menus.app.view.devToolsCurrentServer', 'Developer Tools for Current Server'),
         click() {
-            WindowManager.openBrowserViewDevTools();
+            ViewManager.getCurrentView()?.openDevTools();
         },
     }];
 
@@ -219,21 +220,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.history.back', 'Back'),
             accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
             click: () => {
-                const view = WindowManager.viewManager?.getCurrentView();
-                if (view && view.view.webContents.canGoBack() && !view.isAtRoot) {
-                    view.view.webContents.goBack();
-                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.name);
-                }
+                ViewManager.getCurrentView()?.goToOffset(-1);
             },
         }, {
             label: localizeMessage('main.menus.app.history.forward', 'Forward'),
             accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
             click: () => {
-                const view = WindowManager.viewManager?.getCurrentView();
-                if (view && view.view.webContents.canGoForward()) {
-                    view.view.webContents.goForward();
-                    ipcMain.emit(BROWSER_HISTORY_BUTTON, null, view.name);
-                }
+                ViewManager.getCurrentView()?.goToOffset(1);
             },
         }],
     });

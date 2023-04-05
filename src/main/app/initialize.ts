@@ -56,6 +56,7 @@ import SettingsWindow from 'main/windows/settingsWindow';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
+import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -238,7 +239,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
-    ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
+    ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);
     ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
 
     if (process.platform !== 'darwin') {
@@ -351,7 +352,7 @@ function initializeAfterAppReady() {
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
         log.debug('UserActivityMonitor.on(status)', status);
-        WindowManager.sendToMattermostViews(USER_ACTIVITY_UPDATE, status);
+        ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status);
     });
 
     // start monitoring user activity (needs to be started after the app is ready)

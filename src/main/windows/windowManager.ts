@@ -16,20 +16,14 @@ import {
 import {
     MAXIMIZE_CHANGE,
     HISTORY,
-    REACT_APP_INITIALIZED,
     FOCUS_THREE_DOT_MENU,
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
     BROWSER_HISTORY_PUSH,
-    APP_LOGGED_IN,
-    GET_VIEW_NAME,
     GET_VIEW_WEBCONTENTS_ID,
     RESIZE_MODAL,
-    APP_LOGGED_OUT,
-    BROWSER_HISTORY_BUTTON,
     DISPATCH_GET_DESKTOP_SOURCES,
     DESKTOP_SOURCES_RESULT,
-    RELOAD_CURRENT_VIEW,
     VIEW_FINISHED_RESIZING,
     CALLS_JOIN_CALL,
     CALLS_LEAVE_CALL,
@@ -39,10 +33,9 @@ import {
     CALLS_LINK_CLICK,
 } from 'common/communication';
 import {Logger} from 'common/log';
-import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
-import {getTabViewName, TAB_MESSAGING} from 'common/tabs/TabView';
+import {getTabViewName} from 'common/tabs/TabView';
 
 import downloadsManager from 'main/downloadsManager';
 import {MattermostView} from 'main/views/MattermostView';
@@ -54,7 +47,7 @@ import {
     openScreensharePermissionsSettingsMacOS,
 } from '../utils';
 
-import {ViewManager} from '../views/viewManager';
+import ViewManager from '../views/viewManager';
 import LoadingScreen from '../views/loadingScreen';
 import TeamDropdownView from '../views/teamDropdownView';
 import DownloadsDropdownView from '../views/downloadsDropdownView';
@@ -72,7 +65,6 @@ export class WindowManager {
     assetsDir: string;
 
     callsWidgetWindow?: CallsWidgetWindow;
-    viewManager?: ViewManager;
     teamDropdown?: TeamDropdownView;
     downloadsDropdown?: DownloadsDropdownView;
     downloadsDropdownMenu?: DownloadsDropdownMenuView;
@@ -84,14 +76,7 @@ export class WindowManager {
 
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
-        ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
-        ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
-        ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
-        ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
-        ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
-        ipcMain.handle(GET_VIEW_NAME, this.handleGetViewName);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
-        ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
 
         // Calls handlers
@@ -102,12 +87,6 @@ export class WindowManager {
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.genCallsEventHandler(this.handleCallsWidgetChannelLinkClick));
         ipcMain.on(CALLS_ERROR, this.genCallsEventHandler(this.handleCallsError));
         ipcMain.on(CALLS_LINK_CLICK, this.genCallsEventHandler(this.handleCallsLinkClick));
-    }
-
-    handleUpdateConfig = () => {
-        if (this.viewManager) {
-            this.viewManager.reloadConfiguration(Config.teams || []);
-        }
     }
 
     genCallsEventHandler = (handler: CallsEventHandler) => {
@@ -132,7 +111,7 @@ export class WindowManager {
             // window to be fully closed.
             await this.callsWidgetWindow.close();
         }
-        const currentView = this.viewManager?.views.get(viewName);
+        const currentView = ViewManager.getView(viewName);
         if (!currentView) {
             log.error('unable to create calls widget window: currentView is missing');
             return;
@@ -209,7 +188,7 @@ export class WindowManager {
         }
 
         if (deeplinkingURL) {
-            this.viewManager?.handleDeepLink(deeplinkingURL);
+            ViewManager.handleDeepLink(deeplinkingURL);
         }
     }
 
@@ -227,7 +206,7 @@ export class WindowManager {
         }
         mainWindow.on('will-resize', this.handleWillResizeMainWindow);
         mainWindow.on('resized', this.handleResizedMainWindow);
-        mainWindow.on('focus', this.focusBrowserView);
+        mainWindow.on('focus', ViewManager.focusCurrentView);
         mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
         mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
 
@@ -255,7 +234,7 @@ export class WindowManager {
     handleWillResizeMainWindow = (event: Event, newBounds: Electron.Rectangle) => {
         log.silly('handleWillResizeMainWindow');
 
-        if (!(this.viewManager && MainWindow.get())) {
+        if (!MainWindow.get()) {
             return;
         }
 
@@ -268,7 +247,7 @@ export class WindowManager {
             return;
         }
 
-        if (this.isResizing && LoadingScreen.isHidden() && this.viewManager.getCurrentView()) {
+        if (this.isResizing && LoadingScreen.isHidden() && ViewManager.getCurrentView()) {
             log.debug('prevented resize');
             event.preventDefault();
             return;
@@ -310,7 +289,7 @@ export class WindowManager {
     handleResizeMainWindow = () => {
         log.silly('handleResizeMainWindow');
 
-        if (!(this.viewManager && MainWindow.get())) {
+        if (!MainWindow.get()) {
             return;
         }
         if (this.isResizing) {
@@ -333,7 +312,7 @@ export class WindowManager {
     setCurrentViewBounds = (bounds: {width: number; height: number}) => {
         log.debug('setCurrentViewBounds', {bounds});
 
-        const currentView = this.viewManager?.getCurrentView();
+        const currentView = ViewManager.getCurrentView();
         if (currentView) {
             const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL()));
             this.setBoundsFunction(currentView, adjustedBounds);
@@ -391,12 +370,6 @@ export class WindowManager {
         SettingsWindow.get()?.webContents.send(channel, ...args);
 
         // TODO: should we include popups?
-    }
-
-    sendToMattermostViews = (channel: string, ...args: unknown[]) => {
-        if (this.viewManager) {
-            this.viewManager.sendToAllViews(channel, ...args);
-        }
     }
 
     restoreMain = () => {
@@ -457,12 +430,8 @@ export class WindowManager {
     }
 
     initializeViewManager = () => {
-        if (!this.viewManager && Config) {
-            this.viewManager = new ViewManager();
-            this.viewManager.load();
-            this.viewManager.showInitial();
-            this.initializeCurrentServerName();
-        }
+        ViewManager.init();
+        this.initializeCurrentServerName();
     }
 
     initializeCurrentServerName = () => {
@@ -488,13 +457,13 @@ export class WindowManager {
         const tabViewName = getTabViewName(serverName, nextTab.name);
         if (waitForViewToExist) {
             const timeout = setInterval(() => {
-                if (this.viewManager?.views.has(tabViewName)) {
-                    this.viewManager?.showByName(tabViewName);
+                if (ViewManager.getView(tabViewName)) {
+                    ViewManager.showByName(tabViewName);
                     clearTimeout(timeout);
                 }
             }, 100);
         } else {
-            this.viewManager?.showByName(tabViewName);
+            ViewManager.showByName(tabViewName);
         }
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
     }
@@ -503,23 +472,7 @@ export class WindowManager {
         log.debug('switchTab');
         this.showMainWindow();
         const tabViewName = getTabViewName(serverName, tabName);
-        this.viewManager?.showByName(tabViewName);
-    }
-
-    focusBrowserView = () => {
-        log.debug('focusBrowserView');
-
-        if (this.viewManager) {
-            this.viewManager.focus();
-        } else {
-            log.error('Trying to call focus when the viewManager has not yet been initialized');
-        }
-    }
-
-    openBrowserViewDevTools = () => {
-        if (this.viewManager) {
-            this.viewManager.openViewDevTools();
-        }
+        ViewManager.showByName(tabViewName);
     }
 
     focusThreeDotMenu = () => {
@@ -531,24 +484,6 @@ export class WindowManager {
         return {
             darkMode: Config.darkMode || false,
         };
-    }
-
-    handleReactAppInitialized = (e: IpcMainEvent, view: string) => {
-        log.debug('handleReactAppInitialized', view);
-
-        if (this.viewManager) {
-            this.viewManager.setServerInitialized(view);
-        }
-    }
-
-    getViewNameByWebContentsId = (webContentsId: number) => {
-        const view = this.viewManager?.findViewByWebContent(webContentsId);
-        return view?.name;
-    }
-
-    getServerNameByWebContentsId = (webContentsId: number) => {
-        const view = this.viewManager?.findViewByWebContent(webContentsId);
-        return view?.tab.server.name;
     }
 
     close = () => {
@@ -578,7 +513,7 @@ export class WindowManager {
     }
 
     reload = () => {
-        const currentView = this.viewManager?.getCurrentView();
+        const currentView = ViewManager.getCurrentView();
         if (currentView) {
             LoadingScreen.show();
             currentView.reload();
@@ -586,7 +521,7 @@ export class WindowManager {
     }
 
     sendToFind = () => {
-        const currentView = this.viewManager?.getCurrentView();
+        const currentView = ViewManager.getCurrentView();
         if (currentView) {
             currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
         }
@@ -595,15 +530,13 @@ export class WindowManager {
     handleHistory = (event: IpcMainEvent, offset: number) => {
         log.debug('handleHistory', offset);
 
-        if (this.viewManager) {
-            const activeView = this.viewManager.getCurrentView();
-            if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
-                try {
-                    activeView.view.webContents.goToOffset(offset);
-                } catch (error) {
-                    log.error(error);
-                    activeView.load(activeView.tab.url);
-                }
+        const activeView = ViewManager.getCurrentView();
+        if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
+            try {
+                activeView.view.webContents.goToOffset(offset);
+            } catch (error) {
+                log.error(error);
+                activeView.load(activeView.tab.url);
             }
         }
     }
@@ -617,7 +550,7 @@ export class WindowManager {
     }
 
     selectTab = (fn: (order: number, length: number) => number) => {
-        const currentView = this.viewManager?.getCurrentView();
+        const currentView = ViewManager.getCurrentView();
         if (!currentView) {
             return;
         }
@@ -645,74 +578,8 @@ export class WindowManager {
         return Config.darkMode;
     }
 
-    handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
-        log.debug('handleBrowserHistoryPush', {viewName, pathName});
-
-        const currentView = this.viewManager?.views.get(viewName);
-        const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
-        const redirectedViewName = this.viewManager?.getViewByURL(`${currentView?.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.name || viewName;
-        if (this.viewManager?.closedViews.has(redirectedViewName)) {
-            // If it's a closed view, just open it and stop
-            this.viewManager.openClosedTab(redirectedViewName, `${currentView?.tab.server.url}${cleanedPathName}`);
-            return;
-        }
-        let redirectedView = this.viewManager?.views.get(redirectedViewName) || currentView;
-        if (redirectedView !== currentView && redirectedView?.tab.server.name === this.currentServerName && redirectedView?.isLoggedIn) {
-            log.info('redirecting to a new view', redirectedView?.name || viewName);
-            this.viewManager?.showByName(redirectedView?.name || viewName);
-        } else {
-            redirectedView = currentView;
-        }
-
-        // Special case check for Channels to not force a redirect to "/", causing a refresh
-        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && cleanedPathName === '/')) {
-            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, cleanedPathName);
-            if (redirectedView) {
-                this.handleBrowserHistoryButton(e, redirectedView.name);
-            }
-        }
-    }
-
-    handleBrowserHistoryButton = (e: IpcMainEvent, viewName: string) => {
-        log.debug('handleBrowserHistoryButton', viewName);
-
-        const currentView = this.viewManager?.views.get(viewName);
-        if (currentView) {
-            if (currentView.view.webContents.getURL() === currentView.tab.url.toString()) {
-                currentView.view.webContents.clearHistory();
-                currentView.isAtRoot = true;
-            } else {
-                currentView.isAtRoot = false;
-            }
-            currentView?.view.webContents.send(BROWSER_HISTORY_BUTTON, currentView.view.webContents.canGoBack(), currentView.view.webContents.canGoForward());
-        }
-    }
-
     getCurrentTeamName = () => {
         return this.currentServerName;
-    }
-
-    handleAppLoggedIn = (event: IpcMainEvent, viewName: string) => {
-        log.debug('handleAppLoggedIn', viewName);
-
-        const view = this.viewManager?.views.get(viewName);
-        if (view && !view.isLoggedIn) {
-            view.isLoggedIn = true;
-            this.viewManager?.reloadViewIfNeeded(viewName);
-        }
-    }
-
-    handleAppLoggedOut = (event: IpcMainEvent, viewName: string) => {
-        log.debug('handleAppLoggedOut', viewName);
-
-        const view = this.viewManager?.views.get(viewName);
-        if (view && view.isLoggedIn) {
-            view.isLoggedIn = false;
-        }
-    }
-
-    handleGetViewName = (event: IpcMainInvokeEvent) => {
-        return this.getViewNameByWebContentsId(event.sender.id);
     }
 
     handleGetWebContentsId = (event: IpcMainInvokeEvent) => {
@@ -722,7 +589,7 @@ export class WindowManager {
     handleGetDesktopSources = async (viewName: string, opts: Electron.SourcesOptions) => {
         log.debug('handleGetDesktopSources', {viewName, opts});
 
-        const view = this.viewManager?.views.get(viewName);
+        const view = ViewManager.getView(viewName);
         if (!view) {
             log.error('handleGetDesktopSources: view not found');
             return Promise.resolve();
@@ -784,27 +651,12 @@ export class WindowManager {
         });
     }
 
-    handleReloadCurrentView = () => {
-        log.debug('handleReloadCurrentView');
-
-        const view = this.viewManager?.getCurrentView();
-        if (!view) {
-            return;
-        }
-        view?.reload();
-        this.viewManager?.showByName(view?.name);
-    }
-
     getServerURLFromWebContentsId = (id: number) => {
         if (this.callsWidgetWindow && (id === this.callsWidgetWindow.getWebContentsId() || id === this.callsWidgetWindow.getPopOutWebContentsId())) {
             return this.callsWidgetWindow.getURL();
         }
 
-        const viewName = this.getViewNameByWebContentsId(id);
-        if (!viewName) {
-            return undefined;
-        }
-        return this.viewManager?.views.get(viewName)?.tab.server.url;
+        return ViewManager.getViewByWebContentsId(id)?.tab.server.url;
     }
 }
 

@@ -14,6 +14,7 @@ import {ping} from 'common/utils/requests';
 import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
+import ViewManager from 'main/views/viewManager';
 import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -26,7 +27,7 @@ export function handleReloadConfig() {
     log.debug('handleReloadConfig');
 
     Config.reload();
-    WindowManager.handleUpdateConfig();
+    ViewManager.reloadConfiguration();
 }
 
 export function handleAppVersion() {

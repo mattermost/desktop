@@ -12,6 +12,7 @@ import {Logger, setLoggingLevel} from 'common/log';
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
 import {refreshTrayImages} from 'main/tray/tray';
+import ViewManager from 'main/views/viewManager';
 import LoadingScreen from 'main/views/loadingScreen';
 import WindowManager from 'main/windows/windowManager';
 
@@ -36,8 +37,8 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         return;
     }
 
-    WindowManager.handleUpdateConfig();
     if (app.isReady()) {
+        ViewManager.reloadConfiguration();
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
