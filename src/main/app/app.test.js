@@ -5,7 +5,7 @@ import {app, dialog} from 'electron';
 
 import CertificateStore from 'main/certificateStore';
 import MainWindow from 'main/windows/mainWindow';
-import WindowManager from 'main/windows/windowManager';
+import ViewManager from 'main/views/viewManager';
 
 import {handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
 import {getDeeplinkingURL, openDeepLink} from 'main/app/utils';
@@ -19,13 +19,6 @@ jest.mock('electron', () => ({
     dialog: {
         showMessageBox: jest.fn(),
     },
-}));
-
-jest.mock('common/config', () => ({
-    teams: [{
-        name: 'test-team',
-        url: 'http://server-1.com',
-    }],
 }));
 
 jest.mock('main/app/utils', () => ({
@@ -46,11 +39,14 @@ jest.mock('main/i18nManager', () => ({
 }));
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/windows/windowManager', () => ({
-    getViewNameByWebContentsId: jest.fn(),
-    getServerNameByWebContentsId: jest.fn(),
-    viewManager: {
-        views: new Map(),
-    },
+    showMainWindow: jest.fn(),
+}));
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+}));
+jest.mock('main/views/viewManager', () => ({
+    getView: jest.fn(),
+    getViewByWebContentsId: jest.fn(),
 }));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
@@ -71,7 +67,6 @@ describe('main/app/app', () => {
         });
 
         afterEach(() => {
-            WindowManager.viewManager.views.clear();
             jest.resetAllMocks();
         });
 
@@ -104,10 +99,19 @@ describe('main/app/app', () => {
         const mainWindow = {};
         const promise = Promise.resolve({});
         const certificate = {};
+        const view = {
+            tab: {
+                server: {
+                    name: 'test-team',
+                    url: new URL(testURL),
+                },
+            },
+            load: jest.fn(),
+        };
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(mainWindow);
-            WindowManager.getServerNameByWebContentsId.mockReturnValue('test-team');
+            ViewManager.getViewByWebContentsId.mockReturnValue(view);
         });
 
         afterEach(() => {
@@ -166,12 +170,9 @@ describe('main/app/app', () => {
 
         it('should load URL using MattermostView when trusting certificate', async () => {
             dialog.showMessageBox.mockResolvedValue({response: 0});
-            const load = jest.fn();
-            WindowManager.viewManager.views.set('view-name', {load});
-            WindowManager.getViewNameByWebContentsId.mockReturnValue('view-name');
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
-            expect(load).toHaveBeenCalledWith(testURL);
+            expect(view.load).toHaveBeenCalledWith(testURL);
         });
 
         it('should explicitly untrust if user selects More Details and then cancel with the checkbox checked', async () => {

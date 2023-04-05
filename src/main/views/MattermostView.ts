@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app, ipcMain} from 'electron';
+import {BrowserView, app} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 
 import {EventEmitter} from 'events';
@@ -15,10 +15,10 @@ import {
     LOAD_FAILED,
     UPDATE_TARGET_URL,
     IS_UNREAD,
-    UNREAD_RESULT,
     TOGGLE_BACK_BUTTON,
     SET_VIEW_OPTIONS,
     LOADSCREEN_END,
+    BROWSER_HISTORY_BUTTON,
 } from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView, TabTuple} from 'common/tabs/TabView';
@@ -234,7 +234,6 @@ export class MattermostView extends EventEmitter {
             WindowManager.sendToRenderer(LOAD_SUCCESS, this.tab.name);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === Status.LOADING) {
-                ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
                 this.updateMentionsFromTitle(this.view.webContents.getTitle());
                 this.findUnreadState(null);
             }
@@ -271,6 +270,32 @@ export class MattermostView extends EventEmitter {
     }
 
     hide = () => this.show(false);
+
+    openFind = () => {
+        this.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
+    }
+
+    goToOffset = (offset: number) => {
+        if (this.view.webContents.canGoToOffset(offset)) {
+            try {
+                this.view.webContents.goToOffset(offset);
+                this.updateHistoryButton();
+            } catch (error) {
+                log.error(error);
+                this.reload();
+            }
+        }
+    }
+
+    updateHistoryButton = () => {
+        if (urlUtils.parseURL(this.view.webContents.getURL())?.toString() === this.tab.url.toString()) {
+            this.view.webContents.clearHistory();
+            this.isAtRoot = true;
+        } else {
+            this.isAtRoot = false;
+        }
+        this.view.webContents.send(BROWSER_HISTORY_BUTTON, this.view.webContents.canGoBack(), this.view.webContents.canGoForward());
+    }
 
     setBounds = (boundaries: Electron.Rectangle) => {
         this.view.setBounds(boundaries);
@@ -420,16 +445,6 @@ export class MattermostView extends EventEmitter {
         } catch (err: any) {
             log.error(`There was an error trying to request the unread state: ${err}`);
             log.error(err.stack);
-        }
-    }
-
-    // if favicon is null, it means it is the initial load,
-    // so don't memoize as we don't have the favicons and there is no rush to find out.
-    handleFaviconIsUnread = (e: Event, favicon: string, viewName: string, result: boolean) => {
-        log.silly('handleFaviconIsUnread', {favicon, viewName, result});
-
-        if (this.tab && viewName === this.tab.name) {
-            appState.updateUnreads(viewName, result);
         }
     }
 }
