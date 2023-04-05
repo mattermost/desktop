@@ -19,7 +19,7 @@ export class Logger {
     private prefixes: string[];
 
     constructor(...prefixes: string[]) {
-        this.prefixes = prefixes;
+        this.prefixes = this.shortenPrefixes(...prefixes);
     }
 
     withPrefix = (...prefixes: string[]) => {
@@ -35,7 +35,7 @@ export class Logger {
     }
 
     private prefixed = (func: (...args: any[]) => void, ...additionalPrefixes: string[]) => {
-        return (...args: any[]) => func(...this.shortenPrefixes(...this.prefixes, ...additionalPrefixes), ...args);
+        return (...args: any[]) => func(...this.prefixes, ...this.shortenPrefixes(...additionalPrefixes), ...args);
     }
 
     private shortenPrefixes = (...prefixes: string[]) => {
