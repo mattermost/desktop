@@ -233,7 +233,7 @@ export class ViewManager {
      */
 
     private loadServer = (server: TeamWithTabs) => {
-        const srv = new MattermostServer(server.name, server.url);
+        const srv = new MattermostServer(server);
         const serverInfo = new ServerInfo(srv);
         server.tabs.forEach((tab) => this.loadView(srv, serverInfo, tab));
     }
@@ -422,7 +422,7 @@ export class ViewManager {
             map((t): [TeamWithTabs, Tab] => [x, t]));
 
         for (const [team, tab] of sortedTabs) {
-            const srv = new MattermostServer(team.name, team.url);
+            const srv = new MattermostServer(team);
             const info = new ServerInfo(srv);
             const tabTuple = tuple(new URL(team.url).href, tab.name as TabType);
             const recycle = current.get(tabTuple);
@@ -599,8 +599,7 @@ export class ViewManager {
         if (!server) {
             return undefined;
         }
-
-        const mmServer = new MattermostServer(server.name, server.url);
+        const mmServer = new MattermostServer(server);
         let selectedTab = this.getServerView(mmServer, TAB_MESSAGING);
         server.tabs.
             filter((tab) => tab.name !== TAB_MESSAGING).

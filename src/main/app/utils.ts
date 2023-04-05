@@ -56,7 +56,7 @@ export function updateServerInfos(teams: TeamWithTabs[]) {
     log.silly('app.utils.updateServerInfos');
     const serverInfos: Array<Promise<RemoteInfo | string | undefined>> = [];
     teams.forEach((team) => {
-        const serverInfo = new ServerInfo(new MattermostServer(team.name, team.url));
+        const serverInfo = new ServerInfo(new MattermostServer(team));
         serverInfos.push(serverInfo.promise);
     });
     Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
