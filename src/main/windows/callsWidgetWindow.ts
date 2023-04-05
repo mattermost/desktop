@@ -80,8 +80,8 @@ export class CallsWidgetWindow {
         return this.options?.callID;
     }
 
-    private get serverId() {
-        return this.mainView?.tab.server.id;
+    private get serverName() {
+        return this.mainView?.tab.server.name;
     }
 
     /**
@@ -357,12 +357,11 @@ export class CallsWidgetWindow {
     }
 
     private handleGetDesktopSources = async (viewId: string, opts: Electron.SourcesOptions) => {
-        const viewLogger = ServerManager.getViewLog(viewId, 'WindowManager');
-        viewLogger.debug('handleGetDesktopSources', opts);
+        log.debug('handleGetDesktopSources', opts);
 
         const view = ViewManager.getView(viewId);
         if (!view) {
-            viewLogger.error('handleGetDesktopSources: view not found');
+            log.error('handleGetDesktopSources: view not found');
             return Promise.resolve();
         }
 
@@ -379,7 +378,7 @@ export class CallsWidgetWindow {
                 }
                 this.missingScreensharePermissions = true;
             } catch (err) {
-                viewLogger.error('failed to reset screen sharing permissions', err);
+                log.error('failed to reset screen sharing permissions', err);
             }
         }
 
@@ -389,15 +388,15 @@ export class CallsWidgetWindow {
             let hasScreenPermissions = true;
             if (systemPreferences.getMediaAccessStatus) {
                 const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
-                viewLogger.debug('screenPermissions', screenPermissions);
+                log.debug('screenPermissions', screenPermissions);
                 if (screenPermissions === 'denied') {
-                    viewLogger.info('no screen sharing permissions');
+                    log.info('no screen sharing permissions');
                     hasScreenPermissions = false;
                 }
             }
 
             if (!hasScreenPermissions || !sources.length) {
-                viewLogger.info('missing screen permissions');
+                log.info('missing screen permissions');
                 view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
                 this.win?.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
                 return;
@@ -415,7 +414,7 @@ export class CallsWidgetWindow {
                 view.sendToRenderer(DESKTOP_SOURCES_RESULT, message);
             }
         }).catch((err) => {
-            viewLogger.error('desktopCapturer.getSources failed', err);
+            log.error('desktopCapturer.getSources failed', err);
 
             view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
             this.win?.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
@@ -423,7 +422,7 @@ export class CallsWidgetWindow {
     }
 
     private handleCreateCallsWidgetWindow = async (viewId: string, msg: CallsJoinCallMessage) => {
-        ServerManager.getViewLog(viewId, 'WindowManager').debug('createCallsWidgetWindow');
+        log.debug('createCallsWidgetWindow');
 
         // trying to join again the call we are already in should not be allowed.
         if (this.options?.callID === msg.callID) {
@@ -436,7 +435,7 @@ export class CallsWidgetWindow {
 
         const currentView = ViewManager.getView(viewId);
         if (!currentView) {
-            ServerManager.getViewLog(viewId, 'CallsWidgetWindow').error('unable to create calls widget window: currentView is missing');
+            log.error('unable to create calls widget window: currentView is missing');
             return;
         }
 
@@ -451,11 +450,11 @@ export class CallsWidgetWindow {
     private handleDesktopSourcesModalRequest = () => {
         log.debug('handleDesktopSourcesModalRequest');
 
-        if (!this.serverId) {
+        if (!this.serverName) {
             return;
         }
 
-        WindowManager.switchServer(this.serverId);
+        WindowManager.switchServer(this.serverName);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(DESKTOP_SOURCES_MODAL_REQUEST);
     }
@@ -469,11 +468,11 @@ export class CallsWidgetWindow {
     private handleCallsWidgetChannelLinkClick = () => {
         log.debug('handleCallsWidgetChannelLinkClick');
 
-        if (!this.serverId) {
+        if (!this.serverName) {
             return;
         }
 
-        WindowManager.switchServer(this.serverId);
+        WindowManager.switchServer(this.serverName);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, this.options?.channelURL);
     }
@@ -481,11 +480,11 @@ export class CallsWidgetWindow {
     private handleCallsError = (_: string, msg: CallsErrorMessage) => {
         log.debug('handleCallsError', msg);
 
-        if (!this.serverId) {
+        if (!this.serverName) {
             return;
         }
 
-        WindowManager.switchServer(this.serverId);
+        WindowManager.switchServer(this.serverName);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(CALLS_ERROR, msg);
     }
@@ -493,11 +492,11 @@ export class CallsWidgetWindow {
     private handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
         log.debug('handleCallsLinkClick with linkURL', msg.link);
 
-        if (!this.serverId) {
+        if (!this.serverName) {
             return;
         }
 
-        WindowManager.switchServer(this.serverId);
+        WindowManager.switchServer(this.serverName);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, msg.link);
     }

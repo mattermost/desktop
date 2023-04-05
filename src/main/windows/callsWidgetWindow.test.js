@@ -740,7 +740,7 @@ describe('main/windows/callsWidgetWindow', () => {
         callsWidgetWindow.mainView = {
             tab: {
                 server: {
-                    id: 'server-1',
+                    name: 'server-1',
                 },
             },
             sendToRenderer: jest.fn(),
@@ -806,7 +806,7 @@ describe('main/windows/callsWidgetWindow', () => {
         callsWidgetWindow.mainView = {
             tab: {
                 server: {
-                    id: 'server-2',
+                    name: 'server-2',
                 },
             },
             sendToRenderer: jest.fn(),
@@ -873,7 +873,7 @@ describe('main/windows/callsWidgetWindow', () => {
         callsWidgetWindow.mainView = {
             tab: {
                 server: {
-                    id: 'server-2',
+                    name: 'server-2',
                 },
             },
             sendToRenderer: jest.fn(),
@@ -900,7 +900,7 @@ describe('main/windows/callsWidgetWindow', () => {
         const view = {
             tab: {
                 server: {
-                    id: 'server-1',
+                    name: 'server-1',
                 },
             },
             sendToRenderer: jest.fn(),
