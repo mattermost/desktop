@@ -72,7 +72,7 @@ export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName:
 }
 
 export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
-    log.debug('IhandleOpenTab', {serverName, tabName});
+    log.debug('handleOpenTab', {serverName, tabName});
 
     const teams = Config.teams;
     teams.forEach((team) => {
