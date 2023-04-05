@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {app, shell, Notification} from 'electron';
-import log from 'electron-log';
 
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
@@ -10,6 +9,7 @@ import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
 import {PLAY_SOUND} from 'common/communication';
+import {Logger} from 'common/log';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import ViewManager from '../views/viewManager';
@@ -24,8 +24,10 @@ import getWindowsDoNotDisturb from './dnd-windows';
 
 export const currentNotifications = new Map();
 
+const log = new Logger('Notifications');
+
 export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
-    log.debug('Notifications.displayMention', {title, body, channel, teamId, url, silent, data});
+    log.debug('displayMention', {title, body, channel, teamId, url, silent, data});
 
     if (!Notification.isSupported()) {
         log.error('notification not supported');
@@ -53,7 +55,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     const mentionKey = `${mention.teamId}:${mention.channel.id}`;
 
     mention.on('show', () => {
-        log.debug('Notifications.displayMention.show');
+        log.debug('displayMention.show');
 
         // On Windows, manually dismiss notifications from the same channel and only show the latest one
         if (process.platform === 'win32') {
@@ -82,7 +84,7 @@ export function displayMention(title: string, body: string, channel: {id: string
 }
 
 export function displayDownloadCompleted(fileName: string, path: string, serverName: string) {
-    log.debug('Notifications.displayDownloadCompleted', {fileName, path, serverName});
+    log.debug('displayDownloadCompleted', {fileName, path, serverName});
 
     if (!Notification.isSupported()) {
         log.error('notification not supported');

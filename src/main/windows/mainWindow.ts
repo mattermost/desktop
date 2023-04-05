@@ -8,12 +8,12 @@ import path from 'path';
 import os from 'os';
 
 import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, globalShortcut, Input, ipcMain, screen} from 'electron';
-import log from 'electron-log';
 
 import {SavedWindowState} from 'types/mainWindow';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU} from 'common/communication';
 import Config from 'common/config';
+import {Logger} from 'common/log';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
@@ -24,6 +24,7 @@ import {localizeMessage} from 'main/i18nManager';
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
 
+const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
 
 export class MainWindow {
@@ -224,7 +225,7 @@ export class MainWindow {
     }
 
     private onClose = (event: Event) => {
-        log.debug('MainWindow.on.close');
+        log.debug('onClose');
 
         if (!this.win) {
             return;

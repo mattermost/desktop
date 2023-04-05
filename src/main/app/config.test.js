@@ -5,10 +5,10 @@ import {app} from 'electron';
 
 import {RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
+import {setLoggingLevel} from 'common/log';
 
 import {handleConfigUpdate} from 'main/app/config';
 import {handleMainWindowIsShown} from 'main/app/intercom';
-import {setLoggingLevel} from 'main/app/utils';
 
 import WindowManager from 'main/windows/windowManager';
 import AutoLauncher from 'main/AutoLauncher';

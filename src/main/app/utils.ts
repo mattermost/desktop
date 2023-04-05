@@ -6,13 +6,13 @@ import path from 'path';
 import fs from 'fs-extra';
 
 import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage, screen} from 'electron';
-import log, {LevelOption} from 'electron-log';
 
 import {MigrationInfo, TeamWithTabs} from 'types/config';
 import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
 
 import Config from 'common/config';
+import {Logger} from 'common/log';
 import JsonFileManager from 'common/JsonFileManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
@@ -36,6 +36,7 @@ import {mainProtocol} from './initialize';
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_with_spacing_32.png');
 const appIcon = nativeImage.createFromPath(appIconURL);
+const log = new Logger('App.Utils');
 
 export function openDeepLink(deeplinkingUrl: string) {
     try {
@@ -105,7 +106,7 @@ function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamW
 }
 
 export function handleUpdateMenuEvent() {
-    log.debug('Utils.handleUpdateMenuEvent');
+    log.debug('handleUpdateMenuEvent');
 
     const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
@@ -194,7 +195,7 @@ function getValidWindowPosition(state: Rectangle) {
 
 export function resizeScreen(browserWindow: BrowserWindow) {
     function handle() {
-        log.debug('Utils.resizeScreen.handle');
+        log.debug('resizeScreen.handle');
         const position = browserWindow.getPosition();
         const size = browserWindow.getSize();
         const validPosition = getValidWindowPosition({
@@ -215,7 +216,7 @@ export function resizeScreen(browserWindow: BrowserWindow) {
 }
 
 export function flushCookiesStore(session: Session) {
-    log.debug('Utils.flushCookiesStore');
+    log.debug('flushCookiesStore');
     session.cookies.flushStore().catch((err) => {
         log.error(`There was a problem flushing cookies:\n${err}`);
     });
@@ -289,9 +290,4 @@ export function migrateMacAppStore() {
     } catch (e) {
         log.error('MAS: An error occurred importing the existing configuration', e);
     }
-}
-
-export function setLoggingLevel(level: LevelOption) {
-    log.transports.console.level = level;
-    log.transports.file.level = level;
 }

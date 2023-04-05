@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import log from 'electron-log';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
 import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
@@ -29,6 +28,7 @@ import {
     GET_VIEW_NAME,
 } from 'common/communication';
 import Config from 'common/config';
+import {Logger} from 'common/log';
 import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -49,6 +49,7 @@ import modalManager from './modalManager';
 import WebContentsEventManager from './webContentEvents';
 import LoadingScreen from './loadingScreen';
 
+const log = new Logger('ViewManager');
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
 
@@ -585,7 +586,7 @@ export class ViewManager {
     }
 
     getViewByURL = (inputURL: URL | string, ignoreScheme = false) => {
-        log.silly('ViewManager.getViewByURL', `${inputURL}`, ignoreScheme);
+        log.silly('getViewByURL', `${inputURL}`, ignoreScheme);
 
         const parsedURL = urlUtils.parseURL(inputURL);
         if (!parsedURL) {

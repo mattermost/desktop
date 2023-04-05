@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 
 import {BrowserView, app, ipcMain} from 'electron';
-import log from 'electron-log';
 
 import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
+import {Logger} from 'common/log';
 
 import {getLocalPreload, getLocalURLString, getWindowBoundaries} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
@@ -14,6 +14,8 @@ enum LoadingScreenState {
     FADING = 2,
     HIDDEN = 3,
 }
+
+const log = new Logger('LoadingScreen');
 
 export class LoadingScreen {
     private view?: BrowserView;

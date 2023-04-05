@@ -8,9 +8,12 @@ import os from 'os';
 import path from 'path';
 
 import {app, dialog} from 'electron';
-import log from 'electron-log';
+
+import {Logger} from 'common/log';
 
 import {localizeMessage} from 'main/i18nManager';
+
+const log = new Logger('CriticalErrorHandler');
 
 export class CriticalErrorHandler {
     init = () => {
