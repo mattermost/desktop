@@ -3,8 +3,6 @@
 
 import EventEmitter from 'events';
 
-import log from 'electron-log';
-
 import {Team, ConfigServer, ConfigTab} from 'types/config';
 import {RemoteInfo} from 'types/server';
 
@@ -13,6 +11,7 @@ import {
     SERVERS_URL_MODIFIED,
     SERVERS_UPDATE,
 } from 'common/communication';
+import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS, TabView, getDefaultTabs} from 'common/tabs/TabView';
 import MessagingTabView from 'common/tabs/MessagingTabView';
@@ -20,6 +19,8 @@ import FocalboardTabView from 'common/tabs/FocalboardTabView';
 import PlaybooksTabView from 'common/tabs/PlaybooksTabView';
 import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
 import Utils from 'common/utils/util';
+
+const log = new Logger('ServerManager');
 
 export class ServerManager extends EventEmitter {
     private servers: Map<string, MattermostServer>;
@@ -43,7 +44,7 @@ export class ServerManager extends EventEmitter {
     }
 
     getOrderedTabsForServer = (serverId: string) => {
-        log.debug('ServerManager.getOrderedTabsForServer', serverId);
+        this.getServerLog(serverId, 'ServerManager').debug('getOrderedTabsForServer');
 
         const tabOrder = this.tabOrder.get(serverId);
         if (!tabOrder) {
@@ -84,7 +85,7 @@ export class ServerManager extends EventEmitter {
     }
 
     getLastActiveTabForServer = (serverId: string) => {
-        log.debug('ServerManager.getLastActiveTabForServer', serverId);
+        this.getServerLog(serverId, 'ServerManager').debug('getLastActiveTabForServer');
 
         const lastActiveTab = this.lastActiveTab.get(serverId);
         if (lastActiveTab) {
@@ -163,7 +164,7 @@ export class ServerManager extends EventEmitter {
     }
 
     updateTabOrder = (serverId: string, tabOrder: string[]) => {
-        log.debug('ServerManager.updateTabOrder', serverId, tabOrder);
+        this.getServerLog(serverId, 'ServerManager').debug('updateTabOrder', tabOrder);
 
         this.tabOrder.set(serverId, tabOrder);
         this.persistServers();
@@ -296,12 +297,12 @@ export class ServerManager extends EventEmitter {
         const server = new MattermostServer(team, isPredefined);
         this.servers.set(server.id, server);
 
-        log.debug('initialized server', server.id);
+        this.getServerLog(server.id, 'ServerManager').debug('initialized server');
 
         const tabOrder: string[] = [];
         team.tabs.sort((a, b) => a.order - b.order).forEach((tab) => {
             const tabView = this.getTabView(server, tab.name, tab.isOpen);
-            log.debug('initialized tab', tabView.id);
+            this.getViewLog(tabView.id, 'ServerManager').debug('initialized tab');
 
             this.tabs.set(tabView.id, tabView);
             tabOrder.push(tabView.id);
@@ -417,13 +418,13 @@ export class ServerManager extends EventEmitter {
                 const tab = this.tabs.get(tabId);
                 if (tab) {
                     if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && typeof tab.isOpen === 'undefined') {
-                        log.verbose('opening Playbooks', tab.id);
+                        this.getViewLog(tab.id, 'ServerManager').verbose('opening Playbooks');
                         tab.isOpen = true;
                         this.tabs.set(tabId, tab);
                         hasUpdates = true;
                     }
                     if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && typeof tab.isOpen === 'undefined') {
-                        log.verbose('opening Boards', tab.id);
+                        this.getViewLog(tab.id, 'ServerManager').verbose('opening Boards');
                         tab.isOpen = true;
                         this.tabs.set(tabId, tab);
                         hasUpdates = true;
@@ -433,6 +434,27 @@ export class ServerManager extends EventEmitter {
         }
         return hasUpdates;
     }
+
+    private includeId = (id: string, ...prefixes: string[]) => {
+        const shouldInclude = ['debug', 'silly'].includes(logger.transports.file.level as string);
+        return shouldInclude ? [id, ...prefixes] : prefixes;
+    };
+
+    getServerLog = (serverId: string, ...additionalPrefixes: string[]) => {
+        const server = this.getServer(serverId);
+        if (!server) {
+            return log.withPrefix(serverId);
+        }
+        return log.withPrefix(...additionalPrefixes, ...this.includeId(serverId, server.name));
+    };
+
+    getViewLog = (viewId: string, ...additionalPrefixes: string[]) => {
+        const view = this.getTab(viewId);
+        if (!view) {
+            return log.withPrefix(viewId);
+        }
+        return log.withPrefix(...additionalPrefixes, ...this.includeId(viewId, view.server.name, view.name));
+    };
 }
 
 const serverManager = new ServerManager();
