@@ -13,7 +13,7 @@ import {SavedWindowState} from 'types/mainWindow';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU} from 'common/communication';
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
@@ -24,7 +24,7 @@ import {localizeMessage} from 'main/i18nManager';
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
 
-const log = logger.withPrefix('MainWindow');
+const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
 
 export class MainWindow {

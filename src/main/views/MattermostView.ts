@@ -22,7 +22,7 @@ import {
 } from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TabView, TabTuple} from 'common/tabs/TabView';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import {ServerInfo} from 'main/server/serverInfo';
 import MainWindow from 'main/windows/mainWindow';
@@ -42,7 +42,7 @@ export enum Status {
 }
 
 const MENTIONS_GROUP = 2;
-const log = logger.withPrefix('MattermostView');
+const log = new Logger('MattermostView');
 
 export class MattermostView extends EventEmitter {
     tab: TabView;

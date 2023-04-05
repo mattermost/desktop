@@ -22,19 +22,13 @@ jest.mock('common/log', () => {
         silly: jest.fn(),
     };
     return {
-        create: () => ({
+        Logger: jest.fn().mockImplementation(() => ({
             ...logLevelsFn,
-        }),
-        withPrefix: () => ({
-            ...logLevelsFn,
-        }),
+            withPrefix: () => ({
+                ...logLevelsFn,
+            }),
+        })),
         setLoggingLevel: jest.fn(),
-        ...logLevelsFn,
-        transports: {
-            file: {
-                level: '',
-            },
-        },
     };
 });
 

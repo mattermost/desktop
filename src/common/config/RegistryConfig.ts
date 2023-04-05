@@ -8,9 +8,9 @@ import WindowsRegistryUTF8 from 'winreg-utf8';
 
 import {RegistryConfig as RegistryConfigType, Team} from 'types/config';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
-const log = logger.withPrefix('RegistryConfig');
+const log = new Logger('RegistryConfig');
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 export const REGISTRY_READ_EVENT = 'registry-read';

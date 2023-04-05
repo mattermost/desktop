@@ -5,13 +5,13 @@ import {Certificate, WebContents} from 'electron';
 
 import {CertificateModalData} from 'types/certificate';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import modalManager from './views/modalManager';
 import {getLocalURLString, getLocalPreload} from './utils';
 import MainWindow from './windows/mainWindow';
 
-const log = logger.withPrefix('CertificateManager');
+const log = new Logger('CertificateManager');
 const preload = getLocalPreload('desktopAPI.js');
 const html = getLocalURLString('certificateModal.html');
 

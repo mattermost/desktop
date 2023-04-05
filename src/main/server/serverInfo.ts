@@ -4,11 +4,11 @@
 import {ClientConfig, RemoteInfo} from 'types/server';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import {getServerAPI} from './serverAPI';
 
-const log = logger.withPrefix('ServerInfo');
+const log = new Logger('ServerInfo');
 
 export class ServerInfo {
     server: MattermostServer;

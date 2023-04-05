@@ -18,7 +18,7 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
 } from 'common/communication';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {
     DOWNLOADS_DROPDOWN_FULL_WIDTH,
     DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT,
@@ -31,7 +31,7 @@ import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
 import MainWindow from 'main/windows/mainWindow';
 
-const log = logger.withPrefix('DownloadsDropdownMenuView');
+const log = new Logger('DownloadsDropdownMenuView');
 
 export default class DownloadsDropdownMenuView {
     open: boolean;

@@ -25,7 +25,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
@@ -37,7 +37,7 @@ import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromConten
 import appVersionManager from './AppVersionManager';
 import {downloadsJson} from './constants';
 
-const log = logger.withPrefix('DownloadsManager');
+const log = new Logger('DownloadsManager');
 
 export enum DownloadItemTypeEnum {
     FILE = 'file',

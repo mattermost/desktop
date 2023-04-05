@@ -18,7 +18,7 @@ import {
     GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
 } from 'common/communication';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
@@ -26,7 +26,7 @@ import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
 import MainWindow from 'main/windows/mainWindow';
 
-const log = logger.withPrefix('DownloadsDropdownView');
+const log = new Logger('DownloadsDropdownView');
 
 export default class DownloadsDropdownView {
     bounds?: Electron.Rectangle;

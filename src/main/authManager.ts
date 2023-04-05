@@ -5,7 +5,7 @@ import {AuthenticationResponseDetails, AuthInfo, WebContents} from 'electron';
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import urlUtils from 'common/utils/url';
 
@@ -15,7 +15,7 @@ import {getLocalURLString, getLocalPreload} from 'main/utils';
 import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
-const log = logger.withPrefix('AuthManager');
+const log = new Logger('AuthManager');
 const preload = getLocalPreload('desktopAPI.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
 const permissionModalHtml = getLocalURLString('permissionModal.html');

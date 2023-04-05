@@ -4,7 +4,7 @@
 import {ipcMain} from 'electron';
 
 import {GET_AVAILABLE_LANGUAGES, GET_LANGUAGE_INFORMATION} from 'common/communication';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import {Language, languages} from '../../i18n/i18n';
 
@@ -16,7 +16,7 @@ export function localizeMessage(s: string, defaultString = '', values: any = {})
     return str;
 }
 
-const log = logger.withPrefix('i18nManager');
+const log = new Logger('i18nManager');
 
 export class I18nManager {
     currentLanguage: Language;

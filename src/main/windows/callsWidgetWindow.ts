@@ -15,7 +15,7 @@ import {MattermostView} from 'main/views/MattermostView';
 
 import {getLocalPreload} from 'main/utils';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import urlUtils, {getFormattedPathName} from 'common/utils/url';
@@ -31,7 +31,7 @@ type LoadURLOpts = {
     extraHeaders: string;
 }
 
-const log = logger.withPrefix('CallsWidgetWindow');
+const log = new Logger('CallsWidgetWindow');
 
 export default class CallsWidgetWindow extends EventEmitter {
     public win: BrowserWindow;

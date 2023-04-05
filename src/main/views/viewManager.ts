@@ -22,7 +22,7 @@ import {
     MAIN_WINDOW_SHOWN,
 } from 'common/communication';
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -42,7 +42,7 @@ import modalManager from './modalManager';
 import WebContentsEventManager from './webContentEvents';
 import LoadingScreen from './loadingScreen';
 
-const log = logger.withPrefix('ViewManager');
+const log = new Logger('ViewManager');
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
 

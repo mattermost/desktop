@@ -5,14 +5,14 @@ import {BrowserWindow, ipcMain} from 'electron';
 
 import {SHOW_SETTINGS_WINDOW} from 'common/communication';
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
 import MainWindow from './mainWindow';
 
-const log = logger.withPrefix('SettingsWindow');
+const log = new Logger('SettingsWindow');
 
 export class SettingsWindow {
     private win?: BrowserWindow;

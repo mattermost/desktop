@@ -6,9 +6,9 @@ import AutoLaunch from 'auto-launch';
 import {app} from 'electron';
 import isDev from 'electron-is-dev';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
-const log = logger.withPrefix('AutoLauncher');
+const log = new Logger('AutoLauncher');
 
 export class AutoLauncher {
     appLauncher: AutoLaunch;

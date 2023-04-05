@@ -21,7 +21,7 @@ import {
 
 import {UPDATE_TEAMS, GET_CONFIGURATION, UPDATE_CONFIGURATION, GET_LOCAL_CONFIGURATION, UPDATE_PATHS} from 'common/communication';
 import * as Validator from 'common/Validator';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import Utils from 'common/utils/util';
 
@@ -33,7 +33,7 @@ import buildConfig from './buildConfig';
 import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
 import migrateConfigItems from './migrationPreferences';
 
-const log = logger.withPrefix('Config');
+const log = new Logger('Config');
 
 /**
  * Handles loading and merging all sources of configuration as well as saving user provided config

@@ -18,7 +18,7 @@ import {
     RESIZE_MODAL,
 } from 'common/communication';
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import {getAdjustedWindowBoundaries} from 'main/utils';
 import WebContentsEventManager from 'main/views/webContentEvents';
@@ -26,7 +26,7 @@ import WindowManager from 'main/windows/windowManager';
 
 import {ModalView} from './modalView';
 
-const log = logger.withPrefix('ModalManager');
+const log = new Logger('ModalManager');
 
 export class ModalManager {
     modalQueue: Array<ModalView<any, any>>;

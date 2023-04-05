@@ -15,14 +15,14 @@ import {
     RECEIVE_DROPDOWN_MENU_SIZE,
     SET_ACTIVE_VIEW,
 } from 'common/communication';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import * as AppState from '../appState';
 import WindowManager from '../windows/windowManager';
 import MainWindow from '../windows/mainWindow';
 
-const log = logger.withPrefix('TeamDropdownView');
+const log = new Logger('TeamDropdownView');
 
 export default class TeamDropdownView {
     view: BrowserView;

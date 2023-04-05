@@ -9,11 +9,11 @@ import path from 'path';
 
 import {app, dialog} from 'electron';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import {localizeMessage} from 'main/i18nManager';
 
-const log = logger.withPrefix('CriticalErrorHandler');
+const log = new Logger('CriticalErrorHandler');
 
 export class CriticalErrorHandler {
     init = () => {

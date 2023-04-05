@@ -7,7 +7,7 @@ import {Team, TeamWithIndex} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
 import {ping} from 'common/utils/requests';
 
@@ -20,7 +20,7 @@ import MainWindow from 'main/windows/mainWindow';
 import {handleAppBeforeQuit} from './app';
 import {updateServerInfos} from './utils';
 
-const log = logger.withPrefix('App.Intercom');
+const log = new Logger('App.Intercom');
 
 export function handleReloadConfig() {
     log.debug('handleReloadConfig');

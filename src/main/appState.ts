@@ -4,13 +4,13 @@
 import events from 'events';
 import {ipcMain} from 'electron';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE, SESSION_EXPIRED, UPDATE_DROPDOWN_MENTIONS} from 'common/communication';
 
 import WindowManager from './windows/windowManager';
 
-const log = logger.withPrefix('AppState');
+const log = new Logger('AppState');
 
 const status = {
     unreads: new Map<string, boolean>(),

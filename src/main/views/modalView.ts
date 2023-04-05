@@ -3,7 +3,7 @@
 
 import {BrowserView, BrowserWindow} from 'electron';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries} from '../utils';
@@ -26,11 +26,13 @@ export class ModalView<T, T2> {
     status: Status;
     contextMenu: ContextMenu;
     uncloseable: boolean;
+    logger: Logger;
 
     constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T2) => void, onReject: (value: T2) => void, currentWindow: BrowserWindow, uncloseable: boolean) {
         this.key = key;
         this.html = html;
         this.data = data;
+        this.logger = new Logger('ModalView', key);
         this.log.info(`preloading with ${preload}`);
         this.view = new BrowserView({webPreferences: {
             preload,
@@ -57,7 +59,7 @@ export class ModalView<T, T2> {
     }
 
     private get log() {
-        return logger.withPrefix('ModalView', this.key);
+        return this.logger;
     }
 
     show = (win?: BrowserWindow, withDevTools?: boolean) => {

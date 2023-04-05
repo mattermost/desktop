@@ -38,7 +38,7 @@ import {
     CALLS_ERROR,
     CALLS_LINK_CLICK,
 } from 'common/communication';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import urlUtils from 'common/utils/url';
 import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
@@ -66,7 +66,7 @@ import SettingsWindow from './settingsWindow';
 
 // singleton module to manage application's windows
 
-const log = logger.withPrefix('WindowManager');
+const log = new Logger('WindowManager');
 
 export class WindowManager {
     assetsDir: string;

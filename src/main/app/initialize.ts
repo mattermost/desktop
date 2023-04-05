@@ -37,7 +37,7 @@ import {
     OPEN_APP_MENU,
 } from 'common/communication';
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import urlUtils from 'common/utils/url';
 
 import AllowProtocolDialog from 'main/allowProtocolDialog';
@@ -103,7 +103,7 @@ import {
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
 
-const log = logger.withPrefix('App.Initialize');
+const log = new Logger('App.Initialize');
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order

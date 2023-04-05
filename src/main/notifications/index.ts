@@ -9,7 +9,7 @@ import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
 import {PLAY_SOUND} from 'common/communication';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import MainWindow from '../windows/mainWindow';
@@ -23,7 +23,7 @@ import getWindowsDoNotDisturb from './dnd-windows';
 
 export const currentNotifications = new Map();
 
-const log = logger.withPrefix('Notifications');
+const log = new Logger('Notifications');
 
 export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
     log.debug('displayMention', {title, body, channel, teamId, url, silent, data});

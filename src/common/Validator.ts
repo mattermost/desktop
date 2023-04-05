@@ -11,11 +11,11 @@ import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
 import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
 
-const log = logger.withPrefix('Validator');
+const log = new Logger('Validator');
 const defaultOptions = {
     stripUnknown: true,
 };

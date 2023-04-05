@@ -18,8 +18,6 @@ jest.mock('common/utils/util', () => ({
 
 describe('common/log', () => {
     describe('withPrefix', () => {
-        const logger = new Logger();
-
         beforeEach(() => {
             Util.shorten.mockImplementation((string) => {
                 const maxLength = 20;
@@ -35,22 +33,26 @@ describe('common/log', () => {
         });
 
         it('should just print the log item without prefixes if not provided', () => {
-            logger.withPrefix().log('test item');
+            const logger = new Logger();
+            logger.log('test item');
             expect(log.log).toBeCalledWith('test item');
         });
 
         it('should print the log item with a prefix', () => {
-            logger.withPrefix('prefix').log('test item');
+            const logger = new Logger('prefix');
+            logger.log('test item');
             expect(log.log).toBeCalledWith('[prefix]', 'test item');
         });
 
         it('should allow for multiple prefixes', () => {
-            logger.withPrefix('prefix1', 'prefix2').log('test item');
+            const logger = new Logger('prefix1', 'prefix2');
+            logger.log('test item');
             expect(log.log).toBeCalledWith('[prefix1]', '[prefix2]', 'test item');
         });
 
         it('should truncate really long prefixes', () => {
-            logger.withPrefix('a really really really long prefix').log('test item');
+            const logger = new Logger('a really really really long prefix');
+            logger.log('test item');
             expect(log.log).toBeCalledWith('[a really really r...]', 'test item');
         });
     });

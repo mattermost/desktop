@@ -4,9 +4,9 @@
 import {net, session} from 'electron';
 
 import {COOKIE_NAME_AUTH_TOKEN, COOKIE_NAME_CSRF, COOKIE_NAME_USER_ID} from 'common/constants';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
-const log = logger.withPrefix('serverAPI');
+const log = new Logger('serverAPI');
 
 export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSuccess?: (data: T) => void, onAbort?: () => void, onError?: (error: Error) => void) {
     if (isAuthenticated) {

@@ -4,7 +4,7 @@
 import {BrowserView, app, ipcMain} from 'electron';
 
 import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import {getLocalPreload, getLocalURLString, getWindowBoundaries} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
@@ -15,7 +15,7 @@ enum LoadingScreenState {
     HIDDEN = 3,
 }
 
-const log = logger.withPrefix('LoadingScreen');
+const log = new Logger('LoadingScreen');
 
 export class LoadingScreen {
     private view?: BrowserView;

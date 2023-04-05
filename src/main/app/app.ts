@@ -3,7 +3,7 @@
 
 import {app, BrowserWindow, Event, dialog, WebContents, Certificate, Details} from 'electron';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import urlUtils from 'common/utils/url';
 import Config from 'common/config';
 
@@ -18,7 +18,7 @@ import {getDeeplinkingURL, openDeepLink, resizeScreen} from './utils';
 
 export const certificateErrorCallbacks = new Map();
 
-const log = logger.withPrefix('App.App');
+const log = new Logger('App.App');
 
 //
 // app event handlers

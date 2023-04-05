@@ -12,7 +12,7 @@ import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
 
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import JsonFileManager from 'common/JsonFileManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
@@ -35,7 +35,7 @@ import {mainProtocol} from './initialize';
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_with_spacing_32.png');
 const appIcon = nativeImage.createFromPath(appIconURL);
-const log = logger.withPrefix('App.Utils');
+const log = new Logger('App.Utils');
 
 export function openDeepLink(deeplinkingUrl: string) {
     try {

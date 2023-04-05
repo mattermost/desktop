@@ -10,7 +10,7 @@ import {Certificate, ipcMain} from 'electron';
 import {ComparableCertificate} from 'types/certificate';
 
 import {UPDATE_PATHS} from 'common/communication';
-import log from 'common/log';
+import {Logger} from 'common/log';
 import urlUtils from 'common/utils/url';
 import * as Validator from 'common/Validator';
 
@@ -94,6 +94,6 @@ let certificateStore = new CertificateStore(certificateStorePath);
 export default certificateStore;
 
 ipcMain.on(UPDATE_PATHS, () => {
-    log.withPrefix('certificateStore').debug('UPDATE_PATHS');
+    new Logger('certificateStore').debug('UPDATE_PATHS');
     certificateStore = new CertificateStore(certificateStorePath);
 });

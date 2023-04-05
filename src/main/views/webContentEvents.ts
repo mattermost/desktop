@@ -4,7 +4,7 @@
 import {BrowserWindow, session, shell, WebContents} from 'electron';
 
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 import urlUtils from 'common/utils/url';
 
 import {flushCookiesStore} from 'main/app/utils';
@@ -23,6 +23,7 @@ type CustomLogin = {
     inProgress: boolean;
 }
 
+const log = new Logger('WebContentsEventManager');
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
 export class WebContentsEventManager {
@@ -36,7 +37,7 @@ export class WebContentsEventManager {
     }
 
     private log = (webContentsId?: number) => {
-        return logger.withPrefix('WebContentsEventManager', String(webContentsId));
+        return log.withPrefix(String(webContentsId));
     }
 
     private isTrustedPopupWindow = (webContentsId: number) => {

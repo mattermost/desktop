@@ -10,11 +10,13 @@ import {dialog, shell} from 'electron';
 import {localizeMessage} from 'main/i18nManager';
 
 import buildConfig from 'common/config/buildConfig';
-import log from 'common/log';
+import {Logger} from 'common/log';
 import * as Validator from 'common/Validator';
 
 import MainWindow from './windows/mainWindow';
 import {allowedProtocolFile} from './constants';
+
+const log = new Logger('AllowProtocolDialog');
 
 export class AllowProtocolDialog {
     allowedProtocols: string[];
@@ -70,7 +72,7 @@ export class AllowProtocolDialog {
                 this.allowedProtocols.push(protocol);
                 function handleError(err: NodeJS.ErrnoException | null) {
                     if (err) {
-                        log.withPrefix('AllowProtocolDialog').error(err);
+                        log.error(err);
                     }
                 }
                 fs.writeFile(allowedProtocolFile, JSON.stringify(this.allowedProtocols), handleError);

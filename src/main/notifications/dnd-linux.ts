@@ -3,10 +3,10 @@
 
 import {execSync} from 'child_process';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 const GNOME_READ_DND = 'gsettings get org.gnome.desktop.notifications show-banners';
-const log = logger.withPrefix('Linux-DnD');
+const log = new Logger('Linux-DnD');
 
 function getLinuxDoNotDisturb() {
     try {

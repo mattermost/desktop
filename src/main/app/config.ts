@@ -7,7 +7,7 @@ import {CombinedConfig} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
-import logger from 'common/log';
+import {Logger, setLoggingLevel} from 'common/log';
 
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
@@ -18,7 +18,7 @@ import WindowManager from 'main/windows/windowManager';
 import {handleMainWindowIsShown} from './intercom';
 import {handleUpdateMenuEvent, updateServerInfos, updateSpellCheckerLocales} from './utils';
 
-const log = logger.withPrefix('App.Config');
+const log = new Logger('App.Config');
 
 //
 // config event handlers
@@ -26,7 +26,7 @@ const log = logger.withPrefix('App.Config');
 
 export function handleConfigUpdate(newConfig: CombinedConfig) {
     if (newConfig.logLevel) {
-        logger.setLoggingLevel(newConfig.logLevel);
+        setLoggingLevel(newConfig.logLevel);
     }
 
     log.debug('handleConfigUpdate');

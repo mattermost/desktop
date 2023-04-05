@@ -6,7 +6,7 @@ import path from 'path';
 import {dialog, ipcMain, app, nativeImage} from 'electron';
 import {autoUpdater, CancellationToken, ProgressInfo, UpdateInfo} from 'electron-updater';
 
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
@@ -28,8 +28,8 @@ import Config from 'common/config';
 const NEXT_NOTIFY = 86400000; // 24 hours
 const NEXT_CHECK = 3600000; // 1 hour
 
-const log = logger.withPrefix('UpdateManager');
-autoUpdater.logger = logger;
+const log = new Logger('UpdateManager');
+autoUpdater.logger = log;
 autoUpdater.autoDownload = false;
 autoUpdater.disableWebInstaller = true;
 

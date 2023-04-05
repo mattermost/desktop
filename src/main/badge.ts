@@ -5,14 +5,14 @@
 import {BrowserWindow, app, nativeImage} from 'electron';
 
 import {UPDATE_BADGE} from 'common/communication';
-import logger from 'common/log';
+import {Logger} from 'common/log';
 
 import {localizeMessage} from 'main/i18nManager';
 
 import * as AppState from './appState';
 import MainWindow from './windows/mainWindow';
 
-const log = logger.withPrefix('Badge');
+const log = new Logger('Badge');
 const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
