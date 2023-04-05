@@ -44,7 +44,7 @@ export class ServerManager extends EventEmitter {
     }
 
     getOrderedTabsForServer = (serverId: string) => {
-        this.getServerLog(serverId, 'ServerManager').debug('getOrderedTabsForServer');
+        log.withPrefix(serverId).debug('getOrderedTabsForServer');
 
         const tabOrder = this.tabOrder.get(serverId);
         if (!tabOrder) {
@@ -85,7 +85,7 @@ export class ServerManager extends EventEmitter {
     }
 
     getLastActiveTabForServer = (serverId: string) => {
-        this.getServerLog(serverId, 'ServerManager').debug('getLastActiveTabForServer');
+        log.withPrefix(serverId).debug('getLastActiveTabForServer');
 
         const lastActiveTab = this.lastActiveTab.get(serverId);
         if (lastActiveTab) {
@@ -164,7 +164,7 @@ export class ServerManager extends EventEmitter {
     }
 
     updateTabOrder = (serverId: string, tabOrder: string[]) => {
-        this.getServerLog(serverId, 'ServerManager').debug('updateTabOrder', tabOrder);
+        log.withPrefix(serverId).debug('updateTabOrder', tabOrder);
 
         this.tabOrder.set(serverId, tabOrder);
         this.persistServers();
@@ -297,12 +297,12 @@ export class ServerManager extends EventEmitter {
         const server = new MattermostServer(team, isPredefined);
         this.servers.set(server.id, server);
 
-        this.getServerLog(server.id, 'ServerManager').debug('initialized server');
+        log.withPrefix(server.id).debug('initialized server');
 
         const tabOrder: string[] = [];
         team.tabs.sort((a, b) => a.order - b.order).forEach((tab) => {
             const tabView = this.getTabView(server, tab.name, tab.isOpen);
-            this.getViewLog(tabView.id, 'ServerManager').debug('initialized tab');
+            log.withPrefix(tabView.id).debug('initialized tab');
 
             this.tabs.set(tabView.id, tabView);
             tabOrder.push(tabView.id);
@@ -418,13 +418,13 @@ export class ServerManager extends EventEmitter {
                 const tab = this.tabs.get(tabId);
                 if (tab) {
                     if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && typeof tab.isOpen === 'undefined') {
-                        this.getViewLog(tab.id, 'ServerManager').verbose('opening Playbooks');
+                        log.withPrefix(tab.id).verbose('opening Playbooks');
                         tab.isOpen = true;
                         this.tabs.set(tabId, tab);
                         hasUpdates = true;
                     }
                     if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && typeof tab.isOpen === 'undefined') {
-                        this.getViewLog(tab.id, 'ServerManager').verbose('opening Boards');
+                        log.withPrefix(tab.id).verbose('opening Boards');
                         tab.isOpen = true;
                         this.tabs.set(tabId, tab);
                         hasUpdates = true;
@@ -443,17 +443,17 @@ export class ServerManager extends EventEmitter {
     getServerLog = (serverId: string, ...additionalPrefixes: string[]) => {
         const server = this.getServer(serverId);
         if (!server) {
-            return log.withPrefix(serverId);
+            return new Logger(serverId);
         }
-        return log.withPrefix(...additionalPrefixes, ...this.includeId(serverId, server.name));
+        return new Logger(...additionalPrefixes, ...this.includeId(serverId, server.name));
     };
 
     getViewLog = (viewId: string, ...additionalPrefixes: string[]) => {
         const view = this.getTab(viewId);
         if (!view) {
-            return log.withPrefix(viewId);
+            return new Logger(viewId);
         }
-        return log.withPrefix(...additionalPrefixes, ...this.includeId(viewId, view.server.name, view.name));
+        return new Logger(...additionalPrefixes, ...this.includeId(viewId, view.server.name, view.name));
     };
 }
 
