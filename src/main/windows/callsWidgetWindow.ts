@@ -3,7 +3,6 @@
 
 import {EventEmitter} from 'events';
 import {BrowserWindow, ipcMain, IpcMainEvent, Rectangle} from 'electron';
-import log from 'electron-log';
 
 import {
     CallsJoinedCallMessage,
@@ -16,6 +15,7 @@ import {MattermostView} from 'main/views/MattermostView';
 
 import {getLocalPreload} from 'main/utils';
 
+import {Logger} from 'common/log';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import urlUtils, {getFormattedPathName} from 'common/utils/url';
@@ -30,6 +30,8 @@ import webContentsEventManager from 'main/views/webContentEvents';
 type LoadURLOpts = {
     extraHeaders: string;
 }
+
+const log = new Logger('CallsWidgetWindow');
 
 export default class CallsWidgetWindow extends EventEmitter {
     public win: BrowserWindow;
@@ -86,7 +88,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     public async close() {
-        log.debug('CallsWidgetWindow.close');
+        log.debug('close');
         return new Promise<void>((resolve) => {
             if (this.win.isDestroyed()) {
                 resolve();
@@ -113,7 +115,7 @@ export default class CallsWidgetWindow extends EventEmitter {
         if (url === this.getWidgetURL()) {
             return;
         }
-        log.warn(`CallsWidgetWindow: prevented widget window from navigating to: ${url}`);
+        log.warn(`prevented widget window from navigating to: ${url}`);
         ev.preventDefault();
     }
 
@@ -125,7 +127,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onClosed = () => {
-        log.debug('CallsWidgetWindow.onClosed');
+        log.debug('onClosed');
         this.emit('closed');
         this.removeAllListeners('closed');
         ipcMain.off(CALLS_WIDGET_RESIZE, this.onResize);
@@ -150,10 +152,10 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onResize = (ev: IpcMainEvent, _: string, msg: CallsWidgetResizeMessage) => {
-        log.debug('CallsWidgetWindow.onResize', msg);
+        log.debug('onResize', msg);
 
         if (!this.isAllowedEvent(ev)) {
-            log.warn('CallsWidgetWindow.onResize', 'Disallowed calls event');
+            log.warn('onResize', 'Disallowed calls event');
             return;
         }
 
@@ -170,7 +172,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onShareScreen = (ev: IpcMainEvent, _: string, message: CallsWidgetShareScreenMessage) => {
-        log.debug('CallsWidgetWindow.onShareScreen');
+        log.debug('onShareScreen');
 
         if (!this.isAllowedEvent(ev)) {
             log.warn('Disallowed calls event');
@@ -181,10 +183,10 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onJoinedCall = (ev: IpcMainEvent, _: string, message: CallsJoinedCallMessage) => {
-        log.debug('CallsWidgetWindow.onJoinedCall');
+        log.debug('onJoinedCall');
 
         if (!this.isAllowedEvent(ev)) {
-            log.warn('CallsWidgetWindow.onJoinedCall', 'Disallowed calls event');
+            log.warn('onJoinedCall', 'Disallowed calls event');
             return;
         }
 
@@ -204,7 +206,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onShow = () => {
-        log.debug('CallsWidgetWindow.onShow');
+        log.debug('onShow');
 
         this.win.focus();
         this.win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true, skipTransformProcessType: true});
@@ -237,7 +239,7 @@ export default class CallsWidgetWindow extends EventEmitter {
             };
         }
 
-        log.warn(`CallsWidgetWindow.onPopOutOpen: prevented window open to ${url}`);
+        log.warn(`onPopOutOpen: prevented window open to ${url}`);
         return {action: 'deny' as const};
     }
 
@@ -253,7 +255,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onPopOutClosed = () => {
-        log.debug('CallsWidgetWindow.onPopOutClosed');
+        log.debug('onPopOutClosed');
         this.popOut?.removeAllListeners('closed');
         this.popOut = null;
     }

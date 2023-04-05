@@ -108,9 +108,12 @@ case "${1}" in
         if [[ "${branch_name}" =~ "release-" ]]; then
             print_info "Releasing v${current_version} for MAS approval"
             new_pkg_version="${current_version}"
-            write_package_version "${new_pkg_version}"
-            if [[ "${new_pkg_version}" =~ "-mas." ]]; then
-                mas="${new_pkg_version#*-mas.}"
+            if [[ "${pkg_version}" != "${new_pkg_version}" ]]; then
+                write_package_version "${new_pkg_version}"
+            fi
+            new_tag_version=$(git describe --match "v$current_version*" --abbrev=0)
+            if [[ "${new_tag_version}" =~ "-mas." ]]; then
+                mas="${new_tag_version#*-mas.}"
             else
                 mas=0
             fi

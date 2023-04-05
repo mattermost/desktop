@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 
 import {BrowserWindow, session, shell, WebContents} from 'electron';
-import log from 'electron-log';
 
 import Config from 'common/config';
+import {Logger} from 'common/log';
 import urlUtils from 'common/utils/url';
 
 import {flushCookiesStore} from 'main/app/utils';
@@ -23,6 +23,7 @@ type CustomLogin = {
     inProgress: boolean;
 }
 
+const log = new Logger('WebContentsEventManager');
 const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
 export class WebContentsEventManager {
@@ -33,6 +34,13 @@ export class WebContentsEventManager {
     constructor() {
         this.customLogins = {};
         this.listeners = {};
+    }
+
+    private log = (webContentsId?: number) => {
+        if (webContentsId) {
+            return log.withPrefix(String(webContentsId));
+        }
+        return log;
     }
 
     private isTrustedPopupWindow = (webContentsId: number) => {
@@ -52,7 +60,7 @@ export class WebContentsEventManager {
 
     generateWillNavigate = (webContentsId: number) => {
         return (event: Event, url: string) => {
-            log.debug('webContentEvents.will-navigate', {webContentsId, url});
+            this.log(webContentsId).debug('will-navigate', url);
 
             const parsedURL = urlUtils.parseURL(url)!;
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
@@ -81,14 +89,14 @@ export class WebContentsEventManager {
                 return;
             }
 
-            log.info(`Prevented desktop from navigating to: ${url}`);
+            this.log(webContentsId).info(`Prevented desktop from navigating to: ${url}`);
             event.preventDefault();
         };
     };
 
     generateDidStartNavigation = (webContentsId: number) => {
         return (event: Event, url: string) => {
-            log.debug('webContentEvents.did-start-navigation', {webContentsId, url});
+            this.log(webContentsId).debug('did-start-navigation', {webContentsId, url});
 
             const parsedURL = urlUtils.parseURL(url)!;
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
@@ -106,17 +114,17 @@ export class WebContentsEventManager {
     };
 
     denyNewWindow = (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
-        log.warn(`Prevented popup window to open a new window to ${details.url}.`);
+        this.log().warn(`Prevented popup window to open a new window to ${details.url}.`);
         return {action: 'deny'};
     };
 
     generateNewWindowListener = (webContentsId: number, spellcheck?: boolean) => {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
-            log.debug('webContentEvents.new-window', details.url);
+            this.log(webContentsId).debug('new-window', details.url);
 
             const parsedURL = urlUtils.parseURL(details.url);
             if (!parsedURL) {
-                log.warn(`Ignoring non-url ${details.url}`);
+                this.log(webContentsId).warn(`Ignoring non-url ${details.url}`);
                 return {action: 'deny'};
             }
 
@@ -170,11 +178,11 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
             if (urlUtils.isAdminUrl(serverURL, parsedURL)) {
-                log.info(`${details.url} is an admin console page, preventing to open a new window`);
+                this.log(webContentsId).info(`${details.url} is an admin console page, preventing to open a new window`);
                 return {action: 'deny'};
             }
             if (this.popupWindow && this.popupWindow.win.webContents.getURL() === details.url) {
-                log.info(`Popup window already open at provided url: ${details.url}`);
+                this.log(webContentsId).info(`Popup window already open at provided url: ${details.url}`);
                 return {action: 'deny'};
             }
 
@@ -314,14 +322,14 @@ export class WebContentsEventManager {
                 contents.removeListener('did-start-navigation', didStartNavigation);
                 removeListeners?.(contents);
             } catch (e) {
-                log.error(`Error while trying to detach listeners, this might be ok if the process crashed: ${e}`);
+                this.log(contents.id).error(`Error while trying to detach listeners, this might be ok if the process crashed: ${e}`);
             }
         };
 
         this.listeners[contents.id] = removeWebContentsListeners;
         contents.once('render-process-gone', (event, details) => {
             if (details.reason !== 'clean-exit') {
-                log.error('Renderer process for a webcontent is no longer available:', details.reason);
+                this.log(contents.id).error('Renderer process for a webcontent is no longer available:', details.reason);
             }
             removeWebContentsListeners();
         });

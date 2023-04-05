@@ -6,15 +6,17 @@
 import fs from 'fs';
 
 import {dialog, shell} from 'electron';
-import log from 'electron-log';
 
 import {localizeMessage} from 'main/i18nManager';
 
 import buildConfig from 'common/config/buildConfig';
+import {Logger} from 'common/log';
 import * as Validator from 'common/Validator';
 
 import MainWindow from './windows/mainWindow';
 import {allowedProtocolFile} from './constants';
+
+const log = new Logger('AllowProtocolDialog');
 
 export class AllowProtocolDialog {
     allowedProtocols: string[];

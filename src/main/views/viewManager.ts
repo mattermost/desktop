@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {BrowserView, dialog, ipcMain, IpcMainEvent} from 'electron';
-import log from 'electron-log';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
 import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
@@ -23,6 +22,7 @@ import {
     MAIN_WINDOW_SHOWN,
 } from 'common/communication';
 import Config from 'common/config';
+import {Logger} from 'common/log';
 import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -42,6 +42,7 @@ import modalManager from './modalManager';
 import WebContentsEventManager from './webContentEvents';
 import LoadingScreen from './loadingScreen';
 
+const log = new Logger('ViewManager');
 const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
 
@@ -114,7 +115,7 @@ export class ViewManager {
      * close, open, or reload tabs, taking care to reuse tabs and
      * preserve focus on the currently selected tab. */
     reloadConfiguration = (configServers: TeamWithTabs[]) => {
-        log.debug('viewManager.reloadConfiguration');
+        log.debug('reloadConfiguration');
 
         const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.urlTypeTuple;
 
@@ -188,7 +189,7 @@ export class ViewManager {
     }
 
     showInitial = () => {
-        log.verbose('viewManager.showInitial');
+        log.verbose('showInitial');
 
         const servers = this.getServers();
         if (servers.length) {
@@ -211,7 +212,7 @@ export class ViewManager {
     }
 
     showByName = (name: string) => {
-        log.debug('viewManager.showByName', name);
+        log.debug('showByName', name);
 
         const newView = this.views.get(name);
         if (newView) {
@@ -258,7 +259,7 @@ export class ViewManager {
     }
 
     activateView = (viewName: string) => {
-        log.debug('viewManager.activateView', viewName);
+        log.debug('activateView', viewName);
 
         if (this.currentView === viewName) {
             this.showByName(this.currentView);
@@ -272,7 +273,7 @@ export class ViewManager {
     }
 
     finishLoading = (server: string) => {
-        log.debug('viewManager.finishLoading', server);
+        log.debug('finishLoading', server);
 
         const view = this.views.get(server);
         if (view && this.getCurrentView() === view) {
@@ -299,7 +300,7 @@ export class ViewManager {
     }
 
     failLoading = (tabName: string) => {
-        log.debug('viewManager.failLoading', tabName);
+        log.debug('failLoading', tabName);
 
         LoadingScreen.fade();
         if (this.currentView === tabName) {
@@ -339,7 +340,7 @@ export class ViewManager {
     }
 
     showURLView = (url: URL | string) => {
-        log.silly('viewManager.showURLView', url);
+        log.silly('showURLView', url);
 
         if (this.urlViewCancel) {
             this.urlViewCancel();
@@ -415,7 +416,7 @@ export class ViewManager {
     }
 
     deeplinkSuccess = (viewName: string) => {
-        log.debug('viewManager.deeplinkSuccess', viewName);
+        log.debug('deeplinkSuccess', viewName);
 
         const view = this.views.get(viewName);
         if (!view) {
@@ -435,7 +436,7 @@ export class ViewManager {
     }
 
     getViewByURL = (inputURL: URL | string, ignoreScheme = false) => {
-        log.silly('ViewManager.getViewByURL', `${inputURL}`, ignoreScheme);
+        log.silly('getViewByURL', `${inputURL}`, ignoreScheme);
 
         const parsedURL = urlUtils.parseURL(inputURL);
         if (!parsedURL) {

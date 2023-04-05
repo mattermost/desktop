@@ -2,15 +2,17 @@
 // See LICENSE.txt for license information.
 
 import {BrowserWindow, ipcMain} from 'electron';
-import log from 'electron-log';
 
 import {SHOW_SETTINGS_WINDOW} from 'common/communication';
 import Config from 'common/config';
+import {Logger} from 'common/log';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
 import MainWindow from './mainWindow';
+
+const log = new Logger('SettingsWindow');
 
 export class SettingsWindow {
     private win?: BrowserWindow;

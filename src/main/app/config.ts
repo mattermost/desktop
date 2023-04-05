@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 
 import {app, ipcMain} from 'electron';
-import log, {LogLevel} from 'electron-log';
 
 import {CombinedConfig} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
+import {Logger, setLoggingLevel} from 'common/log';
 
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
@@ -16,22 +16,21 @@ import LoadingScreen from 'main/views/loadingScreen';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleMainWindowIsShown} from './intercom';
-import {handleUpdateMenuEvent, setLoggingLevel, updateServerInfos, updateSpellCheckerLocales} from './utils';
+import {handleUpdateMenuEvent, updateServerInfos, updateSpellCheckerLocales} from './utils';
+
+const log = new Logger('App.Config');
 
 //
 // config event handlers
 //
 
 export function handleConfigUpdate(newConfig: CombinedConfig) {
-    if (log.transports.file.level !== newConfig.logLevel) {
-        log.error('Log level set to:', newConfig.logLevel);
-    }
     if (newConfig.logLevel) {
-        setLoggingLevel(newConfig.logLevel as LogLevel);
+        setLoggingLevel(newConfig.logLevel);
     }
 
-    log.debug('App.Config.handleConfigUpdate');
-    log.silly('App.Config.handleConfigUpdate', newConfig);
+    log.debug('handleConfigUpdate');
+    log.silly('handleConfigUpdate', newConfig);
 
     if (!newConfig) {
         return;
@@ -77,7 +76,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 }
 
 export function handleDarkModeChange(darkMode: boolean) {
-    log.debug('App.Config.handleDarkModeChange', darkMode);
+    log.debug('handleDarkModeChange', darkMode);
 
     refreshTrayImages(Config.trayIconTheme);
     WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
