@@ -8,7 +8,6 @@ import {app, BrowserWindow, systemPreferences, ipcMain, IpcMainEvent, IpcMainInv
 
 import {
     MAXIMIZE_CHANGE,
-    HISTORY,
     FOCUS_THREE_DOT_MENU,
     GET_DARK_MODE,
     UPDATE_SHORTCUT_MENU,
@@ -55,7 +54,6 @@ export class WindowManager {
     constructor() {
         this.assetsDir = path.resolve(app.getAppPath(), 'assets');
 
-        ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.handle(GET_DARK_MODE, this.handleGetDarkMode);
         ipcMain.handle(GET_VIEW_WEBCONTENTS_ID, this.handleGetWebContentsId);
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
@@ -202,7 +200,7 @@ export class WindowManager {
 
         const currentView = ViewManager.getCurrentView();
         if (currentView) {
-            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.view.webContents.getURL()));
+            const adjustedBounds = getAdjustedWindowBoundaries(bounds.width, bounds.height, shouldHaveBackBar(currentView.tab.url, currentView.currentURL));
             this.setBoundsFunction(currentView, adjustedBounds);
         }
     }
@@ -405,27 +403,6 @@ export class WindowManager {
         if (currentView) {
             LoadingScreen.show();
             currentView.reload();
-        }
-    }
-
-    sendToFind = () => {
-        const currentView = ViewManager.getCurrentView();
-        if (currentView) {
-            currentView.view.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
-        }
-    }
-
-    handleHistory = (event: IpcMainEvent, offset: number) => {
-        log.debug('handleHistory', offset);
-
-        const activeView = ViewManager.getCurrentView();
-        if (activeView && activeView.view.webContents.canGoToOffset(offset)) {
-            try {
-                activeView.view.webContents.goToOffset(offset);
-            } catch (error) {
-                log.error(error);
-                activeView.load(activeView.tab.url);
-            }
         }
     }
 

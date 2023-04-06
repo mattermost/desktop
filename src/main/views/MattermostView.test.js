@@ -9,6 +9,7 @@ import MessagingTabView from 'common/tabs/MessagingTabView';
 
 import MainWindow from '../windows/mainWindow';
 import * as WindowManager from '../windows/windowManager';
+import ContextMenu from '../contextMenu';
 import * as appState from '../appState';
 import Utils from '../utils';
 
@@ -24,6 +25,12 @@ jest.mock('electron', () => ({
             on: jest.fn(),
             getTitle: () => 'title',
             getURL: () => 'http://server-1.com',
+            clearHistory: jest.fn(),
+            send: jest.fn(),
+            canGoBack: jest.fn(),
+            canGoForward: jest.fn(),
+            goToOffset: jest.fn(),
+            canGoToOffset: jest.fn(),
         },
     })),
     ipcMain: {
@@ -42,6 +49,7 @@ jest.mock('../appState', () => ({
     updateMentions: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({
+    addWebContentsEventListeners: jest.fn(),
     removeWebContentsListeners: jest.fn(),
 }));
 jest.mock('../contextMenu', () => jest.fn());
@@ -52,8 +60,8 @@ jest.mock('../utils', () => ({
     shouldHaveBackBar: jest.fn(),
 }));
 
-const server = new MattermostServer('server_name', 'http://server-1.com');
-const tabView = new MessagingTabView(server);
+const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
+const tabView = new MessagingTabView(server, true);
 
 describe('main/views/MattermostView', () => {
     describe('load', () => {
@@ -179,6 +187,66 @@ describe('main/views/MattermostView', () => {
         });
     });
 
+    describe('goToOffset', () => {
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, {});
+        mattermostView.reload = jest.fn();
+
+        afterEach(() => {
+            MainWindow.get.mockReturnValue(window);
+            jest.clearAllMocks();
+        });
+
+        it('should only go to offset if it can', () => {
+            mattermostView.view.webContents.canGoToOffset.mockReturnValue(false);
+            mattermostView.goToOffset(1);
+            expect(mattermostView.view.webContents.goToOffset).not.toBeCalled();
+
+            mattermostView.view.webContents.canGoToOffset.mockReturnValue(true);
+            mattermostView.goToOffset(1);
+            expect(mattermostView.view.webContents.goToOffset).toBeCalled();
+        });
+
+        it('should call reload if an error occurs', () => {
+            mattermostView.view.webContents.canGoToOffset.mockReturnValue(true);
+            mattermostView.view.webContents.goToOffset.mockImplementation(() => {
+                throw new Error('hi');
+            });
+            mattermostView.goToOffset(1);
+            expect(mattermostView.reload).toBeCalled();
+        });
+    });
+
+    describe('onLogin', () => {
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, {});
+        mattermostView.view.webContents.getURL = jest.fn();
+        mattermostView.reload = jest.fn();
+
+        afterEach(() => {
+            MainWindow.get.mockReturnValue(window);
+            jest.clearAllMocks();
+        });
+
+        it('should reload view when URL is not on subpath of original server URL', () => {
+            mattermostView.view.webContents.getURL.mockReturnValue('http://server-2.com/subpath');
+            mattermostView.onLogin(true);
+            expect(mattermostView.reload).toHaveBeenCalled();
+        });
+
+        it('should not reload if URLs are matching', () => {
+            mattermostView.view.webContents.getURL.mockReturnValue('http://server-1.com');
+            mattermostView.onLogin(true);
+            expect(mattermostView.reload).not.toHaveBeenCalled();
+        });
+
+        it('should not reload if URL is subpath of server URL', () => {
+            mattermostView.view.webContents.getURL.mockReturnValue('http://server-1.com/subpath');
+            mattermostView.onLogin(true);
+            expect(mattermostView.reload).not.toHaveBeenCalled();
+        });
+    });
+
     describe('loadSuccess', () => {
         const window = {on: jest.fn()};
         const mattermostView = new MattermostView(tabView, {}, {});
@@ -208,7 +276,7 @@ describe('main/views/MattermostView', () => {
     });
 
     describe('show', () => {
-        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn(), on: jest.fn()};
+        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn(), on: jest.fn(), setTopBrowserView: jest.fn()};
         const mattermostView = new MattermostView(tabView, {}, {});
 
         beforeEach(() => {
@@ -226,59 +294,99 @@ describe('main/views/MattermostView', () => {
 
         it('should add browser view to window and set bounds when request is true and view not currently visible', () => {
             mattermostView.isVisible = false;
-            mattermostView.show(true);
+            mattermostView.show();
             expect(window.addBrowserView).toBeCalledWith(mattermostView.view);
             expect(mattermostView.setBounds).toBeCalled();
             expect(mattermostView.isVisible).toBe(true);
         });
 
-        it('should remove browser view when request is false', () => {
-            mattermostView.isVisible = true;
-            mattermostView.show(false);
-            expect(window.removeBrowserView).toBeCalledWith(mattermostView.view);
-            expect(mattermostView.isVisible).toBe(false);
-        });
-
         it('should do nothing when not toggling', () => {
             mattermostView.isVisible = true;
-            mattermostView.show(true);
+            mattermostView.show();
             expect(window.addBrowserView).not.toBeCalled();
-            expect(window.removeBrowserView).not.toBeCalled();
-
-            mattermostView.isVisible = false;
-            mattermostView.show(false);
-            expect(window.addBrowserView).not.toBeCalled();
-            expect(window.removeBrowserView).not.toBeCalled();
         });
 
         it('should focus view if view is ready', () => {
             mattermostView.status = 1;
             mattermostView.isVisible = false;
-            mattermostView.show(true);
+            mattermostView.show();
             expect(mattermostView.focus).toBeCalled();
+        });
+    });
+
+    describe('hide', () => {
+        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn(), on: jest.fn(), setTopBrowserView: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, {});
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
+        });
+
+        it('should remove browser view', () => {
+            mattermostView.isVisible = true;
+            mattermostView.hide();
+            expect(window.removeBrowserView).toBeCalledWith(mattermostView.view);
+            expect(mattermostView.isVisible).toBe(false);
+        });
+
+        it('should do nothing when not toggling', () => {
+            mattermostView.isVisible = false;
+            mattermostView.hide();
+            expect(window.removeBrowserView).not.toBeCalled();
+        });
+    });
+
+    describe('updateHistoryButton', () => {
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostView(tabView, {}, {});
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
+        });
+
+        it('should erase history and set isAtRoot when navigating to root URL', () => {
+            mattermostView.atRoot = false;
+            mattermostView.updateHistoryButton();
+            expect(mattermostView.view.webContents.clearHistory).toHaveBeenCalled();
+            expect(mattermostView.isAtRoot).toBe(true);
         });
     });
 
     describe('destroy', () => {
         const window = {removeBrowserView: jest.fn(), on: jest.fn()};
-        const mattermostView = new MattermostView(tabView, {}, {});
+        const contextMenu = {
+            dispose: jest.fn(),
+        };
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
-            mattermostView.view.webContents.destroy = jest.fn();
+            ContextMenu.mockReturnValue(contextMenu);
         });
 
         it('should remove browser view from window', () => {
+            const mattermostView = new MattermostView(tabView, {}, {});
+            mattermostView.view.webContents.destroy = jest.fn();
             mattermostView.destroy();
             expect(window.removeBrowserView).toBeCalledWith(mattermostView.view);
         });
 
         it('should clear mentions', () => {
+            const mattermostView = new MattermostView(tabView, {}, {});
+            mattermostView.view.webContents.destroy = jest.fn();
             mattermostView.destroy();
             expect(appState.updateMentions).toBeCalledWith(mattermostView.tab.name, 0, false);
         });
 
+        it('should destroy context menu', () => {
+            const mattermostView = new MattermostView(tabView, {}, {});
+            mattermostView.view.webContents.destroy = jest.fn();
+            mattermostView.destroy();
+            expect(contextMenu.dispose).toBeCalled();
+        });
+
         it('should clear outstanding timeouts', () => {
+            const mattermostView = new MattermostView(tabView, {}, {});
+            mattermostView.view.webContents.destroy = jest.fn();
             const spy = jest.spyOn(global, 'clearTimeout');
             mattermostView.retryLoad = 999;
             mattermostView.removeLoading = 1000;

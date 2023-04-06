@@ -18,7 +18,6 @@ import {protocols} from '../../../electron-builder.json';
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
 
-import {MattermostView} from './MattermostView';
 import ViewManager from './viewManager';
 
 type CustomLogin = {
@@ -267,24 +266,6 @@ export class WebContentsEventManager {
         if (this.listeners[id]) {
             this.listeners[id]();
         }
-    };
-
-    addMattermostViewEventListeners = (mmview: MattermostView) => {
-        this.addWebContentsEventListeners(
-            mmview.view.webContents,
-            (contents: WebContents) => {
-                contents.on('page-title-updated', mmview.handleTitleUpdate);
-                contents.on('page-favicon-updated', mmview.handleFaviconUpdate);
-                contents.on('update-target-url', mmview.handleUpdateTarget);
-                contents.on('did-navigate', mmview.handleDidNavigate);
-            },
-            (contents: WebContents) => {
-                contents.removeListener('page-title-updated', mmview.handleTitleUpdate);
-                contents.removeListener('page-favicon-updated', mmview.handleFaviconUpdate);
-                contents.removeListener('update-target-url', mmview.handleUpdateTarget);
-                contents.removeListener('did-navigate', mmview.handleDidNavigate);
-            },
-        );
     };
 
     addWebContentsEventListeners = (

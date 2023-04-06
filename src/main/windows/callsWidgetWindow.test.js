@@ -645,6 +645,7 @@ describe('main/windows/callsWidgetWindow', () => {
                     thumbnail: {
                         toDataURL: jest.fn(),
                     },
+
                 },
             ]);
 

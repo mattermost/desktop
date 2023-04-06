@@ -558,61 +558,6 @@ describe('main/windows/windowManager', () => {
         });
     });
 
-    describe('handleHistory', () => {
-        const windowManager = new WindowManager();
-
-        it('should only go to offset if it can', () => {
-            const view = {
-                view: {
-                    webContents: {
-                        goToOffset: jest.fn(),
-                        canGoToOffset: () => false,
-                    },
-                },
-            };
-            ViewManager.getCurrentView.mockReturnValue(view);
-
-            windowManager.handleHistory(null, 1);
-            expect(view.view.webContents.goToOffset).not.toBeCalled();
-
-            ViewManager.getCurrentView.mockReturnValue({
-                ...view,
-                view: {
-                    ...view.view,
-                    webContents: {
-                        ...view.view.webContents,
-                        canGoToOffset: () => true,
-                    },
-                },
-            });
-
-            windowManager.handleHistory(null, 1);
-            expect(view.view.webContents.goToOffset).toBeCalled();
-        });
-
-        it('should load base URL if an error occurs', () => {
-            const view = {
-                load: jest.fn(),
-                tab: {
-                    url: 'http://server-1.com',
-                },
-                view: {
-                    webContents: {
-                        goToOffset: jest.fn(),
-                        canGoToOffset: () => true,
-                    },
-                },
-            };
-            view.view.webContents.goToOffset.mockImplementation(() => {
-                throw new Error('hi');
-            });
-            ViewManager.getCurrentView.mockReturnValue(view);
-
-            windowManager.handleHistory(null, 1);
-            expect(view.load).toBeCalledWith('http://server-1.com');
-        });
-    });
-
     describe('selectTab', () => {
         const windowManager = new WindowManager();
         windowManager.switchTab = jest.fn();
