@@ -75,7 +75,10 @@ export class ServerManager extends EventEmitter {
         log.debug('getCurrentServer');
 
         if (!this.currentServerId) {
-            throw new Error('No server set as current');
+            if (!this.hasServers()) {
+                throw new Error('No server set as current');
+            }
+            this.currentServerId = this.serverOrder[0];
         }
         const server = this.servers.get(this.currentServerId);
         if (!server) {
@@ -316,10 +319,6 @@ export class ServerManager extends EventEmitter {
             this.lastActiveTab.set(server.id, tabOrder[team.lastActiveTab]);
         }
         return server.id;
-    }
-
-    private getFirstServer = () => {
-        return this.servers.get(this.serverOrder[0]);
     }
 
     private getFirstOpenTabForServer = (serverId: string) => {

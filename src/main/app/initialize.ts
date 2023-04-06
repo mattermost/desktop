@@ -26,7 +26,6 @@ import {
     START_UPGRADE,
     START_UPDATE_DOWNLOAD,
     PING_DOMAIN,
-    MAIN_WINDOW_SHOWN,
     OPEN_APP_MENU,
     GET_CONFIGURATION,
     GET_LOCAL_CONFIGURATION,
@@ -280,7 +279,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
     ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
     ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
-    ipcMain.on(MAIN_WINDOW_SHOWN, handleMainWindowIsShown);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);

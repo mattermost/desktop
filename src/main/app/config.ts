@@ -95,7 +95,10 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         });
     }
 
-    handleMainWindowIsShown();
+    if (app.isReady()) {
+        handleMainWindowIsShown();
+    }
+
     handleUpdateMenuEvent();
     if (newConfig.trayIconTheme) {
         refreshTrayImages(newConfig.trayIconTheme);

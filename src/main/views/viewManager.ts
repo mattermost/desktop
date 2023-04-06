@@ -14,7 +14,6 @@ import {
     BROWSER_HISTORY_PUSH,
     UPDATE_LAST_ACTIVE,
     UPDATE_URL_VIEW_WIDTH,
-    MAIN_WINDOW_SHOWN,
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
     BROWSER_HISTORY_BUTTON,
@@ -268,7 +267,6 @@ export class ViewManager {
             this.showById(lastActiveTab.id);
         } else {
             MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
-            ipcMain.emit(MAIN_WINDOW_SHOWN);
         }
     }
 

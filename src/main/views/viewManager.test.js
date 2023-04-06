@@ -4,9 +4,9 @@
 /* eslint-disable max-lines */
 'use strict';
 
-import {dialog, ipcMain} from 'electron';
+import {dialog} from 'electron';
 
-import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, MAIN_WINDOW_SHOWN, SET_ACTIVE_VIEW} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SET_ACTIVE_VIEW} from 'common/communication';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
 import ServerManager from 'common/servers/serverManager';
 import urlUtils from 'common/utils/url';
@@ -369,7 +369,6 @@ describe('main/views/viewManager', () => {
             ServerManager.hasServers.mockReturnValue(false);
             viewManager.showInitial();
             expect(window.webContents.send).toHaveBeenCalledWith(SET_ACTIVE_VIEW);
-            expect(ipcMain.emit).toHaveBeenCalledWith(MAIN_WINDOW_SHOWN);
         });
     });
 
