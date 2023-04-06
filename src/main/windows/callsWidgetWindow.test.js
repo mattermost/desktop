@@ -52,12 +52,8 @@ describe('main/windows/callsWidgetWindow', () => {
         };
 
         const mainView = {
-            view: {
-                webContents: {
-                    send: jest.fn(),
-                    id: 'mainViewID',
-                },
-            },
+            sendToRenderer: jest.fn(),
+            webContentsId: 'mainViewID',
             serverInfo: {
                 server: {
                     name: 'test-server-name',
@@ -434,12 +430,12 @@ describe('main/windows/callsWidgetWindow', () => {
             widgetWindow.onJoinedCall({
                 sender: {id: 'badID'},
             }, message);
-            expect(widgetWindow.mainView.view.webContents.send).not.toHaveBeenCalled();
+            expect(widgetWindow.mainView.sendToRenderer).not.toHaveBeenCalled();
 
             widgetWindow.onJoinedCall({
                 sender: baseWindow.webContents,
             }, 'widget', message);
-            expect(widgetWindow.mainView.view.webContents.send).toHaveBeenCalledWith(CALLS_JOINED_CALL, message);
+            expect(widgetWindow.mainView.sendToRenderer).toHaveBeenCalledWith(CALLS_JOINED_CALL, message);
         });
 
         it('menubar disabled on popout', () => {
@@ -589,7 +585,7 @@ describe('main/windows/callsWidgetWindow', () => {
             })).toEqual(false);
 
             expect(widgetWindow.isAllowedEvent({
-                sender: widgetWindow.mainView.view.webContents,
+                sender: {id: 'mainViewID'},
             })).toEqual(true);
 
             expect(widgetWindow.isAllowedEvent({

@@ -3,8 +3,6 @@
 import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {BrowserViewConstructorOptions} from 'electron/main';
 
-import {Tuple as tuple} from '@bloomberg/record-tuple-polyfill';
-
 import {Tab, TeamWithTabs} from 'types/config';
 
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
@@ -26,13 +24,14 @@ import {
     APP_LOGGED_OUT,
     UNREAD_RESULT,
     GET_VIEW_NAME,
+    HISTORY,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {getTabViewName, TabTuple, TabType, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
+import {getTabViewName, TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
 import MessagingTabView from 'common/tabs/MessagingTabView';
 import FocalboardTabView from 'common/tabs/FocalboardTabView';
 import PlaybooksTabView from 'common/tabs/PlaybooksTabView';
@@ -46,7 +45,6 @@ import {getLocalURLString, getLocalPreload} from '../utils';
 
 import {MattermostView} from './MattermostView';
 import modalManager from './modalManager';
-import WebContentsEventManager from './webContentEvents';
 import LoadingScreen from './loadingScreen';
 
 const log = new Logger('ViewManager');
@@ -69,6 +67,7 @@ export class ViewManager {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.closedViews = new Map();
 
+        ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
         ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
@@ -97,7 +96,7 @@ export class ViewManager {
     }
 
     getViewByWebContentsId = (webContentsId: number) => {
-        return [...this.views.values()].find((view) => view.view.webContents.id === webContentsId);
+        return [...this.views.values()].find((view) => view.webContentsId === webContentsId);
     }
 
     showByName = (name: string) => {
@@ -157,8 +156,8 @@ export class ViewManager {
 
     sendToAllViews = (channel: string, ...args: unknown[]) => {
         this.views.forEach((view) => {
-            if (!view.view.webContents.isDestroyed()) {
-                view.view.webContents.send(channel, ...args);
+            if (!view.isDestroyed()) {
+                view.sendToRenderer(channel, ...args);
             }
         });
     }
@@ -187,9 +186,9 @@ export class ViewManager {
                         return;
                     }
 
-                    if (view.isInitialized() && view.serverInfo.remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
+                    if (view.isReady() && view.serverInfo.remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(view.serverInfo.remoteInfo.serverVersion, '6.0.0')) {
                         const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
-                        view.view.webContents.send(BROWSER_HISTORY_PUSH, pathName);
+                        view.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
                         this.deeplinkSuccess(view.name);
                     } else {
                         // attempting to change parsedURL protocol results in it not being modified.
@@ -298,12 +297,6 @@ export class ViewManager {
         if (this.currentView === viewName) {
             this.showByName(this.currentView);
         }
-        const view = this.views.get(viewName);
-        if (!view) {
-            log.error(`Couldn't find a view with the name ${viewName}`);
-            return;
-        }
-        WebContentsEventManager.addMattermostViewEventListeners(view);
     }
 
     private finishLoading = (server: string) => {
@@ -352,7 +345,7 @@ export class ViewManager {
             const localURL = getLocalURLString('urlView.html', query);
             urlView.webContents.loadURL(localURL);
             mainWindow.addBrowserView(urlView);
-            const boundaries = this.views.get(this.currentView || '')?.view.getBounds() ?? mainWindow.getBounds();
+            const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? mainWindow.getBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
@@ -407,15 +400,13 @@ export class ViewManager {
     reloadConfiguration = () => {
         log.debug('reloadConfiguration');
 
-        const focusedTuple: TabTuple | undefined = this.views.get(this.currentView as string)?.urlTypeTuple;
-
-        const current: Map<TabTuple, MattermostView> = new Map();
+        const current: Map<string, MattermostView> = new Map();
         for (const view of this.views.values()) {
-            current.set(view.urlTypeTuple, view);
+            current.set(view.name, view);
         }
 
-        const views: Map<TabTuple, MattermostView> = new Map();
-        const closed: Map<TabTuple, {srv: MattermostServer; tab: Tab; name: string}> = new Map();
+        const views: Map<string, MattermostView> = new Map();
+        const closed: Map<string, {srv: MattermostServer; tab: Tab; name: string}> = new Map();
 
         const sortedTabs = this.getServers().flatMap((x) => [...x.tabs].
             sort((a, b) => a.order - b.order).
@@ -424,16 +415,16 @@ export class ViewManager {
         for (const [team, tab] of sortedTabs) {
             const srv = new MattermostServer(team);
             const info = new ServerInfo(srv);
-            const tabTuple = tuple(new URL(team.url).href, tab.name as TabType);
-            const recycle = current.get(tabTuple);
+            const tabName = getTabViewName(team.name, tab.name);
+            const recycle = current.get(tabName);
             if (!tab.isOpen) {
                 const view = this.getServerView(srv, tab.name);
-                closed.set(tabTuple, {srv, tab, name: view.name});
+                closed.set(tabName, {srv, tab, name: view.name});
             } else if (recycle) {
                 recycle.updateServerInfo(srv);
-                views.set(tabTuple, recycle);
+                views.set(tabName, recycle);
             } else {
-                views.set(tabTuple, this.makeView(srv, info, tab, tabTuple[0]));
+                views.set(tabName, this.makeView(srv, info, tab, team.url));
             }
         }
 
@@ -456,7 +447,7 @@ export class ViewManager {
             this.closedViews.set(x.name, {srv: x.srv, tab: x.tab});
         }
 
-        if ((focusedTuple && closed.has(focusedTuple)) || (this.currentView && this.closedViews.has(this.currentView))) {
+        if ((this.currentView && closed.has(this.currentView)) || (this.currentView && this.closedViews.has(this.currentView))) {
             if (this.getServers().length) {
                 this.currentView = undefined;
                 this.showInitial();
@@ -466,8 +457,8 @@ export class ViewManager {
         }
 
         // show the focused tab (or initial)
-        if (focusedTuple && views.has(focusedTuple)) {
-            const view = views.get(focusedTuple);
+        if (this.currentView && views.has(this.currentView)) {
+            const view = views.get(this.currentView);
             if (view) {
                 this.currentView = view.name;
                 this.showByName(view.name);
@@ -478,25 +469,16 @@ export class ViewManager {
         }
     }
 
-    private handleAppLoggedIn = (event: IpcMainEvent, viewName: string) => {
-        log.debug('handleAppLoggedIn', viewName);
-
-        const view = this.views.get(viewName);
-        if (view && !view.isLoggedIn) {
-            view.isLoggedIn = true;
-            if (view.view.webContents.getURL() !== view.tab.url.toString() && !view.view.webContents.getURL().startsWith(view.tab.url.toString())) {
-                view.load(view.tab.url);
-            }
-        }
+    private handleHistory = (event: IpcMainEvent, offset: number) => {
+        this.getCurrentView()?.goToOffset(offset);
     }
 
-    private handleAppLoggedOut = (event: IpcMainEvent, viewName: string) => {
-        log.debug('handleAppLoggedOut', viewName);
+    private handleAppLoggedIn = (event: IpcMainEvent, viewId: string) => {
+        this.getView(viewId)?.onLogin(true);
+    }
 
-        const view = this.views.get(viewName);
-        if (view && view.isLoggedIn) {
-            view.isLoggedIn = false;
-        }
+    private handleAppLoggedOut = (event: IpcMainEvent, viewId: string) => {
+        this.getView(viewId)?.onLogin(false);
     }
 
     private handleBrowserHistoryPush = (e: IpcMainEvent, viewName: string, pathName: string) => {
@@ -520,7 +502,7 @@ export class ViewManager {
 
         // Special case check for Channels to not force a redirect to "/", causing a refresh
         if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && cleanedPathName === '/')) {
-            redirectedView?.view.webContents.send(BROWSER_HISTORY_PUSH, cleanedPathName);
+            redirectedView?.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
             if (redirectedView) {
                 this.handleBrowserHistoryButton(e, redirectedView.name);
             }
