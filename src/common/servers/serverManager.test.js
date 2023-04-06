@@ -32,9 +32,9 @@ describe('common/servers/serverManager', () => {
             };
             serverManager.servers = new Map([['server-1', server]]);
             serverManager.tabs = new Map([
-                ['tab-1', {id: 'tab-1', name: TAB_MESSAGING, isOpen: true, server}],
-                ['tab-2', {id: 'tab-2', name: TAB_PLAYBOOKS, server}],
-                ['tab-3', {id: 'tab-3', name: TAB_FOCALBOARD, server}],
+                ['tab-1', {id: 'tab-1', type: TAB_MESSAGING, isOpen: true, server}],
+                ['tab-2', {id: 'tab-2', type: TAB_PLAYBOOKS, server}],
+                ['tab-3', {id: 'tab-3', type: TAB_FOCALBOARD, server}],
             ]);
             serverManager.tabOrder = new Map([['server-1', ['tab-1', 'tab-2', 'tab-3']]]);
             serverManager.persistServers = jest.fn();

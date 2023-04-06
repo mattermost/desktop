@@ -169,9 +169,6 @@ export class Config extends EventEmitter {
     get version() {
         return this.combinedData?.version ?? defaultPreferences.version;
     }
-    get teams() {
-        return this.combinedData?.teams ?? defaultPreferences.teams;
-    }
     get darkMode() {
         return this.combinedData?.darkMode ?? defaultPreferences.darkMode;
     }
@@ -380,69 +377,12 @@ export class Config extends EventEmitter {
         );
 
         // We don't want to include the servers in the combined config, they should only be accesible via the ServerManager
-        //delete (this.combinedData as any).teams;
+        delete (this.combinedData as any).teams;
         delete (this.combinedData as any).defaultTeams;
 
         if (this.combinedData) {
-            // TODO: This can be removed after we fully migrate to ServerManager
-            let combinedTeams: ConfigServer[] = [];
-            combinedTeams.push(...this.predefinedTeams);
-            if (this.localConfigData && this.enableServerManagement) {
-                combinedTeams.push(...this.localConfigData.teams || []);
-            }
-            combinedTeams = this.filterOutDuplicateTeams(combinedTeams);
-            combinedTeams = this.sortUnorderedTeams(combinedTeams);
-            this.combinedData.teams = combinedTeams;
-
             this.combinedData.appName = this.appName;
         }
-    }
-
-    /**
-     * Returns the provided list of teams with duplicates filtered out
-     * TODO: This can be removed after we fully migrate to ServerManager
-     * @param {array} teams array of teams to check for duplicates
-     */
-    private filterOutDuplicateTeams = (teams: ConfigServer[]) => {
-        let newTeams = teams;
-        const uniqueURLs = new Set();
-        newTeams = newTeams.filter((team) => {
-            return uniqueURLs.has(`${team.name}:${team.url}`) ? false : uniqueURLs.add(`${team.name}:${team.url}`);
-        });
-        return newTeams;
-    }
-
-    /**
-     * Apply a default sort order to the team list, if no order is specified.
-     * @param {array} teams to sort
-     * TODO: This can be removed after we fully migrate to ServerManager
-     */
-    private sortUnorderedTeams = (teams: ConfigServer[]) => {
-        // We want to preserve the array order of teams in the config, otherwise a lot of bugs will occur
-        const mappedTeams = teams.map((team, index) => ({team, originalOrder: index}));
-
-        // Make a best pass at interpreting sort order. If an order is not specified, assume it is 0.
-        //
-        const newTeams = mappedTeams.sort((x, y) => {
-            if (!x.team.order) {
-                x.team.order = 0;
-            }
-            if (!y.team.order) {
-                y.team.order = 0;
-            }
-
-            // once we ensured `order` exists, we can sort numerically
-            return x.team.order - y.team.order;
-        });
-
-        // Now re-number all items from 0 to (max), ensuring user's sort order is preserved. The
-        // new tabbed interface requires an item with order:0 in order to raise the first tab.
-        //
-        newTeams.forEach((mappedTeam, i) => {
-            mappedTeam.team.order = i;
-        });
-
-        return newTeams.sort((x, y) => x.originalOrder - y.originalOrder).map((mappedTeam) => mappedTeam.team);
     }
 
     // helper functions

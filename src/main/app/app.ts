@@ -116,7 +116,6 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
 
         certificateErrorCallbacks.set(errorID, callback);
 
-        // TODO: should we move this to window manager or provide a handler for dialogs?
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;

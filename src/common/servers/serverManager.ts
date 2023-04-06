@@ -145,9 +145,9 @@ export class ServerManager extends EventEmitter {
         }
         const tabs = this.getOrderedTabsForServer(server.id);
 
-        let selectedTab = tabs.find((tab) => tab && tab.name === TAB_MESSAGING);
+        let selectedTab = tabs.find((tab) => tab && tab.type === TAB_MESSAGING);
         tabs.
-            filter((tab) => tab && tab.name !== TAB_MESSAGING).
+            filter((tab) => tab && tab.type !== TAB_MESSAGING).
             forEach((tab) => {
                 if (parsedURL.pathname.match(new RegExp(`^${tab.url.pathname}(/(.+))?`))) {
                     selectedTab = tab;
@@ -229,6 +229,10 @@ export class ServerManager extends EventEmitter {
         this.serverOrder.splice(index, 1);
         this.remoteInfo.delete(serverId);
         this.servers.delete(serverId);
+
+        if (this.currentServerId === serverId && this.hasServers()) {
+            this.currentServerId = this.serverOrder[0];
+        }
 
         this.persistServers();
     }
@@ -312,6 +316,10 @@ export class ServerManager extends EventEmitter {
             this.lastActiveTab.set(server.id, tabOrder[team.lastActiveTab]);
         }
         return server.id;
+    }
+
+    private getFirstServer = () => {
+        return this.servers.get(this.serverOrder[0]);
     }
 
     private getFirstOpenTabForServer = (serverId: string) => {
@@ -417,13 +425,13 @@ export class ServerManager extends EventEmitter {
             tabOrder.forEach((tabId) => {
                 const tab = this.tabs.get(tabId);
                 if (tab) {
-                    if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && typeof tab.isOpen === 'undefined') {
+                    if (tab.type === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && typeof tab.isOpen === 'undefined') {
                         log.withPrefix(tab.id).verbose('opening Playbooks');
                         tab.isOpen = true;
                         this.tabs.set(tabId, tab);
                         hasUpdates = true;
                     }
-                    if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && typeof tab.isOpen === 'undefined') {
+                    if (tab.type === TAB_FOCALBOARD && remoteInfo.hasFocalboard && typeof tab.isOpen === 'undefined') {
                         log.withPrefix(tab.id).verbose('opening Boards');
                         tab.isOpen = true;
                         this.tabs.set(tabId, tab);
@@ -453,7 +461,7 @@ export class ServerManager extends EventEmitter {
         if (!view) {
             return new Logger(viewId);
         }
-        return new Logger(...additionalPrefixes, ...this.includeId(viewId, view.server.name, view.name));
+        return new Logger(...additionalPrefixes, ...this.includeId(viewId, view.server.name, view.type));
     };
 }
 

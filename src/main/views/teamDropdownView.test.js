@@ -36,6 +36,11 @@ jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
 
+jest.mock('common/servers/serverManager', () => ({
+    on: jest.fn(),
+    getOrderedServers: jest.fn().mockReturnValue([]),
+}));
+
 describe('main/views/teamDropdownView', () => {
     describe('getBounds', () => {
         beforeEach(() => {
@@ -61,53 +66,5 @@ describe('main/views/teamDropdownView', () => {
         expect(teamDropdownView.view.setBounds).toBeCalledWith(teamDropdownView.bounds);
         teamDropdownView.handleClose();
         expect(teamDropdownView.view.setBounds).toBeCalledWith({width: 0, height: 0, x: expect.any(Number), y: expect.any(Number)});
-    });
-
-    describe('addGpoToTeams', () => {
-        it('should return teams with "isGPO": false when no config.registryTeams exist', () => {
-            const teamDropdownView = new TeamDropdownView();
-            const teams = [{
-                name: 'team-1',
-                url: 'https://mattermost.team-1.com',
-            }, {
-                name: 'team-2',
-                url: 'https://mattermost.team-2.com',
-            }];
-            const registryTeams = [];
-
-            expect(teamDropdownView.addGpoToTeams(teams, registryTeams)).toStrictEqual([{
-                name: 'team-1',
-                url: 'https://mattermost.team-1.com',
-                isGpo: false,
-            }, {
-                name: 'team-2',
-                url: 'https://mattermost.team-2.com',
-                isGpo: false,
-            }]);
-        });
-        it('should return teams with "isGPO": true if they exist in config.registryTeams', () => {
-            const teamDropdownView = new TeamDropdownView();
-            const teams = [{
-                name: 'team-1',
-                url: 'https://mattermost.team-1.com',
-            }, {
-                name: 'team-2',
-                url: 'https://mattermost.team-2.com',
-            }];
-            const registryTeams = [{
-                name: 'team-1',
-                url: 'https://mattermost.team-1.com',
-            }];
-
-            expect(teamDropdownView.addGpoToTeams(teams, registryTeams)).toStrictEqual([{
-                name: 'team-1',
-                url: 'https://mattermost.team-1.com',
-                isGpo: true,
-            }, {
-                name: 'team-2',
-                url: 'https://mattermost.team-2.com',
-                isGpo: false,
-            }]);
-        });
     });
 });

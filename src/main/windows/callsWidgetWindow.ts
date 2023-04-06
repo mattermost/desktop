@@ -100,7 +100,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     public getServerName() {
-        return this.mainView.serverInfo.server.name;
+        return this.mainView.tab.server.name;
     }
 
     public getChannelURL() {
@@ -137,7 +137,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private getWidgetURL() {
-        const u = urlUtils.parseURL(this.mainView.serverInfo.server.url.toString()) as URL;
+        const u = urlUtils.parseURL(this.mainView.tab.server.url.toString()) as URL;
         u.pathname = getFormattedPathName(u.pathname);
         u.pathname += `plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
         u.searchParams.append('call_id', this.config.callID);
@@ -230,7 +230,7 @@ export default class CallsWidgetWindow extends EventEmitter {
     }
 
     private onPopOutOpen = ({url}: { url: string }) => {
-        if (urlUtils.isCallsPopOutURL(this.mainView.serverInfo.server.url, url, this.config.callID)) {
+        if (urlUtils.isCallsPopOutURL(this.mainView.tab.server.url, url, this.config.callID)) {
             return {
                 action: 'allow' as const,
                 overrideBrowserWindowOptions: {

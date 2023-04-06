@@ -7,9 +7,8 @@ import {FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
 
-import {FullTeam, TeamWithTabs, TeamWithTabsAndGpo} from 'types/config';
+import {MattermostTeam} from 'types/config';
 
-import {getTabViewName} from 'common/tabs/TabView';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
 
 import './css/dropdown.scss';
@@ -17,8 +16,9 @@ import './css/dropdown.scss';
 import IntlProvider from './intl_provider';
 
 type State = {
-    teams?: TeamWithTabsAndGpo[];
-    orderedTeams?: TeamWithTabsAndGpo[];
+    teams?: MattermostTeam[];
+    teamOrder?: string[];
+    orderedTeams?: MattermostTeam[];
     activeTeam?: string;
     darkMode?: boolean;
     enableServerManagement?: boolean;
@@ -59,7 +59,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     }
 
     handleUpdate = (
-        teams: TeamWithTabsAndGpo[],
+        teams: MattermostTeam[],
         darkMode: boolean,
         windowBounds: Electron.Rectangle,
         activeTeam?: string,
@@ -71,7 +71,6 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     ) => {
         this.setState({
             teams,
-            orderedTeams: teams.concat().sort((a: TeamWithTabs, b: TeamWithTabs) => a.order - b.order),
             activeTeam,
             darkMode,
             enableServerManagement,
@@ -83,9 +82,12 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         });
     }
 
-    selectServer = (team: FullTeam) => {
+    selectServer = (team: MattermostTeam) => {
         return () => {
-            window.desktop.serverDropdown.switchServer(team.name);
+            if (!team.id) {
+                return;
+            }
+            window.desktop.serverDropdown.switchServer(team.id);
             this.closeMenu();
         };
     }
@@ -106,8 +108,8 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         this.closeMenu();
     }
 
-    isActiveTeam = (team: FullTeam) => {
-        return team.name === this.state.activeTeam;
+    isActiveTeam = (team: MattermostTeam) => {
+        return team.id === this.state.activeTeam;
     }
 
     onDragStart = () => {
@@ -124,23 +126,14 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         if (!this.state.teams) {
             throw new Error('No config');
         }
-        const teams = this.state.teams.concat();
-        const tabOrder = teams.map((team, index) => {
-            return {
-                index,
-                order: team.order,
-            };
-        }).sort((a, b) => (a.order - b.order));
+        const teamsCopy = this.state.teams.concat();
 
-        const team = tabOrder.splice(removedIndex, 1);
+        const team = teamsCopy.splice(removedIndex, 1);
         const newOrder = addedIndex < this.state.teams.length ? addedIndex : this.state.teams.length - 1;
-        tabOrder.splice(newOrder, 0, team[0]);
+        teamsCopy.splice(newOrder, 0, team[0]);
 
-        tabOrder.forEach((t, order) => {
-            teams[t.index].order = order;
-        });
-        this.setState({teams, orderedTeams: teams.concat().sort((a: FullTeam, b: FullTeam) => a.order - b.order), isAnyDragging: false});
-        window.desktop.updateTeams(teams);
+        this.setState({teams: teamsCopy, isAnyDragging: false});
+        window.desktop.updateServerOrder(teamsCopy.map((team) => team.id!));
     }
 
     componentDidMount() {
@@ -210,30 +203,30 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         }
     }
 
-    editServer = (teamName: string) => {
-        if (this.teamIsGpo(teamName)) {
+    editServer = (teamId: string) => {
+        if (this.teamIsPredefined(teamId)) {
             return () => {};
         }
         return (event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
-            window.desktop.serverDropdown.showEditServerModal(teamName);
+            window.desktop.serverDropdown.showEditServerModal(teamId);
             this.closeMenu();
         };
     }
 
-    removeServer = (teamName: string) => {
-        if (this.teamIsGpo(teamName)) {
+    removeServer = (teamId: string) => {
+        if (this.teamIsPredefined(teamId)) {
             return () => {};
         }
         return (event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
-            window.desktop.serverDropdown.showRemoveServerModal(teamName);
+            window.desktop.serverDropdown.showRemoveServerModal(teamId);
             this.closeMenu();
         };
     }
 
-    teamIsGpo = (teamName: string) => {
-        return this.state.orderedTeams?.some((team) => team.name === teamName && team.isGpo);
+    teamIsPredefined = (teamId: string) => {
+        return this.state.teams?.some((team) => team.id === teamId && team.isPredefined);
     }
 
     render() {
@@ -275,15 +268,11 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
                                 >
-                                    {this.state.orderedTeams?.map((team, orderedIndex) => {
+                                    {this.state.teams?.map((team, orderedIndex) => {
                                         const index = this.state.teams?.indexOf(team);
-                                        const {sessionExpired, hasUnreads, mentionCount} = team.tabs.reduce((counts, tab) => {
-                                            const tabName = getTabViewName(team.name, tab.name);
-                                            counts.sessionExpired = this.state.expired?.get(tabName) || counts.sessionExpired;
-                                            counts.hasUnreads = this.state.unreads?.get(tabName) || counts.hasUnreads;
-                                            counts.mentionCount += this.state.mentions?.get(tabName) || 0;
-                                            return counts;
-                                        }, {sessionExpired: false, hasUnreads: false, mentionCount: 0});
+                                        const sessionExpired = this.state.expired?.get(team.id!);
+                                        const hasUnreads = this.state.unreads?.get(team.id!);
+                                        const mentionCount = this.state.mentions?.get(team.id!);
 
                                         let badgeDiv: React.ReactNode;
                                         if (sessionExpired) {
@@ -334,16 +323,16 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                                                             {this.isActiveTeam(team) ? <i className='icon-check'/> : <i className='icon-server-variant'/>}
                                                             <span>{team.name}</span>
                                                         </div>
-                                                        {!team.isGpo && <div className='TeamDropdown__indicators'>
+                                                        {!team.isPredefined && <div className='TeamDropdown__indicators'>
                                                             <button
                                                                 className='TeamDropdown__button-edit'
-                                                                onClick={this.editServer(team.name)}
+                                                                onClick={this.editServer(team.id!)}
                                                             >
                                                                 <i className='icon-pencil-outline'/>
                                                             </button>
                                                             <button
                                                                 className='TeamDropdown__button-remove'
-                                                                onClick={this.removeServer(team.name)}
+                                                                onClick={this.removeServer(team.id!)}
                                                             >
                                                                 <i className='icon-trash-can-outline'/>
                                                             </button>
@@ -365,7 +354,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
                     {this.state.enableServerManagement &&
                         <button
                             ref={(ref) => {
-                                this.addButtonRef(this.state.orderedTeams?.length || 0, ref);
+                                this.addButtonRef(this.state.teams?.length || 0, ref);
                             }}
                             className='TeamDropdown__button addServer'
                             onClick={this.addServer}
