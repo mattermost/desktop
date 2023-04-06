@@ -49,7 +49,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     });
 
-    if (config.data?.enableServerManagement === true && config.data?.teams.length > 0) {
+    if (config.enableServerManagement === true && config.teams.length > 0) {
         platformAppMenu.push({
             label: localizeMessage('main.menus.app.file.signInToAnotherServer', 'Sign in to Another Server'),
             click() {
@@ -203,7 +203,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         viewSubMenu.push({
             label: localizeMessage('main.menus.app.view.toggleDarkMode', 'Toggle Dark Mode'),
             click() {
-                config.toggleDarkModeManually();
+                config.set('darkMode', !config.darkMode);
             },
         });
     }
@@ -231,7 +231,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         }],
     });
 
-    const teams = config.data?.teams || [];
+    const teams = config.teams || [];
     const windowMenu = {
         id: 'window',
         label: localizeMessage('main.menus.app.window', '&Window'),
@@ -251,7 +251,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: isMac ? localizeMessage('main.menus.app.window.closeWindow', 'Close Window') : localizeMessage('main.menus.app.window.close', 'Close'),
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem,
-        ...(config.data?.teams.length ? [{
+        ...(config.teams.length ? [{
             label: localizeMessage('main.menus.app.window.showServers', 'Show Servers'),
             accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
             click() {
@@ -325,11 +325,11 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             });
         }
     }
-    if (config.data?.helpLink) {
+    if (config.helpLink) {
         submenu.push({
             label: localizeMessage('main.menus.app.help.learnMore', 'Learn More...'),
             click() {
-                shell.openExternal(config.data!.helpLink);
+                shell.openExternal(config.helpLink!);
             },
         });
         submenu.push(separatorItem);

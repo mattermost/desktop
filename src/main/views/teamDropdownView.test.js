@@ -42,7 +42,7 @@ describe('main/views/teamDropdownView', () => {
             MainWindow.getBounds.mockReturnValue({width: 500, height: 400, x: 0, y: 0});
         });
 
-        const teamDropdownView = new TeamDropdownView([], false, true);
+        const teamDropdownView = new TeamDropdownView();
         if (process.platform === 'darwin') {
             it('should account for three dot menu, tab bar and shadow', () => {
                 expect(teamDropdownView.getBounds(400, 300)).toStrictEqual({x: THREE_DOT_MENU_WIDTH_MAC - MENU_SHADOW_WIDTH, y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH, width: 400, height: 300});
@@ -55,7 +55,7 @@ describe('main/views/teamDropdownView', () => {
     });
 
     it('should change the view bounds based on open/closed state', () => {
-        const teamDropdownView = new TeamDropdownView([], false, true);
+        const teamDropdownView = new TeamDropdownView();
         teamDropdownView.bounds = {width: 400, height: 300};
         teamDropdownView.handleOpen();
         expect(teamDropdownView.view.setBounds).toBeCalledWith(teamDropdownView.bounds);
@@ -65,7 +65,7 @@ describe('main/views/teamDropdownView', () => {
 
     describe('addGpoToTeams', () => {
         it('should return teams with "isGPO": false when no config.registryTeams exist', () => {
-            const teamDropdownView = new TeamDropdownView([], false, true);
+            const teamDropdownView = new TeamDropdownView();
             const teams = [{
                 name: 'team-1',
                 url: 'https://mattermost.team-1.com',
@@ -86,7 +86,7 @@ describe('main/views/teamDropdownView', () => {
             }]);
         });
         it('should return teams with "isGPO": true if they exist in config.registryTeams', () => {
-            const teamDropdownView = new TeamDropdownView([], false, true);
+            const teamDropdownView = new TeamDropdownView();
             const teams = [{
                 name: 'team-1',
                 url: 'https://mattermost.team-1.com',

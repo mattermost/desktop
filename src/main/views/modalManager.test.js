@@ -15,10 +15,6 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('common/config', () => ({
-    teams: [],
-}));
-
 jest.mock('main/views/webContentEvents', () => ({
     addWebContentsEventListeners: jest.fn(),
 }));

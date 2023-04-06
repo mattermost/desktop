@@ -8,7 +8,7 @@ import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
 import {Logger} from 'common/log';
-import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
+import {getDefaultConfigTeamFromTeam} from 'common/tabs/TabView';
 import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
@@ -69,7 +69,7 @@ export function handleCloseTab(event: IpcMainEvent, serverName: string, tabName:
     });
     const nextTab = teams.find((team) => team.name === serverName)!.tabs.filter((tab) => tab.isOpen)[0].name;
     WindowManager.switchTab(serverName, nextTab);
-    Config.set('teams', teams);
+    Config.setServers(teams);
 }
 
 export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: string) {
@@ -86,7 +86,7 @@ export function handleOpenTab(event: IpcMainEvent, serverName: string, tabName: 
         }
     });
     WindowManager.switchTab(serverName, tabName);
-    Config.set('teams', teams);
+    Config.setServers(teams);
 }
 
 export function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
@@ -153,9 +153,9 @@ export function handleNewServerModal() {
         modalPromise.then((data) => {
             const teams = Config.teams;
             const order = teams.length;
-            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
+            const newTeam = getDefaultConfigTeamFromTeam({...data, order});
             teams.push(newTeam);
-            Config.set('teams', teams);
+            Config.setServers(teams);
             updateServerInfos([newTeam]);
             WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
@@ -198,7 +198,7 @@ export function handleEditServerModal(e: IpcMainEvent, name: string) {
             const teams = Config.teams;
             teams[serverIndex].name = data.name;
             teams[serverIndex].url = data.url;
-            Config.set('teams', teams);
+            Config.setServers(teams);
             updateServerInfos([teams[serverIndex]]);
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -238,7 +238,7 @@ export function handleRemoveServerModal(e: IpcMainEvent, name: string) {
                         value.order--;
                     }
                 });
-                Config.set('teams', teams);
+                Config.setServers(teams);
             }
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -267,9 +267,9 @@ export function handleWelcomeScreenModal() {
         modalPromise.then((data) => {
             const teams = Config.teams;
             const order = teams.length;
-            const newTeam = getDefaultTeamWithTabsFromTeam({...data, order});
+            const newTeam = getDefaultConfigTeamFromTeam({...data, order});
             teams.push(newTeam);
-            Config.set('teams', teams);
+            Config.setServers(teams);
             updateServerInfos([newTeam]);
             WindowManager.switchServer(newTeam.name, true);
         }).catch((e) => {
@@ -324,10 +324,7 @@ export function handleUpdateLastActive(event: IpcMainEvent, serverName: string, 
             team.lastActiveTab = viewOrder;
         }
     });
-    Config.setMultiple({
-        teams,
-        lastActiveTeam: teams.find((team) => team.name === serverName)?.order || 0,
-    });
+    Config.setServers(teams, teams.find((team) => team.name === serverName)?.order || 0);
 }
 
 export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {
