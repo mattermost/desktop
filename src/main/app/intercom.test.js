@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import Config from 'common/config';
-import {getDefaultTeamWithTabsFromTeam} from 'common/tabs/TabView';
+import {getDefaultConfigTeamFromTeam} from 'common/tabs/TabView';
 
 import {getLocalURLString, getLocalPreload} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
@@ -20,10 +20,10 @@ import {
 } from './intercom';
 
 jest.mock('common/config', () => ({
-    set: jest.fn(),
+    setServers: jest.fn(),
 }));
 jest.mock('common/tabs/TabView', () => ({
-    getDefaultTeamWithTabsFromTeam: jest.fn(),
+    getDefaultConfigTeamFromTeam: jest.fn(),
 }));
 jest.mock('main/notifications', () => ({}));
 jest.mock('main/utils', () => ({
@@ -75,8 +75,8 @@ const teams = [
 describe('main/app/intercom', () => {
     describe('handleCloseTab', () => {
         beforeEach(() => {
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+            Config.setServers.mockImplementation((value) => {
+                Config.teams = value;
             });
             Config.teams = JSON.parse(JSON.stringify(teams));
         });
@@ -94,8 +94,8 @@ describe('main/app/intercom', () => {
 
     describe('handleOpenTab', () => {
         beforeEach(() => {
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+            Config.setServers.mockImplementation((value) => {
+                Config.teams = value;
             });
             Config.teams = JSON.parse(JSON.stringify(teams));
         });
@@ -117,12 +117,12 @@ describe('main/app/intercom', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+            Config.setServers.mockImplementation((value) => {
+                Config.teams = value;
             });
             Config.teams = JSON.parse(JSON.stringify(teams));
 
-            getDefaultTeamWithTabsFromTeam.mockImplementation((team) => ({
+            getDefaultConfigTeamFromTeam.mockImplementation((team) => ({
                 ...team,
                 tabs,
             }));
@@ -156,8 +156,8 @@ describe('main/app/intercom', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+            Config.setServers.mockImplementation((value) => {
+                Config.teams = value;
             });
             Config.teams = JSON.parse(JSON.stringify(teams));
         });
@@ -199,8 +199,8 @@ describe('main/app/intercom', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+            Config.setServers.mockImplementation((value) => {
+                Config.teams = value;
             });
             Config.teams = JSON.parse(JSON.stringify(teams));
         });
@@ -248,8 +248,8 @@ describe('main/app/intercom', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+            Config.setServers.mockImplementation((value) => {
+                Config.teams = value;
             });
             Config.teams = JSON.parse(JSON.stringify([]));
         });
@@ -271,8 +271,8 @@ describe('main/app/intercom', () => {
                 isVisible: () => true,
             });
 
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+            Config.setServers.mockImplementation((value) => {
+                Config.teams = value;
             });
             Config.registryConfigData = {
                 teams: JSON.parse(JSON.stringify([{
@@ -281,6 +281,7 @@ describe('main/app/intercom', () => {
                     url: 'https://someurl.here',
                 }])),
             };
+            Config.teams = JSON.parse(JSON.stringify(teams));
 
             handleMainWindowIsShown();
             expect(ModalManager.addModal).not.toHaveBeenCalled();

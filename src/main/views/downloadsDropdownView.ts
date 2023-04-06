@@ -19,11 +19,12 @@ import {
     DOWNLOADS_DROPDOWN_OPEN_FILE,
 } from 'common/communication';
 import {Logger} from 'common/log';
+import Config from 'common/config';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
 
-import WindowManager from '../windows/windowManager';
+import {getLocalPreload, getLocalURLString} from 'main/utils';
 import downloadsManager from 'main/downloadsManager';
+import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 const log = new Logger('DownloadsDropdownView');
@@ -36,9 +37,9 @@ export default class DownloadsDropdownView {
     view: BrowserView;
     windowBounds: Electron.Rectangle;
 
-    constructor(downloads: DownloadedItems, darkMode: boolean) {
-        this.downloads = downloads;
-        this.darkMode = darkMode;
+    constructor() {
+        this.downloads = downloadsManager.getDownloads();
+        this.darkMode = Config.darkMode;
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);

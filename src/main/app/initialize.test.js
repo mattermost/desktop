@@ -59,6 +59,9 @@ jest.mock('electron', () => ({
         removeHandler: jest.fn(),
         removeListener: jest.fn(),
     },
+    nativeTheme: {
+        on: jest.fn(),
+    },
     screen: {
         on: jest.fn(),
     },
@@ -111,6 +114,7 @@ jest.mock('main/allowProtocolDialog', () => ({
 jest.mock('main/app/app', () => ({}));
 jest.mock('main/app/config', () => ({
     handleConfigUpdate: jest.fn(),
+    handleUpdateTheme: jest.fn(),
 }));
 jest.mock('main/app/intercom', () => ({
     handleMainWindowIsShown: jest.fn(),

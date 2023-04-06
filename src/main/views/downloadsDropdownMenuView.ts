@@ -19,6 +19,7 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
 } from 'common/communication';
 import {Logger} from 'common/log';
+import Config from 'common/config';
 import {
     DOWNLOADS_DROPDOWN_FULL_WIDTH,
     DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT,
@@ -26,10 +27,9 @@ import {
     TAB_BAR_HEIGHT,
 } from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
-
-import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
 import MainWindow from 'main/windows/mainWindow';
+import WindowManager from 'main/windows/windowManager';
 
 const log = new Logger('DownloadsDropdownMenuView');
 
@@ -42,11 +42,11 @@ export default class DownloadsDropdownMenuView {
     darkMode: boolean;
     windowBounds: Electron.Rectangle;
 
-    constructor(darkMode: boolean) {
+    constructor() {
         this.open = false;
         this.item = undefined;
         this.coordinates = undefined;
-        this.darkMode = darkMode;
+        this.darkMode = Config.darkMode;
 
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);

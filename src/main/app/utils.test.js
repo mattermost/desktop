@@ -40,7 +40,7 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('common/config', () => ({
-    set: jest.fn(),
+    setServers: jest.fn(),
 }));
 jest.mock('common/JsonFileManager');
 jest.mock('common/utils/util', () => ({
@@ -95,8 +95,8 @@ describe('main/app/utils', () => {
 
         beforeEach(() => {
             Utils.isVersionGreaterThanOrEqualTo.mockImplementation((version) => version === '6.0.0');
-            Config.set.mockImplementation((name, value) => {
-                Config[name] = value;
+            Config.setServers.mockImplementation((value) => {
+                Config.teams = value;
             });
             const teamsCopy = JSON.parse(JSON.stringify(teams));
             Config.teams = teamsCopy;

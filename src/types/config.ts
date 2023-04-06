@@ -120,7 +120,7 @@ export type BuildConfig = {
 }
 
 export type RegistryConfig = {
-    teams: FullTeam[];
+    teams: Team[];
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
 }

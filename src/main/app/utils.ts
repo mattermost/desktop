@@ -47,8 +47,8 @@ export function openDeepLink(deeplinkingUrl: string) {
 }
 
 export function updateSpellCheckerLocales() {
-    if (Config.data?.spellCheckerLocales.length && app.isReady()) {
-        session.defaultSession.setSpellCheckerLanguages(Config.data?.spellCheckerLocales);
+    if (Config.spellCheckerLocales.length && app.isReady()) {
+        session.defaultSession.setSpellCheckerLanguages(Config.spellCheckerLocales);
     }
 }
 
@@ -67,7 +67,7 @@ export function updateServerInfos(teams: TeamWithTabs[]) {
             hasUpdates = hasUpdates || openExtraTabs(data, team);
         });
         if (hasUpdates) {
-            Config.set('teams', teams);
+            Config.setServers(teams);
         }
     }).catch((reason: any) => {
         log.error('Error getting server infos', reason);
