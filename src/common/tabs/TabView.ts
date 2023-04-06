@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {FullTeam} from 'types/config';
+import {Team} from 'types/config';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
 
@@ -21,7 +21,7 @@ export interface TabView {
     get shouldNotify(): boolean;
 }
 
-export function getDefaultTeamWithTabsFromTeam(team: FullTeam) {
+export function getDefaultConfigTeamFromTeam(team: Team & {order: number; lastActiveTab?: number}) {
     return {
         ...team,
         tabs: getDefaultTabs(),

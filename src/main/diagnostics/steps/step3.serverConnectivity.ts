@@ -15,7 +15,7 @@ const stepDescriptiveName = 'serverConnectivity';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        const teams = Config.combinedData?.teams || [];
+        const teams = Config.teams || [];
 
         await Promise.all(teams.map(async (team) => {
             logger.debug('Pinging server: ', team.url);

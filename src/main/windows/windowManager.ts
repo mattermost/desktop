@@ -20,7 +20,6 @@ import {SECOND} from 'common/utils/constants';
 import Config from 'common/config';
 import {getTabViewName} from 'common/tabs/TabView';
 
-import downloadsManager from 'main/downloadsManager';
 import {MattermostView} from 'main/views/MattermostView';
 
 import {
@@ -96,9 +95,9 @@ export class WindowManager {
         mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
         mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
 
-        this.teamDropdown = new TeamDropdownView(Config.teams, Config.darkMode, Config.enableServerManagement);
-        this.downloadsDropdown = new DownloadsDropdownView(downloadsManager.getDownloads(), Config.darkMode);
-        this.downloadsDropdownMenu = new DownloadsDropdownMenuView(Config.darkMode);
+        this.teamDropdown = new TeamDropdownView();
+        this.downloadsDropdown = new DownloadsDropdownView();
+        this.downloadsDropdownMenu = new DownloadsDropdownMenuView();
 
         this.initializeViewManager();
     }

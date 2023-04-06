@@ -15,9 +15,12 @@ import {
     RECEIVE_DROPDOWN_MENU_SIZE,
     SET_ACTIVE_VIEW,
 } from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
+
 import {getLocalPreload, getLocalURLString} from 'main/utils';
+
 import * as AppState from '../appState';
 import WindowManager from '../windows/windowManager';
 import MainWindow from '../windows/mainWindow';
@@ -38,10 +41,10 @@ export default class TeamDropdownView {
     windowBounds?: Electron.Rectangle;
     isOpen: boolean;
 
-    constructor(teams: TeamWithTabs[], darkMode: boolean, enableServerManagement: boolean) {
-        this.teams = this.addGpoToTeams(teams, []);
-        this.darkMode = darkMode;
-        this.enableServerManagement = enableServerManagement;
+    constructor() {
+        this.teams = this.addGpoToTeams(Config.teams, []);
+        this.darkMode = Config.darkMode;
+        this.enableServerManagement = Config.enableServerManagement;
         this.isOpen = false;
 
         this.windowBounds = MainWindow.getBounds();

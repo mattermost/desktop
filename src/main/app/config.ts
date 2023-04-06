@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, ipcMain} from 'electron';
+import {app, ipcMain, nativeTheme} from 'electron';
 
-import {CombinedConfig} from 'types/config';
+import {CombinedConfig, ConfigServer, Config as ConfigType} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
@@ -24,6 +24,49 @@ const log = new Logger('App.Config');
 //
 // config event handlers
 //
+
+export function handleGetConfiguration() {
+    log.debug('handleGetConfiguration');
+
+    return Config.data;
+}
+
+export function handleGetLocalConfiguration() {
+    log.debug('handleGetLocalConfiguration');
+
+    return {
+        ...Config.localData,
+        appName: app.name,
+        enableServerManagement: Config.enableServerManagement,
+        canUpgrade: Config.canUpgrade,
+    };
+}
+
+export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []) {
+    log.debug('updateConfiguration', properties);
+
+    if (properties.length) {
+        const newData = properties.reduce((obj, data) => {
+            (obj as any)[data.key] = data.data;
+            return obj;
+        }, {} as Partial<ConfigType>);
+        Config.setMultiple(newData);
+    }
+}
+
+export function handleUpdateTheme() {
+    log.debug('Config.handleUpdateTheme');
+
+    Config.set('darkMode', nativeTheme.shouldUseDarkColors);
+}
+
+export function handleUpdateTeams(event: Electron.IpcMainInvokeEvent, newTeams: ConfigServer[]) {
+    log.debug('Config.handleUpdateTeams');
+    log.silly('Config.handleUpdateTeams', newTeams);
+
+    Config.setServers(newTeams);
+    return Config.teams;
+}
 
 export function handleConfigUpdate(newConfig: CombinedConfig) {
     if (newConfig.logLevel) {
