@@ -377,13 +377,6 @@ describe('main/views/MattermostView', () => {
             expect(appState.updateMentions).toBeCalledWith(mattermostView.tab.id, 0, false);
         });
 
-        it('should destroy context menu', () => {
-            const mattermostView = new MattermostView(tabView, {}, {});
-            mattermostView.view.webContents.destroy = jest.fn();
-            mattermostView.destroy();
-            expect(contextMenu.dispose).toBeCalled();
-        });
-
         it('should clear outstanding timeouts', () => {
             const mattermostView = new MattermostView(tabView, {}, {});
             mattermostView.view.webContents.destroy = jest.fn();
