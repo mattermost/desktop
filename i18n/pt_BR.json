@@ -45,5 +45,11 @@
     "main.menus.app.file.quit": "Sair {appName}",
     "main.menus.app.file.settings": "Configurações...",
     "main.menus.app.edit.redo": "Refazer",
-    "main.menus.app.edit.undo": "Desfazer"
+    "main.menus.app.edit.undo": "Desfazer",
+    "main.menus.app.view": "&Visualizar",
+    "main.menus.app.help.checkForUpdates": "Buscar atualizações",
+    "main.menus.app.file.signInToAnotherServer": "Entrar em outro servidor",
+    "main.allowProtocolDialog.detail": "O link requisitado é {URL}. Deseja prosseguir?",
+    "common.permissions.canBasicAuth": "Autenticação Web",
+    "label.ok": "Está bem"
 }
