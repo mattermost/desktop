@@ -165,6 +165,9 @@ jest.mock('main/UserActivityMonitor', () => ({
     on: jest.fn(),
     startMonitoring: jest.fn(),
 }));
+jest.mock('main/windows/callsWidgetWindow', () => ({
+    isCallsWidget: jest.fn(),
+}));
 jest.mock('main/windows/windowManager', () => ({
     showMainWindow: jest.fn(),
     sendToRenderer: jest.fn(),

@@ -40,10 +40,6 @@ jest.mock('electron', () => ({
     },
     systemPreferences: {
         getUserDefault: jest.fn(),
-        getMediaAccessStatus: jest.fn(() => 'granted'),
-    },
-    desktopCapturer: {
-        getSources: jest.fn(),
     },
 }));
 
@@ -90,7 +86,6 @@ jest.mock('../downloadsManager', () => ({
     getDownloads: () => {},
 }));
 
-jest.mock('./callsWidgetWindow');
 jest.mock('common/servers/serverManager', () => ({
     getAllServers: jest.fn(),
     getServer: jest.fn(),
@@ -115,6 +110,10 @@ jest.mock('common/servers/serverManager', () => ({
         debug: jest.fn(),
         silly: jest.fn(),
     }),
+}));
+jest.mock('./callsWidgetWindow', () => ({
+    isCallsWidget: jest.fn(),
+    getURL: jest.fn(),
 }));
 jest.mock('main/views/webContentEvents', () => ({}));
 
@@ -621,72 +620,14 @@ describe('main/windows/windowManager', () => {
         });
     });
 
-    describe('createCallsWidgetWindow', () => {
-        const windowManager = new WindowManager();
-        const view = {
-            name: 'server-1_tab-messaging',
-            serverInfo: {
-                server: {
-                    url: new URL('http://server-1.com'),
-                },
-            },
-        };
-
-        beforeEach(() => {
-            CallsWidgetWindow.mockImplementation(() => {
-                return {
-                    win: {
-                        isDestroyed: jest.fn(() => true),
-                    },
-                    on: jest.fn(),
-                    close: jest.fn(),
-                };
-            });
-            ViewManager.getView.mockReturnValue(view);
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-        });
-
-        it('should create calls widget window', async () => {
-            expect(windowManager.callsWidgetWindow).toBeUndefined();
-            await windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
-            expect(windowManager.callsWidgetWindow).toBeDefined();
-        });
-
-        it('should not create a new window if call is the same', async () => {
-            const widgetWindow = windowManager.callsWidgetWindow;
-            expect(widgetWindow).toBeDefined();
-            widgetWindow.getCallID = jest.fn(() => 'test');
-            await windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
-            expect(windowManager.callsWidgetWindow).toEqual(widgetWindow);
-        });
-
-        it('should create a new window if switching calls', async () => {
-            const widgetWindow = windowManager.callsWidgetWindow;
-            expect(widgetWindow).toBeDefined();
-            widgetWindow.getCallID = jest.fn(() => 'test');
-            await windowManager.createCallsWidgetWindow('server-1_tab-messaging', {callID: 'test2'});
-            expect(windowManager.callsWidgetWindow).not.toEqual(widgetWindow);
-        });
-    });
-
     describe('getServerURLFromWebContentsId', () => {
         const windowManager = new WindowManager();
 
         it('should return calls widget URL', () => {
             ViewManager.getView.mockReturnValue({name: 'server-1_tab-messaging'});
-            CallsWidgetWindow.mockImplementation(() => {
-                return {
-                    on: jest.fn(),
-                    getURL: jest.fn(() => 'http://localhost:8065'),
-                    getWebContentsId: jest.fn(() => 'callsID'),
-                };
-            });
-
-            windowManager.createCallsWidgetWindow('server-1_tab-messaging', 'http://localhost:8065', {callID: 'test'});
-            expect(windowManager.getServerURLFromWebContentsId('callsID')).toBe(windowManager.callsWidgetWindow.getURL());
+            CallsWidgetWindow.getURL.mockReturnValue('http://server-1.com');
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            expect(windowManager.getServerURLFromWebContentsId('callsID')).toBe('http://server-1.com');
         });
     });
 });

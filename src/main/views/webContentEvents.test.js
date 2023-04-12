@@ -27,6 +27,7 @@ jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
 }));
 jest.mock('../allowProtocolDialog', () => ({}));
+jest.mock('main/windows/callsWidgetWindow', () => ({}));
 jest.mock('main/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
 }));

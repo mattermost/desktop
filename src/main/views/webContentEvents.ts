@@ -14,6 +14,7 @@ import ServerManager from 'common/servers/serverManager';
 import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
 import ViewManager from 'main/views/viewManager';
+import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -91,7 +92,7 @@ export class WebContentsEventManager {
                 return;
             }
 
-            const callID = WindowManager.callsWidgetWindow?.getCallID();
+            const callID = CallsWidgetWindow.callID;
             if (serverURL && callID && urlUtils.isCallsPopOutURL(serverURL, parsedURL, callID)) {
                 return;
             }

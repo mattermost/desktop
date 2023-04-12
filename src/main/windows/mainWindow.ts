@@ -11,9 +11,10 @@ import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, glob
 
 import {SavedWindowState} from 'types/mainWindow';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU, SERVERS_UPDATE} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
@@ -39,6 +40,8 @@ export class MainWindow {
         this.savedWindowState = this.getSavedWindowState();
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
+
+        ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
     }
 
     init = () => {
@@ -320,6 +323,13 @@ export class MainWindow {
                 app.relaunch();
             }
         });
+    }
+
+    /**
+     * Server Manager update handler
+     */
+    private handleUpdateConfig = () => {
+        this.win?.webContents.send(SERVERS_UPDATE);
     }
 }
 
