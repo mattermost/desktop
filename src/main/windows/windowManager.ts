@@ -44,7 +44,6 @@ import SettingsWindow from './settingsWindow';
 const log = new Logger('WindowManager');
 
 export class WindowManager {
-    private teamDropdown?: TeamDropdownView;
     private downloadsDropdown?: DownloadsDropdownView;
     private downloadsDropdownMenu?: DownloadsDropdownMenuView;
 
@@ -99,11 +98,11 @@ export class WindowManager {
         mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
         mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
 
-        this.teamDropdown = new TeamDropdownView();
         this.downloadsDropdown = new DownloadsDropdownView();
         this.downloadsDropdownMenu = new DownloadsDropdownMenuView();
 
         this.initializeViewManager();
+        TeamDropdownView.init();
     }
 
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
@@ -276,7 +275,7 @@ export class WindowManager {
 
         this.throttledWillResize(newBounds);
         LoadingScreen.setBounds();
-        this.teamDropdown?.updateWindowBounds();
+        TeamDropdownView.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
         this.downloadsDropdownMenu?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, newBounds);
@@ -288,7 +287,7 @@ export class WindowManager {
         const bounds = this.getBounds();
         this.throttledWillResize(bounds);
         ipcMain.emit(RESIZE_MODAL, null, bounds);
-        this.teamDropdown?.updateWindowBounds();
+        TeamDropdownView.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
         this.downloadsDropdownMenu?.updateWindowBounds();
         this.isResizing = false;
@@ -318,7 +317,7 @@ export class WindowManager {
         setTimeout(this.setCurrentViewBounds, 10, bounds);
 
         LoadingScreen.setBounds();
-        this.teamDropdown?.updateWindowBounds();
+        TeamDropdownView.updateWindowBounds();
         this.downloadsDropdown?.updateWindowBounds();
         this.downloadsDropdownMenu?.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, bounds);

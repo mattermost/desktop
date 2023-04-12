@@ -279,12 +279,6 @@ export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom:
     return result.filePaths[0];
 }
 
-export function handleUpdateLastActive(event: IpcMainEvent, tabId: string) {
-    log.debug('handleUpdateLastActive', {tabId});
-
-    ServerManager.updateLastActive(tabId);
-}
-
 export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {
     return Promise.allSettled([
         ping(new URL(`https://${url}`)),
