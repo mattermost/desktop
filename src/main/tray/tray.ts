@@ -5,13 +5,12 @@ import path from 'path';
 
 import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
+import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
-
-import AppState from '../appState';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 

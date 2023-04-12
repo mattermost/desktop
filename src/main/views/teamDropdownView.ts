@@ -5,6 +5,7 @@ import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
 import {CombinedConfig, MattermostTeam} from 'types/config';
 
+import AppState from 'common/appState';
 import {
     CLOSE_TEAMS_DROPDOWN,
     EMIT_CONFIGURATION,
@@ -23,7 +24,6 @@ import ServerManager from 'common/servers/serverManager';
 
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
-import AppState from '../appState';
 import WindowManager from '../windows/windowManager';
 import MainWindow from '../windows/mainWindow';
 

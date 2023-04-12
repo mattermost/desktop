@@ -11,6 +11,7 @@ import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, glob
 
 import {SavedWindowState} from 'types/mainWindow';
 
+import AppState from 'common/appState';
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU, SERVERS_UPDATE, UPDATE_APPSTATE_FOR_VIEWID, UPDATE_MENTIONS} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -19,7 +20,6 @@ import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINI
 import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
 
-import AppState from 'main/appState';
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 

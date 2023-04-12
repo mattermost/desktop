@@ -3,6 +3,7 @@
 
 'use strict';
 
+import AppState from 'common/appState';
 import {LOAD_FAILED, TOGGLE_BACK_BUTTON, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import MessagingTabView from 'common/tabs/MessagingTabView';
@@ -10,7 +11,6 @@ import MessagingTabView from 'common/tabs/MessagingTabView';
 import MainWindow from '../windows/mainWindow';
 import * as WindowManager from '../windows/windowManager';
 import ContextMenu from '../contextMenu';
-import * as appState from '../appState';
 import Utils from '../utils';
 
 import {MattermostView} from './MattermostView';
@@ -45,7 +45,7 @@ jest.mock('../windows/mainWindow', () => ({
 jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
-jest.mock('../appState', () => ({
+jest.mock('common/appState', () => ({
     clear: jest.fn(),
     updateMentions: jest.fn(),
 }));
@@ -375,7 +375,7 @@ describe('main/views/MattermostView', () => {
             const mattermostView = new MattermostView(tabView, {}, {});
             mattermostView.view.webContents.destroy = jest.fn();
             mattermostView.destroy();
-            expect(appState.clear).toBeCalledWith(mattermostView.tab.id);
+            expect(AppState.clear).toBeCalledWith(mattermostView.tab.id);
         });
 
         it('should clear outstanding timeouts', () => {
@@ -473,12 +473,12 @@ describe('main/views/MattermostView', () => {
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.id, 7);
+            expect(AppState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.id, 7);
         });
 
         it('should parse unreads from title', () => {
             mattermostView.updateMentionsFromTitle('* Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.id, 0);
+            expect(AppState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.id, 0);
         });
     });
 });

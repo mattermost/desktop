@@ -4,12 +4,12 @@
 
 import {BrowserWindow, app, nativeImage} from 'electron';
 
+import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
 
 import {localizeMessage} from 'main/i18nManager';
 
-import AppState from './appState';
 import MainWindow from './windows/mainWindow';
 
 const log = new Logger('Badge');

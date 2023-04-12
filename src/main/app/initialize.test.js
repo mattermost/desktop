@@ -129,7 +129,7 @@ jest.mock('main/app/utils', () => ({
     initCookieManager: jest.fn(),
     updateServerInfos: jest.fn(),
 }));
-jest.mock('main/appState', () => ({
+jest.mock('common/appState', () => ({
     on: jest.fn(),
 }));
 jest.mock('main/AppVersionManager', () => ({}));

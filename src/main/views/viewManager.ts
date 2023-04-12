@@ -3,6 +3,7 @@
 
 import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
+import AppState from 'common/appState';
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
     UPDATE_TARGET_URL,
@@ -36,7 +37,6 @@ import {TabView, TAB_MESSAGING} from 'common/tabs/TabView';
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import appState from '../appState';
 import {getLocalURLString, getLocalPreload} from '../utils';
 
 import {MattermostView} from './MattermostView';
@@ -523,13 +523,13 @@ export class ViewManager {
     private handleFaviconIsUnread = (e: Event, favicon: string, viewId: string, result: boolean) => {
         log.silly('handleFaviconIsUnread', {favicon, viewId, result});
 
-        appState.updateUnreads(viewId, result);
+        AppState.updateUnreads(viewId, result);
     }
 
     private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean, viewId: string) => {
         ServerManager.getViewLog(viewId, 'ViewManager').debug('handleSessionExpired', isExpired);
 
-        appState.updateExpired(viewId, isExpired);
+        AppState.updateExpired(viewId, isExpired);
     }
 
     /**

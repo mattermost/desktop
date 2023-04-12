@@ -107,7 +107,7 @@ jest.mock('./modalManager', () => ({
     isModalDisplayed: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({}));
-jest.mock('../appState', () => ({}));
+jest.mock('common/appState', () => ({}));
 
 describe('main/views/viewManager', () => {
     describe('loadView', () => {
