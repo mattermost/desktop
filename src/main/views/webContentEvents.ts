@@ -10,7 +10,8 @@ import urlUtils from 'common/utils/url';
 import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
 
-import WindowManager from '../windows/windowManager';
+import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
+import WindowManager from 'main/windows/windowManager';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -84,7 +85,7 @@ export class WebContentsEventManager {
                 return;
             }
 
-            const callID = WindowManager.callsWidgetWindow?.getCallID();
+            const callID = CallsWidgetWindow.callID;
             if (serverURL && callID && urlUtils.isCallsPopOutURL(serverURL, parsedURL, callID)) {
                 return;
             }
