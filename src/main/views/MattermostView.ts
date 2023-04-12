@@ -469,12 +469,17 @@ export class MattermostView extends EventEmitter {
     private handleDidNavigate = (event: Event, url: string) => {
         this.log.debug('handleDidNavigate', url);
 
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
+        }
+
         if (shouldHaveBackBar(this.tab.url || '', url)) {
-            this.setBounds(getWindowBoundaries(MainWindow.get()!, true));
+            this.setBounds(getWindowBoundaries(mainWindow, true));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, true);
             this.log.debug('show back button');
         } else {
-            this.setBounds(getWindowBoundaries(MainWindow.get()!));
+            this.setBounds(getWindowBoundaries(mainWindow));
             WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
             this.log.debug('hide back button');
         }

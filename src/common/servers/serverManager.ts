@@ -75,10 +75,7 @@ export class ServerManager extends EventEmitter {
         log.debug('getCurrentServer');
 
         if (!this.currentServerId) {
-            if (!this.hasServers()) {
-                throw new Error('No server set as current');
-            }
-            this.currentServerId = this.serverOrder[0];
+            throw new Error('No server set as current');
         }
         const server = this.servers.get(this.currentServerId);
         if (!server) {
@@ -190,6 +187,10 @@ export class ServerManager extends EventEmitter {
         });
         this.tabOrder.set(newServer.id, tabOrder);
 
+        if (!this.currentServerId) {
+            this.currentServerId = newServer.id;
+        }
+
         // Emit this event whenever we update a server URL to ensure remote info is fetched
         this.emit(SERVERS_URL_MODIFIED, [newServer.id]);
         this.persistServers();
@@ -281,7 +282,7 @@ export class ServerManager extends EventEmitter {
         }
         this.filterOutDuplicateTeams();
         this.serverOrder = serverOrder;
-        if (Config.lastActiveTeam) {
+        if (Config.lastActiveTeam && this.serverOrder[Config.lastActiveTeam]) {
             this.currentServerId = this.serverOrder[Config.lastActiveTeam];
         } else {
             this.currentServerId = this.serverOrder[0];
