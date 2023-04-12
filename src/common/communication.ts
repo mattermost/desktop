@@ -60,8 +60,6 @@ export const UPDATE_MENTIONS = 'update_mentions';
 export const IS_UNREAD = 'is_unread';
 export const UNREAD_RESULT = 'unread_result';
 export const SESSION_EXPIRED = 'session_expired';
-export const UPDATE_TRAY = 'update_tray';
-export const UPDATE_BADGE = 'update_badge';
 
 export const SET_VIEW_OPTIONS = 'set-view-name';
 export const REACT_APP_INITIALIZED = 'react-app-initialized';
@@ -82,7 +80,6 @@ export const LOADSCREEN_END = 'loadscreen-end';
 export const OPEN_TEAMS_DROPDOWN = 'open-teams-dropdown';
 export const CLOSE_TEAMS_DROPDOWN = 'close-teams-dropdown';
 export const UPDATE_TEAMS_DROPDOWN = 'update-teams-dropdown';
-export const UPDATE_DROPDOWN_MENTIONS = 'update-dropdown-mentions';
 export const REQUEST_TEAMS_DROPDOWN_INFO = 'request-teams-dropdown-info';
 export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 
@@ -167,3 +164,7 @@ export const UPDATE_TAB_ORDER = 'update-tab-order';
 export const GET_LAST_ACTIVE = 'get-last-active';
 export const GET_ORDERED_SERVERS = 'get-ordered-servers';
 export const GET_ORDERED_TABS_FOR_SERVER = 'get-ordered-tabs-for-server';
+
+export const UPDATE_APPSTATE = 'update-appstate';
+export const UPDATE_APPSTATE_TOTALS = 'update-appstate-totals';
+export const UPDATE_APPSTATE_FOR_VIEWID = 'update-appstate-for-viewid';

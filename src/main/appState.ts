@@ -1,126 +1,82 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import events from 'events';
-import {ipcMain} from 'electron';
+import {EventEmitter} from 'events';
 
-import {UPDATE_MENTIONS, UPDATE_TRAY, UPDATE_BADGE, SESSION_EXPIRED, UPDATE_DROPDOWN_MENTIONS} from 'common/communication';
+import {UPDATE_APPSTATE, UPDATE_APPSTATE_TOTALS, UPDATE_APPSTATE_FOR_VIEWID} from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
+import {Logger} from 'common/log';
 
-import WindowManager from './windows/windowManager';
+const log = new Logger('AppState');
 
-const status = {
-    unreads: new Map<string, boolean>(),
-    mentions: new Map<string, number>(),
-    expired: new Map<string, boolean>(),
-    emitter: new events.EventEmitter(),
-};
+export class AppState extends EventEmitter {
+    private expired: Map<string, boolean>;
+    private mentions: Map<string, number>;
+    private unreads: Map<string, boolean>;
 
-const emitMentions = (viewId: string) => {
-    const newMentions = getMentions(viewId);
-    const newUnreads = getUnreads(viewId);
-    const isExpired = getIsExpired(viewId);
+    constructor() {
+        super();
 
-    WindowManager.sendToRenderer(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
-    ServerManager.getViewLog(viewId, 'AppState').silly('emitMentions', {isExpired, newMentions, newUnreads});
-    emitStatus();
-};
-
-const emitTray = (expired?: boolean, mentions?: number, unreads?: boolean) => {
-    status.emitter.emit(UPDATE_TRAY, expired, Boolean(mentions), unreads);
-};
-
-const emitBadge = (expired?: boolean, mentions?: number, unreads?: boolean) => {
-    status.emitter.emit(UPDATE_BADGE, expired, mentions, unreads);
-};
-
-const emitDropdown = (expired?: Map<string, boolean>, mentions?: Map<string, number>, unreads?: Map<string, boolean>) => {
-    status.emitter.emit(UPDATE_DROPDOWN_MENTIONS, expired, mentions, unreads);
-};
-
-const emitStatus = () => {
-    const expired = anyExpired();
-    const mentions = totalMentions();
-    const unreads = anyUnreads();
-    emitTray(expired, mentions, unreads);
-    emitBadge(expired, mentions, unreads);
-    emitDropdown(status.expired, status.mentions, status.unreads);
-};
-
-export const updateMentions = (viewId: string, mentions: number, unreads?: boolean) => {
-    if (typeof unreads !== 'undefined') {
-        status.unreads.set(viewId, Boolean(unreads));
+        this.expired = new Map();
+        this.mentions = new Map();
+        this.unreads = new Map();
     }
-    status.mentions.set(viewId, mentions || 0);
-    emitMentions(viewId);
-};
 
-export const updateUnreads = (viewId: string, unreads: boolean) => {
-    status.unreads.set(viewId, Boolean(unreads));
-    emitMentions(viewId);
-};
+    updateExpired = (viewId: string, expired: boolean) => {
+        ServerManager.getViewLog(viewId, 'AppState').silly('updateExpired', expired);
 
-export const updateBadge = () => {
-    const expired = anyExpired();
-    const mentions = totalMentions();
-    const unreads = anyUnreads();
-    emitBadge(expired, mentions, unreads);
-};
-
-const getUnreads = (viewId: string) => {
-    return status.unreads.get(viewId) || false;
-};
-
-const getMentions = (viewId: string) => {
-    return status.mentions.get(viewId) || 0; // this might be undefined as a way to tell that we don't know as it might need to login still.
-};
-
-const getIsExpired = (viewId: string) => {
-    return status.expired.get(viewId) || false;
-};
-
-const totalMentions = () => {
-    let total = 0;
-    for (const v of status.mentions.values()) {
-        total += v;
+        this.unreads.set(viewId, expired);
+        this.emitMentions(viewId);
     }
-    return total;
-};
 
-const anyUnreads = () => {
-    for (const v of status.unreads.values()) {
-        if (v) {
-            return v;
-        }
+    updateMentions = (viewId: string, mentions: number) => {
+        ServerManager.getViewLog(viewId, 'AppState').silly('updateMentions', mentions);
+
+        this.mentions.set(viewId, mentions);
+        this.emitMentions(viewId);
+    };
+
+    updateUnreads = (viewId: string, unreads: boolean) => {
+        ServerManager.getViewLog(viewId, 'AppState').silly('updateUnreads', unreads);
+
+        this.unreads.set(viewId, unreads);
+        this.emitMentions(viewId);
+    };
+
+    clear = (viewId: string) => {
+        ServerManager.getViewLog(viewId, 'AppState').silly('clear');
+
+        this.expired.delete(viewId);
+        this.mentions.delete(viewId);
+        this.unreads.delete(viewId);
     }
-    return false;
-};
 
-const anyExpired = () => {
-    for (const v of status.expired.values()) {
-        if (v) {
-            return v;
-        }
-    }
-    return false;
-};
+    emitStatus = () => {
+        log.silly('emitStatus');
 
-// add any other event emitter methods if needed
-export const on = status.emitter.on.bind(status.emitter);
+        this.emit(UPDATE_APPSTATE,
+            this.expired,
+            this.mentions,
+            this.unreads,
+        );
+        this.emit(UPDATE_APPSTATE_TOTALS,
+            [...this.expired.values()].some((value) => value),
+            [...this.mentions.values()].reduce((total, value) => total + value, 0),
+            [...this.unreads.values()].some((value) => value),
+        );
+    };
 
-const setSessionExpired = (viewId: string, expired: boolean) => {
-    const isExpired = Boolean(expired);
-    const old = status.expired.get(viewId);
-    status.expired.set(viewId, isExpired);
-    if (typeof old !== 'undefined' && old !== isExpired) {
-        emitTray();
-    }
-    emitMentions(viewId);
-};
+    private emitMentions = (viewId: string) => {
+        this.emit(UPDATE_APPSTATE_FOR_VIEWID,
+            viewId,
+            this.expired.get(viewId) || false,
+            this.mentions.get(viewId) || 0,
+            this.unreads.get(viewId) || false,
+        );
 
-ipcMain.on(SESSION_EXPIRED, (event, isExpired, viewId) => {
-    if (isExpired) {
-        ServerManager.getViewLog(viewId, 'AppState').debug('SESSION_EXPIRED', isExpired);
-    }
-    setSessionExpired(viewId, isExpired);
-});
+        this.emitStatus();
+    };
+}
+
+const appState = new AppState();
+export default appState;

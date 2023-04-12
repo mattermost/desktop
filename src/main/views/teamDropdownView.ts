@@ -10,7 +10,7 @@ import {
     EMIT_CONFIGURATION,
     OPEN_TEAMS_DROPDOWN,
     UPDATE_TEAMS_DROPDOWN,
-    UPDATE_DROPDOWN_MENTIONS,
+    UPDATE_APPSTATE,
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
     SET_ACTIVE_VIEW,
@@ -23,7 +23,7 @@ import ServerManager from 'common/servers/serverManager';
 
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
-import * as AppState from '../appState';
+import AppState from '../appState';
 import WindowManager from '../windows/windowManager';
 import MainWindow from '../windows/mainWindow';
 
@@ -71,7 +71,7 @@ export default class TeamDropdownView {
         ipcMain.on(REQUEST_TEAMS_DROPDOWN_INFO, this.updateDropdown);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
         ipcMain.on(SET_ACTIVE_VIEW, this.updateActiveTeam);
-        AppState.on(UPDATE_DROPDOWN_MENTIONS, this.updateMentions);
+        AppState.on(UPDATE_APPSTATE, this.updateMentions);
 
         ServerManager.on(SERVERS_UPDATE, this.updateServers);
     }

@@ -29,7 +29,7 @@ import WindowManager from 'main/windows/windowManager';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
-import * as appState from '../appState';
+import appState from '../appState';
 
 import WebContentsEventManager from './webContentEvents';
 
@@ -237,7 +237,7 @@ export class MattermostView extends EventEmitter {
 
     destroy = () => {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
-        appState.updateMentions(this.id, 0, false);
+        appState.clear(this.id);
         MainWindow.get()?.removeBrowserView(this.view);
 
         // workaround to eliminate zombie processes

@@ -20,7 +20,7 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('./appState', () => ({
-    updateBadge: jest.fn(),
+    emitStatus: jest.fn(),
 }));
 jest.mock('./windows/mainWindow', () => ({
     get: jest.fn(),

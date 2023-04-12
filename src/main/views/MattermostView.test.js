@@ -46,6 +46,7 @@ jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
 jest.mock('../appState', () => ({
+    clear: jest.fn(),
     updateMentions: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({
@@ -374,7 +375,7 @@ describe('main/views/MattermostView', () => {
             const mattermostView = new MattermostView(tabView, {}, {});
             mattermostView.view.webContents.destroy = jest.fn();
             mattermostView.destroy();
-            expect(appState.updateMentions).toBeCalledWith(mattermostView.tab.id, 0, false);
+            expect(appState.clear).toBeCalledWith(mattermostView.tab.id);
         });
 
         it('should clear outstanding timeouts', () => {
