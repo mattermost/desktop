@@ -7,17 +7,16 @@ import fs from 'fs-extra';
 
 import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage, screen} from 'electron';
 
-import {MigrationInfo, TeamWithTabs} from 'types/config';
+import {MigrationInfo} from 'types/config';
 import {RemoteInfo} from 'types/server';
 import {Boundaries} from 'types/utils';
 
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import JsonFileManager from 'common/JsonFileManager';
+import ServerManager from 'common/servers/serverManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS} from 'common/tabs/TabView';
 import urlUtils from 'common/utils/url';
-import Utils from 'common/utils/util';
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
 
 import updateManager from 'main/autoUpdater';
@@ -52,59 +51,6 @@ export function updateSpellCheckerLocales() {
     }
 }
 
-export function updateServerInfos(teams: TeamWithTabs[]) {
-    log.silly('app.utils.updateServerInfos');
-    const serverInfos: Array<Promise<RemoteInfo | string | undefined>> = [];
-    teams.forEach((team) => {
-        const serverInfo = new ServerInfo(new MattermostServer(team));
-        serverInfos.push(serverInfo.promise);
-    });
-    Promise.all(serverInfos).then((data: Array<RemoteInfo | string | undefined>) => {
-        const teams = Config.teams;
-        let hasUpdates = false;
-        teams.forEach((team) => {
-            hasUpdates = hasUpdates || updateServerURL(data, team);
-            hasUpdates = hasUpdates || openExtraTabs(data, team);
-        });
-        if (hasUpdates) {
-            Config.setServers(teams);
-        }
-    }).catch((reason: any) => {
-        log.error('Error getting server infos', reason);
-    });
-}
-
-function updateServerURL(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
-    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
-    if (remoteInfo && remoteInfo.siteURL && team.url !== remoteInfo.siteURL) {
-        team.url = remoteInfo.siteURL;
-        return true;
-    }
-    return false;
-}
-
-function openExtraTabs(data: Array<RemoteInfo | string | undefined>, team: TeamWithTabs) {
-    let hasUpdates = false;
-    const remoteInfo = data.find((info) => info && typeof info !== 'string' && info.name === team.name) as RemoteInfo;
-    if (remoteInfo) {
-        team.tabs.forEach((tab) => {
-            if (tab.name !== TAB_MESSAGING && remoteInfo.serverVersion && Utils.isVersionGreaterThanOrEqualTo(remoteInfo.serverVersion, '6.0.0')) {
-                if (tab.name === TAB_PLAYBOOKS && remoteInfo.hasPlaybooks && typeof tab.isOpen === 'undefined') {
-                    log.info(`opening ${team.name}___${tab.name} on hasPlaybooks`);
-                    tab.isOpen = true;
-                    hasUpdates = true;
-                }
-                if (tab.name === TAB_FOCALBOARD && remoteInfo.hasFocalboard && typeof tab.isOpen === 'undefined') {
-                    log.info(`opening ${team.name}___${tab.name} on hasFocalboard`);
-                    tab.isOpen = true;
-                    hasUpdates = true;
-                }
-            }
-        });
-    }
-    return hasUpdates;
-}
-
 export function handleUpdateMenuEvent() {
     log.debug('handleUpdateMenuEvent');
 
@@ -117,7 +63,7 @@ export function handleUpdateMenuEvent() {
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
-        const tMenu = createTrayMenu(Config.data!);
+        const tMenu = createTrayMenu();
         setTrayMenu(tMenu);
     }
 }
@@ -290,4 +236,19 @@ export function migrateMacAppStore() {
     } catch (e) {
         log.error('MAS: An error occurred importing the existing configuration', e);
     }
+}
+
+export async function updateServerInfos(servers: MattermostServer[]) {
+    const map: Map<string, RemoteInfo> = new Map();
+    await Promise.all(servers.map((srv) => {
+        const serverInfo = new ServerInfo(srv);
+        return serverInfo.fetchRemoteInfo().
+            then((data) => {
+                map.set(srv.id, data);
+            }).
+            catch((error) => {
+                log.warn('Could not get server info for', srv.name, error);
+            });
+    }));
+    ServerManager.updateRemoteInfos(map);
 }

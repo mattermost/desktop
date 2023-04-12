@@ -80,8 +80,8 @@ export class CallsWidgetWindow {
         return this.options?.callID;
     }
 
-    private get serverName() {
-        return this.mainView?.tab.server.name;
+    private get serverID() {
+        return this.mainView?.tab.server.id;
     }
 
     /**
@@ -450,11 +450,11 @@ export class CallsWidgetWindow {
     private handleDesktopSourcesModalRequest = () => {
         log.debug('handleDesktopSourcesModalRequest');
 
-        if (!this.serverName) {
+        if (!this.serverID) {
             return;
         }
 
-        WindowManager.switchServer(this.serverName);
+        WindowManager.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(DESKTOP_SOURCES_MODAL_REQUEST);
     }
@@ -468,11 +468,11 @@ export class CallsWidgetWindow {
     private handleCallsWidgetChannelLinkClick = () => {
         log.debug('handleCallsWidgetChannelLinkClick');
 
-        if (!this.serverName) {
+        if (!this.serverID) {
             return;
         }
 
-        WindowManager.switchServer(this.serverName);
+        WindowManager.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, this.options?.channelURL);
     }
@@ -480,11 +480,11 @@ export class CallsWidgetWindow {
     private handleCallsError = (_: string, msg: CallsErrorMessage) => {
         log.debug('handleCallsError', msg);
 
-        if (!this.serverName) {
+        if (!this.serverID) {
             return;
         }
 
-        WindowManager.switchServer(this.serverName);
+        WindowManager.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(CALLS_ERROR, msg);
     }
@@ -492,11 +492,11 @@ export class CallsWidgetWindow {
     private handleCallsLinkClick = (_: string, msg: CallsLinkClickMessage) => {
         log.debug('handleCallsLinkClick with linkURL', msg.link);
 
-        if (!this.serverName) {
+        if (!this.serverID) {
             return;
         }
 
-        WindowManager.switchServer(this.serverName);
+        WindowManager.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, msg.link);
     }

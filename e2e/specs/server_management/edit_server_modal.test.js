@@ -201,7 +201,7 @@ describe('EditServerModal', function desc() {
         });
         savedConfig.teams.should.deep.contain({
             name: 'example',
-            url: 'http://google.com',
+            url: 'http://google.com/',
             order: 0,
             tabs: [
                 {
@@ -254,7 +254,7 @@ describe('EditServerModal', function desc() {
         });
         savedConfig.teams.should.deep.contain({
             name: 'NewTestTeam',
-            url: 'http://google.com',
+            url: 'http://google.com/',
             order: 0,
             tabs: [
                 {

@@ -180,7 +180,7 @@ describe('main/views/MattermostView', () => {
             await expect(promise).rejects.toThrow(error);
             expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
             expect(mattermostView.loadRetry).not.toBeCalled();
-            expect(WindowManager.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.tab.name, expect.any(String), expect.any(String));
+            expect(WindowManager.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.tab.id, expect.any(String), expect.any(String));
             expect(mattermostView.status).toBe(-1);
             jest.runAllTimers();
             expect(retryInBackgroundFn).toBeCalled();
@@ -374,14 +374,7 @@ describe('main/views/MattermostView', () => {
             const mattermostView = new MattermostView(tabView, {}, {});
             mattermostView.view.webContents.destroy = jest.fn();
             mattermostView.destroy();
-            expect(appState.updateMentions).toBeCalledWith(mattermostView.tab.name, 0, false);
-        });
-
-        it('should destroy context menu', () => {
-            const mattermostView = new MattermostView(tabView, {}, {});
-            mattermostView.view.webContents.destroy = jest.fn();
-            mattermostView.destroy();
-            expect(contextMenu.dispose).toBeCalled();
+            expect(appState.updateMentions).toBeCalledWith(mattermostView.tab.id, 0, false);
         });
 
         it('should clear outstanding timeouts', () => {
@@ -479,12 +472,12 @@ describe('main/views/MattermostView', () => {
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 7);
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.id, 7);
         });
 
         it('should parse unreads from title', () => {
             mattermostView.updateMentionsFromTitle('* Mattermost');
-            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.name, 0);
+            expect(appState.updateMentions).toHaveBeenCalledWith(mattermostView.tab.id, 0);
         });
     });
 });

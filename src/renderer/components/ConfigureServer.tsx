@@ -5,7 +5,7 @@ import React, {useState, useCallback, useEffect} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
-import {TeamWithIndex} from 'types/config';
+import {MattermostTeam} from 'types/config';
 
 import womanLaptop from 'renderer/assets/svg/womanLaptop.svg';
 
@@ -22,8 +22,8 @@ import 'renderer/css/components/ConfigureServer.scss';
 import 'renderer/css/components/LoadingScreen.css';
 
 type ConfigureServerProps = {
-    currentTeams: TeamWithIndex[];
-    team?: TeamWithIndex;
+    currentTeams: MattermostTeam[];
+    team?: MattermostTeam;
     mobileView?: boolean;
     darkMode?: boolean;
     messageTitle?: string;
@@ -32,7 +32,7 @@ type ConfigureServerProps = {
     alternateLinkMessage?: string;
     alternateLinkText?: string;
     alternateLinkURL?: string;
-    onConnect: (data: TeamWithIndex) => void;
+    onConnect: (data: MattermostTeam) => void;
 };
 
 function ConfigureServer({
@@ -53,8 +53,7 @@ function ConfigureServer({
     const {
         name: prevName,
         url: prevURL,
-        order = 0,
-        index = NaN,
+        id,
     } = team || {};
 
     const [transition, setTransition] = useState<'inFromRight' | 'outToLeft'>();
@@ -200,8 +199,7 @@ function ConfigureServer({
             onConnect({
                 url: fullURL,
                 name,
-                index,
-                order,
+                id,
             });
         }, MODAL_TRANSITION_TIMEOUT);
     };

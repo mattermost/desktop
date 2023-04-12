@@ -8,7 +8,7 @@ import 'renderer/css/index.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import {CombinedConfig, Team} from 'types/config';
+import {CombinedConfig} from 'types/config';
 
 import MainPage from './components/MainPage';
 import IntlProvider from './intl_provider';
@@ -45,48 +45,6 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         this.setState({config});
     }
 
-    moveTabs = (teamName: string, originalOrder: number, newOrder: number): number | undefined => {
-        if (!this.state.config) {
-            throw new Error('No config');
-        }
-        const teams = this.state.config.teams.concat();
-        const currentTeamIndex = teams.findIndex((team) => team.name === teamName);
-        const tabs = teams[currentTeamIndex].tabs.concat();
-
-        const tabOrder = tabs.map((team, index) => {
-            return {
-                index,
-                order: team.order,
-            };
-        }).sort((a, b) => (a.order - b.order));
-
-        const team = tabOrder.splice(originalOrder, 1);
-        tabOrder.splice(newOrder, 0, team[0]);
-
-        let teamIndex: number | undefined;
-        tabOrder.forEach((t, order) => {
-            if (order === newOrder) {
-                teamIndex = t.index;
-            }
-            tabs[t.index].order = order;
-        });
-        teams[currentTeamIndex].tabs = tabs;
-        this.setState({
-            config: {
-                ...this.state.config,
-                teams,
-            },
-        });
-        this.teamConfigChange(teams);
-        return teamIndex;
-    };
-
-    teamConfigChange = async (updatedTeams: Team[]) => {
-        window.desktop.updateTeams(updatedTeams).then(() => {
-            this.reloadConfig();
-        });
-    };
-
     reloadConfig = async () => {
         const config = await this.requestConfig();
         this.setState({config});
@@ -120,9 +78,6 @@ class Root extends React.PureComponent<Record<string, never>, State> {
         return (
             <IntlProvider>
                 <MainPage
-                    teams={config.teams}
-                    lastActiveTeam={config.lastActiveTeam}
-                    moveTabs={this.moveTabs}
                     openMenu={this.openMenu}
                     darkMode={config.darkMode}
                     appName={config.appName}

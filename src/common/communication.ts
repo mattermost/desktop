@@ -18,7 +18,6 @@ export const GET_LOCAL_CONFIGURATION = 'get-local-configuration';
 export const RELOAD_CONFIGURATION = 'reload-config';
 export const EMIT_CONFIGURATION = 'emit-configuration';
 
-export const UPDATE_TEAMS = 'update-teams';
 export const DARK_MODE_CHANGE = 'dark_mode_change';
 export const GET_DARK_MODE = 'get-dark-mode';
 export const USER_ACTIVITY_UPDATE = 'user-activity-update';
@@ -38,7 +37,6 @@ export const DOUBLE_CLICK_ON_WINDOW = 'double_click';
 export const SHOW_NEW_SERVER_MODAL = 'show_new_server_modal';
 export const SHOW_EDIT_SERVER_MODAL = 'show-edit-server-modal';
 export const SHOW_REMOVE_SERVER_MODAL = 'show-remove-server-modal';
-export const MAIN_WINDOW_SHOWN = 'main-window-shown';
 
 export const RETRIEVE_MODAL_INFO = 'retrieve-modal-info';
 export const MODAL_CANCEL = 'modal-cancel';
@@ -106,8 +104,7 @@ export const APP_LOGGED_OUT = 'app-logged-out';
 
 export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checker-languages';
 
-export const GET_VIEW_NAME = 'get-view-name';
-export const GET_VIEW_WEBCONTENTS_ID = 'get-view-webcontents-id';
+export const GET_VIEW_INFO_FOR_TEST = 'get-view-info-for-test';
 
 export const RESIZE_MODAL = 'resize-modal';
 export const GET_MODAL_UNCLOSEABLE = 'get-modal-uncloseable';
@@ -119,7 +116,6 @@ export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 export const RELOAD_CURRENT_VIEW = 'reload-current-view';
 
 export const PING_DOMAIN = 'ping-domain';
-export const PING_DOMAIN_RESPONSE = 'ping-domain-response';
 
 export const GET_LANGUAGE_INFORMATION = 'get-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
@@ -166,3 +162,8 @@ export const DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-m
 
 export const SERVERS_URL_MODIFIED = 'servers-modified';
 export const SERVERS_UPDATE = 'servers-update';
+export const UPDATE_SERVER_ORDER = 'update-server-order';
+export const UPDATE_TAB_ORDER = 'update-tab-order';
+export const GET_LAST_ACTIVE = 'get-last-active';
+export const GET_ORDERED_SERVERS = 'get-ordered-servers';
+export const GET_ORDERED_TABS_FOR_SERVER = 'get-ordered-tabs-for-server';

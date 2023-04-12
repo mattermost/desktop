@@ -12,6 +12,7 @@ import {getTabDisplayName, TabType} from 'common/tabs/TabView';
 import {Config} from 'common/config';
 
 import {localizeMessage} from 'main/i18nManager';
+import ServerManager from 'common/servers/serverManager';
 import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
 import downloadsManager from 'main/downloadsManager';
@@ -49,7 +50,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     });
 
-    if (config.enableServerManagement === true && config.teams.length > 0) {
+    if (config.enableServerManagement === true && ServerManager.hasServers()) {
         platformAppMenu.push({
             label: localizeMessage('main.menus.app.file.signInToAnotherServer', 'Sign in to Another Server'),
             click() {
@@ -231,7 +232,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         }],
     });
 
-    const teams = config.teams || [];
+    const teams = ServerManager.getOrderedServers();
     const windowMenu = {
         id: 'window',
         label: localizeMessage('main.menus.app.window', '&Window'),
@@ -251,29 +252,29 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: isMac ? localizeMessage('main.menus.app.window.closeWindow', 'Close Window') : localizeMessage('main.menus.app.window.close', 'Close'),
             accelerator: 'CmdOrCtrl+W',
         }, separatorItem,
-        ...(config.teams.length ? [{
+        ...(ServerManager.hasServers() ? [{
             label: localizeMessage('main.menus.app.window.showServers', 'Show Servers'),
             accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
             click() {
                 ipcMain.emit(OPEN_TEAMS_DROPDOWN);
             },
         }] : []),
-        ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team, i) => {
+        ...teams.slice(0, 9).map((team, i) => {
             const items = [];
             items.push({
                 label: team.name,
                 accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
                 click() {
-                    WindowManager.switchServer(team.name);
+                    WindowManager.switchServer(team.id);
                 },
             });
-            if (WindowManager.getCurrentTeamName() === team.name) {
-                team.tabs.filter((tab) => tab.isOpen).sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).forEach((tab, i) => {
+            if (ServerManager.getCurrentServer().id === team.id) {
+                ServerManager.getOrderedTabsForServer(team.id).slice(0, 9).forEach((tab, i) => {
                     items.push({
-                        label: `    ${localizeMessage(`common.tabs.${tab.name}`, getTabDisplayName(tab.name as TabType))}`,
+                        label: `    ${localizeMessage(`common.tabs.${tab.type}`, getTabDisplayName(tab.type as TabType))}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
-                            WindowManager.switchTab(team.name, tab.name);
+                            WindowManager.switchTab(tab.id);
                         },
                     });
                 });

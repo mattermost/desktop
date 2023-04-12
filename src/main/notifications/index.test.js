@@ -11,7 +11,6 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 
 import {PLAY_SOUND} from 'common/communication';
 import Config from 'common/config';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import {localizeMessage} from 'main/i18nManager';
 
@@ -249,7 +248,7 @@ describe('main/notifications', () => {
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
-            expect(WindowManager.switchTab).toBeCalledWith('server_name', TAB_MESSAGING);
+            expect(WindowManager.switchTab).toHaveBeenCalledWith('server_id');
         });
 
         it('linux/windows - should not flash frame when config item is not set', () => {

@@ -3,7 +3,7 @@
 
 import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
-import {CombinedConfig, Team, TeamWithTabs, TeamWithTabsAndGpo} from 'types/config';
+import {CombinedConfig, MattermostTeam} from 'types/config';
 
 import {
     CLOSE_TEAMS_DROPDOWN,
@@ -14,10 +14,12 @@ import {
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
     SET_ACTIVE_VIEW,
+    SERVERS_UPDATE,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
+import ServerManager from 'common/servers/serverManager';
 
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
@@ -30,7 +32,7 @@ const log = new Logger('TeamDropdownView');
 export default class TeamDropdownView {
     view: BrowserView;
     bounds?: Electron.Rectangle;
-    teams: TeamWithTabsAndGpo[];
+    teams: MattermostTeam[];
     activeTeam?: string;
     darkMode: boolean;
     enableServerManagement?: boolean;
@@ -42,7 +44,8 @@ export default class TeamDropdownView {
     isOpen: boolean;
 
     constructor() {
-        this.teams = this.addGpoToTeams(Config.teams, []);
+        this.teams = this.getOrderedTeams();
+        this.hasGPOTeams = this.teams.some((srv) => srv.isPredefined);
         this.darkMode = Config.darkMode;
         this.enableServerManagement = Config.enableServerManagement;
         this.isOpen = false;
@@ -69,6 +72,17 @@ export default class TeamDropdownView {
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
         ipcMain.on(SET_ACTIVE_VIEW, this.updateActiveTeam);
         AppState.on(UPDATE_DROPDOWN_MENTIONS, this.updateMentions);
+
+        ServerManager.on(SERVERS_UPDATE, this.updateServers);
+    }
+
+    private getOrderedTeams = () => {
+        return ServerManager.getOrderedServers().map((team) => team.toMattermostTeam());
+    }
+
+    updateServers = () => {
+        this.teams = this.getOrderedTeams();
+        this.hasGPOTeams = this.teams.some((srv) => srv.isPredefined);
     }
 
     updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
@@ -76,23 +90,33 @@ export default class TeamDropdownView {
 
         this.darkMode = config.darkMode;
         this.enableServerManagement = config.enableServerManagement;
-        this.hasGPOTeams = config.registryTeams && config.registryTeams.length > 0;
         this.updateDropdown();
     }
 
-    updateActiveTeam = (event: IpcMainEvent, name: string) => {
-        log.silly('updateActiveTeam', {name});
+    updateActiveTeam = (event: IpcMainEvent, serverId: string) => {
+        log.silly('updateActiveTeam', {serverId});
 
-        this.activeTeam = name;
+        this.activeTeam = serverId;
         this.updateDropdown();
+    }
+
+    private reduceNotifications = <T>(items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
+        return [...items.keys()].reduce((map, key) => {
+            const view = ServerManager.getTab(key);
+            if (!view) {
+                return map;
+            }
+            map.set(view.server.id, modifier(map.get(view.server.id), items.get(key)));
+            return map;
+        }, new Map());
     }
 
     updateMentions = (expired: Map<string, boolean>, mentions: Map<string, number>, unreads: Map<string, boolean>) => {
         log.silly('updateMentions', {expired, mentions, unreads});
 
-        this.unreads = unreads;
-        this.mentions = mentions;
-        this.expired = expired;
+        this.unreads = this.reduceNotifications(unreads, (base, value) => base || value || false);
+        this.mentions = this.reduceNotifications(mentions, (base, value) => (base ?? 0) + (value ?? 0));
+        this.expired = this.reduceNotifications(expired, (base, value) => base || value || false);
         this.updateDropdown();
     }
 
@@ -163,17 +187,5 @@ export default class TeamDropdownView {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         this.view.webContents.destroy();
-    }
-
-    addGpoToTeams = (teams: TeamWithTabs[], registryTeams: Team[]): TeamWithTabsAndGpo[] => {
-        if (!registryTeams || registryTeams.length === 0) {
-            return teams.map((team) => ({...team, isGpo: false}));
-        }
-        return teams.map((team) => {
-            return {
-                ...team,
-                isGpo: registryTeams.some((regTeam) => regTeam!.url === team!.url),
-            };
-        });
     }
 }

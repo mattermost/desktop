@@ -314,67 +314,66 @@ describe('common/config', () => {
         });
     });
 
-    // TODO: Re-enable when we migrate to ServerManager fully
-    // describe('regenerateCombinedConfigData', () => {
-    //     it('should combine config from all sources', () => {
-    //         const config = new Config();
-    //         config.reload = jest.fn();
-    //         config.init(configPath, appName, appPath);
-    //         config.useNativeWindow = false;
-    //         config.defaultConfigData = {defaultSetting: 'default', otherDefaultSetting: 'default'};
-    //         config.localConfigData = {otherDefaultSetting: 'local', localSetting: 'local', otherLocalSetting: 'local'};
-    //         config.buildConfigData = {otherLocalSetting: 'build', buildSetting: 'build', otherBuildSetting: 'build'};
-    //         config.registryConfigData = {otherBuildSetting: 'registry', registrySetting: 'registry'};
+    describe('regenerateCombinedConfigData', () => {
+        it('should combine config from all sources', () => {
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
+            config.useNativeWindow = false;
+            config.defaultConfigData = {defaultSetting: 'default', otherDefaultSetting: 'default'};
+            config.localConfigData = {otherDefaultSetting: 'local', localSetting: 'local', otherLocalSetting: 'local'};
+            config.buildConfigData = {otherLocalSetting: 'build', buildSetting: 'build', otherBuildSetting: 'build'};
+            config.registryConfigData = {otherBuildSetting: 'registry', registrySetting: 'registry'};
 
-    //         config.regenerateCombinedConfigData();
-    //         config.combinedData.darkMode = false;
-    //         expect(config.combinedData).toStrictEqual({
-    //             appName: 'app-name',
-    //             useNativeWindow: false,
-    //             darkMode: false,
-    //             otherBuildSetting: 'registry',
-    //             registrySetting: 'registry',
-    //             otherLocalSetting: 'build',
-    //             buildSetting: 'build',
-    //             otherDefaultSetting: 'local',
-    //             localSetting: 'local',
-    //             defaultSetting: 'default',
-    //         });
-    //     });
+            config.regenerateCombinedConfigData();
+            config.combinedData.darkMode = false;
+            expect(config.combinedData).toStrictEqual({
+                appName: 'app-name',
+                useNativeWindow: false,
+                darkMode: false,
+                otherBuildSetting: 'registry',
+                registrySetting: 'registry',
+                otherLocalSetting: 'build',
+                buildSetting: 'build',
+                otherDefaultSetting: 'local',
+                localSetting: 'local',
+                defaultSetting: 'default',
+            });
+        });
 
-    //     it('should not include any teams in the combined config', () => {
-    //         const config = new Config();
-    //         config.reload = jest.fn();
-    //         config.init(configPath, appName, appPath);
-    //         config.defaultConfigData = {};
-    //         config.localConfigData = {};
-    //         config.buildConfigData = {enableServerManagement: true};
-    //         config.registryConfigData = {};
-    //         config.predefinedTeams.push(team, team);
-    //         config.useNativeWindow = false;
-    //         config.localConfigData = {teams: [
-    //             team,
-    //             {
-    //                 ...team,
-    //                 name: 'local-team-2',
-    //                 url: 'http://local-team-2.com',
-    //             },
-    //             {
-    //                 ...team,
-    //                 name: 'local-team-1',
-    //                 order: 1,
-    //                 url: 'http://local-team-1.com',
-    //             },
-    //         ]};
+        it('should not include any teams in the combined config', () => {
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
+            config.defaultConfigData = {};
+            config.localConfigData = {};
+            config.buildConfigData = {enableServerManagement: true};
+            config.registryConfigData = {};
+            config.predefinedTeams.push(team, team);
+            config.useNativeWindow = false;
+            config.localConfigData = {teams: [
+                team,
+                {
+                    ...team,
+                    name: 'local-team-2',
+                    url: 'http://local-team-2.com',
+                },
+                {
+                    ...team,
+                    name: 'local-team-1',
+                    order: 1,
+                    url: 'http://local-team-1.com',
+                },
+            ]};
 
-    //         config.regenerateCombinedConfigData();
-    //         config.combinedData.darkMode = false;
-    //         expect(config.combinedData).toStrictEqual({
-    //             appName: 'app-name',
-    //             useNativeWindow: false,
-    //             darkMode: false,
-    //             enableServerManagement: true,
-    //         });
-    //     });
-    // });
+            config.regenerateCombinedConfigData();
+            config.combinedData.darkMode = false;
+            expect(config.combinedData).toStrictEqual({
+                appName: 'app-name',
+                useNativeWindow: false,
+                darkMode: false,
+                enableServerManagement: true,
+            });
+        });
+    });
 });

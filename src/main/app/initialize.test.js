@@ -124,10 +124,10 @@ jest.mock('main/app/utils', () => ({
     getDeeplinkingURL: jest.fn(),
     handleUpdateMenuEvent: jest.fn(),
     shouldShowTrayIcon: jest.fn(),
-    updateServerInfos: jest.fn(),
     updateSpellCheckerLocales: jest.fn(),
     wasUpdated: jest.fn(),
     initCookieManager: jest.fn(),
+    updateServerInfos: jest.fn(),
 }));
 jest.mock('main/appState', () => ({
     on: jest.fn(),
@@ -149,6 +149,11 @@ jest.mock('main/notifications', () => ({
     displayDownloadCompleted: jest.fn(),
 }));
 jest.mock('main/ParseArgs', () => jest.fn());
+jest.mock('common/servers/serverManager', () => ({
+    reloadFromConfig: jest.fn(),
+    getAllServers: jest.fn(),
+    on: jest.fn(),
+}));
 jest.mock('main/tray/tray', () => ({
     refreshTrayImages: jest.fn(),
     setupTray: jest.fn(),
@@ -194,7 +199,6 @@ describe('main/app/initialize', () => {
             }
         });
         Config.data = {};
-        Config.teams = [];
         app.whenReady.mockResolvedValue();
         app.requestSingleInstanceLock.mockReturnValue(true);
         app.getPath.mockImplementation((p) => `/basedir/${p}`);

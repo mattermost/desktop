@@ -4,72 +4,56 @@
 import {ClientConfig, RemoteInfo} from 'types/server';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {Logger} from 'common/log';
 
 import {getServerAPI} from './serverAPI';
 
-const log = new Logger('ServerInfo');
-
 export class ServerInfo {
-    server: MattermostServer;
-    remoteInfo: RemoteInfo;
-    promise: Promise<RemoteInfo | string | undefined>;
-    onRetrievedRemoteInfo?: (result?: RemoteInfo | string) => void;
+    private server: MattermostServer;
+    private remoteInfo: RemoteInfo;
 
     constructor(server: MattermostServer) {
         this.server = server;
-        this.remoteInfo = {name: server.name};
-
-        this.promise = new Promise<RemoteInfo | string | undefined>((resolve) => {
-            this.onRetrievedRemoteInfo = resolve;
-        });
-        this.getRemoteInfo();
+        this.remoteInfo = {};
     }
 
-    getRemoteInfo = () => {
-        getServerAPI<ClientConfig>(
+    fetchRemoteInfo = async () => {
+        await this.getRemoteInfo<ClientConfig>(
             new URL(`${this.server.url.toString()}/api/v4/config/client?format=old`),
-            false,
             this.onGetConfig,
-            this.onRetrievedRemoteInfo,
-            this.onRetrievedRemoteInfo);
-
-        getServerAPI<Array<{id: string; version: string}>>(
+        );
+        await this.getRemoteInfo<Array<{id: string; version: string}>>(
             new URL(`${this.server.url.toString()}/api/v4/plugins/webapp`),
-            false,
             this.onGetPlugins,
-            this.onRetrievedRemoteInfo,
-            this.onRetrievedRemoteInfo);
+        );
+
+        return this.remoteInfo;
     }
 
-    onGetConfig = (data: ClientConfig) => {
+    private getRemoteInfo = <T>(
+        url: URL,
+        callback: (data: T) => void,
+    ) => {
+        return new Promise<void>((resolve, reject) => {
+            getServerAPI<T>(
+                url,
+                false,
+                (data: T) => {
+                    callback(data);
+                    resolve();
+                },
+                () => reject(new Error('Aborted')),
+                (error: Error) => reject(error));
+        });
+    }
+
+    private onGetConfig = (data: ClientConfig) => {
         this.remoteInfo.serverVersion = data.Version;
         this.remoteInfo.siteURL = data.SiteURL;
         this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.BuildBoards === 'true';
-
-        this.trySendRemoteInfo();
     }
 
-    onGetPlugins = (data: Array<{id: string; version: string}>) => {
+    private onGetPlugins = (data: Array<{id: string; version: string}>) => {
         this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.some((plugin) => plugin.id === 'focalboard');
         this.remoteInfo.hasPlaybooks = data.some((plugin) => plugin.id === 'playbooks');
-
-        this.trySendRemoteInfo();
-    }
-
-    trySendRemoteInfo = () => {
-        log.debug('trySendRemoteInfo', this.server.name, this.remoteInfo);
-
-        if (this.isRemoteInfoRetrieved()) {
-            this.onRetrievedRemoteInfo?.(this.remoteInfo);
-        }
-    }
-
-    isRemoteInfoRetrieved = () => {
-        return !(
-            typeof this.remoteInfo.serverVersion === 'undefined' ||
-            typeof this.remoteInfo.hasFocalboard === 'undefined' ||
-            typeof this.remoteInfo.hasPlaybooks === 'undefined'
-        );
     }
 }

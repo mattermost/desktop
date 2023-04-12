@@ -10,7 +10,6 @@ import {MentionData} from 'types/notification';
 import Config from 'common/config';
 import {PLAY_SOUND} from 'common/communication';
 import {Logger} from 'common/log';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
 
 import ViewManager from '../views/viewManager';
 import MainWindow from '../windows/mainWindow';
@@ -76,7 +75,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     mention.on('click', () => {
         log.debug('notification click', serverName, mention);
         if (serverName) {
-            WindowManager.switchTab(serverName, TAB_MESSAGING);
+            WindowManager.switchTab(view.id);
             webcontents.send('notification-clicked', {channel, teamId, url});
         }
     });

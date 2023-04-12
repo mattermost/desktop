@@ -3,7 +3,7 @@
 
 import {v4 as uuid} from 'uuid';
 
-import {Team} from 'types/config';
+import {MattermostTeam, Team} from 'types/config';
 
 import urlUtils from 'common/utils/url';
 
@@ -13,14 +13,13 @@ export class MattermostServer {
     url!: URL;
     isPredefined: boolean;
 
-    constructor(server: Team, isPredefined = false) {
+    constructor(server: Team, isPredefined: boolean) {
         this.id = uuid();
+
         this.name = server.name;
         this.updateURL(server.url);
+
         this.isPredefined = isPredefined;
-        if (!this.url) {
-            throw new Error('Invalid url for creating a server');
-        }
     }
 
     updateURL = (url: string) => {
@@ -28,5 +27,14 @@ export class MattermostServer {
         if (!this.url) {
             throw new Error('Invalid url for creating a server');
         }
+    }
+
+    toMattermostTeam = (): MattermostTeam => {
+        return {
+            name: this.name,
+            url: this.url.toString(),
+            id: this.id,
+            isPredefined: this.isPredefined,
+        };
     }
 }

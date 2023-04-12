@@ -23,12 +23,13 @@ jest.mock('electron', () => ({
     session: {},
 }));
 jest.mock('main/contextMenu', () => jest.fn());
-
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+}));
 jest.mock('../allowProtocolDialog', () => ({}));
 jest.mock('main/windows/callsWidgetWindow', () => ({}));
 jest.mock('main/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
-    getViewByURL: jest.fn(),
 }));
 jest.mock('../windows/windowManager', () => ({
     getServerURLFromWebContentsId: jest.fn(),

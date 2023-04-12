@@ -9,8 +9,6 @@ import {ipcRenderer, contextBridge} from 'electron';
 import {
     GET_LANGUAGE_INFORMATION,
     QUIT,
-    GET_VIEW_NAME,
-    GET_VIEW_WEBCONTENTS_ID,
     OPEN_APP_MENU,
     CLOSE_TEAMS_DROPDOWN,
     OPEN_TEAMS_DROPDOWN,
@@ -29,7 +27,6 @@ import {
     HISTORY,
     CHECK_FOR_UPDATES,
     UPDATE_CONFIGURATION,
-    UPDATE_TEAMS,
     GET_CONFIGURATION,
     GET_DARK_MODE,
     REQUEST_HAS_DOWNLOADS,
@@ -85,16 +82,15 @@ import {
     LOADING_SCREEN_ANIMATION_FINISHED,
     TOGGLE_LOADING_SCREEN_VISIBILITY,
     DOWNLOADS_DROPDOWN_FOCUSED,
+    UPDATE_SERVER_ORDER,
+    UPDATE_TAB_ORDER,
+    GET_LAST_ACTIVE,
+    GET_ORDERED_SERVERS,
+    GET_ORDERED_TABS_FOR_SERVER,
+    SERVERS_UPDATE,
 } from 'common/communication';
 
 console.log('Preload initialized');
-
-if (process.env.NODE_ENV === 'test') {
-    contextBridge.exposeInMainWorld('testHelper', {
-        getViewName: () => ipcRenderer.invoke(GET_VIEW_NAME),
-        getWebContentsId: () => ipcRenderer.invoke(GET_VIEW_WEBCONTENTS_ID),
-    });
-}
 
 contextBridge.exposeInMainWorld('process', {
     platform: process.platform,
@@ -117,14 +113,14 @@ contextBridge.exposeInMainWorld('desktop', {
     openAppMenu: () => ipcRenderer.send(OPEN_APP_MENU),
     closeTeamsDropdown: () => ipcRenderer.send(CLOSE_TEAMS_DROPDOWN),
     openTeamsDropdown: () => ipcRenderer.send(OPEN_TEAMS_DROPDOWN),
-    switchTab: (serverName, tabName) => ipcRenderer.send(SWITCH_TAB, serverName, tabName),
-    closeTab: (serverName, tabName) => ipcRenderer.send(CLOSE_TAB, serverName, tabName),
+    switchTab: (tabId) => ipcRenderer.send(SWITCH_TAB, tabId),
+    closeTab: (tabId) => ipcRenderer.send(CLOSE_TAB, tabId),
     closeWindow: () => ipcRenderer.send(WINDOW_CLOSE),
     minimizeWindow: () => ipcRenderer.send(WINDOW_MINIMIZE),
     maximizeWindow: () => ipcRenderer.send(WINDOW_MAXIMIZE),
     restoreWindow: () => ipcRenderer.send(WINDOW_RESTORE),
     doubleClickOnWindow: (windowName) => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, windowName),
-    focusBrowserView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
+    focusCurrentView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
     reloadCurrentView: () => ipcRenderer.send(RELOAD_CURRENT_VIEW),
     closeDownloadsDropdown: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN),
     closeDownloadsDropdownMenu: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU),
@@ -133,25 +129,31 @@ contextBridge.exposeInMainWorld('desktop', {
     checkForUpdates: () => ipcRenderer.send(CHECK_FOR_UPDATES),
     updateConfiguration: (saveQueueItems) => ipcRenderer.send(UPDATE_CONFIGURATION, saveQueueItems),
 
-    updateTeams: (updatedTeams) => ipcRenderer.invoke(UPDATE_TEAMS, updatedTeams),
-    getConfiguration: (option) => ipcRenderer.invoke(GET_CONFIGURATION, option),
+    updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
+    updateTabOrder: (serverId, tabOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, tabOrder),
+    getLastActive: () => ipcRenderer.invoke(GET_LAST_ACTIVE),
+    getOrderedServers: () => ipcRenderer.invoke(GET_ORDERED_SERVERS),
+    getOrderedTabsForServer: (serverId) => ipcRenderer.invoke(GET_ORDERED_TABS_FOR_SERVER, serverId),
+    onUpdateServers: (listener) => ipcRenderer.on(SERVERS_UPDATE, () => listener()),
+
+    getConfiguration: () => ipcRenderer.invoke(GET_CONFIGURATION),
     getVersion: () => ipcRenderer.invoke('get-app-version'),
     getDarkMode: () => ipcRenderer.invoke(GET_DARK_MODE),
     requestHasDownloads: () => ipcRenderer.invoke(REQUEST_HAS_DOWNLOADS),
     getFullScreenStatus: () => ipcRenderer.invoke(GET_FULL_SCREEN_STATUS),
     getAvailableSpellCheckerLanguages: () => ipcRenderer.invoke(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES),
     getAvailableLanguages: () => ipcRenderer.invoke(GET_AVAILABLE_LANGUAGES),
-    getLocalConfiguration: (option) => ipcRenderer.invoke(GET_LOCAL_CONFIGURATION, option),
+    getLocalConfiguration: () => ipcRenderer.invoke(GET_LOCAL_CONFIGURATION),
     getDownloadLocation: (downloadLocation) => ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, downloadLocation),
     getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
 
     onSynchronizeConfig: (listener) => ipcRenderer.on('synchronize-config', () => listener()),
     onReloadConfiguration: (listener) => ipcRenderer.on(RELOAD_CONFIGURATION, () => listener()),
     onDarkModeChange: (listener) => ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => listener(darkMode)),
-    onLoadRetry: (listener) => ipcRenderer.on(LOAD_RETRY, (_, viewName, retry, err, loadUrl) => listener(viewName, retry, err, loadUrl)),
-    onLoadSuccess: (listener) => ipcRenderer.on(LOAD_SUCCESS, (_, viewName) => listener(viewName)),
-    onLoadFailed: (listener) => ipcRenderer.on(LOAD_FAILED, (_, viewName, err, loadUrl) => listener(viewName, err, loadUrl)),
-    onSetActiveView: (listener) => ipcRenderer.on(SET_ACTIVE_VIEW, (_, serverName, tabName) => listener(serverName, tabName)),
+    onLoadRetry: (listener) => ipcRenderer.on(LOAD_RETRY, (_, viewId, retry, err, loadUrl) => listener(viewId, retry, err, loadUrl)),
+    onLoadSuccess: (listener) => ipcRenderer.on(LOAD_SUCCESS, (_, viewId) => listener(viewId)),
+    onLoadFailed: (listener) => ipcRenderer.on(LOAD_FAILED, (_, viewId, err, loadUrl) => listener(viewId, err, loadUrl)),
+    onSetActiveView: (listener) => ipcRenderer.on(SET_ACTIVE_VIEW, (_, serverId, tabId) => listener(serverId, tabId)),
     onMaximizeChange: (listener) => ipcRenderer.on(MAXIMIZE_CHANGE, (_, maximize) => listener(maximize)),
     onEnterFullScreen: (listener) => ipcRenderer.on('enter-full-screen', () => listener()),
     onLeaveFullScreen: (listener) => ipcRenderer.on('leave-full-screen', () => listener()),
@@ -195,10 +197,10 @@ contextBridge.exposeInMainWorld('desktop', {
     serverDropdown: {
         requestInfo: () => ipcRenderer.send(REQUEST_TEAMS_DROPDOWN_INFO),
         sendSize: (width, height) => ipcRenderer.send(RECEIVE_DROPDOWN_MENU_SIZE, width, height),
-        switchServer: (server) => ipcRenderer.send(SWITCH_SERVER, server),
+        switchServer: (serverId) => ipcRenderer.send(SWITCH_SERVER, serverId),
         showNewServerModal: () => ipcRenderer.send(SHOW_NEW_SERVER_MODAL),
-        showEditServerModal: (serverName) => ipcRenderer.send(SHOW_EDIT_SERVER_MODAL, serverName),
-        showRemoveServerModal: (serverName) => ipcRenderer.send(SHOW_REMOVE_SERVER_MODAL, serverName),
+        showEditServerModal: (serverId) => ipcRenderer.send(SHOW_EDIT_SERVER_MODAL, serverId),
+        showRemoveServerModal: (serverId) => ipcRenderer.send(SHOW_REMOVE_SERVER_MODAL, serverId),
 
         onUpdateServerDropdown: (listener) => ipcRenderer.on(UPDATE_TEAMS_DROPDOWN, (_,
             teams,

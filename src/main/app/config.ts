@@ -3,7 +3,7 @@
 
 import {app, ipcMain, nativeTheme} from 'electron';
 
-import {CombinedConfig, ConfigServer, Config as ConfigType} from 'types/config';
+import {CombinedConfig, Config as ConfigType} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
@@ -12,12 +12,11 @@ import {Logger, setLoggingLevel} from 'common/log';
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
 import {refreshTrayImages} from 'main/tray/tray';
-import ViewManager from 'main/views/viewManager';
 import LoadingScreen from 'main/views/loadingScreen';
 import WindowManager from 'main/windows/windowManager';
 
 import {handleMainWindowIsShown} from './intercom';
-import {handleUpdateMenuEvent, updateServerInfos, updateSpellCheckerLocales} from './utils';
+import {handleUpdateMenuEvent, updateSpellCheckerLocales} from './utils';
 
 const log = new Logger('App.Config');
 
@@ -60,14 +59,6 @@ export function handleUpdateTheme() {
     Config.set('darkMode', nativeTheme.shouldUseDarkColors);
 }
 
-export function handleUpdateTeams(event: Electron.IpcMainInvokeEvent, newTeams: ConfigServer[]) {
-    log.debug('Config.handleUpdateTeams');
-    log.silly('Config.handleUpdateTeams', newTeams);
-
-    Config.setServers(newTeams);
-    return Config.teams;
-}
-
 export function handleConfigUpdate(newConfig: CombinedConfig) {
     if (newConfig.logLevel) {
         setLoggingLevel(newConfig.logLevel);
@@ -81,7 +72,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     }
 
     if (app.isReady()) {
-        ViewManager.reloadConfiguration();
         WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
@@ -106,8 +96,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     }
 
     if (app.isReady()) {
-        updateServerInfos(newConfig.teams);
-        WindowManager.initializeCurrentServerName();
         handleMainWindowIsShown();
     }
 

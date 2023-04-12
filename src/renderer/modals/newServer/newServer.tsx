@@ -7,7 +7,7 @@ import 'renderer/css/modals.css';
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
-import {TeamWithIndex} from 'types/config';
+import {MattermostTeam} from 'types/config';
 
 import IntlProvider from 'renderer/intl_provider';
 
@@ -21,19 +21,19 @@ const onClose = () => {
     window.desktop.modals.cancelModal();
 };
 
-const onSave = (data: TeamWithIndex) => {
+const onSave = (data: MattermostTeam) => {
     window.desktop.modals.finishModal(data);
 };
 
 const NewServerModalWrapper: React.FC = () => {
     const [unremoveable, setUnremovable] = useState<boolean>();
-    const [currentTeams, setCurrentTeams] = useState<TeamWithIndex[]>();
+    const [currentTeams, setCurrentTeams] = useState<MattermostTeam[]>();
 
     useEffect(() => {
         window.desktop.modals.isModalUncloseable().then((uncloseable) => {
             setUnremovable(uncloseable);
         });
-        window.desktop.modals.getModalInfo<TeamWithIndex[]>().then((teams) => {
+        window.desktop.modals.getModalInfo<MattermostTeam[]>().then((teams) => {
             setCurrentTeams(teams);
         });
     }, []);

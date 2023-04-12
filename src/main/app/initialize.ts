@@ -11,16 +11,9 @@ import {
     SWITCH_SERVER,
     FOCUS_BROWSERVIEW,
     QUIT,
-    DOUBLE_CLICK_ON_WINDOW,
     SHOW_NEW_SERVER_MODAL,
-    WINDOW_CLOSE,
-    WINDOW_MAXIMIZE,
-    WINDOW_MINIMIZE,
-    WINDOW_RESTORE,
     NOTIFY_MENTION,
     GET_DOWNLOAD_LOCATION,
-    SHOW_SETTINGS_WINDOW,
-    RELOAD_CONFIGURATION,
     SWITCH_TAB,
     CLOSE_TAB,
     OPEN_TAB,
@@ -33,13 +26,17 @@ import {
     START_UPGRADE,
     START_UPDATE_DOWNLOAD,
     PING_DOMAIN,
-    MAIN_WINDOW_SHOWN,
     OPEN_APP_MENU,
     GET_CONFIGURATION,
     GET_LOCAL_CONFIGURATION,
     UPDATE_CONFIGURATION,
     UPDATE_PATHS,
-    UPDATE_TEAMS,
+    UPDATE_SERVER_ORDER,
+    UPDATE_TAB_ORDER,
+    GET_LAST_ACTIVE,
+    GET_ORDERED_SERVERS,
+    GET_ORDERED_TABS_FOR_SERVER,
+    SERVERS_URL_MODIFIED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -57,7 +54,7 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
-import SettingsWindow from 'main/windows/settingsWindow';
+import ServerManager from 'common/servers/serverManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
@@ -84,7 +81,6 @@ import {
     handleGetLocalConfiguration,
     handleUpdateTheme,
     updateConfiguration,
-    handleUpdateTeams,
 } from './config';
 import {
     handleMainWindowIsShown,
@@ -96,24 +92,26 @@ import {
     handleOpenAppMenu,
     handleOpenTab,
     handleQuit,
-    handleReloadConfig,
     handleRemoveServerModal,
     handleSelectDownload,
     handleSwitchServer,
     handleSwitchTab,
     handleUpdateLastActive,
     handlePingDomain,
+    handleGetOrderedServers,
+    handleGetOrderedTabsForServer,
+    handleGetLastActive,
 } from './intercom';
 import {
     clearAppCache,
     getDeeplinkingURL,
     handleUpdateMenuEvent,
     shouldShowTrayIcon,
-    updateServerInfos,
     updateSpellCheckerLocales,
     wasUpdated,
     initCookieManager,
     migrateMacAppStore,
+    updateServerInfos,
 } from './utils';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
@@ -153,7 +151,7 @@ export async function initialize() {
 
     // initialization that should run once the app is ready
     initializeInterCommunicationEventListeners();
-    initializeAfterAppReady();
+    await initializeAfterAppReady();
 }
 
 //
@@ -262,7 +260,6 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.on(RELOAD_CONFIGURATION, handleReloadConfig);
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
@@ -280,17 +277,9 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(QUIT, handleQuit);
 
-    ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
-
     ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
     ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
     ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
-    ipcMain.on(MAIN_WINDOW_SHOWN, handleMainWindowIsShown);
-    ipcMain.on(WINDOW_CLOSE, WindowManager.close);
-    ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
-    ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
-    ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
-    ipcMain.on(SHOW_SETTINGS_WINDOW, SettingsWindow.show);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
@@ -298,12 +287,24 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(PING_DOMAIN, handlePingDomain);
     ipcMain.handle(GET_CONFIGURATION, handleGetConfiguration);
     ipcMain.handle(GET_LOCAL_CONFIGURATION, handleGetLocalConfiguration);
-    ipcMain.handle(UPDATE_TEAMS, handleUpdateTeams);
     ipcMain.on(UPDATE_CONFIGURATION, updateConfiguration);
+
+    ipcMain.on(UPDATE_SERVER_ORDER, (event, serverOrder) => ServerManager.updateServerOrder(serverOrder));
+    ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, tabOrder) => ServerManager.updateTabOrder(serverId, tabOrder));
+    ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
+    ipcMain.handle(GET_ORDERED_SERVERS, handleGetOrderedServers);
+    ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedTabsForServer);
 }
 
-function initializeAfterAppReady() {
-    updateServerInfos(Config.teams);
+async function initializeAfterAppReady() {
+    ServerManager.reloadFromConfig();
+    updateServerInfos(ServerManager.getAllServers());
+    ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
+        if (serverIds && serverIds.length) {
+            updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
+        }
+    });
+
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 

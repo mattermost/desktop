@@ -5,15 +5,11 @@ import fs from 'fs-extra';
 
 import {dialog, screen} from 'electron';
 
-import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
-import {TAB_MESSAGING, TAB_FOCALBOARD, TAB_PLAYBOOKS} from 'common/tabs/TabView';
-import Utils from 'common/utils/util';
 
 import {updatePaths} from 'main/constants';
-import {ServerInfo} from 'main/server/serverInfo';
 
-import {getDeeplinkingURL, updateServerInfos, resizeScreen, migrateMacAppStore} from './utils';
+import {getDeeplinkingURL, resizeScreen, migrateMacAppStore} from './utils';
 
 jest.mock('fs-extra', () => ({
     readFileSync: jest.fn(),
@@ -43,9 +39,6 @@ jest.mock('common/config', () => ({
     setServers: jest.fn(),
 }));
 jest.mock('common/JsonFileManager');
-jest.mock('common/utils/util', () => ({
-    isVersionGreaterThanOrEqualTo: jest.fn(),
-}));
 
 jest.mock('main/autoUpdater', () => ({}));
 jest.mock('main/constants', () => ({
@@ -56,9 +49,6 @@ jest.mock('main/i18nManager', () => ({
 }));
 jest.mock('main/menus/app', () => ({}));
 jest.mock('main/menus/tray', () => ({}));
-jest.mock('main/server/serverInfo', () => ({
-    ServerInfo: jest.fn(),
-}));
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/windows/mainWindow', () => ({}));
@@ -69,107 +59,6 @@ jest.mock('./initialize', () => ({
 }));
 
 describe('main/app/utils', () => {
-    describe('updateServerInfos', () => {
-        const tabs = [
-            {
-                name: TAB_MESSAGING,
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: TAB_FOCALBOARD,
-                order: 2,
-            },
-            {
-                name: TAB_PLAYBOOKS,
-                order: 1,
-            },
-        ];
-        const teams = [
-            {
-                name: 'server-1',
-                url: 'http://server-1.com',
-                tabs,
-            },
-        ];
-
-        beforeEach(() => {
-            Utils.isVersionGreaterThanOrEqualTo.mockImplementation((version) => version === '6.0.0');
-            Config.setServers.mockImplementation((value) => {
-                Config.teams = value;
-            });
-            const teamsCopy = JSON.parse(JSON.stringify(teams));
-            Config.teams = teamsCopy;
-        });
-
-        afterEach(() => {
-            delete Config.teams;
-        });
-
-        it('should open all tabs', async () => {
-            ServerInfo.mockReturnValue({promise: {
-                name: 'server-1',
-                siteURL: 'http://server-1.com',
-                serverVersion: '6.0.0',
-                hasPlaybooks: true,
-                hasFocalboard: true,
-            }});
-
-            updateServerInfos(Config.teams);
-            await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
-
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBe(true);
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBe(true);
-        });
-
-        it('should open only playbooks', async () => {
-            ServerInfo.mockReturnValue({promise: {
-                name: 'server-1',
-                siteURL: 'http://server-1.com',
-                serverVersion: '6.0.0',
-                hasPlaybooks: true,
-                hasFocalboard: false,
-            }});
-
-            updateServerInfos(Config.teams);
-            await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
-
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBe(true);
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBeUndefined();
-        });
-
-        it('should open none when server version is too old', async () => {
-            ServerInfo.mockReturnValue({promise: {
-                name: 'server-1',
-                siteURL: 'http://server-1.com',
-                serverVersion: '5.0.0',
-                hasPlaybooks: true,
-                hasFocalboard: true,
-            }});
-
-            updateServerInfos(Config.teams);
-            await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
-
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_PLAYBOOKS).isOpen).toBeUndefined();
-            expect(Config.teams.find((team) => team.name === 'server-1').tabs.find((tab) => tab.name === TAB_FOCALBOARD).isOpen).toBeUndefined();
-        });
-
-        it('should update server URL using site URL', async () => {
-            ServerInfo.mockReturnValue({promise: {
-                name: 'server-1',
-                siteURL: 'http://server-2.com',
-                serverVersion: '6.0.0',
-                hasPlaybooks: true,
-                hasFocalboard: true,
-            }});
-
-            updateServerInfos(Config.teams);
-            await new Promise(setImmediate); // workaround since Promise.all seems to not let me wait here
-
-            expect(Config.teams.find((team) => team.name === 'server-1').url).toBe('http://server-2.com');
-        });
-    });
-
     describe('getDeeplinkingURL', () => {
         it('should return undefined if deeplinking URL is not last argument', () => {
             expect(getDeeplinkingURL(['mattermost', 'mattermost://server-1.com', '--oops'])).toBeUndefined();

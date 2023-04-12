@@ -3,9 +3,11 @@
 
 import {v4 as uuid} from 'uuid';
 
+import {MattermostTab} from 'types/config';
+
 import {MattermostServer} from 'common/servers/MattermostServer';
 
-import {getTabViewName, TabType, TabView} from './TabView';
+import {TabType, TabView} from './TabView';
 
 export default abstract class BaseTabView implements TabView {
     id: string;
@@ -17,9 +19,6 @@ export default abstract class BaseTabView implements TabView {
         this.server = server;
         this.isOpen = isOpen;
     }
-    get name(): string {
-        return getTabViewName(this.server.name, this.type);
-    }
     get url(): URL {
         throw new Error('Not implemented');
     }
@@ -28,5 +27,13 @@ export default abstract class BaseTabView implements TabView {
     }
     get shouldNotify(): boolean {
         return false;
+    }
+
+    toMattermostTab = (): MattermostTab => {
+        return {
+            id: this.id,
+            name: this.type,
+            isOpen: this.isOpen,
+        };
     }
 }
