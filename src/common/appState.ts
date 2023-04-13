@@ -26,21 +26,21 @@ export class AppState extends EventEmitter {
         ServerManager.getViewLog(viewId, 'AppState').silly('updateExpired', expired);
 
         this.unreads.set(viewId, expired);
-        this.emitMentions(viewId);
+        this.emitStatusForView(viewId);
     }
 
     updateMentions = (viewId: string, mentions: number) => {
         ServerManager.getViewLog(viewId, 'AppState').silly('updateMentions', mentions);
 
         this.mentions.set(viewId, mentions);
-        this.emitMentions(viewId);
+        this.emitStatusForView(viewId);
     };
 
     updateUnreads = (viewId: string, unreads: boolean) => {
         ServerManager.getViewLog(viewId, 'AppState').silly('updateUnreads', unreads);
 
         this.unreads.set(viewId, unreads);
-        this.emitMentions(viewId);
+        this.emitStatusForView(viewId);
     };
 
     clear = (viewId: string) => {
@@ -66,7 +66,7 @@ export class AppState extends EventEmitter {
         );
     };
 
-    private emitMentions = (viewId: string) => {
+    private emitStatusForView = (viewId: string) => {
         this.emit(UPDATE_APPSTATE_FOR_VIEWID,
             viewId,
             this.expired.get(viewId) || false,
