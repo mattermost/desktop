@@ -3,8 +3,7 @@
 
 import {BrowserView, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
-import {CombinedConfig} from 'types/config';
-import {DownloadedItem, DownloadedItems} from 'types/downloads';
+import {DownloadedItem} from 'types/downloads';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -29,37 +28,31 @@ import MainWindow from 'main/windows/mainWindow';
 
 const log = new Logger('DownloadsDropdownView');
 
-export default class DownloadsDropdownView {
-    bounds?: Electron.Rectangle;
-    darkMode: boolean;
-    downloads: DownloadedItems;
-    item?: DownloadedItem;
-    view: BrowserView;
-    windowBounds: Electron.Rectangle;
+export class DownloadsDropdownView {
+    private bounds?: Electron.Rectangle;
+    private windowBounds?: Electron.Rectangle;
+    private item?: DownloadedItem;
+    private view?: BrowserView;
 
     constructor() {
-        this.downloads = downloadsManager.getDownloads();
-        this.darkMode = Config.darkMode;
-
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
-        ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
+        ipcMain.on(EMIT_CONFIGURATION, this.updateDownloadsDropdown);
         ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_INFO, this.updateDownloadsDropdown);
         ipcMain.on(REQUEST_CLEAR_DOWNLOADS_DROPDOWN, this.clearDownloads);
         ipcMain.on(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, this.handleReceivedDownloadsDropdownSize);
         ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
-        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloads);
+        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloadsDropdown);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
         ipcMain.handle(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, this.getDownloadImageThumbnailLocation);
+    }
 
-        const mainWindow = MainWindow.get();
-        const windowBounds = MainWindow.getBounds();
-        if (!(mainWindow && windowBounds)) {
-            throw new Error('Cannot initialize downloadsDropdownView, missing MainWindow');
+    init = () => {
+        this.windowBounds = MainWindow.getBounds();
+        if (!this.windowBounds) {
+            throw new Error('Cannot initialize, no main window');
         }
-
-        this.windowBounds = windowBounds;
-        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
+        this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
 
         const preload = getLocalPreload('desktopAPI.js');
         this.view = new BrowserView({webPreferences: {
@@ -73,28 +66,7 @@ export default class DownloadsDropdownView {
 
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.view.webContents.session.webRequest.onHeadersReceived(downloadsManager.webRequestOnHeadersReceivedHandler);
-        mainWindow.addBrowserView(this.view);
-    }
-
-    updateDownloads = (event: IpcMainEvent, downloads: DownloadedItems) => {
-        log.debug('updateDownloads', {downloads});
-
-        this.downloads = downloads;
-
-        this.updateDownloadsDropdown();
-    }
-
-    updateDownloadsDropdownMenuItem = (event: IpcMainEvent, item?: DownloadedItem) => {
-        log.debug('updateDownloadsDropdownMenuItem', {item});
-        this.item = item;
-        this.updateDownloadsDropdown();
-    }
-
-    updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
-        log.debug('updateConfig');
-
-        this.darkMode = config.darkMode;
-        this.updateDownloadsDropdown();
+        MainWindow.get()?.addBrowserView(this.view);
     }
 
     /**
@@ -104,30 +76,33 @@ export default class DownloadsDropdownView {
     updateWindowBounds = () => {
         log.debug('updateWindowBounds');
 
-        const mainWindow = MainWindow.get();
-        if (mainWindow) {
-            this.windowBounds = mainWindow.getContentBounds();
-            this.updateDownloadsDropdown();
-            this.repositionDownloadsDropdown();
-        }
+        this.windowBounds = MainWindow.getBounds();
+        this.updateDownloadsDropdown();
+        this.repositionDownloadsDropdown();
     }
 
-    updateDownloadsDropdown = () => {
+    private updateDownloadsDropdownMenuItem = (event: IpcMainEvent, item?: DownloadedItem) => {
+        log.debug('updateDownloadsDropdownMenuItem', {item});
+        this.item = item;
+        this.updateDownloadsDropdown();
+    }
+
+    private updateDownloadsDropdown = () => {
         log.debug('updateDownloadsDropdown');
 
-        this.view.webContents.send(
+        this.view?.webContents.send(
             UPDATE_DOWNLOADS_DROPDOWN,
-            this.downloads,
-            this.darkMode,
-            this.windowBounds,
+            downloadsManager.getDownloads(),
+            Config.darkMode,
+            MainWindow.getBounds(),
             this.item,
         );
     }
 
-    handleOpen = () => {
+    private handleOpen = () => {
         log.debug('handleOpen', {bounds: this.bounds});
 
-        if (!this.bounds) {
+        if (!(this.bounds && this.view)) {
             return;
         }
 
@@ -138,36 +113,36 @@ export default class DownloadsDropdownView {
         WindowManager.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
     }
 
-    handleClose = () => {
+    private handleClose = () => {
         log.debug('handleClose');
 
-        this.view.setBounds(this.getBounds(0, 0));
+        this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
         downloadsManager.onClose();
         WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
     }
 
-    clearDownloads = () => {
+    private clearDownloads = () => {
         downloadsManager.clearDownloadsDropDown();
         this.handleClose();
     }
 
-    openFile = (e: IpcMainEvent, item: DownloadedItem) => {
+    private openFile = (e: IpcMainEvent, item: DownloadedItem) => {
         log.debug('openFile', {item});
 
         downloadsManager.openFile(item);
     }
 
-    getBounds = (width: number, height: number) => {
+    private getBounds = (windowWidth: number, width: number, height: number) => {
         // Must always use integers
         return {
-            x: this.getX(this.windowBounds.width),
+            x: this.getX(windowWidth),
             y: this.getY(),
             width: Math.round(width),
             height: Math.round(height),
         };
     }
 
-    getX = (windowWidth: number) => {
+    private getX = (windowWidth: number) => {
         const result = windowWidth - DOWNLOADS_DROPDOWN_FULL_WIDTH;
         if (result <= DOWNLOADS_DROPDOWN_WIDTH) {
             return 0;
@@ -175,11 +150,11 @@ export default class DownloadsDropdownView {
         return Math.round(result);
     }
 
-    getY = () => {
+    private getY = () => {
         return Math.round(TAB_BAR_HEIGHT);
     }
 
-    repositionDownloadsDropdown = () => {
+    private repositionDownloadsDropdown = () => {
         if (!(this.bounds && this.windowBounds)) {
             return;
         }
@@ -189,28 +164,27 @@ export default class DownloadsDropdownView {
             y: this.getY(),
         };
         if (downloadsManager.getIsOpen()) {
-            this.view.setBounds(this.bounds);
+            this.view?.setBounds(this.bounds);
         }
     }
 
-    handleReceivedDownloadsDropdownSize = (event: IpcMainEvent, width: number, height: number) => {
+    private handleReceivedDownloadsDropdownSize = (event: IpcMainEvent, width: number, height: number) => {
         log.silly('handleReceivedDownloadsDropdownSize', {width, height});
 
-        this.bounds = this.getBounds(width, height);
+        if (!this.windowBounds) {
+            return;
+        }
+
+        this.bounds = this.getBounds(this.windowBounds.width, width, height);
         if (downloadsManager.getIsOpen()) {
-            this.view.setBounds(this.bounds);
+            this.view?.setBounds(this.bounds);
         }
     }
 
-    destroy = () => {
-        // workaround to eliminate zombie processes
-        // https://github.com/mattermost/desktop/pull/1519
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        this.view.webContents.destroy();
-    }
-
-    getDownloadImageThumbnailLocation = (event: IpcMainInvokeEvent, location: string) => {
+    private getDownloadImageThumbnailLocation = (event: IpcMainInvokeEvent, location: string) => {
         return location;
     }
 }
+
+const downloadsDropdownView = new DownloadsDropdownView();
+export default downloadsDropdownView;

@@ -9,7 +9,7 @@ import {DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT, DOWN
 
 import MainWindow from 'main/windows/mainWindow';
 
-import DownloadsDropdownMenuView from './downloadsDropdownMenuView';
+import {DownloadsDropdownMenuView} from './downloadsDropdownMenuView';
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
@@ -76,12 +76,13 @@ describe('main/views/DownloadsDropdownMenuView', () => {
     describe('getBounds', () => {
         it('should be placed top-left inside the downloads dropdown if coordinates not used', () => {
             const downloadsDropdownMenuView = new DownloadsDropdownMenuView();
-            expect(downloadsDropdownMenuView.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT)).toStrictEqual({x: 800 - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT});
+            expect(downloadsDropdownMenuView.getBounds(800, DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT)).toStrictEqual({x: 800 - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT});
         });
     });
 
     it('should change the view bounds based on open/closed state', () => {
         const downloadsDropdownMenuView = new DownloadsDropdownMenuView();
+        downloadsDropdownMenuView.init();
         downloadsDropdownMenuView.bounds = {width: 400, height: 300};
         downloadsDropdownMenuView.handleOpen();
         expect(downloadsDropdownMenuView.view.setBounds).toBeCalledWith(downloadsDropdownMenuView.bounds);
