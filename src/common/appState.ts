@@ -3,7 +3,7 @@
 
 import {EventEmitter} from 'events';
 
-import {UPDATE_APPSTATE, UPDATE_APPSTATE_TOTALS, UPDATE_APPSTATE_FOR_VIEWID} from 'common/communication';
+import {UPDATE_APPSTATE, UPDATE_APPSTATE_TOTALS, UPDATE_APPSTATE_FOR_VIEW_ID} from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
 
@@ -67,7 +67,7 @@ export class AppState extends EventEmitter {
     };
 
     private emitStatusForView = (viewId: string) => {
-        this.emit(UPDATE_APPSTATE_FOR_VIEWID,
+        this.emit(UPDATE_APPSTATE_FOR_VIEW_ID,
             viewId,
             this.expired.get(viewId) || false,
             this.mentions.get(viewId) || 0,

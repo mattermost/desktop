@@ -12,7 +12,7 @@ import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, glob
 import {SavedWindowState} from 'types/mainWindow';
 
 import AppState from 'common/appState';
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU, SERVERS_UPDATE, UPDATE_APPSTATE_FOR_VIEWID, UPDATE_MENTIONS} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU, SERVERS_UPDATE, UPDATE_APPSTATE_FOR_VIEW_ID, UPDATE_MENTIONS} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -44,7 +44,7 @@ export class MainWindow {
 
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
 
-        AppState.on(UPDATE_APPSTATE_FOR_VIEWID, this.handleUpdateAppStateForViewId);
+        AppState.on(UPDATE_APPSTATE_FOR_VIEW_ID, this.handleUpdateAppStateForViewId);
     }
 
     init = () => {
