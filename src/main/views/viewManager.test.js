@@ -77,6 +77,7 @@ jest.mock('common/servers/serverManager', () => ({
     hasServers: jest.fn(),
     getLastActiveServer: jest.fn(),
     getLastActiveTabForServer: jest.fn(),
+    updateLastActive: jest.fn(),
     lookupTabByURL: jest.fn(),
     getRemoteInfo: jest.fn(),
     on: jest.fn(),

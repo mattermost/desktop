@@ -6,7 +6,6 @@ export const SWITCH_TAB = 'switch-tab';
 export const CLOSE_TAB = 'close-tab';
 export const OPEN_TAB = 'open-tab';
 export const SET_ACTIVE_VIEW = 'set-active-view';
-export const UPDATE_LAST_ACTIVE = 'update-last-active';
 export const FOCUS_BROWSERVIEW = 'focus-browserview';
 export const HISTORY = 'history';
 

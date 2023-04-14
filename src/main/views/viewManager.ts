@@ -13,7 +13,6 @@ import {
     SET_ACTIVE_VIEW,
     OPEN_TAB,
     BROWSER_HISTORY_PUSH,
-    UPDATE_LAST_ACTIVE,
     UPDATE_URL_VIEW_WIDTH,
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
@@ -122,12 +121,7 @@ export class ViewManager {
             }
             hidePrevious?.();
             MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.id, newView.tab.id);
-            ipcMain.emit(SET_ACTIVE_VIEW, true, newView.tab.server.id, newView.tab.id);
-            if (newView.isReady()) {
-                ipcMain.emit(UPDATE_LAST_ACTIVE, true, newView.tab.id);
-            } else {
-                this.getViewLogger(tabId).warn(`couldn't show ${tabId}, not ready`);
-            }
+            ServerManager.updateLastActive(newView.tab.id);
         } else {
             this.getViewLogger(tabId).warn(`Couldn't find a view with name: ${tabId}`);
         }

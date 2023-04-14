@@ -20,7 +20,6 @@ import {
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
-    UPDATE_LAST_ACTIVE,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
     START_UPGRADE,
@@ -96,7 +95,6 @@ import {
     handleSelectDownload,
     handleSwitchServer,
     handleSwitchTab,
-    handleUpdateLastActive,
     handlePingDomain,
     handleGetOrderedServers,
     handleGetOrderedTabsForServer,
@@ -264,7 +262,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);
-    ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
 
     if (process.platform !== 'darwin') {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);

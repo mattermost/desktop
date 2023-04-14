@@ -13,6 +13,7 @@ import {getAdjustedWindowBoundaries} from 'main/utils';
 
 import ViewManager from '../views/viewManager';
 import LoadingScreen from '../views/loadingScreen';
+import TeamDropdownView from '../views/teamDropdownView';
 
 import {WindowManager} from './windowManager';
 import MainWindow from './mainWindow';
@@ -72,7 +73,9 @@ jest.mock('../views/loadingScreen', () => ({
     isHidden: jest.fn(),
     setBounds: jest.fn(),
 }));
-jest.mock('../views/teamDropdownView', () => jest.fn());
+jest.mock('../views/teamDropdownView', () => ({
+    updateWindowBounds: jest.fn(),
+}));
 jest.mock('../views/downloadsDropdownView', () => jest.fn());
 jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
 jest.mock('./settingsWindow', () => ({
@@ -199,7 +202,7 @@ describe('main/windows/windowManager', () => {
         it('should update loading screen and team dropdown bounds', () => {
             windowManager.handleResizeMainWindow();
             expect(LoadingScreen.setBounds).toHaveBeenCalled();
-            expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
+            expect(TeamDropdownView.updateWindowBounds).toHaveBeenCalled();
         });
 
         it('should use getSize when the platform is linux', () => {
@@ -237,9 +240,6 @@ describe('main/windows/windowManager', () => {
             getContentBounds: () => ({width: 1000, height: 900}),
             getSize: () => [1000, 900],
         };
-        windowManager.teamDropdown = {
-            updateWindowBounds: jest.fn(),
-        };
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(mainWindow);
@@ -257,7 +257,7 @@ describe('main/windows/windowManager', () => {
             const event = {preventDefault: jest.fn()};
             windowManager.handleWillResizeMainWindow(event, {width: 800, height: 600});
             expect(LoadingScreen.setBounds).toHaveBeenCalled();
-            expect(windowManager.teamDropdown.updateWindowBounds).toHaveBeenCalled();
+            expect(TeamDropdownView.updateWindowBounds).toHaveBeenCalled();
         });
 
         it('should not resize if the app is already resizing', () => {

@@ -7,7 +7,7 @@ import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHA
 
 import MainWindow from 'main/windows/mainWindow';
 
-import TeamDropdownView from './teamDropdownView';
+import {TeamDropdownView} from './teamDropdownView';
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
@@ -61,6 +61,12 @@ describe('main/views/teamDropdownView', () => {
 
     it('should change the view bounds based on open/closed state', () => {
         const teamDropdownView = new TeamDropdownView();
+        teamDropdownView.view = {
+            setBounds: jest.fn(),
+            webContents: {
+                focus: jest.fn(),
+            },
+        };
         teamDropdownView.bounds = {width: 400, height: 300};
         teamDropdownView.handleOpen();
         expect(teamDropdownView.view.setBounds).toBeCalledWith(teamDropdownView.bounds);
