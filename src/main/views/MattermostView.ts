@@ -8,6 +8,7 @@ import {EventEmitter} from 'events';
 
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
+import AppState from 'common/appState';
 import {
     LOAD_RETRY,
     LOAD_SUCCESS,
@@ -29,7 +30,6 @@ import WindowManager from 'main/windows/windowManager';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
-import * as appState from '../appState';
 
 import WebContentsEventManager from './webContentEvents';
 
@@ -237,7 +237,7 @@ export class MattermostView extends EventEmitter {
 
     destroy = () => {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
-        appState.updateMentions(this.id, 0, false);
+        AppState.clear(this.id);
         MainWindow.get()?.removeBrowserView(this.view);
 
         // workaround to eliminate zombie processes
@@ -353,7 +353,7 @@ export class MattermostView extends EventEmitter {
         const results = resultsIterator.next(); // we are only interested in the first set
         const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
 
-        appState.updateMentions(this.id, mentions);
+        AppState.updateMentions(this.id, mentions);
     }
 
     // if favicon is null, it will affect appState, but won't be memoized

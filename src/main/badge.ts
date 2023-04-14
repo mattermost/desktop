@@ -4,12 +4,12 @@
 
 import {BrowserWindow, app, nativeImage} from 'electron';
 
-import {UPDATE_BADGE} from 'common/communication';
+import AppState from 'common/appState';
+import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
 
 import {localizeMessage} from 'main/i18nManager';
 
-import * as AppState from './appState';
 import MainWindow from './windows/mainWindow';
 
 const log = new Logger('Badge');
@@ -128,9 +128,9 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
 
 export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
     showUnreadBadgeSetting = showUnreadBadge;
-    AppState.updateBadge();
+    AppState.emitStatus();
 }
 
 export function setupBadge() {
-    AppState.on(UPDATE_BADGE, showBadge);
+    AppState.on(UPDATE_APPSTATE_TOTALS, showBadge);
 }

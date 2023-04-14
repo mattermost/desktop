@@ -11,7 +11,8 @@ import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, glob
 
 import {SavedWindowState} from 'types/mainWindow';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU, SERVERS_UPDATE} from 'common/communication';
+import AppState from 'common/appState';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU, SERVERS_UPDATE, UPDATE_APPSTATE_FOR_VIEW_ID, UPDATE_MENTIONS} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -42,6 +43,8 @@ export class MainWindow {
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
 
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
+
+        AppState.on(UPDATE_APPSTATE_FOR_VIEW_ID, this.handleUpdateAppStateForViewId);
     }
 
     init = () => {
@@ -330,6 +333,14 @@ export class MainWindow {
      */
     private handleUpdateConfig = () => {
         this.win?.webContents.send(SERVERS_UPDATE);
+    }
+
+    /**
+     * App State update handler
+     */
+
+    private handleUpdateAppStateForViewId = (viewId: string, isExpired: boolean, newMentions: number, newUnreads: boolean) => {
+        this.win?.webContents.send(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
     }
 }
 

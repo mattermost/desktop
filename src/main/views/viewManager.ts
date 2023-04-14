@@ -3,6 +3,7 @@
 
 import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
+import AppState from 'common/appState';
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
     UPDATE_TARGET_URL,
@@ -22,6 +23,7 @@ import {
     UNREAD_RESULT,
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
+    SESSION_EXPIRED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -34,7 +36,6 @@ import {TabView, TAB_MESSAGING} from 'common/tabs/TabView';
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import * as appState from '../appState';
 import {getLocalURLString, getLocalPreload} from '../utils';
 
 import {MattermostView} from './MattermostView';
@@ -65,6 +66,7 @@ export class ViewManager {
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
+        ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
 
         ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
     }
@@ -515,7 +517,13 @@ export class ViewManager {
     private handleFaviconIsUnread = (e: Event, favicon: string, viewId: string, result: boolean) => {
         log.silly('handleFaviconIsUnread', {favicon, viewId, result});
 
-        appState.updateUnreads(viewId, result);
+        AppState.updateUnreads(viewId, result);
+    }
+
+    private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean, viewId: string) => {
+        ServerManager.getViewLog(viewId, 'ViewManager').debug('handleSessionExpired', isExpired);
+
+        AppState.updateExpired(viewId, isExpired);
     }
 
     /**

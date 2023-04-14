@@ -5,12 +5,13 @@ import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
 import {MattermostTeam} from 'types/config';
 
+import AppState from 'common/appState';
 import {
     CLOSE_TEAMS_DROPDOWN,
     EMIT_CONFIGURATION,
     OPEN_TEAMS_DROPDOWN,
     UPDATE_TEAMS_DROPDOWN,
-    UPDATE_DROPDOWN_MENTIONS,
+    UPDATE_APPSTATE,
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
     SERVERS_UPDATE,
@@ -22,7 +23,6 @@ import ServerManager from 'common/servers/serverManager';
 
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
-import * as AppState from '../appState';
 import WindowManager from '../windows/windowManager';
 import MainWindow from '../windows/mainWindow';
 
@@ -58,7 +58,7 @@ export class TeamDropdownView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateDropdown);
         ipcMain.on(REQUEST_TEAMS_DROPDOWN_INFO, this.updateDropdown);
 
-        AppState.on(UPDATE_DROPDOWN_MENTIONS, this.updateMentions);
+        AppState.on(UPDATE_APPSTATE, this.updateMentions);
         ServerManager.on(SERVERS_UPDATE, this.updateServers);
     }
 

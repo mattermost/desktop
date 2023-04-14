@@ -5,13 +5,12 @@ import path from 'path';
 
 import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
-import {UPDATE_TRAY} from 'common/communication';
+import AppState from 'common/appState';
+import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
-
-import * as AppState from '../appState';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 
@@ -102,8 +101,8 @@ export function setupTray(iconTheme: string) {
         WindowManager.restoreMain();
     });
 
-    AppState.on(UPDATE_TRAY, (anyExpired, anyMentions, anyUnreads) => {
-        if (anyMentions) {
+    AppState.on(UPDATE_APPSTATE_TOTALS, (anyExpired: boolean, anyMentions: number, anyUnreads: boolean) => {
+        if (anyMentions > 0) {
             setTray('mention', localizeMessage('main.tray.tray.mention', 'You have been mentioned'));
         } else if (anyUnreads) {
             setTray('unread', localizeMessage('main.tray.tray.unread', 'You have unread channels'));
