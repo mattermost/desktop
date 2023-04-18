@@ -13,9 +13,8 @@ import {PLAY_SOUND} from 'common/communication';
 import Config from 'common/config';
 
 import {localizeMessage} from 'main/i18nManager';
-
-import MainWindow from '../windows/mainWindow';
-import WindowManager from '../windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
+import ViewManager from 'main/views/viewManager';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 
@@ -83,14 +82,11 @@ jest.mock('../views/viewManager', () => ({
             },
         },
     }),
+    showById: jest.fn(),
 }));
 jest.mock('../windows/mainWindow', () => ({
     get: jest.fn(),
     sendToRenderer: jest.fn(),
-}));
-jest.mock('../windows/windowManager', () => ({
-    flashFrame: jest.fn(),
-    switchTab: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -248,7 +244,7 @@ describe('main/notifications', () => {
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
-            expect(WindowManager.switchTab).toHaveBeenCalledWith('server_id');
+            expect(ViewManager.showById).toHaveBeenCalledWith('server_id');
         });
 
         it('linux/windows - should not flash frame when config item is not set', () => {

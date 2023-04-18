@@ -83,17 +83,11 @@ import {
 import {
     handleMainWindowIsShown,
     handleAppVersion,
-    handleCloseTab,
     handleMentionNotification,
     handleOpenAppMenu,
-    handleOpenTab,
     handleQuit,
     handleSelectDownload,
-    handleSwitchTab,
     handlePingDomain,
-    handleGetOrderedServers,
-    handleGetOrderedTabsForServer,
-    handleGetLastActive,
 } from './intercom';
 import {
     handleEditServerModal,
@@ -101,6 +95,9 @@ import {
     handleRemoveServerModal,
     switchServer,
 } from './servers';
+import {
+    handleCloseTab, handleGetLastActive, handleGetOrderedTabsForServer, handleOpenTab,
+} from './tabs';
 import {
     clearAppCache,
     getDeeplinkingURL,
@@ -269,7 +266,7 @@ function initializeInterCommunicationEventListeners() {
     }
 
     ipcMain.on(SWITCH_SERVER, (event, serverId) => switchServer(serverId));
-    ipcMain.on(SWITCH_TAB, handleSwitchTab);
+    ipcMain.on(SWITCH_TAB, (event, viewId) => ViewManager.showById(viewId));
     ipcMain.on(CLOSE_TAB, handleCloseTab);
     ipcMain.on(OPEN_TAB, handleOpenTab);
 
@@ -290,7 +287,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(UPDATE_SERVER_ORDER, (event, serverOrder) => ServerManager.updateServerOrder(serverOrder));
     ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, tabOrder) => ServerManager.updateTabOrder(serverId, tabOrder));
     ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
-    ipcMain.handle(GET_ORDERED_SERVERS, handleGetOrderedServers);
+    ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toMattermostTeam()));
     ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedTabsForServer);
 }
 

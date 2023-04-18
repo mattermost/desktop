@@ -13,7 +13,6 @@ import {Logger} from 'common/log';
 
 import ViewManager from '../views/viewManager';
 import MainWindow from '../windows/mainWindow';
-import WindowManager from '../windows/windowManager';
 
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
@@ -75,7 +74,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     mention.on('click', () => {
         log.debug('notification click', serverName, mention);
         if (serverName) {
-            WindowManager.switchTab(view.id);
+            ViewManager.showById(view.id);
             webcontents.send('notification-clicked', {channel, teamId, url});
         }
     });

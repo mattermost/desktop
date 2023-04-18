@@ -14,11 +14,10 @@ import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import ServerManager from 'common/servers/serverManager';
 import ModalManager from 'main/views/modalManager';
-import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {handleAppBeforeQuit} from './app';
-import {handleNewServerModal} from './servers';
+import {handleNewServerModal, switchServer} from './servers';
 
 const log = new Logger('App.Intercom');
 
@@ -34,44 +33,6 @@ export function handleQuit(e: IpcMainEvent, reason: string, stack: string) {
     log.info(`Stacktrace:\n${stack}`);
     handleAppBeforeQuit();
     app.quit();
-}
-
-export function handleSwitchTab(event: IpcMainEvent, tabId: string) {
-    log.silly('handleSwitchTab', {tabId});
-    WindowManager.switchTab(tabId);
-}
-
-export function handleCloseTab(event: IpcMainEvent, tabId: string) {
-    log.debug('handleCloseTab', {tabId});
-
-    const tab = ServerManager.getTab(tabId);
-    if (!tab) {
-        return;
-    }
-    ServerManager.setTabIsOpen(tabId, false);
-    const nextTab = ServerManager.getLastActiveTabForServer(tab.server.id);
-    WindowManager.switchTab(nextTab.id);
-}
-
-export function handleOpenTab(event: IpcMainEvent, tabId: string) {
-    log.debug('handleOpenTab', {tabId});
-
-    ServerManager.setTabIsOpen(tabId, true);
-    WindowManager.switchTab(tabId);
-}
-
-export function handleGetOrderedServers() {
-    return ServerManager.getOrderedServers().map((srv) => srv.toMattermostTeam());
-}
-
-export function handleGetOrderedTabsForServer(event: IpcMainInvokeEvent, serverId: string) {
-    return ServerManager.getOrderedTabsForServer(serverId).map((tab) => tab.toMattermostTab());
-}
-
-export function handleGetLastActive() {
-    const server = ServerManager.getCurrentServer();
-    const tab = ServerManager.getLastActiveTabForServer(server.id);
-    return {server: server.id, tab: tab.id};
 }
 
 function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerModal: boolean, mainWindowIsVisible: boolean) {
@@ -137,7 +98,7 @@ export function handleWelcomeScreenModal() {
     if (modalPromise) {
         modalPromise.then((data) => {
             const newTeam = ServerManager.addServer(data);
-            WindowManager.switchServer(newTeam.id, true);
+            switchServer(newTeam.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {

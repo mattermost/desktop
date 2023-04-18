@@ -5,20 +5,14 @@ import {getLocalURLString, getLocalPreload} from 'main/utils';
 import ServerManager from 'common/servers/serverManager';
 import MainWindow from 'main/windows/mainWindow';
 import ModalManager from 'main/views/modalManager';
-import WindowManager from 'main/windows/windowManager';
 
 import {
-    handleOpenTab,
-    handleCloseTab,
     handleWelcomeScreenModal,
     handleMainWindowIsShown,
 } from './intercom';
 
 jest.mock('common/config', () => ({
     setServers: jest.fn(),
-}));
-jest.mock('common/tabs/TabView', () => ({
-    getDefaultConfigTeamFromTeam: jest.fn(),
 }));
 jest.mock('main/notifications', () => ({}));
 jest.mock('common/servers/serverManager', () => ({
@@ -40,10 +34,6 @@ jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/views/modalManager', () => ({
     addModal: jest.fn(),
 }));
-jest.mock('main/windows/windowManager', () => ({
-    switchServer: jest.fn(),
-    switchTab: jest.fn(),
-}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
 }));
@@ -51,23 +41,6 @@ jest.mock('main/windows/mainWindow', () => ({
 jest.mock('./app', () => ({}));
 
 describe('main/app/intercom', () => {
-    describe('handleCloseTab', () => {
-        it('should close the specified tab and switch to the next open tab', () => {
-            ServerManager.getTab.mockReturnValue({server: {id: 'server-1'}});
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-2'});
-            handleCloseTab(null, 'tab-3');
-            expect(ServerManager.setTabIsOpen).toBeCalledWith('tab-3', false);
-            expect(WindowManager.switchTab).toBeCalledWith('tab-2');
-        });
-    });
-
-    describe('handleOpenTab', () => {
-        it('should open the specified tab', () => {
-            handleOpenTab(null, 'tab-1');
-            expect(WindowManager.switchTab).toBeCalledWith('tab-1');
-        });
-    });
-
     describe('handleWelcomeScreenModal', () => {
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
