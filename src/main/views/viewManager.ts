@@ -76,6 +76,8 @@ export class ViewManager {
     }
 
     private init = () => {
+        MainWindow.onBrowserWindow?.('focus', this.focusCurrentView);
+
         LoadingScreen.show();
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
         this.showInitial();

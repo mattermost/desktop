@@ -7,12 +7,14 @@ import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 
 import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
+import {Logger} from 'common/log';
 
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
-import WindowManager from 'main/windows/windowManager';
+import SettingsWindow from 'main/windows/settingsWindow';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
+const log = new Logger('Tray');
 
 let trayImages: Record<string, Electron.NativeImage>;
 let trayIcon: Tray;
@@ -90,7 +92,7 @@ export function setupTray(iconTheme: string) {
             mainWindow.blur(); // To move focus to the next top-level window in Windows
             mainWindow.hide();
         } else {
-            WindowManager.restoreMain();
+            restoreMain();
         }
     });
 
@@ -98,7 +100,7 @@ export function setupTray(iconTheme: string) {
         trayIcon.popUpContextMenu();
     });
     trayIcon.on('balloon-click', () => {
-        WindowManager.restoreMain();
+        restoreMain();
     });
 
     AppState.on(UPDATE_APPSTATE_TOTALS, (anyExpired: boolean, anyMentions: number, anyUnreads: boolean) => {
@@ -113,6 +115,32 @@ export function setupTray(iconTheme: string) {
         }
     });
 }
+
+const restoreMain = () => {
+    log.info('restoreMain');
+    MainWindow.show();
+    const mainWindow = MainWindow.get();
+    if (!mainWindow) {
+        throw new Error('Main window does not exist');
+    }
+    if (!mainWindow.isVisible() || mainWindow.isMinimized()) {
+        if (mainWindow.isMinimized()) {
+            mainWindow.restore();
+        } else {
+            mainWindow.show();
+        }
+        const settingsWindow = SettingsWindow.get();
+        if (settingsWindow) {
+            settingsWindow.focus();
+        } else {
+            mainWindow.focus();
+        }
+    } else if (SettingsWindow.get()) {
+        SettingsWindow.get()?.focus();
+    } else {
+        mainWindow.focus();
+    }
+};
 
 function setTray(status: string, message: string) {
     if (trayIcon.isDestroyed()) {

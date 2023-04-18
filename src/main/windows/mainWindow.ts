@@ -195,6 +195,8 @@ export class MainWindow extends EventEmitter {
         }
     }
 
+    onBrowserWindow = this.win?.on;
+
     sendToRenderer = (channel: string, ...args: unknown[]) => {
         this.sendToRendererWithRetry(3, channel, ...args);
     }

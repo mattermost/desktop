@@ -25,9 +25,6 @@ jest.mock('common/appState', () => ({
 jest.mock('./windows/mainWindow', () => ({
     get: jest.fn(),
 }));
-jest.mock('./windows/windowManager', () => ({
-    setOverlayIcon: jest.fn(),
-}));
 
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn().mockReturnValue(''),

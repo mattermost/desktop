@@ -36,6 +36,12 @@ import {
     GET_ORDERED_SERVERS,
     GET_ORDERED_TABS_FOR_SERVER,
     SERVERS_URL_MODIFIED,
+    GET_DARK_MODE,
+    WINDOW_CLOSE,
+    WINDOW_MAXIMIZE,
+    WINDOW_MINIMIZE,
+    WINDOW_RESTORE,
+    DOUBLE_CLICK_ON_WINDOW,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -109,6 +115,14 @@ import {
     migrateMacAppStore,
     updateServerInfos,
 } from './utils';
+import {
+    handleClose,
+    handleDoubleClick,
+    handleGetDarkMode,
+    handleMaximize,
+    handleMinimize,
+    handleRestore,
+} from './windows';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
 
@@ -289,6 +303,13 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
     ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toMattermostTeam()));
     ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedTabsForServer);
+
+    ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
+    ipcMain.on(WINDOW_CLOSE, handleClose);
+    ipcMain.on(WINDOW_MAXIMIZE, handleMaximize);
+    ipcMain.on(WINDOW_MINIMIZE, handleMinimize);
+    ipcMain.on(WINDOW_RESTORE, handleRestore);
+    ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
 }
 
 async function initializeAfterAppReady() {
