@@ -440,7 +440,7 @@ async function initializeAfterAppReady() {
         }
 
         const requestingURL = webContents.getURL();
-        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.tab.server.url;
 
         if (!serverURL) {
             callback(false);

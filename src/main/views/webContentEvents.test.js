@@ -8,8 +8,9 @@ import {shell, BrowserWindow} from 'electron';
 import urlUtils from 'common/utils/url';
 
 import ContextMenu from 'main/contextMenu';
+import ViewManager from 'main/views/viewManager';
+import WindowManager from 'main/windows/windowManager';
 
-import * as WindowManager from '../windows/windowManager';
 import allowProtocolDialog from '../allowProtocolDialog';
 
 import {WebContentsEventManager} from './webContentEvents';
@@ -231,7 +232,7 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should open in the browser when there is no server matching', () => {
-            WindowManager.getServerURLFromWebContentsId.mockReturnValue(undefined);
+            ViewManager.getViewByWebContentsId.mockReturnValue(undefined);
             expect(newWindow({url: 'http://server-2.com/subpath'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).toBeCalledWith('http://server-2.com/subpath');
         });

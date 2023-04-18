@@ -63,7 +63,11 @@ export class WebContentsEventManager {
             return this.popupWindow.serverURL;
         }
 
-        return WindowManager.getServerURLFromWebContentsId(webContentsId);
+        if (CallsWidgetWindow.isCallsWidget(webContentsId)) {
+            return CallsWidgetWindow.getURL();
+        }
+
+        return ViewManager.getViewByWebContentsId(webContentsId)?.tab.server.url;
     }
 
     private generateWillNavigate = (webContentsId: number) => {

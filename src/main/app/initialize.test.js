@@ -9,6 +9,7 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
 import parseArgs from 'main/ParseArgs';
+import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 import WindowManager from 'main/windows/windowManager';
 
@@ -173,7 +174,9 @@ jest.mock('main/windows/windowManager', () => ({
     getServerNameByWebContentsId: jest.fn(),
     getServerURLFromWebContentsId: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({}));
+jest.mock('main/views/viewManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+}));
 jest.mock('main/windows/settingsWindow', () => ({
     show: jest.fn(),
 }));
@@ -276,7 +279,13 @@ describe('main/app/initialize', () => {
         });
 
         it('should allow permission requests for supported types from trusted URLs', async () => {
-            WindowManager.getServerURLFromWebContentsId.mockReturnValue(new URL('http://server-1.com'));
+            ViewManager.getViewByWebContentsId.mockReturnValue({
+                tab: {
+                    server: {
+                        url: new URL('http://server-1.com'),
+                    },
+                },
+            });
             let callback = jest.fn();
             session.defaultSession.setPermissionRequestHandler.mockImplementation((cb) => {
                 cb({id: 1, getURL: () => 'http://server-1.com'}, 'bad-permission', callback);
