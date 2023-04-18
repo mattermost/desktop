@@ -9,7 +9,7 @@ import {DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_HEIGHT
 
 import MainWindow from 'main/windows/mainWindow';
 
-import DownloadsDropdownView from './downloadsDropdownView';
+import {DownloadsDropdownView} from './downloadsDropdownView';
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
@@ -81,20 +81,19 @@ describe('main/views/DownloadsDropdownView', () => {
     });
     describe('getBounds', () => {
         it('should be placed far right when window is large enough', () => {
-            MainWindow.getBounds.mockReturnValue({width: 800, height: 600, x: 0, y: 0});
             const downloadsDropdownView = new DownloadsDropdownView();
-            expect(downloadsDropdownView.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT)).toStrictEqual({x: 800 - DOWNLOADS_DROPDOWN_FULL_WIDTH, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_HEIGHT});
+            expect(downloadsDropdownView.getBounds(800, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT)).toStrictEqual({x: 800 - DOWNLOADS_DROPDOWN_FULL_WIDTH, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_HEIGHT});
         });
         it('should be placed left if window is very small', () => {
-            MainWindow.getBounds.mockReturnValue({width: 500, height: 400, x: 0, y: 0});
             const downloadsDropdownView = new DownloadsDropdownView();
-            expect(downloadsDropdownView.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT)).toStrictEqual({x: 0, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_HEIGHT});
+            expect(downloadsDropdownView.getBounds(500, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT)).toStrictEqual({x: 0, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_HEIGHT});
         });
     });
 
     it('should change the view bounds based on open/closed state', () => {
         MainWindow.getBounds.mockReturnValue({width: 800, height: 600, x: 0, y: 0});
         const downloadsDropdownView = new DownloadsDropdownView();
+        downloadsDropdownView.init();
         downloadsDropdownView.bounds = {width: 400, height: 300};
         downloadsDropdownView.handleOpen();
         expect(downloadsDropdownView.view.setBounds).toBeCalledWith(downloadsDropdownView.bounds);

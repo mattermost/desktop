@@ -44,9 +44,6 @@ import SettingsWindow from './settingsWindow';
 const log = new Logger('WindowManager');
 
 export class WindowManager {
-    private downloadsDropdown?: DownloadsDropdownView;
-    private downloadsDropdownMenu?: DownloadsDropdownMenuView;
-
     private isResizing: boolean;
 
     constructor() {
@@ -98,11 +95,10 @@ export class WindowManager {
         mainWindow.on('enter-full-screen', () => this.sendToRenderer('enter-full-screen'));
         mainWindow.on('leave-full-screen', () => this.sendToRenderer('leave-full-screen'));
 
-        this.downloadsDropdown = new DownloadsDropdownView();
-        this.downloadsDropdownMenu = new DownloadsDropdownMenuView();
-
         this.initializeViewManager();
         TeamDropdownView.init();
+        DownloadsDropdownView.init();
+        DownloadsDropdownMenuView.init();
     }
 
     // max retries allows the message to get to the renderer even if it is sent while the app is starting up.
@@ -240,14 +236,14 @@ export class WindowManager {
      *****************/
 
     private handleMaximizeMainWindow = () => {
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
+        DownloadsDropdownView.updateWindowBounds();
+        DownloadsDropdownMenuView.updateWindowBounds();
         this.sendToRenderer(MAXIMIZE_CHANGE, true);
     }
 
     private handleUnmaximizeMainWindow = () => {
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
+        DownloadsDropdownView.updateWindowBounds();
+        DownloadsDropdownMenuView.updateWindowBounds();
         this.sendToRenderer(MAXIMIZE_CHANGE, false);
     }
 
@@ -276,8 +272,8 @@ export class WindowManager {
         this.throttledWillResize(newBounds);
         LoadingScreen.setBounds();
         TeamDropdownView.updateWindowBounds();
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
+        DownloadsDropdownView.updateWindowBounds();
+        DownloadsDropdownMenuView.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, newBounds);
     }
 
@@ -288,8 +284,8 @@ export class WindowManager {
         this.throttledWillResize(bounds);
         ipcMain.emit(RESIZE_MODAL, null, bounds);
         TeamDropdownView.updateWindowBounds();
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
+        DownloadsDropdownView.updateWindowBounds();
+        DownloadsDropdownMenuView.updateWindowBounds();
         this.isResizing = false;
     }
 
@@ -318,8 +314,8 @@ export class WindowManager {
 
         LoadingScreen.setBounds();
         TeamDropdownView.updateWindowBounds();
-        this.downloadsDropdown?.updateWindowBounds();
-        this.downloadsDropdownMenu?.updateWindowBounds();
+        DownloadsDropdownView.updateWindowBounds();
+        DownloadsDropdownMenuView.updateWindowBounds();
         ipcMain.emit(RESIZE_MODAL, null, bounds);
     };
 

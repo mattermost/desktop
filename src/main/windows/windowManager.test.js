@@ -76,8 +76,12 @@ jest.mock('../views/loadingScreen', () => ({
 jest.mock('../views/teamDropdownView', () => ({
     updateWindowBounds: jest.fn(),
 }));
-jest.mock('../views/downloadsDropdownView', () => jest.fn());
-jest.mock('../views/downloadsDropdownMenuView', () => jest.fn());
+jest.mock('../views/downloadsDropdownView', () => ({
+    updateWindowBounds: jest.fn(),
+}));
+jest.mock('../views/downloadsDropdownMenuView', () => ({
+    updateWindowBounds: jest.fn(),
+}));
 jest.mock('./settingsWindow', () => ({
     show: jest.fn(),
     get: jest.fn(),
