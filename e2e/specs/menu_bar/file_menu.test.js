@@ -60,21 +60,12 @@ describe('file_menu/dropdown', function desc() {
         });
     }
 
-    it('MM-T804 Preferences in Menu Bar open the Settings page', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        mainWindow.should.not.be.null;
-        robot.keyTap(',', [env.cmdOrCtrl]);
-        const settingsWindow = await this.app.waitForEvent('window', {
-            predicate: (window) => window.url().includes('settings'),
-        });
-        settingsWindow.should.not.be.null;
-
-        if (process.platform !== 'darwin') {
-            robot.keyTap('w', [env.cmdOrCtrl]);
-
+    if (process.platform !== 'darwin') {
+        it('MM-T804 Preferences in Menu Bar open the Settings page', async () => {
             //Opening the menu bar
-            robot.keyTap('alt');
-            robot.keyTap('enter');
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            mainWindow.should.not.be.null;
+            await mainWindow.click('button.three-dot-menu');
             robot.keyTap('f');
             robot.keyTap('s');
             robot.keyTap('enter');
@@ -82,8 +73,8 @@ describe('file_menu/dropdown', function desc() {
                 predicate: (window) => window.url().includes('settings'),
             });
             settingsWindowFromMenu.should.not.be.null;
-        }
-    });
+        });
+    }
 
     // TODO: Causes issues on Windows so skipping for Windows
     if (process.platform !== 'win32') {

@@ -86,6 +86,7 @@ describe('Configure Server Modal', function desc() {
             url: 'http://example.org/',
             name: 'TestTeam',
             order: 0,
+            lastActiveTab: 0,
             tabs: [
                 {
                     name: 'TAB_MESSAGING',

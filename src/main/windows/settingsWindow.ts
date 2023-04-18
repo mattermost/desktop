@@ -7,6 +7,8 @@ import {SHOW_SETTINGS_WINDOW} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 
+import ViewManager from 'main/views/viewManager';
+
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
@@ -71,6 +73,8 @@ export class SettingsWindow {
 
         this.win.on('closed', () => {
             delete this.win;
+
+            ViewManager.focusCurrentView();
         });
     }
 }
