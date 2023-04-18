@@ -36,6 +36,7 @@ jest.mock('electron', () => ({
     BrowserWindow: jest.fn(),
     ipcMain: {
         handle: jest.fn(),
+        on: jest.fn(),
     },
     screen: {
         getDisplayMatching: jest.fn(),

@@ -12,6 +12,7 @@ import {
     DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER,
     EMIT_CONFIGURATION,
     MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
     OPEN_DOWNLOADS_DROPDOWN_MENU,
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
@@ -44,6 +45,7 @@ export class DownloadsDropdownMenuView {
         this.open = false;
 
         MainWindow.on(MAIN_WINDOW_CREATED, this.init);
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
         ipcMain.on(TOGGLE_DOWNLOADS_DROPDOWN_MENU, this.handleToggle);
@@ -80,10 +82,10 @@ export class DownloadsDropdownMenuView {
      * This is called every time the "window" is resized so that we can position
      * the downloads dropdown at the correct position
      */
-    updateWindowBounds = () => {
+    private updateWindowBounds = (newBounds: Electron.Rectangle) => {
         log.debug('updateWindowBounds');
 
-        this.windowBounds = MainWindow.getBounds();
+        this.windowBounds = newBounds;
         this.updateDownloadsDropdownMenu();
         this.repositionDownloadsDropdownMenu();
     }

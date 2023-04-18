@@ -15,7 +15,7 @@ import {
     EMIT_CONFIGURATION,
     DARK_MODE_CHANGE,
     GET_MODAL_UNCLOSEABLE,
-    RESIZE_MODAL,
+    MAIN_WINDOW_RESIZED,
 } from 'common/communication';
 import {Logger} from 'common/log';
 
@@ -40,7 +40,7 @@ export class ModalManager {
         ipcMain.handle(RETRIEVE_MODAL_INFO, this.handleInfoRequest);
         ipcMain.on(MODAL_RESULT, this.handleModalResult);
         ipcMain.on(MODAL_CANCEL, this.handleModalCancel);
-        ipcMain.on(RESIZE_MODAL, this.handleResizeModal);
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.handleResizeModal);
 
         ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
     }
@@ -131,7 +131,7 @@ export class ModalManager {
         return this.modalQueue.some((modal) => modal.isActive());
     }
 
-    handleResizeModal = (event: IpcMainEvent, bounds: Electron.Rectangle) => {
+    handleResizeModal = (bounds: Electron.Rectangle) => {
         log.debug('handleResizeModal', {bounds, modalQueueLength: this.modalQueue.length});
 
         if (this.modalQueue.length) {

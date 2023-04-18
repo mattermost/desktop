@@ -22,7 +22,10 @@ import {
     SERVERS_UPDATE,
     UPDATE_APPSTATE_FOR_VIEW_ID,
     UPDATE_MENTIONS,
+    MAXIMIZE_CHANGE,
     MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
+    VIEW_FINISHED_RESIZING,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -45,15 +48,18 @@ export class MainWindow extends EventEmitter {
 
     private savedWindowState: SavedWindowState;
     private ready: boolean;
+    private isResizing: boolean;
 
     constructor() {
         super();
 
         // Create the browser window.
         this.ready = false;
+        this.isResizing = false;
         this.savedWindowState = this.getSavedWindowState();
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
+        ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
 
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
 
@@ -121,6 +127,15 @@ export class MainWindow extends EventEmitter {
         this.win.on('focus', this.onFocus);
         this.win.on('blur', this.onBlur);
         this.win.on('unresponsive', this.onUnresponsive);
+        this.win.on('maximize', this.onMaximize);
+        this.win.on('unmaximize', this.onUnmaximize);
+        this.win.on('enter-full-screen', () => this.win?.webContents.send('enter-full-screen'));
+        this.win.on('leave-full-screen', () => this.win?.webContents.send('leave-full-screen'));
+        this.win.on('will-resize', this.onWillResize);
+        this.win.on('resized', this.onResized);
+        if (process.platform !== 'darwin') {
+            mainWindow.on('resize', this.onResize);
+        }
 
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
 
@@ -157,8 +172,20 @@ export class MainWindow extends EventEmitter {
         }
     }
 
-    getBounds = () => {
-        return this.win?.getContentBounds();
+    getBounds = (): Electron.Rectangle | undefined => {
+        if (!this.win) {
+            return undefined;
+        }
+
+        // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
+        // https://github.com/electron/electron/issues/28699
+        // https://github.com/electron/electron/issues/28106
+        if (process.platform === 'linux') {
+            const size = this.win.getSize();
+            return {...this.win.getContentBounds(), width: size[0], height: size[1]};
+        }
+
+        return this.win.getContentBounds();
     }
 
     focusThreeDotMenu = () => {
@@ -370,6 +397,64 @@ export class MainWindow extends EventEmitter {
                 app.relaunch();
             }
         });
+    }
+
+    private onMaximize = () => {
+        this.win?.webContents.send(MAXIMIZE_CHANGE, true);
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+    }
+
+    private onUnmaximize = () => {
+        this.win?.webContents.send(MAXIMIZE_CHANGE, false);
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+    }
+
+    /**
+     * Resizing code
+     */
+
+    private onWillResize = (event: Event, newBounds: Electron.Rectangle) => {
+        log.silly('onWillResize', newBounds);
+
+        /**
+         * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
+         * causing the "resize" event to not fire
+         */
+        const prevBounds = this.getBounds();
+        if (prevBounds?.height === newBounds.height && prevBounds?.width === newBounds.width) {
+            log.debug('prevented resize');
+            event.preventDefault();
+            return;
+        }
+
+        if (this.isResizing) {
+            log.debug('prevented resize');
+            event.preventDefault();
+            return;
+        }
+
+        this.isResizing = true;
+        this.emit(MAIN_WINDOW_RESIZED, newBounds);
+    }
+
+    private onResize = () => {
+        log.silly('onResize');
+
+        if (this.isResizing) {
+            return;
+        }
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+    }
+
+    private onResized = () => {
+        log.debug('onResized');
+
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        this.isResizing = false;
+    }
+
+    private handleViewFinishedResizing = () => {
+        this.isResizing = false;
     }
 
     /**

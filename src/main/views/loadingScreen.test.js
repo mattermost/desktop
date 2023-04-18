@@ -13,6 +13,7 @@ jest.mock('electron', () => ({
 
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
+    on: jest.fn(),
 }));
 
 describe('main/views/loadingScreen', () => {

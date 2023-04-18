@@ -16,6 +16,7 @@ import {
     RECEIVE_DROPDOWN_MENU_SIZE,
     SERVERS_UPDATE,
     MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -52,6 +53,8 @@ export class TeamDropdownView {
         this.expired = new Map();
 
         MainWindow.on(MAIN_WINDOW_CREATED, this.init);
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
+
         ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_TEAMS_DROPDOWN, this.handleClose);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
@@ -61,6 +64,11 @@ export class TeamDropdownView {
 
         AppState.on(UPDATE_APPSTATE, this.updateMentions);
         ServerManager.on(SERVERS_UPDATE, this.updateServers);
+    }
+
+    private updateWindowBounds = (newBounds: Electron.Rectangle) => {
+        this.windowBounds = newBounds;
+        this.updateDropdown();
     }
 
     private init = () => {
@@ -80,11 +88,6 @@ export class TeamDropdownView {
         this.windowBounds = MainWindow.getBounds();
         this.updateDropdown();
         MainWindow.get()?.addBrowserView(this.view);
-    }
-
-    updateWindowBounds = () => {
-        this.windowBounds = MainWindow.getBounds();
-        this.updateDropdown();
     }
 
     private updateDropdown = () => {
