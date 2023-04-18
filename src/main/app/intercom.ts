@@ -3,7 +3,7 @@
 
 import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 
-import {Team, MattermostTeam} from 'types/config';
+import {MattermostTeam} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
@@ -18,6 +18,7 @@ import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {handleAppBeforeQuit} from './app';
+import {handleNewServerModal} from './servers';
 
 const log = new Logger('App.Intercom');
 
@@ -33,11 +34,6 @@ export function handleQuit(e: IpcMainEvent, reason: string, stack: string) {
     log.info(`Stacktrace:\n${stack}`);
     handleAppBeforeQuit();
     app.quit();
-}
-
-export function handleSwitchServer(event: IpcMainEvent, serverId: string) {
-    log.silly('handleSwitchServer', serverId);
-    WindowManager.switchServer(serverId);
 }
 
 export function handleSwitchTab(event: IpcMainEvent, tabId: string) {
@@ -123,101 +119,6 @@ export function handleMainWindowIsShown() {
         mainWindow?.once('show', () => {
             handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
         });
-    }
-}
-
-export function handleNewServerModal() {
-    log.debug('handleNewServerModal');
-
-    const html = getLocalURLString('newServer.html');
-
-    const preload = getLocalPreload('desktopAPI.js');
-
-    const mainWindow = MainWindow.get();
-    if (!mainWindow) {
-        return;
-    }
-    const modalPromise = ModalManager.addModal<MattermostTeam[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team) => team.toMattermostTeam()), mainWindow, !ServerManager.hasServers());
-    if (modalPromise) {
-        modalPromise.then((data) => {
-            const newTeam = ServerManager.addServer(data);
-            WindowManager.switchServer(newTeam.id, true);
-        }).catch((e) => {
-            // e is undefined for user cancellation
-            if (e) {
-                log.error(`there was an error in the new server modal: ${e}`);
-            }
-        });
-    } else {
-        log.warn('There is already a new server modal');
-    }
-}
-
-export function handleEditServerModal(e: IpcMainEvent, id: string) {
-    log.debug('handleEditServerModal', id);
-
-    const html = getLocalURLString('editServer.html');
-
-    const preload = getLocalPreload('desktopAPI.js');
-
-    const mainWindow = MainWindow.get();
-    if (!mainWindow) {
-        return;
-    }
-    const server = ServerManager.getServer(id);
-    if (!server) {
-        return;
-    }
-    const modalPromise = ModalManager.addModal<{currentTeams: MattermostTeam[]; team: MattermostTeam}, Team>(
-        'editServer',
-        html,
-        preload,
-        {
-            currentTeams: ServerManager.getAllServers().map((team) => team.toMattermostTeam()),
-            team: server.toMattermostTeam(),
-        },
-        mainWindow);
-    if (modalPromise) {
-        modalPromise.then((data) => ServerManager.editServer(id, data)).catch((e) => {
-            // e is undefined for user cancellation
-            if (e) {
-                log.error(`there was an error in the edit server modal: ${e}`);
-            }
-        });
-    } else {
-        log.warn('There is already an edit server modal');
-    }
-}
-
-export function handleRemoveServerModal(e: IpcMainEvent, id: string) {
-    log.debug('handleRemoveServerModal', id);
-
-    const html = getLocalURLString('removeServer.html');
-
-    const preload = getLocalPreload('desktopAPI.js');
-
-    const server = ServerManager.getServer(id);
-    if (!server) {
-        return;
-    }
-    const mainWindow = MainWindow.get();
-    if (!mainWindow) {
-        return;
-    }
-    const modalPromise = ModalManager.addModal<string, boolean>('removeServer', html, preload, server.name, mainWindow);
-    if (modalPromise) {
-        modalPromise.then((remove) => {
-            if (remove) {
-                ServerManager.removeServer(server.id);
-            }
-        }).catch((e) => {
-            // e is undefined for user cancellation
-            if (e) {
-                log.error(`there was an error in the edit server modal: ${e}`);
-            }
-        });
-    } else {
-        log.warn('There is already an edit server modal');
     }
 }
 

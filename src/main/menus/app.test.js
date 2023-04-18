@@ -55,6 +55,9 @@ jest.mock('common/servers/serverManager', () => ({
     getOrderedServers: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
 }));
+jest.mock('main/app/servers', () => ({
+    switchServer: jest.fn(),
+}));
 jest.mock('main/diagnostics', () => ({}));
 jest.mock('main/downloadsManager', () => ({
     hasDownloads: jest.fn(),

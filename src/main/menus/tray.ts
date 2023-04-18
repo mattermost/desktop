@@ -5,10 +5,11 @@
 
 import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
 
-import WindowManager from 'main/windows/windowManager';
-import {localizeMessage} from 'main/i18nManager';
 import ServerManager from 'common/servers/serverManager';
+
+import {localizeMessage} from 'main/i18nManager';
 import SettingsWindow from 'main/windows/settingsWindow';
+import {switchServer} from 'main/app/servers';
 
 export function createTemplate() {
     const teams = ServerManager.getOrderedServers();
@@ -17,7 +18,7 @@ export function createTemplate() {
             return {
                 label: team.name.length > 50 ? `${team.name.slice(0, 50)}...` : team.name,
                 click: () => {
-                    WindowManager.switchServer(team.id);
+                    switchServer(team.id);
                 },
             };
         }), {

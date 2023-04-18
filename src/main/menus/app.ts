@@ -19,6 +19,7 @@ import downloadsManager from 'main/downloadsManager';
 import Diagnostics from 'main/diagnostics';
 import ViewManager from 'main/views/viewManager';
 import SettingsWindow from 'main/windows/settingsWindow';
+import {switchServer} from 'main/app/servers';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -265,7 +266,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 label: team.name,
                 accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
                 click() {
-                    WindowManager.switchServer(team.id);
+                    switchServer(team.id);
                 },
             });
             if (ServerManager.getCurrentServer().id === team.id) {

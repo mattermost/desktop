@@ -84,21 +84,23 @@ import {
     handleMainWindowIsShown,
     handleAppVersion,
     handleCloseTab,
-    handleEditServerModal,
     handleMentionNotification,
-    handleNewServerModal,
     handleOpenAppMenu,
     handleOpenTab,
     handleQuit,
-    handleRemoveServerModal,
     handleSelectDownload,
-    handleSwitchServer,
     handleSwitchTab,
     handlePingDomain,
     handleGetOrderedServers,
     handleGetOrderedTabsForServer,
     handleGetLastActive,
 } from './intercom';
+import {
+    handleEditServerModal,
+    handleNewServerModal,
+    handleRemoveServerModal,
+    switchServer,
+} from './servers';
 import {
     clearAppCache,
     getDeeplinkingURL,
@@ -266,7 +268,7 @@ function initializeInterCommunicationEventListeners() {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
     }
 
-    ipcMain.on(SWITCH_SERVER, handleSwitchServer);
+    ipcMain.on(SWITCH_SERVER, (event, serverId) => switchServer(serverId));
     ipcMain.on(SWITCH_TAB, handleSwitchTab);
     ipcMain.on(CLOSE_TAB, handleCloseTab);
     ipcMain.on(OPEN_TAB, handleOpenTab);
