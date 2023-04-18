@@ -170,7 +170,6 @@ jest.mock('main/windows/callsWidgetWindow', () => ({
 }));
 jest.mock('main/windows/windowManager', () => ({
     showMainWindow: jest.fn(),
-    sendToRenderer: jest.fn(),
     getServerNameByWebContentsId: jest.fn(),
     getServerURLFromWebContentsId: jest.fn(),
 }));
@@ -180,6 +179,7 @@ jest.mock('main/windows/settingsWindow', () => ({
 }));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
+    sendToRenderer: jest.fn(),
 }));
 const originalProcess = process;
 describe('main/app/initialize', () => {

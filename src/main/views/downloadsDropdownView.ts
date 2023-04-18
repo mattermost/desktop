@@ -23,7 +23,6 @@ import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOW
 
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import downloadsManager from 'main/downloadsManager';
-import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 const log = new Logger('DownloadsDropdownView');
@@ -110,7 +109,7 @@ export class DownloadsDropdownView {
         MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
         downloadsManager.onOpen();
-        WindowManager.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
+        MainWindow.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
     }
 
     private handleClose = () => {
@@ -118,7 +117,7 @@ export class DownloadsDropdownView {
 
         this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
         downloadsManager.onClose();
-        WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
+        MainWindow.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
     }
 
     private clearDownloads = () => {

@@ -23,7 +23,6 @@ import ServerManager from 'common/servers/serverManager';
 
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
-import WindowManager from '../windows/windowManager';
 import MainWindow from '../windows/mainWindow';
 
 const log = new Logger('TeamDropdownView');
@@ -132,7 +131,7 @@ export class TeamDropdownView {
         this.view.setBounds(this.bounds);
         MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
-        WindowManager.sendToRenderer(OPEN_TEAMS_DROPDOWN);
+        MainWindow.sendToRenderer(OPEN_TEAMS_DROPDOWN);
         this.isOpen = true;
     }
 
@@ -140,7 +139,7 @@ export class TeamDropdownView {
         log.debug('handleClose');
 
         this.view?.setBounds(this.getBounds(0, 0));
-        WindowManager.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
+        MainWindow.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
         this.isOpen = false;
     }
 

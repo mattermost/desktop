@@ -16,7 +16,7 @@ import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THRE
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
+import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
 
@@ -141,6 +141,25 @@ export class MainWindow {
             this.win.webContents.focus();
             this.win.webContents.send(FOCUS_THREE_DOT_MENU);
         }
+    }
+
+    sendToRenderer = (channel: string, ...args: unknown[]) => {
+        this.sendToRendererWithRetry(3, channel, ...args);
+    }
+
+    private sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
+        if (!this.win || !this.isReady) {
+            if (maxRetries > 0) {
+                log.debug(`Can't send ${channel}, will retry`);
+                setTimeout(() => {
+                    this.sendToRendererWithRetry(maxRetries - 1, channel, ...args);
+                }, SECOND);
+            } else {
+                log.error(`Unable to send the message to the main window for message type ${channel}`);
+            }
+            return;
+        }
+        this.win.webContents.send(channel, ...args);
     }
 
     private shouldStartFullScreen = () => {

@@ -20,9 +20,9 @@ import {
 import {Logger} from 'common/log';
 
 import {getAdjustedWindowBoundaries} from 'main/utils';
+import MainWindow from 'main/windows/mainWindow';
 import WebContentsEventManager from 'main/views/webContentEvents';
 import ViewManager from 'main/views/viewManager';
-import WindowManager from 'main/windows/windowManager';
 
 import {ModalView} from './modalView';
 
@@ -88,11 +88,11 @@ export class ModalManager {
         const withDevTools = process.env.MM_DEBUG_MODALS || false;
         this.modalQueue.forEach((modal, index) => {
             if (index === 0) {
-                WindowManager.sendToRenderer(MODAL_OPEN);
+                MainWindow.sendToRenderer(MODAL_OPEN);
                 modal.show(undefined, Boolean(withDevTools));
                 WebContentsEventManager.addWebContentsEventListeners(modal.view.webContents);
             } else {
-                WindowManager.sendToRenderer(MODAL_CLOSE);
+                MainWindow.sendToRenderer(MODAL_CLOSE);
                 modal.hide();
             }
         });
@@ -114,7 +114,7 @@ export class ModalManager {
         if (this.modalQueue.length) {
             this.showModal();
         } else {
-            WindowManager.sendToRenderer(MODAL_CLOSE);
+            MainWindow.sendToRenderer(MODAL_CLOSE);
             ViewManager.focusCurrentView();
         }
     }

@@ -9,7 +9,6 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 import MessagingTabView from 'common/tabs/MessagingTabView';
 
 import MainWindow from '../windows/mainWindow';
-import * as WindowManager from '../windows/windowManager';
 import ContextMenu from '../contextMenu';
 import Utils from '../utils';
 
@@ -41,8 +40,6 @@ jest.mock('electron', () => ({
 jest.mock('../windows/mainWindow', () => ({
     focusThreeDotMenu: jest.fn(),
     get: jest.fn(),
-}));
-jest.mock('../windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
 jest.mock('common/appState', () => ({
@@ -181,7 +178,7 @@ describe('main/views/MattermostView', () => {
             await expect(promise).rejects.toThrow(error);
             expect(mattermostView.view.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
             expect(mattermostView.loadRetry).not.toBeCalled();
-            expect(WindowManager.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.tab.id, expect.any(String), expect.any(String));
+            expect(MainWindow.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.tab.id, expect.any(String), expect.any(String));
             expect(mattermostView.status).toBe(-1);
             jest.runAllTimers();
             expect(retryInBackgroundFn).toBeCalled();
@@ -426,13 +423,13 @@ describe('main/views/MattermostView', () => {
         it('should hide back button on internal url', () => {
             Utils.shouldHaveBackBar.mockReturnValue(false);
             mattermostView.handleDidNavigate(null, 'http://server-1.com/path/to/channels');
-            expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(TOGGLE_BACK_BUTTON, false);
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(TOGGLE_BACK_BUTTON, false);
         });
 
         it('should show back button on external url', () => {
             Utils.shouldHaveBackBar.mockReturnValue(true);
             mattermostView.handleDidNavigate(null, 'http://server-2.com/some/other/path');
-            expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(TOGGLE_BACK_BUTTON, true);
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(TOGGLE_BACK_BUTTON, true);
         });
     });
 

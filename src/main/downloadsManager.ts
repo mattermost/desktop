@@ -32,7 +32,7 @@ import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
 import {displayDownloadCompleted} from 'main/notifications';
 import ViewManager from 'main/views/viewManager';
-import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
 
 import appVersionManager from './AppVersionManager';
@@ -335,7 +335,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
     onOpen = () => {
         this.open = true;
-        WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+        MainWindow.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
     };
 
     onClose = () => {
@@ -361,7 +361,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         log.debug('openDownloadsDropdown');
         this.open = true;
         ipcMain.emit(OPEN_DOWNLOADS_DROPDOWN);
-        WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+        MainWindow.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
     };
 
     hasUpdate = () => {
@@ -394,7 +394,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.downloads = downloads;
         this.setJson(downloads);
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, true, this.downloads);
-        WindowManager?.sendToRenderer(UPDATE_DOWNLOADS_DROPDOWN, this.downloads);
+        MainWindow.sendToRenderer(UPDATE_DOWNLOADS_DROPDOWN, this.downloads);
     };
 
     private save = (key: string, item: DownloadedItem) => {
@@ -402,7 +402,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.downloads[key] = item;
         this.setValue(key, item);
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN, true, this.downloads);
-        WindowManager?.sendToRenderer(UPDATE_DOWNLOADS_DROPDOWN, this.downloads);
+        MainWindow.sendToRenderer(UPDATE_DOWNLOADS_DROPDOWN, this.downloads);
     };
 
     private handleDownloadItemEvents = (item: DownloadItem, webContents: WebContents) => {
@@ -485,9 +485,9 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         log.debug('shouldShowBadge');
 
         if (this.open === true) {
-            WindowManager.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+            MainWindow.sendToRenderer(HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
         } else {
-            WindowManager.sendToRenderer(SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
+            MainWindow.sendToRenderer(SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE);
         }
     };
 

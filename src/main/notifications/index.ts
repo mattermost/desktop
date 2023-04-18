@@ -67,7 +67,7 @@ export function displayMention(title: string, body: string, channel: {id: string
         }
         const notificationSound = mention.getNotificationSound();
         if (notificationSound) {
-            WindowManager.sendToRenderer(PLAY_SOUND, notificationSound);
+            MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
         }
         flashFrame(true);
     });

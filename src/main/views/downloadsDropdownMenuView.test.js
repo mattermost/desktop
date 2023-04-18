@@ -56,8 +56,6 @@ jest.mock('main/downloadsManager', () => ({}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     getBounds: jest.fn(),
-}));
-jest.mock('main/windows/windowManager', () => ({
     sendToRenderer: jest.fn(),
 }));
 jest.mock('fs', () => ({

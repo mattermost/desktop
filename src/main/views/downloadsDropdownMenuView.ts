@@ -28,7 +28,6 @@ import {
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import downloadsManager from 'main/downloadsManager';
 import MainWindow from 'main/windows/mainWindow';
-import WindowManager from 'main/windows/windowManager';
 
 const log = new Logger('DownloadsDropdownMenuView');
 
@@ -134,7 +133,7 @@ export class DownloadsDropdownMenuView {
         this.item = undefined;
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM);
         this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
-        WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+        MainWindow.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
     }
 
     private handleToggle = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload) => {

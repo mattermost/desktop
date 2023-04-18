@@ -86,9 +86,9 @@ jest.mock('../views/viewManager', () => ({
 }));
 jest.mock('../windows/mainWindow', () => ({
     get: jest.fn(),
+    sendToRenderer: jest.fn(),
 }));
 jest.mock('../windows/windowManager', () => ({
-    sendToRenderer: jest.fn(),
     flashFrame: jest.fn(),
     switchTab: jest.fn(),
 }));
@@ -192,7 +192,7 @@ describe('main/notifications', () => {
                 {id: 1},
                 {soundName: 'test_sound'},
             );
-            expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
         });
 
         it('should remove existing notification from the same channel/team on windows', () => {

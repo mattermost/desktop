@@ -10,7 +10,7 @@ import {setLoggingLevel} from 'common/log';
 import {handleConfigUpdate} from 'main/app/config';
 import {handleMainWindowIsShown} from 'main/app/intercom';
 
-import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 import AutoLauncher from 'main/AutoLauncher';
 
 jest.mock('electron', () => ({
@@ -47,8 +47,7 @@ jest.mock('main/views/viewManager', () => ({
     reloadConfiguration: jest.fn(),
 }));
 jest.mock('main/views/loadingScreen', () => ({}));
-jest.mock('main/windows/windowManager', () => ({
-    handleUpdateConfig: jest.fn(),
+jest.mock('main/windows/mainWindow', () => ({
     sendToRenderer: jest.fn(),
 }));
 
@@ -65,11 +64,11 @@ describe('main/app/config', () => {
 
         it('should reload renderer config only when app is ready', () => {
             handleConfigUpdate({});
-            expect(WindowManager.sendToRenderer).not.toBeCalled();
+            expect(MainWindow.sendToRenderer).not.toBeCalled();
 
             app.isReady.mockReturnValue(true);
             handleConfigUpdate({});
-            expect(WindowManager.sendToRenderer).toBeCalledWith(RELOAD_CONFIGURATION);
+            expect(MainWindow.sendToRenderer).toBeCalledWith(RELOAD_CONFIGURATION);
         });
 
         it('should set download path if applicable', () => {

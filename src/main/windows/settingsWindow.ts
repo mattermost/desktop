@@ -33,6 +33,10 @@ export class SettingsWindow {
         return this.win;
     }
 
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.win?.webContents.send(channel, ...args);
+    }
+
     private create = () => {
         const mainWindow = MainWindow.get(true);
         if (!mainWindow) {

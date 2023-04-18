@@ -58,7 +58,7 @@ export function handleUpdateMenuEvent() {
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', () => {
         ViewManager.focusCurrentView();
-        WindowManager.sendToRenderer(APP_MENU_WILL_CLOSE);
+        MainWindow.sendToRenderer(APP_MENU_WILL_CLOSE);
     });
 
     // set up context menu for tray icon

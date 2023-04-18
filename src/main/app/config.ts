@@ -13,7 +13,8 @@ import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
 import {refreshTrayImages} from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
-import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
+import SettingsWindow from 'main/windows/settingsWindow';
 
 import {handleMainWindowIsShown} from './intercom';
 import {handleUpdateMenuEvent, updateSpellCheckerLocales} from './utils';
@@ -72,7 +73,8 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     }
 
     if (app.isReady()) {
-        WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
+        MainWindow.sendToRenderer(RELOAD_CONFIGURATION);
+        SettingsWindow.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
     setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
@@ -111,7 +113,8 @@ export function handleDarkModeChange(darkMode: boolean) {
     log.debug('handleDarkModeChange', darkMode);
 
     refreshTrayImages(Config.trayIconTheme);
-    WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
+    MainWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
+    SettingsWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     LoadingScreen.setDarkMode(darkMode);
 
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
