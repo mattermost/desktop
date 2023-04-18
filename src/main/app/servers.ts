@@ -29,7 +29,7 @@ export const switchServer = (serverId: string, waitForViewToExist = false) => {
         const timeout = setInterval(() => {
             if (ViewManager.getView(nextTab.id)) {
                 ViewManager.showById(nextTab.id);
-                clearTimeout(timeout);
+                clearInterval(timeout);
             }
         }, 100);
     } else {
