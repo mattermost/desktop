@@ -11,6 +11,7 @@ import {
     DOWNLOADS_DROPDOWN_MENU_OPEN_FILE,
     DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER,
     EMIT_CONFIGURATION,
+    MAIN_WINDOW_CREATED,
     OPEN_DOWNLOADS_DROPDOWN_MENU,
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
@@ -42,6 +43,7 @@ export class DownloadsDropdownMenuView {
     constructor() {
         this.open = false;
 
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
         ipcMain.on(TOGGLE_DOWNLOADS_DROPDOWN_MENU, this.handleToggle);
@@ -54,7 +56,7 @@ export class DownloadsDropdownMenuView {
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, this.updateItem);
     }
 
-    init = () => {
+    private init = () => {
         this.windowBounds = MainWindow.getBounds();
         if (!this.windowBounds) {
             throw new Error('Cannot initialize downloadsDropdownMenuView, missing MainWindow');

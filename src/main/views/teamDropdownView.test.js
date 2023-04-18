@@ -27,10 +27,9 @@ jest.mock('electron', () => ({
     },
 }));
 jest.mock('main/windows/mainWindow', () => ({
+    on: jest.fn(),
     get: jest.fn(),
     getBounds: jest.fn(),
-    addBrowserView: jest.fn(),
-    setTopBrowserView: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
 

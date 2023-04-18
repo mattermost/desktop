@@ -24,6 +24,7 @@ import {
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
     SESSION_EXPIRED,
+    MAIN_WINDOW_CREATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -57,6 +58,7 @@ export class ViewManager {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.closedViews = new Map();
 
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
         ipcMain.handle(GET_VIEW_INFO_FOR_TEST, this.handleGetViewInfoForTest);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
@@ -71,7 +73,7 @@ export class ViewManager {
         ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
     }
 
-    init = () => {
+    private init = () => {
         LoadingScreen.show();
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
         this.showInitial();

@@ -54,6 +54,7 @@ jest.mock('macos-notification-state', () => ({
 }));
 jest.mock('main/downloadsManager', () => ({}));
 jest.mock('main/windows/mainWindow', () => ({
+    on: jest.fn(),
     get: jest.fn(),
     getBounds: jest.fn(),
     sendToRenderer: jest.fn(),

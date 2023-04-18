@@ -12,7 +12,6 @@ import ContextMenu from 'main/contextMenu';
 import ServerManager from 'common/servers/serverManager';
 
 import MainWindow from 'main/windows/mainWindow';
-import WindowManager from 'main/windows/windowManager';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 
@@ -186,7 +185,7 @@ export class WebContentsEventManager {
             }
 
             if (urlUtils.isTeamUrl(serverURL, parsedURL, true)) {
-                WindowManager.showMainWindow(parsedURL);
+                ViewManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};
             }
             if (urlUtils.isAdminUrl(serverURL, parsedURL)) {
@@ -263,7 +262,7 @@ export class WebContentsEventManager {
 
             const otherServerURL = ServerManager.lookupTabByURL(parsedURL);
             if (otherServerURL && urlUtils.isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
-                WindowManager.showMainWindow(parsedURL);
+                ViewManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};
             }
 

@@ -27,7 +27,6 @@ import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
 import {setTrayMenu} from 'main/tray/tray';
 import ViewManager from 'main/views/viewManager';
-import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {mainProtocol} from './initialize';
@@ -39,7 +38,8 @@ const log = new Logger('App.Utils');
 
 export function openDeepLink(deeplinkingUrl: string) {
     try {
-        WindowManager.showMainWindow(deeplinkingUrl);
+        MainWindow.show();
+        ViewManager.handleDeepLink(deeplinkingUrl);
     } catch (err) {
         log.error(`There was an error opening the deeplinking url: ${err}`);
     }

@@ -85,8 +85,8 @@ export function setupTray(iconTheme: string) {
 
     trayIcon.setToolTip(app.name);
     trayIcon.on('click', () => {
-        const mainWindow = MainWindow.get(true)!;
-        if (mainWindow.isVisible()) {
+        const mainWindow = MainWindow.get();
+        if (mainWindow && mainWindow.isVisible()) {
             mainWindow.blur(); // To move focus to the next top-level window in Windows
             mainWindow.hide();
         } else {

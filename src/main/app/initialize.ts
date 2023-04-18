@@ -59,7 +59,6 @@ import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
-import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {protocols} from '../../../electron-builder.json';
@@ -203,7 +202,7 @@ function initializeAppEventListeners() {
     app.on('second-instance', handleAppSecondInstance);
     app.on('window-all-closed', handleAppWindowAllClosed);
     app.on('browser-window-created', handleAppBrowserWindowCreated);
-    app.on('activate', () => WindowManager.showMainWindow());
+    app.on('activate', () => MainWindow.show());
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('select-client-certificate', CertificateManager.handleSelectCertificate);
@@ -364,6 +363,9 @@ async function initializeAfterAppReady() {
             catch((err) => log.error('An error occurred: ', err));
     }
 
+    initCookieManager(defaultSession);
+    MainWindow.show();
+
     let deeplinkingURL;
 
     // Protocol handler for win32
@@ -371,12 +373,11 @@ async function initializeAfterAppReady() {
         const args = process.argv.slice(1);
         if (Array.isArray(args) && args.length > 0) {
             deeplinkingURL = getDeeplinkingURL(args);
+            if (deeplinkingURL) {
+                ViewManager.handleDeepLink(deeplinkingURL);
+            }
         }
     }
-
-    initCookieManager(defaultSession);
-
-    WindowManager.showMainWindow(deeplinkingURL);
 
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {

@@ -15,6 +15,7 @@ import {
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
     SERVERS_UPDATE,
+    MAIN_WINDOW_CREATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -50,6 +51,7 @@ export class TeamDropdownView {
         this.mentions = new Map();
         this.expired = new Map();
 
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
         ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_TEAMS_DROPDOWN, this.handleClose);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
@@ -61,7 +63,8 @@ export class TeamDropdownView {
         ServerManager.on(SERVERS_UPDATE, this.updateServers);
     }
 
-    init = () => {
+    private init = () => {
+        log.info('init');
         const preload = getLocalPreload('desktopAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,

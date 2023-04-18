@@ -38,7 +38,7 @@ export class SettingsWindow {
     }
 
     private create = () => {
-        const mainWindow = MainWindow.get(true);
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }

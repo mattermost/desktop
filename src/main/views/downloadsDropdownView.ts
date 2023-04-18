@@ -16,6 +16,7 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
     GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
+    MAIN_WINDOW_CREATED,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import Config from 'common/config';
@@ -34,6 +35,7 @@ export class DownloadsDropdownView {
     private view?: BrowserView;
 
     constructor() {
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
         ipcMain.on(EMIT_CONFIGURATION, this.updateDownloadsDropdown);

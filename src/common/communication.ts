@@ -167,3 +167,5 @@ export const GET_ORDERED_TABS_FOR_SERVER = 'get-ordered-tabs-for-server';
 export const UPDATE_APPSTATE = 'update-appstate';
 export const UPDATE_APPSTATE_TOTALS = 'update-appstate-totals';
 export const UPDATE_APPSTATE_FOR_VIEW_ID = 'update-appstate-for-view-id';
+
+export const MAIN_WINDOW_CREATED = 'main-window-created';

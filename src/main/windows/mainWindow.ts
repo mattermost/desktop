@@ -7,12 +7,23 @@ import path from 'path';
 
 import os from 'os';
 
+import {EventEmitter} from 'events';
+
 import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, globalShortcut, Input, ipcMain, screen} from 'electron';
 
 import {SavedWindowState} from 'types/mainWindow';
 
 import AppState from 'common/appState';
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU, SERVERS_UPDATE, UPDATE_APPSTATE_FOR_VIEW_ID, UPDATE_MENTIONS} from 'common/communication';
+import {
+    SELECT_NEXT_TAB,
+    SELECT_PREVIOUS_TAB,
+    GET_FULL_SCREEN_STATUS,
+    FOCUS_THREE_DOT_MENU,
+    SERVERS_UPDATE,
+    UPDATE_APPSTATE_FOR_VIEW_ID,
+    UPDATE_MENTIONS,
+    MAIN_WINDOW_CREATED,
+} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -29,13 +40,15 @@ import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
 
-export class MainWindow {
+export class MainWindow extends EventEmitter {
     private win?: BrowserWindow;
 
     private savedWindowState: SavedWindowState;
     private ready: boolean;
 
     constructor() {
+        super();
+
         // Create the browser window.
         this.ready = false;
         this.savedWindowState = this.getSavedWindowState();
@@ -119,17 +132,29 @@ export class MainWindow {
 
         const contextMenu = new ContextMenu({}, this.win);
         contextMenu.reload();
+
+        this.emit(MAIN_WINDOW_CREATED);
     }
 
     get isReady() {
         return this.ready;
     }
 
-    get = (ensureCreated?: boolean) => {
-        if (ensureCreated && !this.win) {
-            this.init();
-        }
+    get = () => {
         return this.win;
+    }
+
+    show = () => {
+        if (this.win) {
+            if (this.win.isVisible()) {
+                this.win.focus();
+            } else {
+                this.win.show();
+            }
+        } else {
+            this.init();
+            this.show();
+        }
     }
 
     getBounds = () => {
