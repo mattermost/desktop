@@ -13,12 +13,13 @@ import {Config} from 'common/config';
 
 import {localizeMessage} from 'main/i18nManager';
 import ServerManager from 'common/servers/serverManager';
-import WindowManager from 'main/windows/windowManager';
 import {UpdateManager} from 'main/autoUpdater';
 import downloadsManager from 'main/downloadsManager';
 import Diagnostics from 'main/diagnostics';
 import ViewManager from 'main/views/viewManager';
 import SettingsWindow from 'main/windows/settingsWindow';
+import {selectNextTab, selectPreviousTab} from 'main/app/tabs';
+import {switchServer} from 'main/app/servers';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -265,7 +266,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 label: team.name,
                 accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
                 click() {
-                    WindowManager.switchServer(team.id);
+                    switchServer(team.id);
                 },
             });
             if (ServerManager.getCurrentServer().id === team.id) {
@@ -274,7 +275,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                         label: `    ${localizeMessage(`common.tabs.${tab.type}`, getTabDisplayName(tab.type as TabType))}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
-                            WindowManager.switchTab(tab.id);
+                            ViewManager.showById(tab.id);
                         },
                     });
                 });
@@ -284,14 +285,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
             accelerator: 'Ctrl+Tab',
             click() {
-                WindowManager.selectNextTab();
+                selectNextTab();
             },
             enabled: (teams.length > 1),
         }, {
             label: localizeMessage('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
             accelerator: 'Ctrl+Shift+Tab',
             click() {
-                WindowManager.selectPreviousTab();
+                selectPreviousTab();
             },
             enabled: (teams.length > 1),
         }, ...(isMac ? [separatorItem, {

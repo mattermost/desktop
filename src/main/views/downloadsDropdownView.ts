@@ -16,6 +16,8 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
     GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
+    MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import Config from 'common/config';
@@ -23,7 +25,6 @@ import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOW
 
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import downloadsManager from 'main/downloadsManager';
-import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 const log = new Logger('DownloadsDropdownView');
@@ -35,6 +36,8 @@ export class DownloadsDropdownView {
     private view?: BrowserView;
 
     constructor() {
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.handleClose);
         ipcMain.on(EMIT_CONFIGURATION, this.updateDownloadsDropdown);
@@ -73,10 +76,10 @@ export class DownloadsDropdownView {
      * This is called every time the "window" is resized so that we can position
      * the downloads dropdown at the correct position
      */
-    updateWindowBounds = () => {
+    private updateWindowBounds = (newBounds: Electron.Rectangle) => {
         log.debug('updateWindowBounds');
 
-        this.windowBounds = MainWindow.getBounds();
+        this.windowBounds = newBounds;
         this.updateDownloadsDropdown();
         this.repositionDownloadsDropdown();
     }
@@ -110,7 +113,7 @@ export class DownloadsDropdownView {
         MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
         downloadsManager.onOpen();
-        WindowManager.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
+        MainWindow.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
     }
 
     private handleClose = () => {
@@ -118,7 +121,7 @@ export class DownloadsDropdownView {
 
         this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
         downloadsManager.onClose();
-        WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
+        MainWindow.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
     }
 
     private clearDownloads = () => {

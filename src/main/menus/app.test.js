@@ -55,12 +55,15 @@ jest.mock('common/servers/serverManager', () => ({
     getOrderedServers: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
 }));
+jest.mock('main/app/servers', () => ({
+    switchServer: jest.fn(),
+}));
 jest.mock('main/diagnostics', () => ({}));
 jest.mock('main/downloadsManager', () => ({
     hasDownloads: jest.fn(),
 }));
 jest.mock('main/views/viewManager', () => ({}));
-jest.mock('main/windows/windowManager', () => ({
+jest.mock('main/windows/mainWindow', () => ({
     sendToRenderer: jest.fn(),
 }));
 jest.mock('main/windows/settingsWindow', () => ({}));

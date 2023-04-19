@@ -52,7 +52,6 @@ jest.mock('main/menus/tray', () => ({}));
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/windows/mainWindow', () => ({}));
-jest.mock('main/windows/windowManager', () => ({}));
 
 jest.mock('./initialize', () => ({
     mainProtocol: 'mattermost',

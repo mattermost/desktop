@@ -69,6 +69,7 @@ jest.mock('main/views/loadingScreen', () => ({
 }));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
+    on: jest.fn(),
 }));
 jest.mock('common/servers/serverManager', () => ({
     getCurrentServer: jest.fn(),

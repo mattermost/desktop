@@ -10,7 +10,6 @@ import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
 import {localizeMessage} from 'main/i18nManager';
 import {destroyTray} from 'main/tray/tray';
-import WindowManager from 'main/windows/windowManager';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -30,8 +29,10 @@ export function handleAppSecondInstance(event: Event, argv: string[]) {
 
     // Protocol handler for win32
     // argv: An array of the second instance’s (command line / deep linked) arguments
-    const deeplinkingUrl = getDeeplinkingURL(argv);
-    WindowManager.showMainWindow(deeplinkingUrl);
+    const deeplinkingURL = getDeeplinkingURL(argv);
+    if (deeplinkingURL) {
+        openDeepLink(deeplinkingURL);
+    }
 }
 
 export function handleAppWindowAllClosed() {

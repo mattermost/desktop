@@ -38,18 +38,13 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 jest.mock('main/tray/tray', () => ({}));
-jest.mock('main/windows/windowManager', () => ({
-    showMainWindow: jest.fn(),
-}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
+    show: jest.fn(),
 }));
 jest.mock('main/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
-}));
-jest.mock('main/windows/mainWindow', () => ({
-    get: jest.fn(),
 }));
 
 describe('main/app/app', () => {

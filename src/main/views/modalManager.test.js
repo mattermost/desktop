@@ -25,7 +25,8 @@ jest.mock('./modalView', () => ({
 jest.mock('main/views/viewManager', () => ({
     focusCurrentView: jest.fn(),
 }));
-jest.mock('main/windows/windowManager', () => ({
+jest.mock('main/windows/mainWindow', () => ({
+    on: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
 jest.mock('process', () => ({

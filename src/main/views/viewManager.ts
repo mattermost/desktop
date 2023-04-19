@@ -24,6 +24,8 @@ import {
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
     SESSION_EXPIRED,
+    MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -36,7 +38,7 @@ import {TabView, TAB_MESSAGING} from 'common/tabs/TabView';
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import {getLocalURLString, getLocalPreload} from '../utils';
+import {getLocalURLString, getLocalPreload, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
 
 import {MattermostView} from './MattermostView';
 import modalManager from './modalManager';
@@ -57,6 +59,8 @@ export class ViewManager {
         this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
         this.closedViews = new Map();
 
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.handleSetCurrentViewBounds);
         ipcMain.handle(GET_VIEW_INFO_FOR_TEST, this.handleGetViewInfoForTest);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
@@ -71,7 +75,9 @@ export class ViewManager {
         ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
     }
 
-    init = () => {
+    private init = () => {
+        MainWindow.onBrowserWindow?.('focus', this.focusCurrentView);
+
         LoadingScreen.show();
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
         this.showInitial();
@@ -323,7 +329,7 @@ export class ViewManager {
             const localURL = getLocalURLString('urlView.html', query);
             urlView.webContents.loadURL(localURL);
             MainWindow.get()?.addBrowserView(urlView);
-            const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? mainWindow.getBounds();
+            const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? MainWindow.getBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
@@ -342,6 +348,10 @@ export class ViewManager {
 
             const adjustWidth = (event: IpcMainEvent, width: number) => {
                 log.silly('showURLView.adjustWidth', width);
+
+                if (!boundaries) {
+                    return;
+                }
 
                 const bounds = {
                     x: 0,
@@ -524,6 +534,16 @@ export class ViewManager {
         ServerManager.getViewLog(viewId, 'ViewManager').debug('handleSessionExpired', isExpired);
 
         AppState.updateExpired(viewId, isExpired);
+    }
+
+    private handleSetCurrentViewBounds = (newBounds: Electron.Rectangle) => {
+        log.debug('handleSetCurrentViewBounds', newBounds);
+
+        const currentView = this.getCurrentView();
+        if (currentView) {
+            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height, shouldHaveBackBar(currentView.tab.url, currentView.currentURL));
+            currentView.setBounds(adjustedBounds);
+        }
     }
 
     /**

@@ -3,7 +3,7 @@
 
 import {BrowserView, app, ipcMain} from 'electron';
 
-import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
+import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, MAIN_WINDOW_RESIZED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 import {Logger} from 'common/log';
 
 import {getLocalPreload, getLocalURLString, getWindowBoundaries} from 'main/utils';
@@ -24,22 +24,13 @@ export class LoadingScreen {
     constructor() {
         this.state = LoadingScreenState.HIDDEN;
 
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.setBounds);
         ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleAnimationFinished);
     }
 
     /**
      * Loading Screen
      */
-
-    setBounds = () => {
-        if (this.view) {
-            const mainWindow = MainWindow.get();
-            if (!mainWindow) {
-                return;
-            }
-            this.view.setBounds(getWindowBoundaries(mainWindow));
-        }
-    }
 
     setDarkMode = (darkMode: boolean) => {
         this.view?.webContents.send(DARK_MODE_CHANGE, darkMode);
@@ -109,6 +100,16 @@ export class LoadingScreen {
 
         if (process.env.NODE_ENV === 'test') {
             app.emit('e2e-app-loaded');
+        }
+    }
+
+    private setBounds = () => {
+        if (this.view) {
+            const mainWindow = MainWindow.get();
+            if (!mainWindow) {
+                return;
+            }
+            this.view.setBounds(getWindowBoundaries(mainWindow));
         }
     }
 }

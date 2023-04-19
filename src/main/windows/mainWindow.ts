@@ -7,16 +7,30 @@ import path from 'path';
 
 import os from 'os';
 
+import {EventEmitter} from 'events';
+
 import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, globalShortcut, Input, ipcMain, screen} from 'electron';
 
 import {SavedWindowState} from 'types/mainWindow';
 
 import AppState from 'common/appState';
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, GET_FULL_SCREEN_STATUS, FOCUS_THREE_DOT_MENU, SERVERS_UPDATE, UPDATE_APPSTATE_FOR_VIEW_ID, UPDATE_MENTIONS} from 'common/communication';
+import {
+    SELECT_NEXT_TAB,
+    SELECT_PREVIOUS_TAB,
+    GET_FULL_SCREEN_STATUS,
+    FOCUS_THREE_DOT_MENU,
+    SERVERS_UPDATE,
+    UPDATE_APPSTATE_FOR_VIEW_ID,
+    UPDATE_MENTIONS,
+    MAXIMIZE_CHANGE,
+    MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
+    VIEW_FINISHED_RESIZING,
+} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH} from 'common/utils/constants';
+import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
 
@@ -29,18 +43,23 @@ import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
 
-export class MainWindow {
+export class MainWindow extends EventEmitter {
     private win?: BrowserWindow;
 
     private savedWindowState: SavedWindowState;
     private ready: boolean;
+    private isResizing: boolean;
 
     constructor() {
+        super();
+
         // Create the browser window.
         this.ready = false;
+        this.isResizing = false;
         this.savedWindowState = this.getSavedWindowState();
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
+        ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
 
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
 
@@ -108,6 +127,15 @@ export class MainWindow {
         this.win.on('focus', this.onFocus);
         this.win.on('blur', this.onBlur);
         this.win.on('unresponsive', this.onUnresponsive);
+        this.win.on('maximize', this.onMaximize);
+        this.win.on('unmaximize', this.onUnmaximize);
+        this.win.on('enter-full-screen', () => this.win?.webContents.send('enter-full-screen'));
+        this.win.on('leave-full-screen', () => this.win?.webContents.send('leave-full-screen'));
+        this.win.on('will-resize', this.onWillResize);
+        this.win.on('resized', this.onResized);
+        if (process.platform !== 'darwin') {
+            mainWindow.on('resize', this.onResize);
+        }
 
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
 
@@ -119,21 +147,45 @@ export class MainWindow {
 
         const contextMenu = new ContextMenu({}, this.win);
         contextMenu.reload();
+
+        this.emit(MAIN_WINDOW_CREATED);
     }
 
     get isReady() {
         return this.ready;
     }
 
-    get = (ensureCreated?: boolean) => {
-        if (ensureCreated && !this.win) {
-            this.init();
-        }
+    get = () => {
         return this.win;
     }
 
-    getBounds = () => {
-        return this.win?.getContentBounds();
+    show = () => {
+        if (this.win) {
+            if (this.win.isVisible()) {
+                this.win.focus();
+            } else {
+                this.win.show();
+            }
+        } else {
+            this.init();
+            this.show();
+        }
+    }
+
+    getBounds = (): Electron.Rectangle | undefined => {
+        if (!this.win) {
+            return undefined;
+        }
+
+        // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
+        // https://github.com/electron/electron/issues/28699
+        // https://github.com/electron/electron/issues/28106
+        if (process.platform === 'linux') {
+            const size = this.win.getSize();
+            return {...this.win.getContentBounds(), width: size[0], height: size[1]};
+        }
+
+        return this.win.getContentBounds();
     }
 
     focusThreeDotMenu = () => {
@@ -141,6 +193,27 @@ export class MainWindow {
             this.win.webContents.focus();
             this.win.webContents.send(FOCUS_THREE_DOT_MENU);
         }
+    }
+
+    onBrowserWindow = this.win?.on;
+
+    sendToRenderer = (channel: string, ...args: unknown[]) => {
+        this.sendToRendererWithRetry(3, channel, ...args);
+    }
+
+    private sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
+        if (!this.win || !this.isReady) {
+            if (maxRetries > 0) {
+                log.debug(`Can't send ${channel}, will retry`);
+                setTimeout(() => {
+                    this.sendToRendererWithRetry(maxRetries - 1, channel, ...args);
+                }, SECOND);
+            } else {
+                log.error(`Unable to send the message to the main window for message type ${channel}`);
+            }
+            return;
+        }
+        this.win.webContents.send(channel, ...args);
     }
 
     private shouldStartFullScreen = () => {
@@ -326,6 +399,64 @@ export class MainWindow {
                 app.relaunch();
             }
         });
+    }
+
+    private onMaximize = () => {
+        this.win?.webContents.send(MAXIMIZE_CHANGE, true);
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+    }
+
+    private onUnmaximize = () => {
+        this.win?.webContents.send(MAXIMIZE_CHANGE, false);
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+    }
+
+    /**
+     * Resizing code
+     */
+
+    private onWillResize = (event: Event, newBounds: Electron.Rectangle) => {
+        log.silly('onWillResize', newBounds);
+
+        /**
+         * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
+         * causing the "resize" event to not fire
+         */
+        const prevBounds = this.getBounds();
+        if (prevBounds?.height === newBounds.height && prevBounds?.width === newBounds.width) {
+            log.debug('prevented resize');
+            event.preventDefault();
+            return;
+        }
+
+        if (this.isResizing) {
+            log.debug('prevented resize');
+            event.preventDefault();
+            return;
+        }
+
+        this.isResizing = true;
+        this.emit(MAIN_WINDOW_RESIZED, newBounds);
+    }
+
+    private onResize = () => {
+        log.silly('onResize');
+
+        if (this.isResizing) {
+            return;
+        }
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+    }
+
+    private onResized = () => {
+        log.debug('onResized');
+
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        this.isResizing = false;
+    }
+
+    private handleViewFinishedResizing = () => {
+        this.isResizing = false;
     }
 
     /**

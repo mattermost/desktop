@@ -15,6 +15,8 @@ import {
     REQUEST_TEAMS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
     SERVERS_UPDATE,
+    MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -23,7 +25,6 @@ import ServerManager from 'common/servers/serverManager';
 
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 
-import WindowManager from '../windows/windowManager';
 import MainWindow from '../windows/mainWindow';
 
 const log = new Logger('TeamDropdownView');
@@ -51,6 +52,9 @@ export class TeamDropdownView {
         this.mentions = new Map();
         this.expired = new Map();
 
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
+
         ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_TEAMS_DROPDOWN, this.handleClose);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
@@ -62,7 +66,13 @@ export class TeamDropdownView {
         ServerManager.on(SERVERS_UPDATE, this.updateServers);
     }
 
-    init = () => {
+    private updateWindowBounds = (newBounds: Electron.Rectangle) => {
+        this.windowBounds = newBounds;
+        this.updateDropdown();
+    }
+
+    private init = () => {
+        log.info('init');
         const preload = getLocalPreload('desktopAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,
@@ -78,11 +88,6 @@ export class TeamDropdownView {
         this.windowBounds = MainWindow.getBounds();
         this.updateDropdown();
         MainWindow.get()?.addBrowserView(this.view);
-    }
-
-    updateWindowBounds = () => {
-        this.windowBounds = MainWindow.getBounds();
-        this.updateDropdown();
     }
 
     private updateDropdown = () => {
@@ -132,7 +137,7 @@ export class TeamDropdownView {
         this.view.setBounds(this.bounds);
         MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
-        WindowManager.sendToRenderer(OPEN_TEAMS_DROPDOWN);
+        MainWindow.sendToRenderer(OPEN_TEAMS_DROPDOWN);
         this.isOpen = true;
     }
 
@@ -140,7 +145,7 @@ export class TeamDropdownView {
         log.debug('handleClose');
 
         this.view?.setBounds(this.getBounds(0, 0));
-        WindowManager.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
+        MainWindow.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
         this.isOpen = false;
     }
 

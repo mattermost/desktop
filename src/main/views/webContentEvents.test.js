@@ -8,8 +8,8 @@ import {shell, BrowserWindow} from 'electron';
 import urlUtils from 'common/utils/url';
 
 import ContextMenu from 'main/contextMenu';
+import ViewManager from 'main/views/viewManager';
 
-import * as WindowManager from '../windows/windowManager';
 import allowProtocolDialog from '../allowProtocolDialog';
 
 import {WebContentsEventManager} from './webContentEvents';
@@ -30,10 +30,7 @@ jest.mock('../allowProtocolDialog', () => ({}));
 jest.mock('main/windows/callsWidgetWindow', () => ({}));
 jest.mock('main/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
-}));
-jest.mock('../windows/windowManager', () => ({
-    getServerURLFromWebContentsId: jest.fn(),
-    showMainWindow: jest.fn(),
+    handleDeepLink: jest.fn(),
 }));
 jest.mock('../utils', () => ({
     composeUserAgent: jest.fn(),
@@ -231,7 +228,7 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should open in the browser when there is no server matching', () => {
-            WindowManager.getServerURLFromWebContentsId.mockReturnValue(undefined);
+            ViewManager.getViewByWebContentsId.mockReturnValue(undefined);
             expect(newWindow({url: 'http://server-2.com/subpath'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).toBeCalledWith('http://server-2.com/subpath');
         });
@@ -248,7 +245,7 @@ describe('main/views/webContentsEvents', () => {
 
         it('should open team links in the app', () => {
             expect(newWindow({url: 'http://server-1.com/myteam/channels/mychannel'})).toStrictEqual({action: 'deny'});
-            expect(WindowManager.showMainWindow).toBeCalledWith(new URL('http://server-1.com/myteam/channels/mychannel'));
+            expect(ViewManager.handleDeepLink).toBeCalledWith(new URL('http://server-1.com/myteam/channels/mychannel'));
         });
 
         it('should prevent admin links from opening in a new window', () => {

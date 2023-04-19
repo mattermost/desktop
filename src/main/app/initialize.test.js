@@ -9,8 +9,8 @@ import Config from 'common/config';
 import urlUtils from 'common/utils/url';
 
 import parseArgs from 'main/ParseArgs';
+import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
-import WindowManager from 'main/windows/windowManager';
 
 import {initialize} from './initialize';
 import {clearAppCache, getDeeplinkingURL, wasUpdated} from './utils';
@@ -119,6 +119,7 @@ jest.mock('main/app/config', () => ({
 jest.mock('main/app/intercom', () => ({
     handleMainWindowIsShown: jest.fn(),
 }));
+jest.mock('main/app/servers', () => ({}));
 jest.mock('main/app/utils', () => ({
     clearAppCache: jest.fn(),
     getDeeplinkingURL: jest.fn(),
@@ -168,18 +169,17 @@ jest.mock('main/UserActivityMonitor', () => ({
 jest.mock('main/windows/callsWidgetWindow', () => ({
     isCallsWidget: jest.fn(),
 }));
-jest.mock('main/windows/windowManager', () => ({
-    showMainWindow: jest.fn(),
-    sendToRenderer: jest.fn(),
-    getServerNameByWebContentsId: jest.fn(),
-    getServerURLFromWebContentsId: jest.fn(),
+jest.mock('main/views/viewManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+    handleDeepLink: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/windows/settingsWindow', () => ({
     show: jest.fn(),
 }));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
+    show: jest.fn(),
+    sendToRenderer: jest.fn(),
 }));
 const originalProcess = process;
 describe('main/app/initialize', () => {
@@ -272,11 +272,17 @@ describe('main/app/initialize', () => {
                 value: originalPlatform,
             });
 
-            expect(WindowManager.showMainWindow).toHaveBeenCalledWith('mattermost://server-1.com');
+            expect(ViewManager.handleDeepLink).toHaveBeenCalledWith('mattermost://server-1.com');
         });
 
         it('should allow permission requests for supported types from trusted URLs', async () => {
-            WindowManager.getServerURLFromWebContentsId.mockReturnValue(new URL('http://server-1.com'));
+            ViewManager.getViewByWebContentsId.mockReturnValue({
+                tab: {
+                    server: {
+                        url: new URL('http://server-1.com'),
+                    },
+                },
+            });
             let callback = jest.fn();
             session.defaultSession.setPermissionRequestHandler.mockImplementation((cb) => {
                 cb({id: 1, getURL: () => 'http://server-1.com'}, 'bad-permission', callback);

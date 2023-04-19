@@ -7,6 +7,8 @@ import {SHOW_SETTINGS_WINDOW} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 
+import ViewManager from 'main/views/viewManager';
+
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
@@ -33,8 +35,12 @@ export class SettingsWindow {
         return this.win;
     }
 
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.win?.webContents.send(channel, ...args);
+    }
+
     private create = () => {
-        const mainWindow = MainWindow.get(true);
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }
@@ -67,6 +73,8 @@ export class SettingsWindow {
 
         this.win.on('closed', () => {
             delete this.win;
+
+            ViewManager.focusCurrentView();
         });
     }
 }

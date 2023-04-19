@@ -26,7 +26,6 @@ import {Logger} from 'common/log';
 import {TabView} from 'common/tabs/TabView';
 
 import MainWindow from 'main/windows/mainWindow';
-import WindowManager from 'main/windows/windowManager';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
@@ -180,7 +179,7 @@ export class MattermostView extends EventEmitter {
         const loading = this.view.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
-                WindowManager.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                MainWindow.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                 this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                 this.log.info(`Invalid certificate, stop retrying until the user decides what to do: ${err}.`);
                 this.status = Status.ERROR;
@@ -394,7 +393,7 @@ export class MattermostView extends EventEmitter {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);
                 } else {
-                    WindowManager.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                    MainWindow.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.log.info(`Couldn't establish a connection with ${loadURL}, will continue to retry in the background`, err);
                     this.status = Status.ERROR;
@@ -419,14 +418,14 @@ export class MattermostView extends EventEmitter {
 
     private loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
-        WindowManager.sendToRenderer(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
+        MainWindow.sendToRenderer(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
         this.log.info(`failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     }
 
     private loadSuccess = (loadURL: string) => {
         return () => {
             this.log.verbose(`finished loading ${loadURL}`);
-            WindowManager.sendToRenderer(LOAD_SUCCESS, this.id);
+            MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === Status.LOADING) {
                 this.updateMentionsFromTitle(this.view.webContents.getTitle());
@@ -476,11 +475,11 @@ export class MattermostView extends EventEmitter {
 
         if (shouldHaveBackBar(this.tab.url || '', url)) {
             this.setBounds(getWindowBoundaries(mainWindow, true));
-            WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, true);
+            MainWindow.sendToRenderer(TOGGLE_BACK_BUTTON, true);
             this.log.debug('show back button');
         } else {
             this.setBounds(getWindowBoundaries(mainWindow));
-            WindowManager.sendToRenderer(TOGGLE_BACK_BUTTON, false);
+            MainWindow.sendToRenderer(TOGGLE_BACK_BUTTON, false);
             this.log.debug('hide back button');
         }
     }

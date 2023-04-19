@@ -36,6 +36,7 @@ jest.mock('electron', () => ({
     BrowserWindow: jest.fn(),
     ipcMain: {
         handle: jest.fn(),
+        on: jest.fn(),
     },
     screen: {
         getDisplayMatching: jest.fn(),
@@ -466,6 +467,39 @@ describe('main/windows/mainWindow', () => {
                 value: originalPlatform,
             });
             expect(globalShortcut.registerAll).toHaveBeenCalledWith(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], expect.any(Function));
+        });
+    });
+
+    describe('show', () => {
+        const mainWindow = new MainWindow();
+        mainWindow.win = {
+            visible: false,
+            isVisible: () => mainWindow.visible,
+            show: jest.fn(),
+            focus: jest.fn(),
+            on: jest.fn(),
+            once: jest.fn(),
+            webContents: {
+                setWindowOpenHandler: jest.fn(),
+            },
+        };
+
+        beforeEach(() => {
+            mainWindow.win.show.mockImplementation(() => {
+                mainWindow.visible = true;
+            });
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should show main window if it exists and focus it if it is already visible', () => {
+            mainWindow.show();
+            expect(mainWindow.win.show).toHaveBeenCalled();
+
+            mainWindow.show();
+            expect(mainWindow.win.focus).toHaveBeenCalled();
         });
     });
 

@@ -14,9 +14,10 @@ jest.mock('main/i18nManager', () => ({
 jest.mock('common/servers/serverManager', () => ({
     getOrderedServers: jest.fn(),
 }));
-
+jest.mock('main/app/servers', () => ({
+    switchServer: jest.fn(),
+}));
 jest.mock('main/windows/settingsWindow', () => ({}));
-jest.mock('main/windows/windowManager', () => ({}));
 
 describe('main/menus/tray', () => {
     it('should show the first 9 servers (using order)', () => {

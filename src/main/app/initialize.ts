@@ -36,6 +36,12 @@ import {
     GET_ORDERED_SERVERS,
     GET_ORDERED_TABS_FOR_SERVER,
     SERVERS_URL_MODIFIED,
+    GET_DARK_MODE,
+    WINDOW_CLOSE,
+    WINDOW_MAXIMIZE,
+    WINDOW_MINIMIZE,
+    WINDOW_RESTORE,
+    DOUBLE_CLICK_ON_WINDOW,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -59,7 +65,6 @@ import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
-import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {protocols} from '../../../electron-builder.json';
@@ -84,22 +89,21 @@ import {
 import {
     handleMainWindowIsShown,
     handleAppVersion,
-    handleCloseTab,
-    handleEditServerModal,
     handleMentionNotification,
-    handleNewServerModal,
     handleOpenAppMenu,
-    handleOpenTab,
     handleQuit,
-    handleRemoveServerModal,
     handleSelectDownload,
-    handleSwitchServer,
-    handleSwitchTab,
     handlePingDomain,
-    handleGetOrderedServers,
-    handleGetOrderedTabsForServer,
-    handleGetLastActive,
 } from './intercom';
+import {
+    handleEditServerModal,
+    handleNewServerModal,
+    handleRemoveServerModal,
+    switchServer,
+} from './servers';
+import {
+    handleCloseTab, handleGetLastActive, handleGetOrderedTabsForServer, handleOpenTab,
+} from './tabs';
 import {
     clearAppCache,
     getDeeplinkingURL,
@@ -111,6 +115,14 @@ import {
     migrateMacAppStore,
     updateServerInfos,
 } from './utils';
+import {
+    handleClose,
+    handleDoubleClick,
+    handleGetDarkMode,
+    handleMaximize,
+    handleMinimize,
+    handleRestore,
+} from './windows';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
 
@@ -203,7 +215,7 @@ function initializeAppEventListeners() {
     app.on('second-instance', handleAppSecondInstance);
     app.on('window-all-closed', handleAppWindowAllClosed);
     app.on('browser-window-created', handleAppBrowserWindowCreated);
-    app.on('activate', () => WindowManager.showMainWindow());
+    app.on('activate', () => MainWindow.show());
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('select-client-certificate', CertificateManager.handleSelectCertificate);
@@ -267,8 +279,8 @@ function initializeInterCommunicationEventListeners() {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
     }
 
-    ipcMain.on(SWITCH_SERVER, handleSwitchServer);
-    ipcMain.on(SWITCH_TAB, handleSwitchTab);
+    ipcMain.on(SWITCH_SERVER, (event, serverId) => switchServer(serverId));
+    ipcMain.on(SWITCH_TAB, (event, viewId) => ViewManager.showById(viewId));
     ipcMain.on(CLOSE_TAB, handleCloseTab);
     ipcMain.on(OPEN_TAB, handleOpenTab);
 
@@ -289,8 +301,15 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(UPDATE_SERVER_ORDER, (event, serverOrder) => ServerManager.updateServerOrder(serverOrder));
     ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, tabOrder) => ServerManager.updateTabOrder(serverId, tabOrder));
     ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
-    ipcMain.handle(GET_ORDERED_SERVERS, handleGetOrderedServers);
+    ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toMattermostTeam()));
     ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedTabsForServer);
+
+    ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
+    ipcMain.on(WINDOW_CLOSE, handleClose);
+    ipcMain.on(WINDOW_MAXIMIZE, handleMaximize);
+    ipcMain.on(WINDOW_MINIMIZE, handleMinimize);
+    ipcMain.on(WINDOW_RESTORE, handleRestore);
+    ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
 }
 
 async function initializeAfterAppReady() {
@@ -364,6 +383,9 @@ async function initializeAfterAppReady() {
             catch((err) => log.error('An error occurred: ', err));
     }
 
+    initCookieManager(defaultSession);
+    MainWindow.show();
+
     let deeplinkingURL;
 
     // Protocol handler for win32
@@ -371,12 +393,11 @@ async function initializeAfterAppReady() {
         const args = process.argv.slice(1);
         if (Array.isArray(args) && args.length > 0) {
             deeplinkingURL = getDeeplinkingURL(args);
+            if (deeplinkingURL) {
+                ViewManager.handleDeepLink(deeplinkingURL);
+            }
         }
     }
-
-    initCookieManager(defaultSession);
-
-    WindowManager.showMainWindow(deeplinkingURL);
 
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
@@ -440,7 +461,7 @@ async function initializeAfterAppReady() {
         }
 
         const requestingURL = webContents.getURL();
-        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.tab.server.url;
 
         if (!serverURL) {
             callback(false);

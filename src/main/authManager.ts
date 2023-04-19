@@ -12,8 +12,8 @@ import urlUtils from 'common/utils/url';
 import modalManager from 'main/views/modalManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
-import WindowManager from 'main/windows/windowManager';
 import MainWindow from 'main/windows/mainWindow';
+import ViewManager from 'main/views/viewManager';
 
 const log = new Logger('AuthManager');
 const preload = getLocalPreload('desktopAPI.js');
@@ -40,7 +40,7 @@ export class AuthManager {
         if (!parsedURL) {
             return;
         }
-        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.tab.server.url;
         if (!serverURL) {
             return;
         }

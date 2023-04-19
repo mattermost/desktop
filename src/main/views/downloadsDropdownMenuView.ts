@@ -11,6 +11,8 @@ import {
     DOWNLOADS_DROPDOWN_MENU_OPEN_FILE,
     DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER,
     EMIT_CONFIGURATION,
+    MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
     OPEN_DOWNLOADS_DROPDOWN_MENU,
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
@@ -28,7 +30,6 @@ import {
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import downloadsManager from 'main/downloadsManager';
 import MainWindow from 'main/windows/mainWindow';
-import WindowManager from 'main/windows/windowManager';
 
 const log = new Logger('DownloadsDropdownMenuView');
 
@@ -43,6 +44,8 @@ export class DownloadsDropdownMenuView {
     constructor() {
         this.open = false;
 
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
         ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
         ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
         ipcMain.on(TOGGLE_DOWNLOADS_DROPDOWN_MENU, this.handleToggle);
@@ -55,7 +58,7 @@ export class DownloadsDropdownMenuView {
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, this.updateItem);
     }
 
-    init = () => {
+    private init = () => {
         this.windowBounds = MainWindow.getBounds();
         if (!this.windowBounds) {
             throw new Error('Cannot initialize downloadsDropdownMenuView, missing MainWindow');
@@ -79,10 +82,10 @@ export class DownloadsDropdownMenuView {
      * This is called every time the "window" is resized so that we can position
      * the downloads dropdown at the correct position
      */
-    updateWindowBounds = () => {
+    private updateWindowBounds = (newBounds: Electron.Rectangle) => {
         log.debug('updateWindowBounds');
 
-        this.windowBounds = MainWindow.getBounds();
+        this.windowBounds = newBounds;
         this.updateDownloadsDropdownMenu();
         this.repositionDownloadsDropdownMenu();
     }
@@ -134,7 +137,7 @@ export class DownloadsDropdownMenuView {
         this.item = undefined;
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM);
         this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
-        WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+        MainWindow.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
     }
 
     private handleToggle = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload) => {

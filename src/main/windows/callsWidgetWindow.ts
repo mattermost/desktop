@@ -37,9 +37,10 @@ import {
     DESKTOP_SOURCES_RESULT,
     DISPATCH_GET_DESKTOP_SOURCES,
 } from 'common/communication';
+
+import {switchServer} from 'main/app/servers';
 import webContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
-import WindowManager from 'main/windows/windowManager';
 import ViewManager from 'main/views/viewManager';
 
 const log = new Logger('CallsWidgetWindow');
@@ -454,7 +455,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        WindowManager.switchServer(this.serverID);
+        switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(DESKTOP_SOURCES_MODAL_REQUEST);
     }
@@ -472,7 +473,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        WindowManager.switchServer(this.serverID);
+        switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, this.options?.channelURL);
     }
@@ -484,7 +485,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        WindowManager.switchServer(this.serverID);
+        switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(CALLS_ERROR, msg);
     }
@@ -496,7 +497,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        WindowManager.switchServer(this.serverID);
+        switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, msg.link);
     }
