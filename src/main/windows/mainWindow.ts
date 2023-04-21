@@ -133,6 +133,7 @@ export class MainWindow extends EventEmitter {
         this.win.on('leave-full-screen', () => this.win?.webContents.send('leave-full-screen'));
         this.win.on('will-resize', this.onWillResize);
         this.win.on('resized', this.onResized);
+        this.win.on('moved', this.onResized);
         if (process.platform !== 'darwin') {
             mainWindow.on('resize', this.onResize);
         }
@@ -286,6 +287,8 @@ export class MainWindow extends EventEmitter {
                 // do nothing because we want to supress the menu popping up
             });
         }
+
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
     }
 
     private onBlur = () => {
@@ -294,6 +297,8 @@ export class MainWindow extends EventEmitter {
         }
 
         globalShortcut.unregisterAll();
+
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
 
         // App should save bounds when a window is closed.
         // However, 'close' is not fired in some situations(shutdown, ctrl+c)
