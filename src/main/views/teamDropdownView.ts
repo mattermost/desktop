@@ -172,6 +172,7 @@ export class TeamDropdownView {
     }
 
     private reduceNotifications = <T>(inputMap: Map<string, T>, items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
+        inputMap.clear();
         return [...items.keys()].reduce((map, key) => {
             const view = ServerManager.getTab(key);
             if (!view) {
