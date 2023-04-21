@@ -287,6 +287,8 @@ export class MainWindow extends EventEmitter {
                 // do nothing because we want to supress the menu popping up
             });
         }
+
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
     }
 
     private onBlur = () => {
@@ -295,6 +297,8 @@ export class MainWindow extends EventEmitter {
         }
 
         globalShortcut.unregisterAll();
+
+        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
 
         // App should save bounds when a window is closed.
         // However, 'close' is not fired in some situations(shutdown, ctrl+c)
@@ -417,7 +421,7 @@ export class MainWindow extends EventEmitter {
      */
 
     private onWillResize = (event: Event, newBounds: Electron.Rectangle) => {
-        log.silly('onWillResize', newBounds);
+        log.info('onWillResize', newBounds);
 
         /**
          * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
@@ -441,7 +445,7 @@ export class MainWindow extends EventEmitter {
     }
 
     private onResize = () => {
-        log.silly('onResize');
+        log.info('onResize');
 
         if (this.isResizing) {
             return;
@@ -450,7 +454,7 @@ export class MainWindow extends EventEmitter {
     }
 
     private onResized = () => {
-        log.debug('onResized');
+        log.info('onResized');
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
         this.isResizing = false;
