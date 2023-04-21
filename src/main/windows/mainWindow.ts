@@ -133,6 +133,7 @@ export class MainWindow extends EventEmitter {
         this.win.on('leave-full-screen', () => this.win?.webContents.send('leave-full-screen'));
         this.win.on('will-resize', this.onWillResize);
         this.win.on('resized', this.onResized);
+        this.win.on('moved', this.onResized);
         if (process.platform !== 'darwin') {
             mainWindow.on('resize', this.onResize);
         }
