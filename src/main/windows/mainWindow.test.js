@@ -462,6 +462,7 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             const mainWindow = new MainWindow();
+            mainWindow.getBounds = jest.fn();
             mainWindow.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
