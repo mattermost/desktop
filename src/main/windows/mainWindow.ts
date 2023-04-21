@@ -421,7 +421,7 @@ export class MainWindow extends EventEmitter {
      */
 
     private onWillResize = (event: Event, newBounds: Electron.Rectangle) => {
-        log.info('onWillResize', newBounds);
+        log.silly('onWillResize', newBounds);
 
         /**
          * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
@@ -445,7 +445,7 @@ export class MainWindow extends EventEmitter {
     }
 
     private onResize = () => {
-        log.info('onResize');
+        log.silly('onResize');
 
         if (this.isResizing) {
             return;
@@ -454,7 +454,7 @@ export class MainWindow extends EventEmitter {
     }
 
     private onResized = () => {
-        log.info('onResized');
+        log.debug('onResized');
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
         this.isResizing = false;
