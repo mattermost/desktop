@@ -1,1 +1,17 @@
-{}
+{
+    "label.yes": "Tak",
+    "label.save": "Zapisz",
+    "label.remove": "Usuń",
+    "label.ok": "OK",
+    "label.no": "Nie",
+    "label.login": "Logowanie",
+    "label.close": "Zamknij",
+    "label.change": "Zmień",
+    "label.cancel": "Anuluj",
+    "label.add": "Dodaj",
+    "label.accept": "Akceptacja",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooki",
+    "common.tabs.TAB_MESSAGING": "Kanały",
+    "common.tabs.TAB_FOCALBOARD": "Tablice",
+    "common.permissions.canBasicAuth": "Uwierzytelnianie przez Internet"
+}
