@@ -62,6 +62,7 @@ export default class CallsWidgetWindow extends EventEmitter {
             transparent: true,
             show: false,
             alwaysOnTop: true,
+            hasShadow: false,
             backgroundColor: '#00ffffff',
             webPreferences: {
                 preload: getLocalPreload('callsWidget.js'),
