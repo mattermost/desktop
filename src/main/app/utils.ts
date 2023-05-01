@@ -91,7 +91,11 @@ export function clearAppCache() {
     // TODO: clear cache on browserviews, not in the renderer.
     const mainWindow = MainWindow.get();
     if (mainWindow) {
-        mainWindow.webContents.session.clearCache().then(mainWindow.reload);
+        mainWindow.webContents.session.clearCache().
+            then(mainWindow.reload).
+            catch((err) => {
+                log.error('clearAppCache', err);
+            });
     } else {
     //Wait for mainWindow
         setTimeout(clearAppCache, 100);
