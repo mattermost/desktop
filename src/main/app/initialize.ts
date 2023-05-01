@@ -345,11 +345,6 @@ async function initializeAfterAppReady() {
         updateSpellCheckerLocales();
     }
 
-    if (wasUpdated(AppVersionManager.lastAppVersion)) {
-        clearAppCache();
-    }
-    AppVersionManager.lastAppVersion = app.getVersion();
-
     if (typeof Config.canUpgrade === 'undefined') {
         // windows might not be ready, so we have to wait until it is
         Config.once('update', () => {
@@ -471,6 +466,11 @@ async function initializeAfterAppReady() {
         // is the requesting url trusted?
         callback(urlUtils.isTrustedURL(requestingURL, serverURL));
     });
+
+    if (wasUpdated(AppVersionManager.lastAppVersion)) {
+        clearAppCache();
+    }
+    AppVersionManager.lastAppVersion = app.getVersion();
 
     handleMainWindowIsShown();
 }
