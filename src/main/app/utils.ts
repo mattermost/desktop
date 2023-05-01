@@ -92,7 +92,7 @@ export function clearAppCache() {
     const mainWindow = MainWindow.get();
     if (mainWindow) {
         mainWindow.webContents.session.clearCache().
-            then(mainWindow.reload).
+            then(mainWindow.webContents.reload).
             catch((err) => {
                 log.error('clearAppCache', err);
             });
