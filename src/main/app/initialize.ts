@@ -13,7 +13,6 @@ import {
     QUIT,
     SHOW_NEW_SERVER_MODAL,
     NOTIFY_MENTION,
-    GET_DOWNLOAD_LOCATION,
     SWITCH_TAB,
     CLOSE_TAB,
     OPEN_TAB,
@@ -92,7 +91,6 @@ import {
     handleMentionNotification,
     handleOpenAppMenu,
     handleQuit,
-    handleSelectDownload,
     handlePingDomain,
 } from './intercom';
 import {
@@ -290,7 +288,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
     ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
-    ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
     ipcMain.handle(PING_DOMAIN, handlePingDomain);

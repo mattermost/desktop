@@ -1,18 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, dialog, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
+import {app, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 
 import {MattermostTeam} from 'types/config';
 import {MentionData} from 'types/notification';
 
-import Config from 'common/config';
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 
 import {displayMention} from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
-import ServerManager from 'common/servers/serverManager';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -128,17 +127,6 @@ export function handleOpenAppMenu() {
         x: 18,
         y: 18,
     });
-}
-
-export async function handleSelectDownload(event: IpcMainInvokeEvent, startFrom: string) {
-    log.debug('handleSelectDownload', startFrom);
-
-    const message = 'Specify the folder where files will download';
-    const result = await dialog.showOpenDialog({defaultPath: startFrom || Config.downloadLocation,
-        message,
-        properties:
-     ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
-    return result.filePaths[0];
 }
 
 export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promise<string> {
