@@ -137,8 +137,8 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                 this.willDownloadURLs.set(url, {filePath: saveDialogResult.filePath, bookmark: saveDialogResult.bookmark});
             } else {
                 const filename = this.createFilename(item);
-                const savePath = this.getSavePath(`${Config.downloadLocation}`, filename);
-                await this.verifyMacAppStoreDownloadFolder(savePath);
+                const downloadLocation = await this.verifyMacAppStoreDownloadFolder(filename);
+                const savePath = this.getSavePath(`${downloadLocation}`, filename);
                 this.willDownloadURLs.set(url, {filePath: savePath});
             }
 
@@ -395,22 +395,27 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         return result.filePaths[0];
     }
 
-    private verifyMacAppStoreDownloadFolder = async (savePath: string) => {
+    private verifyMacAppStoreDownloadFolder = async (fileName: string) => {
+        let downloadLocation = Config.downloadLocation;
+
         // eslint-disable-next-line no-undef
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        if (__IS_MAC_APP_STORE__ && Config.downloadLocation) {
+        if (__IS_MAC_APP_STORE__ && downloadLocation) {
             try {
+                const savePath = this.getSavePath(downloadLocation, fileName);
                 fs.writeFileSync(savePath, '');
                 fs.unlinkSync(savePath);
             } catch (e) {
-                const newDownloadLocation = await this.selectDefaultDownloadDirectory(
-                    Config.downloadLocation,
+                downloadLocation = await this.selectDefaultDownloadDirectory(
+                    downloadLocation,
                     localizeMessage('main.downloadsManager.resetDownloadsFolder', 'Please reset the folder where files will download'),
                 );
-                Config.set('downloadLocation', newDownloadLocation);
+                Config.set('downloadLocation', downloadLocation);
             }
         }
+
+        return downloadLocation;
     }
 
     private markFileAsDeleted = (item: DownloadedItem) => {
