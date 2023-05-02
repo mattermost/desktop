@@ -134,8 +134,8 @@ export class MainWindow extends EventEmitter {
         this.win.on('will-resize', this.onWillResize);
         this.win.on('resized', this.onResized);
         this.win.on('moved', this.onResized);
-        if (process.platform !== 'darwin') {
-            mainWindow.on('resize', this.onResize);
+        if (process.platform === 'linux') {
+            this.win.on('resize', this.onResize);
         }
 
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
