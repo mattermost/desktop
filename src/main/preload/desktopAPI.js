@@ -88,7 +88,6 @@ import {
     GET_ORDERED_SERVERS,
     GET_ORDERED_TABS_FOR_SERVER,
     SERVERS_UPDATE,
-    VIEW_FINISHED_RESIZING,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -253,6 +252,3 @@ const createKeyDownListener = () => {
 };
 createKeyDownListener();
 
-window.addEventListener('resize', () => {
-    ipcRenderer.send(VIEW_FINISHED_RESIZING);
-});
