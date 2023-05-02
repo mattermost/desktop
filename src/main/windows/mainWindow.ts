@@ -458,6 +458,7 @@ export class MainWindow extends EventEmitter {
             return;
         }
 
+        // Workaround for macOS to stop the window from sending too many resize calls to the BrowserViews
         if (process.platform === 'darwin' && this.isResizing) {
             log.debug('prevented resize');
             event.preventDefault();
@@ -471,6 +472,7 @@ export class MainWindow extends EventEmitter {
     private onResize = () => {
         log.silly('onResize');
 
+        // Workaround for macOS to stop the window from sending too many resize calls to the BrowserViews
         if (process.platform === 'darwin' && this.isResizing) {
             return;
         }
