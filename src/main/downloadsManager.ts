@@ -3,7 +3,7 @@
 import path from 'path';
 import fs from 'fs';
 
-import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu, app} from 'electron';
+import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu, app, IpcMainInvokeEvent} from 'electron';
 import {ProgressInfo, UpdateInfo} from 'electron-updater';
 import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
 
@@ -12,6 +12,7 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_FOCUSED,
+    GET_DOWNLOAD_LOCATION,
     HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
     NO_UPDATE_AVAILABLE,
     OPEN_DOWNLOADS_DROPDOWN,
@@ -89,12 +90,14 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             return this.hasDownloads();
         });
 
+        ipcMain.removeHandler(GET_DOWNLOAD_LOCATION);
         ipcMain.removeListener(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
         ipcMain.removeListener(UPDATE_AVAILABLE, this.onUpdateAvailable);
         ipcMain.removeListener(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
         ipcMain.removeListener(UPDATE_PROGRESS, this.onUpdateProgress);
         ipcMain.removeListener(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
 
+        ipcMain.handle(GET_DOWNLOAD_LOCATION, this.handleSelectDownload);
         ipcMain.on(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
         ipcMain.on(UPDATE_AVAILABLE, this.onUpdateAvailable);
         ipcMain.on(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
@@ -134,7 +137,8 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                 this.willDownloadURLs.set(url, {filePath: saveDialogResult.filePath, bookmark: saveDialogResult.bookmark});
             } else {
                 const filename = this.createFilename(item);
-                const savePath = this.getSavePath(`${Config.downloadLocation}`, filename);
+                const downloadLocation = await this.verifyMacAppStoreDownloadFolder(filename);
+                const savePath = this.getSavePath(`${downloadLocation}`, filename);
                 this.willDownloadURLs.set(url, {filePath: savePath});
             }
 
@@ -373,6 +377,46 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         delete downloads[APP_UPDATE_KEY];
         this.saveAll(downloads);
     };
+
+    private handleSelectDownload = (event: IpcMainInvokeEvent, startFrom: string) => {
+        return this.selectDefaultDownloadDirectory(
+            startFrom,
+            localizeMessage('main.downloadsManager.specifyDownloadsFolder', 'Specify the folder where files will download'),
+        );
+    }
+
+    private selectDefaultDownloadDirectory = async (startFrom: string, message: string) => {
+        log.debug('handleSelectDownload', startFrom);
+
+        const result = await dialog.showOpenDialog({defaultPath: startFrom || Config.downloadLocation,
+            message,
+            properties:
+        ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
+        return result.filePaths[0];
+    }
+
+    private verifyMacAppStoreDownloadFolder = async (fileName: string) => {
+        let downloadLocation = Config.downloadLocation;
+
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if (__IS_MAC_APP_STORE__ && downloadLocation) {
+            try {
+                const savePath = this.getSavePath(downloadLocation, fileName);
+                fs.writeFileSync(savePath, '');
+                fs.unlinkSync(savePath);
+            } catch (e) {
+                downloadLocation = await this.selectDefaultDownloadDirectory(
+                    downloadLocation,
+                    localizeMessage('main.downloadsManager.resetDownloadsFolder', 'Please reset the folder where files will download'),
+                );
+                Config.set('downloadLocation', downloadLocation);
+            }
+        }
+
+        return downloadLocation;
+    }
 
     private markFileAsDeleted = (item: DownloadedItem) => {
         const fileId = this.getDownloadedFileId(item);
