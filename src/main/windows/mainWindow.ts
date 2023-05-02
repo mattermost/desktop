@@ -458,7 +458,7 @@ export class MainWindow extends EventEmitter {
             return;
         }
 
-        if (this.isResizing) {
+        if (process.platform === 'darwin' && this.isResizing) {
             log.debug('prevented resize');
             event.preventDefault();
             return;
@@ -471,7 +471,7 @@ export class MainWindow extends EventEmitter {
     private onResize = () => {
         log.silly('onResize');
 
-        if (this.isResizing) {
+        if (process.platform === 'darwin' && this.isResizing) {
             return;
         }
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
