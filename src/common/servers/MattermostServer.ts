@@ -5,7 +5,7 @@ import {v4 as uuid} from 'uuid';
 
 import {MattermostTeam, Team} from 'types/config';
 
-import urlUtils from 'common/utils/url';
+import {parseURL} from 'common/utils/url';
 
 export class MattermostServer {
     id: string;
@@ -23,7 +23,7 @@ export class MattermostServer {
     }
 
     updateURL = (url: string) => {
-        this.url = urlUtils.parseURL(url)!;
+        this.url = parseURL(url)!;
         if (!this.url) {
             throw new Error('Invalid url for creating a server');
         }

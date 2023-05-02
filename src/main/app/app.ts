@@ -4,7 +4,7 @@
 import {app, BrowserWindow, Event, dialog, WebContents, Certificate, Details} from 'electron';
 
 import {Logger} from 'common/log';
-import urlUtils from 'common/utils/url';
+import {parseURL} from 'common/utils/url';
 
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
@@ -80,27 +80,26 @@ export function handleAppBeforeQuit() {
 export async function handleAppCertificateError(event: Event, webContents: WebContents, url: string, error: string, certificate: Certificate, callback: (isTrusted: boolean) => void) {
     log.verbose('handleAppCertificateError', {url, error, certificate});
 
-    const parsedURL = urlUtils.parseURL(url);
+    const parsedURL = parseURL(url);
     if (!parsedURL) {
         return;
     }
-    const origin = parsedURL.origin;
-    if (CertificateStore.isExplicitlyUntrusted(origin)) {
+    if (CertificateStore.isExplicitlyUntrusted(parsedURL)) {
         event.preventDefault();
-        log.warn(`Ignoring previously untrusted certificate for ${origin}`);
+        log.warn(`Ignoring previously untrusted certificate for ${parsedURL.origin}`);
         callback(false);
-    } else if (CertificateStore.isTrusted(origin, certificate)) {
+    } else if (CertificateStore.isTrusted(parsedURL, certificate)) {
         event.preventDefault();
         callback(true);
     } else {
     // update the callback
-        const errorID = `${origin}:${error}`;
+        const errorID = `${parsedURL.origin}:${error}`;
 
         const view = ViewManager.getViewByWebContentsId(webContents.id);
         if (view?.tab.server) {
-            const serverURL = urlUtils.parseURL(view.tab.server.url);
-            if (serverURL && serverURL.origin !== origin) {
-                log.warn(`Ignoring certificate for unmatched origin ${origin}, will not trust`);
+            const serverURL = parseURL(view.tab.server.url);
+            if (serverURL && serverURL.origin !== parsedURL.origin) {
+                log.warn(`Ignoring certificate for unmatched origin ${parsedURL.origin}, will not trust`);
                 callback(false);
                 return;
             }
@@ -112,8 +111,8 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
             certificateErrorCallbacks.set(errorID, callback);
             return;
         }
-        const extraDetail = CertificateStore.isExisting(origin) ? localizeMessage('main.app.app.handleAppCertificateError.dialog.extraDetail', 'Certificate is different from previous one.\n\n') : '';
-        const detail = localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.detail', '{extraDetail}origin: {origin}\nError: {error}', {extraDetail, origin, error});
+        const extraDetail = CertificateStore.isExisting(parsedURL) ? localizeMessage('main.app.app.handleAppCertificateError.dialog.extraDetail', 'Certificate is different from previous one.\n\n') : '';
+        const detail = localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.detail', '{extraDetail}origin: {origin}\nError: {error}', {extraDetail, origin: parsedURL.origin, error});
 
         certificateErrorCallbacks.set(errorID, callback);
 
@@ -154,7 +153,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
             }
 
             if (result.response === 0) {
-                CertificateStore.add(origin, certificate);
+                CertificateStore.add(parsedURL, certificate);
                 CertificateStore.save();
                 certificateErrorCallbacks.get(errorID)(true);
 
@@ -165,7 +164,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
                 }
             } else {
                 if (result.checkboxChecked) {
-                    CertificateStore.add(origin, certificate, true);
+                    CertificateStore.add(parsedURL, certificate, true);
                     CertificateStore.save();
                 }
                 certificateErrorCallbacks.get(errorID)(false);

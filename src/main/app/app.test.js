@@ -159,7 +159,7 @@ describe('main/app/app', () => {
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
             expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
-            expect(CertificateStore.add).toHaveBeenCalledWith('http://server-1.com', certificate);
+            expect(CertificateStore.add).toHaveBeenCalledWith(new URL('http://server-1.com'), certificate);
             expect(CertificateStore.save).toHaveBeenCalled();
         });
 
@@ -175,7 +175,7 @@ describe('main/app/app', () => {
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
             expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
-            expect(CertificateStore.add).toHaveBeenCalledWith('http://server-1.com', certificate, true);
+            expect(CertificateStore.add).toHaveBeenCalledWith(new URL('http://server-1.com'), certificate, true);
             expect(CertificateStore.save).toHaveBeenCalled();
         });
     });

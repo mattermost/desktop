@@ -16,8 +16,8 @@ import {Logger} from 'common/log';
 import JsonFileManager from 'common/JsonFileManager';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import urlUtils from 'common/utils/url';
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
+import {isValidURI} from 'common/utils/url';
 
 import updateManager from 'main/autoUpdater';
 import {migrationInfoPath, updatePaths} from 'main/constants';
@@ -72,7 +72,7 @@ export function getDeeplinkingURL(args: string[]) {
     if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
         const url = args[args.length - 1];
-        if (url && mainProtocol && url.startsWith(mainProtocol) && urlUtils.isValidURI(url)) {
+        if (url && mainProtocol && url.startsWith(mainProtocol) && isValidURI(url)) {
             return url;
         }
     }

@@ -17,7 +17,7 @@ import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS, TabView, getDefaultTabs} f
 import MessagingTabView from 'common/tabs/MessagingTabView';
 import FocalboardTabView from 'common/tabs/FocalboardTabView';
 import PlaybooksTabView from 'common/tabs/PlaybooksTabView';
-import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
+import {isInternalURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 
 const log = new Logger('ServerManager');
@@ -133,12 +133,12 @@ export class ServerManager extends EventEmitter {
     lookupTabByURL = (inputURL: URL | string, ignoreScheme = false) => {
         log.silly('lookupTabByURL', `${inputURL}`, ignoreScheme);
 
-        const parsedURL = urlUtils.parseURL(inputURL);
+        const parsedURL = parseURL(inputURL);
         if (!parsedURL) {
             return undefined;
         }
         const server = this.getAllServers().find((server) => {
-            return equalUrlsIgnoringSubpath(parsedURL, server.url, ignoreScheme) && parsedURL.pathname.match(new RegExp(`^${server.url.pathname}(.+)?(/(.+))?$`));
+            return isInternalURL(parsedURL, server.url, ignoreScheme) && parsedURL.pathname.match(new RegExp(`^${server.url.pathname}(.+)?(/(.+))?$`));
         });
         if (!server) {
             return undefined;
@@ -204,7 +204,7 @@ export class ServerManager extends EventEmitter {
         }
 
         let urlModified;
-        if (existingServer.url.toString() !== urlUtils.parseURL(server.url)?.toString()) {
+        if (existingServer.url.toString() !== parseURL(server.url)?.toString()) {
             // Emit this event whenever we update a server URL to ensure remote info is fetched
             urlModified = () => this.emit(SERVERS_URL_MODIFIED, [serverId]);
         }

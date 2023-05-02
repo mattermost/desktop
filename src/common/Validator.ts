@@ -13,7 +13,7 @@ import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
 import {Logger} from 'common/log';
 import {TAB_MESSAGING} from 'common/tabs/TabView';
-import urlUtils from 'common/utils/url';
+import {isValidURL} from 'common/utils/url';
 
 const log = new Logger('Validator');
 const defaultOptions = {
@@ -232,7 +232,7 @@ function cleanTeams<T extends {name: string; url: string}>(teams: T[], func: (te
         newTeams = newTeams.map((team) => func(team));
 
         // next filter out urls that are still invalid so all is not lost
-        newTeams = newTeams.filter(({url}) => urlUtils.isValidURL(url));
+        newTeams = newTeams.filter(({url}) => isValidURL(url));
     }
     return newTeams;
 }
@@ -245,7 +245,7 @@ export function validateV1ConfigData(data: ConfigV1) {
 
 export function validateV2ConfigData(data: ConfigV2) {
     data.teams = cleanTeams(data.teams, cleanTeam);
-    if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
+    if (data.spellCheckerURL && !isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;
     }
@@ -254,7 +254,7 @@ export function validateV2ConfigData(data: ConfigV2) {
 
 export function validateV3ConfigData(data: ConfigV3) {
     data.teams = cleanTeams(data.teams, cleanTeamWithTabs);
-    if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
+    if (data.spellCheckerURL && !isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;
     }

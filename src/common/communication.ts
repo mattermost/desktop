@@ -102,7 +102,6 @@ export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checke
 
 export const GET_VIEW_INFO_FOR_TEST = 'get-view-info-for-test';
 
-export const RESIZE_MODAL = 'resize-modal';
 export const GET_MODAL_UNCLOSEABLE = 'get-modal-uncloseable';
 
 export const UPDATE_PATHS = 'update-paths';

@@ -21,7 +21,7 @@ import {getLocalPreload, openScreensharePermissionsSettingsMacOS, resetScreensha
 import {Logger} from 'common/log';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import Utils from 'common/utils/util';
-import urlUtils, {getFormattedPathName} from 'common/utils/url';
+import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import {
     BROWSER_HISTORY_PUSH,
     CALLS_ERROR,
@@ -90,7 +90,7 @@ export class CallsWidgetWindow {
      */
 
     getURL = () => {
-        return this.win && urlUtils.parseURL(this.win?.webContents.getURL());
+        return this.win && parseURL(this.win?.webContents.getURL());
     }
 
     isCallsWidget = (webContentsId: number) => {
@@ -101,7 +101,7 @@ export class CallsWidgetWindow {
         if (!this.mainView) {
             return undefined;
         }
-        const u = urlUtils.parseURL(this.mainView.tab.server.url.toString()) as URL;
+        const u = parseURL(this.mainView.tab.server.url.toString()) as URL;
 
         u.pathname = getFormattedPathName(u.pathname);
         u.pathname += `plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
@@ -266,7 +266,11 @@ export class CallsWidgetWindow {
             return {action: 'deny' as const};
         }
 
-        if (urlUtils.isCallsPopOutURL(this.mainView?.tab.server.url, url, this.options?.callID)) {
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
+            return {action: 'deny' as const};
+        }
+        if (isCallsPopOutURL(this.mainView?.tab.server.url, parsedURL, this.options?.callID)) {
             return {
                 action: 'allow' as const,
                 overrideBrowserWindowOptions: {

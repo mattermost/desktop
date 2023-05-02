@@ -107,11 +107,11 @@ describe('main/utils', () => {
 
     describe('shouldHaveBackBar', () => {
         it('should have back bar for custom logins', () => {
-            expect(Utils.shouldHaveBackBar('https://server-1.com', 'https://server-1.com/login/sso/saml')).toBe(true);
+            expect(Utils.shouldHaveBackBar(new URL('https://server-1.com'), new URL('https://server-1.com/login/sso/saml'))).toBe(true);
         });
 
         it('should not have back bar for regular login', () => {
-            expect(Utils.shouldHaveBackBar('https://server-1.com', 'https://server-1.com/login')).toBe(false);
+            expect(Utils.shouldHaveBackBar(new URL('https://server-1.com'), new URL('https://server-1.com/login'))).toBe(false);
         });
     });
 

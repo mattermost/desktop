@@ -11,7 +11,6 @@ import {ComparableCertificate} from 'types/certificate';
 
 import {UPDATE_PATHS} from 'common/communication';
 import {Logger} from 'common/log';
-import urlUtils from 'common/utils/url';
 import * as Validator from 'common/Validator';
 
 import {certificateStorePath} from './constants';
@@ -57,35 +56,32 @@ export class CertificateStore {
         fs.writeFileSync(this.storeFile, JSON.stringify(this.data, null, '  '));
     };
 
-    add = (targetURL: string, certificate: Certificate, dontTrust = false) => {
-        const host = urlUtils.getHost(targetURL);
+    add = (targetURL: URL, certificate: Certificate, dontTrust = false) => {
         const comparableCert = comparableCertificate(certificate, dontTrust);
-        this.data[host] = comparableCert;
+        this.data[targetURL.origin] = comparableCert;
 
         // Trust certificate for websocket connections on the same origin.
-        if (host.startsWith('https://')) {
-            const wssHost = host.replace('https', 'wss');
+        if (targetURL.origin.startsWith('https://')) {
+            const wssHost = targetURL.origin.replace('https', 'wss');
             this.data[wssHost] = comparableCert;
         }
     };
 
-    isExisting = (targetURL: string) => {
-        return Object.prototype.hasOwnProperty.call(this.data, urlUtils.getHost(targetURL));
+    isExisting = (targetURL: URL) => {
+        return Object.prototype.hasOwnProperty.call(this.data, targetURL.origin);
     };
 
-    isTrusted = (targetURL: string, certificate: Certificate) => {
-        const host = urlUtils.getHost(targetURL);
+    isTrusted = (targetURL: URL, certificate: Certificate) => {
         if (!this.isExisting(targetURL)) {
             return false;
         }
-        return areEqual(this.data[host], comparableCertificate(certificate));
+        return areEqual(this.data[targetURL.origin], comparableCertificate(certificate));
     };
 
-    isExplicitlyUntrusted = (targetURL: string) => {
+    isExplicitlyUntrusted = (targetURL: URL) => {
         // Whether or not the certificate was explicitly marked as untrusted by
         // clicking "Don't ask again" checkbox before cancelling the connection.
-        const host = urlUtils.getHost(targetURL);
-        const dontTrust = this.data[host]?.dontTrust;
+        const dontTrust = this.data[targetURL.origin]?.dontTrust;
         return dontTrust === undefined ? false : dontTrust;
     }
 }
