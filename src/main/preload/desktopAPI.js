@@ -252,7 +252,3 @@ const createKeyDownListener = () => {
     });
 };
 createKeyDownListener();
-
-window.addEventListener('resize', () => {
-    ipcRenderer.send(VIEW_FINISHED_RESIZING);
-});
