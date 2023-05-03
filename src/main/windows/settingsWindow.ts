@@ -73,8 +73,7 @@ export class SettingsWindow {
 
         this.win.on('closed', () => {
             delete this.win;
-
-            ViewManager.focusCurrentView();
+            setTimeout(() => MainWindow.get()?.focus(), 10);
         });
     }
 }
