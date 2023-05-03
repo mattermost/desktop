@@ -43,8 +43,8 @@ import {
     DOUBLE_CLICK_ON_WINDOW,
 } from 'common/communication';
 import Config from 'common/config';
+import {isTrustedURL, parseURL} from 'common/utils/url';
 import {Logger} from 'common/log';
-import urlUtils from 'common/utils/url';
 
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
@@ -460,8 +460,14 @@ async function initializeAfterAppReady() {
             return;
         }
 
+        const parsedURL = parseURL(requestingURL);
+        if (!parsedURL) {
+            callback(false);
+            return;
+        }
+
         // is the requesting url trusted?
-        callback(urlUtils.isTrustedURL(requestingURL, serverURL));
+        callback(isTrustedURL(parsedURL, serverURL));
     });
 
     if (wasUpdated(AppVersionManager.lastAppVersion)) {

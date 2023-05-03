@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {TAB_MESSAGING, TAB_FOCALBOARD, TAB_PLAYBOOKS} from 'common/tabs/TabView';
-import urlUtils, {equalUrlsIgnoringSubpath} from 'common/utils/url';
+import {parseURL, isInternalURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 
 import {ServerManager} from './serverManager';
@@ -12,7 +12,7 @@ jest.mock('common/config', () => ({
 }));
 jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
-    equalUrlsIgnoringSubpath: jest.fn(),
+    isInternalURL: jest.fn(),
 }));
 jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),
@@ -125,8 +125,8 @@ describe('common/servers/serverManager', () => {
         };
 
         beforeEach(() => {
-            urlUtils.parseURL.mockImplementation((url) => new URL(url));
-            equalUrlsIgnoringSubpath.mockImplementation((url1, url2) => `${url1}`.startsWith(`${url2}`));
+            parseURL.mockImplementation((url) => new URL(url));
+            isInternalURL.mockImplementation((url1, url2) => `${url1}`.startsWith(`${url2}`));
         });
 
         afterEach(() => {

@@ -6,7 +6,7 @@ import path from 'path';
 import {app, session} from 'electron';
 
 import Config from 'common/config';
-import urlUtils from 'common/utils/url';
+import {parseURL, isTrustedURL} from 'common/utils/url';
 
 import parseArgs from 'main/ParseArgs';
 import ViewManager from 'main/views/viewManager';
@@ -105,6 +105,7 @@ jest.mock('common/config', () => ({
 }));
 
 jest.mock('common/utils/url', () => ({
+    parseURL: jest.fn(),
     isTrustedURL: jest.fn(),
 }));
 
@@ -283,6 +284,9 @@ describe('main/app/initialize', () => {
                     },
                 },
             });
+            parseURL.mockImplementation((url) => new URL(url));
+            isTrustedURL.mockImplementation((url) => url.toString() === 'http://server-1.com/');
+
             let callback = jest.fn();
             session.defaultSession.setPermissionRequestHandler.mockImplementation((cb) => {
                 cb({id: 1, getURL: () => 'http://server-1.com'}, 'bad-permission', callback);
@@ -297,8 +301,6 @@ describe('main/app/initialize', () => {
             });
             await initialize();
             expect(callback).toHaveBeenCalledWith(true);
-
-            urlUtils.isTrustedURL.mockImplementation((url) => url === 'http://server-1.com');
 
             callback = jest.fn();
             session.defaultSession.setPermissionRequestHandler.mockImplementation((cb) => {

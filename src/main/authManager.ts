@@ -7,7 +7,7 @@ import {LoginModalData} from 'types/auth';
 
 import {Logger} from 'common/log';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
-import urlUtils from 'common/utils/url';
+import {isCustomLoginURL, isTrustedURL, parseURL} from 'common/utils/url';
 
 import modalManager from 'main/views/modalManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
@@ -36,7 +36,7 @@ export class AuthManager {
         log.verbose('handleAppLogin', {request, authInfo});
 
         event.preventDefault();
-        const parsedURL = urlUtils.parseURL(request.url);
+        const parsedURL = parseURL(request.url);
         if (!parsedURL) {
             return;
         }
@@ -46,7 +46,7 @@ export class AuthManager {
         }
 
         this.loginCallbackMap.set(request.url, callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-        if (urlUtils.isTrustedURL(request.url, serverURL) || urlUtils.isCustomLoginURL(parsedURL, serverURL) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+        if (isTrustedURL(parsedURL, serverURL) || isCustomLoginURL(parsedURL, serverURL) || TrustedOriginsStore.checkPermission(parsedURL, BASIC_AUTH_PERMISSION)) {
             this.popLoginModal(request, authInfo);
         } else {
             this.popPermissionModal(request, authInfo, BASIC_AUTH_PERMISSION);
@@ -109,7 +109,11 @@ export class AuthManager {
     }
 
     handlePermissionGranted(url: string, permission: PermissionType) {
-        TrustedOriginsStore.addPermission(url, permission);
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
+            return;
+        }
+        TrustedOriginsStore.addPermission(parsedURL, permission);
         TrustedOriginsStore.save();
     }
 }

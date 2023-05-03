@@ -7,9 +7,9 @@ import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
 import {PermissionModalInfo} from 'types/modals';
 
-import urlUtil from 'common/utils/url';
 import {t} from 'common/utils/util';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
+import {parseURL} from 'common/utils/url';
 
 type Props = {
     handleDeny: React.MouseEventHandler<HTMLButtonElement>;
@@ -51,14 +51,14 @@ class PermissionModal extends React.PureComponent<Props, State> {
         }
 
         const {url, permission} = this.state;
-        const originDisplay = url ? urlUtil.getHost(url) : this.props.intl.formatMessage({id: 'renderer.modals.permission.permissionModal.unknownOrigin', defaultMessage: 'unknown origin'});
-        const originLink = url ? originDisplay : '';
+        const originDisplay = url ? parseURL(url)?.origin : this.props.intl.formatMessage({id: 'renderer.modals.permission.permissionModal.unknownOrigin', defaultMessage: 'unknown origin'});
+        const originLink = originDisplay ?? '';
 
         const click = (e: React.MouseEvent<HTMLAnchorElement>) => {
             e.preventDefault();
             let parseUrl;
             try {
-                parseUrl = urlUtil.parseURL(originLink);
+                parseUrl = parseURL(originLink);
                 this.props.openExternalLink(parseUrl!.protocol, originLink);
             } catch (err) {
                 console.error(`invalid url ${originLink} supplied to externallink: ${err}`);

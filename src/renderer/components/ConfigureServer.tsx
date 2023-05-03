@@ -7,15 +7,15 @@ import classNames from 'classnames';
 
 import {MattermostTeam} from 'types/config';
 
+import {isValidURL, parseURL} from 'common/utils/url';
+import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
+
 import womanLaptop from 'renderer/assets/svg/womanLaptop.svg';
 
 import Header from 'renderer/components/Header';
 import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
-
-import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
-import urlUtils from 'common/utils/url';
 
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/ConfigureServer.scss';
@@ -72,7 +72,7 @@ function ConfigureServer({
     }, []);
 
     const checkProtocolInURL = (checkURL: string): Promise<string> => {
-        if (urlUtils.startsWithProtocol(checkURL)) {
+        if (isValidURL(checkURL)) {
             return Promise.resolve(checkURL);
         }
         return window.desktop.modals.pingDomain(checkURL).
@@ -115,21 +115,21 @@ function ConfigureServer({
             });
         }
 
-        if (!urlUtils.startsWithProtocol(fullURL)) {
-            return formatMessage({
-                id: 'renderer.components.newTeamModal.error.urlNeedsHttp',
-                defaultMessage: 'URL should start with http:// or https://.',
-            });
-        }
-
-        if (!urlUtils.isValidURL(fullURL)) {
+        if (!parseURL(fullURL)) {
             return formatMessage({
                 id: 'renderer.components.newTeamModal.error.urlIncorrectFormatting',
                 defaultMessage: 'URL is not formatted correctly.',
             });
         }
 
-        if (currentTeams.find(({url: existingURL}) => existingURL === fullURL)) {
+        if (!isValidURL(fullURL)) {
+            return formatMessage({
+                id: 'renderer.components.newTeamModal.error.urlNeedsHttp',
+                defaultMessage: 'URL should start with http:// or https://.',
+            });
+        }
+
+        if (currentTeams.find(({url: existingURL}) => parseURL(existingURL)?.toString === parseURL(fullURL)?.toString())) {
             return formatMessage({
                 id: 'renderer.components.newTeamModal.error.serverUrlExists',
                 defaultMessage: 'A server with the same URL already exists.',

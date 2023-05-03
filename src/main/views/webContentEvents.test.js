@@ -5,8 +5,6 @@
 
 import {shell, BrowserWindow} from 'electron';
 
-import urlUtils from 'common/utils/url';
-
 import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
 
@@ -38,27 +36,6 @@ jest.mock('../utils', () => ({
 
 jest.mock('common/config', () => ({
     spellcheck: true,
-}));
-
-jest.mock('common/utils/url', () => ({
-    parseURL: (url) => {
-        try {
-            return new URL(url);
-        } catch (e) {
-            return null;
-        }
-    },
-    getView: jest.fn(),
-    isTeamUrl: jest.fn(),
-    isAdminUrl: jest.fn(),
-    isTrustedPopupWindow: jest.fn(),
-    isTrustedURL: jest.fn(),
-    isCustomLoginURL: jest.fn(),
-    isInternalURL: jest.fn(),
-    isValidURI: jest.fn(),
-    isPluginUrl: jest.fn(),
-    isManagedResource: jest.fn(),
-    isChannelExportUrl: jest.fn(),
 }));
 
 jest.mock('main/app/utils', () => ({
@@ -97,13 +74,11 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should allow navigation when url isTeamURL', () => {
-            urlUtils.isTeamUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(serverURL));
             willNavigate(event, 'http://server-1.com/subpath');
             expect(event.preventDefault).not.toBeCalled();
         });
 
         it('should allow navigation when url isAdminURL', () => {
-            urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}admin_console`));
             willNavigate(event, 'http://server-1.com/admin_console/subpath');
             expect(event.preventDefault).not.toBeCalled();
         });
@@ -116,9 +91,13 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should allow navigation when isCustomLoginURL', () => {
-            urlUtils.isCustomLoginURL.mockImplementation((parsedURL) => parsedURL.toString().startsWith('http://loginurl.com/login'));
-            willNavigate(event, 'http://loginurl.com/login/oauth');
+            willNavigate(event, 'http://server-1.com/oauth/authorize');
             expect(event.preventDefault).not.toBeCalled();
+        });
+
+        it('should not allow navigation when isCustomLoginURL is external', () => {
+            willNavigate(event, 'http://loginurl.com/oauth/authorize');
+            expect(event.preventDefault).toBeCalled();
         });
 
         it('should allow navigation when protocol is mailto', () => {
@@ -133,7 +112,6 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should allow navigation when it isChannelExportUrl', () => {
-            urlUtils.isChannelExportUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().includes('/plugins/com.mattermost.plugin-channel-export/api/v1/export'));
             willNavigate(event, 'http://server-1.com/plugins/com.mattermost.plugin-channel-export/api/v1/export');
             expect(event.preventDefault).not.toBeCalled();
         });
@@ -150,9 +128,6 @@ describe('main/views/webContentsEvents', () => {
 
         beforeEach(() => {
             webContentsEventManager.getServerURLFromWebContentsId = jest.fn().mockImplementation(() => new URL('http://server-1.com'));
-            urlUtils.isTrustedURL.mockReturnValue(true);
-            urlUtils.isInternalURL.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(serverURL));
-            urlUtils.isCustomLoginURL.mockImplementation((parsedURL) => parsedURL.toString().startsWith('http://loginurl.com/login'));
         });
 
         afterEach(() => {
@@ -162,7 +137,7 @@ describe('main/views/webContentsEvents', () => {
 
         it('should add custom login entry on custom login URL', () => {
             webContentsEventManager.customLogins[1] = {inProgress: false};
-            didStartNavigation(event, 'http://loginurl.com/login/oauth');
+            didStartNavigation(event, 'http://server-1.com/oauth/authorize');
             expect(webContentsEventManager.customLogins[1]).toStrictEqual({inProgress: true});
         });
 
@@ -178,12 +153,7 @@ describe('main/views/webContentsEvents', () => {
         const newWindow = webContentsEventManager.generateNewWindowListener(1, true);
 
         beforeEach(() => {
-            urlUtils.isValidURI.mockReturnValue(true);
             webContentsEventManager.getServerURLFromWebContentsId = jest.fn().mockImplementation(() => new URL('http://server-1.com'));
-            urlUtils.isTeamUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}myteam`));
-            urlUtils.isAdminUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}admin_console`));
-            urlUtils.isPluginUrl.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}myplugin`));
-            urlUtils.isManagedResource.mockImplementation((serverURL, parsedURL) => parsedURL.toString().startsWith(`${serverURL}trusted`));
 
             BrowserWindow.mockImplementation(() => ({
                 once: jest.fn(),
@@ -212,7 +182,6 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should open invalid URIs in browser', () => {
-            urlUtils.isValidURI.mockReturnValue(false);
             expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).toBeCalledWith('https://google.com/?^');
         });
@@ -258,7 +227,7 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should open popup window for plugins', () => {
-            expect(newWindow({url: 'http://server-1.com/myplugin/login'})).toStrictEqual({action: 'deny'});
+            expect(newWindow({url: 'http://server-1.com/plugins/myplugin/login'})).toStrictEqual({action: 'deny'});
             expect(webContentsEventManager.popupWindow).toBeTruthy();
         });
 
@@ -268,7 +237,6 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should open external URIs in browser', () => {
-            urlUtils.isValidURI.mockReturnValue(false);
             expect(newWindow({url: 'https://google.com'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).toBeCalledWith('https://google.com');
         });

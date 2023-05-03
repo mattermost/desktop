@@ -29,11 +29,11 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
-import urlUtils from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {TabView, TAB_MESSAGING} from 'common/tabs/TabView';
+import {parseURL} from 'common/utils/url';
 
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -174,7 +174,7 @@ export class ViewManager {
 
     handleDeepLink = (url: string | URL) => {
         if (url) {
-            const parsedURL = urlUtils.parseURL(url)!;
+            const parsedURL = parseURL(url)!;
             const tabView = ServerManager.lookupTabByURL(parsedURL, true);
             if (tabView) {
                 const urlWithSchema = `${tabView.url.origin}${parsedURL.pathname}${parsedURL.search}`;
@@ -471,11 +471,17 @@ export class ViewManager {
         log.debug('handleBrowserHistoryPush', {viewId, pathName});
 
         const currentView = this.getView(viewId);
-        const cleanedPathName = urlUtils.cleanPathName(currentView?.tab.server.url.pathname || '', pathName);
-        const redirectedviewId = ServerManager.lookupTabByURL(`${currentView?.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
+        if (!currentView) {
+            return;
+        }
+        let cleanedPathName = pathName;
+        if (currentView.tab.server.url.pathname !== '/' && pathName.startsWith(currentView.tab.server.url.pathname)) {
+            cleanedPathName = pathName.replace(currentView.tab.server.url.pathname, '');
+        }
+        const redirectedviewId = ServerManager.lookupTabByURL(`${currentView.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
         if (this.isViewClosed(redirectedviewId)) {
             // If it's a closed view, just open it and stop
-            this.openClosedTab(redirectedviewId, `${currentView?.tab.server.url}${cleanedPathName}`);
+            this.openClosedTab(redirectedviewId, `${currentView.tab.server.url}${cleanedPathName}`);
             return;
         }
         let redirectedView = this.getView(redirectedviewId) || currentView;
@@ -540,7 +546,7 @@ export class ViewManager {
         log.debug('handleSetCurrentViewBounds', newBounds);
 
         const currentView = this.getCurrentView();
-        if (currentView) {
+        if (currentView && currentView.currentURL) {
             const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height, shouldHaveBackBar(currentView.tab.url, currentView.currentURL));
             currentView.setBounds(adjustedBounds);
         }

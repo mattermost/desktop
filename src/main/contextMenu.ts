@@ -5,14 +5,14 @@
 import {BrowserView, BrowserWindow, ContextMenuParams, Event} from 'electron';
 import electronContextMenu, {Options} from 'electron-context-menu';
 
-import urlUtils from 'common/utils/url';
+import {parseURL} from 'common/utils/url';
 
 const defaultMenuOptions = {
     shouldShowMenu: (e: Event, p: ContextMenuParams) => {
         const isInternalLink = p.linkURL.endsWith('#') && p.linkURL.slice(0, -1) === p.pageURL;
         let isInternalSrc;
         try {
-            const srcurl = urlUtils.parseURL(p.srcURL);
+            const srcurl = parseURL(p.srcURL);
             isInternalSrc = srcurl?.protocol === 'file:';
         } catch (err) {
             isInternalSrc = false;

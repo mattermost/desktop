@@ -5,11 +5,26 @@ import {BrowserWindow, session, shell, WebContents} from 'electron';
 
 import Config from 'common/config';
 import {Logger} from 'common/log';
-import urlUtils from 'common/utils/url';
+import ServerManager from 'common/servers/serverManager';
+import {
+    isAdminUrl,
+    isCallsPopOutURL,
+    isChannelExportUrl,
+    isCustomLoginURL,
+    isHelpUrl,
+    isImageProxyUrl,
+    isInternalURL,
+    isManagedResource,
+    isPluginUrl,
+    isPublicFilesUrl,
+    isTeamUrl,
+    isTrustedURL,
+    isValidURI,
+    parseURL,
+} from 'common/utils/url';
 
 import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
-import ServerManager from 'common/servers/serverManager';
 
 import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
@@ -73,18 +88,18 @@ export class WebContentsEventManager {
         return (event: Event, url: string) => {
             this.log(webContentsId).debug('will-navigate', url);
 
-            const parsedURL = urlUtils.parseURL(url)!;
+            const parsedURL = parseURL(url)!;
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
-            if (serverURL && (urlUtils.isTeamUrl(serverURL, parsedURL) || urlUtils.isAdminUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
+            if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
                 return;
             }
 
-            if (serverURL && urlUtils.isChannelExportUrl(serverURL, parsedURL)) {
+            if (serverURL && isChannelExportUrl(serverURL, parsedURL)) {
                 return;
             }
 
-            if (serverURL && urlUtils.isCustomLoginURL(parsedURL, serverURL)) {
+            if (serverURL && isCustomLoginURL(parsedURL, serverURL)) {
                 return;
             }
             if (parsedURL.protocol === 'mailto:') {
@@ -96,7 +111,7 @@ export class WebContentsEventManager {
             }
 
             const callID = CallsWidgetWindow.callID;
-            if (serverURL && callID && urlUtils.isCallsPopOutURL(serverURL, parsedURL, callID)) {
+            if (serverURL && callID && isCallsPopOutURL(serverURL, parsedURL, callID)) {
                 return;
             }
 
@@ -109,16 +124,16 @@ export class WebContentsEventManager {
         return (event: Event, url: string) => {
             this.log(webContentsId).debug('did-start-navigation', url);
 
-            const parsedURL = urlUtils.parseURL(url)!;
+            const parsedURL = parseURL(url)!;
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
-            if (!serverURL || !urlUtils.isTrustedURL(parsedURL, serverURL)) {
+            if (!serverURL || !isTrustedURL(parsedURL, serverURL)) {
                 return;
             }
 
-            if (serverURL && urlUtils.isCustomLoginURL(parsedURL, serverURL)) {
+            if (serverURL && isCustomLoginURL(parsedURL, serverURL)) {
                 this.customLogins[webContentsId].inProgress = true;
-            } else if (serverURL && this.customLogins[webContentsId].inProgress && urlUtils.isInternalURL(serverURL || new URL(''), parsedURL)) {
+            } else if (serverURL && this.customLogins[webContentsId].inProgress && isInternalURL(serverURL || new URL(''), parsedURL)) {
                 this.customLogins[webContentsId].inProgress = false;
             }
         };
@@ -133,7 +148,7 @@ export class WebContentsEventManager {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
             this.log(webContentsId).debug('new-window', details.url);
 
-            const parsedURL = urlUtils.parseURL(details.url);
+            const parsedURL = parseURL(details.url);
             if (!parsedURL) {
                 this.log(webContentsId).warn(`Ignoring non-url ${details.url}`);
                 return {action: 'deny'};
@@ -152,7 +167,7 @@ export class WebContentsEventManager {
 
             // Check for valid URL
             // Let the browser handle invalid URIs
-            if (!urlUtils.isValidURI(details.url)) {
+            if (!isValidURI(details.url)) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};
             }
@@ -164,31 +179,30 @@ export class WebContentsEventManager {
             }
 
             // Public download links case
-            // TODO: We might be handling different types differently in the future, for now
             // we are going to mimic the browser and just pop a new browser window for public links
-            if (parsedURL.pathname.match(/^(\/api\/v[3-4]\/public)*\/files\//)) {
+            if (isPublicFilesUrl(serverURL, parsedURL)) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};
             }
 
             // Image proxy case
-            if (parsedURL.pathname.match(/^\/api\/v[3-4]\/image/)) {
+            if (isImageProxyUrl(serverURL, parsedURL)) {
                 shell.openExternal(details.url);
                 return {action: 'deny'};
             }
 
-            if (parsedURL.pathname.match(/^\/help\//)) {
+            if (isHelpUrl(serverURL, parsedURL)) {
                 // Help links case
                 // continue to open special case internal urls in default browser
                 shell.openExternal(details.url);
                 return {action: 'deny'};
             }
 
-            if (urlUtils.isTeamUrl(serverURL, parsedURL, true)) {
+            if (isTeamUrl(serverURL, parsedURL, true)) {
                 ViewManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};
             }
-            if (urlUtils.isAdminUrl(serverURL, parsedURL)) {
+            if (isAdminUrl(serverURL, parsedURL)) {
                 this.log(webContentsId).info(`${details.url} is an admin console page, preventing to open a new window`);
                 return {action: 'deny'};
             }
@@ -198,7 +212,7 @@ export class WebContentsEventManager {
             }
 
             // TODO: move popups to its own and have more than one.
-            if (urlUtils.isPluginUrl(serverURL, parsedURL) || urlUtils.isManagedResource(serverURL, parsedURL)) {
+            if (isPluginUrl(serverURL, parsedURL) || isManagedResource(serverURL, parsedURL)) {
                 let popup: BrowserWindow;
                 if (this.popupWindow) {
                     this.popupWindow.win.once('ready-to-show', () => {
@@ -224,13 +238,13 @@ export class WebContentsEventManager {
 
                     popup = this.popupWindow.win;
                     popup.webContents.on('will-redirect', (event, url) => {
-                        const parsedURL = urlUtils.parseURL(url);
+                        const parsedURL = parseURL(url);
                         if (!parsedURL) {
                             event.preventDefault();
                             return;
                         }
 
-                        if (urlUtils.isInternalURL(serverURL, parsedURL) && !urlUtils.isPluginUrl(serverURL, parsedURL) && !urlUtils.isManagedResource(serverURL, parsedURL)) {
+                        if (isInternalURL(serverURL, parsedURL) && !isPluginUrl(serverURL, parsedURL) && !isManagedResource(serverURL, parsedURL)) {
                             event.preventDefault();
                         }
                     });
@@ -247,7 +261,7 @@ export class WebContentsEventManager {
 
                 popup.once('ready-to-show', () => popup.show());
 
-                if (urlUtils.isManagedResource(serverURL, parsedURL)) {
+                if (isManagedResource(serverURL, parsedURL)) {
                     popup.loadURL(details.url);
                 } else {
                     // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
@@ -261,7 +275,7 @@ export class WebContentsEventManager {
             }
 
             const otherServerURL = ServerManager.lookupTabByURL(parsedURL);
-            if (otherServerURL && urlUtils.isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
+            if (otherServerURL && isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
                 ViewManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};
             }

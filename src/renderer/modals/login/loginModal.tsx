@@ -10,7 +10,7 @@ import {AuthenticationResponseDetails, AuthInfo} from 'electron/renderer';
 
 import {LoginModalInfo} from 'types/modals';
 
-import urlUtils from 'common/utils/url';
+import {parseURL} from 'common/utils/url';
 
 type Props = {
     onCancel: (request: AuthenticationResponseDetails) => void;
@@ -86,7 +86,7 @@ class LoginModal extends React.PureComponent<Props, State> {
                 />
             );
         }
-        const tmpURL = urlUtils.parseURL(this.state.request.url);
+        const tmpURL = parseURL(this.state.request.url);
         return (
             <FormattedMessage
                 id='renderer.modals.login.loginModal.message.server'

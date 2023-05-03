@@ -7,7 +7,6 @@ import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 import {EventEmitter} from 'events';
 
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
-import urlUtils from 'common/utils/url';
 import AppState from 'common/appState';
 import {
     LOAD_RETRY,
@@ -23,6 +22,7 @@ import {
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
+import {isInternalURL, parseURL} from 'common/utils/url';
 import {TabView} from 'common/tabs/TabView';
 
 import MainWindow from 'main/windows/mainWindow';
@@ -114,7 +114,7 @@ export class MattermostView extends EventEmitter {
         return this.loggedIn;
     }
     get currentURL() {
-        return this.view.webContents.getURL();
+        return parseURL(this.view.webContents.getURL());
     }
     get webContentsId() {
         return this.view.webContents.id;
@@ -129,8 +129,8 @@ export class MattermostView extends EventEmitter {
 
         // If we're logging in from a different tab, force a reload
         if (loggedIn &&
-            this.currentURL !== this.tab.url.toString() &&
-            !this.currentURL.startsWith(this.tab.url.toString())
+            this.currentURL?.toString() !== this.tab.url.toString() &&
+            !this.currentURL?.toString().startsWith(this.tab.url.toString())
         ) {
             this.reload();
         }
@@ -149,7 +149,7 @@ export class MattermostView extends EventEmitter {
     }
 
     updateHistoryButton = () => {
-        if (urlUtils.parseURL(this.currentURL)?.toString() === this.tab.url.toString()) {
+        if (this.currentURL?.toString() === this.tab.url.toString()) {
             this.view.webContents.clearHistory();
             this.atRoot = true;
         } else {
@@ -165,7 +165,7 @@ export class MattermostView extends EventEmitter {
 
         let loadURL: string;
         if (someURL) {
-            const parsedURL = urlUtils.parseURL(someURL);
+            const parsedURL = parseURL(someURL);
             if (parsedURL) {
                 loadURL = parsedURL.toString();
             } else {
@@ -196,6 +196,9 @@ export class MattermostView extends EventEmitter {
     show = () => {
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
+            return;
+        }
+        if (!this.currentURL) {
             return;
         }
         if (this.isVisible) {
@@ -435,7 +438,7 @@ export class MattermostView extends EventEmitter {
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.id, loadURL);
             const mainWindow = MainWindow.get();
-            if (mainWindow) {
+            if (mainWindow && this.currentURL) {
                 this.setBounds(getWindowBoundaries(mainWindow, shouldHaveBackBar(this.tab.url || '', this.currentURL)));
             }
         };
@@ -472,8 +475,12 @@ export class MattermostView extends EventEmitter {
         if (!mainWindow) {
             return;
         }
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
+            return;
+        }
 
-        if (shouldHaveBackBar(this.tab.url || '', url)) {
+        if (shouldHaveBackBar(this.tab.url || '', parsedURL)) {
             this.setBounds(getWindowBoundaries(mainWindow, true));
             MainWindow.sendToRenderer(TOGGLE_BACK_BUTTON, true);
             this.log.debug('show back button');
@@ -486,10 +493,11 @@ export class MattermostView extends EventEmitter {
 
     private handleUpdateTarget = (e: Event, url: string) => {
         this.log.silly('handleUpdateTarget', url);
-        if (url && !urlUtils.isInternalURL(urlUtils.parseURL(url), this.tab.server.url)) {
-            this.emit(UPDATE_TARGET_URL, url);
-        } else {
+        const parsedURL = parseURL(url);
+        if (parsedURL && isInternalURL(parsedURL, this.tab.server.url)) {
             this.emit(UPDATE_TARGET_URL);
+        } else {
+            this.emit(UPDATE_TARGET_URL, url);
         }
     }
 

@@ -58,7 +58,7 @@ jest.mock('common/config', () => ({
 jest.mock('common/utils/url', () => {
     const actualUrl = jest.requireActual('common/utils/url');
     return {
-        ...actualUrl.default,
+        ...actualUrl,
         isTrustedURL: (url) => {
             return url.toString() === 'http://trustedurl.com/';
         },

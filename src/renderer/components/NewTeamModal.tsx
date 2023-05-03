@@ -8,7 +8,7 @@ import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
 import {MattermostTeam} from 'types/config';
 
-import urlUtils from 'common/utils/url';
+import {isValidURL} from 'common/utils/url';
 
 type Props = {
     onClose?: () => void;
@@ -124,7 +124,7 @@ class NewTeamModal extends React.PureComponent<Props, State> {
                 />
             );
         }
-        if (!urlUtils.isValidURL(this.state.teamUrl.trim())) {
+        if (!isValidURL(this.state.teamUrl.trim())) {
             return (
                 <FormattedMessage
                     id='renderer.components.newTeamModal.error.urlIncorrectFormatting'
