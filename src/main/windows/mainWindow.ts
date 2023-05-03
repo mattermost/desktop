@@ -100,11 +100,6 @@ export class MainWindow extends EventEmitter {
         this.win.setAutoHideMenuBar(true);
         this.win.setMenuBarVisibility(false);
 
-        const localURL = getLocalURLString('index.html');
-        this.win.loadURL(localURL).catch(
-            (reason) => {
-                log.error('failed to load', reason);
-            });
         this.win.once('ready-to-show', () => {
             if (!this.win) {
                 return;
@@ -124,7 +119,6 @@ export class MainWindow extends EventEmitter {
         this.win.once('restore', () => {
             this.win?.restore();
         });
-
         this.win.on('close', this.onClose);
         this.win.on('closed', this.onClosed);
         this.win.on('focus', this.onFocus);
@@ -144,7 +138,6 @@ export class MainWindow extends EventEmitter {
         if (process.platform === 'linux') {
             this.win.on('resize', this.onResize);
         }
-
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
 
         // Should not allow the main window to generate a window of its own
@@ -155,6 +148,12 @@ export class MainWindow extends EventEmitter {
 
         const contextMenu = new ContextMenu({}, this.win);
         contextMenu.reload();
+
+        const localURL = getLocalURLString('index.html');
+        this.win.loadURL(localURL).catch(
+            (reason) => {
+                log.error('failed to load', reason);
+            });
 
         this.emit(MAIN_WINDOW_CREATED);
     }
@@ -168,12 +167,11 @@ export class MainWindow extends EventEmitter {
     }
 
     show = () => {
-        if (this.win) {
+        if (this.win && this.isReady) {
             this.win.show();
             this.win.focus();
         } else {
             this.init();
-            this.show();
         }
     }
 
