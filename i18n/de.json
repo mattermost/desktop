@@ -274,5 +274,7 @@
     "main.menus.app.view.downloads": "Downloads",
     "renderer.components.settingsPage.trayIcon.color": "Symbol Farbe: ",
     "main.menus.app.help.RunDiagnostics": "Diagnose durchführen",
-    "main.menus.app.help.ShowLogs": "Protokolle anzeigen"
+    "main.menus.app.help.ShowLogs": "Protokolle anzeigen",
+    "main.downloadsManager.specifyDownloadsFolder": "Definiere das Verzeichnis in das Dateien heruntergeladen werden",
+    "main.downloadsManager.resetDownloadsFolder": "Bitte setze den Ordner zurück, in den die Dateien heruntergeladen werden sollen"
 }
