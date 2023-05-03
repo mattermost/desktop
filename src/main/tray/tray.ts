@@ -119,6 +119,9 @@ export class TrayIcon {
         this.tray.setToolTip(message);
     }
 
+    // Linux note: the click event was fixed in Electron v23, but only fires when the OS supports StatusIconLinuxDbus
+    // There is a fallback case that will make sure the icon is displayed, but will only support the context menu
+    // See here: https://github.com/electron/electron/pull/36333
     private onClick = () => {
         log.verbose('onClick');
 
