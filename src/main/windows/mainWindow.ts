@@ -49,6 +49,7 @@ export class MainWindow extends EventEmitter {
     private savedWindowState: SavedWindowState;
     private ready: boolean;
     private isResizing: boolean;
+    private lastEmittedBounds?: Electron.Rectangle
 
     constructor() {
         super();
@@ -134,7 +135,11 @@ export class MainWindow extends EventEmitter {
         this.win.on('leave-full-screen', this.onLeaveFullScreen);
         this.win.on('will-resize', this.onWillResize);
         this.win.on('resized', this.onResized);
-        this.win.on('moved', this.onResized);
+        if (process.platform === 'win32') {
+            // We don't want this on macOS, it's an alias of 'move'
+            // This is mostly a fix for Windows 11 snapping
+            this.win.on('moved', this.onResized);
+        }
         if (process.platform === 'linux') {
             this.win.on('resize', this.onResize);
         }
@@ -407,24 +412,33 @@ export class MainWindow extends EventEmitter {
         });
     }
 
-    private emitBoundsForMaximize = () => {
+    private emitBounds = (bounds?: Electron.Rectangle, force?: boolean) => {
         // Workaround since the window bounds aren't updated immediately when the window is maximized for some reason
-        setTimeout(() => this.emit(MAIN_WINDOW_RESIZED, this.getBounds()), 10);
+        // We also don't want to force too many resizes so we throttle here
+        setTimeout(() => {
+            const newBounds = bounds ?? this.getBounds();
+            if (!force && newBounds?.height === this.lastEmittedBounds?.height && newBounds?.width === this.lastEmittedBounds?.width) {
+                return;
+            }
+
+            this.emit(MAIN_WINDOW_RESIZED, newBounds);
+            this.lastEmittedBounds = newBounds;
+        }, 10);
     }
 
     private onMaximize = () => {
         this.win?.webContents.send(MAXIMIZE_CHANGE, true);
-        this.emitBoundsForMaximize();
+        this.emitBounds();
     }
 
     private onUnmaximize = () => {
         this.win?.webContents.send(MAXIMIZE_CHANGE, false);
-        this.emitBoundsForMaximize();
+        this.emitBounds();
     }
 
     private onEnterFullScreen = () => {
         this.win?.webContents.send('enter-full-screen');
-        this.emitBoundsForMaximize();
+        this.emitBounds();
 
         // For some reason on Linux I've seen the menu bar popup again
         this.win?.setMenuBarVisibility(false);
@@ -432,7 +446,7 @@ export class MainWindow extends EventEmitter {
 
     private onLeaveFullScreen = () => {
         this.win?.webContents.send('leave-full-screen');
-        this.emitBoundsForMaximize();
+        this.emitBounds();
     }
 
     /**
@@ -461,7 +475,7 @@ export class MainWindow extends EventEmitter {
         }
 
         this.isResizing = true;
-        this.emit(MAIN_WINDOW_RESIZED, newBounds);
+        this.emitBounds(newBounds);
     }
 
     private onResize = () => {
@@ -471,13 +485,14 @@ export class MainWindow extends EventEmitter {
         if (process.platform === 'darwin' && this.isResizing) {
             return;
         }
-        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        this.emitBounds();
     }
 
     private onResized = () => {
         log.debug('onResized');
 
-        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        // Because this is the final window state after a resize, we force the size here
+        this.emitBounds(this.getBounds(), true);
         this.isResizing = false;
     }
 
