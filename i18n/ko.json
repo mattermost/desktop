@@ -270,5 +270,7 @@
     "renderer.components.settingsPage.bounceIcon": "Dock 아이콘 바운스",
     "renderer.components.configureServer.subtitle": "팀 커뮤니케이션 허브에<br></br>연결할 첫 번째 서버 설정",
     "renderer.downloadsDropdown.remaining": "잔여",
-    "main.menus.app.help.ShowLogs": "로그 표시"
+    "main.menus.app.help.ShowLogs": "로그 표시",
+    "main.downloadsManager.specifyDownloadsFolder": "파일이 다운로드 될 폴더를 지정하세요",
+    "main.downloadsManager.resetDownloadsFolder": "파일이 다운로드 될 폴더를 다시 설정 하세요"
 }
