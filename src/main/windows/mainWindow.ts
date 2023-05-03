@@ -169,11 +169,8 @@ export class MainWindow extends EventEmitter {
 
     show = () => {
         if (this.win) {
-            if (this.win.isVisible()) {
-                this.win.focus();
-            } else {
-                this.win.show();
-            }
+            this.win.show();
+            this.win.focus();
         } else {
             this.init();
             this.show();
