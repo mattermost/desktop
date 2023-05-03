@@ -91,11 +91,12 @@ export class MainWindow extends EventEmitter {
         }
 
         this.win = new BrowserWindow(windowOptions);
-        this.win.setMenuBarVisibility(false);
-
         if (!this.win) {
             throw new Error('unable to create main window');
         }
+
+        this.win.setAutoHideMenuBar(true);
+        this.win.setMenuBarVisibility(false);
 
         const localURL = getLocalURLString('index.html');
         this.win.loadURL(localURL).catch(
@@ -129,13 +130,13 @@ export class MainWindow extends EventEmitter {
         this.win.on('unresponsive', this.onUnresponsive);
         this.win.on('maximize', this.onMaximize);
         this.win.on('unmaximize', this.onUnmaximize);
-        this.win.on('enter-full-screen', () => this.win?.webContents.send('enter-full-screen'));
-        this.win.on('leave-full-screen', () => this.win?.webContents.send('leave-full-screen'));
+        this.win.on('enter-full-screen', this.onEnterFullScreen);
+        this.win.on('leave-full-screen', this.onLeaveFullScreen);
         this.win.on('will-resize', this.onWillResize);
         this.win.on('resized', this.onResized);
         this.win.on('moved', this.onResized);
-        if (process.platform !== 'darwin') {
-            mainWindow.on('resize', this.onResize);
+        if (process.platform === 'linux') {
+            this.win.on('resize', this.onResize);
         }
 
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
@@ -406,14 +407,37 @@ export class MainWindow extends EventEmitter {
         });
     }
 
+    private emitBoundsForMaximize = () => {
+        // Workaround for Linux since the window bounds aren't updated immediately when the window is maximized for some reason
+        if (process.platform !== 'linux') {
+            return;
+        }
+        setTimeout(() => {
+            this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        }, 10);
+    }
+
     private onMaximize = () => {
         this.win?.webContents.send(MAXIMIZE_CHANGE, true);
-        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        this.emitBoundsForMaximize();
     }
 
     private onUnmaximize = () => {
         this.win?.webContents.send(MAXIMIZE_CHANGE, false);
-        this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        this.emitBoundsForMaximize();
+    }
+
+    private onEnterFullScreen = () => {
+        this.win?.webContents.send('enter-full-screen');
+        this.emitBoundsForMaximize();
+
+        // For some reason on Linux I've seen the menu bar popup again
+        this.win?.setMenuBarVisibility(false);
+    }
+
+    private onLeaveFullScreen = () => {
+        this.win?.webContents.send('leave-full-screen');
+        this.emitBoundsForMaximize();
     }
 
     /**
@@ -434,7 +458,8 @@ export class MainWindow extends EventEmitter {
             return;
         }
 
-        if (this.isResizing) {
+        // Workaround for macOS to stop the window from sending too many resize calls to the BrowserViews
+        if (process.platform === 'darwin' && this.isResizing) {
             log.debug('prevented resize');
             event.preventDefault();
             return;
@@ -447,7 +472,8 @@ export class MainWindow extends EventEmitter {
     private onResize = () => {
         log.silly('onResize');
 
-        if (this.isResizing) {
+        // Workaround for macOS to stop the window from sending too many resize calls to the BrowserViews
+        if (process.platform === 'darwin' && this.isResizing) {
             return;
         }
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());

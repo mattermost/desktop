@@ -85,6 +85,7 @@ describe('main/windows/mainWindow', () => {
     describe('init', () => {
         const baseWindow = {
             setMenuBarVisibility: jest.fn(),
+            setAutoHideMenuBar: jest.fn(),
             loadURL: jest.fn(),
             once: jest.fn(),
             on: jest.fn(),
