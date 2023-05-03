@@ -59,6 +59,7 @@ import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
 import ServerManager from 'common/servers/serverManager';
+import Telemetry from 'main/telemetry';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {refreshTrayImages, setupTray} from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
@@ -317,6 +318,7 @@ async function initializeAfterAppReady() {
             updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
         }
     });
+    Telemetry.trackEvent('server-count', 'startup', {num_of_servers: ServerManager.getAllServers().length});
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
