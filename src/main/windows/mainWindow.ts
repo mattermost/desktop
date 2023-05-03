@@ -408,13 +408,8 @@ export class MainWindow extends EventEmitter {
     }
 
     private emitBoundsForMaximize = () => {
-        // Workaround for Linux since the window bounds aren't updated immediately when the window is maximized for some reason
-        if (process.platform !== 'linux') {
-            return;
-        }
-        setTimeout(() => {
-            this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
-        }, 10);
+        // Workaround since the window bounds aren't updated immediately when the window is maximized for some reason
+        setTimeout(() => this.emit(MAIN_WINDOW_RESIZED, this.getBounds()), 10);
     }
 
     private onMaximize = () => {
