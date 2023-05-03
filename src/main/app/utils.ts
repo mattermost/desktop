@@ -25,7 +25,7 @@ import {localizeMessage} from 'main/i18nManager';
 import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
-import {setTrayMenu} from 'main/tray/tray';
+import Tray from 'main/tray/tray';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -64,7 +64,7 @@ export function handleUpdateMenuEvent() {
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {
         const tMenu = createTrayMenu();
-        setTrayMenu(tMenu);
+        Tray.setMenu(tMenu);
     }
 }
 

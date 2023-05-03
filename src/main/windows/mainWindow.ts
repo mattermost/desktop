@@ -25,6 +25,7 @@ import {
     MAXIMIZE_CHANGE,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
+    MAIN_WINDOW_FOCUSED,
     VIEW_FINISHED_RESIZING,
 } from 'common/communication';
 import Config from 'common/config';
@@ -202,8 +203,6 @@ export class MainWindow extends EventEmitter {
         }
     }
 
-    onBrowserWindow = this.win?.on;
-
     sendToRenderer = (channel: string, ...args: unknown[]) => {
         this.sendToRendererWithRetry(3, channel, ...args);
     }
@@ -295,6 +294,7 @@ export class MainWindow extends EventEmitter {
         }
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        this.emit(MAIN_WINDOW_FOCUSED);
     }
 
     private onBlur = () => {

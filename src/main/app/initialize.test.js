@@ -157,8 +157,8 @@ jest.mock('common/servers/serverManager', () => ({
     on: jest.fn(),
 }));
 jest.mock('main/tray/tray', () => ({
-    refreshTrayImages: jest.fn(),
-    setupTray: jest.fn(),
+    refreshImages: jest.fn(),
+    setup: jest.fn(),
 }));
 jest.mock('main/trustedOrigins', () => ({
     load: jest.fn(),
