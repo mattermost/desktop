@@ -485,6 +485,7 @@ describe('main/windows/mainWindow', () => {
                 setWindowOpenHandler: jest.fn(),
             },
         };
+        mainWindow.init = jest.fn();
 
         beforeEach(() => {
             mainWindow.win.show.mockImplementation(() => {
@@ -493,15 +494,20 @@ describe('main/windows/mainWindow', () => {
         });
 
         afterEach(() => {
+            mainWindow.ready = false;
             jest.resetAllMocks();
         });
 
-        it('should show main window if it exists and focus it if it is already visible', () => {
+        it('should show main window and focus it if it is exists', () => {
+            mainWindow.ready = true;
             mainWindow.show();
             expect(mainWindow.win.show).toHaveBeenCalled();
-
-            mainWindow.show();
             expect(mainWindow.win.focus).toHaveBeenCalled();
+        });
+
+        it('should init if the main window does not exist', () => {
+            mainWindow.show();
+            expect(mainWindow.init).toHaveBeenCalled();
         });
     });
 
