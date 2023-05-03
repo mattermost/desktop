@@ -263,5 +263,7 @@
     "common.permissions.canBasicAuth": "Веб-аутентификация",
     "renderer.components.settingsPage.trayIcon.color": "Цвет значка: ",
     "main.menus.app.help.RunDiagnostics": "Выполните диагностику",
-    "main.menus.app.help.ShowLogs": "Показать журналы"
+    "main.menus.app.help.ShowLogs": "Показать журналы",
+    "main.downloadsManager.specifyDownloadsFolder": "Укажите папку, в которую будут загружаться файлы",
+    "main.downloadsManager.resetDownloadsFolder": "Пожалуйста, сбросьте папку, в которую будут загружаться файлы"
 }
