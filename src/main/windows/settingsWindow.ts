@@ -74,7 +74,10 @@ export class SettingsWindow {
         this.win.on('closed', () => {
             delete this.win;
 
-            ViewManager.focusCurrentView();
+            // For some reason, on macOS, the app will hard crash when the settings window is closed
+            // It seems to be related to calling view.focus() and there's no log output unfortunately
+            // Adding this arbitrary delay seems to get rid of it (it happens very frequently)
+            setTimeout(() => MainWindow.get()?.focus(), 10);
         });
     }
 }
