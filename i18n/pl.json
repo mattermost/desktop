@@ -274,5 +274,7 @@
     "main.menus.app.view.downloads": "Do pobrania",
     "renderer.components.settingsPage.trayIcon.color": "Kolor ikony: ",
     "main.menus.app.help.RunDiagnostics": "Uruchom diagnostykę",
-    "main.menus.app.help.ShowLogs": "Pokaż logi"
+    "main.menus.app.help.ShowLogs": "Pokaż logi",
+    "main.downloadsManager.specifyDownloadsFolder": "Określ folder, do którego będą pobierane pliki",
+    "main.downloadsManager.resetDownloadsFolder": "Proszę zresetować folder, do którego będą pobierane pliki"
 }
