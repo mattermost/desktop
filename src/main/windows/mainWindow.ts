@@ -97,7 +97,6 @@ export class MainWindow extends EventEmitter {
             throw new Error('unable to create main window');
         }
 
-        this.win.setAutoHideMenuBar(true);
         this.win.setMenuBarVisibility(false);
 
         this.win.once('ready-to-show', () => {
@@ -416,6 +415,9 @@ export class MainWindow extends EventEmitter {
                 return;
             }
 
+            // For some reason on Linux I've seen the menu bar popup again
+            this.win?.setMenuBarVisibility(false);
+
             this.emit(MAIN_WINDOW_RESIZED, newBounds);
             this.lastEmittedBounds = newBounds;
         }, 10);
@@ -434,9 +436,6 @@ export class MainWindow extends EventEmitter {
     private onEnterFullScreen = () => {
         this.win?.webContents.send('enter-full-screen');
         this.emitBounds();
-
-        // For some reason on Linux I've seen the menu bar popup again
-        this.win?.setMenuBarVisibility(false);
     }
 
     private onLeaveFullScreen = () => {
