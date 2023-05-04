@@ -60,7 +60,7 @@ import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
 import ServerManager from 'common/servers/serverManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
-import {refreshTrayImages, setupTray} from 'main/tray/tray';
+import Tray from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
@@ -239,7 +239,7 @@ function initializeBeforeAppReady() {
         process.chdir(expectedPath);
     }
 
-    refreshTrayImages(Config.trayIconTheme);
+    Tray.refreshImages(Config.trayIconTheme);
 
     // If there is already an instance, quit this one
     // eslint-disable-next-line no-undef
@@ -401,7 +401,7 @@ async function initializeAfterAppReady() {
     UserActivityMonitor.startMonitoring();
 
     if (shouldShowTrayIcon()) {
-        setupTray(Config.trayIconTheme);
+        Tray.init(Config.trayIconTheme);
     }
     setupBadge();
 

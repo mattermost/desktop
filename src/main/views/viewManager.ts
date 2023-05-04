@@ -26,6 +26,7 @@ import {
     SESSION_EXPIRED,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
+    MAIN_WINDOW_FOCUSED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -61,6 +62,7 @@ export class ViewManager {
 
         MainWindow.on(MAIN_WINDOW_CREATED, this.init);
         MainWindow.on(MAIN_WINDOW_RESIZED, this.handleSetCurrentViewBounds);
+        MainWindow.on(MAIN_WINDOW_FOCUSED, this.focusCurrentView);
         ipcMain.handle(GET_VIEW_INFO_FOR_TEST, this.handleGetViewInfoForTest);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
@@ -76,8 +78,6 @@ export class ViewManager {
     }
 
     private init = () => {
-        MainWindow.onBrowserWindow?.('focus', this.focusCurrentView);
-
         LoadingScreen.show();
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
         this.showInitial();

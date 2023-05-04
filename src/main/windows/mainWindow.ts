@@ -25,6 +25,7 @@ import {
     MAXIMIZE_CHANGE,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
+    MAIN_WINDOW_FOCUSED,
     VIEW_FINISHED_RESIZING,
 } from 'common/communication';
 import Config from 'common/config';
@@ -99,11 +100,6 @@ export class MainWindow extends EventEmitter {
         this.win.setAutoHideMenuBar(true);
         this.win.setMenuBarVisibility(false);
 
-        const localURL = getLocalURLString('index.html');
-        this.win.loadURL(localURL).catch(
-            (reason) => {
-                log.error('failed to load', reason);
-            });
         this.win.once('ready-to-show', () => {
             if (!this.win) {
                 return;
@@ -123,7 +119,6 @@ export class MainWindow extends EventEmitter {
         this.win.once('restore', () => {
             this.win?.restore();
         });
-
         this.win.on('close', this.onClose);
         this.win.on('closed', this.onClosed);
         this.win.on('focus', this.onFocus);
@@ -143,7 +138,6 @@ export class MainWindow extends EventEmitter {
         if (process.platform === 'linux') {
             this.win.on('resize', this.onResize);
         }
-
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
 
         // Should not allow the main window to generate a window of its own
@@ -154,6 +148,12 @@ export class MainWindow extends EventEmitter {
 
         const contextMenu = new ContextMenu({}, this.win);
         contextMenu.reload();
+
+        const localURL = getLocalURLString('index.html');
+        this.win.loadURL(localURL).catch(
+            (reason) => {
+                log.error('failed to load', reason);
+            });
 
         this.emit(MAIN_WINDOW_CREATED);
     }
@@ -167,15 +167,11 @@ export class MainWindow extends EventEmitter {
     }
 
     show = () => {
-        if (this.win) {
-            if (this.win.isVisible()) {
-                this.win.focus();
-            } else {
-                this.win.show();
-            }
+        if (this.win && this.isReady) {
+            this.win.show();
+            this.win.focus();
         } else {
             this.init();
-            this.show();
         }
     }
 
@@ -201,8 +197,6 @@ export class MainWindow extends EventEmitter {
             this.win.webContents.send(FOCUS_THREE_DOT_MENU);
         }
     }
-
-    onBrowserWindow = this.win?.on;
 
     sendToRenderer = (channel: string, ...args: unknown[]) => {
         this.sendToRendererWithRetry(3, channel, ...args);
@@ -295,6 +289,7 @@ export class MainWindow extends EventEmitter {
         }
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        this.emit(MAIN_WINDOW_FOCUSED);
     }
 
     private onBlur = () => {

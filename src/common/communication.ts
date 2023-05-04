@@ -169,3 +169,4 @@ export const UPDATE_APPSTATE_FOR_VIEW_ID = 'update-appstate-for-view-id';
 
 export const MAIN_WINDOW_CREATED = 'main-window-created';
 export const MAIN_WINDOW_RESIZED = 'main-window-resized';
+export const MAIN_WINDOW_FOCUSED = 'main-window-focused';

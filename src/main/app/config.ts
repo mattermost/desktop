@@ -11,7 +11,7 @@ import {Logger, setLoggingLevel} from 'common/log';
 
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
-import {refreshTrayImages} from 'main/tray/tray';
+import Tray from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
 import MainWindow from 'main/windows/mainWindow';
 import SettingsWindow from 'main/windows/settingsWindow';
@@ -103,7 +103,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 
     handleUpdateMenuEvent();
     if (newConfig.trayIconTheme) {
-        refreshTrayImages(newConfig.trayIconTheme);
+        Tray.refreshImages(newConfig.trayIconTheme);
     }
 
     ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
@@ -112,7 +112,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 export function handleDarkModeChange(darkMode: boolean) {
     log.debug('handleDarkModeChange', darkMode);
 
-    refreshTrayImages(Config.trayIconTheme);
+    Tray.refreshImages(Config.trayIconTheme);
     MainWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     SettingsWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     LoadingScreen.setDarkMode(darkMode);

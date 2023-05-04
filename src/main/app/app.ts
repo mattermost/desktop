@@ -9,7 +9,7 @@ import {parseURL} from 'common/utils/url';
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
 import {localizeMessage} from 'main/i18nManager';
-import {destroyTray} from 'main/tray/tray';
+import Tray from 'main/tray/tray';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -72,7 +72,7 @@ export function handleAppBeforeQuit() {
     log.debug('handleAppBeforeQuit');
 
     // Make sure tray icon gets removed if the user exits via CTRL-Q
-    destroyTray();
+    Tray.destroy();
     global.willAppQuit = true;
     updateManager.handleOnQuit();
 }
