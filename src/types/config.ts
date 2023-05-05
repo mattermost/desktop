@@ -61,52 +61,42 @@ export type ConfigV3 = {
     appLanguage?: string;
 }
 
-export type ConfigV2 = {
-    version: 2;
-    teams: Array<{
-        name: string;
-        url: string;
-        order: number;
-    }>;
-    showTrayIcon: boolean;
-    trayIconTheme: string;
-    minimizeToTray: boolean;
-    notifications: {
-        flashWindow: number;
-        bounceIcon: boolean;
-        bounceIconType: 'critical' | 'informational';
-    };
-    showUnreadBadge: boolean;
-    useSpellChecker: boolean;
-    enableHardwareAcceleration: boolean;
-    autostart: boolean;
-    spellCheckerLocale: string;
-    spellCheckerURL?: string;
-    darkMode: boolean;
-    downloadLocation?: string;
-}
+export type ConfigV2 =
+    Omit<ConfigV3,
+    'version' |
+    'teams' |
+    'hideOnStart' |
+    'spellCheckerLocales' |
+    'lastActiveTeam' |
+    'startInFullscreen' |
+    'autoCheckForUpdates' |
+    'alwaysMinimize' |
+    'alwaysClose' |
+    'logLevel' |
+    'appLanguage'
+    > & {
+        version: 2;
+        teams: Array<{
+            name: string;
+            url: string;
+            order: number;
+        }>;
+        spellCheckerLocale: string;
+    }
 
-export type ConfigV1 = {
-    version: 1;
-    teams: Array<{
-        name: string;
-        url: string;
-    }>;
-    showTrayIcon: boolean;
-    trayIconTheme: string;
-    minimizeToTray: boolean;
-    notifications: {
-        flashWindow: number;
-        bounceIcon: boolean;
-        bounceIconType: 'critical' | 'informational';
-    };
-    showUnreadBadge: boolean;
-    useSpellChecker: boolean;
-    spellCheckerURL?: string;
-    enableHardwareAcceleration: boolean;
-    autostart: boolean;
-    spellCheckerLocale: string;
-}
+export type ConfigV1 =
+    Omit<ConfigV2,
+    'version' |
+    'teams' |
+    'darkMode' |
+    'downloadLocation'
+    > & {
+        version: 1;
+        teams: Array<{
+            name: string;
+            url: string;
+        }>;
+    }
 
 export type ConfigV0 = {version: 0; url: string};
 
@@ -127,7 +117,7 @@ export type RegistryConfig = {
     enableAutoUpdater: boolean;
 }
 
-export type CombinedConfig = Omit<ConfigV3, 'teams'> & Omit<BuildConfig, 'defaultServers'> & {
+export type CombinedConfig = Omit<Config, 'teams'> & Omit<BuildConfig, 'defaultServers'> & {
     appName: string;
     useNativeWindow: boolean;
 }

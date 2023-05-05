@@ -15,7 +15,7 @@ function deepCopy<T>(object: T): T {
 export function upgradeV0toV1(configV0: ConfigV0) {
     const config = deepCopy(pastDefaultPreferences[1]);
     config.teams.push({
-        name: 'Primary team',
+        name: 'Primary server',
         url: configV0.url,
     });
     return config;
