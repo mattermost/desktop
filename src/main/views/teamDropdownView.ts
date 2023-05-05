@@ -3,7 +3,7 @@
 
 import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
-import {MattermostTeam} from 'types/config';
+import {UniqueServer} from 'types/config';
 
 import AppState from 'common/appState';
 import {
@@ -31,7 +31,7 @@ const log = new Logger('TeamDropdownView');
 
 export class TeamDropdownView {
     private view?: BrowserView;
-    private teams: MattermostTeam[];
+    private teams: UniqueServer[];
     private hasGPOTeams: boolean;
     private isOpen: boolean;
     private bounds: Electron.Rectangle;
@@ -184,7 +184,7 @@ export class TeamDropdownView {
     }
 
     private setOrderedTeams = () => {
-        this.teams = ServerManager.getOrderedServers().map((team) => team.toMattermostTeam());
+        this.teams = ServerManager.getOrderedServers().map((team) => team.toUniqueServer());
         this.hasGPOTeams = this.teams.some((srv) => srv.isPredefined);
     }
 }

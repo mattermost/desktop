@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {MattermostTab, Team} from 'types/config';
+import {UniqueView, Team} from 'types/config';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
 
@@ -19,7 +19,7 @@ export interface TabView {
     get url(): URL;
     get shouldNotify(): boolean;
 
-    toMattermostTab(): MattermostTab;
+    toUniqueView(): UniqueView;
 }
 
 export function getDefaultConfigTeamFromTeam(team: Team & {order: number; lastActiveTab?: number}) {

@@ -3,7 +3,7 @@
 
 import {v4 as uuid} from 'uuid';
 
-import {MattermostTeam, Team} from 'types/config';
+import {UniqueServer, Team} from 'types/config';
 
 import {parseURL} from 'common/utils/url';
 
@@ -29,7 +29,7 @@ export class MattermostServer {
         }
     }
 
-    toMattermostTeam = (): MattermostTeam => {
+    toUniqueServer = (): UniqueServer => {
         return {
             name: this.name,
             url: this.url.toString(),

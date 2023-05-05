@@ -3,7 +3,7 @@
 
 import {IpcMainEvent, ipcMain} from 'electron';
 
-import {MattermostTeam, Team} from 'types/config';
+import {UniqueServer, Team} from 'types/config';
 
 import {UPDATE_SHORTCUT_MENU} from 'common/communication';
 import {Logger} from 'common/log';
@@ -49,7 +49,7 @@ export const handleNewServerModal = () => {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<MattermostTeam[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team) => team.toMattermostTeam()), mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<UniqueServer[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team) => team.toUniqueServer()), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
             const newTeam = ServerManager.addServer(data);
@@ -80,13 +80,13 @@ export const handleEditServerModal = (e: IpcMainEvent, id: string) => {
     if (!server) {
         return;
     }
-    const modalPromise = ModalManager.addModal<{currentTeams: MattermostTeam[]; team: MattermostTeam}, Team>(
+    const modalPromise = ModalManager.addModal<{currentTeams: UniqueServer[]; team: UniqueServer}, Team>(
         'editServer',
         html,
         preload,
         {
-            currentTeams: ServerManager.getAllServers().map((team) => team.toMattermostTeam()),
-            team: server.toMattermostTeam(),
+            currentTeams: ServerManager.getAllServers().map((team) => team.toUniqueServer()),
+            team: server.toUniqueServer(),
         },
         mainWindow);
     if (modalPromise) {

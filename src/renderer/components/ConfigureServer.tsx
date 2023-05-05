@@ -5,7 +5,7 @@ import React, {useState, useCallback, useEffect} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
-import {MattermostTeam} from 'types/config';
+import {UniqueServer} from 'types/config';
 
 import {isValidURL, parseURL} from 'common/utils/url';
 import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
@@ -22,8 +22,8 @@ import 'renderer/css/components/ConfigureServer.scss';
 import 'renderer/css/components/LoadingScreen.css';
 
 type ConfigureServerProps = {
-    currentTeams: MattermostTeam[];
-    team?: MattermostTeam;
+    currentTeams: UniqueServer[];
+    team?: UniqueServer;
     mobileView?: boolean;
     darkMode?: boolean;
     messageTitle?: string;
@@ -32,7 +32,7 @@ type ConfigureServerProps = {
     alternateLinkMessage?: string;
     alternateLinkText?: string;
     alternateLinkURL?: string;
-    onConnect: (data: MattermostTeam) => void;
+    onConnect: (data: UniqueServer) => void;
 };
 
 function ConfigureServer({

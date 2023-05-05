@@ -3,7 +3,7 @@
 
 import {v4 as uuid} from 'uuid';
 
-import {MattermostTab} from 'types/config';
+import {UniqueView} from 'types/config';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
 
@@ -29,7 +29,7 @@ export default abstract class BaseTabView implements TabView {
         return false;
     }
 
-    toMattermostTab = (): MattermostTab => {
+    toUniqueView = (): UniqueView => {
         return {
             id: this.id,
             name: this.type,

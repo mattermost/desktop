@@ -21,12 +21,12 @@ export type ConfigServer = Team & {
     tabs: ConfigTab[];
 }
 
-export type MattermostTeam = Team & {
+export type UniqueServer = Team & {
     id?: string;
     isPredefined?: boolean;
 }
 
-export type MattermostTab = Tab & {
+export type UniqueView = Tab & {
     id?: string;
 }
 

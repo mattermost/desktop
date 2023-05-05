@@ -5,7 +5,7 @@ import {ipcRenderer, Rectangle} from 'electron/renderer';
 
 import {Language} from '../../i18n/i18n';
 
-import {CombinedConfig, LocalConfiguration, MattermostTab, MattermostTeam} from './config';
+import {CombinedConfig, LocalConfiguration, UniqueView, UniqueServer} from './config';
 import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import {SaveQueueItem} from './settings';
 
@@ -53,8 +53,8 @@ declare global {
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, tabOrder: string[]) => Promise<void>;
             getLastActive: () => Promise<{server: string; tab: string}>;
-            getOrderedServers: () => Promise<MattermostTeam[]>;
-            getOrderedTabsForServer: (serverId: string) => Promise<MattermostTab[]>;
+            getOrderedServers: () => Promise<UniqueServer[]>;
+            getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             onUpdateServers: (listener: () => void) => void;
 
             getConfiguration: () => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
@@ -139,7 +139,7 @@ declare global {
                 showRemoveServerModal: (serverId: string) => void;
 
                 onUpdateServerDropdown: (listener: (
-                    teams: MattermostTeam[],
+                    teams: UniqueServer[],
                     darkMode: boolean,
                     windowBounds: Rectangle,
                     activeTeam?: string,

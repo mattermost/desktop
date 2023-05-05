@@ -10,7 +10,7 @@ import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
 import {injectIntl, IntlShape} from 'react-intl';
 
-import {MattermostTab, MattermostTeam} from 'types/config';
+import {UniqueView, UniqueServer} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -47,8 +47,8 @@ type Props = {
 type State = {
     activeServerId?: string;
     activeTabId?: string;
-    servers: MattermostTeam[];
-    tabs: Map<string, MattermostTab[]>;
+    servers: UniqueServer[];
+    tabs: Map<string, UniqueView[]>;
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
     mentionCounts: Record<string, number>;
@@ -399,7 +399,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     render() {
         const {intl} = this.props;
-        let currentTabs: MattermostTab[] = [];
+        let currentTabs: UniqueView[] = [];
         if (this.state.activeServerId) {
             currentTabs = this.state.tabs.get(this.state.activeServerId) ?? [];
         }

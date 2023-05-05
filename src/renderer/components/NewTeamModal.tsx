@@ -6,15 +6,15 @@ import React from 'react';
 import {Modal, Button, FormGroup, FormControl, FormLabel, FormText} from 'react-bootstrap';
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
-import {MattermostTeam} from 'types/config';
+import {UniqueServer} from 'types/config';
 
 import {isValidURL} from 'common/utils/url';
 
 type Props = {
     onClose?: () => void;
-    onSave?: (team: MattermostTeam) => void;
-    team?: MattermostTeam;
-    currentTeams?: MattermostTeam[];
+    onSave?: (team: UniqueServer) => void;
+    team?: UniqueServer;
+    currentTeams?: UniqueServer[];
     editMode?: boolean;
     show?: boolean;
     restoreFocus?: boolean;

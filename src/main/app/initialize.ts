@@ -298,7 +298,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(UPDATE_SERVER_ORDER, (event, serverOrder) => ServerManager.updateServerOrder(serverOrder));
     ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, tabOrder) => ServerManager.updateTabOrder(serverId, tabOrder));
     ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
-    ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toMattermostTeam()));
+    ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toUniqueServer()));
     ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedTabsForServer);
 
     ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);

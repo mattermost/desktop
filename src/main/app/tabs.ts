@@ -38,7 +38,7 @@ export const selectPreviousTab = () => {
 };
 
 export const handleGetOrderedTabsForServer = (event: IpcMainInvokeEvent, serverId: string) => {
-    return ServerManager.getOrderedTabsForServer(serverId).map((tab) => tab.toMattermostTab());
+    return ServerManager.getOrderedTabsForServer(serverId).map((tab) => tab.toUniqueView());
 };
 
 export const handleGetLastActive = () => {

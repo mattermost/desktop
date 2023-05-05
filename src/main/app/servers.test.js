@@ -215,7 +215,7 @@ describe('main/app/servers', () => {
                 if (id !== teamsCopy[0].id) {
                     return undefined;
                 }
-                return {...teamsCopy[0], toMattermostTeam: jest.fn()};
+                return {...teamsCopy[0], toUniqueServer: jest.fn()};
             });
             ServerManager.editServer.mockImplementation((id, team) => {
                 if (id !== teamsCopy[0].id) {
@@ -227,7 +227,7 @@ describe('main/app/servers', () => {
                 };
                 teamsCopy = [newTeam];
             });
-            ServerManager.getAllServers.mockReturnValue(teamsCopy.map((team) => ({...team, toMattermostTeam: jest.fn()})));
+            ServerManager.getAllServers.mockReturnValue(teamsCopy.map((team) => ({...team, toUniqueServer: jest.fn()})));
         });
 
         it('should do nothing when the server cannot be found', () => {

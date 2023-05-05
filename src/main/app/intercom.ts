@@ -3,7 +3,7 @@
 
 import {app, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 
-import {MattermostTeam} from 'types/config';
+import {UniqueServer} from 'types/config';
 import {MentionData} from 'types/notification';
 
 import {Logger} from 'common/log';
@@ -93,7 +93,7 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<MattermostTeam[], MattermostTeam>('welcomeScreen', html, preload, ServerManager.getAllServers().map((team) => team.toMattermostTeam()), mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<UniqueServer[], UniqueServer>('welcomeScreen', html, preload, ServerManager.getAllServers().map((team) => team.toUniqueServer()), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
             const newTeam = ServerManager.addServer(data);

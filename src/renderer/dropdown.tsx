@@ -7,7 +7,7 @@ import {FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
 
-import {MattermostTeam} from 'types/config';
+import {UniqueServer} from 'types/config';
 
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
 
@@ -16,9 +16,9 @@ import './css/dropdown.scss';
 import IntlProvider from './intl_provider';
 
 type State = {
-    teams?: MattermostTeam[];
+    teams?: UniqueServer[];
     teamOrder?: string[];
-    orderedTeams?: MattermostTeam[];
+    orderedTeams?: UniqueServer[];
     activeTeam?: string;
     darkMode?: boolean;
     enableServerManagement?: boolean;
@@ -59,7 +59,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
     }
 
     handleUpdate = (
-        teams: MattermostTeam[],
+        teams: UniqueServer[],
         darkMode: boolean,
         windowBounds: Electron.Rectangle,
         activeTeam?: string,
@@ -82,7 +82,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         });
     }
 
-    selectServer = (team: MattermostTeam) => {
+    selectServer = (team: UniqueServer) => {
         return () => {
             if (!team.id) {
                 return;
@@ -108,7 +108,7 @@ class TeamDropdown extends React.PureComponent<Record<string, never>, State> {
         this.closeMenu();
     }
 
-    isActiveTeam = (team: MattermostTeam) => {
+    isActiveTeam = (team: UniqueServer) => {
         return team.id === this.state.activeTeam;
     }
 
