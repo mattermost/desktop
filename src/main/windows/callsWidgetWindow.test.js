@@ -580,7 +580,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 send: jest.fn(),
             },
         };
-        const teams = [
+        const servers = [
             {
                 name: 'server-1',
                 order: 1,
@@ -614,7 +614,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 lastActiveTab: 2,
             },
         ];
-        const map = teams.reduce((arr, item) => {
+        const map = servers.reduce((arr, item) => {
             item.tabs.forEach((tab) => {
                 arr.push([`${item.name}_${tab.name}`, {
                     sendToRenderer: jest.fn(),
@@ -746,7 +746,7 @@ describe('main/windows/callsWidgetWindow', () => {
             },
             sendToRenderer: jest.fn(),
         };
-        const teams = [
+        const servers = [
             {
                 name: 'server-1',
                 order: 1,
@@ -780,7 +780,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 lastActiveTab: 2,
             },
         ];
-        const map = teams.reduce((arr, item) => {
+        const map = servers.reduce((arr, item) => {
             item.tabs.forEach((tab) => {
                 arr.push([`${item.name}_${tab.name}`, {}]);
             });
@@ -813,7 +813,7 @@ describe('main/windows/callsWidgetWindow', () => {
             sendToRenderer: jest.fn(),
         };
         callsWidgetWindow.getChannelURL = jest.fn();
-        const teams = [
+        const servers = [
             {
                 name: 'server-1',
                 order: 1,
@@ -847,7 +847,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 lastActiveTab: 2,
             },
         ];
-        const map = teams.reduce((arr, item) => {
+        const map = servers.reduce((arr, item) => {
             item.tabs.forEach((tab) => {
                 arr.push([`${item.name}_${tab.name}`, {}]);
             });

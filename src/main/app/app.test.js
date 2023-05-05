@@ -97,7 +97,7 @@ describe('main/app/app', () => {
         const view = {
             tab: {
                 server: {
-                    name: 'test-team',
+                    name: 'test-server',
                     url: new URL(testURL),
                 },
             },

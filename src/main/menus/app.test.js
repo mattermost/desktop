@@ -217,7 +217,7 @@ describe('main/menus/app', () => {
         expect(signInOption).toBe(undefined);
     });
 
-    it('should not show `Sign in to Another Server` if no teams are configured', () => {
+    it('should not show `Sign in to Another Server` if no servers are configured', () => {
         localizeMessage.mockImplementation((id) => {
             switch (id) {
             case 'main.menus.app.file':

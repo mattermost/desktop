@@ -139,7 +139,7 @@ describe('common/servers/serverManager', () => {
         });
 
         it('should match the correct server - base tab', () => {
-            const inputURL = new URL('http://server-1.com/team');
+            const inputURL = new URL('http://server-1.com/server');
             expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-1', url: new URL('http://server-1.com')});
         });
 
@@ -164,12 +164,12 @@ describe('common/servers/serverManager', () => {
         });
 
         it('should match the correct server with a subpath - base tab', () => {
-            const inputURL = new URL('http://server-2.com/subpath/team');
+            const inputURL = new URL('http://server-2.com/subpath/server');
             expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-2', url: new URL('http://server-2.com/subpath')});
         });
 
         it('should match the correct server with a subpath - different tab', () => {
-            const inputURL = new URL('http://server-2.com/subpath/type2/team');
+            const inputURL = new URL('http://server-2.com/subpath/type2/server');
             expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-2-type-2', url: new URL('http://server-2.com/subpath/type2')});
         });
 

@@ -76,10 +76,10 @@ export const FOCUS_THREE_DOT_MENU = 'focus-three-dot-menu';
 
 export const LOADSCREEN_END = 'loadscreen-end';
 
-export const OPEN_TEAMS_DROPDOWN = 'open-teams-dropdown';
-export const CLOSE_TEAMS_DROPDOWN = 'close-teams-dropdown';
-export const UPDATE_TEAMS_DROPDOWN = 'update-teams-dropdown';
-export const REQUEST_TEAMS_DROPDOWN_INFO = 'request-teams-dropdown-info';
+export const OPEN_SERVERS_DROPDOWN = 'open-servers-dropdown';
+export const CLOSE_SERVERS_DROPDOWN = 'close-servers-dropdown';
+export const UPDATE_SERVERS_DROPDOWN = 'update-servers-dropdown';
+export const REQUEST_SERVERS_DROPDOWN_INFO = 'request-servers-dropdown-info';
 export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 
 export const UPDATE_AVAILABLE = 'update-available';

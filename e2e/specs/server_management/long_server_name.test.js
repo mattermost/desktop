@@ -24,8 +24,8 @@ describe('LongServerName', function desc() {
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
 
-        await mainView.click('.TeamDropdownButton');
-        await dropdownView.click('.TeamDropdown .TeamDropdown__button.addServer');
+        await mainView.click('.ServerDropdownButton');
+        await dropdownView.click('.ServerDropdown .ServerDropdown__button.addServer');
         newServerView = await this.app.waitForEvent('window', {
             predicate: (window) => window.url().includes('newServer'),
         });
@@ -44,8 +44,8 @@ describe('LongServerName', function desc() {
     let newServerView;
 
     it('MM-T4050 Long server name', async () => {
-        await newServerView.type('#teamNameInput', longServerName);
-        await newServerView.type('#teamUrlInput', longServerUrl);
+        await newServerView.type('#serverNameInput', longServerName);
+        await newServerView.type('#serverUrlInput', longServerUrl);
         await newServerView.click('#saveNewServerModal');
 
         await asyncSleep(1000);

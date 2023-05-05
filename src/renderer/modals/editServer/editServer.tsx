@@ -11,15 +11,15 @@ import {UniqueServer} from 'types/config';
 
 import IntlProvider from 'renderer/intl_provider';
 
-import NewTeamModal from '../../components/NewTeamModal'; //'./addServer.jsx';
+import NewServerModal from '../../components/NewServerModal'; //'./addServer.jsx';
 
 import setupDarkMode from '../darkMode';
 
 setupDarkMode();
 
 type ModalInfo = {
-    team: UniqueServer;
-    currentTeams: UniqueServer[];
+    server: UniqueServer;
+    currentServers: UniqueServer[];
 };
 
 const onClose = () => {
@@ -32,24 +32,24 @@ const onSave = (data: UniqueServer) => {
 
 const EditServerModalWrapper: React.FC = () => {
     const [server, setServer] = useState<UniqueServer>();
-    const [currentTeams, setCurrentTeams] = useState<UniqueServer[]>();
+    const [currentServers, setCurrentServers] = useState<UniqueServer[]>();
 
     useEffect(() => {
-        window.desktop.modals.getModalInfo<ModalInfo>().then(({team, currentTeams}) => {
-            setServer(team);
-            setCurrentTeams(currentTeams);
+        window.desktop.modals.getModalInfo<ModalInfo>().then(({server, currentServers}) => {
+            setServer(server);
+            setCurrentServers(currentServers);
         });
     }, []);
 
     return (
         <IntlProvider>
-            <NewTeamModal
+            <NewServerModal
                 onClose={onClose}
                 onSave={onSave}
                 editMode={true}
                 show={Boolean(server)}
-                team={server}
-                currentTeams={currentTeams}
+                server={server}
+                currentServers={currentServers}
             />
         </IntlProvider>
     );

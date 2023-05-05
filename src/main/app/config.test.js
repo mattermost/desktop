@@ -93,14 +93,14 @@ describe('main/app/config', () => {
             });
         });
 
-        it('should recheck teams after config update if registry data is pulled in', () => {
+        it('should recheck servers after config update if registry data is pulled in', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
             });
             Config.registryConfigData = {};
 
-            handleConfigUpdate({teams: []});
+            handleConfigUpdate({servers: []});
             expect(handleMainWindowIsShown).toHaveBeenCalled();
 
             Object.defineProperty(process, 'platform', {

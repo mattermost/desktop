@@ -3,7 +3,7 @@
 
 import {v4 as uuid} from 'uuid';
 
-import {UniqueServer, Team} from 'types/config';
+import {UniqueServer, Server} from 'types/config';
 
 import {parseURL} from 'common/utils/url';
 
@@ -13,7 +13,7 @@ export class MattermostServer {
     url!: URL;
     isPredefined: boolean;
 
-    constructor(server: Team, isPredefined: boolean) {
+    constructor(server: Server, isPredefined: boolean) {
         this.id = uuid();
 
         this.name = server.name;

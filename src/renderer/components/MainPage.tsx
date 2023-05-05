@@ -23,7 +23,7 @@ import {playSound} from '../notificationSounds';
 import TabBar from './TabBar';
 import ExtraBar from './ExtraBar';
 import ErrorView from './ErrorView';
-import TeamDropdownButton from './TeamDropdownButton';
+import ServerDropdownButton from './ServerDropdownButton';
 import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
 
 import '../css/components/UpgradeButton.scss';
@@ -239,11 +239,11 @@ class MainPage extends React.PureComponent<Props, State> {
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
 
-        window.desktop.onCloseTeamsDropdown(() => {
+        window.desktop.onCloseServersDropdown(() => {
             this.setState({isMenuOpen: false});
         });
 
-        window.desktop.onOpenTeamsDropdown(() => {
+        window.desktop.onOpenServersDropdown(() => {
             this.setState({isMenuOpen: true});
         });
 
@@ -290,7 +290,7 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleCloseDropdowns = () => {
-        window.desktop.closeTeamsDropdown();
+        window.desktop.closeServersDropdown();
         this.closeDownloadsDropdown();
     }
 
@@ -538,7 +538,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         />
                     </button>
                     {activeServer && (
-                        <TeamDropdownButton
+                        <ServerDropdownButton
                             isDisabled={this.state.modalOpen}
                             activeServerName={activeServer.name}
                             totalMentionCount={totalMentionCount}

@@ -32,8 +32,8 @@ declare global {
         desktop: {
             quit: (reason: string, stack: string) => void;
             openAppMenu: () => void;
-            closeTeamsDropdown: () => void;
-            openTeamsDropdown: () => void;
+            closeServersDropdown: () => void;
+            openServersDropdown: () => void;
             switchTab: (tabId: string) => void;
             closeTab: (tabId: string) => void;
             closeWindow: () => void;
@@ -83,8 +83,8 @@ declare global {
             onModalClose: (listener: () => void) => void;
             onToggleBackButton: (listener: (showExtraBar: boolean) => void) => void;
             onUpdateMentions: (listener: (view: string, mentions: number, unreads: boolean, isExpired: boolean) => void) => void;
-            onCloseTeamsDropdown: (listener: () => void) => void;
-            onOpenTeamsDropdown: (listener: () => void) => void;
+            onCloseServersDropdown: (listener: () => void) => void;
+            onOpenServersDropdown: (listener: () => void) => void;
             onCloseDownloadsDropdown: (listener: () => void) => void;
             onOpenDownloadsDropdown: (listener: () => void) => void;
             onShowDownloadsDropdownButtonBadge: (listener: () => void) => void;
@@ -139,12 +139,12 @@ declare global {
                 showRemoveServerModal: (serverId: string) => void;
 
                 onUpdateServerDropdown: (listener: (
-                    teams: UniqueServer[],
+                    servers: UniqueServer[],
                     darkMode: boolean,
                     windowBounds: Rectangle,
-                    activeTeam?: string,
+                    activeServer?: string,
                     enableServerManagement?: boolean,
-                    hasGPOTeams?: boolean,
+                    hasGPOServers?: boolean,
                     expired?: Map<string, boolean>,
                     mentions?: Map<string, number>,
                     unreads?: Map<string, boolean>,

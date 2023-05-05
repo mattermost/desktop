@@ -30,9 +30,6 @@ jest.mock('electron', () => ({
         handle: jest.fn(),
     },
 }));
-jest.mock('common/config', () => ({
-    teams: [],
-}));
 jest.mock('common/tabs/TabView', () => ({
     getTabViewName: jest.fn((a, b) => `${a}-${b}`),
     TAB_MESSAGING: 'tab',

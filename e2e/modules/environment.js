@@ -40,7 +40,7 @@ if (process.platform === 'win32') {
     robot.mouseClick();
 }
 
-const exampleTeam = {
+const exampleServer = {
     name: 'example',
     url: exampleURL,
     order: 0,
@@ -61,7 +61,7 @@ const exampleTeam = {
     ],
     lastActiveTab: 0,
 };
-const githubTeam = {
+const githubServer = {
     name: 'github',
     url: 'https://github.com/',
     order: 1,
@@ -87,7 +87,7 @@ const githubTeam = {
 
 const demoConfig = {
     version: 3,
-    teams: [exampleTeam, githubTeam],
+    teams: [exampleServer, githubServer],
     showTrayIcon: false,
     trayIconTheme: 'light',
     minimizeToTray: false,
@@ -113,9 +113,9 @@ const demoConfig = {
 const demoMattermostConfig = {
     ...demoConfig,
     teams: [{
-        ...exampleTeam,
+        ...exampleServer,
         url: mattermostURL,
-    }, githubTeam],
+    }, githubServer],
 };
 
 const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';

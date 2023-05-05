@@ -64,7 +64,7 @@ describe('common/config/RegistryConfig', () => {
         Object.defineProperty(process, 'platform', {
             value: originalPlatform,
         });
-        expect(registryConfig.data.teams).toContainEqual({
+        expect(registryConfig.data.servers).toContainEqual({
             name: 'server-1',
             url: 'http://server-1.com',
         });

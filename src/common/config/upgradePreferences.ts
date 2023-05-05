@@ -4,7 +4,7 @@
 
 import {ConfigV3, ConfigV2, ConfigV1, ConfigV0, AnyConfig} from 'types/config';
 
-import {getDefaultConfigTeamFromTeam} from 'common/tabs/TabView';
+import {getDefaultConfigServerFromServer} from 'common/tabs/TabView';
 
 import pastDefaultPreferences from './pastDefaultPreferences';
 
@@ -37,7 +37,7 @@ export function upgradeV2toV3(configV2: ConfigV2) {
     const config: ConfigV3 = Object.assign({}, deepCopy<ConfigV3>(pastDefaultPreferences[3]), configV2);
     config.version = 3;
     config.teams = configV2.teams.map((value) => {
-        return getDefaultConfigTeamFromTeam(value);
+        return getDefaultConfigServerFromServer(value);
     });
     config.lastActiveTeam = 0;
     config.spellCheckerLocales = [];

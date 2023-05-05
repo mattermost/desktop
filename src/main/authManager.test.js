@@ -7,54 +7,6 @@ import MainWindow from 'main/windows/mainWindow';
 import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 
-jest.mock('common/config', () => ({
-    teams: [{
-        name: 'example',
-        url: 'http://example.com',
-        order: 0,
-        tabs: [
-            {
-                name: 'TAB_MESSAGING',
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_FOCALBOARD',
-                order: 1,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_PLAYBOOKS',
-                order: 2,
-                isOpen: true,
-            },
-        ],
-        lastActiveTab: 0,
-    }, {
-        name: 'github',
-        url: 'https://github.com/',
-        order: 1,
-        tabs: [
-            {
-                name: 'TAB_MESSAGING',
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_FOCALBOARD',
-                order: 1,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_PLAYBOOKS',
-                order: 2,
-                isOpen: true,
-            },
-        ],
-        lastActiveTab: 0,
-    }],
-}));
-
 jest.mock('common/utils/url', () => {
     const actualUrl = jest.requireActual('common/utils/url');
     return {

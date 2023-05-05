@@ -6,7 +6,7 @@ export type Tab = {
     isOpen?: boolean;
 }
 
-export type Team = {
+export type Server = {
     name: string;
     url: string;
 }
@@ -15,13 +15,13 @@ export type ConfigTab = Tab & {
     order: number;
 }
 
-export type ConfigServer = Team & {
+export type ConfigServer = Server & {
     order: number;
     lastActiveTab?: number;
     tabs: ConfigTab[];
 }
 
-export type UniqueServer = Team & {
+export type UniqueServer = Server & {
     id?: string;
     isPredefined?: boolean;
 }
@@ -113,7 +113,7 @@ export type ConfigV0 = {version: 0; url: string};
 export type AnyConfig = ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
 
 export type BuildConfig = {
-    defaultTeams?: Team[];
+    defaultServers?: Server[];
     helpLink: string;
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
@@ -122,12 +122,12 @@ export type BuildConfig = {
 }
 
 export type RegistryConfig = {
-    teams: Team[];
+    servers: Server[];
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
 }
 
-export type CombinedConfig = Omit<ConfigV3, 'teams'> & Omit<BuildConfig, 'defaultTeams'> & {
+export type CombinedConfig = Omit<ConfigV3, 'teams'> & Omit<BuildConfig, 'defaultServers'> & {
     appName: string;
     useNativeWindow: boolean;
 }

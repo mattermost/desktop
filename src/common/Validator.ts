@@ -206,17 +206,17 @@ function cleanURL(url: string): string {
     return updatedURL;
 }
 
-function cleanTeam<T extends {name: string; url: string}>(team: T) {
+function cleanServer<T extends {name: string; url: string}>(server: T) {
     return {
-        ...team,
-        url: cleanURL(team.url),
+        ...server,
+        url: cleanURL(server.url),
     };
 }
 
-function cleanTeamWithTabs(team: ConfigServer) {
+function cleanServerWithTabs(server: ConfigServer) {
     return {
-        ...cleanTeam(team),
-        tabs: team.tabs.map((tab) => {
+        ...cleanServer(server),
+        tabs: server.tabs.map((tab) => {
             return {
                 ...tab,
                 isOpen: tab.name === TAB_MESSAGING ? true : tab.isOpen,
@@ -225,26 +225,26 @@ function cleanTeamWithTabs(team: ConfigServer) {
     };
 }
 
-function cleanTeams<T extends {name: string; url: string}>(teams: T[], func: (team: T) => T) {
-    let newTeams = teams;
-    if (Array.isArray(newTeams) && newTeams.length) {
+function cleanServers<T extends {name: string; url: string}>(servers: T[], func: (server: T) => T) {
+    let newServers = servers;
+    if (Array.isArray(newServers) && newServers.length) {
         // first replace possible backslashes with forward slashes
-        newTeams = newTeams.map((team) => func(team));
+        newServers = newServers.map((server) => func(server));
 
         // next filter out urls that are still invalid so all is not lost
-        newTeams = newTeams.filter(({url}) => isValidURL(url));
+        newServers = newServers.filter(({url}) => isValidURL(url));
     }
-    return newTeams;
+    return newServers;
 }
 
 // validate v.1 config.json
 export function validateV1ConfigData(data: ConfigV1) {
-    data.teams = cleanTeams(data.teams, cleanTeam);
+    data.teams = cleanServers(data.teams, cleanServer);
     return validateAgainstSchema(data, configDataSchemaV1);
 }
 
 export function validateV2ConfigData(data: ConfigV2) {
-    data.teams = cleanTeams(data.teams, cleanTeam);
+    data.teams = cleanServers(data.teams, cleanServer);
     if (data.spellCheckerURL && !isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;
@@ -253,7 +253,7 @@ export function validateV2ConfigData(data: ConfigV2) {
 }
 
 export function validateV3ConfigData(data: ConfigV3) {
-    data.teams = cleanTeams(data.teams, cleanTeamWithTabs);
+    data.teams = cleanServers(data.teams, cleanServerWithTabs);
     if (data.spellCheckerURL && !isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;

@@ -23,7 +23,7 @@ const WelcomeScreenModalWrapper = () => {
     const [darkMode, setDarkMode] = useState(false);
     const [getStarted, setGetStarted] = useState(false);
     const [mobileView, setMobileView] = useState(false);
-    const [currentTeams, setCurrentTeams] = useState<UniqueServer[]>([]);
+    const [currentServers, setCurrentServers] = useState<UniqueServer[]>([]);
 
     const handleWindowResize = () => {
         setMobileView(window.innerWidth < MOBILE_SCREEN_WIDTH);
@@ -39,7 +39,7 @@ const WelcomeScreenModalWrapper = () => {
         });
 
         window.desktop.modals.getModalInfo<UniqueServer[]>().then((result) => {
-            setCurrentTeams(result);
+            setCurrentServers(result);
         });
 
         handleWindowResize();
@@ -60,7 +60,7 @@ const WelcomeScreenModalWrapper = () => {
                 <ConfigureServer
                     mobileView={mobileView}
                     darkMode={darkMode}
-                    currentTeams={currentTeams}
+                    currentServers={currentServers}
                     onConnect={onConnect}
                 />
             ) : (

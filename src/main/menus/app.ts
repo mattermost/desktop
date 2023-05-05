@@ -6,7 +6,7 @@
 import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, clipboard} from 'electron';
 import log from 'electron-log';
 
-import {OPEN_TEAMS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
+import {OPEN_SERVERS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {t} from 'common/utils/util';
 import {getTabDisplayName, TabType} from 'common/tabs/TabView';
 import {Config} from 'common/config';
@@ -233,7 +233,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         }],
     });
 
-    const teams = ServerManager.getOrderedServers();
+    const servers = ServerManager.getOrderedServers();
     const windowMenu = {
         id: 'window',
         label: localizeMessage('main.menus.app.window', '&Window'),
@@ -257,20 +257,20 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.window.showServers', 'Show Servers'),
             accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
             click() {
-                ipcMain.emit(OPEN_TEAMS_DROPDOWN);
+                ipcMain.emit(OPEN_SERVERS_DROPDOWN);
             },
         }] : []),
-        ...teams.slice(0, 9).map((team, i) => {
+        ...servers.slice(0, 9).map((server, i) => {
             const items = [];
             items.push({
-                label: team.name,
+                label: server.name,
                 accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
                 click() {
-                    switchServer(team.id);
+                    switchServer(server.id);
                 },
             });
-            if (ServerManager.getCurrentServer().id === team.id) {
-                ServerManager.getOrderedTabsForServer(team.id).slice(0, 9).forEach((tab, i) => {
+            if (ServerManager.getCurrentServer().id === server.id) {
+                ServerManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((tab, i) => {
                     items.push({
                         label: `    ${localizeMessage(`common.tabs.${tab.type}`, getTabDisplayName(tab.type as TabType))}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
@@ -287,14 +287,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             click() {
                 selectNextTab();
             },
-            enabled: (teams.length > 1),
+            enabled: (servers.length > 1),
         }, {
             label: localizeMessage('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
             accelerator: 'Ctrl+Shift+Tab',
             click() {
                 selectPreviousTab();
             },
-            enabled: (teams.length > 1),
+            enabled: (servers.length > 1),
         }, ...(isMac ? [separatorItem, {
             role: 'front',
             label: localizeMessage('main.menus.app.window.bringAllToFront', 'Bring All to Front'),

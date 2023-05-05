@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import ServerManager from 'common/servers/serverManager';
-import {getDefaultConfigTeamFromTeam} from 'common/tabs/TabView';
+import {getDefaultConfigServerFromServer} from 'common/tabs/TabView';
 
 import ModalManager from 'main/views/modalManager';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
@@ -30,7 +30,7 @@ jest.mock('common/servers/serverManager', () => ({
     getServerLog: jest.fn(),
 }));
 jest.mock('common/tabs/TabView', () => ({
-    getDefaultConfigTeamFromTeam: jest.fn(),
+    getDefaultConfigServerFromServer: jest.fn(),
 }));
 jest.mock('main/views/modalManager', () => ({
     addModal: jest.fn(),
@@ -65,7 +65,7 @@ const tabs = [
         isOpen: true,
     },
 ];
-const teams = [
+const servers = [
     {
         id: 'server-1',
         name: 'server-1',
@@ -147,41 +147,41 @@ describe('main/app/servers', () => {
     });
 
     describe('handleNewServerModal', () => {
-        let teamsCopy;
+        let serversCopy;
 
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            teamsCopy = JSON.parse(JSON.stringify(teams));
+            serversCopy = JSON.parse(JSON.stringify(servers));
             ServerManager.getAllServers.mockReturnValue([]);
             ServerManager.addServer.mockImplementation(() => {
-                const newTeam = {
+                const newServer = {
                     id: 'server-1',
-                    name: 'new-team',
-                    url: 'http://new-team.com',
+                    name: 'new-server',
+                    url: 'http://new-server.com',
                     tabs,
                 };
-                teamsCopy = [
-                    ...teamsCopy,
-                    newTeam,
+                serversCopy = [
+                    ...serversCopy,
+                    newServer,
                 ];
-                return newTeam;
+                return newServer;
             });
-            ServerManager.hasServers.mockReturnValue(Boolean(teamsCopy.length));
+            ServerManager.hasServers.mockReturnValue(Boolean(serversCopy.length));
             ServerManager.getServerLog.mockReturnValue({debug: jest.fn(), error: jest.fn()});
 
-            getDefaultConfigTeamFromTeam.mockImplementation((team) => ({
-                ...team,
+            getDefaultConfigServerFromServer.mockImplementation((server) => ({
+                ...server,
                 tabs,
             }));
         });
 
-        it('should add new team to the config', async () => {
+        it('should add new server to the config', async () => {
             const data = {
-                name: 'new-team',
-                url: 'http://new-team.com',
+                name: 'new-server',
+                url: 'http://new-server.com',
             };
             const promise = Promise.resolve(data);
             ModalManager.addModal.mockReturnValue(promise);
@@ -190,10 +190,10 @@ describe('main/app/servers', () => {
             await promise;
 
             expect(ServerManager.addServer).toHaveBeenCalledWith(data);
-            expect(teamsCopy).toContainEqual(expect.objectContaining({
+            expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
-                name: 'new-team',
-                url: 'http://new-team.com',
+                name: 'new-server',
+                url: 'http://new-server.com',
                 tabs,
             }));
 
@@ -203,31 +203,31 @@ describe('main/app/servers', () => {
     });
 
     describe('handleEditServerModal', () => {
-        let teamsCopy;
+        let serversCopy;
 
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            teamsCopy = JSON.parse(JSON.stringify(teams));
+            serversCopy = JSON.parse(JSON.stringify(servers));
             ServerManager.getServer.mockImplementation((id) => {
-                if (id !== teamsCopy[0].id) {
+                if (id !== serversCopy[0].id) {
                     return undefined;
                 }
-                return {...teamsCopy[0], toUniqueServer: jest.fn()};
+                return {...serversCopy[0], toUniqueServer: jest.fn()};
             });
-            ServerManager.editServer.mockImplementation((id, team) => {
-                if (id !== teamsCopy[0].id) {
+            ServerManager.editServer.mockImplementation((id, server) => {
+                if (id !== serversCopy[0].id) {
                     return;
                 }
-                const newTeam = {
-                    ...teamsCopy[0],
-                    ...team,
+                const newServer = {
+                    ...serversCopy[0],
+                    ...server,
                 };
-                teamsCopy = [newTeam];
+                serversCopy = [newServer];
             });
-            ServerManager.getAllServers.mockReturnValue(teamsCopy.map((team) => ({...team, toUniqueServer: jest.fn()})));
+            ServerManager.getAllServers.mockReturnValue(serversCopy.map((server) => ({...server, toUniqueServer: jest.fn()})));
         });
 
         it('should do nothing when the server cannot be found', () => {
@@ -235,58 +235,58 @@ describe('main/app/servers', () => {
             expect(ModalManager.addModal).not.toBeCalled();
         });
 
-        it('should edit the existing team', async () => {
+        it('should edit the existing server', async () => {
             const promise = Promise.resolve({
-                name: 'new-team',
-                url: 'http://new-team.com',
+                name: 'new-server',
+                url: 'http://new-server.com',
             });
             ModalManager.addModal.mockReturnValue(promise);
 
             Servers.handleEditServerModal(null, 'server-1');
             await promise;
-            expect(teamsCopy).not.toContainEqual(expect.objectContaining({
+            expect(serversCopy).not.toContainEqual(expect.objectContaining({
                 id: 'server-1',
                 name: 'server-1',
                 url: 'http://server-1.com',
                 tabs,
             }));
-            expect(teamsCopy).toContainEqual(expect.objectContaining({
+            expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
-                name: 'new-team',
-                url: 'http://new-team.com',
+                name: 'new-server',
+                url: 'http://new-server.com',
                 tabs,
             }));
         });
     });
 
     describe('handleRemoveServerModal', () => {
-        let teamsCopy;
+        let serversCopy;
 
         beforeEach(() => {
             getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            teamsCopy = JSON.parse(JSON.stringify(teams));
+            serversCopy = JSON.parse(JSON.stringify(servers));
             ServerManager.getServer.mockImplementation((id) => {
-                if (id !== teamsCopy[0].id) {
+                if (id !== serversCopy[0].id) {
                     return undefined;
                 }
-                return teamsCopy[0];
+                return serversCopy[0];
             });
             ServerManager.removeServer.mockImplementation(() => {
-                teamsCopy = [];
+                serversCopy = [];
             });
-            ServerManager.getAllServers.mockReturnValue(teamsCopy);
+            ServerManager.getAllServers.mockReturnValue(serversCopy);
         });
 
-        it('should remove the existing team', async () => {
+        it('should remove the existing server', async () => {
             const promise = Promise.resolve(true);
             ModalManager.addModal.mockReturnValue(promise);
 
             Servers.handleRemoveServerModal(null, 'server-1');
             await promise;
-            expect(teamsCopy).not.toContainEqual(expect.objectContaining({
+            expect(serversCopy).not.toContainEqual(expect.objectContaining({
                 id: 'server-1',
                 name: 'server-1',
                 url: 'http://server-1.com',
@@ -294,11 +294,11 @@ describe('main/app/servers', () => {
             }));
         });
 
-        it('should not remove the existing team when clicking Cancel', async () => {
+        it('should not remove the existing server when clicking Cancel', async () => {
             const promise = Promise.resolve(false);
             ModalManager.addModal.mockReturnValue(promise);
 
-            expect(teamsCopy).toContainEqual(expect.objectContaining({
+            expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
                 name: 'server-1',
                 url: 'http://server-1.com',
@@ -307,7 +307,7 @@ describe('main/app/servers', () => {
 
             Servers.handleRemoveServerModal(null, 'server-1');
             await promise;
-            expect(teamsCopy).toContainEqual(expect.objectContaining({
+            expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
                 name: 'server-1',
                 url: 'http://server-1.com',

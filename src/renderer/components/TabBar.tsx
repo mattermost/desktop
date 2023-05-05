@@ -80,7 +80,7 @@ class TabBar extends React.PureComponent<Props> {
             return (
                 <Draggable
                     key={tab.id}
-                    draggableId={`teamTabItem-${tab.id}`}
+                    draggableId={`serverTabItem-${tab.id}`}
                     index={index}
                 >
                     {(provided, snapshot) => {
@@ -98,10 +98,10 @@ class TabBar extends React.PureComponent<Props> {
                             <NavItem
                                 ref={provided.innerRef}
                                 as='li'
-                                id={`teamTabItem${index}`}
+                                id={`serverTabItem${index}`}
                                 draggable={false}
                                 title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getTabDisplayName(tab.name as TabType)})}
-                                className={classNames('teamTabItem', {
+                                className={classNames('serverTabItem', {
                                     active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
                                 })}
@@ -126,7 +126,7 @@ class TabBar extends React.PureComponent<Props> {
                                         { badgeDiv }
                                         {canCloseTab(tab.name as TabType) &&
                                             <button
-                                                className='teamTabItem__close'
+                                                className='serverTabItem__close'
                                                 onClick={this.onCloseTab(tab.id!)}
                                             >
                                                 <i className='icon-close'/>

@@ -120,7 +120,7 @@
                 "src/renderer/components/Button/Button.stories.tsx",
                 "src/renderer/components/TeamList.tsx",
                 "src/renderer/components/LoginModal.tsx",
-                "src/renderer/components/NewTeamModal.tsx",
+                "src/renderer/components/NewServerModal.tsx",
                 "src/renderer/settings.tsx",
                 "src/renderer/index.tsx"
             ],

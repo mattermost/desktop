@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import React, {useEffect} from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import '../css/components/TeamDropdownButton.scss';
+import '../css/components/ServerDropdownButton.scss';
 
 type Props = {
     isDisabled?: boolean;
@@ -16,7 +16,7 @@ type Props = {
     darkMode: boolean;
 }
 
-const TeamDropdownButton: React.FC<Props> = (props: Props) => {
+const ServerDropdownButton: React.FC<Props> = (props: Props) => {
     const {isDisabled, activeServerName, totalMentionCount, hasUnreads, isMenuOpen, darkMode} = props;
     const buttonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
@@ -30,22 +30,22 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
         event.preventDefault();
         event.stopPropagation();
         if (isMenuOpen) {
-            window.desktop.closeTeamsDropdown();
+            window.desktop.closeServersDropdown();
         } else {
-            window.desktop.openTeamsDropdown();
+            window.desktop.openServersDropdown();
         }
     };
 
     let badgeDiv: React.ReactNode;
     if (totalMentionCount > 0) {
         badgeDiv = (
-            <div className='TeamDropdownButton__badge-count'>
+            <div className='ServerDropdownButton__badge-count'>
                 <span>{totalMentionCount > 99 ? '99+' : totalMentionCount}</span>
             </div>
         );
     } else if (hasUnreads) {
         badgeDiv = (
-            <div className='TeamDropdownButton__badge-unreads'/>
+            <div className='ServerDropdownButton__badge-unreads'/>
         );
     }
 
@@ -53,7 +53,7 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
         <button
             ref={buttonRef}
             disabled={isDisabled}
-            className={classNames('TeamDropdownButton', {
+            className={classNames('ServerDropdownButton', {
                 disabled: isDisabled,
                 isMenuOpen,
                 darkMode,
@@ -63,14 +63,14 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
                 event.stopPropagation();
             }}
         >
-            <div className='TeamDropdownButton__badge'>
+            <div className='ServerDropdownButton__badge'>
                 <i className='icon-server-variant'/>
                 {badgeDiv}
             </div>
             {activeServerName && <span>{activeServerName}</span>}
             {!activeServerName &&
                 <FormattedMessage
-                    id='renderer.components.teamDropdownButton.noServersConfigured'
+                    id='renderer.components.serverDropdownButton.noServersConfigured'
                     defaultMessage='No servers configured'
                 />
             }
@@ -79,4 +79,4 @@ const TeamDropdownButton: React.FC<Props> = (props: Props) => {
     );
 };
 
-export default TeamDropdownButton;
+export default ServerDropdownButton;

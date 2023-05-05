@@ -3,7 +3,7 @@
 
 import EventEmitter from 'events';
 
-import {Team, ConfigServer, ConfigTab} from 'types/config';
+import {Server, ConfigServer, ConfigTab} from 'types/config';
 import {RemoteInfo} from 'types/server';
 
 import Config from 'common/config';
@@ -170,7 +170,7 @@ export class ServerManager extends EventEmitter {
         this.persistServers();
     }
 
-    addServer = (server: Team) => {
+    addServer = (server: Server) => {
         const newServer = new MattermostServer(server, false);
 
         if (this.servers.has(newServer.id)) {
@@ -197,7 +197,7 @@ export class ServerManager extends EventEmitter {
         return newServer;
     }
 
-    editServer = (serverId: string, server: Team) => {
+    editServer = (serverId: string, server: Server) => {
         const existingServer = this.servers.get(serverId);
         if (!existingServer) {
             return;
@@ -270,26 +270,26 @@ export class ServerManager extends EventEmitter {
 
     reloadFromConfig = () => {
         const serverOrder: string[] = [];
-        Config.predefinedTeams.forEach((team) => {
-            const id = this.initServer(team, true);
+        Config.predefinedServers.forEach((server) => {
+            const id = this.initServer(server, true);
             serverOrder.push(id);
         });
         if (Config.enableServerManagement) {
-            Config.localTeams.sort((a, b) => a.order - b.order).forEach((team) => {
-                const id = this.initServer(team, false);
+            Config.localServers.sort((a, b) => a.order - b.order).forEach((server) => {
+                const id = this.initServer(server, false);
                 serverOrder.push(id);
             });
         }
-        this.filterOutDuplicateTeams();
+        this.filterOutDuplicateServers();
         this.serverOrder = serverOrder;
-        if (Config.lastActiveTeam && this.serverOrder[Config.lastActiveTeam]) {
-            this.currentServerId = this.serverOrder[Config.lastActiveTeam];
+        if (Config.lastActiveServer && this.serverOrder[Config.lastActiveServer]) {
+            this.currentServerId = this.serverOrder[Config.lastActiveServer];
         } else {
             this.currentServerId = this.serverOrder[0];
         }
     }
 
-    private filterOutDuplicateTeams = () => {
+    private filterOutDuplicateServers = () => {
         const servers = [...this.servers.keys()].map((key) => ({key, value: this.servers.get(key)!}));
         const uniqueServers = new Set();
         servers.forEach((server) => {
@@ -301,14 +301,14 @@ export class ServerManager extends EventEmitter {
         });
     }
 
-    private initServer = (team: ConfigServer, isPredefined: boolean) => {
-        const server = new MattermostServer(team, isPredefined);
+    private initServer = (configServer: ConfigServer, isPredefined: boolean) => {
+        const server = new MattermostServer(configServer, isPredefined);
         this.servers.set(server.id, server);
 
         log.withPrefix(server.id).debug('initialized server');
 
         const tabOrder: string[] = [];
-        team.tabs.sort((a, b) => a.order - b.order).forEach((tab) => {
+        configServer.tabs.sort((a, b) => a.order - b.order).forEach((tab) => {
             const tabView = this.getTabView(server, tab.name, tab.isOpen);
             log.withPrefix(tabView.id).debug('initialized tab');
 
@@ -316,8 +316,8 @@ export class ServerManager extends EventEmitter {
             tabOrder.push(tabView.id);
         });
         this.tabOrder.set(server.id, tabOrder);
-        if (typeof team.lastActiveTab !== 'undefined') {
-            this.lastActiveTab.set(server.id, tabOrder[team.lastActiveTab]);
+        if (typeof configServer.lastActiveTab !== 'undefined') {
+            this.lastActiveTab.set(server.id, tabOrder[configServer.lastActiveTab]);
         }
         return server.id;
     }
@@ -332,7 +332,7 @@ export class ServerManager extends EventEmitter {
         return firstTab;
     }
 
-    private persistServers = async (lastActiveTeam?: number) => {
+    private persistServers = async (lastActiveServer?: number) => {
         this.emit(SERVERS_UPDATE);
 
         const localServers = [...this.servers.values()].
@@ -343,7 +343,7 @@ export class ServerManager extends EventEmitter {
                 servers.push(this.toConfigServer(srv));
                 return servers;
             }, [] as ConfigServer[]);
-        await Config.setServers(localServers, lastActiveTeam);
+        await Config.setServers(localServers, lastActiveServer);
     }
 
     private getLastActiveTab = (serverId: string) => {

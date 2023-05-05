@@ -21,9 +21,9 @@ describe('RemoveServerModal', function desc() {
 
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-        await mainView.click('.TeamDropdownButton');
-        await dropdownView.hover('.TeamDropdown .TeamDropdown__button:nth-child(1)');
-        await dropdownView.click('.TeamDropdown .TeamDropdown__button:nth-child(1) button.TeamDropdown__button-remove');
+        await mainView.click('.ServerDropdownButton');
+        await dropdownView.hover('.ServerDropdown .ServerDropdown__button:nth-child(1)');
+        await dropdownView.click('.ServerDropdown .ServerDropdown__button:nth-child(1) button.ServerDropdown__button-remove');
 
         removeServerView = await this.app.waitForEvent('window', {
             predicate: (window) => window.url().includes('removeServer'),
@@ -42,7 +42,7 @@ describe('RemoveServerModal', function desc() {
 
     let removeServerView;
 
-    it('MM-T4390_1 should remove existing team on click Remove', async () => {
+    it('MM-T4390_1 should remove existing server on click Remove', async () => {
         await removeServerView.click('button:has-text("Remove")');
         await asyncSleep(1000);
 
@@ -55,7 +55,7 @@ describe('RemoveServerModal', function desc() {
         savedConfig.teams.should.deep.equal(expectedConfig);
     });
 
-    it('MM-T4390_2 should NOT remove existing team on click Cancel', async () => {
+    it('MM-T4390_2 should NOT remove existing server on click Cancel', async () => {
         await removeServerView.click('button:has-text("Cancel")');
         await asyncSleep(1000);
 

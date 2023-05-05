@@ -53,17 +53,17 @@ const selectTab = (fn: (order: number, length: number) => number) => {
         return;
     }
 
-    const currentTeamTabs = ServerManager.getOrderedTabsForServer(currentView.tab.server.id).map((tab, index) => ({tab, index}));
-    const filteredTabs = currentTeamTabs?.filter((tab) => tab.tab.isOpen);
-    const currentTab = currentTeamTabs?.find((tab) => tab.tab.type === currentView.tab.type);
-    if (!currentTeamTabs || !currentTab || !filteredTabs) {
+    const currentServerTabs = ServerManager.getOrderedTabsForServer(currentView.tab.server.id).map((tab, index) => ({tab, index}));
+    const filteredTabs = currentServerTabs?.filter((tab) => tab.tab.isOpen);
+    const currentTab = currentServerTabs?.find((tab) => tab.tab.type === currentView.tab.type);
+    if (!currentServerTabs || !currentTab || !filteredTabs) {
         return;
     }
 
     let currentOrder = currentTab.index;
     let nextIndex = -1;
     while (nextIndex === -1) {
-        const nextOrder = (fn(currentOrder, currentTeamTabs.length) % currentTeamTabs.length);
+        const nextOrder = (fn(currentOrder, currentServerTabs.length) % currentServerTabs.length);
         nextIndex = filteredTabs.findIndex((tab) => tab.index === nextOrder);
         currentOrder = nextOrder;
     }
