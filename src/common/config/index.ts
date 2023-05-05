@@ -18,7 +18,7 @@ import {
 } from 'types/config';
 
 import {Logger} from 'common/log';
-import {getDefaultConfigServerFromServer} from 'common/tabs/TabView';
+import {getDefaultTabsForConfigServer} from 'common/tabs/TabView';
 import Utils, {copy} from 'common/utils/util';
 import * as Validator from 'common/Validator';
 
@@ -51,7 +51,7 @@ export class Config extends EventEmitter {
         this.registryConfig = new RegistryConfig();
         this.pPredefinedServers = [];
         if (buildConfig.defaultServers) {
-            this.pPredefinedServers.push(...buildConfig.defaultServers.map((server, index) => getDefaultConfigServerFromServer({...server, order: index})));
+            this.pPredefinedServers.push(...buildConfig.defaultServers.map((server, index) => getDefaultTabsForConfigServer({...server, order: index})));
         }
         try {
             this.useNativeWindow = os.platform() === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2');
@@ -262,7 +262,7 @@ export class Config extends EventEmitter {
 
         this.registryConfigData = registryData;
         if (this.registryConfigData.servers) {
-            this.pPredefinedServers.push(...this.registryConfigData.servers.map((server, index) => getDefaultConfigServerFromServer({...server, order: index})));
+            this.pPredefinedServers.push(...this.registryConfigData.servers.map((server, index) => getDefaultTabsForConfigServer({...server, order: index})));
         }
         this.reload();
     }

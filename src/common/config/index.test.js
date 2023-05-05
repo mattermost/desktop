@@ -25,7 +25,7 @@ jest.mock('common/Validator', () => ({
 }));
 
 jest.mock('common/tabs/TabView', () => ({
-    getDefaultConfigServerFromServer: (value) => ({
+    getDefaultTabsForConfigServer: (value) => ({
         ...value,
         tabs: [
             {

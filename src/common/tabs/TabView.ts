@@ -22,7 +22,7 @@ export interface TabView {
     toUniqueView(): UniqueView;
 }
 
-export function getDefaultConfigServerFromServer(server: Server & {order: number; lastActiveTab?: number}) {
+export function getDefaultTabsForConfigServer(server: Server & {order: number; lastActiveTab?: number}) {
     return {
         ...server,
         tabs: getDefaultTabs(),

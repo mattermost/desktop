@@ -5,7 +5,7 @@ import {upgradeV0toV1, upgradeV1toV2, upgradeV2toV3} from 'common/config/upgrade
 import pastDefaultPreferences from 'common/config/pastDefaultPreferences';
 
 jest.mock('common/tabs/TabView', () => ({
-    getDefaultConfigServerFromServer: (value) => ({
+    getDefaultTabsForConfigServer: (value) => ({
         ...value,
         tabs: [
             {

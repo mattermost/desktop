@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import ServerManager from 'common/servers/serverManager';
-import {getDefaultConfigServerFromServer} from 'common/tabs/TabView';
+import {getDefaultTabsForConfigServer} from 'common/tabs/TabView';
 
 import ModalManager from 'main/views/modalManager';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
@@ -30,7 +30,7 @@ jest.mock('common/servers/serverManager', () => ({
     getServerLog: jest.fn(),
 }));
 jest.mock('common/tabs/TabView', () => ({
-    getDefaultConfigServerFromServer: jest.fn(),
+    getDefaultTabsForConfigServer: jest.fn(),
 }));
 jest.mock('main/views/modalManager', () => ({
     addModal: jest.fn(),
@@ -172,7 +172,7 @@ describe('main/app/servers', () => {
             ServerManager.hasServers.mockReturnValue(Boolean(serversCopy.length));
             ServerManager.getServerLog.mockReturnValue({debug: jest.fn(), error: jest.fn()});
 
-            getDefaultConfigServerFromServer.mockImplementation((server) => ({
+            getDefaultTabsForConfigServer.mockImplementation((server) => ({
                 ...server,
                 tabs,
             }));
