@@ -378,6 +378,6 @@ export function createMenu(config: Config, updateManager: UpdateManager) {
     return Menu.buildFromTemplate(createTemplate(config, updateManager) as Array<MenuItemConstructorOptions | MenuItem>);
 }
 
-t('common.views.TAB_MESSAGING');
-t('common.views.TAB_FOCALBOARD');
-t('common.views.TAB_PLAYBOOKS');
+t('common.tabs.TAB_MESSAGING');
+t('common.tabs.TAB_FOCALBOARD');
+t('common.tabs.TAB_PLAYBOOKS');
