@@ -554,7 +554,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         log.debug('doneEventController', {state});
 
         if (state === 'completed' && !this.open) {
-            displayDownloadCompleted(path.basename(item.savePath), item.savePath, ViewManager.getViewByWebContentsId(webContents.id)?.tab.server.name ?? '');
+            displayDownloadCompleted(path.basename(item.savePath), item.savePath, ViewManager.getViewByWebContentsId(webContents.id)?.view.server.name ?? '');
         }
 
         const bookmark = this.bookmarks.get(this.getFileId(item));

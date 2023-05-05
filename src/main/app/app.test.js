@@ -95,7 +95,7 @@ describe('main/app/app', () => {
         const promise = Promise.resolve({});
         const certificate = {};
         const view = {
-            tab: {
+            view: {
                 server: {
                     name: 'test-server',
                     url: new URL(testURL),
@@ -163,7 +163,7 @@ describe('main/app/app', () => {
             expect(CertificateStore.save).toHaveBeenCalled();
         });
 
-        it('should load URL using MattermostView when trusting certificate', async () => {
+        it('should load URL using MattermostBrowserView when trusting certificate', async () => {
             dialog.showMessageBox.mockResolvedValue({response: 0});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);

@@ -8,7 +8,7 @@ import log from 'electron-log';
 
 import {OPEN_SERVERS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import {t} from 'common/utils/util';
-import {getTabDisplayName, TabType} from 'common/tabs/TabView';
+import {getViewDisplayName, ViewType} from 'common/views/View';
 import {Config} from 'common/config';
 
 import {localizeMessage} from 'main/i18nManager';
@@ -18,7 +18,7 @@ import downloadsManager from 'main/downloadsManager';
 import Diagnostics from 'main/diagnostics';
 import ViewManager from 'main/views/viewManager';
 import SettingsWindow from 'main/windows/settingsWindow';
-import {selectNextTab, selectPreviousTab} from 'main/app/tabs';
+import {selectNextView, selectPreviousView} from 'main/app/views';
 import {switchServer} from 'main/app/servers';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
@@ -270,12 +270,12 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 },
             });
             if (ServerManager.getCurrentServer().id === server.id) {
-                ServerManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((tab, i) => {
+                ServerManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view, i) => {
                     items.push({
-                        label: `    ${localizeMessage(`common.tabs.${tab.type}`, getTabDisplayName(tab.type as TabType))}`,
+                        label: `    ${localizeMessage(`common.views.${view.type}`, getViewDisplayName(view.type as ViewType))}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
-                            ViewManager.showById(tab.id);
+                            ViewManager.showById(view.id);
                         },
                     });
                 });
@@ -285,14 +285,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
             accelerator: 'Ctrl+Tab',
             click() {
-                selectNextTab();
+                selectNextView();
             },
             enabled: (servers.length > 1),
         }, {
             label: localizeMessage('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
             accelerator: 'Ctrl+Shift+Tab',
             click() {
-                selectPreviousTab();
+                selectPreviousView();
             },
             enabled: (servers.length > 1),
         }, ...(isMac ? [separatorItem, {
@@ -378,6 +378,6 @@ export function createMenu(config: Config, updateManager: UpdateManager) {
     return Menu.buildFromTemplate(createTemplate(config, updateManager) as Array<MenuItemConstructorOptions | MenuItem>);
 }
 
-t('common.tabs.TAB_MESSAGING');
-t('common.tabs.TAB_FOCALBOARD');
-t('common.tabs.TAB_PLAYBOOKS');
+t('common.views.TAB_MESSAGING');
+t('common.views.TAB_FOCALBOARD');
+t('common.views.TAB_PLAYBOOKS');

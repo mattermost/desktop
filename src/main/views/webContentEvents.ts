@@ -81,7 +81,7 @@ export class WebContentsEventManager {
             return CallsWidgetWindow.getURL();
         }
 
-        return ViewManager.getViewByWebContentsId(webContentsId)?.tab.server.url;
+        return ViewManager.getViewByWebContentsId(webContentsId)?.view.server.url;
     }
 
     private generateWillNavigate = (webContentsId: number) => {
@@ -274,7 +274,7 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            const otherServerURL = ServerManager.lookupTabByURL(parsedURL);
+            const otherServerURL = ServerManager.lookupViewByURL(parsedURL);
             if (otherServerURL && isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
                 ViewManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};

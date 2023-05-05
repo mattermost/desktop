@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-export type Tab = {
+export type View = {
     name: string;
     isOpen?: boolean;
 }
@@ -11,14 +11,14 @@ export type Server = {
     url: string;
 }
 
-export type ConfigTab = Tab & {
+export type ConfigView = View & {
     order: number;
 }
 
 export type ConfigServer = Server & {
     order: number;
     lastActiveTab?: number;
-    tabs: ConfigTab[];
+    tabs: ConfigView[];
 }
 
 export type UniqueServer = Server & {
@@ -26,7 +26,7 @@ export type UniqueServer = Server & {
     isPredefined?: boolean;
 }
 
-export type UniqueView = Tab & {
+export type UniqueView = View & {
     id?: string;
 }
 

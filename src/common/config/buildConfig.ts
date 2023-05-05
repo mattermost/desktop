@@ -9,9 +9,9 @@ import {BuildConfig} from 'types/config';
 /**
  * Build-time configuration. End-users can't change these parameters.
  * @prop {Object[]} defaultServers
- * @prop {string} defaultServers[].name - The tab name for default server.
+ * @prop {string} defaultServers[].name - The view name for default server.
  * @prop {string} defaultServers[].url - The URL for default server.
- * @prop {string} defaultServers[].order - Sort order for server tabs (0, 1, 2)
+ * @prop {string} defaultServers[].order - Sort order for server views (0, 1, 2)
  * @prop {string} helpLink - The URL for "Help->Learn More..." menu item.
  *                           If null is specified, the menu disappears.
  * @prop {boolean} enableServerManagement - Whether users can edit servers configuration.

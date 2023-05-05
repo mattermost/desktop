@@ -278,7 +278,7 @@ describe('main/app/initialize', () => {
 
         it('should allow permission requests for supported types from trusted URLs', async () => {
             ViewManager.getViewByWebContentsId.mockReturnValue({
-                tab: {
+                view: {
                     server: {
                         url: new URL('http://server-1.com'),
                     },

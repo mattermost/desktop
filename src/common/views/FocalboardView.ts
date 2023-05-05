@@ -3,15 +3,15 @@
 
 import {getFormattedPathName} from 'common/utils/url';
 
-import BaseTabView from './BaseTabView';
-import {TabType, TAB_FOCALBOARD} from './TabView';
+import BaseView from './BaseView';
+import {ViewType, TAB_FOCALBOARD} from './View';
 
-export default class FocalboardTabView extends BaseTabView {
+export default class FocalboardView extends BaseView {
     get url(): URL {
         return new URL(`${this.server.url.origin}${getFormattedPathName(this.server.url.pathname)}boards`);
     }
 
-    get type(): TabType {
+    get type(): ViewType {
         return TAB_FOCALBOARD;
     }
 }

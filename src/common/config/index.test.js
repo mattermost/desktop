@@ -24,15 +24,15 @@ jest.mock('common/Validator', () => ({
     validateConfigData: (configData) => (configData.version === 3 ? configData : null),
 }));
 
-jest.mock('common/tabs/TabView', () => ({
-    getDefaultTabsForConfigServer: (value) => ({
+jest.mock('common/views/View', () => ({
+    getDefaultViewsForConfigServer: (value) => ({
         ...value,
         tabs: [
             {
-                name: 'tab1',
+                name: 'view1',
             },
             {
-                name: 'tab2',
+                name: 'view2',
             },
         ],
     }),
@@ -44,14 +44,14 @@ const buildServer = {
     url: 'http://build-server-1.com',
 };
 
-const buildServerWithTabs = {
+const buildServerWithViews = {
     ...buildServer,
     tabs: [
         {
-            name: 'tab1',
+            name: 'view1',
         },
         {
-            name: 'tab2',
+            name: 'view2',
         },
     ],
 };
@@ -68,10 +68,10 @@ const server = {
     url: 'http://server-1.com',
     tabs: [
         {
-            name: 'tab1',
+            name: 'view1',
         },
         {
-            name: 'tab2',
+            name: 'view2',
         },
     ],
 };
@@ -99,7 +99,7 @@ describe('common/config', () => {
         const config = new Config();
         config.reload = jest.fn();
         config.init(configPath, appName, appPath);
-        expect(config.predefinedServers).toContainEqual(buildServerWithTabs);
+        expect(config.predefinedServers).toContainEqual(buildServerWithViews);
     });
 
     describe('loadRegistry', () => {
@@ -113,10 +113,10 @@ describe('common/config', () => {
                 ...registryServer,
                 tabs: [
                     {
-                        name: 'tab1',
+                        name: 'view1',
                     },
                     {
-                        name: 'tab2',
+                        name: 'view2',
                     },
                 ],
             });
@@ -169,8 +169,8 @@ describe('common/config', () => {
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.set('teams', [{...buildServerWithTabs, name: 'build-team-2'}]);
-            expect(config.localConfigData.teams).not.toContainEqual({...buildServerWithTabs, name: 'build-team-2'});
+            config.set('teams', [{...buildServerWithViews, name: 'build-team-2'}]);
+            expect(config.localConfigData.teams).not.toContainEqual({...buildServerWithViews, name: 'build-team-2'});
             expect(config.localConfigData.teams).toContainEqual(server);
         });
     });
@@ -186,8 +186,8 @@ describe('common/config', () => {
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.setServers([{...buildServerWithTabs, name: 'build-server-2'}, server], 0);
-            expect(config.localConfigData.teams).toContainEqual({...buildServerWithTabs, name: 'build-server-2'});
+            config.setServers([{...buildServerWithViews, name: 'build-server-2'}, server], 0);
+            expect(config.localConfigData.teams).toContainEqual({...buildServerWithViews, name: 'build-server-2'});
             expect(config.localConfigData.lastActiveTeam).toBe(0);
             expect(config.regenerateCombinedConfigData).toHaveBeenCalled();
             expect(config.saveLocalConfigData).toHaveBeenCalled();

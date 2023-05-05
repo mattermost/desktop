@@ -235,7 +235,7 @@ module.exports = {
                     return null;
                 }
                 const info = await window.testHelper.getViewInfoForTest();
-                return {viewName: `${info.serverName}___${info.tabType}`, webContentsId: info.webContentsId};
+                return {viewName: `${info.serverName}___${info.viewType}`, webContentsId: info.webContentsId};
             }).then((result) => {
                 if (result) {
                     map[result.viewName] = {win, webContentsId: result.webContentsId};

@@ -12,7 +12,7 @@ import {ComparableCertificate} from 'types/certificate';
 import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
 import {Logger} from 'common/log';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
+import {TAB_MESSAGING} from 'common/views/View';
 import {isValidURL} from 'common/utils/url';
 
 const log = new Logger('Validator');
@@ -213,13 +213,13 @@ function cleanServer<T extends {name: string; url: string}>(server: T) {
     };
 }
 
-function cleanServerWithTabs(server: ConfigServer) {
+function cleanServerWithViews(server: ConfigServer) {
     return {
         ...cleanServer(server),
-        tabs: server.tabs.map((tab) => {
+        tabs: server.tabs.map((view) => {
             return {
-                ...tab,
-                isOpen: tab.name === TAB_MESSAGING ? true : tab.isOpen,
+                ...view,
+                isOpen: view.name === TAB_MESSAGING ? true : view.isOpen,
             };
         }),
     };
@@ -253,7 +253,7 @@ export function validateV2ConfigData(data: ConfigV2) {
 }
 
 export function validateV3ConfigData(data: ConfigV3) {
-    data.teams = cleanServers(data.teams, cleanServerWithTabs);
+    data.teams = cleanServers(data.teams, cleanServerWithViews);
     if (data.spellCheckerURL && !isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;

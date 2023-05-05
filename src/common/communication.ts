@@ -3,8 +3,8 @@
 
 export const SWITCH_SERVER = 'switch-server';
 export const SWITCH_TAB = 'switch-tab';
-export const CLOSE_TAB = 'close-tab';
-export const OPEN_TAB = 'open-tab';
+export const CLOSE_VIEW = 'close-view';
+export const OPEN_VIEW = 'open-view';
 export const SET_ACTIVE_VIEW = 'set-active-view';
 export const FOCUS_BROWSERVIEW = 'focus-browserview';
 export const HISTORY = 'history';

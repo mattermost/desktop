@@ -3,15 +3,15 @@
 
 import {getFormattedPathName} from 'common/utils/url';
 
-import BaseTabView from './BaseTabView';
-import {TabType, TAB_PLAYBOOKS} from './TabView';
+import BaseView from './BaseView';
+import {ViewType, TAB_PLAYBOOKS} from './View';
 
-export default class PlaybooksTabView extends BaseTabView {
+export default class PlaybooksView extends BaseView {
     get url(): URL {
         return new URL(`${this.server.url.origin}${getFormattedPathName(this.server.url.pathname)}playbooks`);
     }
 
-    get type(): TabType {
+    get type(): ViewType {
         return TAB_PLAYBOOKS;
     }
 }

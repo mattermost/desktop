@@ -24,16 +24,16 @@ export const switchServer = (serverId: string, waitForViewToExist = false) => {
         ServerManager.getServerLog(serverId, 'WindowManager').error('Cannot find server in config');
         return;
     }
-    const nextTab = ServerManager.getLastActiveTabForServer(serverId);
+    const nextView = ServerManager.getLastActiveTabForServer(serverId);
     if (waitForViewToExist) {
         const timeout = setInterval(() => {
-            if (ViewManager.getView(nextTab.id)) {
-                ViewManager.showById(nextTab.id);
+            if (ViewManager.getView(nextView.id)) {
+                ViewManager.showById(nextView.id);
                 clearInterval(timeout);
             }
         }, 100);
     } else {
-        ViewManager.showById(nextTab.id);
+        ViewManager.showById(nextView.id);
     }
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
 };

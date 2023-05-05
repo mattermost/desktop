@@ -14,11 +14,11 @@ import {
     isTrustedURL,
 } from 'common/utils/url';
 
-jest.mock('common/tabs/TabView', () => ({
-    getServerView: (srv, tab) => {
+jest.mock('common/views/View', () => ({
+    getServerView: (srv, view) => {
         return {
-            name: `${srv.name}_${tab.name}`,
-            url: `${srv.url}${srv.url.toString().endsWith('/') ? '' : '/'}${tab.name.split('-')[1] || ''}`,
+            name: `${srv.name}_${view.name}`,
+            url: `${srv.url}${srv.url.toString().endsWith('/') ? '' : '/'}${view.name.split('-')[1] || ''}`,
         };
     },
 }));

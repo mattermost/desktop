@@ -10,7 +10,7 @@ import classNames from 'classnames';
 
 import {UniqueView} from 'types/config';
 
-import {TabType, canCloseTab, getTabDisplayName} from 'common/tabs/TabView';
+import {ViewType, canCloseView, getViewDisplayName} from 'common/views/View';
 
 type Props = {
     activeTabId?: string;
@@ -100,7 +100,7 @@ class TabBar extends React.PureComponent<Props> {
                                 as='li'
                                 id={`serverTabItem${index}`}
                                 draggable={false}
-                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getTabDisplayName(tab.name as TabType)})}
+                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getViewDisplayName(tab.name as ViewType)})}
                                 className={classNames('serverTabItem', {
                                     active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
@@ -121,10 +121,10 @@ class TabBar extends React.PureComponent<Props> {
                                     <div className='TabBar-tabSeperator'>
                                         <FormattedMessage
                                             id={`common.tabs.${tab.name}`}
-                                            defaultMessage={getTabDisplayName(tab.name as TabType)}
+                                            defaultMessage={getViewDisplayName(tab.name as ViewType)}
                                         />
                                         { badgeDiv }
-                                        {canCloseTab(tab.name as TabType) &&
+                                        {canCloseView(tab.name as ViewType) &&
                                             <button
                                                 className='serverTabItem__close'
                                                 onClick={this.onCloseTab(tab.id!)}

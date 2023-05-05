@@ -16,14 +16,14 @@ jest.mock('common/config', () => ({
 }));
 jest.mock('main/notifications', () => ({}));
 jest.mock('common/servers/serverManager', () => ({
-    setTabIsOpen: jest.fn(),
+    setViewIsOpen: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),
     addServer: jest.fn(),
     editServer: jest.fn(),
     removeServer: jest.fn(),
     getServer: jest.fn(),
-    getTab: jest.fn(),
+    getView: jest.fn(),
     getLastActiveTabForServer: jest.fn(),
 }));
 jest.mock('main/utils', () => ({

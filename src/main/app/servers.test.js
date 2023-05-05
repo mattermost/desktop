@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import ServerManager from 'common/servers/serverManager';
-import {getDefaultTabsForConfigServer} from 'common/tabs/TabView';
+import {getDefaultViewsForConfigServer} from 'common/views/View';
 
 import ModalManager from 'main/views/modalManager';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
@@ -18,19 +18,19 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('common/servers/serverManager', () => ({
-    setTabIsOpen: jest.fn(),
+    setViewIsOpen: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),
     addServer: jest.fn(),
     editServer: jest.fn(),
     removeServer: jest.fn(),
     getServer: jest.fn(),
-    getTab: jest.fn(),
+    getView: jest.fn(),
     getLastActiveTabForServer: jest.fn(),
     getServerLog: jest.fn(),
 }));
-jest.mock('common/tabs/TabView', () => ({
-    getDefaultTabsForConfigServer: jest.fn(),
+jest.mock('common/views/View', () => ({
+    getDefaultViewsForConfigServer: jest.fn(),
 }));
 jest.mock('main/views/modalManager', () => ({
     addModal: jest.fn(),
@@ -50,17 +50,17 @@ jest.mock('main/views/viewManager', () => ({
 
 const tabs = [
     {
-        name: 'tab-1',
+        name: 'view-1',
         order: 0,
         isOpen: false,
     },
     {
-        name: 'tab-2',
+        name: 'view-2',
         order: 2,
         isOpen: true,
     },
     {
-        name: 'tab-3',
+        name: 'view-3',
         order: 1,
         isOpen: true,
     },
@@ -77,9 +77,9 @@ const servers = [
 describe('main/app/servers', () => {
     describe('switchServer', () => {
         const views = new Map([
-            ['tab-1', {id: 'tab-1'}],
-            ['tab-2', {id: 'tab-2'}],
-            ['tab-3', {id: 'tab-3'}],
+            ['view-1', {id: 'view-1'}],
+            ['view-2', {id: 'view-2'}],
+            ['view-3', {id: 'view-3'}],
         ]);
 
         beforeEach(() => {
@@ -119,30 +119,30 @@ describe('main/app/servers', () => {
             expect(ViewManager.showById).not.toBeCalled();
         });
 
-        it('should show first open tab in order when last active not defined', () => {
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-3'});
+        it('should show first open view in order when last active not defined', () => {
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-3'});
             Servers.switchServer('server-1');
-            expect(ViewManager.showById).toHaveBeenCalledWith('tab-3');
+            expect(ViewManager.showById).toHaveBeenCalledWith('view-3');
         });
 
-        it('should show last active tab of chosen server', () => {
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-2'});
+        it('should show last active view of chosen server', () => {
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-2'});
             Servers.switchServer('server-2');
-            expect(ViewManager.showById).toHaveBeenCalledWith('tab-2');
+            expect(ViewManager.showById).toHaveBeenCalledWith('view-2');
         });
 
         it('should wait for view to exist if specified', () => {
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-3'});
-            views.delete('tab-3');
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-3'});
+            views.delete('view-3');
             Servers.switchServer('server-1', true);
             expect(ViewManager.showById).not.toBeCalled();
 
             jest.advanceTimersByTime(200);
             expect(ViewManager.showById).not.toBeCalled();
 
-            views.set('tab-3', {});
+            views.set('view-3', {});
             jest.advanceTimersByTime(200);
-            expect(ViewManager.showById).toBeCalledWith('tab-3');
+            expect(ViewManager.showById).toBeCalledWith('view-3');
         });
     });
 
@@ -172,7 +172,7 @@ describe('main/app/servers', () => {
             ServerManager.hasServers.mockReturnValue(Boolean(serversCopy.length));
             ServerManager.getServerLog.mockReturnValue({debug: jest.fn(), error: jest.fn()});
 
-            getDefaultTabsForConfigServer.mockImplementation((server) => ({
+            getDefaultViewsForConfigServer.mockImplementation((server) => ({
                 ...server,
                 tabs,
             }));

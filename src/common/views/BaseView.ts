@@ -7,9 +7,9 @@ import {UniqueView} from 'types/config';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
 
-import {TabType, TabView} from './TabView';
+import {ViewType, MattermostView} from './View';
 
-export default abstract class BaseTabView implements TabView {
+export default abstract class BaseView implements MattermostView {
     id: string;
     server: MattermostServer;
     isOpen?: boolean;
@@ -22,7 +22,7 @@ export default abstract class BaseTabView implements TabView {
     get url(): URL {
         throw new Error('Not implemented');
     }
-    get type(): TabType {
+    get type(): ViewType {
         throw new Error('Not implemented');
     }
     get shouldNotify(): boolean {

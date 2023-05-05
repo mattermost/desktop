@@ -153,7 +153,7 @@ describe('common/Validator', () => {
             version: 3,
         };
 
-        it('should ensure messaging tab is open', () => {
+        it('should ensure messaging view is open', () => {
             const modifiedConfig = {
                 ...config,
                 teams: [

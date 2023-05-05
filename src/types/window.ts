@@ -34,8 +34,8 @@ declare global {
             openAppMenu: () => void;
             closeServersDropdown: () => void;
             openServersDropdown: () => void;
-            switchTab: (tabId: string) => void;
-            closeTab: (tabId: string) => void;
+            switchTab: (viewId: string) => void;
+            closeView: (viewId: string) => void;
             closeWindow: () => void;
             minimizeWindow: () => void;
             maximizeWindow: () => void;
@@ -51,8 +51,8 @@ declare global {
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
-            updateTabOrder: (serverId: string, tabOrder: string[]) => Promise<void>;
-            getLastActive: () => Promise<{server: string; tab: string}>;
+            updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
+            getLastActive: () => Promise<{server: string; view: string}>;
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             onUpdateServers: (listener: () => void) => void;
@@ -74,7 +74,7 @@ declare global {
             onLoadRetry: (listener: (viewId: string, retry: Date, err: string, loadUrl: string) => void) => void;
             onLoadSuccess: (listener: (viewId: string) => void) => void;
             onLoadFailed: (listener: (viewId: string, err: string, loadUrl: string) => void) => void;
-            onSetActiveView: (listener: (serverId: string, tabId: string) => void) => void;
+            onSetActiveView: (listener: (serverId: string, viewId: string) => void) => void;
             onMaximizeChange: (listener: (maximize: boolean) => void) => void;
             onEnterFullScreen: (listener: () => void) => void;
             onLeaveFullScreen: (listener: () => void) => void;

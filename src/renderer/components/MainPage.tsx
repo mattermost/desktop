@@ -147,7 +147,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     setInitialActiveTab = async () => {
         const lastActive = await window.desktop.getLastActive();
-        this.setActiveView(lastActive.server, lastActive.tab);
+        this.setActiveView(lastActive.server, lastActive.view);
     }
 
     updateServers = async () => {
@@ -307,7 +307,7 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleCloseTab = (tabId: string) => {
-        window.desktop.closeTab(tabId);
+        window.desktop.closeView(tabId);
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
