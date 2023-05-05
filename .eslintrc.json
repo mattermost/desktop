@@ -26,7 +26,8 @@
         "no-var": 2,
         "react/no-find-dom-node": 2,
         "multiline-ternary": 0,
-        "max-lines": ["warn", 650]
+        "max-lines": ["warn", 650],
+        "no-underscore-dangle": ["warn"]
     },
     "overrides": [
         {

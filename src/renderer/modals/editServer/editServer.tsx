@@ -11,7 +11,7 @@ import {UniqueServer} from 'types/config';
 
 import IntlProvider from 'renderer/intl_provider';
 
-import NewServerModal from '../../components/NewServerModal'; //'./addServer.jsx';
+import NewServerModal from '../../components/NewServerModal';
 
 import setupDarkMode from '../darkMode';
 

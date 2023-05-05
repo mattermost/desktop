@@ -36,7 +36,7 @@ export class Config extends EventEmitter {
     private appPath?: string;
 
     private registryConfig: RegistryConfig;
-    private pPredefinedServers: ConfigServer[];
+    private _predefinedServers: ConfigServer[];
     private useNativeWindow: boolean;
 
     private combinedData?: CombinedConfig;
@@ -49,9 +49,9 @@ export class Config extends EventEmitter {
     constructor() {
         super();
         this.registryConfig = new RegistryConfig();
-        this.pPredefinedServers = [];
+        this._predefinedServers = [];
         if (buildConfig.defaultServers) {
-            this.pPredefinedServers.push(...buildConfig.defaultServers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
+            this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
         }
         try {
             this.useNativeWindow = os.platform() === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2');
@@ -176,7 +176,7 @@ export class Config extends EventEmitter {
         return this.localConfigData?.teams ?? defaultPreferences.teams;
     }
     get predefinedServers() {
-        return this.pPredefinedServers;
+        return this._predefinedServers;
     }
     get enableHardwareAcceleration() {
         return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;
@@ -262,7 +262,7 @@ export class Config extends EventEmitter {
 
         this.registryConfigData = registryData;
         if (this.registryConfigData.servers) {
-            this.pPredefinedServers.push(...this.registryConfigData.servers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
+            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
         }
         this.reload();
     }
