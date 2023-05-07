@@ -269,5 +269,7 @@
     "renderer.components.settingsPage.loggingLevel.level.verbose": "详细(verbose)",
     "renderer.components.showCertificateModal.notValidBefore": "不早于",
     "renderer.components.showCertificateModal.commonName": "公用名",
-    "renderer.components.showCertificateModal.notValidAfter": "不晚于"
+    "renderer.components.showCertificateModal.notValidAfter": "不晚于",
+    "main.downloadsManager.specifyDownloadsFolder": "指定下载文件的文件夹",
+    "main.downloadsManager.resetDownloadsFolder": "请重置下载文件的文件夹"
 }
