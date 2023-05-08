@@ -274,5 +274,7 @@
     "main.menus.app.view.downloads": "Downloads",
     "renderer.components.settingsPage.trayIcon.color": "Icoonkleur: ",
     "main.menus.app.help.RunDiagnostics": "Diagnostische tests uitvoeren",
-    "main.menus.app.help.ShowLogs": "Logs tonen"
+    "main.menus.app.help.ShowLogs": "Logs tonen",
+    "main.downloadsManager.specifyDownloadsFolder": "Geef de map op waar de bestanden in worden gedownload",
+    "main.downloadsManager.resetDownloadsFolder": "Stel de map waar de bestanden in worden gedownload opnieuw in"
 }
