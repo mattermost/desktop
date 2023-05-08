@@ -158,7 +158,9 @@ export class CallsWidgetWindow {
         if (!widgetURL) {
             return;
         }
-        this.win?.loadURL(widgetURL).catch((reason) => {
+        this.win?.loadURL(widgetURL, {
+            userAgent: composeUserAgent(),
+        }).catch((reason) => {
             log.error(`failed to load: ${reason}`);
         });
     }
