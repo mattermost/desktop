@@ -274,5 +274,7 @@
     "main.menus.app.view.downloads": "Nedladdningar",
     "renderer.components.settingsPage.trayIcon.color": "Ikonfärg: ",
     "main.menus.app.help.RunDiagnostics": "Kör diagnostik",
-    "main.menus.app.help.ShowLogs": "Visa loggar"
+    "main.menus.app.help.ShowLogs": "Visa loggar",
+    "main.downloadsManager.specifyDownloadsFolder": "Ange mappen där hämtade filer ska sparas",
+    "main.downloadsManager.resetDownloadsFolder": "Återställ mappen där hämtade filer kommer sparas"
 }
