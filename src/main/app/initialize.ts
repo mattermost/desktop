@@ -14,8 +14,8 @@ import {
     SHOW_NEW_SERVER_MODAL,
     NOTIFY_MENTION,
     SWITCH_TAB,
-    CLOSE_TAB,
-    OPEN_TAB,
+    CLOSE_VIEW,
+    OPEN_VIEW,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
@@ -100,8 +100,8 @@ import {
     switchServer,
 } from './servers';
 import {
-    handleCloseTab, handleGetLastActive, handleGetOrderedTabsForServer, handleOpenTab,
-} from './tabs';
+    handleCloseView, handleGetLastActive, handleGetOrderedViewsForServer, handleOpenView,
+} from './views';
 import {
     clearAppCache,
     getDeeplinkingURL,
@@ -279,8 +279,8 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(SWITCH_SERVER, (event, serverId) => switchServer(serverId));
     ipcMain.on(SWITCH_TAB, (event, viewId) => ViewManager.showById(viewId));
-    ipcMain.on(CLOSE_TAB, handleCloseTab);
-    ipcMain.on(OPEN_TAB, handleOpenTab);
+    ipcMain.on(CLOSE_VIEW, handleCloseView);
+    ipcMain.on(OPEN_VIEW, handleOpenView);
 
     ipcMain.on(QUIT, handleQuit);
 
@@ -296,10 +296,10 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(UPDATE_CONFIGURATION, updateConfiguration);
 
     ipcMain.on(UPDATE_SERVER_ORDER, (event, serverOrder) => ServerManager.updateServerOrder(serverOrder));
-    ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, tabOrder) => ServerManager.updateTabOrder(serverId, tabOrder));
+    ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => ServerManager.updateTabOrder(serverId, viewOrder));
     ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
-    ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toMattermostTeam()));
-    ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedTabsForServer);
+    ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toUniqueServer()));
+    ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedViewsForServer);
 
     ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
     ipcMain.on(WINDOW_CLOSE, handleClose);
@@ -453,7 +453,7 @@ async function initializeAfterAppReady() {
         }
 
         const requestingURL = webContents.getURL();
-        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.tab.server.url;
+        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.view.server.url;
 
         if (!serverURL) {
             callback(false);

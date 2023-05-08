@@ -10,7 +10,7 @@ import {Container, Row} from 'react-bootstrap';
 import {DropResult} from 'react-beautiful-dnd';
 import {injectIntl, IntlShape} from 'react-intl';
 
-import {MattermostTab, MattermostTeam} from 'types/config';
+import {UniqueView, UniqueServer} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 
 import restoreButton from '../../assets/titlebar/chrome-restore.svg';
@@ -23,7 +23,7 @@ import {playSound} from '../notificationSounds';
 import TabBar from './TabBar';
 import ExtraBar from './ExtraBar';
 import ErrorView from './ErrorView';
-import TeamDropdownButton from './TeamDropdownButton';
+import ServerDropdownButton from './ServerDropdownButton';
 import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
 
 import '../css/components/UpgradeButton.scss';
@@ -47,8 +47,8 @@ type Props = {
 type State = {
     activeServerId?: string;
     activeTabId?: string;
-    servers: MattermostTeam[];
-    tabs: Map<string, MattermostTab[]>;
+    servers: UniqueServer[];
+    tabs: Map<string, UniqueView[]>;
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
     mentionCounts: Record<string, number>;
@@ -147,7 +147,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     setInitialActiveTab = async () => {
         const lastActive = await window.desktop.getLastActive();
-        this.setActiveView(lastActive.server, lastActive.tab);
+        this.setActiveView(lastActive.server, lastActive.view);
     }
 
     updateServers = async () => {
@@ -239,11 +239,11 @@ class MainPage extends React.PureComponent<Props, State> {
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
 
-        window.desktop.onCloseTeamsDropdown(() => {
+        window.desktop.onCloseServersDropdown(() => {
             this.setState({isMenuOpen: false});
         });
 
-        window.desktop.onOpenTeamsDropdown(() => {
+        window.desktop.onOpenServersDropdown(() => {
             this.setState({isMenuOpen: true});
         });
 
@@ -290,7 +290,7 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleCloseDropdowns = () => {
-        window.desktop.closeTeamsDropdown();
+        window.desktop.closeServersDropdown();
         this.closeDownloadsDropdown();
     }
 
@@ -307,7 +307,7 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     handleCloseTab = (tabId: string) => {
-        window.desktop.closeTab(tabId);
+        window.desktop.closeView(tabId);
     }
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -399,7 +399,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     render() {
         const {intl} = this.props;
-        let currentTabs: MattermostTab[] = [];
+        let currentTabs: UniqueView[] = [];
         if (this.state.activeServerId) {
             currentTabs = this.state.tabs.get(this.state.activeServerId) ?? [];
         }
@@ -538,7 +538,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         />
                     </button>
                     {activeServer && (
-                        <TeamDropdownButton
+                        <ServerDropdownButton
                             isDisabled={this.state.modalOpen}
                             activeServerName={activeServer.name}
                             totalMentionCount={totalMentionCount}

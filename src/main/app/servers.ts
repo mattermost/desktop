@@ -3,7 +3,7 @@
 
 import {IpcMainEvent, ipcMain} from 'electron';
 
-import {MattermostTeam, Team} from 'types/config';
+import {UniqueServer, Server} from 'types/config';
 
 import {UPDATE_SHORTCUT_MENU} from 'common/communication';
 import {Logger} from 'common/log';
@@ -24,16 +24,16 @@ export const switchServer = (serverId: string, waitForViewToExist = false) => {
         ServerManager.getServerLog(serverId, 'WindowManager').error('Cannot find server in config');
         return;
     }
-    const nextTab = ServerManager.getLastActiveTabForServer(serverId);
+    const nextView = ServerManager.getLastActiveTabForServer(serverId);
     if (waitForViewToExist) {
         const timeout = setInterval(() => {
-            if (ViewManager.getView(nextTab.id)) {
-                ViewManager.showById(nextTab.id);
+            if (ViewManager.getView(nextView.id)) {
+                ViewManager.showById(nextView.id);
                 clearInterval(timeout);
             }
         }, 100);
     } else {
-        ViewManager.showById(nextTab.id);
+        ViewManager.showById(nextView.id);
     }
     ipcMain.emit(UPDATE_SHORTCUT_MENU);
 };
@@ -49,11 +49,11 @@ export const handleNewServerModal = () => {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<MattermostTeam[], Team>('newServer', html, preload, ServerManager.getAllServers().map((team) => team.toMattermostTeam()), mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<UniqueServer[], Server>('newServer', html, preload, ServerManager.getAllServers().map((server) => server.toUniqueServer()), mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
-            const newTeam = ServerManager.addServer(data);
-            switchServer(newTeam.id, true);
+            const newServer = ServerManager.addServer(data);
+            switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -80,13 +80,13 @@ export const handleEditServerModal = (e: IpcMainEvent, id: string) => {
     if (!server) {
         return;
     }
-    const modalPromise = ModalManager.addModal<{currentTeams: MattermostTeam[]; team: MattermostTeam}, Team>(
+    const modalPromise = ModalManager.addModal<{currentServers: UniqueServer[]; server: UniqueServer}, Server>(
         'editServer',
         html,
         preload,
         {
-            currentTeams: ServerManager.getAllServers().map((team) => team.toMattermostTeam()),
-            team: server.toMattermostTeam(),
+            currentServers: ServerManager.getAllServers().map((server) => server.toUniqueServer()),
+            server: server.toUniqueServer(),
         },
         mainWindow);
     if (modalPromise) {

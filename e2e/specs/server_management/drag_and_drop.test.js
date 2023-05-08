@@ -64,41 +64,41 @@ describe('server_management/drag_and_drop', function desc() {
             await beforeFunc();
             mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-            await mainWindow.click('.TeamDropdownButton');
+            await mainWindow.click('.ServerDropdownButton');
         });
         after(afterFunc);
 
         it('MM-T2634_1 should appear the original order', async () => {
-            const firstMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(1) .TeamDropdown__draggable-handle');
+            const firstMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
             const firstMenuItemText = await firstMenuItem.innerText();
             firstMenuItemText.should.equal('example');
-            const secondMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(2) .TeamDropdown__draggable-handle');
+            const secondMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(2) .ServerDropdown__draggable-handle');
             const secondMenuItemText = await secondMenuItem.innerText();
             secondMenuItemText.should.equal('github');
-            const thirdMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(3) .TeamDropdown__draggable-handle');
+            const thirdMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(3) .ServerDropdown__draggable-handle');
             const thirdMenuItemText = await thirdMenuItem.innerText();
             thirdMenuItemText.should.equal('google');
         });
 
         it('MM-T2634_2 after dragging the server down, should appear in the new order', async () => {
             // Move the first server down, then re-open the dropdown
-            const initialMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(1) .TeamDropdown__draggable-handle');
+            const initialMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
             await initialMenuItem.focus();
             await dropdownView.keyboard.down(' ');
             await dropdownView.keyboard.down('ArrowDown');
             await dropdownView.keyboard.down(' ');
             await asyncSleep(1000);
             await mainWindow.keyboard.press('Escape');
-            await mainWindow.click('.TeamDropdownButton');
+            await mainWindow.click('.ServerDropdownButton');
 
             // Verify that the new order persists
-            const firstMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(1) .TeamDropdown__draggable-handle');
+            const firstMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
             const firstMenuItemText = await firstMenuItem.innerText();
             firstMenuItemText.should.equal('github');
-            const secondMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(2) .TeamDropdown__draggable-handle');
+            const secondMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(2) .ServerDropdown__draggable-handle');
             const secondMenuItemText = await secondMenuItem.innerText();
             secondMenuItemText.should.equal('example');
-            const thirdMenuItem = await dropdownView.waitForSelector('.TeamDropdown button.TeamDropdown__button:nth-child(3) .TeamDropdown__draggable-handle');
+            const thirdMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(3) .ServerDropdown__draggable-handle');
             const thirdMenuItemText = await thirdMenuItem.innerText();
             thirdMenuItemText.should.equal('google');
         });
@@ -125,20 +125,20 @@ describe('server_management/drag_and_drop', function desc() {
 
         it('MM-T2635_1 should be in the original order', async () => {
             // Verify the original order
-            const firstTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(1)');
+            const firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
             const firstTabText = await firstTab.innerText();
             firstTabText.should.equal('Channels');
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(2)');
+            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
             const secondTabText = await secondTab.innerText();
             secondTabText.should.equal('Boards');
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(3)');
+            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
             const thirdTabText = await thirdTab.innerText();
             thirdTabText.should.equal('Playbooks');
         });
 
         it('MM-T2635_2 after moving the tab to the right, the tab should be in the new order', async () => {
             // Move the first tab to the right
-            let firstTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(1)');
+            let firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
             await firstTab.focus();
             await mainWindow.keyboard.down(' ');
             await mainWindow.keyboard.down('ArrowRight');
@@ -146,13 +146,13 @@ describe('server_management/drag_and_drop', function desc() {
             await asyncSleep(1000);
 
             // Verify that the new order is visible
-            firstTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(1)');
+            firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
             const firstTabText = await firstTab.innerText();
             firstTabText.should.equal('Boards');
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(2)');
+            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
             const secondTabText = await secondTab.innerText();
             secondTabText.should.equal('Channels');
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.teamTabItem:nth-child(3)');
+            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
             const thirdTabText = await thirdTab.innerText();
             thirdTabText.should.equal('Playbooks');
         });

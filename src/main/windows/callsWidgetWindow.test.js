@@ -247,7 +247,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 title: 'call test title #/&',
             };
             callsWidgetWindow.mainView = {
-                tab: {
+                view: {
                     server: {
                         url: new URL('http://localhost:8065'),
                     },
@@ -262,7 +262,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('getWidgetURL - under subpath', () => {
             callsWidgetWindow.mainView = {
-                tab: {
+                view: {
                     server: {
                         url: new URL('http://localhost:8065/subpath'),
                     },
@@ -339,7 +339,7 @@ describe('main/windows/callsWidgetWindow', () => {
         beforeEach(() => {
             callsWidgetWindow.options = {callID: 'id'};
             callsWidgetWindow.mainView = {
-                tab: {
+                view: {
                     server: {
                         url: new URL('http://localhost:8065'),
                     },
@@ -491,7 +491,7 @@ describe('main/windows/callsWidgetWindow', () => {
         callsWidgetWindow.close = jest.fn();
         callsWidgetWindow.getWidgetURL = jest.fn();
         const view = {
-            name: 'server-1_tab-messaging',
+            name: 'server-1_view-messaging',
             serverInfo: {
                 server: {
                     url: new URL('http://server-1.com'),
@@ -526,12 +526,12 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should create calls widget window', async () => {
             expect(callsWidgetWindow.win).toBeUndefined();
-            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
+            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_view-messaging', {callID: 'test'});
             expect(callsWidgetWindow.win).toBeDefined();
         });
 
         it('should create with correct initial configuration', async () => {
-            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
+            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_view-messaging', {callID: 'test'});
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
                 height: MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -560,7 +560,7 @@ describe('main/windows/callsWidgetWindow', () => {
             const window = {webContents: {id: 2}};
             callsWidgetWindow.win = window;
             callsWidgetWindow.options = {callID: 'test'};
-            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_tab-messaging', {callID: 'test'});
+            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_view-messaging', {callID: 'test'});
             expect(callsWidgetWindow.win).toEqual(window);
         });
 
@@ -568,7 +568,7 @@ describe('main/windows/callsWidgetWindow', () => {
             const window = {webContents: {id: 2}};
             callsWidgetWindow.win = window;
             callsWidgetWindow.getCallID = jest.fn(() => 'test');
-            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_tab-messaging', {callID: 'test2'});
+            await callsWidgetWindow.handleCreateCallsWidgetWindow('server-1_view-messaging', {callID: 'test2'});
             expect(callsWidgetWindow.win).not.toEqual(window);
         });
     });
@@ -580,18 +580,18 @@ describe('main/windows/callsWidgetWindow', () => {
                 send: jest.fn(),
             },
         };
-        const teams = [
+        const servers = [
             {
                 name: 'server-1',
                 order: 1,
-                tabs: [
+                views: [
                     {
-                        name: 'tab-1',
+                        name: 'view-1',
                         order: 0,
                         isOpen: false,
                     },
                     {
-                        name: 'tab-2',
+                        name: 'view-2',
                         order: 2,
                         isOpen: true,
                     },
@@ -599,24 +599,24 @@ describe('main/windows/callsWidgetWindow', () => {
             }, {
                 name: 'server-2',
                 order: 0,
-                tabs: [
+                views: [
                     {
-                        name: 'tab-1',
+                        name: 'view-1',
                         order: 0,
                         isOpen: false,
                     },
                     {
-                        name: 'tab-2',
+                        name: 'view-2',
                         order: 2,
                         isOpen: true,
                     },
                 ],
-                lastActiveTab: 2,
+                lastActiveView: 2,
             },
         ];
-        const map = teams.reduce((arr, item) => {
-            item.tabs.forEach((tab) => {
-                arr.push([`${item.name}_${tab.name}`, {
+        const map = servers.reduce((arr, item) => {
+            item.views.forEach((view) => {
+                arr.push([`${item.name}_${view.name}`, {
                     sendToRenderer: jest.fn(),
                 }]);
             });
@@ -649,9 +649,9 @@ describe('main/windows/callsWidgetWindow', () => {
                 },
             ]);
 
-            await callsWidgetWindow.handleGetDesktopSources('server-1_tab-1', null);
+            await callsWidgetWindow.handleGetDesktopSources('server-1_view-1', null);
 
-            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('desktop-sources-result', [
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('desktop-sources-result', [
                 {
                     id: 'screen0',
                 },
@@ -663,11 +663,11 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should send error with no sources', async () => {
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
-            await callsWidgetWindow.handleGetDesktopSources('server-2_tab-1', null);
+            await callsWidgetWindow.handleGetDesktopSources('server-2_view-1', null);
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(views.get('server-2_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-2_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
@@ -684,16 +684,16 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await callsWidgetWindow.handleGetDesktopSources('server-1_tab-1', null);
+            await callsWidgetWindow.handleGetDesktopSources('server-1_view-1', null);
 
             expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledTimes(1);
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledTimes(1);
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
 
@@ -713,7 +713,7 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await callsWidgetWindow.handleGetDesktopSources('server-1_tab-1', null);
+            await callsWidgetWindow.handleGetDesktopSources('server-1_view-1', null);
 
             expect(callsWidgetWindow.missingScreensharePermissions).toBe(true);
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(1);
@@ -721,11 +721,11 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
-            expect(views.get('server-1_tab-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
                 err: 'screen-permissions',
             });
 
-            await callsWidgetWindow.handleGetDesktopSources('server-1_tab-1', null);
+            await callsWidgetWindow.handleGetDesktopSources('server-1_view-1', null);
 
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(2);
             expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(1);
@@ -739,25 +739,25 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleDesktopSourcesModalRequest', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
         callsWidgetWindow.mainView = {
-            tab: {
+            view: {
                 server: {
                     id: 'server-1',
                 },
             },
             sendToRenderer: jest.fn(),
         };
-        const teams = [
+        const servers = [
             {
                 name: 'server-1',
                 order: 1,
-                tabs: [
+                views: [
                     {
-                        name: 'tab-1',
+                        name: 'view-1',
                         order: 0,
                         isOpen: false,
                     },
                     {
-                        name: 'tab-2',
+                        name: 'view-2',
                         order: 2,
                         isOpen: true,
                     },
@@ -765,24 +765,24 @@ describe('main/windows/callsWidgetWindow', () => {
             }, {
                 name: 'server-2',
                 order: 0,
-                tabs: [
+                views: [
                     {
-                        name: 'tab-1',
+                        name: 'view-1',
                         order: 0,
                         isOpen: false,
                     },
                     {
-                        name: 'tab-2',
+                        name: 'view-2',
                         order: 2,
                         isOpen: true,
                     },
                 ],
-                lastActiveTab: 2,
+                lastActiveView: 2,
             },
         ];
-        const map = teams.reduce((arr, item) => {
-            item.tabs.forEach((tab) => {
-                arr.push([`${item.name}_${tab.name}`, {}]);
+        const map = servers.reduce((arr, item) => {
+            item.views.forEach((view) => {
+                arr.push([`${item.name}_${view.name}`, {}]);
             });
             return arr;
         }, []);
@@ -805,7 +805,7 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleCallsWidgetChannelLinkClick', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
         callsWidgetWindow.mainView = {
-            tab: {
+            view: {
                 server: {
                     id: 'server-2',
                 },
@@ -813,18 +813,18 @@ describe('main/windows/callsWidgetWindow', () => {
             sendToRenderer: jest.fn(),
         };
         callsWidgetWindow.getChannelURL = jest.fn();
-        const teams = [
+        const servers = [
             {
                 name: 'server-1',
                 order: 1,
-                tabs: [
+                views: [
                     {
-                        name: 'tab-1',
+                        name: 'view-1',
                         order: 0,
                         isOpen: false,
                     },
                     {
-                        name: 'tab-2',
+                        name: 'view-2',
                         order: 2,
                         isOpen: true,
                     },
@@ -832,24 +832,24 @@ describe('main/windows/callsWidgetWindow', () => {
             }, {
                 name: 'server-2',
                 order: 0,
-                tabs: [
+                views: [
                     {
-                        name: 'tab-1',
+                        name: 'view-1',
                         order: 0,
                         isOpen: false,
                     },
                     {
-                        name: 'tab-2',
+                        name: 'view-2',
                         order: 2,
                         isOpen: true,
                     },
                 ],
-                lastActiveTab: 2,
+                lastActiveView: 2,
             },
         ];
-        const map = teams.reduce((arr, item) => {
-            item.tabs.forEach((tab) => {
-                arr.push([`${item.name}_${tab.name}`, {}]);
+        const map = servers.reduce((arr, item) => {
+            item.views.forEach((view) => {
+                arr.push([`${item.name}_${view.name}`, {}]);
             });
             return arr;
         }, []);
@@ -872,7 +872,7 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleCallsError', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
         callsWidgetWindow.mainView = {
-            tab: {
+            view: {
                 server: {
                     id: 'server-2',
                 },
@@ -899,7 +899,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
     describe('handleCallsLinkClick', () => {
         const view = {
-            tab: {
+            view: {
                 server: {
                     id: 'server-1',
                 },

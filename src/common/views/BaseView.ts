@@ -3,13 +3,13 @@
 
 import {v4 as uuid} from 'uuid';
 
-import {MattermostTab} from 'types/config';
+import {UniqueView} from 'types/config';
 
 import {MattermostServer} from 'common/servers/MattermostServer';
 
-import {TabType, TabView} from './TabView';
+import {ViewType, MattermostView} from './View';
 
-export default abstract class BaseTabView implements TabView {
+export default abstract class BaseView implements MattermostView {
     id: string;
     server: MattermostServer;
     isOpen?: boolean;
@@ -22,14 +22,14 @@ export default abstract class BaseTabView implements TabView {
     get url(): URL {
         throw new Error('Not implemented');
     }
-    get type(): TabType {
+    get type(): ViewType {
         throw new Error('Not implemented');
     }
     get shouldNotify(): boolean {
         return false;
     }
 
-    toMattermostTab = (): MattermostTab => {
+    toUniqueView = (): UniqueView => {
         return {
             id: this.id,
             name: this.type,

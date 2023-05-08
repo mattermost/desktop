@@ -7,54 +7,6 @@ import MainWindow from 'main/windows/mainWindow';
 import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 
-jest.mock('common/config', () => ({
-    teams: [{
-        name: 'example',
-        url: 'http://example.com',
-        order: 0,
-        tabs: [
-            {
-                name: 'TAB_MESSAGING',
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_FOCALBOARD',
-                order: 1,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_PLAYBOOKS',
-                order: 2,
-                isOpen: true,
-            },
-        ],
-        lastActiveTab: 0,
-    }, {
-        name: 'github',
-        url: 'https://github.com/',
-        order: 1,
-        tabs: [
-            {
-                name: 'TAB_MESSAGING',
-                order: 0,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_FOCALBOARD',
-                order: 1,
-                isOpen: true,
-            },
-            {
-                name: 'TAB_PLAYBOOKS',
-                order: 2,
-                isOpen: true,
-            },
-        ],
-        lastActiveTab: 0,
-    }],
-}));
-
 jest.mock('common/utils/url', () => {
     const actualUrl = jest.requireActual('common/utils/url');
     return {
@@ -116,35 +68,35 @@ describe('main/authManager', () => {
         });
 
         it('should popLoginModal when isTrustedURL', () => {
-            ViewManager.getViewByWebContentsId.mockReturnValue({tab: {server: {url: new URL('http://trustedurl.com/')}}});
+            ViewManager.getViewByWebContentsId.mockReturnValue({view: {server: {url: new URL('http://trustedurl.com/')}}});
             authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://trustedurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).toBeCalled();
             expect(authManager.popPermissionModal).not.toBeCalled();
         });
 
         it('should popLoginModal when isCustomLoginURL', () => {
-            ViewManager.getViewByWebContentsId.mockReturnValue({tab: {server: {url: new URL('http://customloginurl.com/')}}});
+            ViewManager.getViewByWebContentsId.mockReturnValue({view: {server: {url: new URL('http://customloginurl.com/')}}});
             authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://customloginurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).toBeCalled();
             expect(authManager.popPermissionModal).not.toBeCalled();
         });
 
         it('should popLoginModal when has permission', () => {
-            ViewManager.getViewByWebContentsId.mockReturnValue({tab: {server: {url: new URL('http://haspermissionurl.com/')}}});
+            ViewManager.getViewByWebContentsId.mockReturnValue({view: {server: {url: new URL('http://haspermissionurl.com/')}}});
             authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://haspermissionurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).toBeCalled();
             expect(authManager.popPermissionModal).not.toBeCalled();
         });
 
         it('should popPermissionModal when anything else is true', () => {
-            ViewManager.getViewByWebContentsId.mockReturnValue({tab: {server: {url: new URL('http://someotherurl.com/')}}});
+            ViewManager.getViewByWebContentsId.mockReturnValue({view: {server: {url: new URL('http://someotherurl.com/')}}});
             authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://someotherurl.com/'}, null, jest.fn());
             expect(authManager.popLoginModal).not.toBeCalled();
             expect(authManager.popPermissionModal).toBeCalled();
         });
 
         it('should set login callback when logging in', () => {
-            ViewManager.getViewByWebContentsId.mockReturnValue({tab: {server: {url: new URL('http://someotherurl.com/')}}});
+            ViewManager.getViewByWebContentsId.mockReturnValue({view: {server: {url: new URL('http://someotherurl.com/')}}});
             const callback = jest.fn();
             authManager.handleAppLogin({preventDefault: jest.fn()}, {id: 1}, {url: 'http://someotherurl.com/'}, null, callback);
             expect(authManager.loginCallbackMap.get('http://someotherurl.com/')).toEqual(callback);

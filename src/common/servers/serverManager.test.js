@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {TAB_MESSAGING, TAB_FOCALBOARD, TAB_PLAYBOOKS} from 'common/tabs/TabView';
+import {TAB_MESSAGING, TAB_FOCALBOARD, TAB_PLAYBOOKS} from 'common/views/View';
 import {parseURL, isInternalURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 
@@ -31,12 +31,12 @@ describe('common/servers/serverManager', () => {
                 server.url = new URL(url);
             };
             serverManager.servers = new Map([['server-1', server]]);
-            serverManager.tabs = new Map([
-                ['tab-1', {id: 'tab-1', type: TAB_MESSAGING, isOpen: true, server}],
-                ['tab-2', {id: 'tab-2', type: TAB_PLAYBOOKS, server}],
-                ['tab-3', {id: 'tab-3', type: TAB_FOCALBOARD, server}],
+            serverManager.views = new Map([
+                ['view-1', {id: 'view-1', type: TAB_MESSAGING, isOpen: true, server}],
+                ['view-2', {id: 'view-2', type: TAB_PLAYBOOKS, server}],
+                ['view-3', {id: 'view-3', type: TAB_FOCALBOARD, server}],
             ]);
-            serverManager.tabOrder = new Map([['server-1', ['tab-1', 'tab-2', 'tab-3']]]);
+            serverManager.viewOrder = new Map([['server-1', ['view-1', 'view-2', 'view-3']]]);
             serverManager.persistServers = jest.fn();
             Utils.isVersionGreaterThanOrEqualTo.mockImplementation((version) => version === '6.0.0');
         });
@@ -52,7 +52,7 @@ describe('common/servers/serverManager', () => {
             expect(serverManager.persistServers).not.toHaveBeenCalled();
         });
 
-        it('should open all tabs', async () => {
+        it('should open all views', async () => {
             serverManager.updateRemoteInfos(new Map([['server-1', {
                 siteURL: 'http://server-1.com',
                 serverVersion: '6.0.0',
@@ -60,8 +60,8 @@ describe('common/servers/serverManager', () => {
                 hasFocalboard: true,
             }]]));
 
-            expect(serverManager.tabs.get('tab-2').isOpen).toBe(true);
-            expect(serverManager.tabs.get('tab-3').isOpen).toBe(true);
+            expect(serverManager.views.get('view-2').isOpen).toBe(true);
+            expect(serverManager.views.get('view-3').isOpen).toBe(true);
         });
 
         it('should open only playbooks', async () => {
@@ -72,8 +72,8 @@ describe('common/servers/serverManager', () => {
                 hasFocalboard: false,
             }]]));
 
-            expect(serverManager.tabs.get('tab-2').isOpen).toBe(true);
-            expect(serverManager.tabs.get('tab-3').isOpen).toBeUndefined();
+            expect(serverManager.views.get('view-2').isOpen).toBe(true);
+            expect(serverManager.views.get('view-3').isOpen).toBeUndefined();
         });
 
         it('should open none when server version is too old', async () => {
@@ -84,8 +84,8 @@ describe('common/servers/serverManager', () => {
                 hasFocalboard: true,
             }]]));
 
-            expect(serverManager.tabs.get('tab-2').isOpen).toBeUndefined();
-            expect(serverManager.tabs.get('tab-3').isOpen).toBeUndefined();
+            expect(serverManager.views.get('view-2').isOpen).toBeUndefined();
+            expect(serverManager.views.get('view-3').isOpen).toBeUndefined();
         });
 
         it('should update server URL using site URL', async () => {
@@ -100,7 +100,7 @@ describe('common/servers/serverManager', () => {
         });
     });
 
-    describe('lookupTabByURL', () => {
+    describe('lookupViewByURL', () => {
         const serverManager = new ServerManager();
         serverManager.getAllServers = () => [
             {id: 'server-1', url: new URL('http://server-1.com')},
@@ -109,16 +109,16 @@ describe('common/servers/serverManager', () => {
         serverManager.getOrderedTabsForServer = (serverId) => {
             if (serverId === 'server-1') {
                 return [
-                    {id: 'tab-1', url: new URL('http://server-1.com')},
-                    {id: 'tab-1-type-1', url: new URL('http://server-1.com/type1')},
-                    {id: 'tab-1-type-2', url: new URL('http://server-1.com/type2')},
+                    {id: 'view-1', url: new URL('http://server-1.com')},
+                    {id: 'view-1-type-1', url: new URL('http://server-1.com/type1')},
+                    {id: 'view-1-type-2', url: new URL('http://server-1.com/type2')},
                 ];
             }
             if (serverId === 'server-2') {
                 return [
-                    {id: 'tab-2', url: new URL('http://server-2.com/subpath')},
-                    {id: 'tab-2-type-1', url: new URL('http://server-2.com/subpath/type1')},
-                    {id: 'tab-2-type-2', url: new URL('http://server-2.com/subpath/type2')},
+                    {id: 'view-2', url: new URL('http://server-2.com/subpath')},
+                    {id: 'view-2-type-1', url: new URL('http://server-2.com/subpath/type1')},
+                    {id: 'view-2-type-2', url: new URL('http://server-2.com/subpath/type2')},
                 ];
             }
             return [];
@@ -135,47 +135,47 @@ describe('common/servers/serverManager', () => {
 
         it('should match the correct server - base URL', () => {
             const inputURL = new URL('http://server-1.com');
-            expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-1', url: new URL('http://server-1.com')});
+            expect(serverManager.lookupViewByURL(inputURL)).toStrictEqual({id: 'view-1', url: new URL('http://server-1.com')});
         });
 
-        it('should match the correct server - base tab', () => {
-            const inputURL = new URL('http://server-1.com/team');
-            expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-1', url: new URL('http://server-1.com')});
+        it('should match the correct server - base view', () => {
+            const inputURL = new URL('http://server-1.com/server');
+            expect(serverManager.lookupViewByURL(inputURL)).toStrictEqual({id: 'view-1', url: new URL('http://server-1.com')});
         });
 
-        it('should match the correct server - different tab', () => {
+        it('should match the correct server - different view', () => {
             const inputURL = new URL('http://server-1.com/type1/app');
-            expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-1-type-1', url: new URL('http://server-1.com/type1')});
+            expect(serverManager.lookupViewByURL(inputURL)).toStrictEqual({id: 'view-1-type-1', url: new URL('http://server-1.com/type1')});
         });
 
         it('should return undefined for server with subpath and URL without', () => {
             const inputURL = new URL('http://server-2.com');
-            expect(serverManager.lookupTabByURL(inputURL)).toBe(undefined);
+            expect(serverManager.lookupViewByURL(inputURL)).toBe(undefined);
         });
 
         it('should return undefined for server with subpath and URL with wrong subpath', () => {
             const inputURL = new URL('http://server-2.com/different/subpath');
-            expect(serverManager.lookupTabByURL(inputURL)).toBe(undefined);
+            expect(serverManager.lookupViewByURL(inputURL)).toBe(undefined);
         });
 
         it('should match the correct server with a subpath - base URL', () => {
             const inputURL = new URL('http://server-2.com/subpath');
-            expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-2', url: new URL('http://server-2.com/subpath')});
+            expect(serverManager.lookupViewByURL(inputURL)).toStrictEqual({id: 'view-2', url: new URL('http://server-2.com/subpath')});
         });
 
-        it('should match the correct server with a subpath - base tab', () => {
-            const inputURL = new URL('http://server-2.com/subpath/team');
-            expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-2', url: new URL('http://server-2.com/subpath')});
+        it('should match the correct server with a subpath - base view', () => {
+            const inputURL = new URL('http://server-2.com/subpath/server');
+            expect(serverManager.lookupViewByURL(inputURL)).toStrictEqual({id: 'view-2', url: new URL('http://server-2.com/subpath')});
         });
 
-        it('should match the correct server with a subpath - different tab', () => {
-            const inputURL = new URL('http://server-2.com/subpath/type2/team');
-            expect(serverManager.lookupTabByURL(inputURL)).toStrictEqual({id: 'tab-2-type-2', url: new URL('http://server-2.com/subpath/type2')});
+        it('should match the correct server with a subpath - different view', () => {
+            const inputURL = new URL('http://server-2.com/subpath/type2/server');
+            expect(serverManager.lookupViewByURL(inputURL)).toStrictEqual({id: 'view-2-type-2', url: new URL('http://server-2.com/subpath/type2')});
         });
 
         it('should return undefined for wrong server', () => {
             const inputURL = new URL('http://server-3.com');
-            expect(serverManager.lookupTabByURL(inputURL)).toBe(undefined);
+            expect(serverManager.lookupViewByURL(inputURL)).toBe(undefined);
         });
     });
 });

@@ -1,4 +1,4 @@
-.TeamDropdownButton {
+.ServerDropdownButton {
     background-color: transparent;
     border-width: 0 1px;
     border-color: rgba(61, 60, 64, 0.08);
@@ -17,7 +17,7 @@
     &:not(.disabled):hover {
         background-color: #f4f4f4;
 
-        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+        .ServerDropdownButton__badge-count, .ServerDropdownButton__badge-unreads {
             border-color: #f4f4f4;
         }
     }
@@ -25,7 +25,7 @@
     &:not(.disabled):focus, &.isMenuOpen {
         background-color: #fff;
 
-        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+        .ServerDropdownButton__badge-count, .ServerDropdownButton__badge-unreads {
             border-color: #fff;
         }
     }
@@ -49,11 +49,11 @@
     }    
 }
 
-.TeamDropdownButton__badge {
+.ServerDropdownButton__badge {
     position: relative;
 }
 
-.TeamDropdownButton__badge-count {
+.ServerDropdownButton__badge-count {
     background: #F74343;
     border-radius: 8px;
     display: flex;
@@ -77,7 +77,7 @@
     box-sizing: unset;
 }
 
-.TeamDropdownButton__badge-unreads {
+.ServerDropdownButton__badge-unreads {
     background: #579eff;
     border-radius: 100px;
     width: 12px;
@@ -88,13 +88,13 @@
     border: 2px solid #efefef;
 }
 
-.TeamDropdownButton.darkMode {
+.ServerDropdownButton.darkMode {
     border-color: rgba(221, 221, 221, 0.08);
 
     &:hover {
         background-color: #292929;
 
-        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+        .ServerDropdownButton__badge-count, .ServerDropdownButton__badge-unreads {
             border-color: #292929;
         }
     }
@@ -102,7 +102,7 @@
     &:focus, &.isMenuOpen {
         background-color: #1f1f1f;
 
-        .TeamDropdownButton__badge-count, .TeamDropdownButton__badge-unreads {
+        .ServerDropdownButton__badge-count, .ServerDropdownButton__badge-unreads {
             border-color: #1f1f1f;
         }
     }
@@ -115,15 +115,15 @@
         color: rgba(221, 221, 221, 0.56);
     }
 
-    .TeamDropdownButton__badge-count {
+    .ServerDropdownButton__badge-count {
         border-color: #2e2e2e;
     }
 
-    .TeamDropdownButton__badge-unreads {
+    .ServerDropdownButton__badge-unreads {
         border-color: #2e2e2e;
     }
 
-    .TeamDropdownButton__badge-unreads {
+    .ServerDropdownButton__badge-unreads {
         background: #196CAF;
     }
 }

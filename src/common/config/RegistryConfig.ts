@@ -6,7 +6,7 @@ import {EventEmitter} from 'events';
 import WindowsRegistry from 'winreg';
 import WindowsRegistryUTF8 from 'winreg-utf8';
 
-import {RegistryConfig as RegistryConfigType, Team} from 'types/config';
+import {RegistryConfig as RegistryConfigType, Server} from 'types/config';
 
 import {Logger} from 'common/log';
 
@@ -26,7 +26,7 @@ export default class RegistryConfig extends EventEmitter {
         super();
         this.initialized = false;
         this.data = {
-            teams: [],
+            servers: [],
         };
     }
 
@@ -41,7 +41,7 @@ export default class RegistryConfig extends EventEmitter {
             try {
                 const servers = await this.getServersListFromRegistry();
                 if (servers.length) {
-                    this.data.teams!.push(...servers);
+                    this.data.servers!.push(...servers);
                 }
             } catch (error) {
                 log.warn('Nothing retrieved for \'DefaultServerList\'', error);
@@ -78,7 +78,7 @@ export default class RegistryConfig extends EventEmitter {
    */
     async getServersListFromRegistry() {
         const defaultServers = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-        return defaultServers.flat(2).reduce((servers: Team[], server) => {
+        return defaultServers.flat(2).reduce((servers: Server[], server) => {
             if (server) {
                 servers.push({
                     name: (server as WindowsRegistry.RegistryItem).name,

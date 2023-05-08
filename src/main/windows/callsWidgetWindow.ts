@@ -14,7 +14,7 @@ import {
     CallsWidgetWindowConfig,
 } from 'types/calls';
 
-import {MattermostView} from 'main/views/MattermostView';
+import {MattermostBrowserView} from 'main/views/MattermostBrowserView';
 
 import {getLocalPreload, openScreensharePermissionsSettingsMacOS, resetScreensharePermissionsMacOS} from 'main/utils';
 
@@ -47,7 +47,7 @@ const log = new Logger('CallsWidgetWindow');
 
 export class CallsWidgetWindow {
     private win?: BrowserWindow;
-    private mainView?: MattermostView;
+    private mainView?: MattermostBrowserView;
     private options?: CallsWidgetWindowConfig;
     private missingScreensharePermissions?: boolean;
 
@@ -82,7 +82,7 @@ export class CallsWidgetWindow {
     }
 
     private get serverID() {
-        return this.mainView?.tab.server.id;
+        return this.mainView?.view.server.id;
     }
 
     /**
@@ -101,7 +101,7 @@ export class CallsWidgetWindow {
         if (!this.mainView) {
             return undefined;
         }
-        const u = parseURL(this.mainView.tab.server.url.toString()) as URL;
+        const u = parseURL(this.mainView.view.server.url.toString()) as URL;
 
         u.pathname = getFormattedPathName(u.pathname);
         u.pathname += `plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
@@ -119,7 +119,7 @@ export class CallsWidgetWindow {
         return u.toString();
     }
 
-    private init = (view: MattermostView, options: CallsWidgetWindowConfig) => {
+    private init = (view: MattermostBrowserView, options: CallsWidgetWindowConfig) => {
         this.win = new BrowserWindow({
             width: MINIMUM_CALLS_WIDGET_WIDTH,
             height: MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -271,7 +271,7 @@ export class CallsWidgetWindow {
         if (!parsedURL) {
             return {action: 'deny' as const};
         }
-        if (isCallsPopOutURL(this.mainView?.tab.server.url, parsedURL, this.options?.callID)) {
+        if (isCallsPopOutURL(this.mainView?.view.server.url, parsedURL, this.options?.callID)) {
             return {
                 action: 'allow' as const,
                 overrideBrowserWindowOptions: {

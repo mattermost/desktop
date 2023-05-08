@@ -7,13 +7,13 @@
 import {dialog} from 'electron';
 
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SET_ACTIVE_VIEW} from 'common/communication';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
+import {TAB_MESSAGING} from 'common/views/View';
 import ServerManager from 'common/servers/serverManager';
 import urlUtils from 'common/utils/url';
 
 import MainWindow from 'main/windows/mainWindow';
 
-import {MattermostView} from './MattermostView';
+import {MattermostBrowserView} from './MattermostBrowserView';
 import {ViewManager} from './viewManager';
 import LoadingScreen from './loadingScreen';
 
@@ -30,12 +30,9 @@ jest.mock('electron', () => ({
         handle: jest.fn(),
     },
 }));
-jest.mock('common/config', () => ({
-    teams: [],
-}));
-jest.mock('common/tabs/TabView', () => ({
-    getTabViewName: jest.fn((a, b) => `${a}-${b}`),
-    TAB_MESSAGING: 'tab',
+jest.mock('common/views/View', () => ({
+    getViewName: jest.fn((a, b) => `${a}-${b}`),
+    TAB_MESSAGING: 'view',
 }));
 
 jest.mock('common/servers/MattermostServer', () => ({
@@ -79,7 +76,7 @@ jest.mock('common/servers/serverManager', () => ({
     getLastActiveServer: jest.fn(),
     getLastActiveTabForServer: jest.fn(),
     updateLastActive: jest.fn(),
-    lookupTabByURL: jest.fn(),
+    lookupViewByURL: jest.fn(),
     getRemoteInfo: jest.fn(),
     on: jest.fn(),
     getServerLog: () => ({
@@ -100,8 +97,8 @@ jest.mock('common/servers/serverManager', () => ({
     }),
 }));
 
-jest.mock('./MattermostView', () => ({
-    MattermostView: jest.fn(),
+jest.mock('./MattermostBrowserView', () => ({
+    MattermostBrowserView: jest.fn(),
 }));
 
 jest.mock('./modalManager', () => ({
@@ -121,12 +118,12 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.showById = jest.fn();
             MainWindow.get.mockReturnValue({});
-            MattermostView.mockImplementation((tab) => ({
+            MattermostBrowserView.mockImplementation((view) => ({
                 on: jest.fn(),
                 load: loadFn,
                 once: onceFn,
                 destroy: destroyFn,
-                id: tab.id,
+                id: view.id,
             }));
         });
 
@@ -136,21 +133,21 @@ describe('main/views/viewManager', () => {
             viewManager.views = new Map();
         });
 
-        it('should add closed tabs to closedViews', () => {
-            viewManager.loadView({id: 'server1'}, {id: 'tab1', isOpen: false});
-            expect(viewManager.closedViews.has('tab1')).toBe(true);
+        it('should add closed views to closedViews', () => {
+            viewManager.loadView({id: 'server1'}, {id: 'view1', isOpen: false});
+            expect(viewManager.closedViews.has('view1')).toBe(true);
         });
 
-        it('should remove from remove from closedViews when the tab is open', () => {
-            viewManager.closedViews.set('tab1', {});
-            expect(viewManager.closedViews.has('tab1')).toBe(true);
-            viewManager.loadView({id: 'server1'}, {id: 'tab1', isOpen: true});
-            expect(viewManager.closedViews.has('tab1')).toBe(false);
+        it('should remove from remove from closedViews when the view is open', () => {
+            viewManager.closedViews.set('view1', {});
+            expect(viewManager.closedViews.has('view1')).toBe(true);
+            viewManager.loadView({id: 'server1'}, {id: 'view1', isOpen: true});
+            expect(viewManager.closedViews.has('view1')).toBe(false);
         });
 
         it('should add view to views map and add listeners', () => {
-            viewManager.loadView({id: 'server1'}, {id: 'tab1', isOpen: true}, 'http://server-1.com/subpath');
-            expect(viewManager.views.has('tab1')).toBe(true);
+            viewManager.loadView({id: 'server1'}, {id: 'view1', isOpen: true}, 'http://server-1.com/subpath');
+            expect(viewManager.views.has('view1')).toBe(true);
             expect(onceFn).toHaveBeenCalledWith(LOAD_SUCCESS, viewManager.activateView);
             expect(loadFn).toHaveBeenCalledWith('http://server-1.com/subpath');
         });
@@ -173,14 +170,14 @@ describe('main/views/viewManager', () => {
             const onceFn = jest.fn();
             const loadFn = jest.fn();
             const destroyFn = jest.fn();
-            MattermostView.mockImplementation((tab) => ({
+            MattermostBrowserView.mockImplementation((view) => ({
                 on: jest.fn(),
                 load: loadFn,
                 once: onceFn,
                 destroy: destroyFn,
-                id: tab.id,
+                id: view.id,
                 updateServerInfo: jest.fn(),
-                tab,
+                view,
             }));
         });
 
@@ -193,45 +190,45 @@ describe('main/views/viewManager', () => {
 
         it('should recycle existing views', () => {
             const makeSpy = jest.spyOn(viewManager, 'makeView');
-            const view = new MattermostView({
-                id: 'tab1',
+            const view = new MattermostBrowserView({
+                id: 'view1',
                 server: {
                     id: 'server1',
                 },
             });
-            viewManager.views.set('tab1', view);
+            viewManager.views.set('view1', view);
             ServerManager.getAllServers.mockReturnValue([{
                 id: 'server1',
                 url: new URL('http://server1.com'),
             }]);
             ServerManager.getOrderedTabsForServer.mockReturnValue([
                 {
-                    id: 'tab1',
+                    id: 'view1',
                     isOpen: true,
                 },
             ]);
             viewManager.handleReloadConfiguration();
-            expect(viewManager.views.get('tab1')).toBe(view);
+            expect(viewManager.views.get('view1')).toBe(view);
             expect(makeSpy).not.toHaveBeenCalled();
             makeSpy.mockRestore();
         });
 
-        it('should close tabs that arent open', () => {
+        it('should close views that arent open', () => {
             ServerManager.getAllServers.mockReturnValue([{
                 id: 'server1',
                 url: new URL('http://server1.com'),
             }]);
             ServerManager.getOrderedTabsForServer.mockReturnValue([
                 {
-                    id: 'tab1',
+                    id: 'view1',
                     isOpen: false,
                 },
             ]);
             viewManager.handleReloadConfiguration();
-            expect(viewManager.closedViews.has('tab1')).toBe(true);
+            expect(viewManager.closedViews.has('view1')).toBe(true);
         });
 
-        it('should create new views for new tabs', () => {
+        it('should create new views for new views', () => {
             const makeSpy = jest.spyOn(viewManager, 'makeView');
             ServerManager.getAllServers.mockReturnValue([{
                 id: 'server1',
@@ -240,10 +237,10 @@ describe('main/views/viewManager', () => {
             }]);
             ServerManager.getOrderedTabsForServer.mockReturnValue([
                 {
-                    id: 'tab1',
-                    name: 'tab1',
+                    id: 'view1',
+                    name: 'view1',
                     isOpen: true,
-                    url: new URL('http://server1.com/tab'),
+                    url: new URL('http://server1.com/view'),
                 },
             ]);
             viewManager.handleReloadConfiguration();
@@ -254,10 +251,10 @@ describe('main/views/viewManager', () => {
                     url: new URL('http://server1.com'),
                 },
                 {
-                    id: 'tab1',
-                    name: 'tab1',
+                    id: 'view1',
+                    name: 'view1',
                     isOpen: true,
-                    url: new URL('http://server1.com/tab'),
+                    url: new URL('http://server1.com/view'),
                 },
             );
             makeSpy.mockRestore();
@@ -265,27 +262,27 @@ describe('main/views/viewManager', () => {
 
         it('should set focus to current view on reload', () => {
             const view = {
-                id: 'tab1',
-                tab: {
+                id: 'view1',
+                view: {
                     server: {
                         id: 'server-1',
                     },
-                    id: 'tab1',
+                    id: 'view1',
                     url: new URL('http://server1.com'),
                 },
                 destroy: jest.fn(),
                 updateServerInfo: jest.fn(),
                 focus: jest.fn(),
             };
-            viewManager.currentView = 'tab1';
-            viewManager.views.set('tab1', view);
+            viewManager.currentView = 'view1';
+            viewManager.views.set('view1', view);
             ServerManager.getAllServers.mockReturnValue([{
                 id: 'server1',
                 url: new URL('http://server1.com'),
             }]);
             ServerManager.getOrderedTabsForServer.mockReturnValue([
                 {
-                    id: 'tab1',
+                    id: 'view1',
                     isOpen: true,
                 },
             ]);
@@ -295,23 +292,23 @@ describe('main/views/viewManager', () => {
 
         it('should show initial if currentView has been removed', () => {
             const view = {
-                id: 'tab1',
-                tab: {
-                    id: 'tab1',
+                id: 'view1',
+                view: {
+                    id: 'view1',
                     url: new URL('http://server1.com'),
                 },
                 destroy: jest.fn(),
                 updateServerInfo: jest.fn(),
             };
-            viewManager.currentView = 'tab1';
-            viewManager.views.set('tab1', view);
+            viewManager.currentView = 'view1';
+            viewManager.views.set('view1', view);
             ServerManager.getAllServers.mockReturnValue([{
                 id: 'server2',
                 url: new URL('http://server2.com'),
             }]);
             ServerManager.getOrderedTabsForServer.mockReturnValue([
                 {
-                    id: 'tab1',
+                    id: 'view1',
                     isOpen: false,
                 },
             ]);
@@ -321,21 +318,21 @@ describe('main/views/viewManager', () => {
 
         it('should remove unused views', () => {
             const view = {
-                name: 'tab1',
-                tab: {
-                    name: 'tab1',
+                name: 'view1',
+                view: {
+                    name: 'view1',
                     url: new URL('http://server1.com'),
                 },
                 destroy: jest.fn(),
             };
-            viewManager.views.set('tab1', view);
+            viewManager.views.set('view1', view);
             ServerManager.getAllServers.mockReturnValue([{
                 id: 'server2',
                 url: new URL('http://server2.com'),
             }]);
             ServerManager.getOrderedTabsForServer.mockReturnValue([
                 {
-                    id: 'tab1',
+                    id: 'view1',
                     isOpen: false,
                 },
             ]);
@@ -360,11 +357,11 @@ describe('main/views/viewManager', () => {
             jest.resetAllMocks();
         });
 
-        it('should show last active tab and server', () => {
+        it('should show last active view and server', () => {
             ServerManager.getLastActiveServer.mockReturnValue({id: 'server-1'});
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'tab-1'});
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-1'});
             viewManager.showInitial();
-            expect(viewManager.showById).toHaveBeenCalledWith('tab-1');
+            expect(viewManager.showById).toHaveBeenCalledWith('view-1');
         });
 
         it('should open new server modal when no servers exist', () => {
@@ -385,7 +382,7 @@ describe('main/views/viewManager', () => {
                 order: 0,
                 tabs: [
                     {
-                        name: 'tab-messaging',
+                        name: 'view-messaging',
                         order: 0,
                         isOpen: true,
                     },
@@ -403,9 +400,9 @@ describe('main/views/viewManager', () => {
             },
         ];
         const view1 = {
-            id: 'server-1_tab-messaging',
+            id: 'server-1_view-messaging',
             isLoggedIn: true,
-            tab: {
+            view: {
                 type: TAB_MESSAGING,
                 server: {
                     url: 'http://server-1.com',
@@ -416,21 +413,21 @@ describe('main/views/viewManager', () => {
         const view2 = {
             ...view1,
             id: 'server-1_other_type_1',
-            tab: {
-                ...view1.tab,
+            view: {
+                ...view1.view,
                 type: 'other_type_1',
             },
         };
         const view3 = {
             ...view1,
             id: 'server-1_other_type_2',
-            tab: {
-                ...view1.tab,
+            view: {
+                ...view1.view,
                 type: 'other_type_2',
             },
         };
         const views = new Map([
-            ['server-1_tab-messaging', view1],
+            ['server-1_view-messaging', view1],
             ['server-1_other_type_1', view2],
         ]);
         const closedViews = new Map([
@@ -438,7 +435,7 @@ describe('main/views/viewManager', () => {
         ]);
         viewManager.getView = (viewId) => views.get(viewId);
         viewManager.isViewClosed = (viewId) => closedViews.has(viewId);
-        viewManager.openClosedTab = jest.fn();
+        viewManager.openClosedView = jest.fn();
 
         beforeEach(() => {
             ServerManager.getAllServers.mockReturnValue(servers);
@@ -451,24 +448,24 @@ describe('main/views/viewManager', () => {
         });
 
         it('should open closed view if pushing to it', () => {
-            viewManager.openClosedTab.mockImplementation((name) => {
+            viewManager.openClosedView.mockImplementation((name) => {
                 const view = closedViews.get(name);
                 closedViews.delete(name);
                 views.set(name, view);
             });
-            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_2'});
-            viewManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_2/subpath');
-            expect(viewManager.openClosedTab).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
+            ServerManager.lookupViewByURL.mockReturnValue({id: 'server-1_other_type_2'});
+            viewManager.handleBrowserHistoryPush(null, 'server-1_view-messaging', '/other_type_2/subpath');
+            expect(viewManager.openClosedView).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
         });
 
         it('should open redirect view if different from current view', () => {
-            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_other_type_1'});
-            viewManager.handleBrowserHistoryPush(null, 'server-1_tab-messaging', '/other_type_1/subpath');
+            ServerManager.lookupViewByURL.mockReturnValue({id: 'server-1_other_type_1'});
+            viewManager.handleBrowserHistoryPush(null, 'server-1_view-messaging', '/other_type_1/subpath');
             expect(viewManager.showById).toBeCalledWith('server-1_other_type_1');
         });
 
-        it('should ignore redirects to "/" to Messages from other tabs', () => {
-            ServerManager.lookupTabByURL.mockReturnValue({id: 'server-1_tab-messaging'});
+        it('should ignore redirects to "/" to Messages from other views', () => {
+            ServerManager.lookupViewByURL.mockReturnValue({id: 'server-1_view-messaging'});
             viewManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
             expect(view1.sendToRenderer).not.toBeCalled();
         });
@@ -487,11 +484,11 @@ describe('main/views/viewManager', () => {
                     send: jest.fn(),
                 },
             },
-            tab: {
+            view: {
                 server: {
                     name: 'server-1',
                 },
-                type: 'tab-1',
+                type: 'view-1',
             },
         };
 
@@ -510,9 +507,9 @@ describe('main/views/viewManager', () => {
                 ...baseView,
                 isVisible: true,
             };
-            viewManager.views.set('server1-tab1', view);
+            viewManager.views.set('server1-view1', view);
 
-            viewManager.showById('server1-tab1');
+            viewManager.showById('server1-view1');
             expect(viewManager.currentView).toBeUndefined();
             expect(view.isReady).not.toBeCalled();
             expect(view.show).not.toBeCalled();
@@ -584,7 +581,7 @@ describe('main/views/viewManager', () => {
         };
 
         beforeEach(() => {
-            viewManager.openClosedTab = jest.fn();
+            viewManager.openClosedView = jest.fn();
         });
 
         afterEach(() => {
@@ -594,7 +591,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should load URL into matching view', () => {
-            ServerManager.lookupTabByURL.mockImplementation(() => ({id: 'view1', url: new URL('http://server-1.com/')}));
+            ServerManager.lookupViewByURL.mockImplementation(() => ({id: 'view1', url: new URL('http://server-1.com/')}));
             const view = {...baseView};
             viewManager.views.set('view1', view);
             viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
@@ -602,11 +599,11 @@ describe('main/views/viewManager', () => {
         });
 
         it('should send the URL to the view if its already loaded on a 6.0 server', () => {
-            ServerManager.lookupTabByURL.mockImplementation(() => ({id: 'view1', url: new URL('http://server-1.com/')}));
+            ServerManager.lookupViewByURL.mockImplementation(() => ({id: 'view1', url: new URL('http://server-1.com/')}));
             ServerManager.getRemoteInfo.mockReturnValue({serverVersion: '6.0.0'});
             const view = {
                 ...baseView,
-                tab: {
+                view: {
                     server: {
                         url: new URL('http://server-1.com'),
                     },
@@ -619,7 +616,7 @@ describe('main/views/viewManager', () => {
         });
 
         it('should throw error if view is missing', () => {
-            ServerManager.lookupTabByURL.mockImplementation(() => ({id: 'view1', url: new URL('http://server-1.com/')}));
+            ServerManager.lookupViewByURL.mockImplementation(() => ({id: 'view1', url: new URL('http://server-1.com/')}));
             const view = {...baseView};
             viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
             expect(view.load).not.toHaveBeenCalled();
@@ -632,11 +629,11 @@ describe('main/views/viewManager', () => {
             expect(dialog.showErrorBox).toHaveBeenCalled();
         });
 
-        it('should reopen closed tab if called upon', () => {
-            ServerManager.lookupTabByURL.mockImplementation(() => ({id: 'view1', url: new URL('http://server-1.com/')}));
+        it('should reopen closed view if called upon', () => {
+            ServerManager.lookupViewByURL.mockImplementation(() => ({id: 'view1', url: new URL('http://server-1.com/')}));
             viewManager.closedViews.set('view1', {});
             viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
-            expect(viewManager.openClosedTab).toHaveBeenCalledWith('view1', 'http://server-1.com/deep/link?thing=yes');
+            expect(viewManager.openClosedView).toHaveBeenCalledWith('view1', 'http://server-1.com/deep/link?thing=yes');
         });
     });
 });

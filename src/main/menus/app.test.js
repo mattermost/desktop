@@ -67,8 +67,8 @@ jest.mock('main/windows/mainWindow', () => ({
     sendToRenderer: jest.fn(),
 }));
 jest.mock('main/windows/settingsWindow', () => ({}));
-jest.mock('common/tabs/TabView', () => ({
-    getTabDisplayName: (name) => name,
+jest.mock('common/views/View', () => ({
+    getViewDisplayName: (name) => name,
 }));
 
 describe('main/menus/app', () => {
@@ -88,19 +88,19 @@ describe('main/menus/app', () => {
             url: 'https:/ /github.com/',
         },
     ];
-    const tabs = [
+    const views = [
         {
-            id: 'tab-1',
+            id: 'view-1',
             name: 'TAB_MESSAGING',
             isOpen: true,
         },
         {
-            id: 'tab-2',
+            id: 'view-2',
             name: 'TAB_FOCALBOARD',
             isOpen: true,
         },
         {
-            id: 'tab-3',
+            id: 'view-3',
             name: 'TAB_PLAYBOOKS',
             isOpen: true,
         },
@@ -109,7 +109,7 @@ describe('main/menus/app', () => {
     beforeEach(() => {
         ServerManager.getCurrentServer.mockReturnValue(servers[0]);
         ServerManager.getOrderedServers.mockReturnValue(servers);
-        ServerManager.getOrderedTabsForServer.mockReturnValue(tabs);
+        ServerManager.getOrderedTabsForServer.mockReturnValue(views);
         getDarwinDoNotDisturb.mockReturnValue(false);
     });
 
@@ -217,7 +217,7 @@ describe('main/menus/app', () => {
         expect(signInOption).toBe(undefined);
     });
 
-    it('should not show `Sign in to Another Server` if no teams are configured', () => {
+    it('should not show `Sign in to Another Server` if no servers are configured', () => {
         localizeMessage.mockImplementation((id) => {
             switch (id) {
             case 'main.menus.app.file':
@@ -247,15 +247,15 @@ describe('main/menus/app', () => {
             name: `server-${key}`,
             url: `http://server-${key}.com`,
         }));
-        const modifiedTabs = [
+        const modifiedViews = [
             {
-                id: 'tab-1',
+                id: 'view-1',
                 type: 'TAB_MESSAGING',
                 isOpen: true,
             },
         ];
         ServerManager.getOrderedServers.mockReturnValue(modifiedServers);
-        ServerManager.getOrderedTabsForServer.mockReturnValue(modifiedTabs);
+        ServerManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
         const menu = createTemplate(config);
         const windowMenu = menu.find((item) => item.label === '&Window');
         for (let i = 0; i < 9; i++) {
@@ -268,32 +268,32 @@ describe('main/menus/app', () => {
         }
     });
 
-    it('should show the first 9 tabs (using order) in the Window menu', () => {
+    it('should show the first 9 views (using order) in the Window menu', () => {
         localizeMessage.mockImplementation((id) => {
             if (id === 'main.menus.app.window') {
                 return '&Window';
             }
-            if (id.startsWith('common.tabs')) {
-                return id.replace('common.tabs.', '');
+            if (id.startsWith('common.views')) {
+                return id.replace('common.views.', '');
             }
             return id;
         });
         ServerManager.getCurrentServer.mockImplementation(() => ({id: servers[0].id}));
 
-        const modifiedTabs = [...Array(15).keys()].map((key) => ({
-            id: `tab-${key}`,
-            type: `tab-${key}`,
+        const modifiedViews = [...Array(15).keys()].map((key) => ({
+            id: `view-${key}`,
+            type: `view-${key}`,
             isOpen: true,
         }));
-        ServerManager.getOrderedTabsForServer.mockReturnValue(modifiedTabs);
+        ServerManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
         const menu = createTemplate(config);
         const windowMenu = menu.find((item) => item.label === '&Window');
         for (let i = 0; i < 9; i++) {
-            const menuItem = windowMenu.submenu.find((item) => item.label === `    tab-${i}`);
+            const menuItem = windowMenu.submenu.find((item) => item.label === `    view-${i}`);
             expect(menuItem).not.toBe(undefined);
         }
         for (let i = 9; i < 15; i++) {
-            const menuItem = windowMenu.submenu.find((item) => item.label === `    tab-${i}`);
+            const menuItem = windowMenu.submenu.find((item) => item.label === `    view-${i}`);
             expect(menuItem).toBe(undefined);
         }
     });

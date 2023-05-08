@@ -24,54 +24,54 @@ jest.mock('common/Validator', () => ({
     validateConfigData: (configData) => (configData.version === 3 ? configData : null),
 }));
 
-jest.mock('common/tabs/TabView', () => ({
-    getDefaultConfigTeamFromTeam: (value) => ({
+jest.mock('common/views/View', () => ({
+    getDefaultViewsForConfigServer: (value) => ({
         ...value,
         tabs: [
             {
-                name: 'tab1',
+                name: 'view1',
             },
             {
-                name: 'tab2',
+                name: 'view2',
             },
         ],
     }),
 }));
 
-const buildTeam = {
-    name: 'build-team-1',
+const buildServer = {
+    name: 'build-server-1',
     order: 0,
-    url: 'http://build-team-1.com',
+    url: 'http://build-server-1.com',
 };
 
-const buildTeamWithTabs = {
-    ...buildTeam,
+const buildServerWithViews = {
+    ...buildServer,
     tabs: [
         {
-            name: 'tab1',
+            name: 'view1',
         },
         {
-            name: 'tab2',
+            name: 'view2',
         },
     ],
 };
 
-const registryTeam = {
-    name: 'registry-team-1',
+const registryServer = {
+    name: 'registry-server-1',
     order: 0,
-    url: 'http://registry-team-1.com',
+    url: 'http://registry-server-1.com',
 };
 
-const team = {
-    name: 'team-1',
+const server = {
+    name: 'server-1',
     order: 0,
-    url: 'http://team-1.com',
+    url: 'http://server-1.com',
     tabs: [
         {
-            name: 'tab1',
+            name: 'view1',
         },
         {
-            name: 'tab2',
+            name: 'view2',
         },
     ],
 };
@@ -86,7 +86,7 @@ jest.mock('common/config/migrationPreferences', () => jest.fn());
 
 jest.mock('common/config/buildConfig', () => {
     return {
-        defaultTeams: [buildTeam],
+        defaultServers: [buildServer],
     };
 });
 
@@ -99,7 +99,7 @@ describe('common/config', () => {
         const config = new Config();
         config.reload = jest.fn();
         config.init(configPath, appName, appPath);
-        expect(config.predefinedTeams).toContainEqual(buildTeamWithTabs);
+        expect(config.predefinedServers).toContainEqual(buildServerWithViews);
     });
 
     describe('loadRegistry', () => {
@@ -107,16 +107,16 @@ describe('common/config', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.onLoadRegistry({teams: [registryTeam]});
+            config.onLoadRegistry({servers: [registryServer]});
             expect(config.reload).toHaveBeenCalled();
-            expect(config.predefinedTeams).toContainEqual({
-                ...registryTeam,
+            expect(config.predefinedServers).toContainEqual({
+                ...registryServer,
                 tabs: [
                     {
-                        name: 'tab1',
+                        name: 'view1',
                     },
                     {
-                        name: 'tab2',
+                        name: 'view2',
                     },
                 ],
             });
@@ -159,19 +159,19 @@ describe('common/config', () => {
             expect(config.saveLocalConfigData).toHaveBeenCalled();
         });
 
-        it('should not allow teams to be set using this method', () => {
+        it('should not allow servers to be set using this method', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.localConfigData = {teams: [team]};
+            config.localConfigData = {teams: [server]};
             config.regenerateCombinedConfigData = jest.fn().mockImplementation(() => {
                 config.combinedData = {...config.localConfigData};
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.set('teams', [{...buildTeamWithTabs, name: 'build-team-2'}]);
-            expect(config.localConfigData.teams).not.toContainEqual({...buildTeamWithTabs, name: 'build-team-2'});
-            expect(config.localConfigData.teams).toContainEqual(team);
+            config.set('teams', [{...buildServerWithViews, name: 'build-team-2'}]);
+            expect(config.localConfigData.teams).not.toContainEqual({...buildServerWithViews, name: 'build-team-2'});
+            expect(config.localConfigData.teams).toContainEqual(server);
         });
     });
 
@@ -186,8 +186,8 @@ describe('common/config', () => {
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.setServers([{...buildTeamWithTabs, name: 'build-team-2'}, team], 0);
-            expect(config.localConfigData.teams).toContainEqual({...buildTeamWithTabs, name: 'build-team-2'});
+            config.setServers([{...buildServerWithViews, name: 'build-server-2'}, server], 0);
+            expect(config.localConfigData.teams).toContainEqual({...buildServerWithViews, name: 'build-server-2'});
             expect(config.localConfigData.lastActiveTeam).toBe(0);
             expect(config.regenerateCombinedConfigData).toHaveBeenCalled();
             expect(config.saveLocalConfigData).toHaveBeenCalled();
@@ -341,7 +341,7 @@ describe('common/config', () => {
             });
         });
 
-        it('should not include any teams in the combined config', () => {
+        it('should not include any servers in the combined config', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
@@ -349,20 +349,20 @@ describe('common/config', () => {
             config.localConfigData = {};
             config.buildConfigData = {enableServerManagement: true};
             config.registryConfigData = {};
-            config.predefinedTeams.push(team, team);
+            config.predefinedServers.push(server, server);
             config.useNativeWindow = false;
             config.localConfigData = {teams: [
-                team,
+                server,
                 {
-                    ...team,
-                    name: 'local-team-2',
-                    url: 'http://local-team-2.com',
+                    ...server,
+                    name: 'local-server-2',
+                    url: 'http://local-server-2.com',
                 },
                 {
-                    ...team,
-                    name: 'local-team-1',
+                    ...server,
+                    name: 'local-server-1',
                     order: 1,
-                    url: 'http://local-team-1.com',
+                    url: 'http://local-server-1.com',
                 },
             ]};
 

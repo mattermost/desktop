@@ -3,16 +3,16 @@
 
 import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
-import {MattermostTeam} from 'types/config';
+import {UniqueServer} from 'types/config';
 
 import AppState from 'common/appState';
 import {
-    CLOSE_TEAMS_DROPDOWN,
+    CLOSE_SERVERS_DROPDOWN,
     EMIT_CONFIGURATION,
-    OPEN_TEAMS_DROPDOWN,
-    UPDATE_TEAMS_DROPDOWN,
+    OPEN_SERVERS_DROPDOWN,
+    UPDATE_SERVERS_DROPDOWN,
     UPDATE_APPSTATE,
-    REQUEST_TEAMS_DROPDOWN_INFO,
+    REQUEST_SERVERS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
     SERVERS_UPDATE,
     MAIN_WINDOW_CREATED,
@@ -27,12 +27,12 @@ import {getLocalPreload, getLocalURLString} from 'main/utils';
 
 import MainWindow from '../windows/mainWindow';
 
-const log = new Logger('TeamDropdownView');
+const log = new Logger('ServerDropdownView');
 
-export class TeamDropdownView {
+export class ServerDropdownView {
     private view?: BrowserView;
-    private teams: MattermostTeam[];
-    private hasGPOTeams: boolean;
+    private servers: UniqueServer[];
+    private hasGPOServers: boolean;
     private isOpen: boolean;
     private bounds: Electron.Rectangle;
 
@@ -43,8 +43,8 @@ export class TeamDropdownView {
     private windowBounds?: Electron.Rectangle;
 
     constructor() {
-        this.teams = [];
-        this.hasGPOTeams = false;
+        this.servers = [];
+        this.hasGPOServers = false;
         this.isOpen = false;
         this.bounds = this.getBounds(0, 0);
 
@@ -55,12 +55,12 @@ export class TeamDropdownView {
         MainWindow.on(MAIN_WINDOW_CREATED, this.init);
         MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
 
-        ipcMain.on(OPEN_TEAMS_DROPDOWN, this.handleOpen);
-        ipcMain.on(CLOSE_TEAMS_DROPDOWN, this.handleClose);
+        ipcMain.on(OPEN_SERVERS_DROPDOWN, this.handleOpen);
+        ipcMain.on(CLOSE_SERVERS_DROPDOWN, this.handleClose);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
 
         ipcMain.on(EMIT_CONFIGURATION, this.updateDropdown);
-        ipcMain.on(REQUEST_TEAMS_DROPDOWN_INFO, this.updateDropdown);
+        ipcMain.on(REQUEST_SERVERS_DROPDOWN_INFO, this.updateDropdown);
 
         AppState.on(UPDATE_APPSTATE, this.updateMentions);
         ServerManager.on(SERVERS_UPDATE, this.updateServers);
@@ -84,7 +84,7 @@ export class TeamDropdownView {
         }});
         this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
 
-        this.setOrderedTeams();
+        this.setOrderedServers();
         this.windowBounds = MainWindow.getBounds();
         this.updateDropdown();
         MainWindow.get()?.addBrowserView(this.view);
@@ -94,13 +94,13 @@ export class TeamDropdownView {
         log.silly('updateDropdown');
 
         this.view?.webContents.send(
-            UPDATE_TEAMS_DROPDOWN,
-            this.teams,
+            UPDATE_SERVERS_DROPDOWN,
+            this.servers,
             Config.darkMode,
             this.windowBounds,
             ServerManager.hasServers() ? ServerManager.getCurrentServer().id : undefined,
             Config.enableServerManagement,
-            this.hasGPOTeams,
+            this.hasGPOServers,
             this.expired,
             this.mentions,
             this.unreads,
@@ -108,7 +108,7 @@ export class TeamDropdownView {
     }
 
     private updateServers = () => {
-        this.setOrderedTeams();
+        this.setOrderedServers();
         this.updateDropdown();
     }
 
@@ -137,7 +137,7 @@ export class TeamDropdownView {
         this.view.setBounds(this.bounds);
         MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
-        MainWindow.sendToRenderer(OPEN_TEAMS_DROPDOWN);
+        MainWindow.sendToRenderer(OPEN_SERVERS_DROPDOWN);
         this.isOpen = true;
     }
 
@@ -145,7 +145,7 @@ export class TeamDropdownView {
         log.debug('handleClose');
 
         this.view?.setBounds(this.getBounds(0, 0));
-        MainWindow.sendToRenderer(CLOSE_TEAMS_DROPDOWN);
+        MainWindow.sendToRenderer(CLOSE_SERVERS_DROPDOWN);
         this.isOpen = false;
     }
 
@@ -174,7 +174,7 @@ export class TeamDropdownView {
     private reduceNotifications = <T>(inputMap: Map<string, T>, items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
         inputMap.clear();
         return [...items.keys()].reduce((map, key) => {
-            const view = ServerManager.getTab(key);
+            const view = ServerManager.getView(key);
             if (!view) {
                 return map;
             }
@@ -183,11 +183,11 @@ export class TeamDropdownView {
         }, inputMap);
     }
 
-    private setOrderedTeams = () => {
-        this.teams = ServerManager.getOrderedServers().map((team) => team.toMattermostTeam());
-        this.hasGPOTeams = this.teams.some((srv) => srv.isPredefined);
+    private setOrderedServers = () => {
+        this.servers = ServerManager.getOrderedServers().map((server) => server.toUniqueServer());
+        this.hasGPOServers = this.servers.some((srv) => srv.isPredefined);
     }
 }
 
-const teamDropdownView = new TeamDropdownView();
-export default teamDropdownView;
+const serverDropdownView = new ServerDropdownView();
+export default serverDropdownView;

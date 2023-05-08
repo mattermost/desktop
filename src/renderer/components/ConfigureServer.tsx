@@ -5,7 +5,7 @@ import React, {useState, useCallback, useEffect} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
-import {MattermostTeam} from 'types/config';
+import {UniqueServer} from 'types/config';
 
 import {isValidURL, parseURL} from 'common/utils/url';
 import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
@@ -22,8 +22,8 @@ import 'renderer/css/components/ConfigureServer.scss';
 import 'renderer/css/components/LoadingScreen.css';
 
 type ConfigureServerProps = {
-    currentTeams: MattermostTeam[];
-    team?: MattermostTeam;
+    currentServers: UniqueServer[];
+    server?: UniqueServer;
     mobileView?: boolean;
     darkMode?: boolean;
     messageTitle?: string;
@@ -32,12 +32,12 @@ type ConfigureServerProps = {
     alternateLinkMessage?: string;
     alternateLinkText?: string;
     alternateLinkURL?: string;
-    onConnect: (data: MattermostTeam) => void;
+    onConnect: (data: UniqueServer) => void;
 };
 
 function ConfigureServer({
-    currentTeams,
-    team,
+    currentServers,
+    server,
     mobileView,
     darkMode,
     messageTitle,
@@ -54,7 +54,7 @@ function ConfigureServer({
         name: prevName,
         url: prevURL,
         id,
-    } = team || {};
+    } = server || {};
 
     const [transition, setTransition] = useState<'inFromRight' | 'outToLeft'>();
     const [name, setName] = useState(prevName || '');
@@ -92,14 +92,14 @@ function ConfigureServer({
 
         if (!newName) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.nameRequired',
+                id: 'renderer.components.newServerModal.error.nameRequired',
                 defaultMessage: 'Name is required.',
             });
         }
 
-        if (currentTeams.find(({name: existingName}) => existingName === newName)) {
+        if (currentServers.find(({name: existingName}) => existingName === newName)) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.serverNameExists',
+                id: 'renderer.components.newServerModal.error.serverNameExists',
                 defaultMessage: 'A server with the same name already exists.',
             });
         }
@@ -110,28 +110,28 @@ function ConfigureServer({
     const validateURL = async (fullURL: string) => {
         if (!fullURL) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.urlRequired',
+                id: 'renderer.components.newServerModal.error.urlRequired',
                 defaultMessage: 'URL is required.',
             });
         }
 
         if (!parseURL(fullURL)) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.urlIncorrectFormatting',
+                id: 'renderer.components.newServerModal.error.urlIncorrectFormatting',
                 defaultMessage: 'URL is not formatted correctly.',
             });
         }
 
         if (!isValidURL(fullURL)) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.urlNeedsHttp',
+                id: 'renderer.components.newServerModal.error.urlNeedsHttp',
                 defaultMessage: 'URL should start with http:// or https://.',
             });
         }
 
-        if (currentTeams.find(({url: existingURL}) => parseURL(existingURL)?.toString === parseURL(fullURL)?.toString())) {
+        if (currentServers.find(({url: existingURL}) => parseURL(existingURL)?.toString === parseURL(fullURL)?.toString())) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.serverUrlExists',
+                id: 'renderer.components.newServerModal.error.serverUrlExists',
                 defaultMessage: 'A server with the same URL already exists.',
             });
         }

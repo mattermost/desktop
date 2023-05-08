@@ -6,7 +6,7 @@
 import {initialize} from './initialize';
 
 // TODO: Singletons, we need DI :D
-import('main/views/teamDropdownView');
+import('main/views/serverDropdownView');
 import('main/views/downloadsDropdownMenuView');
 import('main/views/downloadsDropdownView');
 

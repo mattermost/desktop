@@ -12,13 +12,13 @@ import SettingsWindow from 'main/windows/settingsWindow';
 import {switchServer} from 'main/app/servers';
 
 export function createTemplate() {
-    const teams = ServerManager.getOrderedServers();
+    const servers = ServerManager.getOrderedServers();
     const template = [
-        ...teams.slice(0, 9).map((team) => {
+        ...servers.slice(0, 9).map((server) => {
             return {
-                label: team.name.length > 50 ? `${team.name.slice(0, 50)}...` : team.name,
+                label: server.name.length > 50 ? `${server.name.slice(0, 50)}...` : server.name,
                 click: () => {
-                    switchServer(team.id);
+                    switchServer(server.id);
                 },
             };
         }), {

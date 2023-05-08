@@ -1,6 +1,6 @@
 # Developer guide for using Group Policy Objects (GPO) (Windows 10 Pro)
 
-GPOs are used to pre-configure servers/teams, autoUpdater and server management
+GPOs are used to pre-configure servers, autoUpdater and server management
 
 You can read more about GPOs [here](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/policy/group-policy-objects)
 
@@ -18,7 +18,7 @@ Example:
 | Value Name | Value                            |
 |------------|----------------------------------|
 | Community  | <https://community.mattermost.com> |
-8. Now if you open your Mattermost desktop application you should be able to see the server in the server dropdown (team dropdown)
+8. Now if you open your Mattermost desktop application you should be able to see the server in the server dropdown
 
 ---
 

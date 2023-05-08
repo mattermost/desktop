@@ -1,6 +1,6 @@
 @import '~bootstrap-dark/src/bootstrap-dark.css';
 
-.TeamListItem:hover {
+.ServerListItem:hover {
     background: #242a30;
 }
 

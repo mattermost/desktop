@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
-import {MattermostTeam} from 'types/config';
+import {UniqueServer} from 'types/config';
 
 import IntlProvider from 'renderer/intl_provider';
 
@@ -15,7 +15,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 const MOBILE_SCREEN_WIDTH = 1200;
 
-const onConnect = (data: MattermostTeam) => {
+const onConnect = (data: UniqueServer) => {
     window.desktop.modals.finishModal(data);
 };
 
@@ -23,7 +23,7 @@ const WelcomeScreenModalWrapper = () => {
     const [darkMode, setDarkMode] = useState(false);
     const [getStarted, setGetStarted] = useState(false);
     const [mobileView, setMobileView] = useState(false);
-    const [currentTeams, setCurrentTeams] = useState<MattermostTeam[]>([]);
+    const [currentServers, setCurrentServers] = useState<UniqueServer[]>([]);
 
     const handleWindowResize = () => {
         setMobileView(window.innerWidth < MOBILE_SCREEN_WIDTH);
@@ -38,8 +38,8 @@ const WelcomeScreenModalWrapper = () => {
             setDarkMode(result);
         });
 
-        window.desktop.modals.getModalInfo<MattermostTeam[]>().then((result) => {
-            setCurrentTeams(result);
+        window.desktop.modals.getModalInfo<UniqueServer[]>().then((result) => {
+            setCurrentServers(result);
         });
 
         handleWindowResize();
@@ -60,7 +60,7 @@ const WelcomeScreenModalWrapper = () => {
                 <ConfigureServer
                     mobileView={mobileView}
                     darkMode={darkMode}
-                    currentTeams={currentTeams}
+                    currentServers={currentServers}
                     onConnect={onConnect}
                 />
             ) : (

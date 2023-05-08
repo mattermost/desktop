@@ -18,7 +18,7 @@ import {
 } from 'types/config';
 
 import {Logger} from 'common/log';
-import {getDefaultConfigTeamFromTeam} from 'common/tabs/TabView';
+import {getDefaultViewsForConfigServer} from 'common/views/View';
 import Utils, {copy} from 'common/utils/util';
 import * as Validator from 'common/Validator';
 
@@ -36,7 +36,7 @@ export class Config extends EventEmitter {
     private appPath?: string;
 
     private registryConfig: RegistryConfig;
-    private predefinedServers: ConfigServer[];
+    private _predefinedServers: ConfigServer[];
     private useNativeWindow: boolean;
 
     private combinedData?: CombinedConfig;
@@ -49,9 +49,9 @@ export class Config extends EventEmitter {
     constructor() {
         super();
         this.registryConfig = new RegistryConfig();
-        this.predefinedServers = [];
-        if (buildConfig.defaultTeams) {
-            this.predefinedServers.push(...buildConfig.defaultTeams.map((team, index) => getDefaultConfigTeamFromTeam({...team, order: index})));
+        this._predefinedServers = [];
+        if (buildConfig.defaultServers) {
+            this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
         }
         try {
             this.useNativeWindow = os.platform() === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2');
@@ -138,10 +138,10 @@ export class Config extends EventEmitter {
         this.saveLocalConfigData();
     }
 
-    setServers = (servers: ConfigServer[], lastActiveTeam?: number) => {
-        log.debug('setServers', servers, lastActiveTeam);
+    setServers = (servers: ConfigServer[], lastActiveServer?: number) => {
+        log.debug('setServers', servers, lastActiveServer);
 
-        this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveTeam ?? this.localConfigData?.lastActiveTeam});
+        this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveServer ?? this.localConfigData?.lastActiveTeam});
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
     }
@@ -172,11 +172,11 @@ export class Config extends EventEmitter {
     get darkMode() {
         return this.combinedData?.darkMode ?? defaultPreferences.darkMode;
     }
-    get localTeams() {
+    get localServers() {
         return this.localConfigData?.teams ?? defaultPreferences.teams;
     }
-    get predefinedTeams() {
-        return this.predefinedServers;
+    get predefinedServers() {
+        return this._predefinedServers;
     }
     get enableHardwareAcceleration() {
         return this.combinedData?.enableHardwareAcceleration ?? defaultPreferences.enableHardwareAcceleration;
@@ -229,7 +229,7 @@ export class Config extends EventEmitter {
     get minimizeToTray() {
         return this.combinedData?.minimizeToTray;
     }
-    get lastActiveTeam() {
+    get lastActiveServer() {
         return this.combinedData?.lastActiveTeam;
     }
     get alwaysClose() {
@@ -252,17 +252,17 @@ export class Config extends EventEmitter {
     }
 
     /**
-     * Gets the teams from registry into the config object and reload
+     * Gets the servers from registry into the config object and reload
      *
-     * @param {object} registryData Team configuration from the registry and if teams can be managed by user
+     * @param {object} registryData Server configuration from the registry and if servers can be managed by user
      */
 
     private onLoadRegistry = (registryData: Partial<RegistryConfigType>): void => {
         log.debug('loadRegistry', {registryData});
 
         this.registryConfigData = registryData;
-        if (this.registryConfigData.teams) {
-            this.predefinedTeams.push(...this.registryConfigData.teams.map((team, index) => getDefaultConfigTeamFromTeam({...team, order: index})));
+        if (this.registryConfigData.servers) {
+            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
         }
         this.reload();
     }
@@ -378,7 +378,8 @@ export class Config extends EventEmitter {
 
         // We don't want to include the servers in the combined config, they should only be accesible via the ServerManager
         delete (this.combinedData as any).teams;
-        delete (this.combinedData as any).defaultTeams;
+        delete (this.combinedData as any).servers;
+        delete (this.combinedData as any).defaultServers;
 
         if (this.combinedData) {
             this.combinedData.appName = this.appName;

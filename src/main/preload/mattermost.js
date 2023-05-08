@@ -20,7 +20,7 @@ import {
     SET_VIEW_OPTIONS,
     REACT_APP_INITIALIZED,
     USER_ACTIVITY_UPDATE,
-    CLOSE_TEAMS_DROPDOWN,
+    CLOSE_SERVERS_DROPDOWN,
     BROWSER_HISTORY_BUTTON,
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
@@ -272,7 +272,7 @@ function isDownloadLink(el) {
 }
 
 window.addEventListener('click', (e) => {
-    ipcRenderer.send(CLOSE_TEAMS_DROPDOWN);
+    ipcRenderer.send(CLOSE_SERVERS_DROPDOWN);
     const el = e.target;
     if (!isDownloadLink(el)) {
         ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);

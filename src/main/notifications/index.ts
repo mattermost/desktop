@@ -40,7 +40,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     if (!view) {
         return;
     }
-    const serverName = view.tab.server.name;
+    const serverName = view.view.server.name;
 
     const options = {
         title: `${serverName}: ${title}`,

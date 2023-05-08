@@ -421,7 +421,7 @@ describe('main/windows/mainWindow', () => {
             expect(window.setFullScreen).toHaveBeenCalledWith(false);
         });
 
-        it('should select tabs using alt+cmd+arrow keys on Mac', () => {
+        it('should select views using alt+cmd+arrow keys on Mac', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',

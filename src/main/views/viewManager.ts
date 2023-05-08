@@ -11,7 +11,7 @@ import {
     LOAD_FAILED,
     LOADSCREEN_END,
     SET_ACTIVE_VIEW,
-    OPEN_TAB,
+    OPEN_VIEW,
     BROWSER_HISTORY_PUSH,
     UPDATE_URL_VIEW_WIDTH,
     SERVERS_UPDATE,
@@ -33,7 +33,7 @@ import {Logger} from 'common/log';
 import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
-import {TabView, TAB_MESSAGING} from 'common/tabs/TabView';
+import {MattermostView, TAB_MESSAGING} from 'common/views/View';
 import {parseURL} from 'common/utils/url';
 
 import {localizeMessage} from 'main/i18nManager';
@@ -41,7 +41,7 @@ import MainWindow from 'main/windows/mainWindow';
 
 import {getLocalURLString, getLocalPreload, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
 
-import {MattermostView} from './MattermostView';
+import {MattermostBrowserView} from './MattermostBrowserView';
 import modalManager from './modalManager';
 import LoadingScreen from './loadingScreen';
 
@@ -50,14 +50,14 @@ const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
 
 export class ViewManager {
-    private closedViews: Map<string, {srv: MattermostServer; tab: TabView}>;
-    private views: Map<string, MattermostView>;
+    private closedViews: Map<string, {srv: MattermostServer; view: MattermostView}>;
+    private views: Map<string, MattermostBrowserView>;
     private currentView?: string;
 
     private urlViewCancel?: () => void;
 
     constructor() {
-        this.views = new Map(); // keep in mind that this doesn't need to hold server order, only tabs on the renderer need that.
+        this.views = new Map(); // keep in mind that this doesn't need to hold server order, only views on the renderer need that.
         this.closedViews = new Map();
 
         MainWindow.on(MAIN_WINDOW_CREATED, this.init);
@@ -102,23 +102,23 @@ export class ViewManager {
         return this.closedViews.has(viewId);
     }
 
-    showById = (tabId: string) => {
-        this.getViewLogger(tabId).debug('showById', tabId);
+    showById = (viewId: string) => {
+        this.getViewLogger(viewId).debug('showById', viewId);
 
-        const newView = this.views.get(tabId);
+        const newView = this.views.get(viewId);
         if (newView) {
             if (newView.isVisible) {
                 return;
             }
             let hidePrevious;
-            if (this.currentView && this.currentView !== tabId) {
+            if (this.currentView && this.currentView !== viewId) {
                 const previous = this.getCurrentView();
                 if (previous) {
                     hidePrevious = () => previous.hide();
                 }
             }
 
-            this.currentView = tabId;
+            this.currentView = viewId;
             if (!newView.isErrored()) {
                 newView.show();
                 if (newView.needsLoadingScreen()) {
@@ -126,10 +126,10 @@ export class ViewManager {
                 }
             }
             hidePrevious?.();
-            MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, newView.tab.server.id, newView.tab.id);
-            ServerManager.updateLastActive(newView.tab.id);
+            MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, newView.view.server.id, newView.view.id);
+            ServerManager.updateLastActive(newView.view.id);
         } else {
-            this.getViewLogger(tabId).warn(`Couldn't find a view with name: ${tabId}`);
+            this.getViewLogger(viewId).warn(`Couldn't find a view with name: ${viewId}`);
         }
         modalManager.showModal();
     }
@@ -175,28 +175,28 @@ export class ViewManager {
     handleDeepLink = (url: string | URL) => {
         if (url) {
             const parsedURL = parseURL(url)!;
-            const tabView = ServerManager.lookupTabByURL(parsedURL, true);
-            if (tabView) {
-                const urlWithSchema = `${tabView.url.origin}${parsedURL.pathname}${parsedURL.search}`;
-                if (this.closedViews.has(tabView.id)) {
-                    this.openClosedTab(tabView.id, urlWithSchema);
+            const view = ServerManager.lookupViewByURL(parsedURL, true);
+            if (view) {
+                const urlWithSchema = `${view.url.origin}${parsedURL.pathname}${parsedURL.search}`;
+                if (this.closedViews.has(view.id)) {
+                    this.openClosedView(view.id, urlWithSchema);
                 } else {
-                    const view = this.views.get(tabView.id);
-                    if (!view) {
-                        log.error(`Couldn't find a view matching the id ${tabView.id}`);
+                    const browserView = this.views.get(view.id);
+                    if (!browserView) {
+                        log.error(`Couldn't find a view matching the id ${view.id}`);
                         return;
                     }
 
-                    if (view.isReady() && ServerManager.getRemoteInfo(view.tab.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(view.tab.server.id)?.serverVersion ?? '', '6.0.0')) {
-                        const pathName = `/${urlWithSchema.replace(view.tab.server.url.toString(), '')}`;
-                        view.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
-                        this.deeplinkSuccess(view.id);
+                    if (browserView.isReady() && ServerManager.getRemoteInfo(browserView.view.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(browserView.view.server.id)?.serverVersion ?? '', '6.0.0')) {
+                        const pathName = `/${urlWithSchema.replace(browserView.view.server.url.toString(), '')}`;
+                        browserView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
+                        this.deeplinkSuccess(browserView.id);
                     } else {
                         // attempting to change parsedURL protocol results in it not being modified.
-                        view.resetLoadingStatus();
-                        view.load(urlWithSchema);
-                        view.once(LOAD_SUCCESS, this.deeplinkSuccess);
-                        view.once(LOAD_FAILED, this.deeplinkFailed);
+                        browserView.resetLoadingStatus();
+                        browserView.load(urlWithSchema);
+                        browserView.once(LOAD_SUCCESS, this.deeplinkSuccess);
+                        browserView.once(LOAD_FAILED, this.deeplinkFailed);
                     }
                 }
             } else {
@@ -225,35 +225,35 @@ export class ViewManager {
      */
 
     private loadServer = (server: MattermostServer) => {
-        const tabs = ServerManager.getOrderedTabsForServer(server.id);
-        tabs.forEach((tab) => this.loadView(server, tab));
+        const views = ServerManager.getOrderedTabsForServer(server.id);
+        views.forEach((view) => this.loadView(server, view));
     }
 
-    private loadView = (srv: MattermostServer, tab: TabView, url?: string) => {
-        if (!tab.isOpen) {
-            this.closedViews.set(tab.id, {srv, tab});
+    private loadView = (srv: MattermostServer, view: MattermostView, url?: string) => {
+        if (!view.isOpen) {
+            this.closedViews.set(view.id, {srv, view});
             return;
         }
-        const view = this.makeView(srv, tab, url);
-        this.addView(view);
+        const browserView = this.makeView(srv, view, url);
+        this.addView(browserView);
     }
 
-    private makeView = (srv: MattermostServer, tab: TabView, url?: string): MattermostView => {
+    private makeView = (srv: MattermostServer, view: MattermostView, url?: string): MattermostBrowserView => {
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             throw new Error('Cannot create view, no main window present');
         }
 
-        const view = new MattermostView(tab, {webPreferences: {spellcheck: Config.useSpellChecker}});
-        view.once(LOAD_SUCCESS, this.activateView);
-        view.on(LOADSCREEN_END, this.finishLoading);
-        view.on(LOAD_FAILED, this.failLoading);
-        view.on(UPDATE_TARGET_URL, this.showURLView);
-        view.load(url);
-        return view;
+        const browserView = new MattermostBrowserView(view, {webPreferences: {spellcheck: Config.useSpellChecker}});
+        browserView.once(LOAD_SUCCESS, this.activateView);
+        browserView.on(LOADSCREEN_END, this.finishLoading);
+        browserView.on(LOAD_FAILED, this.failLoading);
+        browserView.on(UPDATE_TARGET_URL, this.showURLView);
+        browserView.load(url);
+        return browserView;
     }
 
-    private addView = (view: MattermostView): void => {
+    private addView = (view: MattermostBrowserView): void => {
         this.views.set(view.id, view);
         if (this.closedViews.has(view.id)) {
             this.closedViews.delete(view.id);
@@ -265,8 +265,8 @@ export class ViewManager {
 
         if (ServerManager.hasServers()) {
             const lastActiveServer = ServerManager.getCurrentServer();
-            const lastActiveTab = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
-            this.showById(lastActiveTab.id);
+            const lastActiveView = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
+            this.showById(lastActiveView.id);
         } else {
             MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
         }
@@ -382,33 +382,33 @@ export class ViewManager {
      */
 
     /** Called when a new configuration is received
-     * Servers or tabs have been added or edited. We need to
-     * close, open, or reload tabs, taking care to reuse tabs and
-     * preserve focus on the currently selected tab. */
+     * Servers or views have been added or edited. We need to
+     * close, open, or reload views, taking care to reuse views and
+     * preserve focus on the currently selected view. */
     private handleReloadConfiguration = () => {
         log.debug('handleReloadConfiguration');
 
-        const currentTabId: string | undefined = this.views.get(this.currentView as string)?.tab.id;
+        const currentViewId: string | undefined = this.views.get(this.currentView as string)?.view.id;
 
-        const current: Map<string, MattermostView> = new Map();
+        const current: Map<string, MattermostBrowserView> = new Map();
         for (const view of this.views.values()) {
-            current.set(view.tab.id, view);
+            current.set(view.view.id, view);
         }
 
-        const views: Map<string, MattermostView> = new Map();
-        const closed: Map<string, {srv: MattermostServer; tab: TabView}> = new Map();
+        const views: Map<string, MattermostBrowserView> = new Map();
+        const closed: Map<string, {srv: MattermostServer; view: MattermostView}> = new Map();
 
-        const sortedTabs = ServerManager.getAllServers().flatMap((x) => ServerManager.getOrderedTabsForServer(x.id).
-            map((t): [MattermostServer, TabView] => [x, t]));
+        const sortedViews = ServerManager.getAllServers().flatMap((x) => ServerManager.getOrderedTabsForServer(x.id).
+            map((t): [MattermostServer, MattermostView] => [x, t]));
 
-        for (const [srv, tab] of sortedTabs) {
-            const recycle = current.get(tab.id);
-            if (!tab.isOpen) {
-                closed.set(tab.id, {srv, tab});
+        for (const [srv, view] of sortedViews) {
+            const recycle = current.get(view.id);
+            if (!view.isOpen) {
+                closed.set(view.id, {srv, view});
             } else if (recycle) {
-                views.set(tab.id, recycle);
+                views.set(view.id, recycle);
             } else {
-                views.set(tab.id, this.makeView(srv, tab));
+                views.set(view.id, this.makeView(srv, view));
             }
         }
 
@@ -428,10 +428,10 @@ export class ViewManager {
 
         // commit closed
         for (const x of closed.values()) {
-            this.closedViews.set(x.tab.id, {srv: x.srv, tab: x.tab});
+            this.closedViews.set(x.view.id, {srv: x.srv, view: x.view});
         }
 
-        if ((currentTabId && closed.has(currentTabId)) || (this.currentView && this.closedViews.has(this.currentView))) {
+        if ((currentViewId && closed.has(currentViewId)) || (this.currentView && this.closedViews.has(this.currentView))) {
             if (ServerManager.hasServers()) {
                 this.currentView = undefined;
                 this.showInitial();
@@ -440,13 +440,13 @@ export class ViewManager {
             }
         }
 
-        // show the focused tab (or initial)
-        if (currentTabId && views.has(currentTabId)) {
-            const view = views.get(currentTabId);
+        // show the focused view (or initial)
+        if (currentViewId && views.has(currentViewId)) {
+            const view = views.get(currentViewId);
             if (view && view.id !== this.currentView) {
                 this.currentView = view.id;
                 this.showById(view.id);
-                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.tab.server.id, view.tab.id);
+                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.view.server.id, view.view.id);
             } else {
                 this.focusCurrentView();
             }
@@ -475,17 +475,17 @@ export class ViewManager {
             return;
         }
         let cleanedPathName = pathName;
-        if (currentView.tab.server.url.pathname !== '/' && pathName.startsWith(currentView.tab.server.url.pathname)) {
-            cleanedPathName = pathName.replace(currentView.tab.server.url.pathname, '');
+        if (currentView.view.server.url.pathname !== '/' && pathName.startsWith(currentView.view.server.url.pathname)) {
+            cleanedPathName = pathName.replace(currentView.view.server.url.pathname, '');
         }
-        const redirectedviewId = ServerManager.lookupTabByURL(`${currentView.tab.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
+        const redirectedviewId = ServerManager.lookupViewByURL(`${currentView.view.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
         if (this.isViewClosed(redirectedviewId)) {
             // If it's a closed view, just open it and stop
-            this.openClosedTab(redirectedviewId, `${currentView.tab.server.url}${cleanedPathName}`);
+            this.openClosedView(redirectedviewId, `${currentView.view.server.url}${cleanedPathName}`);
             return;
         }
         let redirectedView = this.getView(redirectedviewId) || currentView;
-        if (redirectedView !== currentView && redirectedView?.tab.server.id === ServerManager.getCurrentServer().id && redirectedView?.isLoggedIn) {
+        if (redirectedView !== currentView && redirectedView?.view.server.id === ServerManager.getCurrentServer().id && redirectedView?.isLoggedIn) {
             log.info('redirecting to a new view', redirectedView?.id || viewId);
             this.showById(redirectedView?.id || viewId);
         } else {
@@ -493,7 +493,7 @@ export class ViewManager {
         }
 
         // Special case check for Channels to not force a redirect to "/", causing a refresh
-        if (!(redirectedView !== currentView && redirectedView?.tab.type === TAB_MESSAGING && cleanedPathName === '/')) {
+        if (!(redirectedView !== currentView && redirectedView?.view.type === TAB_MESSAGING && cleanedPathName === '/')) {
             redirectedView?.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
             if (redirectedView) {
                 this.handleBrowserHistoryButton(e, redirectedView.id);
@@ -547,7 +547,7 @@ export class ViewManager {
 
         const currentView = this.getCurrentView();
         if (currentView && currentView.currentURL) {
-            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height, shouldHaveBackBar(currentView.tab.url, currentView.currentURL));
+            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height, shouldHaveBackBar(currentView.view.url, currentView.currentURL));
             currentView.setBounds(adjustedBounds);
         }
     }
@@ -556,21 +556,21 @@ export class ViewManager {
      * Helper functions
      */
 
-    private openClosedTab = (id: string, url?: string) => {
+    private openClosedView = (id: string, url?: string) => {
         if (!this.closedViews.has(id)) {
             return;
         }
-        const {srv, tab} = this.closedViews.get(id)!;
-        tab.isOpen = true;
-        this.loadView(srv, tab, url);
+        const {srv, view} = this.closedViews.get(id)!;
+        view.isOpen = true;
+        this.loadView(srv, view, url);
         this.showById(id);
-        const view = this.views.get(id)!;
-        view.isVisible = true;
-        view.on(LOAD_SUCCESS, () => {
-            view.isVisible = false;
+        const browserView = this.views.get(id)!;
+        browserView.isVisible = true;
+        browserView.on(LOAD_SUCCESS, () => {
+            browserView.isVisible = false;
             this.showById(id);
         });
-        ipcMain.emit(OPEN_TAB, null, tab.id);
+        ipcMain.emit(OPEN_VIEW, null, view.id);
     }
 
     private getViewLogger = (viewId: string) => {
@@ -585,8 +585,8 @@ export class ViewManager {
         return {
             id: view.id,
             webContentsId: view.webContentsId,
-            serverName: view.tab.server.name,
-            tabType: view.tab.type,
+            serverName: view.view.server.name,
+            viewType: view.view.type,
         };
     }
 }

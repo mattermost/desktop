@@ -8,9 +8,9 @@ import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDra
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 import classNames from 'classnames';
 
-import {MattermostTab} from 'types/config';
+import {UniqueView} from 'types/config';
 
-import {TabType, canCloseTab, getTabDisplayName} from 'common/tabs/TabView';
+import {ViewType, canCloseView, getViewDisplayName} from 'common/views/View';
 
 type Props = {
     activeTabId?: string;
@@ -19,7 +19,7 @@ type Props = {
     isDarkMode: boolean;
     onSelect: (id: string) => void;
     onCloseTab: (id: string) => void;
-    tabs: MattermostTab[];
+    tabs: UniqueView[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
     mentionCounts: Record<string, number>;
@@ -80,7 +80,7 @@ class TabBar extends React.PureComponent<Props> {
             return (
                 <Draggable
                     key={tab.id}
-                    draggableId={`teamTabItem-${tab.id}`}
+                    draggableId={`serverTabItem-${tab.id}`}
                     index={index}
                 >
                     {(provided, snapshot) => {
@@ -98,10 +98,10 @@ class TabBar extends React.PureComponent<Props> {
                             <NavItem
                                 ref={provided.innerRef}
                                 as='li'
-                                id={`teamTabItem${index}`}
+                                id={`serverTabItem${index}`}
                                 draggable={false}
-                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getTabDisplayName(tab.name as TabType)})}
-                                className={classNames('teamTabItem', {
+                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getViewDisplayName(tab.name as ViewType)})}
+                                className={classNames('serverTabItem', {
                                     active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
                                 })}
@@ -121,12 +121,12 @@ class TabBar extends React.PureComponent<Props> {
                                     <div className='TabBar-tabSeperator'>
                                         <FormattedMessage
                                             id={`common.tabs.${tab.name}`}
-                                            defaultMessage={getTabDisplayName(tab.name as TabType)}
+                                            defaultMessage={getViewDisplayName(tab.name as ViewType)}
                                         />
                                         { badgeDiv }
-                                        {canCloseTab(tab.name as TabType) &&
+                                        {canCloseView(tab.name as ViewType) &&
                                             <button
-                                                className='teamTabItem__close'
+                                                className='serverTabItem__close'
                                                 onClick={this.onCloseTab(tab.id!)}
                                             >
                                                 <i className='icon-close'/>

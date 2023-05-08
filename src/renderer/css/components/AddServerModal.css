@@ -5,7 +5,7 @@ body {
   min-height: 100%;
 }
 
-.NewTeamModal-noBottomSpace {
+.NewServerModal-noBottomSpace {
   padding-bottom: 0px;
   margin-bottom: 0px;
 }

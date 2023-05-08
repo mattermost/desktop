@@ -5,7 +5,7 @@ import {ipcRenderer, Rectangle} from 'electron/renderer';
 
 import {Language} from '../../i18n/i18n';
 
-import {CombinedConfig, LocalConfiguration, MattermostTab, MattermostTeam} from './config';
+import {CombinedConfig, LocalConfiguration, UniqueView, UniqueServer} from './config';
 import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import {SaveQueueItem} from './settings';
 
@@ -32,10 +32,10 @@ declare global {
         desktop: {
             quit: (reason: string, stack: string) => void;
             openAppMenu: () => void;
-            closeTeamsDropdown: () => void;
-            openTeamsDropdown: () => void;
-            switchTab: (tabId: string) => void;
-            closeTab: (tabId: string) => void;
+            closeServersDropdown: () => void;
+            openServersDropdown: () => void;
+            switchTab: (viewId: string) => void;
+            closeView: (viewId: string) => void;
             closeWindow: () => void;
             minimizeWindow: () => void;
             maximizeWindow: () => void;
@@ -51,10 +51,10 @@ declare global {
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
-            updateTabOrder: (serverId: string, tabOrder: string[]) => Promise<void>;
-            getLastActive: () => Promise<{server: string; tab: string}>;
-            getOrderedServers: () => Promise<MattermostTeam[]>;
-            getOrderedTabsForServer: (serverId: string) => Promise<MattermostTab[]>;
+            updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
+            getLastActive: () => Promise<{server: string; view: string}>;
+            getOrderedServers: () => Promise<UniqueServer[]>;
+            getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             onUpdateServers: (listener: () => void) => void;
 
             getConfiguration: () => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
@@ -74,7 +74,7 @@ declare global {
             onLoadRetry: (listener: (viewId: string, retry: Date, err: string, loadUrl: string) => void) => void;
             onLoadSuccess: (listener: (viewId: string) => void) => void;
             onLoadFailed: (listener: (viewId: string, err: string, loadUrl: string) => void) => void;
-            onSetActiveView: (listener: (serverId: string, tabId: string) => void) => void;
+            onSetActiveView: (listener: (serverId: string, viewId: string) => void) => void;
             onMaximizeChange: (listener: (maximize: boolean) => void) => void;
             onEnterFullScreen: (listener: () => void) => void;
             onLeaveFullScreen: (listener: () => void) => void;
@@ -83,8 +83,8 @@ declare global {
             onModalClose: (listener: () => void) => void;
             onToggleBackButton: (listener: (showExtraBar: boolean) => void) => void;
             onUpdateMentions: (listener: (view: string, mentions: number, unreads: boolean, isExpired: boolean) => void) => void;
-            onCloseTeamsDropdown: (listener: () => void) => void;
-            onOpenTeamsDropdown: (listener: () => void) => void;
+            onCloseServersDropdown: (listener: () => void) => void;
+            onOpenServersDropdown: (listener: () => void) => void;
             onCloseDownloadsDropdown: (listener: () => void) => void;
             onOpenDownloadsDropdown: (listener: () => void) => void;
             onShowDownloadsDropdownButtonBadge: (listener: () => void) => void;
@@ -139,12 +139,12 @@ declare global {
                 showRemoveServerModal: (serverId: string) => void;
 
                 onUpdateServerDropdown: (listener: (
-                    teams: MattermostTeam[],
+                    servers: UniqueServer[],
                     darkMode: boolean,
                     windowBounds: Rectangle,
-                    activeTeam?: string,
+                    activeServer?: string,
                     enableServerManagement?: boolean,
-                    hasGPOTeams?: boolean,
+                    hasGPOServers?: boolean,
                     expired?: Map<string, boolean>,
                     mentions?: Map<string, number>,
                     unreads?: Map<string, boolean>,

@@ -76,7 +76,7 @@ jest.mock('macos-notification-state', () => ({
 jest.mock('../views/viewManager', () => ({
     getViewByWebContentsId: () => ({
         id: 'server_id',
-        tab: {
+        view: {
             server: {
                 name: 'server_name',
             },
@@ -231,7 +231,7 @@ describe('main/notifications', () => {
             });
         });
 
-        it('should switch tab when clicking on notification', () => {
+        it('should switch view when clicking on notification', () => {
             displayMention(
                 'click_test',
                 'mention_click_body',
