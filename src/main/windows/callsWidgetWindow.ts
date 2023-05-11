@@ -305,6 +305,7 @@ export class CallsWidgetWindow {
 
         // Set the userAgent so that the widget's popout is considered a desktop window in the webapp code.
         // 'did-frame-finish-load' is the earliest moment that allows us to call loadURL without throwing an error.
+        // https://mattermost.atlassian.net/browse/MM-52756 is the proper fix for this.
         this.popOut.webContents.once('did-frame-finish-load', async () => {
             const url = this.popOut?.webContents.getURL() || '';
             if (!url) {
