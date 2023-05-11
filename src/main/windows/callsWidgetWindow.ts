@@ -16,7 +16,12 @@ import {
 
 import {MattermostBrowserView} from 'main/views/MattermostBrowserView';
 
-import {getLocalPreload, openScreensharePermissionsSettingsMacOS, resetScreensharePermissionsMacOS} from 'main/utils';
+import {
+    composeUserAgent,
+    getLocalPreload,
+    openScreensharePermissionsSettingsMacOS,
+    resetScreensharePermissionsMacOS,
+} from 'main/utils';
 
 import {Logger} from 'common/log';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
@@ -154,7 +159,9 @@ export class CallsWidgetWindow {
         if (!widgetURL) {
             return;
         }
-        this.win?.loadURL(widgetURL).catch((reason) => {
+        this.win?.loadURL(widgetURL, {
+            userAgent: composeUserAgent(),
+        }).catch((reason) => {
             log.error(`failed to load: ${reason}`);
         });
     }
@@ -262,7 +269,7 @@ export class CallsWidgetWindow {
         this.setBounds(initialBounds);
     }
 
-    private onPopOutOpen = ({url}: {url: string}) => {
+    private onPopOutOpen = ({url}: { url: string }) => {
         if (!(this.mainView && this.options)) {
             return {action: 'deny' as const};
         }
@@ -299,6 +306,24 @@ export class CallsWidgetWindow {
 
         this.popOut.on('closed', () => {
             delete this.popOut;
+        });
+
+        // Set the userAgent so that the widget's popout is considered a desktop window in the webapp code.
+        // 'did-frame-finish-load' is the earliest moment that allows us to call loadURL without throwing an error.
+        // https://mattermost.atlassian.net/browse/MM-52756 is the proper fix for this.
+        this.popOut.webContents.once('did-frame-finish-load', async () => {
+            const url = this.popOut?.webContents.getURL() || '';
+            if (!url) {
+                return;
+            }
+
+            try {
+                await this.popOut?.loadURL(url, {
+                    userAgent: composeUserAgent(),
+                });
+            } catch (e) {
+                log.error('did-frame-finish-load, failed to reload with correct userAgent', e);
+            }
         });
     }
 

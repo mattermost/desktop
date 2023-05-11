@@ -66,6 +66,7 @@ jest.mock('../utils', () => ({
     openScreensharePermissionsSettingsMacOS: jest.fn(),
     resetScreensharePermissionsMacOS: jest.fn(),
     getLocalPreload: jest.fn(),
+    composeUserAgent: jest.fn(),
 }));
 
 describe('main/windows/callsWidgetWindow', () => {
@@ -401,6 +402,7 @@ describe('main/windows/callsWidgetWindow', () => {
     it('onPopOutCreate - should attach correct listeners and should prevent redirects', () => {
         let redirectListener;
         let closedListener;
+        let frameFinishedLoadListener;
         const popOut = {
             on: (event, listener) => {
                 closedListener = listener;
@@ -409,8 +411,13 @@ describe('main/windows/callsWidgetWindow', () => {
                 on: (event, listener) => {
                     redirectListener = listener;
                 },
+                once: (event, listener) => {
+                    frameFinishedLoadListener = listener;
+                },
                 id: 'webContentsId',
+                getURL: () => ('http://myurl.com'),
             },
+            loadURL: jest.fn(),
         };
 
         const callsWidgetWindow = new CallsWidgetWindow();
@@ -418,10 +425,14 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(callsWidgetWindow.popOut).toBe(popOut);
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
+        expect(frameFinishedLoadListener).toBeDefined();
 
         const event = {preventDefault: jest.fn()};
         redirectListener(event);
         expect(event.preventDefault).toHaveBeenCalled();
+
+        frameFinishedLoadListener();
+        expect(callsWidgetWindow.popOut.loadURL).toHaveBeenCalledTimes(1);
 
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
