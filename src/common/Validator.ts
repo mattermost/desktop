@@ -1,20 +1,21 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import log from 'electron-log';
 
 import Joi from 'joi';
 
 import {Args} from 'types/args';
-import {AnyConfig, ConfigV0, ConfigV1, ConfigV2, ConfigV3, TeamWithTabs} from 'types/config';
+import {AnyConfig, ConfigV0, ConfigV1, ConfigV2, ConfigV3, ConfigServer} from 'types/config';
 import {DownloadedItems} from 'types/downloads';
 import {SavedWindowState} from 'types/mainWindow';
 import {AppState} from 'types/appState';
 import {ComparableCertificate} from 'types/certificate';
 import {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
-import {TAB_MESSAGING} from 'common/tabs/TabView';
-import urlUtils from 'common/utils/url';
+import {Logger} from 'common/log';
+import {TAB_MESSAGING} from 'common/views/View';
+import {isValidURL} from 'common/utils/url';
 
+const log = new Logger('Validator');
 const defaultOptions = {
     stripUnknown: true,
 };
@@ -205,46 +206,46 @@ function cleanURL(url: string): string {
     return updatedURL;
 }
 
-function cleanTeam<T extends {name: string; url: string}>(team: T) {
+function cleanServer<T extends {name: string; url: string}>(server: T) {
     return {
-        ...team,
-        url: cleanURL(team.url),
+        ...server,
+        url: cleanURL(server.url),
     };
 }
 
-function cleanTeamWithTabs(team: TeamWithTabs) {
+function cleanServerWithViews(server: ConfigServer) {
     return {
-        ...cleanTeam(team),
-        tabs: team.tabs.map((tab) => {
+        ...cleanServer(server),
+        tabs: server.tabs.map((view) => {
             return {
-                ...tab,
-                isOpen: tab.name === TAB_MESSAGING ? true : tab.isOpen,
+                ...view,
+                isOpen: view.name === TAB_MESSAGING ? true : view.isOpen,
             };
         }),
     };
 }
 
-function cleanTeams<T extends {name: string; url: string}>(teams: T[], func: (team: T) => T) {
-    let newTeams = teams;
-    if (Array.isArray(newTeams) && newTeams.length) {
+function cleanServers<T extends {name: string; url: string}>(servers: T[], func: (server: T) => T) {
+    let newServers = servers;
+    if (Array.isArray(newServers) && newServers.length) {
         // first replace possible backslashes with forward slashes
-        newTeams = newTeams.map((team) => func(team));
+        newServers = newServers.map((server) => func(server));
 
         // next filter out urls that are still invalid so all is not lost
-        newTeams = newTeams.filter(({url}) => urlUtils.isValidURL(url));
+        newServers = newServers.filter(({url}) => isValidURL(url));
     }
-    return newTeams;
+    return newServers;
 }
 
 // validate v.1 config.json
 export function validateV1ConfigData(data: ConfigV1) {
-    data.teams = cleanTeams(data.teams, cleanTeam);
+    data.teams = cleanServers(data.teams, cleanServer);
     return validateAgainstSchema(data, configDataSchemaV1);
 }
 
 export function validateV2ConfigData(data: ConfigV2) {
-    data.teams = cleanTeams(data.teams, cleanTeam);
-    if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
+    data.teams = cleanServers(data.teams, cleanServer);
+    if (data.spellCheckerURL && !isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;
     }
@@ -252,8 +253,8 @@ export function validateV2ConfigData(data: ConfigV2) {
 }
 
 export function validateV3ConfigData(data: ConfigV3) {
-    data.teams = cleanTeams(data.teams, cleanTeamWithTabs);
-    if (data.spellCheckerURL && !urlUtils.isValidURL(data.spellCheckerURL)) {
+    data.teams = cleanServers(data.teams, cleanServerWithViews);
+    if (data.spellCheckerURL && !isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;
     }

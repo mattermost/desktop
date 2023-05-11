@@ -48,10 +48,10 @@ You're now all set! See the [User Guide](#user-guide) below for instructions.
 
 ## User Guide
 
-After launching, you need to configure the application to interact with your team.
+After launching, you need to configure the application to interact with your server.
 
 1. If you don't see a page titled "Settings", select **File** > **Settings...** from the menu bar.
-2. Click **Add new team** next to the right of Team Management section.
+2. Click **Add new server** next to the right of Server Management section.
 3. Enter **Name** and a valid **URL**, which begins with either `http://` or `https://`.
 4. Click **Add**.
 5. Click **Save**.

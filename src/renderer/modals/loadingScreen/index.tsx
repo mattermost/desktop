@@ -35,7 +35,7 @@ class LoadingScreenRoot extends React.PureComponent<Props, State> {
         window.desktop.loadingScreen.onToggleLoadingScreenVisibility(this.onToggleLoadingScreenVisibility);
 
         window.addEventListener('click', () => {
-            window.desktop.closeTeamsDropdown();
+            window.desktop.closeServersDropdown();
             window.desktop.closeDownloadsDropdown();
         });
     }

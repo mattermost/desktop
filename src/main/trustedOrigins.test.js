@@ -80,16 +80,16 @@ describe('Trusted Origins', () => {
             expect(tos.data.size).toBe(2);
         });
         it('should say ok if the permission is set', () => {
-            expect(tos.checkPermission('https://mattermost.com', BASIC_AUTH_PERMISSION)).toBe(true);
+            expect(tos.checkPermission(new URL('https://mattermost.com'), BASIC_AUTH_PERMISSION)).toBe(true);
         });
         it('should say ko if the permission is set to false', () => {
-            expect(tos.checkPermission('https://notmattermost.com', BASIC_AUTH_PERMISSION)).toBe(false);
+            expect(tos.checkPermission(new URL('https://notmattermost.com'), BASIC_AUTH_PERMISSION)).toBe(false);
         });
         it('should say ko if the uri is not set', () => {
-            expect(tos.checkPermission('https://undefined.com', BASIC_AUTH_PERMISSION)).toBe(undefined);
+            expect(tos.checkPermission(new URL('https://undefined.com'), BASIC_AUTH_PERMISSION)).toBe(undefined);
         });
         it('should say null if the permission is unknown', () => {
-            expect(tos.checkPermission('https://mattermost.com')).toBe(null);
+            expect(tos.checkPermission(new URL('https://mattermost.com'))).toBe(null);
         });
     });
 
@@ -105,9 +105,9 @@ describe('Trusted Origins', () => {
         const tos = mockTOS('permission_test', JSON.stringify(value));
         tos.load();
         it('deleting revokes access', () => {
-            expect(tos.checkPermission('https://mattermost.com', BASIC_AUTH_PERMISSION)).toBe(true);
-            tos.delete('https://mattermost.com');
-            expect(tos.checkPermission('https://mattermost.com', BASIC_AUTH_PERMISSION)).toBe(undefined);
+            expect(tos.checkPermission(new URL('https://mattermost.com'), BASIC_AUTH_PERMISSION)).toBe(true);
+            tos.delete(new URL('https://mattermost.com'));
+            expect(tos.checkPermission(new URL('https://mattermost.com'), BASIC_AUTH_PERMISSION)).toBe(undefined);
         });
     });
 });

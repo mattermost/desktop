@@ -4,15 +4,15 @@
 import {upgradeV0toV1, upgradeV1toV2, upgradeV2toV3} from 'common/config/upgradePreferences';
 import pastDefaultPreferences from 'common/config/pastDefaultPreferences';
 
-jest.mock('common/tabs/TabView', () => ({
-    getDefaultTeamWithTabsFromTeam: (value) => ({
+jest.mock('common/views/View', () => ({
+    getDefaultViewsForConfigServer: (value) => ({
         ...value,
         tabs: [
             {
-                name: 'tab1',
+                name: 'view1',
             },
             {
-                name: 'tab2',
+                name: 'view2',
             },
         ],
     }),
@@ -27,7 +27,7 @@ describe('common/config/upgradePreferences', () => {
                 version: 1,
                 teams: [
                     {
-                        name: 'Primary team',
+                        name: 'Primary server',
                         url: config.url,
                     },
                 ],
@@ -39,10 +39,10 @@ describe('common/config/upgradePreferences', () => {
             const config = {
                 version: 1,
                 teams: [{
-                    name: 'Primary team',
+                    name: 'Primary server',
                     url: 'http://server-1.com',
                 }, {
-                    name: 'Secondary team',
+                    name: 'Secondary server',
                     url: 'http://server-2.com',
                 }],
                 showTrayIcon: true,
@@ -64,11 +64,11 @@ describe('common/config/upgradePreferences', () => {
                 ...config,
                 version: 2,
                 teams: [{
-                    name: 'Primary team',
+                    name: 'Primary server',
                     url: 'http://server-1.com',
                     order: 0,
                 }, {
-                    name: 'Secondary team',
+                    name: 'Secondary server',
                     url: 'http://server-2.com',
                     order: 1,
                 }],
@@ -80,11 +80,11 @@ describe('common/config/upgradePreferences', () => {
             const config = {
                 version: 2,
                 teams: [{
-                    name: 'Primary team',
+                    name: 'Primary server',
                     url: 'http://server-1.com',
                     order: 0,
                 }, {
-                    name: 'Secondary team',
+                    name: 'Secondary server',
                     url: 'http://server-2.com',
                     order: 1,
                 }],
@@ -111,31 +111,29 @@ describe('common/config/upgradePreferences', () => {
                 ...config,
                 version: 3,
                 teams: [{
-                    name: 'Primary team',
+                    name: 'Primary server',
                     url: 'http://server-1.com',
                     order: 0,
                     tabs: [
                         {
-                            name: 'tab1',
+                            name: 'view1',
                         },
                         {
-                            name: 'tab2',
+                            name: 'view2',
                         },
                     ],
-                    lastActiveTab: 0,
                 }, {
-                    name: 'Secondary team',
+                    name: 'Secondary server',
                     url: 'http://server-2.com',
                     order: 1,
                     tabs: [
                         {
-                            name: 'tab1',
+                            name: 'view1',
                         },
                         {
-                            name: 'tab2',
+                            name: 'view2',
                         },
                     ],
-                    lastActiveTab: 0,
                 }],
             });
         });

@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 export type RemoteInfo = {
-    name: string;
     serverVersion?: string;
     siteURL?: string;
     hasFocalboard?: boolean;

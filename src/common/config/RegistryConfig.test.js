@@ -64,10 +64,9 @@ describe('common/config/RegistryConfig', () => {
         Object.defineProperty(process, 'platform', {
             value: originalPlatform,
         });
-        expect(registryConfig.data.teams).toContainEqual({
+        expect(registryConfig.data.servers).toContainEqual({
             name: 'server-1',
             url: 'http://server-1.com',
-            order: 0,
         });
         expect(registryConfig.data.enableAutoUpdater).toBe(true);
         expect(registryConfig.data.enableServerManagement).toBe(true);

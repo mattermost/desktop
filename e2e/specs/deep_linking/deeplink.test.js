@@ -46,7 +46,7 @@ describe('application', function desc() {
                 return window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getURL();
             }, webContentsId);
             isActive.should.equal('https://github.com/test/url');
-            const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+            const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
             dropdownButtonText.should.equal('github');
             await this.app.close();
         });

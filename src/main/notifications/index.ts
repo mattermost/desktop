@@ -1,17 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {shell, Notification} from 'electron';
-import log from 'electron-log';
+import {app, shell, Notification} from 'electron';
 
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {MentionData} from 'types/notification';
 
+import Config from 'common/config';
 import {PLAY_SOUND} from 'common/communication';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
+import {Logger} from 'common/log';
 
-import WindowManager from '../windows/windowManager';
+import ViewManager from '../views/viewManager';
+import MainWindow from '../windows/mainWindow';
 
 import {Mention} from './Mention';
 import {DownloadNotification} from './Download';
@@ -21,8 +22,10 @@ import getWindowsDoNotDisturb from './dnd-windows';
 
 export const currentNotifications = new Map();
 
+const log = new Logger('Notifications');
+
 export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
-    log.debug('Notifications.displayMention', {title, body, channel, teamId, url, silent, data});
+    log.debug('displayMention', {title, body, channel, teamId, url, silent, data});
 
     if (!Notification.isSupported()) {
         log.error('notification not supported');
@@ -33,7 +36,11 @@ export function displayMention(title: string, body: string, channel: {id: string
         return;
     }
 
-    const serverName = WindowManager.getServerNameByWebContentsId(webcontents.id);
+    const view = ViewManager.getViewByWebContentsId(webcontents.id);
+    if (!view) {
+        return;
+    }
+    const serverName = view.view.server.name;
 
     const options = {
         title: `${serverName}: ${title}`,
@@ -46,7 +53,7 @@ export function displayMention(title: string, body: string, channel: {id: string
     const mentionKey = `${mention.teamId}:${mention.channel.id}`;
 
     mention.on('show', () => {
-        log.debug('Notifications.displayMention.show');
+        log.debug('displayMention.show');
 
         // On Windows, manually dismiss notifications from the same channel and only show the latest one
         if (process.platform === 'win32') {
@@ -59,15 +66,15 @@ export function displayMention(title: string, body: string, channel: {id: string
         }
         const notificationSound = mention.getNotificationSound();
         if (notificationSound) {
-            WindowManager.sendToRenderer(PLAY_SOUND, notificationSound);
+            MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
         }
-        WindowManager.flashFrame(true);
+        flashFrame(true);
     });
 
     mention.on('click', () => {
         log.debug('notification click', serverName, mention);
         if (serverName) {
-            WindowManager.switchTab(serverName, TAB_MESSAGING);
+            ViewManager.showById(view.id);
             webcontents.send('notification-clicked', {channel, teamId, url});
         }
     });
@@ -75,7 +82,7 @@ export function displayMention(title: string, body: string, channel: {id: string
 }
 
 export function displayDownloadCompleted(fileName: string, path: string, serverName: string) {
-    log.debug('Notifications.displayDownloadCompleted', {fileName, path, serverName});
+    log.debug('displayDownloadCompleted', {fileName, path, serverName});
 
     if (!Notification.isSupported()) {
         log.error('notification not supported');
@@ -89,7 +96,7 @@ export function displayDownloadCompleted(fileName: string, path: string, serverN
     const download = new DownloadNotification(fileName, serverName);
 
     download.on('show', () => {
-        WindowManager.flashFrame(true);
+        flashFrame(true);
     });
 
     download.on('click', () => {
@@ -152,4 +159,15 @@ function getDoNotDisturb() {
     }
 
     return false;
+}
+
+function flashFrame(flash: boolean) {
+    if (process.platform === 'linux' || process.platform === 'win32') {
+        if (Config.notifications.flashWindow) {
+            MainWindow.get()?.flashFrame(flash);
+        }
+    }
+    if (process.platform === 'darwin' && Config.notifications.bounceIcon) {
+        app.dock.bounce(Config.notifications.bounceIconType);
+    }
 }

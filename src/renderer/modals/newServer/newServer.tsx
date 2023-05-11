@@ -7,11 +7,11 @@ import 'renderer/css/modals.css';
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
-import {TeamWithIndex} from 'types/config';
+import {UniqueServer} from 'types/config';
 
 import IntlProvider from 'renderer/intl_provider';
 
-import NewTeamModal from '../../components/NewTeamModal'; //'./addServer.jsx';
+import NewServerModal from '../../components/NewServerModal';
 
 import setupDarkMode from '../darkMode';
 
@@ -21,31 +21,31 @@ const onClose = () => {
     window.desktop.modals.cancelModal();
 };
 
-const onSave = (data: TeamWithIndex) => {
+const onSave = (data: UniqueServer) => {
     window.desktop.modals.finishModal(data);
 };
 
 const NewServerModalWrapper: React.FC = () => {
     const [unremoveable, setUnremovable] = useState<boolean>();
-    const [currentTeams, setCurrentTeams] = useState<TeamWithIndex[]>();
+    const [currentServers, setCurrentServers] = useState<UniqueServer[]>();
 
     useEffect(() => {
         window.desktop.modals.isModalUncloseable().then((uncloseable) => {
             setUnremovable(uncloseable);
         });
-        window.desktop.modals.getModalInfo<TeamWithIndex[]>().then((teams) => {
-            setCurrentTeams(teams);
+        window.desktop.modals.getModalInfo<UniqueServer[]>().then((servers) => {
+            setCurrentServers(servers);
         });
     }, []);
 
     return (
         <IntlProvider>
-            <NewTeamModal
+            <NewServerModal
                 onClose={unremoveable ? undefined : onClose}
                 onSave={onSave}
                 editMode={false}
                 show={true}
-                currentTeams={currentTeams}
+                currentServers={currentServers}
             />
         </IntlProvider>
     );

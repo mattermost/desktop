@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app} from 'electron';
+import {app, nativeImage} from 'electron';
+
+import MainWindow from './windows/mainWindow';
 
 import * as Badge from './badge';
-
-import WindowManager from './windows/windowManager';
 
 jest.mock('electron', () => ({
     app: {
@@ -14,14 +14,16 @@ jest.mock('electron', () => ({
             setBadge: jest.fn(),
         },
     },
+    nativeImage: {
+        createFromDataURL: jest.fn(),
+    },
 }));
 
-jest.mock('./appState', () => ({
-    updateBadge: jest.fn(),
+jest.mock('common/appState', () => ({
+    emitStatus: jest.fn(),
 }));
-
-jest.mock('./windows/windowManager', () => ({
-    setOverlayIcon: jest.fn(),
+jest.mock('./windows/mainWindow', () => ({
+    get: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -30,35 +32,69 @@ jest.mock('main/i18nManager', () => ({
 
 describe('main/badge', () => {
     describe('showBadgeWindows', () => {
-        it('should show dot when session expired', () => {
+        const window = {
+            setOverlayIcon: jest.fn(),
+            webContents: {
+                executeJavaScript: jest.fn(),
+            },
+        };
+        let promise;
+
+        beforeEach(() => {
+            window.webContents.executeJavaScript.mockImplementation((code) => {
+                promise = new Promise((resolve) => resolve(code));
+                return promise;
+            });
+            nativeImage.createFromDataURL.mockImplementation((url) => url);
+            Badge.setUnreadBadgeSetting(false);
+            MainWindow.get.mockReturnValue(window);
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should show dot when session expired', async () => {
             Badge.showBadgeWindows(true, 0, false);
-            expect(WindowManager.setOverlayIcon).toBeCalledWith('•', expect.any(String), expect.any(Boolean));
+            await promise;
+            expect(window.setOverlayIcon).toBeCalledWith(expect.stringContaining('window.drawBadge(\'•\', false)'), expect.any(String));
         });
 
-        it('should show mention count when has mention count', () => {
+        it('should show mention count when has mention count', async () => {
             Badge.showBadgeWindows(true, 50, false);
-            expect(WindowManager.setOverlayIcon).toBeCalledWith('50', expect.any(String), false);
+            await promise;
+            expect(window.setOverlayIcon).toBeCalledWith(expect.stringContaining('window.drawBadge(\'50\', false)'), expect.any(String));
         });
 
-        it('should show 99+ when has mention count over 99', () => {
+        it('should show 99+ when has mention count over 99', async () => {
             Badge.showBadgeWindows(true, 200, false);
-            expect(WindowManager.setOverlayIcon).toBeCalledWith('99+', expect.any(String), true);
+            await promise;
+            expect(window.setOverlayIcon).toBeCalledWith(expect.stringContaining('window.drawBadge(\'99+\', true)'), expect.any(String));
         });
 
-        it('should not show dot when has unreads but setting is off', () => {
+        it('should not show dot when has unreads but setting is off', async () => {
             Badge.showBadgeWindows(false, 0, true);
-            expect(WindowManager.setOverlayIcon).not.toBeCalledWith('•', expect.any(String), expect.any(Boolean));
+            await promise;
+            expect(window.setOverlayIcon).toBeCalledWith(null, expect.any(String));
         });
 
-        it('should show dot when has unreads', () => {
+        it('should show dot when has unreads', async () => {
             Badge.setUnreadBadgeSetting(true);
             Badge.showBadgeWindows(false, 0, true);
-            expect(WindowManager.setOverlayIcon).toBeCalledWith('•', expect.any(String), expect.any(Boolean));
-            Badge.setUnreadBadgeSetting(false);
+            await promise;
+            expect(window.setOverlayIcon).toBeCalledWith(expect.stringContaining('window.drawBadge(\'•\', false)'), expect.any(String));
         });
     });
 
     describe('showBadgeOSX', () => {
+        beforeEach(() => {
+            Badge.setUnreadBadgeSetting(false);
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
         it('should show dot when session expired', () => {
             Badge.showBadgeOSX(true, 0, false);
             expect(app.dock.setBadge).toBeCalledWith('•');

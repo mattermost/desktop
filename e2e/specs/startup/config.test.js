@@ -44,7 +44,7 @@ describe('config', function desc() {
 
         it('MM-T4401_1 should show correct server in the dropdown button', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton');
+            const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
             dropdownButtonText.should.equal('example');
         });
 
@@ -66,8 +66,8 @@ describe('config', function desc() {
         fs.writeFileSync(env.configFilePath, JSON.stringify(oldConfig));
         this.app = await env.getApp();
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownButtonText = await mainWindow.innerText('.TeamDropdownButton:has-text("Primary team")');
-        dropdownButtonText.should.equal('Primary team');
+        const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("Primary server")');
+        dropdownButtonText.should.equal('Primary server');
 
         const str = fs.readFileSync(env.configFilePath, 'utf8');
         const upgradedConfig = JSON.parse(str);

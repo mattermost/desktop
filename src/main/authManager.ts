@@ -1,19 +1,21 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import {AuthenticationResponseDetails, AuthInfo, WebContents} from 'electron';
-import log from 'electron-log';
 
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
 
+import {Logger} from 'common/log';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
-import urlUtils from 'common/utils/url';
+import {isCustomLoginURL, isTrustedURL, parseURL} from 'common/utils/url';
 
 import modalManager from 'main/views/modalManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
-import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
+import ViewManager from 'main/views/viewManager';
 
+const log = new Logger('AuthManager');
 const preload = getLocalPreload('desktopAPI.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
 const permissionModalHtml = getLocalURLString('permissionModal.html');
@@ -31,20 +33,20 @@ export class AuthManager {
     }
 
     handleAppLogin = (event: Event, webContents: WebContents, request: AuthenticationResponseDetails, authInfo: AuthInfo, callback?: (username?: string, password?: string) => void) => {
-        log.verbose('AuthManager.handleAppLogin', {request, authInfo});
+        log.verbose('handleAppLogin', {request, authInfo});
 
         event.preventDefault();
-        const parsedURL = urlUtils.parseURL(request.url);
+        const parsedURL = parseURL(request.url);
         if (!parsedURL) {
             return;
         }
-        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.view.server.url;
         if (!serverURL) {
             return;
         }
 
         this.loginCallbackMap.set(request.url, callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-        if (urlUtils.isTrustedURL(request.url, serverURL) || urlUtils.isCustomLoginURL(parsedURL, serverURL) || TrustedOriginsStore.checkPermission(request.url, BASIC_AUTH_PERMISSION)) {
+        if (isTrustedURL(parsedURL, serverURL) || isCustomLoginURL(parsedURL, serverURL) || TrustedOriginsStore.checkPermission(parsedURL, BASIC_AUTH_PERMISSION)) {
             this.popLoginModal(request, authInfo);
         } else {
             this.popPermissionModal(request, authInfo, BASIC_AUTH_PERMISSION);
@@ -52,7 +54,7 @@ export class AuthManager {
     }
 
     popLoginModal = (request: AuthenticationResponseDetails, authInfo: AuthInfo) => {
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }
@@ -71,7 +73,7 @@ export class AuthManager {
     }
 
     popPermissionModal = (request: AuthenticationResponseDetails, authInfo: AuthInfo, permission: PermissionType) => {
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }
@@ -107,7 +109,11 @@ export class AuthManager {
     }
 
     handlePermissionGranted(url: string, permission: PermissionType) {
-        TrustedOriginsStore.addPermission(url, permission);
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
+            return;
+        }
+        TrustedOriginsStore.addPermission(parsedURL, permission);
         TrustedOriginsStore.save();
     }
 }

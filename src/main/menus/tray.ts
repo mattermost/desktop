@@ -4,19 +4,21 @@
 'use strict';
 
 import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
-import {CombinedConfig} from 'types/config';
 
-import WindowManager from 'main/windows/windowManager';
+import ServerManager from 'common/servers/serverManager';
+
 import {localizeMessage} from 'main/i18nManager';
+import SettingsWindow from 'main/windows/settingsWindow';
+import {switchServer} from 'main/app/servers';
 
-export function createTemplate(config: CombinedConfig) {
-    const teams = config.teams;
+export function createTemplate() {
+    const servers = ServerManager.getOrderedServers();
     const template = [
-        ...teams.sort((teamA, teamB) => teamA.order - teamB.order).slice(0, 9).map((team) => {
+        ...servers.slice(0, 9).map((server) => {
             return {
-                label: team.name.length > 50 ? `${team.name.slice(0, 50)}...` : team.name,
+                label: server.name.length > 50 ? `${server.name.slice(0, 50)}...` : server.name,
                 click: () => {
-                    WindowManager.switchServer(team.name);
+                    switchServer(server.id);
                 },
             };
         }), {
@@ -24,7 +26,7 @@ export function createTemplate(config: CombinedConfig) {
         }, {
             label: process.platform === 'darwin' ? localizeMessage('main.menus.tray.preferences', 'Preferences...') : localizeMessage('main.menus.tray.settings', 'Settings'),
             click: () => {
-                WindowManager.showSettingsWindow();
+                SettingsWindow.show();
             },
         }, {
             type: 'separator',
@@ -35,7 +37,7 @@ export function createTemplate(config: CombinedConfig) {
     return template;
 }
 
-export function createMenu(config: CombinedConfig) {
+export function createMenu() {
     // Electron is enforcing certain variables that it doesn't need
-    return Menu.buildFromTemplate(createTemplate(config) as Array<MenuItemConstructorOptions | MenuItem>);
+    return Menu.buildFromTemplate(createTemplate() as Array<MenuItemConstructorOptions | MenuItem>);
 }

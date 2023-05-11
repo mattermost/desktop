@@ -3,12 +3,14 @@
 // See LICENSE.txt for license information.
 
 import {EventEmitter} from 'events';
-import log from 'electron-log';
 import WindowsRegistry from 'winreg';
 import WindowsRegistryUTF8 from 'winreg-utf8';
 
-import {RegistryConfig as RegistryConfigType, Team} from 'types/config';
+import {RegistryConfig as RegistryConfigType, Server} from 'types/config';
 
+import {Logger} from 'common/log';
+
+const log = new Logger('RegistryConfig');
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];
 const BASE_REGISTRY_KEY_PATH = '\\Software\\Policies\\Mattermost';
 export const REGISTRY_READ_EVENT = 'registry-read';
@@ -24,7 +26,7 @@ export default class RegistryConfig extends EventEmitter {
         super();
         this.initialized = false;
         this.data = {
-            teams: [],
+            servers: [],
         };
     }
 
@@ -39,10 +41,10 @@ export default class RegistryConfig extends EventEmitter {
             try {
                 const servers = await this.getServersListFromRegistry();
                 if (servers.length) {
-                    this.data.teams!.push(...servers);
+                    this.data.servers!.push(...servers);
                 }
             } catch (error) {
-                log.warn('[RegistryConfig] Nothing retrieved for \'DefaultServerList\'', error);
+                log.warn('Nothing retrieved for \'DefaultServerList\'', error);
             }
 
             // extract EnableServerManagement from the registry
@@ -52,7 +54,7 @@ export default class RegistryConfig extends EventEmitter {
                     this.data.enableServerManagement = enableServerManagement;
                 }
             } catch (error) {
-                log.warn('[RegistryConfig] Nothing retrieved for \'EnableServerManagement\'', error);
+                log.warn('Nothing retrieved for \'EnableServerManagement\'', error);
             }
 
             // extract EnableAutoUpdater from the registry
@@ -62,7 +64,7 @@ export default class RegistryConfig extends EventEmitter {
                     this.data.enableAutoUpdater = enableAutoUpdater;
                 }
             } catch (error) {
-                log.warn('[RegistryConfig] Nothing retrieved for \'EnableAutoUpdater\'', error);
+                log.warn('Nothing retrieved for \'EnableAutoUpdater\'', error);
             }
         }
 
@@ -76,12 +78,11 @@ export default class RegistryConfig extends EventEmitter {
    */
     async getServersListFromRegistry() {
         const defaultServers = await this.getRegistryEntry(`${BASE_REGISTRY_KEY_PATH}\\DefaultServerList`);
-        return defaultServers.flat(2).reduce((servers: Team[], server, index) => {
+        return defaultServers.flat(2).reduce((servers: Server[], server) => {
             if (server) {
                 servers.push({
                     name: (server as WindowsRegistry.RegistryItem).name,
                     url: (server as WindowsRegistry.RegistryItem).value,
-                    order: index,
                 });
             }
             return servers;
@@ -161,9 +162,9 @@ export default class RegistryConfig extends EventEmitter {
     }
 
     handleRegistryEntryError(e: Error, hive: string, key: string, name?: string, utf8?: boolean) {
-        log.verbose('There was an error accessing the registry for', {hive, key, name, utf8}, e);
+        log.debug('There was an error accessing the registry for', {hive, key, name, utf8}, e);
         if (utf8) {
-            log.verbose('Trying without UTF-8...', {hive, key, name});
+            log.debug('Trying without UTF-8...', {hive, key, name});
             return this.getRegistryEntryValues(hive, key, name, false);
         }
 

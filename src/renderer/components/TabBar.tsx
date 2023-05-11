@@ -8,18 +8,18 @@ import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDra
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 import classNames from 'classnames';
 
-import {Tab} from 'types/config';
+import {UniqueView} from 'types/config';
 
-import {getTabViewName, TabType, canCloseTab, getTabDisplayName} from 'common/tabs/TabView';
+import {ViewType, canCloseView, getViewDisplayName} from 'common/views/View';
 
 type Props = {
-    activeTabName?: string;
-    activeServerName?: string;
+    activeTabId?: string;
+    activeServerId?: string;
     id: string;
     isDarkMode: boolean;
-    onSelect: (name: string, index: number) => void;
-    onCloseTab: (name: string) => void;
-    tabs: Tab[];
+    onSelect: (id: string) => void;
+    onCloseTab: (id: string) => void;
+    tabs: UniqueView[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
     mentionCounts: Record<string, number>;
@@ -41,25 +41,21 @@ function getStyle(style?: DraggingStyle | NotDraggingStyle) {
 }
 
 class TabBar extends React.PureComponent<Props> {
-    onCloseTab = (name: string) => {
+    onCloseTab = (id: string) => {
         return (event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
-            this.props.onCloseTab(name);
+            this.props.onCloseTab(id);
         };
     }
 
     render() {
-        const orderedTabs = this.props.tabs.concat().sort((a, b) => a.order - b.order);
-        const tabs = orderedTabs.map((tab, orderedIndex) => {
-            const index = this.props.tabs.indexOf(tab);
-            const tabName = getTabViewName(this.props.activeServerName!, tab.name);
-
-            const sessionExpired = this.props.sessionsExpired[tabName];
-            const hasUnreads = this.props.unreadCounts[tabName];
+        const tabs = this.props.tabs.map((tab, index) => {
+            const sessionExpired = this.props.sessionsExpired[tab.id!];
+            const hasUnreads = this.props.unreadCounts[tab.id!];
 
             let mentionCount = 0;
-            if (this.props.mentionCounts[tabName] > 0) {
-                mentionCount = this.props.mentionCounts[tabName];
+            if (this.props.mentionCounts[tab.id!] > 0) {
+                mentionCount = this.props.mentionCounts[tab.id!];
             }
 
             let badgeDiv: React.ReactNode;
@@ -83,9 +79,9 @@ class TabBar extends React.PureComponent<Props> {
 
             return (
                 <Draggable
-                    key={index}
-                    draggableId={`teamTabItem${index}`}
-                    index={orderedIndex}
+                    key={tab.id}
+                    draggableId={`serverTabItem-${tab.id}`}
+                    index={index}
                 >
                     {(provided, snapshot) => {
                         if (!tab.isOpen) {
@@ -102,11 +98,11 @@ class TabBar extends React.PureComponent<Props> {
                             <NavItem
                                 ref={provided.innerRef}
                                 as='li'
-                                id={`teamTabItem${index}`}
+                                id={`serverTabItem${index}`}
                                 draggable={false}
-                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getTabDisplayName(tab.name as TabType)})}
-                                className={classNames('teamTabItem', {
-                                    active: this.props.activeTabName === tab.name,
+                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getViewDisplayName(tab.name as ViewType)})}
+                                className={classNames('serverTabItem', {
+                                    active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
                                 })}
                                 {...provided.draggableProps}
@@ -116,22 +112,22 @@ class TabBar extends React.PureComponent<Props> {
                                 <NavLink
                                     eventKey={index}
                                     draggable={false}
-                                    active={this.props.activeTabName === tab.name}
+                                    active={this.props.activeTabId === tab.id}
                                     disabled={this.props.tabsDisabled}
                                     onSelect={() => {
-                                        this.props.onSelect(tab.name, index);
+                                        this.props.onSelect(tab.id!);
                                     }}
                                 >
                                     <div className='TabBar-tabSeperator'>
                                         <FormattedMessage
                                             id={`common.tabs.${tab.name}`}
-                                            defaultMessage={getTabDisplayName(tab.name as TabType)}
+                                            defaultMessage={getViewDisplayName(tab.name as ViewType)}
                                         />
                                         { badgeDiv }
-                                        {canCloseTab(tab.name as TabType) &&
+                                        {canCloseView(tab.name as ViewType) &&
                                             <button
-                                                className='teamTabItem__close'
-                                                onClick={this.onCloseTab(tab.name)}
+                                                className='serverTabItem__close'
+                                                onClick={this.onCloseTab(tab.id!)}
                                             >
                                                 <i className='icon-close'/>
                                             </button>

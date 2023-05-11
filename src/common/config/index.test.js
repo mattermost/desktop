@@ -1,25 +1,22 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import fs from 'fs';
+
 import {Config} from 'common/config';
 
 const configPath = '/fake/config/path';
+const appName = 'app-name';
+const appPath = '/my/app/path';
 
-jest.mock('electron', () => ({
-    app: {
-        name: 'Mattermost',
-        getPath: jest.fn(),
-        getAppPath: () => '/path/to/app',
-    },
-    ipcMain: {
-        on: jest.fn(),
-    },
-    nativeTheme: {
-        shouldUseDarkColors: false,
-    },
+jest.mock('fs', () => ({
+    readFileSync: jest.fn(),
+    writeFileSync: jest.fn(),
+    existsSync: jest.fn(),
+    mkdirSync: jest.fn(),
 }));
 
-jest.mock('main/Validator', () => ({
+jest.mock('common/Validator', () => ({
     validateV0ConfigData: (configData) => (configData.version === 0 ? configData : null),
     validateV1ConfigData: (configData) => (configData.version === 1 ? configData : null),
     validateV2ConfigData: (configData) => (configData.version === 2 ? configData : null),
@@ -27,54 +24,54 @@ jest.mock('main/Validator', () => ({
     validateConfigData: (configData) => (configData.version === 3 ? configData : null),
 }));
 
-jest.mock('common/tabs/TabView', () => ({
-    getDefaultTeamWithTabsFromTeam: (value) => ({
+jest.mock('common/views/View', () => ({
+    getDefaultViewsForConfigServer: (value) => ({
         ...value,
         tabs: [
             {
-                name: 'tab1',
+                name: 'view1',
             },
             {
-                name: 'tab2',
+                name: 'view2',
             },
         ],
     }),
 }));
 
-const buildTeam = {
-    name: 'build-team-1',
+const buildServer = {
+    name: 'build-server-1',
     order: 0,
-    url: 'http://build-team-1.com',
+    url: 'http://build-server-1.com',
 };
 
-const buildTeamWithTabs = {
-    ...buildTeam,
+const buildServerWithViews = {
+    ...buildServer,
     tabs: [
         {
-            name: 'tab1',
+            name: 'view1',
         },
         {
-            name: 'tab2',
+            name: 'view2',
         },
     ],
 };
 
-const registryTeam = {
-    name: 'registry-team-1',
+const registryServer = {
+    name: 'registry-server-1',
     order: 0,
-    url: 'http://registry-team-1.com',
+    url: 'http://registry-server-1.com',
 };
 
-const team = {
-    name: 'team-1',
+const server = {
+    name: 'server-1',
     order: 0,
-    url: 'http://team-1.com',
+    url: 'http://server-1.com',
     tabs: [
         {
-            name: 'tab1',
+            name: 'view1',
         },
         {
-            name: 'tab2',
+            name: 'view2',
         },
     ],
 };
@@ -89,7 +86,7 @@ jest.mock('common/config/migrationPreferences', () => jest.fn());
 
 jest.mock('common/config/buildConfig', () => {
     return {
-        defaultTeams: [buildTeam],
+        defaultServers: [buildServer],
     };
 });
 
@@ -99,24 +96,27 @@ jest.mock('common/config/RegistryConfig', () => {
 
 describe('common/config', () => {
     it('should load buildConfig', () => {
-        const config = new Config(configPath);
-        expect(config.predefinedTeams).toContainEqual(buildTeamWithTabs);
+        const config = new Config();
+        config.reload = jest.fn();
+        config.init(configPath, appName, appPath);
+        expect(config.predefinedServers).toContainEqual(buildServerWithViews);
     });
 
     describe('loadRegistry', () => {
         it('should load the registry items and reload the config', () => {
-            const config = new Config(configPath);
+            const config = new Config();
             config.reload = jest.fn();
-            config.loadRegistry({teams: [registryTeam]});
+            config.init(configPath, appName, appPath);
+            config.onLoadRegistry({servers: [registryServer]});
             expect(config.reload).toHaveBeenCalled();
-            expect(config.predefinedTeams).toContainEqual({
-                ...registryTeam,
+            expect(config.predefinedServers).toContainEqual({
+                ...registryServer,
                 tabs: [
                     {
-                        name: 'tab1',
+                        name: 'view1',
                     },
                     {
-                        name: 'tab2',
+                        name: 'view2',
                     },
                 ],
             });
@@ -125,7 +125,8 @@ describe('common/config', () => {
 
     describe('reload', () => {
         it('should emit update event', () => {
-            const config = new Config(configPath);
+            const config = new Config();
+            config.init(configPath, appName, appPath);
             config.loadDefaultConfigData = jest.fn();
             config.loadBuildConfigData = jest.fn();
             config.loadLocalConfigFile = jest.fn();
@@ -134,6 +135,7 @@ describe('common/config', () => {
                 config.combinedData = {test: 'test'};
             });
             config.emit = jest.fn();
+            fs.existsSync.mockReturnValue(true);
 
             config.reload();
             expect(config.emit).toHaveBeenNthCalledWith(1, 'update', {test: 'test'});
@@ -142,7 +144,9 @@ describe('common/config', () => {
 
     describe('set', () => {
         it('should set an arbitrary value and save to local config data', () => {
-            const config = new Config(configPath);
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.localConfigData = {};
             config.regenerateCombinedConfigData = jest.fn().mockImplementation(() => {
                 config.combinedData = {...config.localConfigData};
@@ -155,24 +159,46 @@ describe('common/config', () => {
             expect(config.saveLocalConfigData).toHaveBeenCalled();
         });
 
-        it('should set teams without including predefined', () => {
-            const config = new Config(configPath);
+        it('should not allow servers to be set using this method', () => {
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
+            config.localConfigData = {teams: [server]};
+            config.regenerateCombinedConfigData = jest.fn().mockImplementation(() => {
+                config.combinedData = {...config.localConfigData};
+            });
+            config.saveLocalConfigData = jest.fn();
+
+            config.set('teams', [{...buildServerWithViews, name: 'build-team-2'}]);
+            expect(config.localConfigData.teams).not.toContainEqual({...buildServerWithViews, name: 'build-team-2'});
+            expect(config.localConfigData.teams).toContainEqual(server);
+        });
+    });
+
+    describe('setServers', () => {
+        it('should set only local servers', () => {
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.localConfigData = {};
             config.regenerateCombinedConfigData = jest.fn().mockImplementation(() => {
                 config.combinedData = {...config.localConfigData};
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.set('teams', [{...buildTeamWithTabs, name: 'build-team-2'}, team]);
-            expect(config.localConfigData.teams).not.toContainEqual({...buildTeamWithTabs, name: 'build-team-2'});
-            expect(config.localConfigData.teams).toContainEqual(team);
-            expect(config.predefinedTeams).toContainEqual({...buildTeamWithTabs, name: 'build-team-2'});
+            config.setServers([{...buildServerWithViews, name: 'build-server-2'}, server], 0);
+            expect(config.localConfigData.teams).toContainEqual({...buildServerWithViews, name: 'build-server-2'});
+            expect(config.localConfigData.lastActiveTeam).toBe(0);
+            expect(config.regenerateCombinedConfigData).toHaveBeenCalled();
+            expect(config.saveLocalConfigData).toHaveBeenCalled();
         });
     });
 
     describe('saveLocalConfigData', () => {
         it('should emit update event on save', () => {
-            const config = new Config(configPath);
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.localConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
             config.writeFile = jest.fn().mockImplementation((configFilePath, data, callback) => {
@@ -185,7 +211,9 @@ describe('common/config', () => {
         });
 
         it('should emit error when fs.writeSync throws an error', () => {
-            const config = new Config(configPath);
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.localConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
             config.writeFile = jest.fn().mockImplementation((configFilePath, data, callback) => {
@@ -198,7 +226,9 @@ describe('common/config', () => {
         });
 
         it('should emit error when writeFile throws an error', () => {
-            const config = new Config(configPath);
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.localConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
             config.writeFile = jest.fn().mockImplementation(() => {
@@ -212,7 +242,9 @@ describe('common/config', () => {
 
         it('should retry when file is locked', () => {
             const testFunc = jest.fn();
-            const config = new Config(configPath);
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.localConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
             config.writeFile = jest.fn().mockImplementation((configFilePath, data, callback) => {
@@ -228,37 +260,41 @@ describe('common/config', () => {
 
     describe('loadLocalConfigFile', () => {
         it('should use defaults if readFileSync fails', () => {
-            const config = new Config(configPath);
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.defaultConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
-            config.readFileSync = jest.fn().mockImplementation(() => {
+            fs.existsSync.mockReturnValue(true);
+            fs.readFileSync.mockImplementation(() => {
                 throw new Error('Error message');
             });
-            config.writeFileSync = jest.fn();
+            config.writeFile = jest.fn();
 
             const configData = config.loadLocalConfigFile();
             expect(configData).toStrictEqual({test: 'test'});
         });
 
         it('should use defaults if validation fails', () => {
-            const config = new Config(configPath);
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.defaultConfigData = {test: 'test'};
             config.combinedData = {...config.localConfigData};
-            config.readFileSync = jest.fn().mockImplementation(() => {
-                return {version: -1};
-            });
-            config.writeFileSync = jest.fn();
+            fs.existsSync.mockReturnValue(true);
+            fs.readFileSync.mockReturnValue('{"version": -1}');
+            config.writeFile = jest.fn();
 
             const configData = config.loadLocalConfigFile();
             expect(configData).toStrictEqual({test: 'test'});
         });
 
         it('should return config data if valid', () => {
-            const config = new Config(configPath);
-            config.readFileSync = jest.fn().mockImplementation(() => {
-                return {version: 3};
-            });
-            config.writeFileSync = jest.fn();
+            const config = new Config();
+            config.init(configPath, appName, appPath);
+            fs.existsSync.mockReturnValue(true);
+            fs.readFileSync.mockReturnValue('{"version": 3}');
+            config.writeFile = jest.fn();
 
             const configData = config.loadLocalConfigFile();
             expect(configData).toStrictEqual({version: 3});
@@ -267,7 +303,9 @@ describe('common/config', () => {
 
     describe('checkForConfigUpdates', () => {
         it('should upgrade to latest version', () => {
-            const config = new Config(configPath);
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.defaultConfigData = {version: 10};
             config.writeFileSync = jest.fn();
 
@@ -278,8 +316,9 @@ describe('common/config', () => {
 
     describe('regenerateCombinedConfigData', () => {
         it('should combine config from all sources', () => {
-            const config = new Config(configPath);
-            config.predefinedTeams = [];
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.useNativeWindow = false;
             config.defaultConfigData = {defaultSetting: 'default', otherDefaultSetting: 'default'};
             config.localConfigData = {otherDefaultSetting: 'local', localSetting: 'local', otherLocalSetting: 'local'};
@@ -289,9 +328,7 @@ describe('common/config', () => {
             config.regenerateCombinedConfigData();
             config.combinedData.darkMode = false;
             expect(config.combinedData).toStrictEqual({
-                teams: [],
-                registryTeams: [],
-                appName: 'Mattermost',
+                appName: 'app-name',
                 useNativeWindow: false,
                 darkMode: false,
                 otherBuildSetting: 'registry',
@@ -304,82 +341,38 @@ describe('common/config', () => {
             });
         });
 
-        it('should combine teams from all sources and filter duplicates', () => {
-            const config = new Config(configPath);
+        it('should not include any servers in the combined config', () => {
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
             config.defaultConfigData = {};
             config.localConfigData = {};
             config.buildConfigData = {enableServerManagement: true};
             config.registryConfigData = {};
-            config.predefinedTeams = [team, team];
+            config.predefinedServers.push(server, server);
             config.useNativeWindow = false;
             config.localConfigData = {teams: [
-                team,
+                server,
                 {
-                    ...team,
-                    name: 'local-team-2',
-                    url: 'http://local-team-2.com',
+                    ...server,
+                    name: 'local-server-2',
+                    url: 'http://local-server-2.com',
                 },
                 {
-                    ...team,
-                    name: 'local-team-1',
+                    ...server,
+                    name: 'local-server-1',
                     order: 1,
-                    url: 'http://local-team-1.com',
+                    url: 'http://local-server-1.com',
                 },
             ]};
 
             config.regenerateCombinedConfigData();
             config.combinedData.darkMode = false;
             expect(config.combinedData).toStrictEqual({
-                teams: [
-                    team,
-                    {
-                        ...team,
-                        name: 'local-team-2',
-                        order: 1,
-                        url: 'http://local-team-2.com',
-                    },
-                    {
-                        ...team,
-                        name: 'local-team-1',
-                        order: 2,
-                        url: 'http://local-team-1.com',
-                    },
-                ],
-                registryTeams: [],
-                appName: 'Mattermost',
+                appName: 'app-name',
                 useNativeWindow: false,
                 darkMode: false,
                 enableServerManagement: true,
-            });
-        });
-
-        it('should not include local teams if enableServerManagement is false', () => {
-            const config = new Config(configPath);
-            config.defaultConfigData = {};
-            config.localConfigData = {};
-            config.buildConfigData = {enableServerManagement: false};
-            config.registryConfigData = {};
-            config.predefinedTeams = [team, team];
-            config.useNativeWindow = false;
-            config.localConfigData = {teams: [
-                team,
-                {
-                    ...team,
-                    name: 'local-team-1',
-                    order: 1,
-                    url: 'http://local-team-1.com',
-                },
-            ]};
-
-            config.regenerateCombinedConfigData();
-            config.combinedData.darkMode = false;
-            expect(config.combinedData).toStrictEqual({
-                teams: [team],
-                registryTeams: [],
-                appName: 'Mattermost',
-                useNativeWindow: false,
-                darkMode: false,
-                enableServerManagement: false,
             });
         });
     });

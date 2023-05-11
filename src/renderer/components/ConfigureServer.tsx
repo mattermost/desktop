@@ -5,7 +5,10 @@ import React, {useState, useCallback, useEffect} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
-import {TeamWithIndex} from 'types/config';
+import {UniqueServer} from 'types/config';
+
+import {isValidURL, parseURL} from 'common/utils/url';
+import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 
 import womanLaptop from 'renderer/assets/svg/womanLaptop.svg';
 
@@ -14,16 +17,13 @@ import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
 
-import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
-import urlUtils from 'common/utils/url';
-
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/ConfigureServer.scss';
 import 'renderer/css/components/LoadingScreen.css';
 
 type ConfigureServerProps = {
-    currentTeams: TeamWithIndex[];
-    team?: TeamWithIndex;
+    currentServers: UniqueServer[];
+    server?: UniqueServer;
     mobileView?: boolean;
     darkMode?: boolean;
     messageTitle?: string;
@@ -32,12 +32,12 @@ type ConfigureServerProps = {
     alternateLinkMessage?: string;
     alternateLinkText?: string;
     alternateLinkURL?: string;
-    onConnect: (data: TeamWithIndex) => void;
+    onConnect: (data: UniqueServer) => void;
 };
 
 function ConfigureServer({
-    currentTeams,
-    team,
+    currentServers,
+    server,
     mobileView,
     darkMode,
     messageTitle,
@@ -53,9 +53,8 @@ function ConfigureServer({
     const {
         name: prevName,
         url: prevURL,
-        order = 0,
-        index = NaN,
-    } = team || {};
+        id,
+    } = server || {};
 
     const [transition, setTransition] = useState<'inFromRight' | 'outToLeft'>();
     const [name, setName] = useState(prevName || '');
@@ -73,7 +72,7 @@ function ConfigureServer({
     }, []);
 
     const checkProtocolInURL = (checkURL: string): Promise<string> => {
-        if (urlUtils.startsWithProtocol(checkURL)) {
+        if (isValidURL(checkURL)) {
             return Promise.resolve(checkURL);
         }
         return window.desktop.modals.pingDomain(checkURL).
@@ -93,14 +92,14 @@ function ConfigureServer({
 
         if (!newName) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.nameRequired',
+                id: 'renderer.components.newServerModal.error.nameRequired',
                 defaultMessage: 'Name is required.',
             });
         }
 
-        if (currentTeams.find(({name: existingName}) => existingName === newName)) {
+        if (currentServers.find(({name: existingName}) => existingName === newName)) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.serverNameExists',
+                id: 'renderer.components.newServerModal.error.serverNameExists',
                 defaultMessage: 'A server with the same name already exists.',
             });
         }
@@ -111,28 +110,28 @@ function ConfigureServer({
     const validateURL = async (fullURL: string) => {
         if (!fullURL) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.urlRequired',
+                id: 'renderer.components.newServerModal.error.urlRequired',
                 defaultMessage: 'URL is required.',
             });
         }
 
-        if (!urlUtils.startsWithProtocol(fullURL)) {
+        if (!parseURL(fullURL)) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.urlNeedsHttp',
-                defaultMessage: 'URL should start with http:// or https://.',
-            });
-        }
-
-        if (!urlUtils.isValidURL(fullURL)) {
-            return formatMessage({
-                id: 'renderer.components.newTeamModal.error.urlIncorrectFormatting',
+                id: 'renderer.components.newServerModal.error.urlIncorrectFormatting',
                 defaultMessage: 'URL is not formatted correctly.',
             });
         }
 
-        if (currentTeams.find(({url: existingURL}) => existingURL === fullURL)) {
+        if (!isValidURL(fullURL)) {
             return formatMessage({
-                id: 'renderer.components.newTeamModal.error.serverUrlExists',
+                id: 'renderer.components.newServerModal.error.urlNeedsHttp',
+                defaultMessage: 'URL should start with http:// or https://.',
+            });
+        }
+
+        if (currentServers.find(({url: existingURL}) => parseURL(existingURL)?.toString === parseURL(fullURL)?.toString())) {
+            return formatMessage({
+                id: 'renderer.components.newServerModal.error.serverUrlExists',
                 defaultMessage: 'A server with the same URL already exists.',
             });
         }
@@ -200,8 +199,7 @@ function ConfigureServer({
             onConnect({
                 url: fullURL,
                 name,
-                index,
-                order,
+                id,
             });
         }, MODAL_TRANSITION_TIMEOUT);
     };

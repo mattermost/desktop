@@ -5,7 +5,7 @@
 
 import * as Validator from './Validator';
 
-describe('main/Validator', () => {
+describe('common/Validator', () => {
     describe('validateV0ConfigData', () => {
         const config = {url: 'http://server-1.com'};
 
@@ -153,7 +153,7 @@ describe('main/Validator', () => {
             version: 3,
         };
 
-        it('should ensure messaging tab is open', () => {
+        it('should ensure messaging view is open', () => {
             const modifiedConfig = {
                 ...config,
                 teams: [

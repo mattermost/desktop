@@ -4,7 +4,7 @@
 
 import fs from 'fs';
 
-import {validateCertificateStore} from './Validator';
+import {validateCertificateStore} from 'common/Validator';
 
 import {CertificateStore} from './certificateStore';
 
@@ -21,7 +21,7 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('./Validator', () => ({
+jest.mock('common/Validator', () => ({
     validateCertificateStore: jest.fn(),
 }));
 
@@ -65,26 +65,26 @@ describe('main/certificateStore', () => {
         it('should return true for stored matching certificate', () => {
             certificateStore = new CertificateStore('someFilename');
 
-            expect(certificateStore.isTrusted('https://server-1.com', {
+            expect(certificateStore.isTrusted(new URL('https://server-1.com'), {
                 data: 'someRandomData',
                 issuerName: 'someIssuer',
             })).toBe(true);
         });
 
         it('should return false for missing url', () => {
-            expect(certificateStore.isTrusted('https://server-3.com', {
+            expect(certificateStore.isTrusted(new URL('https://server-3.com'), {
                 data: 'someRandomData',
                 issuerName: 'someIssuer',
             })).toBe(false);
         });
 
         it('should return false for unmatched cert', () => {
-            expect(certificateStore.isTrusted('https://server-1.com', {
+            expect(certificateStore.isTrusted(new URL('https://server-1.com'), {
                 data: 'someOtherRandomData',
                 issuerName: 'someIssuer',
             })).toBe(false);
 
-            expect(certificateStore.isTrusted('https://server-1.com', {
+            expect(certificateStore.isTrusted(new URL('https://server-1.com'), {
                 data: 'someRandomData',
                 issuerName: 'someOtherIssuer',
             })).toBe(false);
@@ -99,8 +99,8 @@ describe('main/certificateStore', () => {
             };
 
             certificateStore = new CertificateStore('someFilename');
-            certificateStore.add(certOrigin, certData);
-            expect(certificateStore.isTrusted(wssCertOrigin, certData)).toBe(true);
+            certificateStore.add(new URL(certOrigin), certData);
+            expect(certificateStore.isTrusted(new URL(wssCertOrigin), certData)).toBe(true);
         });
     });
 
@@ -113,14 +113,14 @@ describe('main/certificateStore', () => {
         });
 
         it('should return true for explicitly untrusted cert', () => {
-            expect(certificateStore.isExplicitlyUntrusted('https://server-2.com', {
+            expect(certificateStore.isExplicitlyUntrusted(new URL('https://server-2.com'), {
                 data: 'someRandomData',
                 issuerName: 'someIssuer',
             })).toBe(true);
         });
 
         it('should return false for trusted cert', () => {
-            expect(certificateStore.isExplicitlyUntrusted('https://server-1.com', {
+            expect(certificateStore.isExplicitlyUntrusted(new URL('https://server-1.com'), {
                 data: 'someRandomData',
                 issuerName: 'someIssuer',
             })).toBe(false);

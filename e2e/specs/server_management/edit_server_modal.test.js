@@ -21,9 +21,9 @@ describe('EditServerModal', function desc() {
 
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-        await mainView.click('.TeamDropdownButton');
-        await dropdownView.hover('.TeamDropdown .TeamDropdown__button:nth-child(1)');
-        await dropdownView.click('.TeamDropdown .TeamDropdown__button:nth-child(1) button.TeamDropdown__button-edit');
+        await mainView.click('.ServerDropdownButton');
+        await dropdownView.hover('.ServerDropdown .ServerDropdown__button:nth-child(1)');
+        await dropdownView.click('.ServerDropdown .ServerDropdown__button:nth-child(1) button.ServerDropdown__button-edit');
 
         editServerView = await this.app.waitForEvent('window', {
             predicate: (window) => window.url().includes('editServer'),
@@ -39,7 +39,7 @@ describe('EditServerModal', function desc() {
 
     let editServerView;
 
-    it('should not edit team when Cancel is pressed', async () => {
+    it('should not edit server when Cancel is pressed', async () => {
         await editServerView.click('#cancelNewServerModal');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
@@ -69,7 +69,7 @@ describe('EditServerModal', function desc() {
         });
     });
 
-    it('MM-T4391_1 should not edit team when Save is pressed but nothing edited', async () => {
+    it('MM-T4391_1 should not edit server when Save is pressed but nothing edited', async () => {
         await editServerView.click('#saveNewServerModal');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
@@ -99,27 +99,27 @@ describe('EditServerModal', function desc() {
         });
     });
 
-    it('MM-T2826_3 should not edit team if an invalid server address has been set', async () => {
-        await editServerView.type('#teamUrlInput', 'superInvalid url');
+    it('MM-T2826_3 should not edit server if an invalid server address has been set', async () => {
+        await editServerView.type('#serverUrlInput', 'superInvalid url');
         await editServerView.click('#saveNewServerModal');
-        const existing = await editServerView.isVisible('#teamUrlInput.is-invalid');
+        const existing = await editServerView.isVisible('#serverUrlInput.is-invalid');
         existing.should.be.true;
     });
 
-    it('should not edit team if another server with the same name or URL exists', async () => {
-        await editServerView.fill('#teamNameInput', config.teams[1].name);
+    it('should not edit server if another server with the same name or URL exists', async () => {
+        await editServerView.fill('#serverNameInput', config.teams[1].name);
         await editServerView.click('#saveNewServerModal');
-        let existing = await editServerView.isVisible('#teamNameInput.is-invalid');
+        let existing = await editServerView.isVisible('#serverNameInput.is-invalid');
         existing.should.be.true;
 
-        await editServerView.fill('#teamNameInput', 'NewTestTeam');
-        await editServerView.fill('#teamUrlInput', config.teams[1].url);
-        existing = await editServerView.isVisible('#teamUrlInput.is-invalid');
+        await editServerView.fill('#serverNameInput', 'NewTestServer');
+        await editServerView.fill('#serverUrlInput', config.teams[1].url);
+        existing = await editServerView.isVisible('#serverUrlInput.is-invalid');
         existing.should.be.true;
     });
 
-    it('MM-T4391_2 should edit team when Save is pressed and name edited', async () => {
-        await editServerView.fill('#teamNameInput', 'NewTestTeam');
+    it('MM-T4391_2 should edit server when Save is pressed and name edited', async () => {
+        await editServerView.fill('#serverNameInput', 'NewTestServer');
         await editServerView.click('#saveNewServerModal');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
@@ -148,7 +148,7 @@ describe('EditServerModal', function desc() {
             lastActiveTab: 0,
         });
         savedConfig.teams.should.deep.contain({
-            name: 'NewTestTeam',
+            name: 'NewTestServer',
             url: env.exampleURL,
             order: 0,
             tabs: [
@@ -170,8 +170,8 @@ describe('EditServerModal', function desc() {
         });
     });
 
-    it('MM-T4391_3 should edit team when Save is pressed and URL edited', async () => {
-        await editServerView.fill('#teamUrlInput', 'http://google.com');
+    it('MM-T4391_3 should edit server when Save is pressed and URL edited', async () => {
+        await editServerView.fill('#serverUrlInput', 'http://google.com');
         await editServerView.click('#saveNewServerModal');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
@@ -201,7 +201,7 @@ describe('EditServerModal', function desc() {
         });
         savedConfig.teams.should.deep.contain({
             name: 'example',
-            url: 'http://google.com',
+            url: 'http://google.com/',
             order: 0,
             tabs: [
                 {
@@ -222,9 +222,9 @@ describe('EditServerModal', function desc() {
         });
     });
 
-    it('MM-T4391_4 should edit team when Save is pressed and both edited', async () => {
-        await editServerView.fill('#teamNameInput', 'NewTestTeam');
-        await editServerView.fill('#teamUrlInput', 'http://google.com');
+    it('MM-T4391_4 should edit server when Save is pressed and both edited', async () => {
+        await editServerView.fill('#serverNameInput', 'NewTestServer');
+        await editServerView.fill('#serverUrlInput', 'http://google.com');
         await editServerView.click('#saveNewServerModal');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
@@ -253,8 +253,8 @@ describe('EditServerModal', function desc() {
             lastActiveTab: 0,
         });
         savedConfig.teams.should.deep.contain({
-            name: 'NewTestTeam',
-            url: 'http://google.com',
+            name: 'NewTestServer',
+            url: 'http://google.com/',
             order: 0,
             tabs: [
                 {

@@ -4,7 +4,8 @@
 import {app, dialog} from 'electron';
 
 import CertificateStore from 'main/certificateStore';
-import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
+import ViewManager from 'main/views/viewManager';
 
 import {handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
 import {getDeeplinkingURL, openDeepLink} from 'main/app/utils';
@@ -18,13 +19,6 @@ jest.mock('electron', () => ({
     dialog: {
         showMessageBox: jest.fn(),
     },
-}));
-
-jest.mock('common/config', () => ({
-    teams: [{
-        name: 'test-team',
-        url: 'http://server-1.com',
-    }],
 }));
 
 jest.mock('main/app/utils', () => ({
@@ -44,13 +38,13 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 jest.mock('main/tray/tray', () => ({}));
-jest.mock('main/windows/windowManager', () => ({
-    getMainWindow: jest.fn(),
-    getViewNameByWebContentsId: jest.fn(),
-    getServerNameByWebContentsId: jest.fn(),
-    viewManager: {
-        views: new Map(),
-    },
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+    show: jest.fn(),
+}));
+jest.mock('main/views/viewManager', () => ({
+    getView: jest.fn(),
+    getViewByWebContentsId: jest.fn(),
 }));
 
 describe('main/app/app', () => {
@@ -68,7 +62,6 @@ describe('main/app/app', () => {
         });
 
         afterEach(() => {
-            WindowManager.viewManager.views.clear();
             jest.resetAllMocks();
         });
 
@@ -101,10 +94,19 @@ describe('main/app/app', () => {
         const mainWindow = {};
         const promise = Promise.resolve({});
         const certificate = {};
+        const view = {
+            view: {
+                server: {
+                    name: 'test-server',
+                    url: new URL(testURL),
+                },
+            },
+            load: jest.fn(),
+        };
 
         beforeEach(() => {
-            WindowManager.getMainWindow.mockReturnValue(mainWindow);
-            WindowManager.getServerNameByWebContentsId.mockReturnValue('test-team');
+            MainWindow.get.mockReturnValue(mainWindow);
+            ViewManager.getViewByWebContentsId.mockReturnValue(view);
         });
 
         afterEach(() => {
@@ -157,18 +159,15 @@ describe('main/app/app', () => {
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
             expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
-            expect(CertificateStore.add).toHaveBeenCalledWith('http://server-1.com', certificate);
+            expect(CertificateStore.add).toHaveBeenCalledWith(new URL('http://server-1.com'), certificate);
             expect(CertificateStore.save).toHaveBeenCalled();
         });
 
-        it('should load URL using MattermostView when trusting certificate', async () => {
+        it('should load URL using MattermostBrowserView when trusting certificate', async () => {
             dialog.showMessageBox.mockResolvedValue({response: 0});
-            const load = jest.fn();
-            WindowManager.viewManager.views.set('view-name', {load});
-            WindowManager.getViewNameByWebContentsId.mockReturnValue('view-name');
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
-            expect(load).toHaveBeenCalledWith(testURL);
+            expect(view.load).toHaveBeenCalledWith(testURL);
         });
 
         it('should explicitly untrust if user selects More Details and then cancel with the checkbox checked', async () => {
@@ -176,7 +175,7 @@ describe('main/app/app', () => {
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
             expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
-            expect(CertificateStore.add).toHaveBeenCalledWith('http://server-1.com', certificate, true);
+            expect(CertificateStore.add).toHaveBeenCalledWith(new URL('http://server-1.com'), certificate, true);
             expect(CertificateStore.save).toHaveBeenCalled();
         });
     });

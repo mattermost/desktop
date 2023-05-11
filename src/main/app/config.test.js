@@ -5,12 +5,12 @@ import {app} from 'electron';
 
 import {RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
+import {setLoggingLevel} from 'common/log';
 
 import {handleConfigUpdate} from 'main/app/config';
 import {handleMainWindowIsShown} from 'main/app/intercom';
-import {setLoggingLevel} from 'main/app/utils';
 
-import WindowManager from 'main/windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
 import AutoLauncher from 'main/AutoLauncher';
 
 jest.mock('electron', () => ({
@@ -28,7 +28,6 @@ jest.mock('electron', () => ({
 jest.mock('main/app/utils', () => ({
     handleUpdateMenuEvent: jest.fn(),
     updateSpellCheckerLocales: jest.fn(),
-    updateServerInfos: jest.fn(),
     setLoggingLevel: jest.fn(),
 }));
 jest.mock('main/app/intercom', () => ({
@@ -44,10 +43,12 @@ jest.mock('main/badge', () => ({
 jest.mock('main/tray/tray', () => ({
     refreshTrayImages: jest.fn(),
 }));
-jest.mock('main/windows/windowManager', () => ({
-    handleUpdateConfig: jest.fn(),
+jest.mock('main/views/viewManager', () => ({
+    reloadConfiguration: jest.fn(),
+}));
+jest.mock('main/views/loadingScreen', () => ({}));
+jest.mock('main/windows/mainWindow', () => ({
     sendToRenderer: jest.fn(),
-    initializeCurrentServerName: jest.fn(),
 }));
 
 describe('main/app/config', () => {
@@ -63,11 +64,11 @@ describe('main/app/config', () => {
 
         it('should reload renderer config only when app is ready', () => {
             handleConfigUpdate({});
-            expect(WindowManager.sendToRenderer).not.toBeCalled();
+            expect(MainWindow.sendToRenderer).not.toBeCalled();
 
             app.isReady.mockReturnValue(true);
             handleConfigUpdate({});
-            expect(WindowManager.sendToRenderer).toBeCalledWith(RELOAD_CONFIGURATION);
+            expect(MainWindow.sendToRenderer).toBeCalledWith(RELOAD_CONFIGURATION);
         });
 
         it('should set download path if applicable', () => {
@@ -92,14 +93,14 @@ describe('main/app/config', () => {
             });
         });
 
-        it('should recheck teams after config update if registry data is pulled in', () => {
+        it('should recheck servers after config update if registry data is pulled in', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
             });
             Config.registryConfigData = {};
 
-            handleConfigUpdate({teams: []});
+            handleConfigUpdate({servers: []});
             expect(handleMainWindowIsShown).toHaveBeenCalled();
 
             Object.defineProperty(process, 'platform', {

@@ -7,7 +7,9 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 
 import {DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_HEIGHT} from 'common/utils/constants';
 
-import DownloadsDropdownView from './downloadsDropdownView';
+import MainWindow from 'main/windows/mainWindow';
+
+import {DownloadsDropdownView} from './downloadsDropdownView';
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
@@ -59,42 +61,38 @@ jest.mock('electron', () => {
         Notification: NotificationMock,
     };
 });
-jest.mock('main/windows/windowManager', () => ({
+jest.mock('main/downloadsManager', () => ({
+    getDownloads: jest.fn(),
+    onOpen: jest.fn(),
+    onClose: jest.fn(),
+}));
+jest.mock('main/windows/mainWindow', () => ({
+    on: jest.fn(),
+    get: jest.fn(),
+    getBounds: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
 
 describe('main/views/DownloadsDropdownView', () => {
     beforeEach(() => {
+        MainWindow.get.mockReturnValue({addBrowserView: jest.fn(), setTopBrowserView: jest.fn()});
         getDarwinDoNotDisturb.mockReturnValue(false);
     });
     describe('getBounds', () => {
         it('should be placed far right when window is large enough', () => {
-            const window = {
-                getContentBounds: () => ({width: 800, height: 600, x: 0, y: 0}),
-                addBrowserView: jest.fn(),
-                setTopBrowserView: jest.fn(),
-            };
-            const downloadsDropdownView = new DownloadsDropdownView(window, {}, false);
-            expect(downloadsDropdownView.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT)).toStrictEqual({x: 800 - DOWNLOADS_DROPDOWN_FULL_WIDTH, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_HEIGHT});
+            const downloadsDropdownView = new DownloadsDropdownView();
+            expect(downloadsDropdownView.getBounds(800, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT)).toStrictEqual({x: 800 - DOWNLOADS_DROPDOWN_FULL_WIDTH, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_HEIGHT});
         });
         it('should be placed left if window is very small', () => {
-            const window = {
-                getContentBounds: () => ({width: 500, height: 400, x: 0, y: 0}),
-                addBrowserView: jest.fn(),
-                setTopBrowserView: jest.fn(),
-            };
-            const downloadsDropdownView = new DownloadsDropdownView(window, {}, false);
-            expect(downloadsDropdownView.getBounds(DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT)).toStrictEqual({x: 0, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_HEIGHT});
+            const downloadsDropdownView = new DownloadsDropdownView();
+            expect(downloadsDropdownView.getBounds(500, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT)).toStrictEqual({x: 0, y: TAB_BAR_HEIGHT, width: DOWNLOADS_DROPDOWN_FULL_WIDTH, height: DOWNLOADS_DROPDOWN_HEIGHT});
         });
     });
 
     it('should change the view bounds based on open/closed state', () => {
-        const window = {
-            getContentBounds: () => ({width: 800, height: 600, x: 0, y: 0}),
-            addBrowserView: jest.fn(),
-            setTopBrowserView: jest.fn(),
-        };
-        const downloadsDropdownView = new DownloadsDropdownView(window, {}, false);
+        MainWindow.getBounds.mockReturnValue({width: 800, height: 600, x: 0, y: 0});
+        const downloadsDropdownView = new DownloadsDropdownView();
+        downloadsDropdownView.init();
         downloadsDropdownView.bounds = {width: 400, height: 300};
         downloadsDropdownView.handleOpen();
         expect(downloadsDropdownView.view.setBounds).toBeCalledWith(downloadsDropdownView.bounds);

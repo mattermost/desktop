@@ -4,17 +4,17 @@
 'use strict';
 import cp from 'child_process';
 
-import {Notification, shell} from 'electron';
+import {Notification, shell, app} from 'electron';
 
 import {getFocusAssist} from 'windows-focus-assist';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {PLAY_SOUND} from 'common/communication';
-import {TAB_MESSAGING} from 'common/tabs/TabView';
+import Config from 'common/config';
 
 import {localizeMessage} from 'main/i18nManager';
-
-import WindowManager from '../windows/windowManager';
+import MainWindow from 'main/windows/mainWindow';
+import ViewManager from 'main/views/viewManager';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 
@@ -55,6 +55,9 @@ jest.mock('electron', () => {
     return {
         app: {
             getAppPath: () => '/path/to/app',
+            dock: {
+                bounce: jest.fn(),
+            },
         },
         Notification: NotificationMock,
         shell: {
@@ -70,24 +73,45 @@ jest.mock('windows-focus-assist', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
-
-jest.mock('../windows/windowManager', () => ({
-    getServerNameByWebContentsId: () => 'server_name',
+jest.mock('../views/viewManager', () => ({
+    getViewByWebContentsId: () => ({
+        id: 'server_id',
+        view: {
+            server: {
+                name: 'server_name',
+            },
+        },
+    }),
+    showById: jest.fn(),
+}));
+jest.mock('../windows/mainWindow', () => ({
+    get: jest.fn(),
     sendToRenderer: jest.fn(),
-    flashFrame: jest.fn(),
-    switchTab: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
+jest.mock('common/config', () => ({}));
+
 describe('main/notifications', () => {
     describe('displayMention', () => {
+        const mainWindow = {
+            flashFrame: jest.fn(),
+        };
+
         beforeEach(() => {
             Notification.isSupported.mockImplementation(() => true);
             getFocusAssist.mockReturnValue({value: false});
             getDarwinDoNotDisturb.mockReturnValue(false);
+            Config.notifications = {};
+            MainWindow.get.mockReturnValue(mainWindow);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            Config.notifications = {};
         });
 
         it('should do nothing when Notification is not supported', () => {
@@ -164,7 +188,7 @@ describe('main/notifications', () => {
                 {id: 1},
                 {soundName: 'test_sound'},
             );
-            expect(WindowManager.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
         });
 
         it('should remove existing notification from the same channel/team on windows', () => {
@@ -207,7 +231,7 @@ describe('main/notifications', () => {
             });
         });
 
-        it('should switch tab when clicking on notification', () => {
+        it('should switch view when clicking on notification', () => {
             displayMention(
                 'click_test',
                 'mention_click_body',
@@ -220,11 +244,108 @@ describe('main/notifications', () => {
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
-            expect(WindowManager.switchTab).toHaveBeenCalledWith('server_name', TAB_MESSAGING);
+            expect(ViewManager.showById).toHaveBeenCalledWith('server_id');
+        });
+
+        it('linux/windows - should not flash frame when config item is not set', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            displayMention(
+                'click_test',
+                'mention_click_body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1, send: jest.fn()},
+                {},
+            );
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(mainWindow.flashFrame).not.toBeCalled();
+        });
+
+        it('linux/windows - should flash frame when config item is set', () => {
+            Config.notifications = {
+                flashWindow: true,
+            };
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            displayMention(
+                'click_test',
+                'mention_click_body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1, send: jest.fn()},
+                {},
+            );
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(mainWindow.flashFrame).toBeCalledWith(true);
+        });
+
+        it('mac - should not bounce icon when config item is not set', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+            displayMention(
+                'click_test',
+                'mention_click_body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1, send: jest.fn()},
+                {},
+            );
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(app.dock.bounce).not.toBeCalled();
+        });
+
+        it('mac - should bounce icon when config item is set', () => {
+            Config.notifications = {
+                bounceIcon: true,
+                bounceIconType: 'critical',
+            };
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+            displayMention(
+                'click_test',
+                'mention_click_body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1, send: jest.fn()},
+                {},
+            );
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            expect(app.dock.bounce).toHaveBeenCalledWith('critical');
         });
     });
 
     describe('displayDownloadCompleted', () => {
+        beforeEach(() => {
+            Notification.isSupported.mockImplementation(() => true);
+            getFocusAssist.mockReturnValue({value: false});
+            getDarwinDoNotDisturb.mockReturnValue(false);
+        });
+
         it('should open file when clicked', () => {
             getDarwinDoNotDisturb.mockReturnValue(false);
             localizeMessage.mockReturnValue('test_filename');

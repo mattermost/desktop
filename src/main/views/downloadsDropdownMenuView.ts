@@ -1,10 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {BrowserView, BrowserWindow, ipcMain, IpcMainEvent} from 'electron';
+import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
-import log from 'electron-log';
-
-import {CombinedConfig} from 'types/config';
 import {CoordinatesToJsonType, DownloadedItem, DownloadsMenuOpenEventPayload} from 'types/downloads';
 
 import {
@@ -14,12 +11,16 @@ import {
     DOWNLOADS_DROPDOWN_MENU_OPEN_FILE,
     DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER,
     EMIT_CONFIGURATION,
+    MAIN_WINDOW_CREATED,
+    MAIN_WINDOW_RESIZED,
     OPEN_DOWNLOADS_DROPDOWN_MENU,
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
 } from 'common/communication';
+import {Logger} from 'common/log';
+import Config from 'common/config';
 import {
     DOWNLOADS_DROPDOWN_FULL_WIDTH,
     DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT,
@@ -27,29 +28,42 @@ import {
     TAB_BAR_HEIGHT,
 } from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
-
-import WindowManager from '../windows/windowManager';
 import downloadsManager from 'main/downloadsManager';
+import MainWindow from 'main/windows/mainWindow';
 
-export default class DownloadsDropdownMenuView {
-    open: boolean;
-    view: BrowserView;
-    bounds?: Electron.Rectangle;
-    item?: DownloadedItem;
-    coordinates?: CoordinatesToJsonType;
-    darkMode: boolean;
-    window: BrowserWindow;
-    windowBounds: Electron.Rectangle;
+const log = new Logger('DownloadsDropdownMenuView');
 
-    constructor(window: BrowserWindow, darkMode: boolean) {
+export class DownloadsDropdownMenuView {
+    private open: boolean;
+    private view?: BrowserView;
+    private bounds?: Electron.Rectangle;
+    private item?: DownloadedItem;
+    private coordinates?: CoordinatesToJsonType;
+    private windowBounds?: Electron.Rectangle;
+
+    constructor() {
         this.open = false;
-        this.item = undefined;
-        this.coordinates = undefined;
-        this.window = window;
-        this.darkMode = darkMode;
 
-        this.windowBounds = this.window.getContentBounds();
-        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
+        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
+        MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
+        ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
+        ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
+        ipcMain.on(TOGGLE_DOWNLOADS_DROPDOWN_MENU, this.handleToggle);
+        ipcMain.on(EMIT_CONFIGURATION, this.updateDownloadsDropdownMenu);
+        ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO, this.updateDownloadsDropdownMenu);
+        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_OPEN_FILE, this.openFile);
+        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER, this.showFileInFolder);
+        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, this.cancelDownload);
+        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, this.clearFile);
+        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, this.updateItem);
+    }
+
+    private init = () => {
+        this.windowBounds = MainWindow.getBounds();
+        if (!this.windowBounds) {
+            throw new Error('Cannot initialize downloadsDropdownMenuView, missing MainWindow');
+        }
+        this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
 
         const preload = getLocalPreload('desktopAPI.js');
         this.view = new BrowserView({webPreferences: {
@@ -60,93 +74,73 @@ export default class DownloadsDropdownMenuView {
             // @ts-ignore
             transparent: true,
         }});
-
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdownMenu.html'));
-        this.window.addBrowserView(this.view);
-
-        ipcMain.on(OPEN_DOWNLOADS_DROPDOWN_MENU, this.handleOpen);
-        ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN_MENU, this.handleClose);
-        ipcMain.on(TOGGLE_DOWNLOADS_DROPDOWN_MENU, this.handleToggle);
-        ipcMain.on(EMIT_CONFIGURATION, this.updateConfig);
-        ipcMain.on(REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO, this.updateDownloadsDropdownMenu);
-        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_OPEN_FILE, this.openFile);
-        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER, this.showFileInFolder);
-        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, this.cancelDownload);
-        ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, this.clearFile);
-        ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, this.updateItem);
-    }
-
-    updateItem = (event: IpcMainEvent, item: DownloadedItem) => {
-        log.debug('DownloadsDropdownMenuView.updateItem', {item});
-
-        this.item = item;
-
-        this.updateDownloadsDropdownMenu();
-    }
-
-    updateConfig = (event: IpcMainEvent, config: CombinedConfig) => {
-        log.debug('DownloadsDropdownMenuView.updateConfig');
-
-        this.darkMode = config.darkMode;
-        this.updateDownloadsDropdownMenu();
+        MainWindow.get()?.addBrowserView(this.view);
     }
 
     /**
      * This is called every time the "window" is resized so that we can position
      * the downloads dropdown at the correct position
      */
-    updateWindowBounds = () => {
-        log.debug('DownloadsDropdownMenuView.updateWindowBounds');
+    private updateWindowBounds = (newBounds: Electron.Rectangle) => {
+        log.debug('updateWindowBounds');
 
-        this.windowBounds = this.window.getContentBounds();
+        this.windowBounds = newBounds;
         this.updateDownloadsDropdownMenu();
         this.repositionDownloadsDropdownMenu();
     }
 
-    updateDownloadsDropdownMenu = () => {
-        log.debug('DownloadsDropdownMenuView.updateDownloadsDropdownMenu');
+    private updateItem = (event: IpcMainEvent, item: DownloadedItem) => {
+        log.debug('updateItem', {item});
 
-        this.view.webContents.send(
+        this.item = item;
+        this.updateDownloadsDropdownMenu();
+    }
+
+    private updateDownloadsDropdownMenu = () => {
+        log.debug('updateDownloadsDropdownMenu');
+
+        this.view?.webContents.send(
             UPDATE_DOWNLOADS_DROPDOWN_MENU,
             this.item,
-            this.darkMode,
+            Config.darkMode,
         );
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, true, this.item);
         this.repositionDownloadsDropdownMenu();
     }
 
-    handleOpen = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload = {} as DownloadsMenuOpenEventPayload) => {
-        log.debug('DownloadsDropdownMenuView.handleOpen', {bounds: this.bounds, payload});
+    private handleOpen = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload = {} as DownloadsMenuOpenEventPayload) => {
+        log.debug('handleOpen', {bounds: this.bounds, payload});
 
-        if (!this.bounds) {
+        if (!(this.bounds && this.view && this.windowBounds)) {
             return;
         }
 
         const {item, coordinates} = payload;
 
-        log.debug('DownloadsDropdownMenuView.handleOpen', {item, coordinates});
+        log.debug('handleOpen', {item, coordinates});
 
         this.open = true;
         this.coordinates = coordinates;
         this.item = item;
-        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
+        this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
         this.view.setBounds(this.bounds);
-        this.window.setTopBrowserView(this.view);
+        MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
         this.updateDownloadsDropdownMenu();
     }
 
-    handleClose = () => {
-        log.debug('DownloadsDropdownMenuView.handleClose');
+    private handleClose = () => {
+        log.debug('handleClose');
 
         this.open = false;
         this.item = undefined;
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM);
-        this.view.setBounds(this.getBounds(0, 0));
-        WindowManager.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+        this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
+        MainWindow.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
     }
 
-    handleToggle = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload) => {
+    private handleToggle = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload) => {
         if (this.open) {
             if (this.item?.location === payload.item.location) {
                 // clicking 3-dot in the same item
@@ -161,61 +155,60 @@ export default class DownloadsDropdownMenuView {
         }
     }
 
-    openFile = () => {
+    private openFile = () => {
         downloadsManager.openFile(this.item);
         this.handleClose();
     }
 
-    showFileInFolder = (e: IpcMainEvent, item: DownloadedItem) => {
+    private showFileInFolder = (e: IpcMainEvent, item: DownloadedItem) => {
         downloadsManager.showFileInFolder(item);
         this.handleClose();
     }
 
-    clearFile = () => {
+    private clearFile = () => {
         downloadsManager.clearFile(this.item);
         this.handleClose();
     }
 
-    cancelDownload = () => {
+    private cancelDownload = () => {
         downloadsManager.cancelDownload(this.item);
         this.handleClose();
     }
 
-    getBounds = (width: number, height: number) => {
+    private getBounds = (windowWidth: number, width: number, height: number) => {
         // MUST return integers
         return {
-            x: this.getX(),
+            x: this.getX(windowWidth),
             y: this.getY(),
             width: Math.round(width),
             height: Math.round(height),
         };
     }
 
-    getX = () => {
-        const result = (this.windowBounds.width - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) + (this.coordinates?.x || 0) + (this.coordinates?.width || 0);
+    private getX = (windowWidth: number) => {
+        const result = (windowWidth - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) + (this.coordinates?.x || 0) + (this.coordinates?.width || 0);
         if (result <= DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) {
             return 0;
         }
         return Math.round(result);
     }
 
-    getY = () => {
+    private getY = () => {
         const result = TAB_BAR_HEIGHT + (this.coordinates?.y || 0) + (this.coordinates?.height || 0);
         return Math.round(result);
     }
 
-    repositionDownloadsDropdownMenu = () => {
-        this.bounds = this.getBounds(DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
+    private repositionDownloadsDropdownMenu = () => {
+        if (!this.windowBounds) {
+            return;
+        }
+
+        this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
         if (this.open) {
-            this.view.setBounds(this.bounds);
+            this.view?.setBounds(this.bounds);
         }
     }
-
-    destroy = () => {
-        // workaround to eliminate zombie processes
-        // https://github.com/mattermost/desktop/pull/1519
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        this.view.webContents.destroy();
-    }
 }
+
+const downloadsDropdownMenuView = new DownloadsDropdownMenuView();
+export default downloadsDropdownMenuView;

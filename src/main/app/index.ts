@@ -5,6 +5,11 @@
 
 import {initialize} from './initialize';
 
+// TODO: Singletons, we need DI :D
+import('main/views/serverDropdownView');
+import('main/views/downloadsDropdownMenuView');
+import('main/views/downloadsDropdownView');
+
 if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
 }

@@ -5,7 +5,6 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+-mas.[0-9]+"
 
 defaults:
   run:
@@ -47,7 +46,7 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
-          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_18.04/Release.key | sudo apt-key add -
+          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
           wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
           sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
           npm ci
@@ -157,46 +156,9 @@ jobs:
           path: ./build
           retention-days: 14
 
-  mac-app-store-preflight:
-    runs-on: macos-12
-    needs:
-      - begin-notification
-    env:
-      MAS_PROFILE: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MAS_PROFILE }}
-      MACOS_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}
-      MACOS_API_KEY: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY }}
-      MACOS_API_ISSUER_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_ISSUER_ID }}
-      CSC_FOR_PULL_REQUEST: true
-      CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_KEY_PASSWORD}}
-      CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
-    steps:
-      - name: release/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: release/setup-node
-        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
-        with:
-          node-version-file: "package.json"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-      - name: release/install-dependencies
-        run: |
-          brew install yq
-          npm ci
-      - name: release/copy-provisioning-profile
-        run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
-      - name: release/patch-version-number-for-MAS
-        run: ./scripts/patch_mas_version.sh
-      - name: release/test
-        uses: ./.github/actions/test
-      - name: release/package
-        run: npm run package:mas
-      - name: release/publish
-        run: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
-
   upload-to-s3:
     runs-on: ubuntu-22.04
     needs:
-      - mac-app-store-preflight
       - build-mac-installer
       - build-msi-installer
       - build-linux

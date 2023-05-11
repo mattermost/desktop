@@ -1,44 +1,80 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, ipcMain} from 'electron';
-import log, {LogLevel} from 'electron-log';
+import {app, ipcMain, nativeTheme} from 'electron';
 
-import {CombinedConfig} from 'types/config';
+import {CombinedConfig, Config as ConfigType} from 'types/config';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
+import {Logger, setLoggingLevel} from 'common/log';
 
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
-import {refreshTrayImages} from 'main/tray/tray';
-import WindowManager from 'main/windows/windowManager';
+import Tray from 'main/tray/tray';
+import LoadingScreen from 'main/views/loadingScreen';
+import MainWindow from 'main/windows/mainWindow';
+import SettingsWindow from 'main/windows/settingsWindow';
 
 import {handleMainWindowIsShown} from './intercom';
-import {handleUpdateMenuEvent, setLoggingLevel, updateServerInfos, updateSpellCheckerLocales} from './utils';
+import {handleUpdateMenuEvent, updateSpellCheckerLocales} from './utils';
+
+const log = new Logger('App.Config');
 
 //
 // config event handlers
 //
 
-export function handleConfigUpdate(newConfig: CombinedConfig) {
-    if (log.transports.file.level !== newConfig.logLevel) {
-        log.error('Log level set to:', newConfig.logLevel);
+export function handleGetConfiguration() {
+    log.debug('handleGetConfiguration');
+
+    return Config.data;
+}
+
+export function handleGetLocalConfiguration() {
+    log.debug('handleGetLocalConfiguration');
+
+    return {
+        ...Config.localData,
+        appName: app.name,
+        enableServerManagement: Config.enableServerManagement,
+        canUpgrade: Config.canUpgrade,
+    };
+}
+
+export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []) {
+    log.debug('updateConfiguration', properties);
+
+    if (properties.length) {
+        const newData = properties.reduce((obj, data) => {
+            (obj as any)[data.key] = data.data;
+            return obj;
+        }, {} as Partial<ConfigType>);
+        Config.setMultiple(newData);
     }
+}
+
+export function handleUpdateTheme() {
+    log.debug('Config.handleUpdateTheme');
+
+    Config.set('darkMode', nativeTheme.shouldUseDarkColors);
+}
+
+export function handleConfigUpdate(newConfig: CombinedConfig) {
     if (newConfig.logLevel) {
-        setLoggingLevel(newConfig.logLevel as LogLevel);
+        setLoggingLevel(newConfig.logLevel);
     }
 
-    log.debug('App.Config.handleConfigUpdate');
-    log.silly('App.Config.handleConfigUpdate', newConfig);
+    log.debug('handleConfigUpdate');
+    log.silly('handleConfigUpdate', newConfig);
 
     if (!newConfig) {
         return;
     }
 
-    WindowManager.handleUpdateConfig();
     if (app.isReady()) {
-        WindowManager.sendToRenderer(RELOAD_CONFIGURATION);
+        MainWindow.sendToRenderer(RELOAD_CONFIGURATION);
+        SettingsWindow.sendToRenderer(RELOAD_CONFIGURATION);
     }
 
     setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
@@ -61,24 +97,25 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         });
     }
 
-    updateServerInfos(newConfig.teams);
-    WindowManager.initializeCurrentServerName();
-    handleMainWindowIsShown();
+    if (app.isReady()) {
+        handleMainWindowIsShown();
+    }
 
     handleUpdateMenuEvent();
     if (newConfig.trayIconTheme) {
-        refreshTrayImages(newConfig.trayIconTheme);
+        Tray.refreshImages(newConfig.trayIconTheme);
     }
 
     ipcMain.emit(EMIT_CONFIGURATION, true, newConfig);
 }
 
 export function handleDarkModeChange(darkMode: boolean) {
-    log.debug('App.Config.handleDarkModeChange', darkMode);
+    log.debug('handleDarkModeChange', darkMode);
 
-    refreshTrayImages(Config.trayIconTheme);
-    WindowManager.sendToRenderer(DARK_MODE_CHANGE, darkMode);
-    WindowManager.updateLoadingScreenDarkMode(darkMode);
+    Tray.refreshImages(Config.trayIconTheme);
+    MainWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
+    SettingsWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
+    LoadingScreen.setDarkMode(darkMode);
 
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
 }

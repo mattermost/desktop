@@ -119,8 +119,8 @@ describe('common/utils/util', () => {
     describe('escapeRegex', () => {
         it('should escape special chars in string when used inside regex', () => {
             const str = 'Language C++';
-            const regex = `${escapeRegex(str)}___TAB_[A-Z]+`;
-            expect(new RegExp(regex).test('Language C++___TAB_ABCDEF')).toBe(true);
+            const regex = `${escapeRegex(str)}___VIEW_[A-Z]+`;
+            expect(new RegExp(regex).test('Language C++___VIEW_ABCDEF')).toBe(true);
         });
     });
 });

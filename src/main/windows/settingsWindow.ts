@@ -1,40 +1,86 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow} from 'electron';
-import log from 'electron-log';
+import {BrowserWindow, ipcMain} from 'electron';
 
+import {SHOW_SETTINGS_WINDOW} from 'common/communication';
 import Config from 'common/config';
+import {Logger} from 'common/log';
+
+import ViewManager from 'main/views/viewManager';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
 
-export function createSettingsWindow(mainWindow: BrowserWindow, withDevTools: boolean) {
-    const preload = getLocalPreload('desktopAPI.js');
-    const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
-    const settingsWindow = new BrowserWindow({
-        parent: mainWindow,
-        title: 'Desktop App Settings',
-        fullscreen: false,
-        webPreferences: {
-            preload,
-            spellcheck,
-        }});
+import MainWindow from './mainWindow';
 
-    const contextMenu = new ContextMenu({}, settingsWindow);
-    contextMenu.reload();
+const log = new Logger('SettingsWindow');
 
-    const localURL = getLocalURLString('settings.html');
-    settingsWindow.setMenuBarVisibility(false);
-    settingsWindow.loadURL(localURL).catch(
-        (reason) => {
-            log.error(`Settings window failed to load: ${reason}`);
-            log.info(process.env);
-        });
-    settingsWindow.show();
+export class SettingsWindow {
+    private win?: BrowserWindow;
 
-    if (withDevTools) {
-        settingsWindow.webContents.openDevTools({mode: 'detach'});
+    constructor() {
+        ipcMain.on(SHOW_SETTINGS_WINDOW, this.show);
     }
-    return settingsWindow;
+
+    show = () => {
+        if (this.win) {
+            this.win.show();
+        } else {
+            this.create();
+        }
+    }
+
+    get = () => {
+        return this.win;
+    }
+
+    sendToRenderer = (channel: string, ...args: any[]) => {
+        this.win?.webContents.send(channel, ...args);
+    }
+
+    private create = () => {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
+        }
+
+        const preload = getLocalPreload('desktopAPI.js');
+        const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
+        this.win = new BrowserWindow({
+            parent: mainWindow,
+            title: 'Desktop App Settings',
+            fullscreen: false,
+            webPreferences: {
+                preload,
+                spellcheck,
+            }});
+
+        const contextMenu = new ContextMenu({}, this.win);
+        contextMenu.reload();
+
+        const localURL = getLocalURLString('settings.html');
+        this.win.setMenuBarVisibility(false);
+        this.win.loadURL(localURL).catch(
+            (reason) => {
+                log.error('failed to load', reason);
+            });
+        this.win.show();
+
+        if (Boolean(process.env.MM_DEBUG_SETTINGS) || false) {
+            this.win.webContents.openDevTools({mode: 'detach'});
+        }
+
+        this.win.on('closed', () => {
+            delete this.win;
+
+            // For some reason, on macOS, the app will hard crash when the settings window is closed
+            // It seems to be related to calling view.focus() and there's no log output unfortunately
+            // Adding this arbitrary delay seems to get rid of it (it happens very frequently)
+            setTimeout(() => MainWindow.get()?.focus(), 10);
+        });
+    }
 }
+
+const settingsWindow = new SettingsWindow();
+export default settingsWindow;

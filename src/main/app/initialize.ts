@@ -3,42 +3,48 @@
 
 import path from 'path';
 
-import {app, ipcMain, session} from 'electron';
+import {app, ipcMain, nativeTheme, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
-import log from 'electron-log';
 
 import {
     SWITCH_SERVER,
     FOCUS_BROWSERVIEW,
     QUIT,
-    DOUBLE_CLICK_ON_WINDOW,
     SHOW_NEW_SERVER_MODAL,
-    WINDOW_CLOSE,
-    WINDOW_MAXIMIZE,
-    WINDOW_MINIMIZE,
-    WINDOW_RESTORE,
     NOTIFY_MENTION,
-    GET_DOWNLOAD_LOCATION,
-    SHOW_SETTINGS_WINDOW,
-    RELOAD_CONFIGURATION,
     SWITCH_TAB,
-    CLOSE_TAB,
-    OPEN_TAB,
+    CLOSE_VIEW,
+    OPEN_VIEW,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
-    UPDATE_LAST_ACTIVE,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
     START_UPGRADE,
     START_UPDATE_DOWNLOAD,
     PING_DOMAIN,
-    MAIN_WINDOW_SHOWN,
     OPEN_APP_MENU,
+    GET_CONFIGURATION,
+    GET_LOCAL_CONFIGURATION,
+    UPDATE_CONFIGURATION,
+    UPDATE_PATHS,
+    UPDATE_SERVER_ORDER,
+    UPDATE_TAB_ORDER,
+    GET_LAST_ACTIVE,
+    GET_ORDERED_SERVERS,
+    GET_ORDERED_TABS_FOR_SERVER,
+    SERVERS_URL_MODIFIED,
+    GET_DARK_MODE,
+    WINDOW_CLOSE,
+    WINDOW_MAXIMIZE,
+    WINDOW_MINIMIZE,
+    WINDOW_RESTORE,
+    DOUBLE_CLICK_ON_WINDOW,
 } from 'common/communication';
 import Config from 'common/config';
-import urlUtils from 'common/utils/url';
+import {isTrustedURL, parseURL} from 'common/utils/url';
+import {Logger} from 'common/log';
 
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
@@ -47,15 +53,18 @@ import AutoLauncher from 'main/AutoLauncher';
 import updateManager from 'main/autoUpdater';
 import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
-import {updatePaths} from 'main/constants';
+import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
+import ServerManager from 'common/servers/serverManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
-import {refreshTrayImages, setupTray} from 'main/tray/tray';
+import Tray from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
-import WindowManager from 'main/windows/windowManager';
+import ViewManager from 'main/views/viewManager';
+import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
+import MainWindow from 'main/windows/mainWindow';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -68,44 +77,60 @@ import {
     handleAppWindowAllClosed,
     handleChildProcessGone,
 } from './app';
-import {handleConfigUpdate, handleDarkModeChange} from './config';
+import {
+    handleConfigUpdate,
+    handleDarkModeChange,
+    handleGetConfiguration,
+    handleGetLocalConfiguration,
+    handleUpdateTheme,
+    updateConfiguration,
+} from './config';
 import {
     handleMainWindowIsShown,
     handleAppVersion,
-    handleCloseTab,
-    handleEditServerModal,
     handleMentionNotification,
-    handleNewServerModal,
     handleOpenAppMenu,
-    handleOpenTab,
     handleQuit,
-    handleReloadConfig,
-    handleRemoveServerModal,
-    handleSelectDownload,
-    handleSwitchServer,
-    handleSwitchTab,
-    handleUpdateLastActive,
     handlePingDomain,
 } from './intercom';
+import {
+    handleEditServerModal,
+    handleNewServerModal,
+    handleRemoveServerModal,
+    switchServer,
+} from './servers';
+import {
+    handleCloseView, handleGetLastActive, handleGetOrderedViewsForServer, handleOpenView,
+} from './views';
 import {
     clearAppCache,
     getDeeplinkingURL,
     handleUpdateMenuEvent,
     shouldShowTrayIcon,
-    updateServerInfos,
     updateSpellCheckerLocales,
     wasUpdated,
     initCookieManager,
     migrateMacAppStore,
+    updateServerInfos,
 } from './utils';
+import {
+    handleClose,
+    handleDoubleClick,
+    handleGetDarkMode,
+    handleMaximize,
+    handleMinimize,
+    handleRestore,
+} from './windows';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
+
+const log = new Logger('App.Initialize');
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
  */
 export async function initialize() {
-    process.on('uncaughtException', CriticalErrorHandler.processUncaughtExceptionHandler.bind(CriticalErrorHandler));
+    CriticalErrorHandler.init();
     global.willAppQuit = false;
 
     // initialization that can run before the app is ready
@@ -134,7 +159,7 @@ export async function initialize() {
 
     // initialization that should run once the app is ready
     initializeInterCommunicationEventListeners();
-    initializeAfterAppReady();
+    await initializeAfterAppReady();
 }
 
 //
@@ -172,7 +197,15 @@ async function initializeConfig() {
 
             resolve();
         });
-        Config.init();
+        Config.init(configPath, app.name, app.getAppPath());
+        ipcMain.on(UPDATE_PATHS, () => {
+            log.debug('Config.UPDATE_PATHS');
+
+            Config.setConfigPath(configPath);
+            if (Config.data) {
+                Config.reload();
+            }
+        });
     });
 }
 
@@ -180,7 +213,7 @@ function initializeAppEventListeners() {
     app.on('second-instance', handleAppSecondInstance);
     app.on('window-all-closed', handleAppWindowAllClosed);
     app.on('browser-window-created', handleAppBrowserWindowCreated);
-    app.on('activate', () => WindowManager.showMainWindow());
+    app.on('activate', () => MainWindow.show());
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('select-client-certificate', CertificateManager.handleSelectCertificate);
@@ -206,7 +239,7 @@ function initializeBeforeAppReady() {
         process.chdir(expectedPath);
     }
 
-    refreshTrayImages(Config.trayIconTheme);
+    Tray.refreshImages(Config.trayIconTheme);
 
     // If there is already an instance, quit this one
     // eslint-disable-next-line no-undef
@@ -227,47 +260,64 @@ function initializeBeforeAppReady() {
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
+
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+        nativeTheme.on('updated', handleUpdateTheme);
+        handleUpdateTheme();
+    }
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.on(RELOAD_CONFIGURATION, handleReloadConfig);
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle('get-app-version', handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
-    ipcMain.on(FOCUS_BROWSERVIEW, WindowManager.focusBrowserView);
-    ipcMain.on(UPDATE_LAST_ACTIVE, handleUpdateLastActive);
+    ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);
 
     if (process.platform !== 'darwin') {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
     }
 
-    ipcMain.on(SWITCH_SERVER, handleSwitchServer);
-    ipcMain.on(SWITCH_TAB, handleSwitchTab);
-    ipcMain.on(CLOSE_TAB, handleCloseTab);
-    ipcMain.on(OPEN_TAB, handleOpenTab);
+    ipcMain.on(SWITCH_SERVER, (event, serverId) => switchServer(serverId));
+    ipcMain.on(SWITCH_TAB, (event, viewId) => ViewManager.showById(viewId));
+    ipcMain.on(CLOSE_VIEW, handleCloseView);
+    ipcMain.on(OPEN_VIEW, handleOpenView);
 
     ipcMain.on(QUIT, handleQuit);
-
-    ipcMain.on(DOUBLE_CLICK_ON_WINDOW, WindowManager.handleDoubleClick);
 
     ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
     ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
     ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
-    ipcMain.on(MAIN_WINDOW_SHOWN, handleMainWindowIsShown);
-    ipcMain.on(WINDOW_CLOSE, WindowManager.close);
-    ipcMain.on(WINDOW_MAXIMIZE, WindowManager.maximize);
-    ipcMain.on(WINDOW_MINIMIZE, WindowManager.minimize);
-    ipcMain.on(WINDOW_RESTORE, WindowManager.restore);
-    ipcMain.on(SHOW_SETTINGS_WINDOW, WindowManager.showSettingsWindow);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
-    ipcMain.handle(GET_DOWNLOAD_LOCATION, handleSelectDownload);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
     ipcMain.handle(PING_DOMAIN, handlePingDomain);
+    ipcMain.handle(GET_CONFIGURATION, handleGetConfiguration);
+    ipcMain.handle(GET_LOCAL_CONFIGURATION, handleGetLocalConfiguration);
+    ipcMain.on(UPDATE_CONFIGURATION, updateConfiguration);
+
+    ipcMain.on(UPDATE_SERVER_ORDER, (event, serverOrder) => ServerManager.updateServerOrder(serverOrder));
+    ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => ServerManager.updateTabOrder(serverId, viewOrder));
+    ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
+    ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toUniqueServer()));
+    ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedViewsForServer);
+
+    ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
+    ipcMain.on(WINDOW_CLOSE, handleClose);
+    ipcMain.on(WINDOW_MAXIMIZE, handleMaximize);
+    ipcMain.on(WINDOW_MINIMIZE, handleMinimize);
+    ipcMain.on(WINDOW_RESTORE, handleRestore);
+    ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
 }
 
-function initializeAfterAppReady() {
-    updateServerInfos(Config.teams);
+async function initializeAfterAppReady() {
+    ServerManager.reloadFromConfig();
+    updateServerInfos(ServerManager.getAllServers());
+    ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
+        if (serverIds && serverIds.length) {
+            updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
+        }
+    });
+
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
 
@@ -292,15 +342,10 @@ function initializeAfterAppReady() {
         updateSpellCheckerLocales();
     }
 
-    if (wasUpdated(AppVersionManager.lastAppVersion)) {
-        clearAppCache();
-    }
-    AppVersionManager.lastAppVersion = app.getVersion();
-
     if (typeof Config.canUpgrade === 'undefined') {
         // windows might not be ready, so we have to wait until it is
         Config.once('update', () => {
-            log.debug('Initialize.checkForUpdates');
+            log.debug('checkForUpdates');
             if (Config.canUpgrade && Config.autoCheckForUpdates) {
                 setTimeout(() => {
                     updateManager.checkForUpdates(false);
@@ -330,6 +375,9 @@ function initializeAfterAppReady() {
             catch((err) => log.error('An error occurred: ', err));
     }
 
+    initCookieManager(defaultSession);
+    MainWindow.show();
+
     let deeplinkingURL;
 
     // Protocol handler for win32
@@ -337,26 +385,23 @@ function initializeAfterAppReady() {
         const args = process.argv.slice(1);
         if (Array.isArray(args) && args.length > 0) {
             deeplinkingURL = getDeeplinkingURL(args);
+            if (deeplinkingURL) {
+                ViewManager.handleDeepLink(deeplinkingURL);
+            }
         }
     }
 
-    initCookieManager(defaultSession);
-
-    WindowManager.showMainWindow(deeplinkingURL);
-
-    CriticalErrorHandler.setMainWindow(WindowManager.getMainWindow()!);
-
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
-        log.debug('Initialize.UserActivityMonitor.on(status)', status);
-        WindowManager.sendToMattermostViews(USER_ACTIVITY_UPDATE, status);
+        log.debug('UserActivityMonitor.on(status)', status);
+        ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status);
     });
 
     // start monitoring user activity (needs to be started after the app is ready)
     UserActivityMonitor.startMonitoring();
 
     if (shouldShowTrayIcon()) {
-        setupTray(Config.trayIconTheme);
+        Tray.init(Config.trayIconTheme);
     }
     setupBadge();
 
@@ -396,35 +441,39 @@ function initializeAfterAppReady() {
         }
 
         // is the request coming from the renderer?
-        const mainWindow = WindowManager.getMainWindow();
+        const mainWindow = MainWindow.get();
         if (mainWindow && webContents.id === mainWindow.webContents.id) {
             callback(true);
             return;
         }
 
-        const callsWidgetWindow = WindowManager.callsWidgetWindow;
-        if (callsWidgetWindow) {
-            if (webContents.id === callsWidgetWindow.win.webContents.id) {
-                callback(true);
-                return;
-            }
-            if (callsWidgetWindow.popOut && webContents.id === callsWidgetWindow.popOut.webContents.id) {
-                callback(true);
-                return;
-            }
+        if (CallsWidgetWindow.isCallsWidget(webContents.id)) {
+            callback(true);
+            return;
         }
 
         const requestingURL = webContents.getURL();
-        const serverURL = WindowManager.getServerURLFromWebContentsId(webContents.id);
+        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.view.server.url;
 
         if (!serverURL) {
             callback(false);
             return;
         }
 
+        const parsedURL = parseURL(requestingURL);
+        if (!parsedURL) {
+            callback(false);
+            return;
+        }
+
         // is the requesting url trusted?
-        callback(urlUtils.isTrustedURL(requestingURL, serverURL));
+        callback(isTrustedURL(parsedURL, serverURL));
     });
+
+    if (wasUpdated(AppVersionManager.lastAppVersion)) {
+        clearAppCache();
+    }
+    AppVersionManager.lastAppVersion = app.getVersion();
 
     handleMainWindowIsShown();
 }

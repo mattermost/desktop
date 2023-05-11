@@ -3,9 +3,7 @@
 
 import Diagnostics from '.';
 
-jest.mock('main/windows/windowManager', () => ({
-    mainWindow: {},
-}));
+jest.mock('main/windows/mainWindow', () => ({}));
 jest.mock('common/config', () => ({
     configFilePath: 'mock/config/filepath/',
 }));

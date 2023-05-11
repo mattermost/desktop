@@ -6,7 +6,9 @@ import {ElectronLog} from 'electron-log';
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
 import Config from 'common/config';
-import * as Validator from 'main/Validator';
+import * as Validator from 'common/Validator';
+
+import {configPath} from 'main/constants';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
@@ -15,13 +17,13 @@ const stepDescriptiveName = 'configValidation';
 
 const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
     try {
-        const configData = JSON.parse(fs.readFileSync(Config.configFilePath, 'utf8'));
+        const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
         // validate based on config file version
         const validData = Validator.validateConfigData(configData);
 
         if (!validData) {
-            throw new Error(`Config validation failed. Config: ${JSON.stringify(Config.combinedData, null, 4)}`);
+            throw new Error(`Config validation failed. Config: ${JSON.stringify(Config.data, null, 4)}`);
         }
 
         return {
