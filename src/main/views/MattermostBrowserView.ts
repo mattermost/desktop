@@ -368,8 +368,8 @@ export class MattermostBrowserView extends EventEmitter {
     }
 
     private handleTitleUpdate = (e: Event, title: string) => {
-        this.log.debug('handleTitleUpdate', title);
-
+        this.log.info('handleTitleUpdate', title);
+        MainWindow.get()?.setTitle('Mattermost Desktop - ' + title);
         this.updateMentionsFromTitle(title);
     }
 
