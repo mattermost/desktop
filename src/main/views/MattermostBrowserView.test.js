@@ -39,7 +39,10 @@ jest.mock('electron', () => ({
 
 jest.mock('../windows/mainWindow', () => ({
     focusThreeDotMenu: jest.fn(),
-    get: jest.fn(),
+    get: jest.fn(() => ({
+        setTitle: jest.fn(),
+        on: jest.fn(),
+    })),
     sendToRenderer: jest.fn(),
 }));
 jest.mock('common/appState', () => ({
@@ -476,6 +479,16 @@ describe('main/views/MattermostBrowserView', () => {
         it('should parse unreads from title', () => {
             mattermostView.updateMentionsFromTitle('* Mattermost');
             expect(AppState.updateMentions).toHaveBeenCalledWith(mattermostView.view.id, 0);
+        });
+    });
+
+    describe('updateMainWindowTitle', () => {
+        MainWindow.get().setTitle('bar');
+        const mattermostView = new MattermostBrowserView(view, {}, {});
+
+        it('should forward the window title', () => {
+            mattermostView.handleTitleUpdate(null, 'foo!');
+            expect(MainWindow.get().setTitle).toHaveBeenCalledWith('Mattermost Desktop - foo!');
         });
     });
 });
