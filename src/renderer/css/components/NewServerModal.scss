@@ -1,0 +1,38 @@
+.NewServerModal-noBottomSpace {
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+.NewServerModal-validation {
+    margin-top: 8px;
+    margin-right: auto;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+
+    > div {
+        margin-top: 4px;
+        > span {
+            margin-left: 4px;
+        }
+    }
+
+    .error {
+        color: #d24b4e;
+    }
+
+    .warning {
+        color: #c79e3f;
+    }
+
+    .success {
+        color: #06d6a0;
+    }
+}
+
+.NewServerModal-validationSpinner {
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-left: 2px;
+    margin-right: 4px;
+}

@@ -3,18 +3,20 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Modal, Button, FormGroup, FormControl, FormLabel, FormText} from 'react-bootstrap';
+import {Modal, Button, FormGroup, FormControl, FormLabel, FormText, Spinner} from 'react-bootstrap';
 import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 
 import {UniqueServer} from 'types/config';
+import {URLValidationResult} from 'types/server';
 
-import {isValidURL} from 'common/utils/url';
+import {URLValidationStatus} from 'common/utils/constants';
+
+import 'renderer/css/components/NewServerModal.scss';
 
 type Props = {
     onClose?: () => void;
     onSave?: (server: UniqueServer) => void;
     server?: UniqueServer;
-    currentServers?: UniqueServer[];
     editMode?: boolean;
     show?: boolean;
     restoreFocus?: boolean;
@@ -29,11 +31,14 @@ type State = {
     serverId?: string;
     serverOrder: number;
     saveStarted: boolean;
+    validationStarted: boolean;
+    validationResult?: URLValidationResult;
 }
 
 class NewServerModal extends React.PureComponent<Props, State> {
     wasShown?: boolean;
     serverUrlInputRef?: HTMLInputElement;
+    validationTimeout?: NodeJS.Timeout;
 
     static defaultProps = {
         restoreFocus: true,
@@ -48,43 +53,23 @@ class NewServerModal extends React.PureComponent<Props, State> {
             serverUrl: '',
             serverOrder: props.currentOrder || 0,
             saveStarted: false,
+            validationStarted: false,
         };
     }
 
-    initializeOnShow() {
+    initializeOnShow = () => {
         this.setState({
             serverName: this.props.server ? this.props.server.name : '',
             serverUrl: this.props.server ? this.props.server.url : '',
             serverId: this.props.server?.id,
             saveStarted: false,
+            validationStarted: false,
+            validationResult: undefined,
         });
-    }
 
-    getServerNameValidationError() {
-        if (!this.state.saveStarted) {
-            return null;
+        if (this.props.editMode && this.props.server) {
+            this.validateServerURL(this.props.server.url);
         }
-        if (this.props.currentServers) {
-            const currentServers = [...this.props.currentServers];
-            if (currentServers.find((server) => server.id !== this.state.serverId && server.name === this.state.serverName)) {
-                return (
-                    <FormattedMessage
-                        id='renderer.components.newServerModal.error.serverNameExists'
-                        defaultMessage='A server with the same name already exists.'
-                    />
-                );
-            }
-        }
-        return this.state.serverName.length > 0 ? null : (
-            <FormattedMessage
-                id='renderer.components.newServerModal.error.nameRequired'
-                defaultMessage='Name is required.'
-            />
-        );
-    }
-
-    getServerNameValidationState() {
-        return this.getServerNameValidationError() === null ? null : 'error';
     }
 
     handleServerNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,108 +78,171 @@ class NewServerModal extends React.PureComponent<Props, State> {
         });
     }
 
-    getServerUrlValidationError() {
-        if (!this.state.saveStarted) {
-            return null;
-        }
-        if (this.props.currentServers) {
-            const currentServers = [...this.props.currentServers];
-            if (currentServers.find((server) => server.id !== this.state.serverId && server.url === this.state.serverUrl)) {
-                return (
-                    <FormattedMessage
-                        id='renderer.components.newServerModal.error.serverUrlExists'
-                        defaultMessage='A server with the same URL already exists.'
-                    />
-                );
-            }
-        }
-        if (this.state.serverUrl.length === 0) {
-            return (
-                <FormattedMessage
-                    id='renderer.components.newServerModal.error.urlRequired'
-                    defaultMessage='URL is required.'
-                />
-            );
-        }
-        if (!(/^https?:\/\/.*/).test(this.state.serverUrl.trim())) {
-            return (
-                <FormattedMessage
-                    id='renderer.components.newServerModal.error.urlNeedsHttp'
-                    defaultMessage='URL should start with http:// or https://.'
-                />
-            );
-        }
-        if (!isValidURL(this.state.serverUrl.trim())) {
-            return (
-                <FormattedMessage
-                    id='renderer.components.newServerModal.error.urlIncorrectFormatting'
-                    defaultMessage='URL is not formatted correctly.'
-                />
-            );
-        }
-        return null;
-    }
-
-    getServerUrlValidationState() {
-        return this.getServerUrlValidationError() === null ? null : 'error';
-    }
-
     handleServerUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const serverUrl = e.target.value;
-        this.setState({serverUrl});
+        this.setState({serverUrl, validationResult: undefined});
+        this.validateServerURL(serverUrl);
     }
 
-    addProtocolToUrl = (serverUrl: string): Promise<void> => {
-        if (serverUrl.startsWith('http://') || serverUrl.startsWith('https://')) {
-            return Promise.resolve(undefined);
+    validateServerURL = (serverUrl: string) => {
+        clearTimeout(this.validationTimeout as unknown as number);
+        this.validationTimeout = setTimeout(() => {
+            this.setState({validationStarted: true});
+            window.desktop.validateServerURL(serverUrl, this.props.server?.id).then((validationResult) => {
+                if (this.state.serverUrl !== serverUrl) {
+                    return;
+                }
+                this.setState({validationResult, validationStarted: false});
+            });
+        }, 1000);
+    }
+
+    isServerURLErrored = () => {
+        return this.state.validationResult?.status === URLValidationStatus.Invalid ||
+            this.state.validationResult?.status === URLValidationStatus.NoHTTP ||
+            this.state.validationResult?.status === URLValidationStatus.Missing;
+    }
+
+    getServerURLMessage = () => {
+        if (this.state.validationStarted) {
+            return (
+                <div>
+                    <Spinner
+                        className='NewServerModal-validationSpinner'
+                        animation='border'
+                        size='sm'
+                    />
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.validating'
+                        defaultMessage='Validating...'
+                    />
+                </div>
+            );
         }
 
-        return window.desktop.modals.pingDomain(serverUrl).
-            then((result: string) => {
-                this.setState({serverUrl: `${result}://${this.state.serverUrl}`});
-            }).
-            catch(() => {
-                console.error(`Could not ping url: ${serverUrl}`);
-            });
+        if (!this.state.validationResult) {
+            return null;
+        }
+
+        switch (this.state.validationResult?.status) {
+        case URLValidationStatus.Missing:
+            return (
+                <div className='error'>
+                    <i className='icon-close-circle'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.error.urlRequired'
+                        defaultMessage='URL is required.'
+                    />
+                </div>
+            );
+        case URLValidationStatus.NoHTTP:
+            return (
+                <div className='error'>
+                    <i className='icon-close-circle'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.error.urlNeedsHttp'
+                        defaultMessage='URL should start with http:// or https://.'
+                    />
+                </div>
+            );
+        case URLValidationStatus.Invalid:
+            return (
+                <div className='error'>
+                    <i className='icon-close-circle'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.error.urlIncorrectFormatting'
+                        defaultMessage='URL is not formatted correctly.'
+                    />
+                </div>
+            );
+        case URLValidationStatus.URLExists:
+            return (
+                <div className='warning'>
+                    <i className='icon-alert-outline'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.error.serverUrlExists'
+                        defaultMessage='A server named {serverName} with the same URL already exists.'
+                        values={{serverName: this.state.validationResult.existingServerName}}
+                    />
+                </div>
+            );
+        case URLValidationStatus.Insecure:
+            return (
+                <div className='warning'>
+                    <i className='icon-alert-outline'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.warning.insecure'
+                        defaultMessage='Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.'
+                    />
+                </div>
+            );
+        case URLValidationStatus.NotMattermost:
+            return (
+                <div className='warning'>
+                    <i className='icon-alert-outline'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.warning.notMattermost'
+                        defaultMessage='The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.'
+                    />
+                </div>
+            );
+        case URLValidationStatus.URLNotMatched:
+            return (
+                <div className='warning'>
+                    <i className='icon-alert-outline'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.warning.urlNotMatched'
+                        defaultMessage='The server URL provided does not match the SiteURL stored on the Mattermost server. For best results, change the URL to match. The configured URL is: {url}'
+                        values={{url: this.state.validationResult.siteURL}}
+                    />
+                </div>
+            );
+        }
+
+        return (
+            <div className='success'>
+                <i className='icon-check-circle'/>
+                <FormattedMessage
+                    id='renderer.components.newServerModal.success.ok'
+                    defaultMessage='Server URL is valid. Server version: {serverVersion}'
+                    values={{serverVersion: this.state.validationResult.serverVersion}}
+                />
+            </div>
+        );
     }
 
-    getError() {
-        const nameError = this.getServerNameValidationError();
-        const urlError = this.getServerUrlValidationError();
-
-        if (nameError && urlError) {
+    getServerNameMessage = () => {
+        if (!this.state.serverName.length) {
             return (
-                <>
-                    {nameError}
-                    <br/>
-                    {urlError}
-                </>
+                <div className='error'>
+                    <i className='icon-close-circle'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.error.nameRequired'
+                        defaultMessage='Name is required.'
+                    />
+                </div>
             );
-        } else if (nameError) {
-            return nameError;
-        } else if (urlError) {
-            return urlError;
         }
         return null;
-    }
-
-    validateForm() {
-        return this.getServerNameValidationState() === null &&
-            this.getServerUrlValidationState() === null;
     }
 
     save = async () => {
-        await this.addProtocolToUrl(this.state.serverUrl);
+        if (!this.state.validationResult) {
+            return;
+        }
+
+        if (this.isServerURLErrored()) {
+            return;
+        }
+
         this.setState({
             saveStarted: true,
         }, () => {
-            if (this.validateForm()) {
-                this.props.onSave?.({
-                    url: this.state.serverUrl,
-                    name: this.state.serverName,
-                    id: this.state.serverId,
-                });
-            }
+            this.props.onSave?.({
+                url: this.state.serverUrl,
+                name: this.state.serverName,
+                id: this.state.serverId,
+            });
         });
     }
 
@@ -291,7 +339,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                         this.props.setInputRef(ref);
                                     }
                                 }}
-                                isInvalid={Boolean(this.getServerUrlValidationState())}
+                                isInvalid={this.isServerURLErrored()}
                                 autoFocus={true}
                             />
                             <FormControl.Feedback/>
@@ -318,7 +366,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                 onClick={(e: React.MouseEvent<HTMLInputElement>) => {
                                     e.stopPropagation();
                                 }}
-                                isInvalid={Boolean(this.getServerNameValidationState())}
+                                isInvalid={!this.state.serverName.length}
                             />
                             <FormControl.Feedback/>
                             <FormText className='NewServerModal-noBottomSpace'>
@@ -329,15 +377,15 @@ class NewServerModal extends React.PureComponent<Props, State> {
                             </FormText>
                         </FormGroup>
                     </form>
+                    <div
+                        className='NewServerModal-validation'
+                    >
+                        {this.getServerNameMessage()}
+                        {this.getServerURLMessage()}
+                    </div>
                 </Modal.Body>
 
                 <Modal.Footer>
-                    <div
-                        className='pull-left modal-error'
-                    >
-                        {this.getError()}
-                    </div>
-
                     {this.props.onClose &&
                         <Button
                             id='cancelNewServerModal'
@@ -354,7 +402,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                         <Button
                             id='saveNewServerModal'
                             onClick={this.save}
-                            disabled={!this.validateForm()}
+                            disabled={!this.state.serverName.length || !this.state.validationResult || this.isServerURLErrored()}
                             variant='primary'
                         >
                             {this.getSaveButtonLabel()}

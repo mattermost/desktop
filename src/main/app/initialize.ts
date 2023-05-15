@@ -41,6 +41,7 @@ import {
     WINDOW_MINIMIZE,
     WINDOW_RESTORE,
     DOUBLE_CLICK_ON_WINDOW,
+    VALIDATE_SERVER_URL,
 } from 'common/communication';
 import Config from 'common/config';
 import {isTrustedURL, parseURL} from 'common/utils/url';
@@ -97,6 +98,7 @@ import {
     handleEditServerModal,
     handleNewServerModal,
     handleRemoveServerModal,
+    handleServerURLValidation,
     switchServer,
 } from './servers';
 import {
@@ -287,6 +289,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
     ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
     ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
+    ipcMain.handle(VALIDATE_SERVER_URL, handleServerURLValidation);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);

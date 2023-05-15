@@ -13,3 +13,10 @@ export type ClientConfig = {
     SiteURL: string;
     BuildBoards: string;
 }
+
+export type URLValidationResult = {
+    status: string;
+    existingServerName?: string;
+    serverVersion?: string;
+    siteURL?: string;
+}

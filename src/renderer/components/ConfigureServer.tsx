@@ -6,9 +6,10 @@ import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
 import {UniqueServer} from 'types/config';
+import {URLValidationResult} from 'types/server';
 
 import {isValidURL, parseURL} from 'common/utils/url';
-import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
+import {MODAL_TRANSITION_TIMEOUT, URLValidationStatus} from 'common/utils/constants';
 
 import womanLaptop from 'renderer/assets/svg/womanLaptop.svg';
 
@@ -22,7 +23,6 @@ import 'renderer/css/components/ConfigureServer.scss';
 import 'renderer/css/components/LoadingScreen.css';
 
 type ConfigureServerProps = {
-    currentServers: UniqueServer[];
     server?: UniqueServer;
     mobileView?: boolean;
     darkMode?: boolean;
@@ -35,8 +35,9 @@ type ConfigureServerProps = {
     onConnect: (data: UniqueServer) => void;
 };
 
+let validationTimeout: NodeJS.Timeout;
+
 function ConfigureServer({
-    currentServers,
     server,
     mobileView,
     darkMode,
@@ -64,28 +65,26 @@ function ConfigureServer({
     const [showContent, setShowContent] = useState(false);
     const [waiting, setWaiting] = useState(false);
 
-    const canSave = name && url && !nameError && !urlError;
+    const [validationResult, setValidationResult] = useState<URLValidationResult>();
+    const [validating, setValidating] = useState(false);
+
+    const canSave = name && url && !nameError && !urlError && !validating;
 
     useEffect(() => {
         setTransition('inFromRight');
         setShowContent(true);
     }, []);
 
-    const checkProtocolInURL = (checkURL: string): Promise<string> => {
-        if (isValidURL(checkURL)) {
-            return Promise.resolve(checkURL);
-        }
-        return window.desktop.modals.pingDomain(checkURL).
-            then((result: string) => {
-                const newURL = `${result}://${checkURL}`;
-                setUrl(newURL);
-                return newURL;
-            }).
-            catch(() => {
-                console.error(`Could not ping url: ${checkURL}`);
-                return checkURL;
+    useEffect(() => {
+        clearTimeout(validationTimeout);
+        validationTimeout = setTimeout(() => {
+            setValidating(true);
+            window.desktop.validateServerURL(url).then((validationResult) => {
+                setValidationResult(validationResult);
+                setValidating(false);
             });
-    };
+        }, 1000);
+    }, [url]);
 
     const validateName = () => {
         const newName = name.trim();
@@ -94,13 +93,6 @@ function ConfigureServer({
             return formatMessage({
                 id: 'renderer.components.newServerModal.error.nameRequired',
                 defaultMessage: 'Name is required.',
-            });
-        }
-
-        if (currentServers.find(({name: existingName}) => existingName === newName)) {
-            return formatMessage({
-                id: 'renderer.components.newServerModal.error.serverNameExists',
-                defaultMessage: 'A server with the same name already exists.',
             });
         }
 
@@ -129,13 +121,6 @@ function ConfigureServer({
             });
         }
 
-        if (currentServers.find(({url: existingURL}) => parseURL(existingURL)?.toString === parseURL(fullURL)?.toString())) {
-            return formatMessage({
-                id: 'renderer.components.newServerModal.error.serverUrlExists',
-                defaultMessage: 'A server with the same URL already exists.',
-            });
-        }
-
         return '';
     };
 
@@ -153,6 +138,10 @@ function ConfigureServer({
         if (urlError) {
             setURLError('');
         }
+    };
+
+    const fetchValidation = async (value: string) => {
+        
     };
 
     const handleOnSaveButtonClick = (e: React.MouseEvent) => {
@@ -183,8 +172,7 @@ function ConfigureServer({
             return;
         }
 
-        const fullURL = await checkProtocolInURL(url.trim());
-        const urlError = await validateURL(fullURL);
+        const urlError = await validateURL(url.trim());
 
         if (urlError) {
             setTransition(undefined);
@@ -197,7 +185,7 @@ function ConfigureServer({
 
         setTimeout(() => {
             onConnect({
-                url: fullURL,
+                url: url.trim(),
                 name,
                 id,
             });
@@ -228,6 +216,55 @@ function ConfigureServer({
             </div>
         );
     }, [transition, darkMode, alternateLinkURL, alternateLinkMessage, alternateLinkText]);
+
+    const getURLMessage = () => {
+        if (urlError) {
+            return {
+                type: STATUS.ERROR,
+                value: urlError,
+            };
+        }
+
+        if (validating) {
+            return {
+                type: STATUS.INFO,
+                value: formatMessage({id: 'renderer.components.configureServer.url.validating', defaultMessage: 'Validating...'}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.Insecure) {
+            return {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.url.insecure', defaultMessage: 'Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.'}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.NotMattermost) {
+            return {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.url.notMattermost', defaultMessage: 'The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.'}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.URLNotMatched) {
+            return {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.url.urlNotMatched', defaultMessage: 'The server URL provided does not match the SiteURL stored on the Mattermost server. For best results, change the URL to match. The configured URL is: {url}'}, {url: validationResult.siteURL}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.OK) {
+            return {
+                type: STATUS.SUCCESS,
+                value: formatMessage({id: 'renderer.components.configureServer.url.ok', defaultMessage: 'Server URL is valid. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
+            };
+        }
+
+        return {
+            type: STATUS.INFO,
+            value: formatMessage({id: 'renderer.components.configureServer.url.info', defaultMessage: 'The URL of your Mattermost server'}),
+        };
+    };
 
     return (
         <div
@@ -286,13 +323,7 @@ function ConfigureServer({
                                         inputSize={SIZE.LARGE}
                                         value={url}
                                         onChange={handleURLOnChange}
-                                        customMessage={urlError ? ({
-                                            type: STATUS.ERROR,
-                                            value: urlError,
-                                        }) : ({
-                                            type: STATUS.INFO,
-                                            value: formatMessage({id: 'renderer.components.configureServer.url.info', defaultMessage: 'The URL of your Mattermost server'}),
-                                        })}
+                                        customMessage={getURLMessage()}
                                         placeholder={formatMessage({id: 'renderer.components.configureServer.url.placeholder', defaultMessage: 'Server URL'})}
                                         disabled={waiting}
                                         darkMode={darkMode}
