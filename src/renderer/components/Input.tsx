@@ -22,7 +22,7 @@ export enum SIZE {
 }
 
 export type CustomMessageInputType = {
-    type: 'info' | 'error' | 'warning' | 'success';
+    type: STATUS;
     value: string;
 } | null;
 

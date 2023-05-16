@@ -140,10 +140,6 @@ function ConfigureServer({
         }
     };
 
-    const fetchValidation = async (value: string) => {
-        
-    };
-
     const handleOnSaveButtonClick = (e: React.MouseEvent) => {
         submit(e);
     };

@@ -47,7 +47,6 @@ describe('main/app/intercom', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            ServerManager.getAllServers.mockReturnValue([]);
             ServerManager.hasServers.mockReturnValue(false);
         });
 
@@ -56,7 +55,7 @@ describe('main/app/intercom', () => {
             ModalManager.addModal.mockReturnValue(promise);
 
             handleWelcomeScreenModal();
-            expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', '/some/index.html', '/some/preload.js', [], {}, true);
+            expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', '/some/index.html', '/some/preload.js', null, {}, true);
         });
     });
 
