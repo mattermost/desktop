@@ -183,12 +183,9 @@ export const handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: str
     }
 
     // If we can't get the remote info, warn the user that this might not be the right URL
+    // If the original URL was invalid, don't replace that as they probably have a typo somewhere
     if (!remoteInfo) {
-        // If the original URL was invalid, tell them that because they likely have a typo
-        if (!isValidURL(url)) {
-            return {status: URLValidationStatus.Invalid};
-        }
-        return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString()};
+        return {status: URLValidationStatus.NotMattermost, validatedURL: isValidURL(url) ? parsedURL.toString() : undefined};
     }
 
     // If we were only able to connect via HTTP, warn the user that the connection is not secure
@@ -197,7 +194,7 @@ export const handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: str
     }
 
     // If the URL doesn't match the Site URL, set the URL to the correct one
-    if (remoteInfo.siteURL && parsedURL.toString() !== new URL(remoteInfo.siteURL).toString()) {
+    if (remoteInfo.siteURL && remoteURL.toString() !== new URL(remoteInfo.siteURL).toString()) {
         // Check the Site URL as well to see if it's already pre-configured
         const parsedSiteURL = parseURL(remoteInfo.siteURL);
         if (parsedSiteURL) {
@@ -208,10 +205,10 @@ export const handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: str
         }
 
         // Otherwise fix it for them and return
-        return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, validatedURL: remoteInfo.siteURL};
+        return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName, validatedURL: remoteInfo.siteURL};
     }
 
-    return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, validatedURL: remoteInfo.siteURL};
+    return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName, validatedURL: remoteInfo.siteURL};
 };
 
 const testRemoteServer = async (parsedURL: URL) => {

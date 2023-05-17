@@ -33,6 +33,8 @@ type ConfigureServerProps = {
     onConnect: (data: UniqueServer) => void;
 };
 
+let validationTimeout: NodeJS.Timeout;
+
 function ConfigureServer({
     server,
     mobileView,
@@ -60,8 +62,9 @@ function ConfigureServer({
     const [urlError, setURLError] = useState<{type: STATUS; value: string}>();
     const [showContent, setShowContent] = useState(false);
     const [waiting, setWaiting] = useState(false);
+    const [validating, setValidating] = useState(false);
 
-    const canSave = name && url && !nameError && !(urlError && urlError.type === STATUS.ERROR);
+    const canSave = name && url && !nameError && !validating && !(urlError && urlError.type === STATUS.ERROR);
 
     useEffect(() => {
         setTransition('inFromRight');
@@ -82,14 +85,14 @@ function ConfigureServer({
     };
 
     const validateURL = async (url: string) => {
-        let errorMessage;
+        let message;
         const validationResult = await window.desktop.validateServerURL(url);
         if (validationResult.validatedURL) {
             setUrl(validationResult.validatedURL);
         }
 
         if (validationResult?.status === URLValidationStatus.Missing) {
-            errorMessage = {
+            message = {
                 type: STATUS.ERROR,
                 value: formatMessage({
                     id: 'renderer.components.newServerModal.error.urlRequired',
@@ -99,7 +102,7 @@ function ConfigureServer({
         }
 
         if (validationResult?.status === URLValidationStatus.Invalid) {
-            errorMessage = {
+            message = {
                 type: STATUS.ERROR,
                 value: formatMessage({
                     id: 'renderer.components.newServerModal.error.urlIncorrectFormatting',
@@ -109,29 +112,44 @@ function ConfigureServer({
         }
 
         if (validationResult?.status === URLValidationStatus.Insecure) {
-            errorMessage = {
+            message = {
                 type: STATUS.WARNING,
                 value: formatMessage({id: 'renderer.components.configureServer.url.insecure', defaultMessage: 'Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.'}),
             };
         }
 
         if (validationResult?.status === URLValidationStatus.NotMattermost) {
-            errorMessage = {
+            message = {
                 type: STATUS.WARNING,
                 value: formatMessage({id: 'renderer.components.configureServer.url.notMattermost', defaultMessage: 'The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.'}),
             };
         }
 
         if (validationResult?.status === URLValidationStatus.URLNotMatched) {
-            errorMessage = {
+            message = {
                 type: STATUS.INFO,
                 value: formatMessage({id: 'renderer.components.configureServer.url.urlNotMatched', defaultMessage: 'The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
             };
         }
 
+        if (validationResult?.status === URLValidationStatus.URLNotMatched) {
+            message = {
+                type: STATUS.INFO,
+                value: formatMessage({id: 'renderer.components.configureServer.url.urlNotMatched', defaultMessage: 'The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.OK) {
+            message = {
+                type: STATUS.SUCCESS,
+                value: formatMessage({id: 'renderer.components.configureServer.url.ok', defaultMessage: 'Server URL is valid. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
+            };
+        }
+
         return {
-            url: validationResult.validatedURL,
-            message: errorMessage,
+            validatedURL: validationResult.validatedURL,
+            serverName: validationResult.serverName,
+            message,
         };
     };
 
@@ -149,6 +167,32 @@ function ConfigureServer({
         if (urlError) {
             setURLError(undefined);
         }
+
+        clearTimeout(validationTimeout);
+        validationTimeout = setTimeout(() => {
+            const currentTimeout = validationTimeout;
+            setValidating(true);
+            setURLError({
+                type: STATUS.INFO,
+                value: formatMessage({id: 'renderer.components.configureServer.url.validating', defaultMessage: 'Validating...'}),
+            });
+            validateURL(value).then(({validatedURL, serverName, message}) => {
+                if (currentTimeout !== validationTimeout) {
+                    return;
+                }
+                if (validatedURL) {
+                    setUrl(validatedURL);
+                }
+                if (serverName && !name) {
+                    setName(serverName);
+                }
+                if (message) {
+                    setTransition(undefined);
+                    setURLError(message);
+                }
+                setValidating(false);
+            });
+        }, 1000);
     };
 
     const handleOnSaveButtonClick = (e: React.MouseEvent) => {
@@ -179,26 +223,11 @@ function ConfigureServer({
             return;
         }
 
-        let finalUrl = url.trim();
-        if (!urlError || urlError.type === STATUS.ERROR) {
-            const validationResult = await validateURL(url.trim());
-            if (validationResult.url) {
-                finalUrl = validationResult.url;
-                setUrl(finalUrl);
-            }
-            if (validationResult.message) {
-                setTransition(undefined);
-                setURLError(validationResult.message);
-                setWaiting(false);
-                return;
-            }
-        }
-
         setTransition('outToLeft');
 
         setTimeout(() => {
             onConnect({
-                url: finalUrl,
+                url,
                 name,
                 id,
             });
@@ -270,7 +299,7 @@ function ConfigureServer({
                                 />
                             </div>
                         </div>
-                        <div className={classNames('ConfigureServer__card', transition, {'with-error': nameError || urlError})}>
+                        <div className={classNames('ConfigureServer__card', transition, {'with-error': nameError || urlError?.type === STATUS.ERROR})}>
                             <div
                                 className='ConfigureServer__card-content'
                                 onKeyDown={handleOnCardEnterKeyDown}
