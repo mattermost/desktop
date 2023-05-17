@@ -77,7 +77,7 @@
     "main.menus.app.help.checkForUpdates": "업데이트 확인",
     "main.menus.app.help": "도움말(&p)",
     "main.menus.app.file.unhide": "모두 보기",
-    "main.menus.app.file.signInToAnotherServer": "다른 서버에 로그인",
+    "main.menus.app.file.signInToAnotherServer": "다른 서버에 로그인...",
     "main.menus.app.file.settings": "설정...",
     "main.menus.app.file.quit": "{appName} 종료",
     "main.menus.app.file.preferences": "설정...",
