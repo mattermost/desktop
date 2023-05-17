@@ -1,24 +1,24 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app} from 'electron';
+import {app, BrowserView} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 
 import {EventEmitter} from 'events';
 
-import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
+import {MAX_LOADING_SCREEN_SECONDS, MAX_SERVER_RETRIES, RELOAD_INTERVAL, SECOND} from 'common/utils/constants';
 import AppState from 'common/appState';
 import {
+    BROWSER_HISTORY_BUTTON,
+    IS_UNREAD,
+    LOAD_FAILED,
     LOAD_RETRY,
     LOAD_SUCCESS,
-    LOAD_FAILED,
-    UPDATE_TARGET_URL,
-    IS_UNREAD,
-    TOGGLE_BACK_BUTTON,
-    SET_VIEW_OPTIONS,
     LOADSCREEN_END,
-    BROWSER_HISTORY_BUTTON,
     SERVERS_URL_MODIFIED,
+    SET_VIEW_OPTIONS,
+    TOGGLE_BACK_BUTTON,
+    UPDATE_TARGET_URL,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
@@ -28,7 +28,7 @@ import {MattermostView} from 'common/views/View';
 import MainWindow from 'main/windows/mainWindow';
 
 import ContextMenu from '../contextMenu';
-import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
+import {composeUserAgent, getLocalPreload, getWindowBoundaries, shouldHaveBackBar} from '../utils';
 
 import WebContentsEventManager from './webContentEvents';
 
@@ -57,6 +57,9 @@ export class MattermostBrowserView extends EventEmitter {
     private retryLoad?: NodeJS.Timeout;
     private maxRetries: number;
     private altPressStatus: boolean;
+
+    // this static holds the initial window title the app came up with
+    private static initialTitle = '';
 
     constructor(view: MattermostView, options: BrowserViewConstructorOptions) {
         super();
@@ -368,8 +371,14 @@ export class MattermostBrowserView extends EventEmitter {
     }
 
     private handleTitleUpdate = (e: Event, title: string) => {
-        this.log.info('handleTitleUpdate', title);
-        MainWindow.get()?.setTitle('Mattermost Desktop - ' + title);
+        // Capture whatever the initial title of the application was, so we can
+        // derive new titles reflecting the window title from the server app from it.
+        if (MattermostBrowserView.initialTitle.length === 0) {
+            MattermostBrowserView.initialTitle = MainWindow.get()?.getTitle() || '';
+        }
+
+        this.log.debug('handleTitleUpdate', title);
+        MainWindow.get()?.setTitle(MattermostBrowserView.initialTitle + ' - ' + title);
         this.updateMentionsFromTitle(title);
     }
 
