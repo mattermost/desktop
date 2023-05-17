@@ -46,7 +46,6 @@ export const DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT = 4000; // 4 sec
 
 export const URLValidationStatus = {
     OK: 'OK',
-    NoHTTP: 'NO_HTTP',
     Missing: 'MISSING',
     Invalid: 'INVALID',
     Insecure: 'INSECURE',

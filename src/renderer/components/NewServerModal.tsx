@@ -92,14 +92,13 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 if (this.state.serverUrl !== serverUrl) {
                     return;
                 }
-                this.setState({validationResult, validationStarted: false});
+                this.setState({validationResult, validationStarted: false, serverUrl: validationResult.validatedURL ?? serverUrl});
             });
         }, 1000);
     }
 
     isServerURLErrored = () => {
         return this.state.validationResult?.status === URLValidationStatus.Invalid ||
-            this.state.validationResult?.status === URLValidationStatus.NoHTTP ||
             this.state.validationResult?.status === URLValidationStatus.Missing;
     }
 
@@ -135,16 +134,6 @@ class NewServerModal extends React.PureComponent<Props, State> {
                     />
                 </div>
             );
-        case URLValidationStatus.NoHTTP:
-            return (
-                <div className='error'>
-                    <i className='icon-close-circle'/>
-                    <FormattedMessage
-                        id='renderer.components.newServerModal.error.urlNeedsHttp'
-                        defaultMessage='URL should start with http:// or https://.'
-                    />
-                </div>
-            );
         case URLValidationStatus.Invalid:
             return (
                 <div className='error'>
@@ -161,7 +150,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                     <i className='icon-alert-outline'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.error.serverUrlExists'
-                        defaultMessage='A server named {serverName} with the same URL already exists.'
+                        defaultMessage='A server named {serverName} with the same Site URL already exists.'
                         values={{serverName: this.state.validationResult.existingServerName}}
                     />
                 </div>
@@ -188,12 +177,12 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         case URLValidationStatus.URLNotMatched:
             return (
-                <div className='warning'>
-                    <i className='icon-alert-outline'/>
+                <div className='info'>
+                    <i className='icon-information-outline'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.warning.urlNotMatched'
-                        defaultMessage='The server URL provided does not match the SiteURL stored on the Mattermost server. For best results, change the URL to match. The configured URL is: {url}'
-                        values={{url: this.state.validationResult.siteURL}}
+                        defaultMessage='The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}'
+                        values={{serverVersion: this.state.validationResult.serverVersion}}
                     />
                 </div>
             );

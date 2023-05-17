@@ -16,7 +16,7 @@ export type ClientConfig = {
 
 export type URLValidationResult = {
     status: string;
+    validatedURL?: string;
     existingServerName?: string;
     serverVersion?: string;
-    siteURL?: string;
 }

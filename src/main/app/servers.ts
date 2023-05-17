@@ -10,7 +10,7 @@ import {UPDATE_SHORTCUT_MENU} from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {isValidURL, parseURL} from 'common/utils/url';
+import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import {URLValidationStatus} from 'common/utils/constants';
 
 import ViewManager from 'main/views/viewManager';
@@ -143,30 +143,33 @@ export const handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: str
         return {status: URLValidationStatus.Missing};
     }
 
-    // Check to make sure it includes http(s?)://
-    if (!(/^https?:\/\/.*/).test(url)) {
-        return {status: URLValidationStatus.NoHTTP};
+    let httpUrl = url;
+    if (!isValidURL(url)) {
+        // If it already includes the protocol, tell them it's invalid
+        if (isValidURI(url)) {
+            httpUrl = url.replace(/^(.+):/, 'https:');
+        } else {
+            // Otherwise add HTTPS for them
+            httpUrl = `https://${url}`;
+        }
     }
 
-    // Make sure the URL is valid
-    if (!isValidURL(url)) {
-        return {status: URLValidationStatus.Invalid};
-    }
-    const parsedURL = parseURL(url);
+    // Make sure the final URL is valid
+    const parsedURL = parseURL(httpUrl);
     if (!parsedURL) {
         return {status: URLValidationStatus.Invalid};
-    }
-
-    // Tell the user if they already have a server for this URL
-    const existingServer = ServerManager.lookupViewByURL(parsedURL);
-    if (existingServer && existingServer.server.id !== currentId) {
-        return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name};
     }
 
     // Try and add HTTPS to see if we can get a more secure URL
     let secureURL = parsedURL;
     if (parsedURL.protocol === 'http:') {
         secureURL = parseURL(parsedURL.toString().replace(/^http:/, 'https:')) ?? parsedURL;
+    }
+
+    // Tell the user if they already have a server for this URL
+    const existingServer = ServerManager.lookupViewByURL(secureURL, true);
+    if (existingServer && existingServer.server.id !== currentId) {
+        return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
     }
 
     // Try and get remote info from the most secure URL, otherwise use the insecure one
@@ -181,20 +184,34 @@ export const handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: str
 
     // If we can't get the remote info, warn the user that this might not be the right URL
     if (!remoteInfo) {
-        return {status: URLValidationStatus.NotMattermost};
+        // If the original URL was invalid, tell them that because they likely have a typo
+        if (!isValidURL(url)) {
+            return {status: URLValidationStatus.Invalid};
+        }
+        return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString()};
     }
 
     // If we were only able to connect via HTTP, warn the user that the connection is not secure
     if (remoteURL.protocol === 'http:') {
-        return {status: URLValidationStatus.Insecure, serverVersion: remoteInfo.serverVersion};
+        return {status: URLValidationStatus.Insecure, serverVersion: remoteInfo.serverVersion, validatedURL: remoteURL.toString()};
     }
 
-    // If the URL doesn't match the Site URL, warn the user that it probably should
+    // If the URL doesn't match the Site URL, set the URL to the correct one
     if (remoteInfo.siteURL && parsedURL.toString() !== new URL(remoteInfo.siteURL).toString()) {
-        return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, siteURL: remoteInfo.siteURL};
+        // Check the Site URL as well to see if it's already pre-configured
+        const parsedSiteURL = parseURL(remoteInfo.siteURL);
+        if (parsedSiteURL) {
+            const existingServer = ServerManager.lookupViewByURL(parsedSiteURL, true);
+            if (existingServer && existingServer.server.id !== currentId) {
+                return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
+            }
+        }
+
+        // Otherwise fix it for them and return
+        return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, validatedURL: remoteInfo.siteURL};
     }
 
-    return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, siteURL: remoteInfo.siteURL};
+    return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, validatedURL: remoteInfo.siteURL};
 };
 
 const testRemoteServer = async (parsedURL: URL) => {
