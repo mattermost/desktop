@@ -1063,7 +1063,7 @@ THE SOFTWARE.
 
 This product contains 'bootstrap-dark' by ForEvolve.
 
-Bootstrap 4 dark theme that supports togging dark/light themes as well. 
+Bootstrap 4 dark theme that supports togging dark/light themes as well.
 
 * HOMEPAGE:
   * https://github.com/ForEvolve/bootstrap-dark
@@ -1267,7 +1267,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 This product contains 'electron' by Electron.
 
-The Electron framework lets you write cross-platform desktop applications using JavaScript, HTML and CSS. 
+The Electron framework lets you write cross-platform desktop applications using JavaScript, HTML and CSS.
 
 * HOMEPAGE:
   * https://github.com/electron/electron
@@ -1509,7 +1509,7 @@ This executable rebuilds native Node.js modules against the version of Node.js t
 * HOMEPAGE:
   * https://github.com/electron/rebuild
 
-* LICENSE: 
+* LICENSE:
 
 MIT License
 
@@ -1733,7 +1733,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 This product contains 'eslint-plugin-import' by import-js.
 
-This plugin intends to support linting of ES2015+ (ES6+) import/export syntax, and prevent issues with misspelling of file paths and import names. 
+This plugin intends to support linting of ES2015+ (ES6+) import/export syntax, and prevent issues with misspelling of file paths and import names.
 
 * HOMEPAGE:
   * https://github.com/import-js/eslint-plugin-import
@@ -2471,7 +2471,7 @@ Set of utilities to help in mattermost development.
 
 This product contains 'mocha-circleci-reporter' by Glenn Morton.
 
-A Mocha reporter specifically for Circle CI. 
+A Mocha reporter specifically for Circle CI.
 
 * HOMEPAGE:
   * https://github.com/sandcastle/mocha-circleci-reporter
@@ -2504,7 +2504,7 @@ SOFTWARE.
 
 This product contains 'mochawesome' by Adam Gruber.
 
-Mochawesome is a custom reporter for use with the Javascript testing framework, mocha. 
+Mochawesome is a custom reporter for use with the Javascript testing framework, mocha.
 
 * HOMEPAGE:
   * https://github.com/adamgruber/mochawesome
@@ -2966,7 +2966,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- 
+
 ---
 
 ## react-beautiful-dnd
@@ -2978,7 +2978,7 @@ Beautiful and accessible drag and drop for lists with React
 * HOMEPAGE:
   * https://github.com/atlassian/react-beautiful-dnd
 
-* LICENSE: 
+* LICENSE:
 
 Copyright 2019 Atlassian Pty Ltd
 
@@ -2993,7 +2993,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-    
+
 ---
 
 ## react-bootstrap
@@ -3051,7 +3051,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-    
+
 ---
 
 ## react-intl
@@ -3299,14 +3299,14 @@ This is a webpack boilerplate that covers all plugins and loaders that are neces
 
 Copyright (c) 2018 Paweł Rafałko dev.rafalko@gmail.com
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of 
-this software and associated documentation files (the "Software"), to deal in 
-the Software without restriction, including without limitation the rights to use, 
-copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
-Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
+Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice **shall be included** in 
+The above copyright notice and this permission notice **shall be included** in
 all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -3345,7 +3345,7 @@ TypeScript is a language for application-scale JavaScript.
 
 Version 2.0, January 2004
 
-http://www.apache.org/licenses/ 
+http://www.apache.org/licenses/
 
 TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
