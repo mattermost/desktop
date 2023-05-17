@@ -180,7 +180,7 @@
     "renderer.components.settingsPage.loggingLevel.description": "Rejestrowanie jest przydatne dla programistów i pomocy technicznej w celu wyodrębnienia problemów, które mogą wystąpić w aplikacji desktopowej.",
     "renderer.components.settingsPage.loggingLevel": "Poziom rejestrowania",
     "renderer.components.settingsPage.loadingConfig": "Ładowanie konfiguracji...",
-    "renderer.components.settingsPage.showUnreadBadge": "Pokaż czerwoną plakietkę na ikonie paska zadań, aby wskazać nieprzeczytane wiadomości",
+    "renderer.components.settingsPage.showUnreadBadge": "Pokaż czerwoną plakietkę na ikonie {taskbar}, aby wskazać nieprzeczytane wiadomości",
     "renderer.components.settingsPage.saving.error": "Nie można zapisać zmian. Proszę spróbować ponownie.",
     "renderer.components.settingsPage.minimizeToTray.description": "Jeśli jest włączone, aplikacja pozostaje uruchomiona w obszarze powiadomień po zamknięciu okna aplikacji.",
     "renderer.components.settingsPage.minimizeToTray": "Pozostawienie uruchomionej aplikacji w obszarze powiadomień po zamknięciu okna aplikacji",
