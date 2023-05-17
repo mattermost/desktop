@@ -1,24 +1,24 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, BrowserView} from 'electron';
+import {BrowserView, app} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 
 import {EventEmitter} from 'events';
 
-import {MAX_LOADING_SCREEN_SECONDS, MAX_SERVER_RETRIES, RELOAD_INTERVAL, SECOND} from 'common/utils/constants';
+import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import AppState from 'common/appState';
 import {
-    BROWSER_HISTORY_BUTTON,
-    IS_UNREAD,
-    LOAD_FAILED,
     LOAD_RETRY,
     LOAD_SUCCESS,
-    LOADSCREEN_END,
-    SERVERS_URL_MODIFIED,
-    SET_VIEW_OPTIONS,
-    TOGGLE_BACK_BUTTON,
+    LOAD_FAILED,
     UPDATE_TARGET_URL,
+    IS_UNREAD,
+    TOGGLE_BACK_BUTTON,
+    SET_VIEW_OPTIONS,
+    LOADSCREEN_END,
+    BROWSER_HISTORY_BUTTON,
+    SERVERS_URL_MODIFIED,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
@@ -28,7 +28,7 @@ import {MattermostView} from 'common/views/View';
 import MainWindow from 'main/windows/mainWindow';
 
 import ContextMenu from '../contextMenu';
-import {composeUserAgent, getLocalPreload, getWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
 
 import WebContentsEventManager from './webContentEvents';
 
