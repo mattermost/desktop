@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useCallback, useEffect} from 'react';
+import React, {useState, useCallback, useEffect, useRef} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
@@ -33,8 +33,6 @@ type ConfigureServerProps = {
     onConnect: (data: UniqueServer) => void;
 };
 
-let validationTimeout: NodeJS.Timeout;
-
 function ConfigureServer({
     server,
     mobileView,
@@ -63,6 +61,7 @@ function ConfigureServer({
     const [showContent, setShowContent] = useState(false);
     const [waiting, setWaiting] = useState(false);
     const [validating, setValidating] = useState(false);
+    const validationTimeout = useRef<NodeJS.Timeout>();
 
     const canSave = name && url && !nameError && !validating && !(urlError && urlError.type === STATUS.ERROR);
 
@@ -168,8 +167,8 @@ function ConfigureServer({
             setURLError(undefined);
         }
 
-        clearTimeout(validationTimeout);
-        validationTimeout = setTimeout(() => {
+        clearTimeout(validationTimeout.current as unknown as number);
+        validationTimeout.current = setTimeout(() => {
             const currentTimeout = validationTimeout;
             setValidating(true);
             setURLError({
@@ -177,7 +176,7 @@ function ConfigureServer({
                 value: formatMessage({id: 'renderer.components.configureServer.url.validating', defaultMessage: 'Validating...'}),
             });
             validateURL(value).then(({validatedURL, serverName, message}) => {
-                if (currentTimeout !== validationTimeout) {
+                if (currentTimeout.current !== validationTimeout.current) {
                     return;
                 }
                 if (validatedURL) {

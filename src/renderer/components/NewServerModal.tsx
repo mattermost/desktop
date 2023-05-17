@@ -87,9 +87,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
     validateServerURL = (serverUrl: string) => {
         clearTimeout(this.validationTimeout as unknown as number);
         this.validationTimeout = setTimeout(() => {
+            const currentTimeout = this.validationTimeout;
             this.setState({validationStarted: true});
             window.desktop.validateServerURL(serverUrl, this.props.server?.id).then((validationResult) => {
-                if (this.state.serverUrl !== serverUrl) {
+                if (currentTimeout !== this.validationTimeout) {
                     return;
                 }
                 this.setState({validationResult, validationStarted: false, serverUrl: validationResult.validatedURL ?? serverUrl, serverName: this.state.serverName ? this.state.serverName : validationResult.serverName ?? ''});
@@ -215,7 +216,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
         return null;
     }
 
-    save = async () => {
+    save = () => {
         if (!this.state.validationResult) {
             return;
         }
