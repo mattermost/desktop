@@ -13,6 +13,18 @@
     display: none;
 }
 
+#extra-bar.dark-mode {
+    background: #1F1F1F;
+}
+
+#extra-bar.dark-mode .btn-link {
+    color: rgba(243,243,243,0.7);
+}
+
+#extra-bar.dark-mode span.backLabel {
+    color: rgba(243,243,243,0.7);
+}
+
 span.backLabel {
     font-family: "Open Sans", sans-serif;
     font-weight: normal;
