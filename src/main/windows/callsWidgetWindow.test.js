@@ -438,15 +438,16 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(callsWidgetWindow.popOut).not.toBeDefined();
     });
 
-    it('getURL', () => {
+    it('getViewURL', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
-        callsWidgetWindow.win = {
-            webContents: {
-                getURL: () => 'http://localhost:8065/',
+        callsWidgetWindow.mainView = {
+            view: {
+                server: {
+                    url: new URL('http://localhost:8065/'),
+                },
             },
         };
-        urlUtils.parseURL.mockImplementation((url) => new URL(url));
-        expect(callsWidgetWindow.getURL().toString()).toBe('http://localhost:8065/');
+        expect(callsWidgetWindow.getViewURL().toString()).toBe('http://localhost:8065/');
     });
 
     describe('isAllowedEvent', () => {
