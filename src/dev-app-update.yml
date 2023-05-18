@@ -1,2 +1,4 @@
-provider: generic
-url: 'http://localhost:8081/'
+provider: github
+url: 'https://github.com/marinawl/mattermost-desktop.git'
+repo: 'update-testing'
+token: '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'

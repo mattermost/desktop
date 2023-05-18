@@ -2,7 +2,7 @@
   "publish": [
     {
     "provider": "generic",
-    "url": "https://releases.mattermost.com/desktop"
+    "url": "https://github.com/marinawl/mattermost-desktop.git"
     }
   ],
   "appId": "Mattermost.Desktop",
