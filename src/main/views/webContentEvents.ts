@@ -78,7 +78,7 @@ export class WebContentsEventManager {
         }
 
         if (CallsWidgetWindow.isCallsWidget(webContentsId)) {
-            return CallsWidgetWindow.getURL();
+            return CallsWidgetWindow.getViewURL();
         }
 
         return ViewManager.getViewByWebContentsId(webContentsId)?.view.server.url;
