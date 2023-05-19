@@ -424,19 +424,7 @@ describe('main/app/servers', () => {
             expect(result.validatedURL).toBe('https://not-server.com/');
         });
 
-        it('should show a warning when the ping request times out, but do not update the URL if it was not valid', async () => {
-            ServerInfo.mockImplementation(() => ({
-                fetchRemoteInfo: jest.fn().mockImplementation(() => {
-                    throw new Error();
-                }),
-            }));
-
-            const result = await Servers.handleServerURLValidation({}, 'not.mattermost.server');
-            expect(result.status).toBe(URLValidationStatus.NotMattermost);
-            expect(result.validatedURL).toBeUndefined();
-        });
-
-        it('should report to the user when the Site URL is different', async () => {
+        it('should update the users URL when the Site URL is different', async () => {
             ServerInfo.mockImplementation(() => ({
                 fetchRemoteInfo: jest.fn().mockImplementation(() => {
                     return {
@@ -448,8 +436,27 @@ describe('main/app/servers', () => {
             }));
 
             const result = await Servers.handleServerURLValidation({}, 'https://server.com');
-            expect(result.status).toBe(URLValidationStatus.URLNotMatched);
+            expect(result.status).toBe(URLValidationStatus.URLUpdated);
             expect(result.validatedURL).toBe('https://mainserver.com/');
+        });
+
+        it('should warn the user when the Site URL is different but unreachable', async () => {
+            ServerInfo.mockImplementation(({url}) => ({
+                fetchRemoteInfo: jest.fn().mockImplementation(() => {
+                    if (url === 'https://mainserver.com/') {
+                        return undefined;
+                    }
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: 'https://mainserver.com/',
+                    };
+                }),
+            }));
+
+            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            expect(result.status).toBe(URLValidationStatus.URLNotMatched);
+            expect(result.validatedURL).toBe('https://server.com/');
         });
 
         it('should warn the user when the Site URL already exists as another server', async () => {

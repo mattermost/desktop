@@ -52,6 +52,7 @@ export const URLValidationStatus = {
     URLExists: 'URL_EXISTS',
     NotMattermost: 'NOT_MATTERMOST',
     URLNotMatched: 'URL_NOT_MATCHED',
+    URLUpdated: 'URL_UPDATED',
 };
 
 // supported custom login paths (oath, saml)

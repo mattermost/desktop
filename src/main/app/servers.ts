@@ -185,7 +185,7 @@ export const handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: str
     // If we can't get the remote info, warn the user that this might not be the right URL
     // If the original URL was invalid, don't replace that as they probably have a typo somewhere
     if (!remoteInfo) {
-        return {status: URLValidationStatus.NotMattermost, validatedURL: isValidURL(url) ? parsedURL.toString() : undefined};
+        return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString()};
     }
 
     // If we were only able to connect via HTTP, warn the user that the connection is not secure
@@ -195,17 +195,23 @@ export const handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: str
 
     // If the URL doesn't match the Site URL, set the URL to the correct one
     if (remoteInfo.siteURL && remoteURL.toString() !== new URL(remoteInfo.siteURL).toString()) {
-        // Check the Site URL as well to see if it's already pre-configured
         const parsedSiteURL = parseURL(remoteInfo.siteURL);
         if (parsedSiteURL) {
+            // Check the Site URL as well to see if it's already pre-configured
             const existingServer = ServerManager.lookupViewByURL(parsedSiteURL, true);
             if (existingServer && existingServer.server.id !== currentId) {
                 return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
             }
+
+            // If we can't reach the remote Site URL, there's probably a configuration issue
+            const remoteSiteURLInfo = await testRemoteServer(parsedSiteURL);
+            if (!remoteSiteURLInfo) {
+                return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName, validatedURL: remoteURL.toString()};
+            }
         }
 
         // Otherwise fix it for them and return
-        return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName, validatedURL: remoteInfo.siteURL};
+        return {status: URLValidationStatus.URLUpdated, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName, validatedURL: remoteInfo.siteURL};
     }
 
     return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName, validatedURL: remoteInfo.siteURL};

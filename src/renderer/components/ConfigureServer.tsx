@@ -53,6 +53,7 @@ function ConfigureServer({
         id,
     } = server || {};
 
+    const mounted = useRef(false);
     const [transition, setTransition] = useState<'inFromRight' | 'outToLeft'>();
     const [name, setName] = useState(prevName || '');
     const [url, setUrl] = useState(prevURL || '');
@@ -60,15 +61,61 @@ function ConfigureServer({
     const [urlError, setURLError] = useState<{type: STATUS; value: string}>();
     const [showContent, setShowContent] = useState(false);
     const [waiting, setWaiting] = useState(false);
+
     const [validating, setValidating] = useState(false);
     const validationTimeout = useRef<NodeJS.Timeout>();
+    const [editing, setEditing] = useState(false);
 
-    const canSave = name && url && !nameError && !validating && !(urlError && urlError.type === STATUS.ERROR);
+    const canSave = name && url && !nameError && !validating && urlError && urlError.type !== STATUS.ERROR;
 
     useEffect(() => {
         setTransition('inFromRight');
         setShowContent(true);
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
     }, []);
+
+    useEffect(() => {
+        if (editing) {
+            return;
+        }
+
+        fetchValidationResult();
+    }, [editing]);
+
+    const fetchValidationResult = () => {
+        if (!url) {
+            return;
+        }
+
+        setValidating(true);
+        setURLError({
+            type: STATUS.INFO,
+            value: formatMessage({id: 'renderer.components.configureServer.url.validating', defaultMessage: 'Validating...'}),
+        });
+        validateURL(url).then(({validatedURL, serverName, message}) => {
+            if (editing) {
+                setValidating(false);
+                setURLError(undefined);
+                return;
+            }
+            if (validatedURL) {
+                setUrl(validatedURL);
+            }
+            if (serverName) {
+                setName((prev) => {
+                    return prev.length ? prev : serverName;
+                });
+            }
+            if (message) {
+                setTransition(undefined);
+                setURLError(message);
+            }
+            setValidating(false);
+        });
+    };
 
     const validateName = () => {
         const newName = name.trim();
@@ -126,15 +173,15 @@ function ConfigureServer({
 
         if (validationResult?.status === URLValidationStatus.URLNotMatched) {
             message = {
-                type: STATUS.INFO,
-                value: formatMessage({id: 'renderer.components.configureServer.url.urlNotMatched', defaultMessage: 'The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.url.urlNotMatched', defaultMessage: 'The server URL provided does not match the configured Site URL on your Mattermost server. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
             };
         }
 
-        if (validationResult?.status === URLValidationStatus.URLNotMatched) {
+        if (validationResult?.status === URLValidationStatus.URLUpdated) {
             message = {
                 type: STATUS.INFO,
-                value: formatMessage({id: 'renderer.components.configureServer.url.urlNotMatched', defaultMessage: 'The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
+                value: formatMessage({id: 'renderer.components.configureServer.url.urlUpdated', defaultMessage: 'The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
             };
         }
 
@@ -167,30 +214,13 @@ function ConfigureServer({
             setURLError(undefined);
         }
 
+        setEditing(true);
         clearTimeout(validationTimeout.current as unknown as number);
         validationTimeout.current = setTimeout(() => {
-            const currentTimeout = validationTimeout;
-            setValidating(true);
-            setURLError({
-                type: STATUS.INFO,
-                value: formatMessage({id: 'renderer.components.configureServer.url.validating', defaultMessage: 'Validating...'}),
-            });
-            validateURL(value).then(({validatedURL, serverName, message}) => {
-                if (currentTimeout.current !== validationTimeout.current) {
-                    return;
-                }
-                if (validatedURL) {
-                    setUrl(validatedURL);
-                }
-                if (serverName && !name) {
-                    setName(serverName);
-                }
-                if (message) {
-                    setTransition(undefined);
-                    setURLError(message);
-                }
-                setValidating(false);
-            });
+            if (!mounted.current) {
+                return;
+            }
+            setEditing(false);
         }, 1000);
     };
 

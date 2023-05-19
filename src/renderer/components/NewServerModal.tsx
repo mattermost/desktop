@@ -39,6 +39,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
     wasShown?: boolean;
     serverUrlInputRef?: HTMLInputElement;
     validationTimeout?: NodeJS.Timeout;
+    mounted: boolean;
 
     static defaultProps = {
         restoreFocus: true,
@@ -48,6 +49,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
         super(props);
 
         this.wasShown = false;
+        this.mounted = false;
         this.state = {
             serverName: '',
             serverUrl: '',
@@ -55,6 +57,14 @@ class NewServerModal extends React.PureComponent<Props, State> {
             saveStarted: false,
             validationStarted: false,
         };
+    }
+
+    componentDidMount(): void {
+        this.mounted = true;
+    }
+
+    componentWillUnmount(): void {
+        this.mounted = false;
     }
 
     initializeOnShow = () => {
@@ -87,9 +97,15 @@ class NewServerModal extends React.PureComponent<Props, State> {
     validateServerURL = (serverUrl: string) => {
         clearTimeout(this.validationTimeout as unknown as number);
         this.validationTimeout = setTimeout(() => {
+            if (!this.mounted) {
+                return;
+            }
             const currentTimeout = this.validationTimeout;
             this.setState({validationStarted: true});
             window.desktop.validateServerURL(serverUrl, this.props.server?.id).then((validationResult) => {
+                if (!this.mounted) {
+                    return;
+                }
                 if (currentTimeout !== this.validationTimeout) {
                     return;
                 }
@@ -178,10 +194,21 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         case URLValidationStatus.URLNotMatched:
             return (
+                <div className='warning'>
+                    <i className='icon-alert-outline'/>
+                    <FormattedMessage
+                        id='renderer.components.newServerModal.warning.urlNotMatched'
+                        defaultMessage='The server URL does not match the configured Site URL on your Mattermost server. Server version: {serverVersion}'
+                        values={{serverVersion: this.state.validationResult.serverVersion}}
+                    />
+                </div>
+            );
+        case URLValidationStatus.URLUpdated:
+            return (
                 <div className='info'>
                     <i className='icon-information-outline'/>
                     <FormattedMessage
-                        id='renderer.components.newServerModal.warning.urlNotMatched'
+                        id='renderer.components.newServerModal.warning.urlUpdated'
                         defaultMessage='The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}'
                         values={{serverVersion: this.state.validationResult.serverVersion}}
                     />
