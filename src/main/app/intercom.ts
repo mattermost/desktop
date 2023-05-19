@@ -38,6 +38,10 @@ function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerMo
     log.debug('handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
 
     if (showWelcomeScreen) {
+        if (ModalManager.isModalDisplayed()) {
+            return;
+        }
+
         handleWelcomeScreenModal();
 
         if (process.env.NODE_ENV === 'test') {
