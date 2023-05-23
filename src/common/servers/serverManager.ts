@@ -238,6 +238,10 @@ export class ServerManager extends EventEmitter {
             this.currentServerId = this.serverOrder[0];
         }
 
+        if (!this.hasServers()) {
+            delete this.currentServerId;
+        }
+
         this.persistServers();
     }
 

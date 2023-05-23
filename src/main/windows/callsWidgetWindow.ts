@@ -94,8 +94,8 @@ export class CallsWidgetWindow {
      * Helper functions
      */
 
-    getURL = () => {
-        return this.win && parseURL(this.win?.webContents.getURL());
+    getViewURL = () => {
+        return this.mainView?.view.server.url;
     }
 
     isCallsWidget = (webContentsId: number) => {
