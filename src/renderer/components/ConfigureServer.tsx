@@ -63,8 +63,9 @@ function ConfigureServer({
     const [waiting, setWaiting] = useState(false);
 
     const [validating, setValidating] = useState(false);
+    const validationTimestamp = useRef<number>();
     const validationTimeout = useRef<NodeJS.Timeout>();
-    const [editing, setEditing] = useState(false);
+    const editing = useRef(false);
 
     const canSave = name && url && !nameError && !validating && urlError && urlError.type !== STATUS.ERROR;
 
@@ -77,28 +78,21 @@ function ConfigureServer({
         };
     }, []);
 
-    useEffect(() => {
-        if (editing) {
-            return;
-        }
-
-        fetchValidationResult();
-    }, [editing]);
-
-    const fetchValidationResult = () => {
-        if (!url) {
-            return;
-        }
-
+    const fetchValidationResult = (urlToValidate: string) => {
         setValidating(true);
         setURLError({
             type: STATUS.INFO,
             value: formatMessage({id: 'renderer.components.configureServer.url.validating', defaultMessage: 'Validating...'}),
         });
-        validateURL(url).then(({validatedURL, serverName, message}) => {
-            if (editing) {
+        const requestTime = Date.now();
+        validationTimestamp.current = requestTime;
+        validateURL(urlToValidate).then(({validatedURL, serverName, message}) => {
+            if (editing.current) {
                 setValidating(false);
                 setURLError(undefined);
+                return;
+            }
+            if (!validationTimestamp.current || requestTime < validationTimestamp.current) {
                 return;
             }
             if (validatedURL) {
@@ -214,13 +208,14 @@ function ConfigureServer({
             setURLError(undefined);
         }
 
-        setEditing(true);
+        editing.current = true;
         clearTimeout(validationTimeout.current as unknown as number);
         validationTimeout.current = setTimeout(() => {
             if (!mounted.current) {
                 return;
             }
-            setEditing(false);
+            editing.current = false;
+            fetchValidationResult(value);
         }, 1000);
     };
 
