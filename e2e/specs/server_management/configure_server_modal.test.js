@@ -49,7 +49,8 @@ describe('Configure Server Modal', function desc() {
 
     it('MM-T5117 should be valid if display name and URL are set', async () => {
         await configureServerModal.type('#input_name', 'TestServer');
-        await configureServerModal.type('#input_url', 'http://example.org');
+        await configureServerModal.type('#input_url', 'https://community.mattermost.com');
+        await configureServerModal.waitForSelector('#customMessage_url.Input___success');
 
         const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
         (connectButtonDisabled === '').should.be.false;
@@ -57,11 +58,8 @@ describe('Configure Server Modal', function desc() {
 
     it('MM-T5118 should not be valid if an invalid URL has been set', async () => {
         await configureServerModal.type('#input_name', 'TestServer');
-        await configureServerModal.type('#input_url', 'lorem.ipsum.dolor.sit.amet');
-
-        await configureServerModal.click('#connectConfigureServer');
-
-        await asyncSleep(1000);
+        await configureServerModal.type('#input_url', '!@#$%^&*()');
+        await configureServerModal.waitForSelector('#customMessage_url.Input___error');
 
         const errorClass = await configureServerModal.getAttribute('#customMessage_url', 'class');
         errorClass.should.contain('Input___error');

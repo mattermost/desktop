@@ -143,7 +143,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
         switch (this.state.validationResult?.status) {
         case URLValidationStatus.Missing:
             return (
-                <div className='error'>
+                <div
+                    id='urlValidation'
+                    className='error'
+                >
                     <i className='icon-close-circle'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.error.urlRequired'
@@ -153,7 +156,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         case URLValidationStatus.Invalid:
             return (
-                <div className='error'>
+                <div
+                    id='urlValidation'
+                    className='error'
+                >
                     <i className='icon-close-circle'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.error.urlIncorrectFormatting'
@@ -163,7 +169,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         case URLValidationStatus.URLExists:
             return (
-                <div className='warning'>
+                <div
+                    id='urlValidation'
+                    className='warning'
+                >
                     <i className='icon-alert-outline'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.error.serverUrlExists'
@@ -174,7 +183,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         case URLValidationStatus.Insecure:
             return (
-                <div className='warning'>
+                <div
+                    id='urlValidation'
+                    className='warning'
+                >
                     <i className='icon-alert-outline'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.warning.insecure'
@@ -184,7 +196,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         case URLValidationStatus.NotMattermost:
             return (
-                <div className='warning'>
+                <div
+                    id='urlValidation'
+                    className='warning'
+                >
                     <i className='icon-alert-outline'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.warning.notMattermost'
@@ -194,7 +209,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         case URLValidationStatus.URLNotMatched:
             return (
-                <div className='warning'>
+                <div
+                    id='urlValidation'
+                    className='warning'
+                >
                     <i className='icon-alert-outline'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.warning.urlNotMatched'
@@ -205,7 +223,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         case URLValidationStatus.URLUpdated:
             return (
-                <div className='info'>
+                <div
+                    id='urlValidation'
+                    className='info'
+                >
                     <i className='icon-information-outline'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.warning.urlUpdated'
@@ -217,7 +238,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className='success'>
+            <div
+                id='urlValidation'
+                className='success'
+            >
                 <i className='icon-check-circle'/>
                 <FormattedMessage
                     id='renderer.components.newServerModal.success.ok'
@@ -231,7 +255,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
     getServerNameMessage = () => {
         if (!this.state.serverName.length) {
             return (
-                <div className='error'>
+                <div
+                    id='nameValidation'
+                    className='error'
+                >
                     <i className='icon-close-circle'/>
                     <FormattedMessage
                         id='renderer.components.newServerModal.error.nameRequired'
