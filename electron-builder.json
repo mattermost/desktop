@@ -65,7 +65,6 @@
       "appimage",
       "rpm"
     ],
-    "icon": "src/assets/icon.icns",
     "extraFiles": [
       {
         "filter": [
@@ -101,7 +100,6 @@
         ]
       }
     ],
-    "icon": "src/assets/osx/osx_icon.icns",
     "hardenedRuntime": true,
     "gatekeeperAssess": true,
     "entitlements": "./entitlements.mac.plist",
