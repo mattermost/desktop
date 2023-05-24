@@ -169,8 +169,19 @@ export class MainWindow extends EventEmitter {
 
     show = () => {
         if (this.win && this.isReady) {
-            this.win.show();
-            this.win.focus();
+            // There's a bug on Windows in Electron where if the window is snapped, it will unsnap when you call show()
+            // See here: https://github.com/electron/electron/issues/25359
+            // So to make sure we always show the window on macOS/Linux (need for workspace switching)
+            // We make an exception here
+            if (process.platform === 'win32') {
+                if (this.win.isVisible()) {
+                    this.win.focus();
+                } else {
+                    this.win.show();
+                }
+            } else {
+                this.win.show();
+            }
         } else {
             this.init();
         }
