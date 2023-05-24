@@ -1,3 +1,7 @@
+@import url("components/index.css");
+@import url("fonts.css");
+@import '~@mattermost/compass-icons/css/compass-icons.css';
+
 body {
   background-color: transparent;
 }

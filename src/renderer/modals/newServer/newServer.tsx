@@ -27,14 +27,10 @@ const onSave = (data: UniqueServer) => {
 
 const NewServerModalWrapper: React.FC = () => {
     const [unremoveable, setUnremovable] = useState<boolean>();
-    const [currentServers, setCurrentServers] = useState<UniqueServer[]>();
 
     useEffect(() => {
         window.desktop.modals.isModalUncloseable().then((uncloseable) => {
             setUnremovable(uncloseable);
-        });
-        window.desktop.modals.getModalInfo<UniqueServer[]>().then((servers) => {
-            setCurrentServers(servers);
         });
     }, []);
 
@@ -45,7 +41,6 @@ const NewServerModalWrapper: React.FC = () => {
                 onSave={onSave}
                 editMode={false}
                 show={true}
-                currentServers={currentServers}
             />
         </IntlProvider>
     );

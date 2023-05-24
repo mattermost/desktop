@@ -1,14 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useCallback, useEffect} from 'react';
+import React, {useState, useCallback, useEffect, useRef} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import classNames from 'classnames';
 
 import {UniqueServer} from 'types/config';
 
-import {isValidURL, parseURL} from 'common/utils/url';
-import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
+import {MODAL_TRANSITION_TIMEOUT, URLValidationStatus} from 'common/utils/constants';
 
 import womanLaptop from 'renderer/assets/svg/womanLaptop.svg';
 
@@ -22,7 +21,6 @@ import 'renderer/css/components/ConfigureServer.scss';
 import 'renderer/css/components/LoadingScreen.css';
 
 type ConfigureServerProps = {
-    currentServers: UniqueServer[];
     server?: UniqueServer;
     mobileView?: boolean;
     darkMode?: boolean;
@@ -36,7 +34,6 @@ type ConfigureServerProps = {
 };
 
 function ConfigureServer({
-    currentServers,
     server,
     mobileView,
     darkMode,
@@ -56,35 +53,62 @@ function ConfigureServer({
         id,
     } = server || {};
 
+    const mounted = useRef(false);
     const [transition, setTransition] = useState<'inFromRight' | 'outToLeft'>();
     const [name, setName] = useState(prevName || '');
     const [url, setUrl] = useState(prevURL || '');
     const [nameError, setNameError] = useState('');
-    const [urlError, setURLError] = useState('');
+    const [urlError, setURLError] = useState<{type: STATUS; value: string}>();
     const [showContent, setShowContent] = useState(false);
     const [waiting, setWaiting] = useState(false);
 
-    const canSave = name && url && !nameError && !urlError;
+    const [validating, setValidating] = useState(false);
+    const validationTimestamp = useRef<number>();
+    const validationTimeout = useRef<NodeJS.Timeout>();
+    const editing = useRef(false);
+
+    const canSave = name && url && !nameError && !validating && urlError && urlError.type !== STATUS.ERROR;
 
     useEffect(() => {
         setTransition('inFromRight');
         setShowContent(true);
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
     }, []);
 
-    const checkProtocolInURL = (checkURL: string): Promise<string> => {
-        if (isValidURL(checkURL)) {
-            return Promise.resolve(checkURL);
-        }
-        return window.desktop.modals.pingDomain(checkURL).
-            then((result: string) => {
-                const newURL = `${result}://${checkURL}`;
-                setUrl(newURL);
-                return newURL;
-            }).
-            catch(() => {
-                console.error(`Could not ping url: ${checkURL}`);
-                return checkURL;
-            });
+    const fetchValidationResult = (urlToValidate: string) => {
+        setValidating(true);
+        setURLError({
+            type: STATUS.INFO,
+            value: formatMessage({id: 'renderer.components.configureServer.url.validating', defaultMessage: 'Validating...'}),
+        });
+        const requestTime = Date.now();
+        validationTimestamp.current = requestTime;
+        validateURL(urlToValidate).then(({validatedURL, serverName, message}) => {
+            if (editing.current) {
+                setValidating(false);
+                setURLError(undefined);
+                return;
+            }
+            if (!validationTimestamp.current || requestTime < validationTimestamp.current) {
+                return;
+            }
+            if (validatedURL) {
+                setUrl(validatedURL);
+            }
+            if (serverName) {
+                setName((prev) => {
+                    return prev.length ? prev : serverName;
+                });
+            }
+            if (message) {
+                setTransition(undefined);
+                setURLError(message);
+            }
+            setValidating(false);
+        });
     };
 
     const validateName = () => {
@@ -97,46 +121,76 @@ function ConfigureServer({
             });
         }
 
-        if (currentServers.find(({name: existingName}) => existingName === newName)) {
-            return formatMessage({
-                id: 'renderer.components.newServerModal.error.serverNameExists',
-                defaultMessage: 'A server with the same name already exists.',
-            });
-        }
-
         return '';
     };
 
-    const validateURL = async (fullURL: string) => {
-        if (!fullURL) {
-            return formatMessage({
-                id: 'renderer.components.newServerModal.error.urlRequired',
-                defaultMessage: 'URL is required.',
-            });
+    const validateURL = async (url: string) => {
+        let message;
+        const validationResult = await window.desktop.validateServerURL(url);
+        if (validationResult.validatedURL) {
+            setUrl(validationResult.validatedURL);
         }
 
-        if (!parseURL(fullURL)) {
-            return formatMessage({
-                id: 'renderer.components.newServerModal.error.urlIncorrectFormatting',
-                defaultMessage: 'URL is not formatted correctly.',
-            });
+        if (validationResult?.status === URLValidationStatus.Missing) {
+            message = {
+                type: STATUS.ERROR,
+                value: formatMessage({
+                    id: 'renderer.components.newServerModal.error.urlRequired',
+                    defaultMessage: 'URL is required.',
+                }),
+            };
         }
 
-        if (!isValidURL(fullURL)) {
-            return formatMessage({
-                id: 'renderer.components.newServerModal.error.urlNeedsHttp',
-                defaultMessage: 'URL should start with http:// or https://.',
-            });
+        if (validationResult?.status === URLValidationStatus.Invalid) {
+            message = {
+                type: STATUS.ERROR,
+                value: formatMessage({
+                    id: 'renderer.components.newServerModal.error.urlIncorrectFormatting',
+                    defaultMessage: 'URL is not formatted correctly.',
+                }),
+            };
         }
 
-        if (currentServers.find(({url: existingURL}) => parseURL(existingURL)?.toString === parseURL(fullURL)?.toString())) {
-            return formatMessage({
-                id: 'renderer.components.newServerModal.error.serverUrlExists',
-                defaultMessage: 'A server with the same URL already exists.',
-            });
+        if (validationResult?.status === URLValidationStatus.Insecure) {
+            message = {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.url.insecure', defaultMessage: 'Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.'}),
+            };
         }
 
-        return '';
+        if (validationResult?.status === URLValidationStatus.NotMattermost) {
+            message = {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.url.notMattermost', defaultMessage: 'The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.'}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.URLNotMatched) {
+            message = {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.url.urlNotMatched', defaultMessage: 'The server URL provided does not match the configured Site URL on your Mattermost server. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.URLUpdated) {
+            message = {
+                type: STATUS.INFO,
+                value: formatMessage({id: 'renderer.components.configureServer.url.urlUpdated', defaultMessage: 'The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.OK) {
+            message = {
+                type: STATUS.SUCCESS,
+                value: formatMessage({id: 'renderer.components.configureServer.url.ok', defaultMessage: 'Server URL is valid. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
+            };
+        }
+
+        return {
+            validatedURL: validationResult.validatedURL,
+            serverName: validationResult.serverName,
+            message,
+        };
     };
 
     const handleNameOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,8 +205,18 @@ function ConfigureServer({
         setUrl(value);
 
         if (urlError) {
-            setURLError('');
+            setURLError(undefined);
         }
+
+        editing.current = true;
+        clearTimeout(validationTimeout.current as unknown as number);
+        validationTimeout.current = setTimeout(() => {
+            if (!mounted.current) {
+                return;
+            }
+            editing.current = false;
+            fetchValidationResult(value);
+        }, 1000);
     };
 
     const handleOnSaveButtonClick = (e: React.MouseEvent) => {
@@ -183,21 +247,11 @@ function ConfigureServer({
             return;
         }
 
-        const fullURL = await checkProtocolInURL(url.trim());
-        const urlError = await validateURL(fullURL);
-
-        if (urlError) {
-            setTransition(undefined);
-            setURLError(urlError);
-            setWaiting(false);
-            return;
-        }
-
         setTransition('outToLeft');
 
         setTimeout(() => {
             onConnect({
-                url: fullURL,
+                url,
                 name,
                 id,
             });
@@ -269,7 +323,7 @@ function ConfigureServer({
                                 />
                             </div>
                         </div>
-                        <div className={classNames('ConfigureServer__card', transition, {'with-error': nameError || urlError})}>
+                        <div className={classNames('ConfigureServer__card', transition, {'with-error': nameError || urlError?.type === STATUS.ERROR})}>
                             <div
                                 className='ConfigureServer__card-content'
                                 onKeyDown={handleOnCardEnterKeyDown}
@@ -286,10 +340,7 @@ function ConfigureServer({
                                         inputSize={SIZE.LARGE}
                                         value={url}
                                         onChange={handleURLOnChange}
-                                        customMessage={urlError ? ({
-                                            type: STATUS.ERROR,
-                                            value: urlError,
-                                        }) : ({
+                                        customMessage={urlError ?? ({
                                             type: STATUS.INFO,
                                             value: formatMessage({id: 'renderer.components.configureServer.url.info', defaultMessage: 'The URL of your Mattermost server'}),
                                         })}
@@ -321,7 +372,10 @@ function ConfigureServer({
                                         extraClasses='ConfigureServer__card-form-button'
                                         saving={waiting}
                                         onClick={handleOnSaveButtonClick}
-                                        defaultMessage={formatMessage({id: 'renderer.components.configureServer.connect.default', defaultMessage: 'Connect'})}
+                                        defaultMessage={urlError?.type === STATUS.WARNING ?
+                                            formatMessage({id: 'renderer.components.configureServer.connect.override', defaultMessage: 'Connect anyway'}) :
+                                            formatMessage({id: 'renderer.components.configureServer.connect.default', defaultMessage: 'Connect'})
+                                        }
                                         savingMessage={formatMessage({id: 'renderer.components.configureServer.connect.saving', defaultMessage: 'Connecting…'})}
                                         disabled={!canSave}
                                         darkMode={darkMode}

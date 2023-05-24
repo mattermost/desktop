@@ -8,6 +8,7 @@ import {Language} from '../../i18n/i18n';
 import {CombinedConfig, LocalConfiguration, UniqueView, UniqueServer} from './config';
 import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import {SaveQueueItem} from './settings';
+import {URLValidationResult} from './server';
 
 declare global {
     interface Window {
@@ -56,6 +57,7 @@ declare global {
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             onUpdateServers: (listener: () => void) => void;
+            validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
 
             getConfiguration: () => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
             getVersion: () => Promise<{name: string; version: string}>;

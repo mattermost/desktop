@@ -49,6 +49,7 @@ export class ServerInfo {
     private onGetConfig = (data: ClientConfig) => {
         this.remoteInfo.serverVersion = data.Version;
         this.remoteInfo.siteURL = data.SiteURL;
+        this.remoteInfo.siteName = data.SiteName;
         this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.BuildBoards === 'true';
     }
 

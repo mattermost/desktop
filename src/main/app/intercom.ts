@@ -97,7 +97,7 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<UniqueServer[], UniqueServer>('welcomeScreen', html, preload, ServerManager.getAllServers().map((server) => server.toUniqueServer()), mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<null, UniqueServer>('welcomeScreen', html, preload, null, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
             const newServer = ServerManager.addServer(data);

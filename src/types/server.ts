@@ -3,6 +3,7 @@
 
 export type RemoteInfo = {
     serverVersion?: string;
+    siteName?: string;
     siteURL?: string;
     hasFocalboard?: boolean;
     hasPlaybooks?: boolean;
@@ -11,5 +12,14 @@ export type RemoteInfo = {
 export type ClientConfig = {
     Version: string;
     SiteURL: string;
+    SiteName: string;
     BuildBoards: string;
+}
+
+export type URLValidationResult = {
+    status: string;
+    validatedURL?: string;
+    existingServerName?: string;
+    serverVersion?: string;
+    serverName?: string;
 }

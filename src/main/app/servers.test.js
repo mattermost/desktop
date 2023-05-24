@@ -1,9 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
+import {URLValidationStatus} from 'common/utils/constants';
 import {getDefaultViewsForConfigServer} from 'common/views/View';
 
+import {ServerInfo} from 'main/server/serverInfo';
 import ModalManager from 'main/views/modalManager';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
@@ -28,9 +31,16 @@ jest.mock('common/servers/serverManager', () => ({
     getView: jest.fn(),
     getLastActiveTabForServer: jest.fn(),
     getServerLog: jest.fn(),
+    lookupViewByURL: jest.fn(),
+}));
+jest.mock('common/servers/MattermostServer', () => ({
+    MattermostServer: jest.fn(),
 }));
 jest.mock('common/views/View', () => ({
     getDefaultViewsForConfigServer: jest.fn(),
+}));
+jest.mock('main/server/serverInfo', () => ({
+    ServerInfo: jest.fn(),
 }));
 jest.mock('main/views/modalManager', () => ({
     addModal: jest.fn(),
@@ -313,6 +323,158 @@ describe('main/app/servers', () => {
                 url: 'http://server-1.com',
                 tabs,
             }));
+        });
+    });
+
+    describe('handleServerURLValidation', () => {
+        beforeEach(() => {
+            MattermostServer.mockImplementation(({url}) => ({url}));
+            ServerInfo.mockImplementation(({url}) => ({
+                fetchRemoteInfo: jest.fn().mockImplementation(() => ({
+                    serverVersion: '7.8.0',
+                    siteName: 'Mattermost',
+                    siteURL: url,
+                })),
+            }));
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should return Missing when you get no URL', async () => {
+            const result = await Servers.handleServerURLValidation({});
+            expect(result.status).toBe(URLValidationStatus.Missing);
+        });
+
+        it('should return Invalid when you pass in invalid characters', async () => {
+            const result = await Servers.handleServerURLValidation({}, '!@#$%^&*()!@#$%^&*()');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+        });
+
+        it('should include HTTPS when missing', async () => {
+            const result = await Servers.handleServerURLValidation({}, 'server.com');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
+        it('should correct typos in the protocol', async () => {
+            const result = await Servers.handleServerURLValidation({}, 'htpst://server.com');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
+        it('should replace HTTP with HTTPS when applicable', async () => {
+            const result = await Servers.handleServerURLValidation({}, 'http://server.com');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
+        it('should generate a warning when the server already exists', async () => {
+            ServerManager.lookupViewByURL.mockReturnValue({server: {id: 'server-1', url: new URL('https://server.com')}});
+            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            expect(result.status).toBe(URLValidationStatus.URLExists);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
+        it('should generate a warning if the server exists when editing', async () => {
+            ServerManager.lookupViewByURL.mockReturnValue({server: {name: 'Server 1', id: 'server-1', url: new URL('https://server.com')}});
+            const result = await Servers.handleServerURLValidation({}, 'https://server.com', 'server-2');
+            expect(result.status).toBe(URLValidationStatus.URLExists);
+            expect(result.validatedURL).toBe('https://server.com/');
+            expect(result.existingServerName).toBe('Server 1');
+        });
+
+        it('should not generate a warning if editing the same server', async () => {
+            ServerManager.lookupViewByURL.mockReturnValue({server: {name: 'Server 1', id: 'server-1', url: new URL('https://server.com')}});
+            const result = await Servers.handleServerURLValidation({}, 'https://server.com', 'server-1');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
+        it('should attempt HTTP when HTTPS fails, and generate a warning', async () => {
+            ServerInfo.mockImplementation(({url}) => ({
+                fetchRemoteInfo: jest.fn().mockImplementation(() => {
+                    if (url.startsWith('https:')) {
+                        return undefined;
+                    }
+
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: url,
+                    };
+                }),
+            }));
+
+            const result = await Servers.handleServerURLValidation({}, 'http://server.com');
+            expect(result.status).toBe(URLValidationStatus.Insecure);
+            expect(result.validatedURL).toBe('http://server.com/');
+        });
+
+        it('should show a warning when the ping request times out', async () => {
+            ServerInfo.mockImplementation(() => ({
+                fetchRemoteInfo: jest.fn().mockImplementation(() => {
+                    throw new Error();
+                }),
+            }));
+
+            const result = await Servers.handleServerURLValidation({}, 'https://not-server.com');
+            expect(result.status).toBe(URLValidationStatus.NotMattermost);
+            expect(result.validatedURL).toBe('https://not-server.com/');
+        });
+
+        it('should update the users URL when the Site URL is different', async () => {
+            ServerInfo.mockImplementation(() => ({
+                fetchRemoteInfo: jest.fn().mockImplementation(() => {
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: 'https://mainserver.com/',
+                    };
+                }),
+            }));
+
+            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            expect(result.status).toBe(URLValidationStatus.URLUpdated);
+            expect(result.validatedURL).toBe('https://mainserver.com/');
+        });
+
+        it('should warn the user when the Site URL is different but unreachable', async () => {
+            ServerInfo.mockImplementation(({url}) => ({
+                fetchRemoteInfo: jest.fn().mockImplementation(() => {
+                    if (url === 'https://mainserver.com/') {
+                        return undefined;
+                    }
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: 'https://mainserver.com/',
+                    };
+                }),
+            }));
+
+            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            expect(result.status).toBe(URLValidationStatus.URLNotMatched);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
+        it('should warn the user when the Site URL already exists as another server', async () => {
+            ServerManager.lookupViewByURL.mockReturnValue({server: {name: 'Server 1', id: 'server-1', url: new URL('https://mainserver.com')}});
+            ServerInfo.mockImplementation(() => ({
+                fetchRemoteInfo: jest.fn().mockImplementation(() => {
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: 'https://mainserver.com',
+                    };
+                }),
+            }));
+
+            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            expect(result.status).toBe(URLValidationStatus.URLExists);
+            expect(result.validatedURL).toBe('https://mainserver.com/');
+            expect(result.existingServerName).toBe('Server 1');
         });
     });
 });
