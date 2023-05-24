@@ -47,7 +47,7 @@ const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
 export class MainWindow extends EventEmitter {
     private win?: BrowserWindow;
 
-    private savedWindowState: SavedWindowState;
+    private savedWindowState?: SavedWindowState;
     private ready: boolean;
     private isResizing: boolean;
     private lastEmittedBounds?: Electron.Rectangle
@@ -58,7 +58,6 @@ export class MainWindow extends EventEmitter {
         // Create the browser window.
         this.ready = false;
         this.isResizing = false;
-        this.savedWindowState = this.getSavedWindowState();
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
@@ -69,6 +68,9 @@ export class MainWindow extends EventEmitter {
     }
 
     init = () => {
+        // Can't call this before the app is ready
+        this.savedWindowState = this.getSavedWindowState();
+
         const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, this.savedWindowState, {
             title: app.name,
             fullscreenable: true,
@@ -107,7 +109,7 @@ export class MainWindow extends EventEmitter {
 
             if (Config.hideOnStart === false) {
                 this.win.show();
-                if (this.savedWindowState.maximized) {
+                if (this.savedWindowState?.maximized) {
                     this.win.maximize();
                 }
             }
@@ -224,7 +226,7 @@ export class MainWindow extends EventEmitter {
         if (Config.startInFullscreen) {
             return Config.startInFullscreen;
         }
-        return this.savedWindowState.fullscreen || false;
+        return this.savedWindowState?.fullscreen || false;
     }
 
     private isFramelessWindow = () => {
@@ -244,7 +246,9 @@ export class MainWindow extends EventEmitter {
                 throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
             }
         } catch (e) {
-        // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
+            log.error(e);
+
+            // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
             savedWindowState = {width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT};
         }
         return savedWindowState;
