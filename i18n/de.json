@@ -276,5 +276,18 @@
     "main.menus.app.help.RunDiagnostics": "Diagnose durchführen",
     "main.menus.app.help.ShowLogs": "Protokolle anzeigen",
     "main.downloadsManager.specifyDownloadsFolder": "Definiere das Verzeichnis in das Dateien heruntergeladen werden",
-    "main.downloadsManager.resetDownloadsFolder": "Bitte setze den Ordner zurück, in den die Dateien heruntergeladen werden sollen"
+    "main.downloadsManager.resetDownloadsFolder": "Bitte setze den Ordner zurück, in den die Dateien heruntergeladen werden sollen",
+    "renderer.components.configureServer.url.notMattermost": "Die angegebene Server-URL scheint nicht auf einen gültigen Mattermost-Server zu verweisen. Bitte verifiziere die URL und überprüfe deine Verbindung.",
+    "renderer.components.configureServer.url.urlUpdated": "Die angegebene Server-URL wurde aktualisiert, damit sie mit der konfigurierten Site-URL auf deinem Mattermost-Server übereinstimmt. Server Version: {serverVersion}",
+    "renderer.components.configureServer.url.validating": "Validiere...",
+    "renderer.components.newServerModal.validating": "Validiere...",
+    "renderer.components.newServerModal.warning.notMattermost": "Die angegebene Server-URL scheint nicht auf einen gültigen Mattermost-Server zu verweisen. Bitte verifiziere die URL und überprüfe deine Verbindung.",
+    "renderer.components.newServerModal.warning.urlNotMatched": "Die angegebene Server-URL stimmt nicht mit der konfigurierten Site-URL auf deinem Mattermost-Server überein. Server Version: {serverVersion}",
+    "renderer.components.configureServer.connect.override": "Trotzdem verbinden",
+    "renderer.components.newServerModal.success.ok": "Die Server-URL ist gültig. Server Version: {serverVersion}",
+    "renderer.components.newServerModal.warning.insecure": "Deine Server-URL ist potenziell unsicher. Die besten Ergebnisse erzielst du, wenn du eine URL mit dem HTTPS-Protokoll verwendest.",
+    "renderer.components.configureServer.url.insecure": "Deine Server-URL ist potenziell unsicher. Die besten Ergebnisse erzielst du, wenn du eine URL mit dem HTTPS-Protokoll verwendest.",
+    "renderer.components.newServerModal.warning.urlUpdated": "Die angegebene Server-URL wurde aktualisiert, damit sie mit der konfigurierten Site-URL auf deinem Mattermost-Server übereinstimmt. Server Version: {serverVersion}",
+    "renderer.components.configureServer.url.ok": "Die Server-URL ist gültig. Server Version: {serverVersion}",
+    "renderer.components.configureServer.url.urlNotMatched": "Die angegebene Server-URL stimmt nicht mit der konfigurierten Site-URL auf deinem Mattermost-Server überein. Server Version: {serverVersion}"
 }
