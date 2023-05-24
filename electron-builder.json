@@ -166,7 +166,8 @@
     "publisherName": "CN=\"Mattermost, Inc.\", O=\"Mattermost, Inc.\", L=Palo Alto, S=California, C=US"
   },
   "nsis": {
-    "artifactName": "${version}/${name}-setup-${version}-win.${ext}"
+    "artifactName": "${version}/${name}-setup-${version}-win.${ext}",
+    "packElevateHelper": false
   },
   "rpm": {
     "fpm": ["--rpm-rpmbuild-define", "_build_id_links none"]
