@@ -210,6 +210,7 @@ jobs:
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: release/notify-channel
         run: |
+          git fetch --all
           jq --null-input \
           --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
           --arg username "MattermostRelease" \
