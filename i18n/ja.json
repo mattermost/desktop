@@ -277,5 +277,6 @@
     "main.menus.app.help.ShowLogs": "ログを表示",
     "main.downloadsManager.specifyDownloadsFolder": "ファイルをダウンロードするフォルダを指定してください",
     "main.downloadsManager.resetDownloadsFolder": "ファイルをダウンロードするフォルダをリセットしてください",
-    "renderer.components.configureServer.url.validating": "検証中..."
+    "renderer.components.configureServer.url.validating": "検証中...",
+    "renderer.components.configureServer.url.insecure": "サーバーURLが安全でない可能性があります。最良の結果を得るには、HTTPSプロトコルのURLを使用してください。"
 }
