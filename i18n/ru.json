@@ -265,5 +265,18 @@
     "main.menus.app.help.RunDiagnostics": "Выполните диагностику",
     "main.menus.app.help.ShowLogs": "Показать журналы",
     "main.downloadsManager.specifyDownloadsFolder": "Укажите папку, в которую будут загружаться файлы",
-    "main.downloadsManager.resetDownloadsFolder": "Пожалуйста, сбросьте папку, в которую будут загружаться файлы"
+    "main.downloadsManager.resetDownloadsFolder": "Пожалуйста, сбросьте папку, в которую будут загружаться файлы",
+    "renderer.components.configureServer.url.ok": "URL-адрес сервера действителен. Версия сервера: {serverVersion}",
+    "renderer.components.configureServer.url.urlNotMatched": "Указанный URL-адрес сервера не соответствует настроенному URL-адресу сайта на вашем сервере Mattermost. Версия сервера: {serverVersion}",
+    "renderer.components.configureServer.url.validating": "Проверка...",
+    "renderer.components.newServerModal.validating": "Проверка...",
+    "renderer.components.newServerModal.warning.notMattermost": "Указанный URL-адрес сервера не указывает на действующий сервер Mattermost. Пожалуйста, проверьте URL и проверьте соединение.",
+    "renderer.components.newServerModal.warning.urlUpdated": "Указанный URL-адрес сервера был обновлен, чтобы соответствовать настроенному URL-адресу сайта на вашем сервере Mattermost. Версия сервера: {serverVersion}",
+    "renderer.components.configureServer.connect.override": "Подключиться в любом случае",
+    "renderer.components.configureServer.url.insecure": "URL-адрес вашего сервера потенциально небезопасен. Рекомендуется использовать протокол HTTPS.",
+    "renderer.components.configureServer.url.notMattermost": "Указанный URL-адрес сервера не указывает на действующий сервер Mattermost. Пожалуйста, проверьте URL и проверьте соединение.",
+    "renderer.components.configureServer.url.urlUpdated": "Указанный URL-адрес сервера был обновлен, чтобы соответствовать настроенному URL-адресу сайта на вашем сервере Mattermost. Версия сервера: {serverVersion}",
+    "renderer.components.newServerModal.success.ok": "URL-адрес сервера действителен. Версия сервера: {serverVersion}",
+    "renderer.components.newServerModal.warning.insecure": "URL-адрес вашего сервера потенциально небезопасен. Рекомендуется использовать протокол HTTPS.",
+    "renderer.components.newServerModal.warning.urlNotMatched": "URL сервера не соответствует настроенному URL сайта на вашем сервере Mattermost. Версия сервера: {serverVersion}"
 }
