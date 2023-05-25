@@ -272,5 +272,18 @@
     "renderer.downloadsDropdown.remaining": "잔여",
     "main.menus.app.help.ShowLogs": "로그 표시",
     "main.downloadsManager.specifyDownloadsFolder": "파일이 다운로드 될 폴더를 지정하세요",
-    "main.downloadsManager.resetDownloadsFolder": "파일이 다운로드 될 폴더를 다시 설정 하세요"
+    "main.downloadsManager.resetDownloadsFolder": "파일이 다운로드 될 폴더를 다시 설정 하세요",
+    "renderer.components.configureServer.connect.override": "무시하고 연결",
+    "renderer.components.configureServer.url.notMattermost": "제공된 서버 URL이 유효한 Mattermost 서버를 가리키지 않고 있습니다. URL을 다시 확인하고 연결을 점검하세요.",
+    "renderer.components.configureServer.url.ok": "서버 URL이 유효합니다. 서버 버전: {serverVersion}",
+    "renderer.components.configureServer.url.validating": "확인 중...",
+    "renderer.components.newServerModal.warning.notMattermost": "제공된 서버 URL이 유효한 Mattermost 서버를 가리키지 않고 있습니다. URL과 연결을 다시 확인하세요.",
+    "renderer.components.newServerModal.warning.urlNotMatched": "서버 URL이 설정된 사이트 URL과 일치하지 않습니다. 서버 버전 : {serverVersion}",
+    "renderer.components.configureServer.url.insecure": "서버 URL이 잠재적으로 안전하지 않습니다. HTTPS 프로토콜을 사용하는 URL 사용을 권고합니다.",
+    "renderer.components.configureServer.url.urlUpdated": "제공된 서버 URL이 설정된 사이트 URL과 일치하도록 업데이트 되었습니다. 서버 버전: {serverVersion}",
+    "renderer.components.configureServer.url.urlNotMatched": "제공된 서버 URL과 설정된 사이트 URL이 일치하지 않습니다. 서버 버전: {serverVersion}",
+    "renderer.components.newServerModal.success.ok": "서버 URL이 확인되었습니다. 서버 버전 : {serverVersion}",
+    "renderer.components.newServerModal.validating": "확인 중...",
+    "renderer.components.newServerModal.warning.insecure": "서버 URL이 잠재적으로 안전하지 않습니다. HTTPS 프로토콜을 사용하는 URL 사용을 권고합니다.",
+    "renderer.components.newServerModal.warning.urlUpdated": "제공된 URL이 설정된 사이트 URL과 일치하도록 업데이트 되었습니다. 서버 버전: {serverVersion}"
 }
