@@ -1,0 +1,27 @@
+name: test
+
+on: push
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TERM: xterm
+  MM_WIN_INSTALLERS: 1
+
+jobs:
+  end-notification:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: release/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: release/notify-channel
+        run: |
+          git fetch --all
+          jq --null-input \
+          --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
+          --arg username "MattermostRelease" \
+          --arg text "$(bash -x scripts/generate_release_post.sh $(jq -r .version package.json))" \
+          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
+          curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
