@@ -276,5 +276,6 @@
     "main.menus.app.help.RunDiagnostics": "診断する",
     "main.menus.app.help.ShowLogs": "ログを表示",
     "main.downloadsManager.specifyDownloadsFolder": "ファイルをダウンロードするフォルダを指定してください",
-    "main.downloadsManager.resetDownloadsFolder": "ファイルをダウンロードするフォルダをリセットしてください"
+    "main.downloadsManager.resetDownloadsFolder": "ファイルをダウンロードするフォルダをリセットしてください",
+    "renderer.components.configureServer.url.validating": "検証中..."
 }
