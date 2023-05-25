@@ -495,14 +495,35 @@ describe('main/windows/mainWindow', () => {
 
         afterEach(() => {
             mainWindow.ready = false;
+            mainWindow.win.visible = false;
             jest.resetAllMocks();
         });
 
-        it('should show main window and focus it if it is exists', () => {
+        it('should show main window if it is exists on macOS/Linux', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
             mainWindow.ready = true;
             mainWindow.show();
             expect(mainWindow.win.show).toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should focus main window if it exists and is visible on Windows', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+            mainWindow.ready = true;
+            mainWindow.win.visible = true;
+            mainWindow.show();
             expect(mainWindow.win.focus).toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
 
         it('should init if the main window does not exist', () => {
