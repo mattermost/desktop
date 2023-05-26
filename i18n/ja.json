@@ -278,5 +278,16 @@
     "main.downloadsManager.specifyDownloadsFolder": "ファイルをダウンロードするフォルダを指定してください",
     "main.downloadsManager.resetDownloadsFolder": "ファイルをダウンロードするフォルダをリセットしてください",
     "renderer.components.configureServer.url.validating": "検証中...",
-    "renderer.components.configureServer.url.insecure": "サーバーURLが安全でない可能性があります。最良の結果を得るには、HTTPSプロトコルのURLを使用してください。"
+    "renderer.components.configureServer.url.insecure": "サーバーURLが安全でない可能性があります。最良の結果を得るには、HTTPSプロトコルのURLを使用してください。",
+    "renderer.components.configureServer.connect.override": "とにかく接続する",
+    "renderer.components.configureServer.url.notMattermost": "指定されたサーバーURLは、有効なMattermostサーバーを指していないようです。URLを確認し、接続を確認してください。",
+    "renderer.components.configureServer.url.ok": "サーバーURLは有効です。Server version: {serverVersion}",
+    "renderer.components.configureServer.url.urlNotMatched": "指定されたサーバーURLは、Mattermostサーバーで設定されたサイトURLと一致しません。Server version: {serverVersion}",
+    "renderer.components.configureServer.url.urlUpdated": "指定されたサーバーURLは、Mattermostサーバーで設定されたサイトURLと同じになるよう更新されました。Server version: {serverVersion}",
+    "renderer.components.newServerModal.success.ok": "サーバーURLは有効です。Server version: {serverVersion}",
+    "renderer.components.newServerModal.validating": "検証中...",
+    "renderer.components.newServerModal.warning.insecure": "サーバーURLが安全でない可能性があります。最良の結果を得るには、HTTPSプロトコルのURLを使用してください。",
+    "renderer.components.newServerModal.warning.notMattermost": "指定されたサーバーURLは、有効なMattermostサーバーを指していないようです。URLを確認し、接続を確認してください。",
+    "renderer.components.newServerModal.warning.urlNotMatched": "サーバーURLが、Mattermostサーバーで設定されたサイトURLと一致しません。Server version: {serverVersion}",
+    "renderer.components.newServerModal.warning.urlUpdated": "指定されたサーバーURLは、Mattermostサーバーで設定されたサイトURLと同じになるよう更新されました。Server version: {serverVersion}"
 }
