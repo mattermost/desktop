@@ -485,4 +485,25 @@ describe('app/serverViewState', () => {
             expect(result.existingServerName).toBe('Server 1');
         });
     });
+
+    describe('handleCloseView', () => {
+        const serverViewState = new ServerViewState();
+
+        it('should close the specified view and switch to the next open view', () => {
+            ServerManager.getView.mockReturnValue({server: {id: 'server-1'}});
+            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-2'});
+            serverViewState.handleCloseView(null, 'view-3');
+            expect(ServerManager.setViewIsOpen).toBeCalledWith('view-3', false);
+            expect(ViewManager.showById).toBeCalledWith('view-2');
+        });
+    });
+
+    describe('handleOpenView', () => {
+        const serverViewState = new ServerViewState();
+
+        it('should open the specified view', () => {
+            serverViewState.handleOpenView(null, 'view-1');
+            expect(ViewManager.showById).toBeCalledWith('view-1');
+        });
+    });
 });

@@ -29,6 +29,7 @@ import {
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
+    SWITCH_TAB,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -75,6 +76,8 @@ export class ViewManager {
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
+
+        ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 
         ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
     }

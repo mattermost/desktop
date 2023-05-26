@@ -11,9 +11,6 @@ import {
     FOCUS_BROWSERVIEW,
     QUIT,
     NOTIFY_MENTION,
-    SWITCH_TAB,
-    CLOSE_VIEW,
-    OPEN_VIEW,
     UPDATE_SHORTCUT_MENU,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
@@ -25,11 +22,6 @@ import {
     GET_LOCAL_CONFIGURATION,
     UPDATE_CONFIGURATION,
     UPDATE_PATHS,
-    UPDATE_SERVER_ORDER,
-    UPDATE_TAB_ORDER,
-    GET_LAST_ACTIVE,
-    GET_ORDERED_SERVERS,
-    GET_ORDERED_TABS_FOR_SERVER,
     SERVERS_URL_MODIFIED,
     GET_DARK_MODE,
     WINDOW_CLOSE,
@@ -91,9 +83,6 @@ import {
     handleQuit,
     handlePingDomain,
 } from './intercom';
-import {
-    handleCloseView, handleGetLastActive, handleGetOrderedViewsForServer, handleOpenView,
-} from './views';
 import {
     clearAppCache,
     getDeeplinkingURL,
@@ -269,10 +258,6 @@ function initializeInterCommunicationEventListeners() {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
     }
 
-    ipcMain.on(SWITCH_TAB, (event, viewId) => ViewManager.showById(viewId));
-    ipcMain.on(CLOSE_VIEW, handleCloseView);
-    ipcMain.on(OPEN_VIEW, handleOpenView);
-
     ipcMain.on(QUIT, handleQuit);
 
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
@@ -282,12 +267,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(GET_CONFIGURATION, handleGetConfiguration);
     ipcMain.handle(GET_LOCAL_CONFIGURATION, handleGetLocalConfiguration);
     ipcMain.on(UPDATE_CONFIGURATION, updateConfiguration);
-
-    ipcMain.on(UPDATE_SERVER_ORDER, (event, serverOrder) => ServerManager.updateServerOrder(serverOrder));
-    ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => ServerManager.updateTabOrder(serverId, viewOrder));
-    ipcMain.handle(GET_LAST_ACTIVE, handleGetLastActive);
-    ipcMain.handle(GET_ORDERED_SERVERS, () => ServerManager.getOrderedServers().map((srv) => srv.toUniqueServer()));
-    ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, handleGetOrderedViewsForServer);
 
     ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
     ipcMain.on(WINDOW_CLOSE, handleClose);

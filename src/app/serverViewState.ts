@@ -7,11 +7,18 @@ import {UniqueServer, Server} from 'types/config';
 import {URLValidationResult} from 'types/server';
 
 import {
+    CLOSE_VIEW,
+    GET_LAST_ACTIVE,
+    GET_ORDERED_SERVERS,
+    GET_ORDERED_TABS_FOR_SERVER,
+    OPEN_VIEW,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_NEW_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     SWITCH_SERVER,
+    UPDATE_SERVER_ORDER,
     UPDATE_SHORTCUT_MENU,
+    UPDATE_TAB_ORDER,
     VALIDATE_SERVER_URL,
 } from 'common/communication';
 import {Logger} from 'common/log';
@@ -38,6 +45,14 @@ export class ServerViewState {
         ipcMain.on(SHOW_EDIT_SERVER_MODAL, this.showEditServerModal);
         ipcMain.on(SHOW_REMOVE_SERVER_MODAL, this.showRemoveServerModal);
         ipcMain.handle(VALIDATE_SERVER_URL, this.handleServerURLValidation);
+        ipcMain.handle(GET_ORDERED_SERVERS, this.handleGetOrderedServers);
+        ipcMain.on(UPDATE_SERVER_ORDER, this.updateServerOrder);
+
+        ipcMain.on(CLOSE_VIEW, this.handleCloseView);
+        ipcMain.on(OPEN_VIEW, this.handleOpenView);
+        ipcMain.handle(GET_LAST_ACTIVE, this.handleGetLastActive);
+        ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, this.handleGetOrderedViewsForServer);
+        ipcMain.on(UPDATE_TAB_ORDER, this.updateTabOrder);
     }
 
     init = () => {
@@ -85,10 +100,22 @@ export class ServerViewState {
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
     }
 
+    selectNextView = () => {
+        this.selectView((order) => order + 1);
+    };
+
+    selectPreviousView = () => {
+        this.selectView((order, length) => (length + (order - 1)));
+    };
+
     updateCurrentView = (serverId: string, viewId: string) => {
         this.currentServerId = serverId;
         ServerManager.updateLastActive(viewId);
     }
+
+    /**
+     * Server Modals
+     */
 
     showNewServerModal = () => {
         log.debug('showNewServerModal');
@@ -185,6 +212,10 @@ export class ServerViewState {
         });
     };
 
+    /**
+     * IPC Handlers
+     */
+
     private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string): Promise<URLValidationResult> => {
         log.debug('handleServerURLValidation', url, currentId);
 
@@ -267,6 +298,44 @@ export class ServerViewState {
         return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName, validatedURL: remoteInfo.siteURL};
     };
 
+    private handleCloseView = (event: IpcMainEvent, viewId: string) => {
+        log.debug('handleCloseView', {viewId});
+
+        const view = ServerManager.getView(viewId);
+        if (!view) {
+            return;
+        }
+        ServerManager.setViewIsOpen(viewId, false);
+        const nextView = ServerManager.getLastActiveTabForServer(view.server.id);
+        ViewManager.showById(nextView.id);
+    };
+
+    private handleOpenView = (event: IpcMainEvent, viewId: string) => {
+        log.debug('handleOpenView', {viewId});
+
+        ServerManager.setViewIsOpen(viewId, true);
+        ViewManager.showById(viewId);
+    };
+
+    private handleGetOrderedViewsForServer = (event: IpcMainInvokeEvent, serverId: string) => {
+        return ServerManager.getOrderedTabsForServer(serverId).map((view) => view.toUniqueView());
+    };
+
+    private handleGetLastActive = () => {
+        const server = this.getCurrentServer();
+        const view = ServerManager.getLastActiveTabForServer(server.id);
+        return {server: server.id, view: view.id};
+    };
+
+    private updateServerOrder = (event: IpcMainEvent, serverOrder: string[]) => ServerManager.updateServerOrder(serverOrder);
+    private updateTabOrder = (event: IpcMainEvent, serverId: string, viewOrder: string[]) => ServerManager.updateTabOrder(serverId, viewOrder);
+
+    private handleGetOrderedServers = () => ServerManager.getOrderedServers().map((srv) => srv.toUniqueServer());
+
+    /**
+     * Helper functions
+     */
+
     private testRemoteServer = async (parsedURL: URL) => {
         const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false);
         const serverInfo = new ServerInfo(server);
@@ -276,6 +345,31 @@ export class ServerViewState {
         } catch (error) {
             return undefined;
         }
+    };
+
+    private selectView = (fn: (order: number, length: number) => number) => {
+        const currentView = ViewManager.getCurrentView();
+        if (!currentView) {
+            return;
+        }
+
+        const currentServerViews = ServerManager.getOrderedTabsForServer(currentView.view.server.id).map((view, index) => ({view, index}));
+        const filteredViews = currentServerViews?.filter((view) => view.view.isOpen);
+        const currentServerView = currentServerViews?.find((view) => view.view.type === currentView.view.type);
+        if (!currentServerViews || !currentServerView || !filteredViews) {
+            return;
+        }
+
+        let currentOrder = currentServerView.index;
+        let nextIndex = -1;
+        while (nextIndex === -1) {
+            const nextOrder = (fn(currentOrder, currentServerViews.length) % currentServerViews.length);
+            nextIndex = filteredViews.findIndex((view) => view.index === nextOrder);
+            currentOrder = nextOrder;
+        }
+
+        const newView = filteredViews[nextIndex].view;
+        ViewManager.showById(newView.id);
     };
 }
 

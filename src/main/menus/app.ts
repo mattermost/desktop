@@ -20,7 +20,6 @@ import downloadsManager from 'main/downloadsManager';
 import Diagnostics from 'main/diagnostics';
 import ViewManager from 'main/views/viewManager';
 import SettingsWindow from 'main/windows/settingsWindow';
-import {selectNextView, selectPreviousView} from 'main/app/views';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -286,14 +285,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
             accelerator: 'Ctrl+Tab',
             click() {
-                selectNextView();
+                ServerViewState.selectNextView();
             },
             enabled: (servers.length > 1),
         }, {
             label: localizeMessage('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
             accelerator: 'Ctrl+Shift+Tab',
             click() {
-                selectPreviousView();
+                ServerViewState.selectPreviousView();
             },
             enabled: (servers.length > 1),
         }, ...(isMac ? [separatorItem, {
