@@ -97,6 +97,9 @@ jest.mock('../../../electron-builder.json', () => ([
     },
 ]));
 
+jest.mock('app/serverViewState', () => ({
+    init: jest.fn(),
+}));
 jest.mock('common/config', () => ({
     once: jest.fn(),
     on: jest.fn(),
@@ -120,7 +123,6 @@ jest.mock('main/app/config', () => ({
 jest.mock('main/app/intercom', () => ({
     handleMainWindowIsShown: jest.fn(),
 }));
-jest.mock('app/serverViewState', () => ({}));
 jest.mock('main/app/utils', () => ({
     clearAppCache: jest.fn(),
     getDeeplinkingURL: jest.fn(),

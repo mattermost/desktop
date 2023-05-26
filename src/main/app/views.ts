@@ -3,6 +3,8 @@
 
 import {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
+import ServerViewState from 'app/serverViewState';
+
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
 
@@ -42,7 +44,7 @@ export const handleGetOrderedViewsForServer = (event: IpcMainInvokeEvent, server
 };
 
 export const handleGetLastActive = () => {
-    const server = ServerManager.getCurrentServer();
+    const server = ServerViewState.getCurrentServer();
     const view = ServerManager.getLastActiveTabForServer(server.id);
     return {server: server.id, view: view.id};
 };

@@ -3,6 +3,8 @@
 
 import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
+import ServerViewState from 'app/serverViewState';
+
 import AppState from 'common/appState';
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
@@ -127,7 +129,7 @@ export class ViewManager {
             }
             hidePrevious?.();
             MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, newView.view.server.id, newView.view.id);
-            ServerManager.updateLastActive(newView.view.id);
+            ServerViewState.updateCurrentView(newView.view.server.id, newView.view.id);
         } else {
             this.getViewLogger(viewId).warn(`Couldn't find a view with name: ${viewId}`);
         }
@@ -264,7 +266,7 @@ export class ViewManager {
         log.verbose('showInitial');
 
         if (ServerManager.hasServers()) {
-            const lastActiveServer = ServerManager.getCurrentServer();
+            const lastActiveServer = ServerViewState.getCurrentServer();
             const lastActiveView = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
             this.showById(lastActiveView.id);
         } else {
@@ -485,7 +487,7 @@ export class ViewManager {
             return;
         }
         let redirectedView = this.getView(redirectedviewId) || currentView;
-        if (redirectedView !== currentView && redirectedView?.view.server.id === ServerManager.getCurrentServer().id && redirectedView?.isLoggedIn) {
+        if (redirectedView !== currentView && redirectedView?.view.server.id === ServerViewState.getCurrentServer().id && redirectedView?.isLoggedIn) {
             log.info('redirecting to a new view', redirectedView?.id || viewId);
             this.showById(redirectedView?.id || viewId);
         } else {

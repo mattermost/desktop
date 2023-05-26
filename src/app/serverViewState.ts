@@ -19,6 +19,7 @@ import ServerManager from 'common/servers/serverManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import {URLValidationStatus} from 'common/utils/constants';
+import Config from 'common/config';
 
 import ViewManager from 'main/views/viewManager';
 import ModalManager from 'main/views/modalManager';
@@ -29,12 +30,36 @@ import {ServerInfo} from 'main/server/serverInfo';
 const log = new Logger('App', 'ServerViewState');
 
 export class ServerViewState {
+    private currentServerId?: string;
+
     constructor() {
         ipcMain.on(SWITCH_SERVER, (event, serverId) => this.switchServer(serverId));
         ipcMain.on(SHOW_NEW_SERVER_MODAL, this.showNewServerModal);
         ipcMain.on(SHOW_EDIT_SERVER_MODAL, this.showEditServerModal);
         ipcMain.on(SHOW_REMOVE_SERVER_MODAL, this.showRemoveServerModal);
         ipcMain.handle(VALIDATE_SERVER_URL, this.handleServerURLValidation);
+    }
+
+    init = () => {
+        const orderedServers = ServerManager.getOrderedServers();
+        if (Config.lastActiveServer && orderedServers[Config.lastActiveServer]) {
+            this.currentServerId = orderedServers[Config.lastActiveServer].id;
+        } else {
+            this.currentServerId = orderedServers[0].id;
+        }
+    }
+
+    getCurrentServer = () => {
+        log.debug('getCurrentServer');
+
+        if (!this.currentServerId) {
+            throw new Error('No server set as current');
+        }
+        const server = ServerManager.getServer(this.currentServerId);
+        if (!server) {
+            throw new Error('Current server does not exist');
+        }
+        return server;
     }
 
     switchServer = (serverId: string, waitForViewToExist = false) => {
@@ -45,6 +70,7 @@ export class ServerViewState {
             ServerManager.getServerLog(serverId, 'WindowManager').error('Cannot find server in config');
             return;
         }
+        this.currentServerId = serverId;
         const nextView = ServerManager.getLastActiveTabForServer(serverId);
         if (waitForViewToExist) {
             const timeout = setInterval(() => {
@@ -57,6 +83,11 @@ export class ServerViewState {
             ViewManager.showById(nextView.id);
         }
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
+    }
+
+    updateCurrentView = (serverId: string, viewId: string) => {
+        this.currentServerId = serverId;
+        ServerManager.updateLastActive(viewId);
     }
 
     showNewServerModal = () => {
@@ -137,6 +168,14 @@ export class ServerViewState {
         modalPromise.then((remove) => {
             if (remove) {
                 ServerManager.removeServer(server.id);
+
+                if (this.currentServerId === server.id && ServerManager.hasServers()) {
+                    this.currentServerId = ServerManager.getOrderedServers()[0].id;
+                }
+
+                if (!ServerManager.hasServers()) {
+                    delete this.currentServerId;
+                }
             }
         }).catch((e) => {
             // e is undefined for user cancellation

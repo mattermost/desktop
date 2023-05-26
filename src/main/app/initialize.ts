@@ -62,6 +62,8 @@ import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
+import ServerViewState from 'app/serverViewState';
+
 import {protocols} from '../../../electron-builder.json';
 
 import {
@@ -297,6 +299,7 @@ function initializeInterCommunicationEventListeners() {
 
 async function initializeAfterAppReady() {
     ServerManager.reloadFromConfig();
+    ServerViewState.init();
     updateServerInfos(ServerManager.getAllServers());
     ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
         if (serverIds && serverIds.length) {

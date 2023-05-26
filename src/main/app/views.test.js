@@ -9,6 +9,7 @@ import {
     handleOpenView,
 } from './views';
 
+jest.mock('app/serverViewState', () => ({}));
 jest.mock('common/servers/serverManager', () => ({
     setViewIsOpen: jest.fn(),
     getView: jest.fn(),

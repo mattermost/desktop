@@ -270,7 +270,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                     ServerViewState.switchServer(server.id);
                 },
             });
-            if (ServerManager.getCurrentServer().id === server.id) {
+            if (ServerViewState.getCurrentServer().id === server.id) {
                 ServerManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view, i) => {
                     items.push({
                         label: `    ${localizeMessage(`common.views.${view.type}`, getViewDisplayName(view.type as ViewType))}`,
