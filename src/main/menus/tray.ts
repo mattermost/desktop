@@ -5,11 +5,12 @@
 
 import {Menu, MenuItem, MenuItemConstructorOptions} from 'electron';
 
+import ServerViewState from 'app/serverViewState';
+
 import ServerManager from 'common/servers/serverManager';
 
 import {localizeMessage} from 'main/i18nManager';
 import SettingsWindow from 'main/windows/settingsWindow';
-import {switchServer} from 'main/app/servers';
 
 export function createTemplate() {
     const servers = ServerManager.getOrderedServers();
@@ -18,7 +19,7 @@ export function createTemplate() {
             return {
                 label: server.name.length > 50 ? `${server.name.slice(0, 50)}...` : server.name,
                 click: () => {
-                    switchServer(server.id);
+                    ServerViewState.switchServer(server.id);
                 },
             };
         }), {

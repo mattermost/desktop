@@ -6,6 +6,8 @@ import {app, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 import {UniqueServer} from 'types/config';
 import {MentionData} from 'types/notification';
 
+import ServerViewState from 'app/serverViewState';
+
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
@@ -16,7 +18,6 @@ import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {handleAppBeforeQuit} from './app';
-import {handleNewServerModal, switchServer} from './servers';
 
 const log = new Logger('App.Intercom');
 
@@ -58,7 +59,7 @@ function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerMo
         return;
     }
     if (showNewServerModal) {
-        handleNewServerModal();
+        ServerViewState.showNewServerModal();
     }
 }
 
@@ -101,7 +102,7 @@ export function handleWelcomeScreenModal() {
     if (modalPromise) {
         modalPromise.then((data) => {
             const newServer = ServerManager.addServer(data);
-            switchServer(newServer.id, true);
+            ServerViewState.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {

@@ -5,6 +5,8 @@
 
 import {BrowserWindow, desktopCapturer, systemPreferences} from 'electron';
 
+import ServerViewState from 'app/serverViewState';
+
 import {CALLS_WIDGET_SHARE_SCREEN, CALLS_JOINED_CALL} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
@@ -13,7 +15,6 @@ import {
 } from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 
-import {switchServer} from 'main/app/servers';
 import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
 import {
@@ -56,7 +57,7 @@ jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     focus: jest.fn(),
 }));
-jest.mock('main/app/servers', () => ({
+jest.mock('app/serverViewState', () => ({
     switchServer: jest.fn(),
 }));
 jest.mock('main/views/viewManager', () => ({
@@ -810,7 +811,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should switch server', () => {
             callsWidgetWindow.handleDesktopSourcesModalRequest();
-            expect(switchServer).toHaveBeenCalledWith('server-1');
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
         });
     });
 
@@ -877,7 +878,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should switch server', () => {
             callsWidgetWindow.handleCallsWidgetChannelLinkClick();
-            expect(switchServer).toHaveBeenCalledWith('server-2');
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-2');
         });
     });
 
@@ -903,7 +904,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should focus view and propagate error to main view', () => {
             callsWidgetWindow.handleCallsError('', {err: 'client-error'});
-            expect(switchServer).toHaveBeenCalledWith('server-2');
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-2');
             expect(focus).toHaveBeenCalled();
             expect(callsWidgetWindow.mainView.sendToRenderer).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
         });
@@ -931,7 +932,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should pass through the click link to browser history push', () => {
             callsWidgetWindow.handleCallsLinkClick('', {link: '/other/subpath'});
-            expect(switchServer).toHaveBeenCalledWith('server-1');
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
             expect(view.sendToRenderer).toBeCalledWith('browser-history-push', '/other/subpath');
         });
     });

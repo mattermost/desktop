@@ -120,7 +120,7 @@ jest.mock('main/app/config', () => ({
 jest.mock('main/app/intercom', () => ({
     handleMainWindowIsShown: jest.fn(),
 }));
-jest.mock('main/app/servers', () => ({}));
+jest.mock('app/serverViewState', () => ({}));
 jest.mock('main/app/utils', () => ({
     clearAppCache: jest.fn(),
     getDeeplinkingURL: jest.fn(),

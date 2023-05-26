@@ -14,7 +14,7 @@ jest.mock('main/i18nManager', () => ({
 jest.mock('common/servers/serverManager', () => ({
     getOrderedServers: jest.fn(),
 }));
-jest.mock('main/app/servers', () => ({
+jest.mock('app/serverViewState', () => ({
     switchServer: jest.fn(),
 }));
 jest.mock('main/windows/settingsWindow', () => ({}));

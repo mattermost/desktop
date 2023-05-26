@@ -11,6 +11,7 @@ import {
     handleMainWindowIsShown,
 } from './intercom';
 
+jest.mock('app/serverViewState', () => ({}));
 jest.mock('common/config', () => ({
     setServers: jest.fn(),
 }));

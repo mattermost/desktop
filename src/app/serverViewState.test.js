@@ -12,10 +12,12 @@ import {getLocalURLString, getLocalPreload} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
 
-import * as Servers from './servers';
+import {ServerViewState} from './serverViewState';
 
 jest.mock('electron', () => ({
     ipcMain: {
+        on: jest.fn(),
+        handle: jest.fn(),
         emit: jest.fn(),
     },
 }));
@@ -84,8 +86,9 @@ const servers = [
     },
 ];
 
-describe('main/app/servers', () => {
+describe('app/serverViewState', () => {
     describe('switchServer', () => {
+        const serverViewState = new ServerViewState();
         const views = new Map([
             ['view-1', {id: 'view-1'}],
             ['view-2', {id: 'view-2'}],
@@ -125,26 +128,26 @@ describe('main/app/servers', () => {
         });
 
         it('should do nothing if cannot find the server', () => {
-            Servers.switchServer('server-3');
+            serverViewState.switchServer('server-3');
             expect(ViewManager.showById).not.toBeCalled();
         });
 
         it('should show first open view in order when last active not defined', () => {
             ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-3'});
-            Servers.switchServer('server-1');
+            serverViewState.switchServer('server-1');
             expect(ViewManager.showById).toHaveBeenCalledWith('view-3');
         });
 
         it('should show last active view of chosen server', () => {
             ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-2'});
-            Servers.switchServer('server-2');
+            serverViewState.switchServer('server-2');
             expect(ViewManager.showById).toHaveBeenCalledWith('view-2');
         });
 
         it('should wait for view to exist if specified', () => {
             ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-3'});
             views.delete('view-3');
-            Servers.switchServer('server-1', true);
+            serverViewState.switchServer('server-1', true);
             expect(ViewManager.showById).not.toBeCalled();
 
             jest.advanceTimersByTime(200);
@@ -156,7 +159,8 @@ describe('main/app/servers', () => {
         });
     });
 
-    describe('handleNewServerModal', () => {
+    describe('showNewServerModal', () => {
+        const serverViewState = new ServerViewState();
         let serversCopy;
 
         beforeEach(() => {
@@ -196,7 +200,7 @@ describe('main/app/servers', () => {
             const promise = Promise.resolve(data);
             ModalManager.addModal.mockReturnValue(promise);
 
-            Servers.handleNewServerModal();
+            serverViewState.showNewServerModal();
             await promise;
 
             expect(ServerManager.addServer).toHaveBeenCalledWith(data);
@@ -213,6 +217,7 @@ describe('main/app/servers', () => {
     });
 
     describe('handleEditServerModal', () => {
+        const serverViewState = new ServerViewState();
         let serversCopy;
 
         beforeEach(() => {
@@ -241,7 +246,7 @@ describe('main/app/servers', () => {
         });
 
         it('should do nothing when the server cannot be found', () => {
-            Servers.handleEditServerModal(null, 'bad-server');
+            serverViewState.showEditServerModal(null, 'bad-server');
             expect(ModalManager.addModal).not.toBeCalled();
         });
 
@@ -252,7 +257,7 @@ describe('main/app/servers', () => {
             });
             ModalManager.addModal.mockReturnValue(promise);
 
-            Servers.handleEditServerModal(null, 'server-1');
+            serverViewState.showEditServerModal(null, 'server-1');
             await promise;
             expect(serversCopy).not.toContainEqual(expect.objectContaining({
                 id: 'server-1',
@@ -270,6 +275,7 @@ describe('main/app/servers', () => {
     });
 
     describe('handleRemoveServerModal', () => {
+        const serverViewState = new ServerViewState();
         let serversCopy;
 
         beforeEach(() => {
@@ -294,7 +300,7 @@ describe('main/app/servers', () => {
             const promise = Promise.resolve(true);
             ModalManager.addModal.mockReturnValue(promise);
 
-            Servers.handleRemoveServerModal(null, 'server-1');
+            serverViewState.showRemoveServerModal(null, 'server-1');
             await promise;
             expect(serversCopy).not.toContainEqual(expect.objectContaining({
                 id: 'server-1',
@@ -315,7 +321,7 @@ describe('main/app/servers', () => {
                 tabs,
             }));
 
-            Servers.handleRemoveServerModal(null, 'server-1');
+            serverViewState.showRemoveServerModal(null, 'server-1');
             await promise;
             expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
@@ -327,6 +333,8 @@ describe('main/app/servers', () => {
     });
 
     describe('handleServerURLValidation', () => {
+        const serverViewState = new ServerViewState();
+
         beforeEach(() => {
             MattermostServer.mockImplementation(({url}) => ({url}));
             ServerInfo.mockImplementation(({url}) => ({
@@ -343,43 +351,43 @@ describe('main/app/servers', () => {
         });
 
         it('should return Missing when you get no URL', async () => {
-            const result = await Servers.handleServerURLValidation({});
+            const result = await serverViewState.handleServerURLValidation({});
             expect(result.status).toBe(URLValidationStatus.Missing);
         });
 
         it('should return Invalid when you pass in invalid characters', async () => {
-            const result = await Servers.handleServerURLValidation({}, '!@#$%^&*()!@#$%^&*()');
+            const result = await serverViewState.handleServerURLValidation({}, '!@#$%^&*()!@#$%^&*()');
             expect(result.status).toBe(URLValidationStatus.Invalid);
         });
 
         it('should include HTTPS when missing', async () => {
-            const result = await Servers.handleServerURLValidation({}, 'server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'server.com');
             expect(result.status).toBe(URLValidationStatus.OK);
             expect(result.validatedURL).toBe('https://server.com/');
         });
 
         it('should correct typos in the protocol', async () => {
-            const result = await Servers.handleServerURLValidation({}, 'htpst://server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'htpst://server.com');
             expect(result.status).toBe(URLValidationStatus.OK);
             expect(result.validatedURL).toBe('https://server.com/');
         });
 
         it('should replace HTTP with HTTPS when applicable', async () => {
-            const result = await Servers.handleServerURLValidation({}, 'http://server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'http://server.com');
             expect(result.status).toBe(URLValidationStatus.OK);
             expect(result.validatedURL).toBe('https://server.com/');
         });
 
         it('should generate a warning when the server already exists', async () => {
             ServerManager.lookupViewByURL.mockReturnValue({server: {id: 'server-1', url: new URL('https://server.com')}});
-            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
             expect(result.status).toBe(URLValidationStatus.URLExists);
             expect(result.validatedURL).toBe('https://server.com/');
         });
 
         it('should generate a warning if the server exists when editing', async () => {
             ServerManager.lookupViewByURL.mockReturnValue({server: {name: 'Server 1', id: 'server-1', url: new URL('https://server.com')}});
-            const result = await Servers.handleServerURLValidation({}, 'https://server.com', 'server-2');
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com', 'server-2');
             expect(result.status).toBe(URLValidationStatus.URLExists);
             expect(result.validatedURL).toBe('https://server.com/');
             expect(result.existingServerName).toBe('Server 1');
@@ -387,7 +395,7 @@ describe('main/app/servers', () => {
 
         it('should not generate a warning if editing the same server', async () => {
             ServerManager.lookupViewByURL.mockReturnValue({server: {name: 'Server 1', id: 'server-1', url: new URL('https://server.com')}});
-            const result = await Servers.handleServerURLValidation({}, 'https://server.com', 'server-1');
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com', 'server-1');
             expect(result.status).toBe(URLValidationStatus.OK);
             expect(result.validatedURL).toBe('https://server.com/');
         });
@@ -407,7 +415,7 @@ describe('main/app/servers', () => {
                 }),
             }));
 
-            const result = await Servers.handleServerURLValidation({}, 'http://server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'http://server.com');
             expect(result.status).toBe(URLValidationStatus.Insecure);
             expect(result.validatedURL).toBe('http://server.com/');
         });
@@ -419,7 +427,7 @@ describe('main/app/servers', () => {
                 }),
             }));
 
-            const result = await Servers.handleServerURLValidation({}, 'https://not-server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'https://not-server.com');
             expect(result.status).toBe(URLValidationStatus.NotMattermost);
             expect(result.validatedURL).toBe('https://not-server.com/');
         });
@@ -435,7 +443,7 @@ describe('main/app/servers', () => {
                 }),
             }));
 
-            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
             expect(result.status).toBe(URLValidationStatus.URLUpdated);
             expect(result.validatedURL).toBe('https://mainserver.com/');
         });
@@ -454,7 +462,7 @@ describe('main/app/servers', () => {
                 }),
             }));
 
-            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
             expect(result.status).toBe(URLValidationStatus.URLNotMatched);
             expect(result.validatedURL).toBe('https://server.com/');
         });
@@ -471,7 +479,7 @@ describe('main/app/servers', () => {
                 }),
             }));
 
-            const result = await Servers.handleServerURLValidation({}, 'https://server.com');
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
             expect(result.status).toBe(URLValidationStatus.URLExists);
             expect(result.validatedURL).toBe('https://mainserver.com/');
             expect(result.existingServerName).toBe('Server 1');

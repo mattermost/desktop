@@ -43,6 +43,7 @@ module.exports = {
         alias: {
             renderer: path.resolve(__dirname, 'src/renderer'),
             main: path.resolve(__dirname, './src/main'),
+            app: path.resolve(__dirname, './src/app'),
             common: path.resolve(__dirname, './src/common'),
             static: path.resolve(__dirname, './src/assets'),
         },

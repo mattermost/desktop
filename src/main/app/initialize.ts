@@ -8,16 +8,12 @@ import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-install
 import isDev from 'electron-is-dev';
 
 import {
-    SWITCH_SERVER,
     FOCUS_BROWSERVIEW,
     QUIT,
-    SHOW_NEW_SERVER_MODAL,
     NOTIFY_MENTION,
     SWITCH_TAB,
     CLOSE_VIEW,
     OPEN_VIEW,
-    SHOW_EDIT_SERVER_MODAL,
-    SHOW_REMOVE_SERVER_MODAL,
     UPDATE_SHORTCUT_MENU,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
@@ -41,7 +37,6 @@ import {
     WINDOW_MINIMIZE,
     WINDOW_RESTORE,
     DOUBLE_CLICK_ON_WINDOW,
-    VALIDATE_SERVER_URL,
 } from 'common/communication';
 import Config from 'common/config';
 import {isTrustedURL, parseURL} from 'common/utils/url';
@@ -94,13 +89,6 @@ import {
     handleQuit,
     handlePingDomain,
 } from './intercom';
-import {
-    handleEditServerModal,
-    handleNewServerModal,
-    handleRemoveServerModal,
-    handleServerURLValidation,
-    switchServer,
-} from './servers';
 import {
     handleCloseView, handleGetLastActive, handleGetOrderedViewsForServer, handleOpenView,
 } from './views';
@@ -279,17 +267,12 @@ function initializeInterCommunicationEventListeners() {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
     }
 
-    ipcMain.on(SWITCH_SERVER, (event, serverId) => switchServer(serverId));
     ipcMain.on(SWITCH_TAB, (event, viewId) => ViewManager.showById(viewId));
     ipcMain.on(CLOSE_VIEW, handleCloseView);
     ipcMain.on(OPEN_VIEW, handleOpenView);
 
     ipcMain.on(QUIT, handleQuit);
 
-    ipcMain.on(SHOW_NEW_SERVER_MODAL, handleNewServerModal);
-    ipcMain.on(SHOW_EDIT_SERVER_MODAL, handleEditServerModal);
-    ipcMain.on(SHOW_REMOVE_SERVER_MODAL, handleRemoveServerModal);
-    ipcMain.handle(VALIDATE_SERVER_URL, handleServerURLValidation);
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
     ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
     ipcMain.on(START_UPGRADE, handleStartUpgrade);
