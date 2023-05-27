@@ -271,5 +271,18 @@
     "renderer.components.showCertificateModal.commonName": "公用名",
     "renderer.components.showCertificateModal.notValidAfter": "不晚于",
     "main.downloadsManager.specifyDownloadsFolder": "指定下载文件的文件夹",
-    "main.downloadsManager.resetDownloadsFolder": "请重置下载文件的文件夹"
+    "main.downloadsManager.resetDownloadsFolder": "请重置下载文件的文件夹",
+    "renderer.components.configureServer.connect.override": "无论如何连接",
+    "renderer.components.configureServer.url.insecure": "您的服务器 URL 可能不安全. 为了获得最佳效果, 请使用带有 HTTPS 协议的URL.",
+    "renderer.components.configureServer.url.notMattermost": "所提供的服务器 URL 似乎没有指向有效的 Mattermost 服务器. 请验证URL并检查您的连接.",
+    "renderer.components.configureServer.url.ok": "服务器 URL 有效. 服务器版本:{serverVersion}",
+    "renderer.components.configureServer.url.urlNotMatched": "提供的服务器 URL 与您的 Mattermost 服务器上配置的站点 URL 不匹配. 服务器版本:{serverVersion}",
+    "renderer.components.configureServer.url.urlUpdated": "所提供的服务器 URL 已更新，以匹配 Mattermost 服务器上配置的站点 URL. 服务器版本:{serverVersion}",
+    "renderer.components.configureServer.url.validating": "验证...",
+    "renderer.components.newServerModal.success.ok": "服务器 URL 有效. 服务器版本:{serverVersion}",
+    "renderer.components.newServerModal.validating": "验证...",
+    "renderer.components.newServerModal.warning.insecure": "您的服务器 URL 可能不安全. 为了获得最佳效果, 请使用带有 HTTPS 协议的URL.",
+    "renderer.components.newServerModal.warning.notMattermost": "所提供的服务器 URL 似乎没有指向有效的 Mattermost 服务器. 请验证 URL 并检查您的连接.",
+    "renderer.components.newServerModal.warning.urlNotMatched": "服务器 URL 与 Mattermost 服务器上配置的站点 URL 不匹配. 服务器版本:{serverVersion}",
+    "renderer.components.newServerModal.warning.urlUpdated": "所提供的服务器 URL 已更新, 以匹配 Mattermost 服务器上配置的站点 URL. 服务器版本:{serverVersion}"
 }
