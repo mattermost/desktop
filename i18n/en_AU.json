@@ -274,5 +274,20 @@
     "renderer.components.errorView.havingTroubleConnecting": "A connection to {appName} couldn't be established. Retrying...",
     "renderer.components.settingsPage.trayIcon.color": "Icon colour: ",
     "main.menus.app.help.RunDiagnostics": "Run diagnostics",
-    "main.menus.app.help.ShowLogs": "Show logs"
+    "main.menus.app.help.ShowLogs": "Show logs",
+    "renderer.components.configureServer.connect.override": "Connect anyway",
+    "renderer.components.configureServer.url.insecure": "Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.",
+    "renderer.components.configureServer.url.notMattermost": "The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.",
+    "renderer.components.configureServer.url.ok": "Server URL is valid. Server version: {serverVersion}",
+    "renderer.components.configureServer.url.urlNotMatched": "The server URL provided does not match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
+    "renderer.components.configureServer.url.urlUpdated": "The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
+    "renderer.components.configureServer.url.validating": "Validating...",
+    "renderer.components.newServerModal.success.ok": "Server URL is valid. Server version: {serverVersion}",
+    "renderer.components.newServerModal.validating": "Validating...",
+    "renderer.components.newServerModal.warning.insecure": "Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.",
+    "renderer.components.newServerModal.warning.notMattermost": "The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.",
+    "renderer.components.newServerModal.warning.urlNotMatched": "The server URL does not match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
+    "renderer.components.newServerModal.warning.urlUpdated": "The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
+    "main.downloadsManager.resetDownloadsFolder": "Please reset the folder where files will download",
+    "main.downloadsManager.specifyDownloadsFolder": "Specify the folder where files will download"
 }
