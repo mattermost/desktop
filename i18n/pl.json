@@ -96,5 +96,15 @@
     "main.menus.app.view.reload": "Wczytaj ponownie",
     "main.menus.app.view.fullscreen": "Przełączanie pełnego ekranu",
     "main.menus.app.view.find": "Znajdź...",
-    "main.menus.app.view.downloads": "Do pobrania"
+    "main.menus.app.view.downloads": "Do pobrania",
+    "main.notifications.upgrade.newVersion.body": "Nowa wersja jest już dostępna do pobrania.",
+    "main.notifications.upgrade.newVersion.title": "Dostępna nowa wersja desktopowa",
+    "main.notifications.upgrade.readyToInstall.body": "Nowa wersja desktopowa jest gotowa do zainstalowania.",
+    "main.notifications.upgrade.readyToInstall.title": "Kliknij, aby ponownie uruchomić i zainstalować aktualizację",
+    "main.tray.tray.expired": "Sesja wygasła: zaloguj się, aby kontynuować otrzymywanie powiadomień.",
+    "main.tray.tray.mention": "Wspomniano o Tobie",
+    "main.tray.tray.unread": "Masz nieprzeczytane kanały",
+    "main.views.viewManager.handleDeepLink.error.body": "Nie ma skonfigurowanego serwera w aplikacji, który pasuje do żądanego adresu url: {url}",
+    "main.views.viewManager.handleDeepLink.error.title": "Brak pasującego serwera",
+    "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "Nie pytaj ponownie"
 }
