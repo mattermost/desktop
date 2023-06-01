@@ -73,6 +73,7 @@ export function displayMention(title: string, body: string, channel: {id: string
 
     mention.on('click', () => {
         log.debug('notification click', serverName, mention);
+        MainWindow.show();
         if (serverName) {
             ViewManager.showById(view.id);
             webcontents.send('notification-clicked', {channel, teamId, url});
