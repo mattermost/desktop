@@ -35,6 +35,7 @@ jest.mock('electron', () => ({
 jest.mock('app/serverViewState', () => ({
     getCurrentServer: jest.fn(),
     updateCurrentView: jest.fn(),
+    init: jest.fn(),
 }));
 jest.mock('common/views/View', () => ({
     getViewName: jest.fn((a, b) => `${a}-${b}`),

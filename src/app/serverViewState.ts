@@ -57,10 +57,12 @@ export class ServerViewState {
 
     init = () => {
         const orderedServers = ServerManager.getOrderedServers();
-        if (Config.lastActiveServer && orderedServers[Config.lastActiveServer]) {
-            this.currentServerId = orderedServers[Config.lastActiveServer].id;
-        } else {
-            this.currentServerId = orderedServers[0].id;
+        if (orderedServers.length) {
+            if (Config.lastActiveServer && orderedServers[Config.lastActiveServer]) {
+                this.currentServerId = orderedServers[Config.lastActiveServer].id;
+            } else {
+                this.currentServerId = orderedServers[0].id;
+            }
         }
     }
 
@@ -194,15 +196,16 @@ export class ServerViewState {
 
         modalPromise.then((remove) => {
             if (remove) {
-                ServerManager.removeServer(server.id);
-
-                if (this.currentServerId === server.id && ServerManager.hasServers()) {
-                    this.currentServerId = ServerManager.getOrderedServers()[0].id;
+                const remainingServers = ServerManager.getOrderedServers().filter((orderedServer) => server.id !== orderedServer.id);
+                if (this.currentServerId === server.id && remainingServers.length) {
+                    this.currentServerId = remainingServers[0].id;
                 }
 
-                if (!ServerManager.hasServers()) {
+                if (!remainingServers.length) {
                     delete this.currentServerId;
                 }
+
+                ServerManager.removeServer(server.id);
             }
         }).catch((e) => {
             // e is undefined for user cancellation

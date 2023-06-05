@@ -34,6 +34,7 @@ jest.mock('common/servers/serverManager', () => ({
     getLastActiveTabForServer: jest.fn(),
     getServerLog: jest.fn(),
     lookupViewByURL: jest.fn(),
+    getOrderedServers: jest.fn(),
 }));
 jest.mock('common/servers/MattermostServer', () => ({
     MattermostServer: jest.fn(),
@@ -284,16 +285,13 @@ describe('app/serverViewState', () => {
             MainWindow.get.mockReturnValue({});
 
             serversCopy = JSON.parse(JSON.stringify(servers));
-            ServerManager.getServer.mockImplementation((id) => {
-                if (id !== serversCopy[0].id) {
-                    return undefined;
-                }
+            ServerManager.getServer.mockImplementation(() => {
                 return serversCopy[0];
             });
             ServerManager.removeServer.mockImplementation(() => {
                 serversCopy = [];
             });
-            ServerManager.getAllServers.mockReturnValue(serversCopy);
+            ServerManager.getOrderedServers.mockReturnValue(serversCopy);
         });
 
         it('should remove the existing server', async () => {
