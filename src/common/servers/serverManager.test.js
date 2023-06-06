@@ -13,6 +13,7 @@ jest.mock('common/config', () => ({
 jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
     isInternalURL: jest.fn(),
+    getFormattedPathName: (pathname) => (pathname.length ? pathname : '/'),
 }));
 jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),

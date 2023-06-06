@@ -50,6 +50,7 @@ jest.mock('common/utils/url', () => ({
             return null;
         }
     },
+    getFormattedPathName: (pathname) => (pathname.length ? pathname : '/'),
     equalUrlsIgnoringSubpath: jest.fn(),
 }));
 
