@@ -1,1 +1,23 @@
-{}
+{
+    "label.cancel": "Hủy",
+    "label.change": "Thay đổi",
+    "label.close": "Đóng",
+    "label.login": "Đăng nhập",
+    "label.no": "Không",
+    "label.ok": "Đồng ý",
+    "label.remove": "Xóa",
+    "label.save": "Lưu",
+    "label.yes": "Có",
+    "main.allowProtocolDialog.detail": "Đường dẫn được yêu cầu là {URL}. Bạn có muốn tiếp tục không?",
+    "main.app.utils.migrateMacAppStore.button.selectAndImport": "Chọn Thư mục và Nhập",
+    "main.CriticalErrorHandler.uncaughtException.button.reopen": "Mở lại",
+    "main.menus.app.edit.copy": "Sao chép",
+    "main.menus.app.edit.cut": "Cắt",
+    "main.menus.app.edit.paste": "Dán",
+    "main.allowProtocolDialog.button.saveProtocolAsAllowed": "Có ( Lưu {protocol} khi được cho phép)",
+    "main.app.initialize.downloadBox.allFiles": "Tất cả tệp tin",
+    "main.app.utils.migrateMacAppStore.button.dontImport": "Đừng nhập",
+    "common.tabs.TAB_FOCALBOARD": "Bảng",
+    "common.tabs.TAB_MESSAGING": "Kênh",
+    "label.add": "Thêm"
+}
