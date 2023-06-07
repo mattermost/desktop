@@ -34,7 +34,7 @@ import Utils from 'common/utils/util';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, TAB_MESSAGING} from 'common/views/View';
-import {parseURL} from 'common/utils/url';
+import {getFormattedPathName, parseURL} from 'common/utils/url';
 
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -177,7 +177,7 @@ export class ViewManager {
             const parsedURL = parseURL(url)!;
             const view = ServerManager.lookupViewByURL(parsedURL, true);
             if (view) {
-                const urlWithSchema = `${view.url.origin}${parsedURL.pathname}${parsedURL.search}`;
+                const urlWithSchema = `${view.url.origin}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`;
                 if (this.closedViews.has(view.id)) {
                     this.openClosedView(view.id, urlWithSchema);
                 } else {
