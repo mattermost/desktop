@@ -17,7 +17,7 @@ import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS, MattermostView, getDefault
 import MessagingView from 'common/views/MessagingView';
 import FocalboardView from 'common/views/FocalboardView';
 import PlaybooksView from 'common/views/PlaybooksView';
-import {isInternalURL, parseURL} from 'common/utils/url';
+import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 
 const log = new Logger('ServerManager');
@@ -138,7 +138,7 @@ export class ServerManager extends EventEmitter {
             return undefined;
         }
         const server = this.getAllServers().find((server) => {
-            return isInternalURL(parsedURL, server.url, ignoreScheme) && parsedURL.pathname.match(new RegExp(`^${server.url.pathname}(.+)?(/(.+))?$`));
+            return isInternalURL(parsedURL, server.url, ignoreScheme) && getFormattedPathName(parsedURL.pathname).match(new RegExp(`^${server.url.pathname}(.+)?(/(.+))?$`));
         });
         if (!server) {
             return undefined;
@@ -149,7 +149,7 @@ export class ServerManager extends EventEmitter {
         views.
             filter((view) => view && view.type !== TAB_MESSAGING).
             forEach((view) => {
-                if (parsedURL.pathname.match(new RegExp(`^${view.url.pathname}(/(.+))?`))) {
+                if (getFormattedPathName(parsedURL.pathname).match(new RegExp(`^${view.url.pathname}(/(.+))?`))) {
                     selectedView = view;
                 }
             });
