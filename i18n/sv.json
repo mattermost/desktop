@@ -276,5 +276,18 @@
     "main.menus.app.help.RunDiagnostics": "Kör diagnostik",
     "main.menus.app.help.ShowLogs": "Visa loggar",
     "main.downloadsManager.specifyDownloadsFolder": "Ange mappen där hämtade filer ska sparas",
-    "main.downloadsManager.resetDownloadsFolder": "Återställ mappen där hämtade filer kommer sparas"
+    "main.downloadsManager.resetDownloadsFolder": "Återställ mappen där hämtade filer kommer sparas",
+    "renderer.components.configureServer.url.insecure": "Din servers URL är eventuellt oskyddad. För bästa anslutning, använd en URL med HTTPS-protokoll.",
+    "renderer.components.configureServer.url.urlUpdated": "Den angivna server-URL:en har uppdaterats med den URL som konfigurerats på Mattermost-server. Serverversion: {serverVersion}",
+    "renderer.components.configureServer.url.notMattermost": "Den URL som angavs verkar inte peka på en Mattermost-server. Verifiera URL och kontrollera din nät-anslutning.",
+    "renderer.components.newServerModal.warning.insecure": "Din server-URL är eventuellt oskyddad. För bästa anslutning, använd en URL med HTTPS-protokoll.",
+    "renderer.components.newServerModal.warning.notMattermost": "Den URL som angavs verkar inte peka på en Mattermost-server. Verifiera URL och kontrollera din nät-anslutning.",
+    "renderer.components.configureServer.connect.override": "Anslut ändå",
+    "renderer.components.configureServer.url.ok": "Server-URL är korrekt. Serverversion: {serverVersion}",
+    "renderer.components.configureServer.url.urlNotMatched": "Den angivna URL:en matchar inte den konfigurerade sajt-URL:en på din Mattermost-server. Serverversion: {serverVersion}",
+    "renderer.components.configureServer.url.validating": "Validerar...",
+    "renderer.components.newServerModal.success.ok": "Server-URL:en är riktig. Serverversion: {serverVersion}",
+    "renderer.components.newServerModal.validating": "Validerar...",
+    "renderer.components.newServerModal.warning.urlNotMatched": "Den angivna URL:en matchar inte den konfigurerade sajt-URL:en på din Mattermost-server. Serverversion: {serverVersion}",
+    "renderer.components.newServerModal.warning.urlUpdated": "Den angivna server-URL:en har uppdaterats med den URL som konfigurerats på Mattermost-server. Serverversion: {serverVersion}"
 }
