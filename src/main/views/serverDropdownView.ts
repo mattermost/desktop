@@ -5,6 +5,8 @@ import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
 
 import {UniqueServer} from 'types/config';
 
+import ServerViewState from 'app/serverViewState';
+
 import AppState from 'common/appState';
 import {
     CLOSE_SERVERS_DROPDOWN,
@@ -98,7 +100,7 @@ export class ServerDropdownView {
             this.servers,
             Config.darkMode,
             this.windowBounds,
-            ServerManager.hasServers() ? ServerManager.getCurrentServer().id : undefined,
+            ServerManager.hasServers() ? ServerViewState.getCurrentServer().id : undefined,
             Config.enableServerManagement,
             this.hasGPOServers,
             this.expired,

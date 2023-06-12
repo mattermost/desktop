@@ -3,6 +3,8 @@
 
 import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 
+import ServerViewState from 'app/serverViewState';
+
 import AppState from 'common/appState';
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {
@@ -27,6 +29,7 @@ import {
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
+    SWITCH_TAB,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -73,6 +76,8 @@ export class ViewManager {
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
+
+        ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 
         ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
     }
@@ -127,7 +132,7 @@ export class ViewManager {
             }
             hidePrevious?.();
             MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, newView.view.server.id, newView.view.id);
-            ServerManager.updateLastActive(newView.view.id);
+            ServerViewState.updateCurrentView(newView.view.server.id, newView.view.id);
         } else {
             this.getViewLogger(viewId).warn(`Couldn't find a view with name: ${viewId}`);
         }
@@ -263,8 +268,10 @@ export class ViewManager {
     private showInitial = () => {
         log.verbose('showInitial');
 
+        // TODO: This init should be happening elsewhere, future refactor will fix this
+        ServerViewState.init();
         if (ServerManager.hasServers()) {
-            const lastActiveServer = ServerManager.getCurrentServer();
+            const lastActiveServer = ServerViewState.getCurrentServer();
             const lastActiveView = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
             this.showById(lastActiveView.id);
         } else {
@@ -485,7 +492,7 @@ export class ViewManager {
             return;
         }
         let redirectedView = this.getView(redirectedviewId) || currentView;
-        if (redirectedView !== currentView && redirectedView?.view.server.id === ServerManager.getCurrentServer().id && redirectedView?.isLoggedIn) {
+        if (redirectedView !== currentView && redirectedView?.view.server.id === ServerViewState.getCurrentServer().id && redirectedView?.isLoggedIn) {
             log.info('redirecting to a new view', redirectedView?.id || viewId);
             this.showById(redirectedView?.id || viewId);
         } else {

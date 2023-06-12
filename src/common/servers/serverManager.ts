@@ -26,7 +26,6 @@ export class ServerManager extends EventEmitter {
     private servers: Map<string, MattermostServer>;
     private remoteInfo: Map<string, RemoteInfo>;
     private serverOrder: string[];
-    private currentServerId?: string;
 
     private views: Map<string, MattermostView>;
     private viewOrder: Map<string, string[]>;
@@ -69,19 +68,6 @@ export class ServerManager extends EventEmitter {
             }
             return servers;
         }, [] as MattermostServer[]);
-    }
-
-    getCurrentServer = () => {
-        log.debug('getCurrentServer');
-
-        if (!this.currentServerId) {
-            throw new Error('No server set as current');
-        }
-        const server = this.servers.get(this.currentServerId);
-        if (!server) {
-            throw new Error('Current server does not exist');
-        }
-        return server;
     }
 
     getLastActiveTabForServer = (serverId: string) => {
@@ -187,10 +173,6 @@ export class ServerManager extends EventEmitter {
         });
         this.viewOrder.set(newServer.id, viewOrder);
 
-        if (!this.currentServerId) {
-            this.currentServerId = newServer.id;
-        }
-
         // Emit this event whenever we update a server URL to ensure remote info is fetched
         this.emit(SERVERS_URL_MODIFIED, [newServer.id]);
         this.persistServers();
@@ -234,14 +216,6 @@ export class ServerManager extends EventEmitter {
         this.remoteInfo.delete(serverId);
         this.servers.delete(serverId);
 
-        if (this.currentServerId === serverId && this.hasServers()) {
-            this.currentServerId = this.serverOrder[0];
-        }
-
-        if (!this.hasServers()) {
-            delete this.currentServerId;
-        }
-
         this.persistServers();
     }
 
@@ -261,8 +235,6 @@ export class ServerManager extends EventEmitter {
             return;
         }
         this.lastActiveView.set(view.server.id, viewId);
-
-        this.currentServerId = view.server.id;
 
         const serverOrder = this.serverOrder.findIndex((srv) => srv === view.server.id);
         if (serverOrder < 0) {
@@ -286,11 +258,6 @@ export class ServerManager extends EventEmitter {
         }
         this.filterOutDuplicateServers();
         this.serverOrder = serverOrder;
-        if (Config.lastActiveServer && this.serverOrder[Config.lastActiveServer]) {
-            this.currentServerId = this.serverOrder[Config.lastActiveServer];
-        } else {
-            this.currentServerId = this.serverOrder[0];
-        }
     }
 
     private filterOutDuplicateServers = () => {

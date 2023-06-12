@@ -8,6 +8,8 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 import {localizeMessage} from 'main/i18nManager';
 import ServerManager from 'common/servers/serverManager';
 
+import ServerViewState from 'app/serverViewState';
+
 import {createTemplate} from './app';
 
 jest.mock('electron', () => {
@@ -51,12 +53,12 @@ jest.mock('main/i18nManager', () => ({
 }));
 jest.mock('common/servers/serverManager', () => ({
     hasServers: jest.fn(),
-    getCurrentServer: jest.fn(),
     getOrderedServers: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
 }));
-jest.mock('main/app/servers', () => ({
+jest.mock('app/serverViewState', () => ({
     switchServer: jest.fn(),
+    getCurrentServer: jest.fn(),
 }));
 jest.mock('main/diagnostics', () => ({}));
 jest.mock('main/downloadsManager', () => ({
@@ -107,7 +109,7 @@ describe('main/menus/app', () => {
     ];
 
     beforeEach(() => {
-        ServerManager.getCurrentServer.mockReturnValue(servers[0]);
+        ServerViewState.getCurrentServer.mockReturnValue(servers[0]);
         ServerManager.getOrderedServers.mockReturnValue(servers);
         ServerManager.getOrderedTabsForServer.mockReturnValue(views);
         getDarwinDoNotDisturb.mockReturnValue(false);
@@ -278,7 +280,7 @@ describe('main/menus/app', () => {
             }
             return id;
         });
-        ServerManager.getCurrentServer.mockImplementation(() => ({id: servers[0].id}));
+        ServerViewState.getCurrentServer.mockImplementation(() => ({id: servers[0].id}));
 
         const modifiedViews = [...Array(15).keys()].map((key) => ({
             id: `view-${key}`,
