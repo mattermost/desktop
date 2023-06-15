@@ -35,7 +35,7 @@ export type CallsLinkClickMessage = {
 }
 
 export type CallsJoinRequestMessage = {
-    targetID: string;
+    callID: string;
 }
 
 export type CallsEventHandler = ((viewName: string, msg: any) => void) | ((viewName: string, opts: Electron.SourcesOptions) => Promise<void>);

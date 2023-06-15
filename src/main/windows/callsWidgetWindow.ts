@@ -535,7 +535,7 @@ export class CallsWidgetWindow {
     }
 
     private handleCallsJoinRequest = (_: string, msg: CallsJoinRequestMessage) => {
-        log.debug('handleCallsJoinRequest with targetID', msg.targetID);
+        log.debug('handleCallsJoinRequest with callID', msg.callID);
         if (!this.serverID) {
             return;
         }

@@ -982,11 +982,11 @@ describe('main/windows/callsWidgetWindow', () => {
             jest.resetAllMocks();
         });
 
-        it('should pass through the join call targetID to the webapp', () => {
-            callsWidgetWindow.handleCallsJoinRequest('', {targetID: 'thecallchannelid'});
+        it('should pass through the join call callID to the webapp', () => {
+            callsWidgetWindow.handleCallsJoinRequest('', {callID: 'thecallchannelid'});
             expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
-            expect(view.sendToRenderer).toBeCalledWith(CALLS_JOIN_REQUEST, {targetID: 'thecallchannelid'});
+            expect(view.sendToRenderer).toBeCalledWith(CALLS_JOIN_REQUEST, {callID: 'thecallchannelid'});
         });
     });
 });
