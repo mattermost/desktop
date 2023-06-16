@@ -173,7 +173,7 @@
     "main.menus.app.edit.undo": "元に戻す",
     "main.menus.app.edit.selectAll": "すべてを選択",
     "main.menus.app.edit.redo": "やり直す",
-    "main.menus.app.edit.pasteAndMatchStyle": "ペースとしてスタイルを合わせる",
+    "main.menus.app.edit.pasteAndMatchStyle": "ペーストしてスタイルを合わせる",
     "main.menus.app.edit.paste": "貼り付け",
     "main.menus.app.edit.cut": "カット",
     "main.menus.app.edit.copy": "コピー",
