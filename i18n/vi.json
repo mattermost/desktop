@@ -19,5 +19,21 @@
     "main.app.utils.migrateMacAppStore.button.dontImport": "Đừng nhập",
     "common.tabs.TAB_FOCALBOARD": "Bảng",
     "common.tabs.TAB_MESSAGING": "Kênh",
-    "label.add": "Thêm"
+    "label.add": "Thêm",
+    "label.accept": "Chấp nhận",
+    "main.app.app.handleAppCertificateError.certError.button.moreDetails": "Chi tiết",
+    "main.app.app.handleAppCertificateError.certNotTrusted.dialog.title": "Chứng Chỉ Không Tin Cậy",
+    "main.app.app.handleAppCertificateError.certError.dialog.title": "Lỗi Chứng Chỉ",
+    "main.CriticalErrorHandler.uncaughtException.button.showDetails": "Hiển Thị Chi Tiết",
+    "main.badge.unreadChannels": "Bạn có kênh chưa đọc",
+    "main.menus.app.edit.undo": "Quay lại",
+    "main.menus.app.file.exit": "Thoát",
+    "main.menus.app.edit.selectAll": "Chọn Tất Cả",
+    "common.permissions.canBasicAuth": "Xác thực Web",
+    "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "Hủy Kết Nối",
+    "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "Hủy Kết Nối",
+    "main.app.utils.migrateMacAppStore.dialog.message": "Nhập Cấu Hình Đã Có",
+    "main.menus.app.edit.redo": "Làm lại",
+    "main.badge.noUnreads": "Bạn không có tin nhắn chưa đọc",
+    "main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate": "Tin Cậy Chứng Chỉ Không Bảo Mật"
 }
