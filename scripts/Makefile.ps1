@@ -518,6 +518,8 @@ function InstallDeps-Electron {
     npm i -g node-gyp
     node-gyp install
     node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+    node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
+    node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
     npm ci
 }
 
