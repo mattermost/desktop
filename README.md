@@ -40,7 +40,7 @@ Configuration will be saved into Electron's userData directory:
 A custom data directory location can be specified with:
 
 * `Mattermost.exe --args --data-dir C:\my-mattermost-data` on Windows
-* `open /Applications/Mattermost.app/ --args --data-dir ~/my-mattermost-data/` on macOS 
+* `open /Applications/Mattermost.app/ --args --data-dir ~/my-mattermost-data/` on macOS
 * `./mattermost-desktop --args --data-dir ~/my-mattermost-data/` on Linux
 
 ## Custom App Deployments
@@ -48,3 +48,5 @@ Our [docs provide a guide](https://docs.mattermost.com/deployment/desktop-app-de
 
 ## Development and Making Contributions
 Our [developer guide](https://developers.mattermost.com/contribute/desktop/) has detailed information on how to set up your development environment, develop, and test changes to the Desktop App.
+
+for a commit
