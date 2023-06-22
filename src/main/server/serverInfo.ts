@@ -16,11 +16,17 @@ export class ServerInfo {
         this.remoteInfo = {};
     }
 
-    fetchRemoteInfo = async () => {
+    fetchConfigData = async () => {
         await this.getRemoteInfo<ClientConfig>(
             new URL(`${this.server.url.toString()}/api/v4/config/client?format=old`),
             this.onGetConfig,
         );
+
+        return this.remoteInfo;
+    }
+
+    fetchRemoteInfo = async () => {
+        await this.fetchConfigData();
         await this.getRemoteInfo<Array<{id: string; version: string}>>(
             new URL(`${this.server.url.toString()}/api/v4/plugins/webapp`),
             this.onGetPlugins,

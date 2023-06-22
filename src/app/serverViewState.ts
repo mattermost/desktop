@@ -343,7 +343,7 @@ export class ServerViewState {
         const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false);
         const serverInfo = new ServerInfo(server);
         try {
-            const remoteInfo = await serverInfo.fetchRemoteInfo();
+            const remoteInfo = await serverInfo.fetchConfigData();
             return remoteInfo;
         } catch (error) {
             return undefined;
