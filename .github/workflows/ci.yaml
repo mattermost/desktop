@@ -51,7 +51,7 @@ jobs:
           retention-days: 10 ## No need to keep CI builds more than 10 days
 
   windows-install-deps:
-    runs-on: windows-2022
+    runs-on: windows-latest
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -75,10 +75,15 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-        run: npm ci --openssl_fips=''
+        run: |
+          choco install yq --version 4.15.1 -y
+          npm i -g node-gyp
+          node-gyp install
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          npm ci --openssl_fips=''
 
   build-win-no-installer:
-    runs-on: windows-2022
+    runs-on: windows-latest
     needs:
       - windows-install-deps
     steps:
@@ -108,8 +113,6 @@ jobs:
           npm i -g node-gyp
           node-gyp install
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
       - name: ci/install-dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         env:
