@@ -126,6 +126,7 @@ jobs:
           mkdir -p ./build/win
       - name: ci/build - 1
         run: |
+          node-gyp rebuild
           npm run package:windows
       - name: ci/build - 2
         run: |
