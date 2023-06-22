@@ -124,8 +124,14 @@ jobs:
       - name: ci/build
         run: |
           mkdir -p ./build/win
+      - name: ci/build - 1
+        run: |
           npm run package:windows
+      - name: ci/build - 2
+        run: |
           bash -x ./scripts/patch_updater_yml.sh
+      - name: ci/build - 3
+        run: |
           bash -x ./scripts/cp_artifacts.sh release ./build/win
       - name: ci/upload-test-results
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
