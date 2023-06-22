@@ -72,11 +72,11 @@ export async function isOnline(logger: ElectronLog = log, url = IS_ONLINE_ENDPOI
             resp.on('end', () => {
                 logger.debug('resp.on.end', {data, url});
                 if (data.length) {
-                const respBody = JSON.parse(data);
-                if (respBody.status === 'OK') {
-                    resolve(true);
-                    return;
-                }
+                    const respBody = JSON.parse(data);
+                    if (respBody.status === 'OK') {
+                        resolve(true);
+                        return;
+                    }
                 }
                 resolve(false);
             });
