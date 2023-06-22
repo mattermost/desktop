@@ -48,7 +48,7 @@ jobs:
           retention-days: 10 ## No need to keep CI builds more than 10 days
 
   windows-install-deps:
-    runs-on: windows-2022
+    runs-on: windows-latest
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -75,7 +75,7 @@ jobs:
         run: npm ci --openssl_fips=''
 
   build-win-for-pr:
-    runs-on: windows-2022
+    runs-on: windows-latest
     needs:
       - windows-install-deps
     steps:
