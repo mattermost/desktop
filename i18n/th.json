@@ -1,1 +1,6 @@
-{}
+{
+    "common.tabs.TAB_FOCALBOARD": "บอร์ด",
+    "common.tabs.TAB_MESSAGING": "ช่องทาง",
+    "label.accept": "ยอมรับ",
+    "label.add": "เพิ่ม"
+}
