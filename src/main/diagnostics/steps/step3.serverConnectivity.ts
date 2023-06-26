@@ -5,6 +5,7 @@ import {ElectronLog} from 'electron-log';
 import {DiagnosticStepResponse} from 'types/diagnostics';
 
 import ServerManager from 'common/servers/serverManager';
+import {parseURL} from 'common/utils/url';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
@@ -24,7 +25,7 @@ const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
                 throw new Error(`Invalid server configuration. Server Url: ${server.url}, server name: ${server.name}`);
             }
 
-            const serverOnline = await isOnline(logger, `${server.url}/api/v4/system/ping`);
+            const serverOnline = await isOnline(logger, parseURL(`${server.url}/api/v4/system/ping`)?.toString());
 
             if (!serverOnline) {
                 throw new Error(`Server appears to be offline. Server url: ${server.url}`);
