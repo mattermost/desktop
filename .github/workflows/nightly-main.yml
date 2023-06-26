@@ -59,7 +59,7 @@ jobs:
           retention-days: 5 ## No need to keep them since they are uploaded on S3
 
   build-msi-installer:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
