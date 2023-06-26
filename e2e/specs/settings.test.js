@@ -196,7 +196,7 @@ describe('Settings', function desc() {
                 });
                 await settingsWindow.waitForSelector('.settingsPage.container');
                 const selected = await settingsWindow.isChecked(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
-                selected.should.equal(true);
+                selected.should.equal(true); // default is true
 
                 await settingsWindow.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
                 await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saving...")');
