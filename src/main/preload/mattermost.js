@@ -36,6 +36,7 @@ import {
     CALLS_WIDGET_SHARE_SCREEN,
     CLOSE_DOWNLOADS_DROPDOWN,
     CALLS_ERROR,
+    CALLS_JOIN_REQUEST,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -346,6 +347,16 @@ ipcRenderer.on(CALLS_ERROR, (event, message) => {
     window.postMessage(
         {
             type: CALLS_ERROR,
+            message,
+        },
+        window.location.origin,
+    );
+});
+
+ipcRenderer.on(CALLS_JOIN_REQUEST, (event, message) => {
+    window.postMessage(
+        {
+            type: CALLS_JOIN_REQUEST,
             message,
         },
         window.location.origin,

@@ -8,6 +8,7 @@ import {
     CallsEventHandler,
     CallsJoinCallMessage,
     CallsJoinedCallMessage,
+    CallsJoinRequestMessage,
     CallsLinkClickMessage,
     CallsWidgetResizeMessage,
     CallsWidgetShareScreenMessage,
@@ -24,6 +25,7 @@ import {
     BROWSER_HISTORY_PUSH,
     CALLS_ERROR,
     CALLS_JOIN_CALL,
+    CALLS_JOIN_REQUEST,
     CALLS_JOINED_CALL,
     CALLS_LEAVE_CALL,
     CALLS_LINK_CLICK,
@@ -75,6 +77,7 @@ export class CallsWidgetWindow {
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.genCallsEventHandler(this.handleCallsWidgetChannelLinkClick));
         ipcMain.on(CALLS_ERROR, this.genCallsEventHandler(this.handleCallsError));
         ipcMain.on(CALLS_LINK_CLICK, this.genCallsEventHandler(this.handleCallsLinkClick));
+        ipcMain.on(CALLS_JOIN_REQUEST, this.genCallsEventHandler(this.handleCallsJoinRequest));
     }
 
     /**
@@ -529,6 +532,17 @@ export class CallsWidgetWindow {
         ServerViewState.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, msg.link);
+    }
+
+    private handleCallsJoinRequest = (_: string, msg: CallsJoinRequestMessage) => {
+        log.debug('handleCallsJoinRequest with callID', msg.callID);
+        if (!this.serverID) {
+            return;
+        }
+
+        ServerViewState.switchServer(this.serverID);
+        MainWindow.get()?.focus();
+        this.mainView?.sendToRenderer(CALLS_JOIN_REQUEST, msg);
     }
 }
 

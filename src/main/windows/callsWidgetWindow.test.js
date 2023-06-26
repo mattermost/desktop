@@ -7,7 +7,7 @@ import {BrowserWindow, desktopCapturer, systemPreferences} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
 
-import {CALLS_WIDGET_SHARE_SCREEN, CALLS_JOINED_CALL} from 'common/communication';
+import {CALLS_WIDGET_SHARE_SCREEN, CALLS_JOINED_CALL, CALLS_JOIN_REQUEST} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -956,6 +956,37 @@ describe('main/windows/callsWidgetWindow', () => {
             callsWidgetWindow.isAllowedEvent = () => true;
             callsWidgetWindow.genCallsEventHandler(handler)();
             expect(handler).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('handleCallsJoinRequest', () => {
+        const view = {
+            view: {
+                server: {
+                    id: 'server-1',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = view;
+
+        const focus = jest.fn();
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue({focus});
+            ViewManager.getView.mockReturnValue(view);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should pass through the join call callID to the webapp', () => {
+            callsWidgetWindow.handleCallsJoinRequest('', {callID: 'thecallchannelid'});
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(focus).toHaveBeenCalled();
+            expect(view.sendToRenderer).toBeCalledWith(CALLS_JOIN_REQUEST, {callID: 'thecallchannelid'});
         });
     });
 });
