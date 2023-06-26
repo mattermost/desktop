@@ -21,9 +21,6 @@ jobs:
       contents: read
 
     steps:
-      - name: "Upgrade packages"
-        run: sudo apt-get update && sudo apt-get upgrade
-
       - name: "Checkout code"
         uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
         with:
