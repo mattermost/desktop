@@ -21,13 +21,13 @@ jobs:
       contents: read
 
     steps:
+      - name: "Upgrade packages"
+        run: sudo apt-get update && sudo apt-get upgrade
+
       - name: "Checkout code"
         uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
         with:
           persist-credentials: false
-
-      - name: "Upgrade packages"
-        run: sudo apt-get update && sudo apt-get upgrade
 
       - name: "Run analysis"
         uses: ossf/scorecard-action@c8416b0b2bf627c349ca92fc8e3de51a64b005cf # v1.0.2
