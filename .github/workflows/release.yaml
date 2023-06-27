@@ -89,6 +89,8 @@ jobs:
           npm i -g node-gyp
           node-gyp install
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
           npm ci --openssl_fips=''
       - name: release/test
         uses: ./.github/actions/test
@@ -210,9 +212,10 @@ jobs:
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: release/notify-channel
         run: |
+          git fetch --all
           jq --null-input \
           --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
           --arg username "MattermostRelease" \
-          --arg text "[$(jq -r .version package.json)] Release process for the desktop app ended, the new release can be found on [GitHub](https://github.com/mattermost/desktop/releases)." \
+          --arg text "$(bash -x scripts/generate_release_post.sh $(jq -r .version package.json))" \
           '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
           curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"

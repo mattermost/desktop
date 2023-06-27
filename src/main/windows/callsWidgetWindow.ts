@@ -8,20 +8,14 @@ import {
     CallsEventHandler,
     CallsJoinCallMessage,
     CallsJoinedCallMessage,
+    CallsJoinRequestMessage,
     CallsLinkClickMessage,
     CallsWidgetResizeMessage,
     CallsWidgetShareScreenMessage,
     CallsWidgetWindowConfig,
 } from 'types/calls';
 
-import {MattermostBrowserView} from 'main/views/MattermostBrowserView';
-
-import {
-    composeUserAgent,
-    getLocalPreload,
-    openScreensharePermissionsSettingsMacOS,
-    resetScreensharePermissionsMacOS,
-} from 'main/utils';
+import ServerViewState from 'app/serverViewState';
 
 import {Logger} from 'common/log';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
@@ -31,6 +25,7 @@ import {
     BROWSER_HISTORY_PUSH,
     CALLS_ERROR,
     CALLS_JOIN_CALL,
+    CALLS_JOIN_REQUEST,
     CALLS_JOINED_CALL,
     CALLS_LEAVE_CALL,
     CALLS_LINK_CLICK,
@@ -43,7 +38,13 @@ import {
     DISPATCH_GET_DESKTOP_SOURCES,
 } from 'common/communication';
 
-import {switchServer} from 'main/app/servers';
+import {MattermostBrowserView} from 'main/views/MattermostBrowserView';
+import {
+    composeUserAgent,
+    getLocalPreload,
+    openScreensharePermissionsSettingsMacOS,
+    resetScreensharePermissionsMacOS,
+} from 'main/utils';
 import webContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
@@ -76,6 +77,7 @@ export class CallsWidgetWindow {
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.genCallsEventHandler(this.handleCallsWidgetChannelLinkClick));
         ipcMain.on(CALLS_ERROR, this.genCallsEventHandler(this.handleCallsError));
         ipcMain.on(CALLS_LINK_CLICK, this.genCallsEventHandler(this.handleCallsLinkClick));
+        ipcMain.on(CALLS_JOIN_REQUEST, this.genCallsEventHandler(this.handleCallsJoinRequest));
     }
 
     /**
@@ -94,8 +96,8 @@ export class CallsWidgetWindow {
      * Helper functions
      */
 
-    getURL = () => {
-        return this.win && parseURL(this.win?.webContents.getURL());
+    getViewURL = () => {
+        return this.mainView?.view.server.url;
     }
 
     isCallsWidget = (webContentsId: number) => {
@@ -485,7 +487,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        switchServer(this.serverID);
+        ServerViewState.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(DESKTOP_SOURCES_MODAL_REQUEST);
     }
@@ -503,7 +505,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        switchServer(this.serverID);
+        ServerViewState.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, this.options?.channelURL);
     }
@@ -515,7 +517,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        switchServer(this.serverID);
+        ServerViewState.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(CALLS_ERROR, msg);
     }
@@ -527,9 +529,20 @@ export class CallsWidgetWindow {
             return;
         }
 
-        switchServer(this.serverID);
+        ServerViewState.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, msg.link);
+    }
+
+    private handleCallsJoinRequest = (_: string, msg: CallsJoinRequestMessage) => {
+        log.debug('handleCallsJoinRequest with callID', msg.callID);
+        if (!this.serverID) {
+            return;
+        }
+
+        ServerViewState.switchServer(this.serverID);
+        MainWindow.get()?.focus();
+        this.mainView?.sendToRenderer(CALLS_JOIN_REQUEST, msg);
     }
 }
 

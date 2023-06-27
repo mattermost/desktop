@@ -6,6 +6,8 @@
 
 import {dialog} from 'electron';
 
+import ServerViewState from 'app/serverViewState';
+
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SET_ACTIVE_VIEW} from 'common/communication';
 import {TAB_MESSAGING} from 'common/views/View';
 import ServerManager from 'common/servers/serverManager';
@@ -30,6 +32,11 @@ jest.mock('electron', () => ({
         handle: jest.fn(),
     },
 }));
+jest.mock('app/serverViewState', () => ({
+    getCurrentServer: jest.fn(),
+    updateCurrentView: jest.fn(),
+    init: jest.fn(),
+}));
 jest.mock('common/views/View', () => ({
     getViewName: jest.fn((a, b) => `${a}-${b}`),
     TAB_MESSAGING: 'view',
@@ -50,6 +57,7 @@ jest.mock('common/utils/url', () => ({
             return null;
         }
     },
+    getFormattedPathName: (pathname) => (pathname.length ? pathname : '/'),
     equalUrlsIgnoringSubpath: jest.fn(),
 }));
 
@@ -69,13 +77,11 @@ jest.mock('main/windows/mainWindow', () => ({
     on: jest.fn(),
 }));
 jest.mock('common/servers/serverManager', () => ({
-    getCurrentServer: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),
     getLastActiveServer: jest.fn(),
     getLastActiveTabForServer: jest.fn(),
-    updateLastActive: jest.fn(),
     lookupViewByURL: jest.fn(),
     getRemoteInfo: jest.fn(),
     on: jest.fn(),
@@ -350,7 +356,7 @@ describe('main/views/viewManager', () => {
             viewManager.showById = jest.fn();
             MainWindow.get.mockReturnValue(window);
             ServerManager.hasServers.mockReturnValue(true);
-            ServerManager.getCurrentServer.mockReturnValue({id: 'server-0'});
+            ServerViewState.getCurrentServer.mockReturnValue({id: 'server-0'});
         });
 
         afterEach(() => {
@@ -439,7 +445,7 @@ describe('main/views/viewManager', () => {
 
         beforeEach(() => {
             ServerManager.getAllServers.mockReturnValue(servers);
-            ServerManager.getCurrentServer.mockReturnValue(servers[0]);
+            ServerViewState.getCurrentServer.mockReturnValue(servers[0]);
             urlUtils.cleanPathName.mockImplementation((base, path) => path);
         });
 

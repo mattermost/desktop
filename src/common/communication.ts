@@ -130,6 +130,7 @@ export const CALLS_LINK_CLICK = 'calls-link-click';
 export const CALLS_JOINED_CALL = 'calls-joined-call';
 export const CALLS_POPOUT_FOCUS = 'calls-popout-focus';
 export const CALLS_ERROR = 'calls-error';
+export const CALLS_JOIN_REQUEST = 'calls-join-request';
 
 export const REQUEST_CLEAR_DOWNLOADS_DROPDOWN = 'request-clear-downloads-dropdown';
 export const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
@@ -170,3 +171,5 @@ export const UPDATE_APPSTATE_FOR_VIEW_ID = 'update-appstate-for-view-id';
 export const MAIN_WINDOW_CREATED = 'main-window-created';
 export const MAIN_WINDOW_RESIZED = 'main-window-resized';
 export const MAIN_WINDOW_FOCUSED = 'main-window-focused';
+
+export const VALIDATE_SERVER_URL = 'validate-server-url';

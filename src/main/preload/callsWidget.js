@@ -16,8 +16,12 @@ import {
     DESKTOP_SOURCES_RESULT,
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_LINK_CLICK,
+    CALLS_JOIN_REQUEST,
 } from 'common/communication';
 
+//
+// Handle messages FROM the widget. (i.e., widget's webapp -> widget's window)
+//
 window.addEventListener('message', ({origin, data = {}} = {}) => {
     const {type, message = {}} = data;
 
@@ -48,13 +52,17 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     case CALLS_JOINED_CALL:
     case CALLS_POPOUT_FOCUS:
     case CALLS_ERROR:
-    case CALLS_LEAVE_CALL: {
+    case CALLS_LEAVE_CALL:
+    case CALLS_JOIN_REQUEST: {
         ipcRenderer.send(type, 'widget', message);
         break;
     }
     }
 });
 
+//
+// Handle messages TO the widget.
+//
 ipcRenderer.on(DESKTOP_SOURCES_RESULT, (event, sources) => {
     window.postMessage(
         {

@@ -17,11 +17,6 @@ import setupDarkMode from '../darkMode';
 
 setupDarkMode();
 
-type ModalInfo = {
-    server: UniqueServer;
-    currentServers: UniqueServer[];
-};
-
 const onClose = () => {
     window.desktop.modals.cancelModal();
 };
@@ -32,12 +27,10 @@ const onSave = (data: UniqueServer) => {
 
 const EditServerModalWrapper: React.FC = () => {
     const [server, setServer] = useState<UniqueServer>();
-    const [currentServers, setCurrentServers] = useState<UniqueServer[]>();
 
     useEffect(() => {
-        window.desktop.modals.getModalInfo<ModalInfo>().then(({server, currentServers}) => {
+        window.desktop.modals.getModalInfo<UniqueServer>().then((server) => {
             setServer(server);
-            setCurrentServers(currentServers);
         });
     }, []);
 
@@ -49,7 +42,6 @@ const EditServerModalWrapper: React.FC = () => {
                 editMode={true}
                 show={Boolean(server)}
                 server={server}
-                currentServers={currentServers}
             />
         </IntlProvider>
     );

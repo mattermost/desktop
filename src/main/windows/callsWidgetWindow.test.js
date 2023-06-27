@@ -5,7 +5,9 @@
 
 import {BrowserWindow, desktopCapturer, systemPreferences} from 'electron';
 
-import {CALLS_WIDGET_SHARE_SCREEN, CALLS_JOINED_CALL} from 'common/communication';
+import ServerViewState from 'app/serverViewState';
+
+import {CALLS_WIDGET_SHARE_SCREEN, CALLS_JOINED_CALL, CALLS_JOIN_REQUEST} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -13,7 +15,6 @@ import {
 } from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
 
-import {switchServer} from 'main/app/servers';
 import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
 import {
@@ -56,7 +57,7 @@ jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     focus: jest.fn(),
 }));
-jest.mock('main/app/servers', () => ({
+jest.mock('app/serverViewState', () => ({
     switchServer: jest.fn(),
 }));
 jest.mock('main/views/viewManager', () => ({
@@ -438,15 +439,16 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(callsWidgetWindow.popOut).not.toBeDefined();
     });
 
-    it('getURL', () => {
+    it('getViewURL', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
-        callsWidgetWindow.win = {
-            webContents: {
-                getURL: () => 'http://localhost:8065/',
+        callsWidgetWindow.mainView = {
+            view: {
+                server: {
+                    url: new URL('http://localhost:8065/'),
+                },
             },
         };
-        urlUtils.parseURL.mockImplementation((url) => new URL(url));
-        expect(callsWidgetWindow.getURL().toString()).toBe('http://localhost:8065/');
+        expect(callsWidgetWindow.getViewURL().toString()).toBe('http://localhost:8065/');
     });
 
     describe('isAllowedEvent', () => {
@@ -809,7 +811,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should switch server', () => {
             callsWidgetWindow.handleDesktopSourcesModalRequest();
-            expect(switchServer).toHaveBeenCalledWith('server-1');
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
         });
     });
 
@@ -876,7 +878,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should switch server', () => {
             callsWidgetWindow.handleCallsWidgetChannelLinkClick();
-            expect(switchServer).toHaveBeenCalledWith('server-2');
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-2');
         });
     });
 
@@ -902,7 +904,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should focus view and propagate error to main view', () => {
             callsWidgetWindow.handleCallsError('', {err: 'client-error'});
-            expect(switchServer).toHaveBeenCalledWith('server-2');
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-2');
             expect(focus).toHaveBeenCalled();
             expect(callsWidgetWindow.mainView.sendToRenderer).toHaveBeenCalledWith('calls-error', {err: 'client-error'});
         });
@@ -930,7 +932,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('should pass through the click link to browser history push', () => {
             callsWidgetWindow.handleCallsLinkClick('', {link: '/other/subpath'});
-            expect(switchServer).toHaveBeenCalledWith('server-1');
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
             expect(view.sendToRenderer).toBeCalledWith('browser-history-push', '/other/subpath');
         });
     });
@@ -954,6 +956,37 @@ describe('main/windows/callsWidgetWindow', () => {
             callsWidgetWindow.isAllowedEvent = () => true;
             callsWidgetWindow.genCallsEventHandler(handler)();
             expect(handler).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('handleCallsJoinRequest', () => {
+        const view = {
+            view: {
+                server: {
+                    id: 'server-1',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = view;
+
+        const focus = jest.fn();
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue({focus});
+            ViewManager.getView.mockReturnValue(view);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should pass through the join call callID to the webapp', () => {
+            callsWidgetWindow.handleCallsJoinRequest('', {callID: 'thecallchannelid'});
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(focus).toHaveBeenCalled();
+            expect(view.sendToRenderer).toBeCalledWith(CALLS_JOIN_REQUEST, {callID: 'thecallchannelid'});
         });
     });
 });

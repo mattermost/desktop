@@ -1,7 +1,7 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "5.4.0-develop.1",
+  "version": "5.5.0-develop.1",
   "description": "Mattermost",
   "main": "dist/index.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "23.3.0",
+    "target": "24.3.1",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -168,7 +168,7 @@
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
-    "electron": "23.3.0",
+    "electron": "24.3.1",
     "electron-builder": "23.3.3",
     "electron-connect": "0.6.3",
     "electron-context-menu": "3.6.1",
@@ -176,7 +176,7 @@
     "electron-is-dev": "2.0.0",
     "electron-log": "4.4.8",
     "electron-mocha": "11.0.2",
-    "electron-notarize": "1.2.1",
+    "electron-notarize": "1.2.2",
     "electron-rebuild": "3.2.9",
     "electron-updater": "5.2.1",
     "eslint": "7.29.0",

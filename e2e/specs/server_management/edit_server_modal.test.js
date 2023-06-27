@@ -101,20 +101,8 @@ describe('EditServerModal', function desc() {
 
     it('MM-T2826_3 should not edit server if an invalid server address has been set', async () => {
         await editServerView.type('#serverUrlInput', 'superInvalid url');
-        await editServerView.click('#saveNewServerModal');
-        const existing = await editServerView.isVisible('#serverUrlInput.is-invalid');
-        existing.should.be.true;
-    });
-
-    it('should not edit server if another server with the same name or URL exists', async () => {
-        await editServerView.fill('#serverNameInput', config.teams[1].name);
-        await editServerView.click('#saveNewServerModal');
-        let existing = await editServerView.isVisible('#serverNameInput.is-invalid');
-        existing.should.be.true;
-
-        await editServerView.fill('#serverNameInput', 'NewTestServer');
-        await editServerView.fill('#serverUrlInput', config.teams[1].url);
-        existing = await editServerView.isVisible('#serverUrlInput.is-invalid');
+        await editServerView.waitForSelector('#urlValidation.error');
+        const existing = await editServerView.isVisible('#urlValidation.error');
         existing.should.be.true;
     });
 

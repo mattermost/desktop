@@ -86,6 +86,7 @@ jest.mock('../views/viewManager', () => ({
 }));
 jest.mock('../windows/mainWindow', () => ({
     get: jest.fn(),
+    show: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
 
@@ -244,6 +245,7 @@ describe('main/notifications', () => {
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention.value.click();
+            expect(MainWindow.show).toHaveBeenCalled();
             expect(ViewManager.showById).toHaveBeenCalledWith('server_id');
         });
 

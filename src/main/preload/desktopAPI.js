@@ -88,6 +88,7 @@ import {
     GET_ORDERED_SERVERS,
     GET_ORDERED_TABS_FOR_SERVER,
     SERVERS_UPDATE,
+    VALIDATE_SERVER_URL,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -135,6 +136,7 @@ contextBridge.exposeInMainWorld('desktop', {
     getOrderedServers: () => ipcRenderer.invoke(GET_ORDERED_SERVERS),
     getOrderedTabsForServer: (serverId) => ipcRenderer.invoke(GET_ORDERED_TABS_FOR_SERVER, serverId),
     onUpdateServers: (listener) => ipcRenderer.on(SERVERS_UPDATE, () => listener()),
+    validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
 
     getConfiguration: () => ipcRenderer.invoke(GET_CONFIGURATION),
     getVersion: () => ipcRenderer.invoke('get-app-version'),

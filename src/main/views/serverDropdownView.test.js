@@ -9,6 +9,8 @@ import MainWindow from 'main/windows/mainWindow';
 
 import {ServerDropdownView} from './serverDropdownView';
 
+jest.mock('app/serverViewState', () => ({}));
+
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
     getLocalURLString: (file) => file,

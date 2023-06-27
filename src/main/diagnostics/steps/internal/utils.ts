@@ -70,11 +70,13 @@ export async function isOnline(logger: ElectronLog = log, url = IS_ONLINE_ENDPOI
 
             // The whole response has been received. Print out the result.
             resp.on('end', () => {
-                logger.debug('resp.on.end', {data});
-                const respBody = JSON.parse(data);
-                if (respBody.status === 'OK') {
-                    resolve(true);
-                    return;
+                logger.debug('resp.on.end', {data, url});
+                if (data.length) {
+                    const respBody = JSON.parse(data);
+                    if (respBody.status === 'OK') {
+                        resolve(true);
+                        return;
+                    }
                 }
                 resolve(false);
             });
