@@ -293,6 +293,21 @@ export class MattermostBrowserView extends EventEmitter {
     }
 
     openDevTools = () => {
+        // Workaround for a bug with our Dev Tools on Mac
+        // For some reason if you open two Dev Tools windows and close the first one, it won't register the closing
+        // So what we do here is check to see if it's opened correctly and if not we reset it
+        if (process.platform === 'darwin') {
+            const timeout = setTimeout(() => {
+                if (this.browserView.webContents.isDevToolsOpened()) {
+                    this.browserView.webContents.closeDevTools();
+                    this.browserView.webContents.openDevTools({mode: 'detach'});
+                }
+            }, 500);
+            this.browserView.webContents.on('devtools-opened', () => {
+                clearTimeout(timeout);
+            });
+        }
+
         this.browserView.webContents.openDevTools({mode: 'detach'});
     }
 
