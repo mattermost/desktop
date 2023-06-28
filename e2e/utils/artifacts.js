@@ -51,7 +51,7 @@ async function saveArtifacts() {
             filesToUpload,
             10,
             async.asyncify(async (file) => {
-                const Key = file.replace(uploadPath, s3Folder);
+                const Key = file.replace(uploadPath, s3Folder).replaceAll('\\', '/');
                 const contentType = mime.lookup(file);
                 const charset = mime.charset(contentType);
 
