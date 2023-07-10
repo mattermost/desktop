@@ -33,6 +33,7 @@ jobs:
         uses: ./.github/actions/test
       - name: ci/build
         run: |
+          echo $GITHUB_WORKFLOW
           mkdir -p ./build/linux
           npm run package:linux
           bash -x ./scripts/patch_updater_yml.sh
