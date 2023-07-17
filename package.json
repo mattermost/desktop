@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "config": {
-    "target": "24.3.1",
+    "target": "24.6.3",
     "arch": "x64",
     "target_arch": "x64",
     "disturl": "https://electronjs.org/headers",
@@ -168,7 +168,7 @@
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
-    "electron": "24.3.1",
+    "electron": "24.6.3",
     "electron-builder": "23.3.3",
     "electron-connect": "0.6.3",
     "electron-context-menu": "3.6.1",
