@@ -37,9 +37,17 @@ jobs:
         run: |
           npm install -g windows-build-tools
           npm install -g npm@latest
+          npm install -g node-gyp
+          node-gyp install
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Rebuild robotjs (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cross-env CL='/std:c++17'
+          cross-env DEBUG=electron-rebuild electron-rebuild -m ./node_modules/robotjs
 
       - name: Run Playwright tests (Linux)
         if: matrix.os == 'ubuntu-latest'
