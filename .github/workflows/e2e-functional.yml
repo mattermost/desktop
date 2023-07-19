@@ -28,7 +28,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: Install packages
+      - name: Install packages (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install libxtst-dev libpng++-dev
 
       - name: Install dependencies
