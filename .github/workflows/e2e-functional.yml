@@ -48,7 +48,12 @@ jobs:
       - name: Run Playwright tests (Mac OS)
         if: matrix.os == 'macos-latest'
         run: |
-          export MM_DESKTOP_BUILD_DISABLEGPU=true
+          npm run test:e2e
+          npm run test:e2e:send-report
+
+      - name: Run Playwright tests (Windows OS)
+        if: matrix.os == 'windows-latest'
+        run: |
           npm run test:e2e
           npm run test:e2e:send-report
 
