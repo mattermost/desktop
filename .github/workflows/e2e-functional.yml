@@ -34,15 +34,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Set up virtual display (Linux)
+      - name: Run Playwright tests (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb
           export DISPLAY=:99
           Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
-
-      - name: Run Playwright tests
-        run: |
           npm run test:e2e
           npm run test:e2e:send-report
