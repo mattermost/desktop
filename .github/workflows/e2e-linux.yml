@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest] # macos-latest, windows-latest
         node-version: [16.x]
 
     steps:
@@ -22,6 +22,10 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install packages
+        run: sudo apt-get install libxtst-dev libpng++-dev
 
       - name: Check out code
         uses: actions/checkout@v2
@@ -32,9 +36,6 @@ jobs:
       - name: Run Playwright tests
         run: |
           npx browserslist@latest --update-db
-          if [[ ${{ matrix.os }} == 'ubuntu-latest' ]]; then
-            export DISPLAY=:1
-          fi
-          npm run test:e2e
+          DISPLAY=:1 npm run test:e2e
           npm run test:e2e:send-report
 
