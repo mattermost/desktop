@@ -3,7 +3,7 @@ name: Electron Playwright Tests
 on:
   push:
     branches:
-      - test_ci
+      - test_ci_linux
   pull_request:
     branches:
       - master
