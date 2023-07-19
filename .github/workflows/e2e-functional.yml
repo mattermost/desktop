@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest] # macos-latest, windows-latest
+        os: [ubuntu-latest, macos-latest] # windows-latest
         node-version: [18.x]
 
     steps:
@@ -41,5 +41,12 @@ jobs:
           sudo apt-get install -y xvfb
           export DISPLAY=:99
           Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
+          npm run test:e2e
+          npm run test:e2e:send-report
+
+      - name: Run Playwright tests (Mac OS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          export MM_DESKTOP_BUILD_DISABLEGPU=true
           npm run test:e2e
           npm run test:e2e:send-report
