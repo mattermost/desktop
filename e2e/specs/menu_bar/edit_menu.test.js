@@ -36,10 +36,8 @@ describe('edit_menu', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
 
         // click on sint channel
-        await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
         await firstServer.type('#post_textbox', 'Mattermost');
         await firstServer.click('#post_textbox');
@@ -54,10 +52,8 @@ describe('edit_menu', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
 
         // click on sint channel
-        await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
         await firstServer.type('#post_textbox', 'Mattermost');
         await firstServer.click('#post_textbox');
@@ -77,10 +73,8 @@ describe('edit_menu', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
 
         // click on sint channel
-        await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
         await firstServer.type('#post_textbox', 'Mattermost');
         robot.keyTap('a', [env.cmdOrCtrl]);
@@ -96,10 +90,8 @@ describe('edit_menu', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
 
         // click on sint channel
-        await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
         await firstServer.type('#post_textbox', 'Mattermost');
         robot.keyTap('a', [env.cmdOrCtrl]);
@@ -118,10 +110,8 @@ describe('edit_menu', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
 
         // click on sint channel
-        await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
         await firstServer.type('#post_textbox', 'Mattermost');
         robot.keyTap('a', [env.cmdOrCtrl]);
@@ -141,10 +131,8 @@ describe('edit_menu', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
 
         // click on sint channel
-        await firstServer.click('#sidebarItem_suscipit-4');
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', 'Mattermost');
         robot.keyTap('a', [env.cmdOrCtrl]);

@@ -36,8 +36,7 @@ describe('copylink', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
-        await firstServer.click('#sidebarItem_suscipit-4');
+        await firstServer.waitForSelector('#post_textbox');
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', 'https://electronjs.org/apps/mattermost');
         await firstServer.press('#post_textbox', 'Enter');
