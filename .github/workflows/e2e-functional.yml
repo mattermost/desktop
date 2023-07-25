@@ -9,21 +9,20 @@ on:
       - master
 
 env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
+  AWS_S3_BUCKET: "mattermost-cypress-report"
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
   BRANCH: ${{ github.ref }}
   BUILD_SUFFIX: 'desktop-pr'
-  MM_TEST_SERVER_URL: "https://localhost:8065"
   JIRA_PROJECT_KEY: 'MM'
+  MM_TEST_SERVER_URL: "https://localhost:8065"
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
-  TEST_CYCLE_LINK_PREFIX: ${{ secrets.TEST_CYCLE_LINK_PREFIX }}
+  TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
-  WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-  ZEPHYR_API_KEY: ${{ secrets.ZEPHYR_API_KEY }}
+  ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   ZEPHYR_ENABLE: 'true'
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
-  ZEPHYR_FOLDER_ID: ${{ secrets.ZEPHYR_FOLDER_ID }}
+  ZEPHYR_FOLDER_ID: "3256491"
 
 jobs:
   e2e-linux:
@@ -64,10 +63,6 @@ jobs:
           echo "BUILD_SUFFIX: ${{ env.BUILD_SUFFIX }}"
           echo "TYPE: ${{ env.TYPE }}"
           echo "JIRA_PROJECT_KEY: ${{ env.JIRA_PROJECT_KEY }}"
-          echo "DNS_RECORD_1: ${{ env.DNS_RECORD_1 }}"
-          echo "AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}"
-          echo "WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}"
-          echo "TEST_CYCLE_LINK_PREFIX: ${{ secrets.TEST_CYCLE_LINK_PREFIX }}"
 
       - name: Desktop Install nodejs dependencies
         run: npm ci
