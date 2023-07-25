@@ -64,9 +64,6 @@ jobs:
           echo "TYPE: ${{ env.TYPE }}"
           echo "JIRA_PROJECT_KEY: ${{ env.JIRA_PROJECT_KEY }}"
 
-      - name: Desktop Install nodejs dependencies
-        run: npm ci
-
 #   Linux
 
       - name: Install packages (Ubuntu OS)
@@ -75,6 +72,9 @@ jobs:
           sudo apt-get install libxtst-dev libpng++-dev
           sudo apt-get update
           sudo apt-get install -y xvfb
+
+      - name: Desktop Install nodejs dependencies
+        run: npm ci &
 
       - name: Checkout mattermost
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
