@@ -66,11 +66,11 @@ jobs:
 
 #   Linux
 
-      # - name: Install packages (Ubuntu OS)
-      #   run: |
-      #     sudo apt-get install libxtst-dev libpng++-dev
-      #     sudo apt-get update
-      #     sudo apt-get install -y xvfb
+      - name: Install packages (Ubuntu OS)
+        run: |
+          sudo apt-get install libxtst-dev libpng++-dev
+          sudo apt-get update
+          sudo apt-get install -y xvfb
 
       - name: Checkout mattermost
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -78,18 +78,18 @@ jobs:
           repository: mattermost/mattermost
           path: mattermost
 
-      # - name: Run mattermsot server
-      #   run: |
-      #     cd mattermost/e2e-tests
-      #     echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
-      #     make start-server && make prepare-server
+      - name: Run mattermsot server
+        run: |
+          cd mattermost/e2e-tests
+          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
+          make start-server && make prepare-server
 
-      # - name: Desktop Install nodejs dependencies
-      #   run: npm ci
+      - name: Desktop Install nodejs dependencies
+        run: npm ci
 
-      # - name: Run Playwright tests (Ubuntu OS)
-      #   run: |
-      #     export DISPLAY=:99
-      #     Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
-      #     npm run test:e2e || true # making job pass even if the tests fail due to flakyness
-      #     npm run test:e2e:send-report
+      - name: Run Playwright tests (Ubuntu OS)
+        run: |
+          export DISPLAY=:99
+          Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
+          npm run test:e2e || true # making job pass even if the tests fail due to flakyness
+          npm run test:e2e:send-report
