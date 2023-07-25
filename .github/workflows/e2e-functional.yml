@@ -50,8 +50,27 @@ jobs:
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
 
+      - name: Print Environment Variables
+        run: |
+          echo "PULL_REQUEST: ${{ env.PULL_REQUEST }}"
+          echo "BUILD_ID: ${{ env.BUILD_ID }}"
+          echo "BRANCH: ${{ env.BRANCH }}"
+          echo "MM_TEST_SERVER_URL: ${{ env.MM_TEST_SERVER_URL }}"
+          echo "ZEPHYR_ENABLE: ${{ env.ZEPHYR_ENABLE }}"
+          echo "ZEPHYR_ENVIRONMENT_NAME: ${{ env.ZEPHYR_ENVIRONMENT_NAME }}"
+          echo "ZEPHYR_FOLDER_ID: ${{ env.ZEPHYR_FOLDER_ID }}"
+          echo "BUILD_TAG: ${{ env.BUILD_TAG }}"
+          echo "PULL_REQUEST: ${{ env.PULL_REQUEST }}"
+          echo "BUILD_SUFFIX: ${{ env.BUILD_SUFFIX }}"
+          echo "TYPE: ${{ env.TYPE }}"
+          echo "JIRA_PROJECT_KEY: ${{ env.JIRA_PROJECT_KEY }}"
+          echo "DNS_RECORD_1: ${{ env.DNS_RECORD_1 }}"
+          echo "AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}"
+          echo "WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}"
+          echo "TEST_CYCLE_LINK_PREFIX: ${{ secrets.TEST_CYCLE_LINK_PREFIX }}"
+
       - name: Desktop Install nodejs dependencies
-        run: npm ci &
+        run: npm ci
 
 #   Linux
 
