@@ -46,11 +46,14 @@ jobs:
       - name: Set Environment Variables
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
           fi
 
