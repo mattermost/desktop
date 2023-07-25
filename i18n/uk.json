@@ -213,5 +213,9 @@
     "renderer.components.settingsPage.loggingLevel.description": "Ведення журналів корисне для розробників і підтримки, щоб ізолювати проблеми, які можуть виникнути в додатку для комп’ютера.",
     "renderer.components.settingsPage.loadingConfig": "Завантаження конфігурації...",
     "renderer.components.settingsPage.launchAppMinimized.description": "Якщо доступно, додаток буде запущено у треї та не з'явиться вікно при запуску.",
-    "main.menus.app.help.ShowLogs": "Показати логи"
+    "main.menus.app.help.ShowLogs": "Показати логи",
+    "renderer.components.configureServer.connect.override": "Підключись все одно",
+    "renderer.components.configureServer.url.insecure": "URL-адреса вашого сервера потенційно небезпечна. Для найкращих результатів використовуйте URL-адресу з протоколом HTTPS.",
+    "main.downloadsManager.resetDownloadsFolder": "Будь ласка, скиньте папку, куди будуть завантажуватися файли",
+    "main.downloadsManager.specifyDownloadsFolder": "Вкажіть папку, куди будуть завантажуватися файли"
 }
