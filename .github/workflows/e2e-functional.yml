@@ -21,7 +21,6 @@ env:
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
   WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
-  ZEPHYR_ENABLE: 'true'
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
   ZEPHYR_FOLDER_ID: "3256491"
 
@@ -46,6 +45,15 @@ jobs:
 
       - name: Set Environment Variables
         run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+          fi
           echo "BRANCH=${BRANCH_NAME#refs/heads/}" >> $GITHUB_ENV
           echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX}}-${{ runner.os }}" >> $GITHUB_ENV
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
