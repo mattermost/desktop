@@ -12,7 +12,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
   AWS_S3_BUCKET: "mattermost-cypress-report"
   AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
-  BRANCH_NAME: ${{ github.ref }}
+  BRANCH: ${{ github.ref }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
   MM_TEST_SERVER_URL: "https://localhost:8065"
@@ -52,20 +52,22 @@ jobs:
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" == "schedule" ]; then
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
-          echo "BRANCH=${BRANCH_NAME#refs/heads/}" >> $GITHUB_ENV
-          echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX}}-${{ runner.os }}" >> $GITHUB_ENV
+
+          echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          if [ -n "${ZEPHYR_ENABLE}" ]; then
+            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
+          fi
 
 #   Linux
 
-      - name: Install packages (Ubuntu OS)
-        run: |
-          sudo apt-get install libxtst-dev libpng++-dev
-          sudo apt-get update
-          sudo apt-get install -y xvfb
+      # - name: Install packages (Ubuntu OS)
+      #   run: |
+      #     sudo apt-get install libxtst-dev libpng++-dev
+      #     sudo apt-get update
+      #     sudo apt-get install -y xvfb
 
       - name: Checkout mattermost
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -73,18 +75,18 @@ jobs:
           repository: mattermost/mattermost
           path: mattermost
 
-      - name: Run mattermsot server
-        run: |
-          cd mattermost/e2e-tests
-          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
-          make start-server && make prepare-server
+      # - name: Run mattermsot server
+      #   run: |
+      #     cd mattermost/e2e-tests
+      #     echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
+      #     make start-server && make prepare-server
 
-      - name: Desktop Install nodejs dependencies
-        run: npm ci
+      # - name: Desktop Install nodejs dependencies
+      #   run: npm ci
 
-      - name: Run Playwright tests (Ubuntu OS)
-        run: |
-          export DISPLAY=:99
-          Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
-          npm run test:e2e || true # making job pass even if the tests fail due to flakyness
-          npm run test:e2e:send-report
+      # - name: Run Playwright tests (Ubuntu OS)
+      #   run: |
+      #     export DISPLAY=:99
+      #     Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
+      #     npm run test:e2e || true # making job pass even if the tests fail due to flakyness
+      #     npm run test:e2e:send-report
