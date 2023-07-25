@@ -12,13 +12,14 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
   AWS_S3_BUCKET: "mattermost-cypress-report"
   AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
-  BRANCH: ${{ github.ref }}
+  BRANCH_NAME: ${{ github.ref }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
   MM_TEST_SERVER_URL: "https://localhost:8065"
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
   TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
+  WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   ZEPHYR_ENABLE: 'true'
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
@@ -45,24 +46,10 @@ jobs:
 
       - name: Set Environment Variables
         run: |
+          echo "BRANCH=${BRANCH_NAME#refs/heads/}" >> $GITHUB_ENV
           echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX}}-${{ runner.os }}" >> $GITHUB_ENV
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-
-      - name: Print Environment Variables
-        run: |
-          echo "PULL_REQUEST: ${{ env.PULL_REQUEST }}"
-          echo "BUILD_ID: ${{ env.BUILD_ID }}"
-          echo "BRANCH: ${{ env.BRANCH }}"
-          echo "MM_TEST_SERVER_URL: ${{ env.MM_TEST_SERVER_URL }}"
-          echo "ZEPHYR_ENABLE: ${{ env.ZEPHYR_ENABLE }}"
-          echo "ZEPHYR_ENVIRONMENT_NAME: ${{ env.ZEPHYR_ENVIRONMENT_NAME }}"
-          echo "ZEPHYR_FOLDER_ID: ${{ env.ZEPHYR_FOLDER_ID }}"
-          echo "BUILD_TAG: ${{ env.BUILD_TAG }}"
-          echo "PULL_REQUEST: ${{ env.PULL_REQUEST }}"
-          echo "BUILD_SUFFIX: ${{ env.BUILD_SUFFIX }}"
-          echo "TYPE: ${{ env.TYPE }}"
-          echo "JIRA_PROJECT_KEY: ${{ env.JIRA_PROJECT_KEY }}"
 
 #   Linux
 
@@ -74,7 +61,7 @@ jobs:
           sudo apt-get install -y xvfb
 
       - name: Desktop Install nodejs dependencies
-        run: npm ci &
+        run: npm ci
 
       - name: Checkout mattermost
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
