@@ -3,24 +3,19 @@ name: Electron Playwright Tests
 on:
   push:
     branches:
-      - test_ci
+      - master
   pull_request:
     branches:
       - master
 
 env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
   AWS_S3_BUCKET: "mattermost-cypress-report"
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
   BRANCH: ${{ github.ref }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
   MM_TEST_SERVER_URL: "https://localhost:8065"
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
-  TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
-  WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
-  ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
   ZEPHYR_FOLDER_ID: "3256491"
 
@@ -46,7 +41,7 @@ jobs:
       - name: Set Environment Variables
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" == "release" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
@@ -60,6 +55,12 @@ jobs:
           echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          echo "TEST_CYCLE_LINK_PREFIX=${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}" >> $GITHUB_ENV
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          echo "WEBHOOK_URL=${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}" >> $GITHUB_ENV
+          echo "ZEPHYR_API_KEY=${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}" >> $GITHUB_ENV
+        
           if [ -n "${ZEPHYR_ENABLE}" ]; then
             echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
           fi
