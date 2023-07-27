@@ -235,7 +235,7 @@ function initializeBeforeAppReady() {
     AllowProtocolDialog.init();
 
     if (isDev && process.env.NODE_ENV !== 'test') {
-        log.info('In development mode, deeplinking is disabled');
+        app.setAsDefaultProtocolClient('mattermost-dev');
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
