@@ -21,25 +21,26 @@ env:
 
 jobs:
   e2e-linux:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node-version: [18.x]
-
+    runs-on: ubuntu-latest
     steps:
 
-      - name: Check out code
-        uses: actions/checkout@v3.5.3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3.7.0
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
 
-      - name: Desktop Install nodejs dependencies
-        run: npm ci
+      - name: Install dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
+        run: |
+          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
+          npm ci
 
       - name: Set Environment Variables
         run: |
@@ -63,19 +64,8 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
           echo "WEBHOOK_URL=${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}" >> $GITHUB_ENV
           echo "ZEPHYR_API_KEY=${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}" >> $GITHUB_ENV
-        
-          if [ -n "${ZEPHYR_ENABLE}" ]; then
-            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
-          fi
 
 #   Linux
-
-      - name: Install packages (Ubuntu OS)
-        run: |
-          sudo apt-get install libxtst-dev libpng++-dev
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-
       - name: Checkout mattermost
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
