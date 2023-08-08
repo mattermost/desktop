@@ -45,8 +45,8 @@ jobs:
       - name: Set Environment Variables
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BRANCH=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
-            echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+          echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+          echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" == "release" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
@@ -55,15 +55,9 @@ jobs:
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
           fi
-
           echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-          echo "TEST_CYCLE_LINK_PREFIX=${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}" >> $GITHUB_ENV
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "WEBHOOK_URL=${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}" >> $GITHUB_ENV
-          echo "ZEPHYR_API_KEY=${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}" >> $GITHUB_ENV
 
 #   Linux
       - name: Checkout mattermost
@@ -85,4 +79,68 @@ jobs:
           export DISPLAY=:99
           Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
+          npm run test:e2e:send-report
+
+  e2e-macos:
+    runs-on: macos-12
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v4.0.1
+        with:
+          go-version: '1.20'
+
+      - name: ci/install-dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          brew install yq
+          jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+          npm ci
+
+      - name: Setup Docker on macOS
+        run: |
+          brew install docker docker-compose
+          colima start
+          mkdir -p ~/.docker/cli-plugins
+          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
+
+      - name: Set Environment Variables
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
+          fi
+          echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
+          echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+
+      - name: Checkout mattermost
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          repository: mattermost/mattermost
+          path: mattermost
+          ref: fix-e2e-macos-support
+
+      - name: Run mattermsot server 
+        run: |
+          cd mattermost/e2e-tests
+          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
+          make start-server && make prepare-server
+          npm run test:e2e || true
           npm run test:e2e:send-report
