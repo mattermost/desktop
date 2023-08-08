@@ -51,7 +51,7 @@ jobs:
       - name: Set Environment Variables
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-          echo "BRANCH=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
+          echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
           echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" == "release" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
@@ -75,7 +75,7 @@ jobs:
           repository: mattermost/mattermost
           path: mattermost
 
-      - name: Run mattermsot server & Playwright tests (Ubuntu OS)
+      - name: Run mattermsot server
         run: |
           LATEST_RELEASE_TAG=$(curl -L -s https://api.github.com/repos/mattermost/mattermost-server/releases/latest | jq -r '.tag_name')
           LATEST_RELEASE_TAG="${LATEST_RELEASE_TAG#v}"
@@ -148,9 +148,9 @@ jobs:
         with:
           repository: mattermost/mattermost
           path: mattermost
-          ref: fix-e2e-macos-support # need to change to master after a PR gets merged
+          ref: master
 
-      - name: Run mattermsot server 
+      - name: Run mattermsot server & Playwright tests (macOS)
         run: |
           cd mattermost/e2e-tests
           echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
@@ -215,7 +215,7 @@ jobs:
             echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
           fi
   
-      - name: Run mattermsot server & Playwright tests (Windows OS)
+      - name: Run Playwright tests (Windows OS)
         run: |
           npm run test:e2e || true
           npm run test:e2e:send-report
