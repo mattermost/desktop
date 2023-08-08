@@ -157,3 +157,66 @@ jobs:
           make start-server && make prepare-server
           npm run test:e2e || true
           npm run test:e2e:send-report
+
+  e2e-windows:
+    runs-on: windows-latest
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - name: ci/setup-node
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: ci/cache-node-modules
+        id: cache-node-modules
+        uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-node-modules
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: ci/install-node-gyp
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          choco install yq --version 4.15.1 -y
+          npm i -g node-gyp
+          node-gyp install
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
+
+      - name: Set Environment Variables
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
+          fi
+          echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
+          echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+
+          if [ -n "${ZEPHYR_ENABLE}" ]; then
+            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
+          fi
+  
+      - name: Run mattermsot server & Playwright tests (Windows OS)
+        run: |
+          npm run test:e2e || true
+          npm run test:e2e:send-report
+        shell: bash
