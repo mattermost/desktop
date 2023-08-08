@@ -18,6 +18,12 @@ env:
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
   ZEPHYR_FOLDER_ID: "3256491"
+  TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
+  WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
+  ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
+
 
 jobs:
   e2e-linux:
@@ -45,7 +51,7 @@ jobs:
       - name: Set Environment Variables
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-          echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+          echo "BRANCH=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
           echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
           elif [ "${{ github.event_name }}" == "release" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
@@ -59,7 +65,10 @@ jobs:
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
 
-#   Linux
+          if [ -n "${ZEPHYR_ENABLE}" ]; then
+            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
+          fi
+
       - name: Checkout mattermost
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
@@ -130,12 +139,16 @@ jobs:
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
 
+          if [ -n "${ZEPHYR_ENABLE}" ]; then
+            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
+          fi
+
       - name: Checkout mattermost
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           repository: mattermost/mattermost
           path: mattermost
-          ref: fix-e2e-macos-support
+          ref: fix-e2e-macos-support # need to change to master after a PR gets merged
 
       - name: Run mattermsot server 
         run: |
