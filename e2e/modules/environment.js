@@ -253,7 +253,7 @@ module.exports = {
         await window.waitForSelector('#saveSetting');
 
         await window.type('#input_loginId', 'sysadmin');
-        await window.type('#input_password-input', 'Sys@dmin-sample1');
+        await window.type('#input_password-input', 'Sys@dmin123');
         await window.click('#saveSetting');
     },
 
