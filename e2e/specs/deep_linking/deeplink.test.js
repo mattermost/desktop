@@ -45,7 +45,7 @@ describe('application', function desc() {
             const isActive = await browserWindow.evaluate((window, id) => {
                 return window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getURL();
             }, webContentsId);
-            isActive.should.equal('https://github.com/test/url');
+            isActive.should.equal('https://github.com/test/url/');
             const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
             dropdownButtonText.should.equal('github');
             await this.app.close();

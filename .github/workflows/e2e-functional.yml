@@ -152,8 +152,10 @@ jobs:
 
       - name: Run mattermsot server & Playwright tests (macOS)
         run: |
+          LATEST_RELEASE_TAG=$(curl -L -s https://api.github.com/repos/mattermost/mattermost-server/releases/latest | jq -r '.tag_name')
+          LATEST_RELEASE_TAG="${LATEST_RELEASE_TAG#v}"
           cd mattermost/e2e-tests
-          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
+          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:$LATEST_RELEASE_TAG" >.ci/env
           make start-server && make prepare-server
 
       - name: Run Playwright tests (macOS)
