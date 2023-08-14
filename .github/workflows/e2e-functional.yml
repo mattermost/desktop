@@ -5,8 +5,9 @@ on:
     branches:
       - master
   pull_request:
-    branches:
-      - master
+    branches: [ master ]
+    types:
+        - labeled
 
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
@@ -28,6 +29,7 @@ env:
 
 jobs:
   e2e-linux:
+    if: ${{ github.event.label.name == 'Run E2E Functional Tests' }}
     runs-on: ubuntu-latest
     steps:
 
@@ -92,6 +94,7 @@ jobs:
           npm run test:e2e:send-report
 
   e2e-macos:
+    if: ${{ github.event.label.name == 'Run E2E Functional Tests' }}
     runs-on: macos-12
     steps:
       - name: ci/checkout-repo
@@ -154,7 +157,7 @@ jobs:
       - name: Run mattermsot server & Playwright tests (macOS)
         run: |
           cd mattermost/e2e-tests
-          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0.1" >.ci/env
+          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
           make start-server && make prepare-server
 
       - name: Run Playwright tests (macOS)
@@ -163,6 +166,7 @@ jobs:
           npm run test:e2e:send-report
 
   e2e-windows:
+    if: ${{ github.event.label.name == 'Run E2E Functional Tests' }}
     runs-on: windows-latest
     steps:
       - name: ci/checkout-repo
