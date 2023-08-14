@@ -29,7 +29,7 @@ env:
 
 jobs:
   e2e-linux:
-    if: ${{ github.event.label.name == 'Run E2E Functional Tests' }}
+    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
     runs-on: ubuntu-latest
     steps:
 
@@ -94,7 +94,7 @@ jobs:
           npm run test:e2e:send-report
 
   e2e-macos:
-    if: ${{ github.event.label.name == 'Run E2E Functional Tests' }}
+    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
     runs-on: macos-12
     steps:
       - name: ci/checkout-repo
@@ -166,7 +166,7 @@ jobs:
           npm run test:e2e:send-report
 
   e2e-windows:
-    if: ${{ github.event.label.name == 'Run E2E Functional Tests' }}
+    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
     runs-on: windows-latest
     steps:
       - name: ci/checkout-repo
