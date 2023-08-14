@@ -93,6 +93,13 @@ jobs:
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
+      - name: Remove "Run Desktop E2E Tests" label
+        if: always()
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: |
+            Run Desktop E2E Tests
+    
   e2e-macos:
     if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
     runs-on: macos-12
