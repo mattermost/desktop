@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Certificate, WebContents} from 'electron';
+import {Certificate, WebContents, Event} from 'electron';
 
 import {CertificateModalData} from 'types/certificate';
 
