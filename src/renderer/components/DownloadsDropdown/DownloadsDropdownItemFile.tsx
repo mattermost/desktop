@@ -7,6 +7,8 @@ import classNames from 'classnames';
 
 import {useIntl} from 'react-intl';
 
+import {app} from 'electron';
+
 import FileSizeAndStatus from './FileSizeAndStatus';
 import ProgressBar from './ProgressBar';
 import ThreeDotButton from './ThreeDotButton';
@@ -28,7 +30,7 @@ const DownloadsDropdownItemFile = ({item, activeItem}: OwnProps) => {
     };
 
     const itemFilename = item.type === 'update' ?
-        translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `Mattermost version ${item.filename}`}, {version: item.filename}) :
+        translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName: app.name}) :
         item.filename;
 
     return (

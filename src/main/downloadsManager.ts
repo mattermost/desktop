@@ -201,9 +201,9 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                     continue;
                 }
 
-                // Remove update if app was updated and restarted
+                // Remove update if app was updated and restarted OR if we disabled auto updates
                 if (fileId === APP_UPDATE_KEY) {
-                    if (appVersionManager.lastAppVersion === file.filename) {
+                    if (appVersionManager.lastAppVersion === file.filename || !Config.canUpgrade) {
                         delete downloads[APP_UPDATE_KEY];
                         modified = true;
                         continue;

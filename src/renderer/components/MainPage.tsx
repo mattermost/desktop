@@ -519,7 +519,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 >
                     {window.process.platform !== 'linux' && this.state.servers.length === 0 && (
                         <div className='app-title'>
-                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: 'Mattermost'})}
+                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: '{appName}'}, {appName: this.props.appName})}
                         </div>
                     )}
                     <button
