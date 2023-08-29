@@ -174,14 +174,19 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         }
 
         for (const file of Object.values(this.downloads)) {
-            if (file.bookmark) {
-                this.bookmarks.set(this.getDownloadedFileId(file), {originalPath: file.location, bookmark: file.bookmark});
+            try {
+                if (file.bookmark) {
+                    this.bookmarks.set(this.getDownloadedFileId(file), {originalPath: file.location, bookmark: file.bookmark});
 
-                if (file.mimeType?.toLowerCase().startsWith('image/')) {
-                    const func = app.startAccessingSecurityScopedResource(file.bookmark);
-                    fs.copyFileSync(file.location, path.resolve(app.getPath('temp'), path.basename(file.location)));
-                    func();
+                    if (file.mimeType?.toLowerCase().startsWith('image/')) {
+                        const func = app.startAccessingSecurityScopedResource(file.bookmark);
+                        fs.copyFileSync(file.location, path.resolve(app.getPath('temp'), path.basename(file.location)));
+                        func();
+                    }
                 }
+            } catch (e) {
+                log.warn('could not load bookmark', file.filename, e);
+                this.clearFile(file);
             }
         }
     }
