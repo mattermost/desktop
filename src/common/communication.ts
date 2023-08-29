@@ -173,3 +173,5 @@ export const MAIN_WINDOW_RESIZED = 'main-window-resized';
 export const MAIN_WINDOW_FOCUSED = 'main-window-focused';
 
 export const VALIDATE_SERVER_URL = 'validate-server-url';
+
+export const GET_IS_DEV_MODE = 'get-is-dev-mode';
