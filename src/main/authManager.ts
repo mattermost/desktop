@@ -1,6 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {AuthenticationResponseDetails, AuthInfo, WebContents} from 'electron';
+import {AuthenticationResponseDetails, AuthInfo, WebContents, Event} from 'electron';
 
 import {PermissionType} from 'types/trustedOrigin';
 import {LoginModalData} from 'types/auth';
