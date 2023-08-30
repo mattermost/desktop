@@ -8,8 +8,6 @@ import {FormattedMessage} from 'react-intl';
 
 import {Button} from 'react-bootstrap';
 
-import {app} from 'electron';
-
 import Thumbnail from '../Thumbnail';
 
 type OwnProps = {
@@ -38,7 +36,7 @@ const UpdateAvailable = ({item}: OwnProps) => {
                         defaultMessage={`A new version of the {appName} Desktop App (version ${item.filename}) is available to install.`}
                         values={{
                             version: item.filename,
-                            appName: app.name,
+                            appName: window.desktop.getAppName(),
                         }}
                     />
                 </div>
