@@ -10,6 +10,14 @@ jest.unmock('common/log');
 
 jest.mock('electron-log', () => ({
     log: jest.fn(),
+    transports: {
+        file: {
+            level: 'info',
+        },
+        console: {
+            level: 'info',
+        },
+    },
 }));
 
 jest.mock('common/utils/util', () => ({
