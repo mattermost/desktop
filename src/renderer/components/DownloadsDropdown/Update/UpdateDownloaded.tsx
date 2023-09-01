@@ -10,8 +10,6 @@ import {Button} from 'react-bootstrap';
 
 import classNames from 'classnames';
 
-import {app} from 'electron';
-
 import Thumbnail from '../Thumbnail';
 import FileSizeAndStatus from '../FileSizeAndStatus';
 
@@ -33,7 +31,7 @@ const UpdateAvailable = ({item}: OwnProps) => {
                 <Thumbnail item={item}/>
                 <div className='DownloadsDropdown__File__Body__Details'>
                     <div className='DownloadsDropdown__File__Body__Details__Filename'>
-                        {translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName: app.name})}
+                        {translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName: window.desktop.getAppName()})}
                     </div>
                     <div
                         className={classNames('DownloadsDropdown__File__Body__Details__FileSizeAndStatus', {
