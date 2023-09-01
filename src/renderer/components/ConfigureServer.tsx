@@ -127,9 +127,6 @@ function ConfigureServer({
     const validateURL = async (url: string) => {
         let message;
         const validationResult = await window.desktop.validateServerURL(url);
-        if (validationResult.validatedURL) {
-            setUrl(validationResult.validatedURL);
-        }
 
         if (validationResult?.status === URLValidationStatus.Missing) {
             message = {
