@@ -59,7 +59,7 @@ describe('startup/app', function desc() {
         it('MM-T4985 should show app name in title bar when no servers exist', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const titleBarText = await mainWindow.innerText('.app-title');
-            titleBarText.should.equal('Mattermost');
+            titleBarText.should.equal('Electron');
         });
     }
 });
