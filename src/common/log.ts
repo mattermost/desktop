@@ -15,6 +15,9 @@ export const setLoggingLevel = (level: string) => {
     log.transports.file.level = level as LevelOption;
 };
 
+// Start on info by default
+setLoggingLevel('info');
+
 export const getLevel = () => log.transports.file.level as string;
 
 export class Logger {
@@ -22,9 +25,6 @@ export class Logger {
 
     constructor(...prefixes: string[]) {
         this.prefixes = this.shortenPrefixes(...prefixes);
-
-        // Start on info by default
-        setLoggingLevel('info');
     }
 
     withPrefix = (...prefixes: string[]) => {
