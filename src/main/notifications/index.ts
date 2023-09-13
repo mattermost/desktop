@@ -11,6 +11,7 @@ import Config from 'common/config';
 import {PLAY_SOUND} from 'common/communication';
 import {Logger} from 'common/log';
 
+import PermissionsManager from '../permissionsManager';
 import ViewManager from '../views/viewManager';
 import MainWindow from '../windows/mainWindow';
 
@@ -24,7 +25,7 @@ export const currentNotifications = new Map();
 
 const log = new Logger('Notifications');
 
-export function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
+export async function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
     log.debug('displayMention', {title, body, channel, teamId, url, silent, data});
 
     if (!Notification.isSupported()) {
@@ -48,6 +49,10 @@ export function displayMention(title: string, body: string, channel: {id: string
         silent,
         data,
     };
+
+    if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', view.view.server.url.toString())) {
+        return;
+    }
 
     const mention = new Mention(options, channel, teamId);
     const mentionKey = `${mention.teamId}:${mention.channel.id}`;
