@@ -378,21 +378,12 @@ window.addEventListener('resize', () => {
 let isPasswordBox = false;
 
 window.addEventListener('focusin', (event) => {
-    if (isPasswordBox) {
-        return;
-    }
-
-    if (event.target.tagName === 'INPUT' && event.target.type === 'password') {
+    const targetIsPasswordBox = event.target.tagName === 'INPUT' && event.target.type === 'password';
+    if (targetIsPasswordBox && !isPasswordBox) {
         ipcRenderer.send(TOGGLE_SECURE_INPUT, true);
-        isPasswordBox = true;
-    }
-});
-
-window.addEventListener('focusout', () => {
-    if (!isPasswordBox) {
-        return;
+    } else if (!targetIsPasswordBox && isPasswordBox) {
+        ipcRenderer.send(TOGGLE_SECURE_INPUT, false);
     }
 
-    isPasswordBox = false;
-    ipcRenderer.send(TOGGLE_SECURE_INPUT, false);
+    isPasswordBox = targetIsPasswordBox;
 });
