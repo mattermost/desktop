@@ -946,7 +946,10 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 <FormText>
                     <FormattedMessage
                         id='renderer.components.settingsPage.enableHardwareAcceleration.description'
-                        defaultMessage='If enabled, Mattermost UI is rendered more efficiently but can lead to decreased stability for some systems.'
+                        defaultMessage='If enabled, {appName} UI is rendered more efficiently but can lead to decreased stability for some systems.'
+                        values={{
+                            appName: this.state.appName,
+                        }}
                     />
                     {' '}
                     <FormattedMessage
@@ -975,7 +978,10 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 <FormText>
                     <FormattedMessage
                         id='renderer.components.settingsPage.fullscreen.description'
-                        defaultMessage='If enabled, the Mattermost application will always open in full screen'
+                        defaultMessage='If enabled, the {appName} application will always open in full screen'
+                        values={{
+                            appName: this.state.appName,
+                        }}
                     />
                 </FormText>
             </FormCheck>,

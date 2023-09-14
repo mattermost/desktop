@@ -22,6 +22,9 @@ export class Logger {
 
     constructor(...prefixes: string[]) {
         this.prefixes = this.shortenPrefixes(...prefixes);
+
+        // Start on info by default
+        setLoggingLevel('info');
     }
 
     withPrefix = (...prefixes: string[]) => {

@@ -54,7 +54,6 @@ type State = {
     mentionCounts: Record<string, number>;
     maximized: boolean;
     tabViewStatus: Map<string, TabViewStatus>;
-    darkMode: boolean;
     modalOpen?: boolean;
     fullScreen?: boolean;
     showExtraBar?: boolean;
@@ -91,7 +90,6 @@ class MainPage extends React.PureComponent<Props, State> {
             mentionCounts: {},
             maximized: false,
             tabViewStatus: new Map(),
-            darkMode: this.props.darkMode,
             isMenuOpen: false,
             isDownloadsDropdownOpen: false,
             showDownloadsBadge: false,
@@ -192,10 +190,6 @@ class MainPage extends React.PureComponent<Props, State> {
                 },
             };
             this.updateTabStatus(viewId, statusValue);
-        });
-
-        window.desktop.onDarkModeChange((darkMode) => {
-            this.setState({darkMode});
         });
 
         // can't switch tabs sequentially for some reason...
@@ -407,7 +401,7 @@ class MainPage extends React.PureComponent<Props, State> {
         const tabsRow = (
             <TabBar
                 id='tabBar'
-                isDarkMode={this.state.darkMode}
+                isDarkMode={this.props.darkMode}
                 tabs={currentTabs}
                 sessionsExpired={this.state.sessionsExpired}
                 unreadCounts={this.state.unreadCounts}
@@ -424,13 +418,13 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const topBarClassName = classNames('topBar', {
             macOS: window.process.platform === 'darwin',
-            darkMode: this.state.darkMode,
+            darkMode: this.props.darkMode,
             fullScreen: this.state.fullScreen,
         });
 
         const downloadsDropdownButton = this.state.hasDownloads ? (
             <DownloadsDropdownButton
-                darkMode={this.state.darkMode}
+                darkMode={this.props.darkMode}
                 isDownloadsDropdownOpen={this.state.isDownloadsDropdownOpen}
                 showDownloadsBadge={this.state.showDownloadsBadge}
                 closeDownloadsDropdown={this.closeDownloadsDropdown}
@@ -519,7 +513,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 >
                     {window.process.platform !== 'linux' && this.state.servers.length === 0 && (
                         <div className='app-title'>
-                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: 'Mattermost'})}
+                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: '{appName}'}, {appName: this.props.appName})}
                         </div>
                     )}
                     <button
@@ -544,7 +538,7 @@ class MainPage extends React.PureComponent<Props, State> {
                             totalMentionCount={totalMentionCount}
                             hasUnreads={hasAnyUnreads}
                             isMenuOpen={this.state.isMenuOpen}
-                            darkMode={this.state.darkMode}
+                            darkMode={this.props.darkMode}
                         />
                     )}
                     {tabsRow}
@@ -589,7 +583,7 @@ class MainPage extends React.PureComponent<Props, State> {
         const viewsRow = (
             <Fragment>
                 <ExtraBar
-                    darkMode={this.state.darkMode}
+                    darkMode={this.props.darkMode}
                     show={this.state.showExtraBar}
                     goBack={() => {
                         window.desktop.goBack();

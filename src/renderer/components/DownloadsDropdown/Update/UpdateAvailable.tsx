@@ -33,8 +33,11 @@ const UpdateAvailable = ({item}: OwnProps) => {
                 <div className='DownloadsDropdown__Update__Details__Description'>
                     <FormattedMessage
                         id='renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall'
-                        defaultMessage={`A new version of the Mattermost Desktop App (version ${item.filename}) is available to install.`}
-                        values={{version: item.filename}}
+                        defaultMessage={`A new version of the {appName} Desktop App (version ${item.filename}) is available to install.`}
+                        values={{
+                            version: item.filename,
+                            appName: window.desktop.getAppName(),
+                        }}
                     />
                 </div>
                 <Button

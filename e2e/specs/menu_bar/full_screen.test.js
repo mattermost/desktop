@@ -19,7 +19,7 @@ describe('menu/view', function desc() {
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
-        fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 0, y: 0, width: 700, height: 240, maximized: false, fullscreen: false}));
+        fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 0, y: 0, width: 600, height: 240, maximized: false, fullscreen: false}));
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);

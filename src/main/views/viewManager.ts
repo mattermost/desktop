@@ -1,7 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent, Event} from 'electron';
+import isDev from 'electron-is-dev';
 
 import ServerViewState from 'app/serverViewState';
 
@@ -30,6 +31,7 @@ import {
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
     SWITCH_TAB,
+    GET_IS_DEV_MODE,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -67,6 +69,7 @@ export class ViewManager {
         MainWindow.on(MAIN_WINDOW_RESIZED, this.handleSetCurrentViewBounds);
         MainWindow.on(MAIN_WINDOW_FOCUSED, this.focusCurrentView);
         ipcMain.handle(GET_VIEW_INFO_FOR_TEST, this.handleGetViewInfoForTest);
+        ipcMain.handle(GET_IS_DEV_MODE, () => isDev);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);

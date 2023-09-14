@@ -37,6 +37,7 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     CALLS_ERROR,
     CALLS_JOIN_REQUEST,
+    GET_IS_DEV_MODE,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -55,6 +56,10 @@ if (process.env.NODE_ENV === 'test') {
         getViewInfoForTest: () => ipcRenderer.invoke(GET_VIEW_INFO_FOR_TEST),
     });
 }
+
+contextBridge.exposeInMainWorld('desktopAPI', {
+    isDev: () => ipcRenderer.invoke(GET_IS_DEV_MODE),
+});
 
 ipcRenderer.invoke('get-app-version').then(({name, version}) => {
     appVersion = version;

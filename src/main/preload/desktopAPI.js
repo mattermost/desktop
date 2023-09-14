@@ -4,7 +4,7 @@
 
 'use strict';
 
-import {ipcRenderer, contextBridge} from 'electron';
+import {ipcRenderer, contextBridge, app} from 'electron';
 
 import {
     GET_LANGUAGE_INFORMATION,
@@ -110,6 +110,8 @@ contextBridge.exposeInMainWorld('mas', {
 });
 
 contextBridge.exposeInMainWorld('desktop', {
+    getAppName: () => app.name,
+
     quit: (reason, stack) => ipcRenderer.send(QUIT, reason, stack),
     openAppMenu: () => ipcRenderer.send(OPEN_APP_MENU),
     closeServersDropdown: () => ipcRenderer.send(CLOSE_SERVERS_DROPDOWN),
