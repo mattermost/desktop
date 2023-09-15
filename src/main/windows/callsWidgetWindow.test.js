@@ -241,7 +241,7 @@ describe('main/windows/callsWidgetWindow', () => {
         beforeEach(() => {
             urlUtils.parseURL.mockImplementation((url) => new URL(url));
             urlUtils.getFormattedPathName.mockImplementation((pn) => {
-                return pn.endsWith('/') ? pn.toLowerCase() : `${pn.toLowerCase()}/`;
+                return pn.endsWith('/') ? pn : `${pn}/`;
             });
             callsWidgetWindow.options = {
                 callID: 'test-call-id',
