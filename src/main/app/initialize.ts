@@ -29,6 +29,7 @@ import {
     WINDOW_MINIMIZE,
     WINDOW_RESTORE,
     DOUBLE_CLICK_ON_WINDOW,
+    TOGGLE_SECURE_INPUT,
 } from 'common/communication';
 import Config from 'common/config';
 import {isTrustedURL, parseURL} from 'common/utils/url';
@@ -80,6 +81,7 @@ import {
     handleOpenAppMenu,
     handleQuit,
     handlePingDomain,
+    handleToggleSecureInput,
 } from './intercom';
 import {
     clearAppCache,
@@ -272,6 +274,8 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(WINDOW_MINIMIZE, handleMinimize);
     ipcMain.on(WINDOW_RESTORE, handleRestore);
     ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
+
+    ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 }
 
 async function initializeAfterAppReady() {
