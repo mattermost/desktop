@@ -32,7 +32,6 @@ import {
     TOGGLE_SECURE_INPUT,
 } from 'common/communication';
 import Config from 'common/config';
-import {isTrustedURL, parseURL} from 'common/utils/url';
 import {Logger} from 'common/log';
 
 import AllowProtocolDialog from 'main/allowProtocolDialog';
@@ -47,12 +46,12 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
+import PermissionsManager from 'main/permissionsManager';
 import ServerManager from 'common/servers/serverManager';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import Tray from 'main/tray/tray';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import ViewManager from 'main/views/viewManager';
-import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
 import {protocols} from '../../../electron-builder.json';
@@ -392,56 +391,9 @@ async function initializeAfterAppReady() {
 
     ipcMain.emit('update-dict');
 
-    // supported permission types
-    const supportedPermissionTypes = [
-        'media',
-        'geolocation',
-        'notifications',
-        'fullscreen',
-        'openExternal',
-        'clipboard-sanitized-write',
-    ];
-
     // handle permission requests
     // - approve if a supported permission type and the request comes from the renderer or one of the defined servers
-    defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-        log.debug('permission requested', webContents.getURL(), permission);
-
-        // is the requested permission type supported?
-        if (!supportedPermissionTypes.includes(permission)) {
-            callback(false);
-            return;
-        }
-
-        // is the request coming from the renderer?
-        const mainWindow = MainWindow.get();
-        if (mainWindow && webContents.id === mainWindow.webContents.id) {
-            callback(true);
-            return;
-        }
-
-        if (CallsWidgetWindow.isCallsWidget(webContents.id)) {
-            callback(true);
-            return;
-        }
-
-        const requestingURL = webContents.getURL();
-        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.view.server.url;
-
-        if (!serverURL) {
-            callback(false);
-            return;
-        }
-
-        const parsedURL = parseURL(requestingURL);
-        if (!parsedURL) {
-            callback(false);
-            return;
-        }
-
-        // is the requesting url trusted?
-        callback(isTrustedURL(parsedURL, serverURL));
-    });
+    defaultSession.setPermissionRequestHandler(PermissionsManager.handlePermissionRequest);
 
     if (wasUpdated(AppVersionManager.lastAppVersion)) {
         clearAppCache();
