@@ -38,6 +38,7 @@ import {
     CALLS_ERROR,
     CALLS_JOIN_REQUEST,
     GET_IS_DEV_MODE,
+    TOGGLE_SECURE_INPUT,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -372,4 +373,17 @@ ipcRenderer.on(CALLS_JOIN_REQUEST, (event, message) => {
 
 window.addEventListener('resize', () => {
     ipcRenderer.send(VIEW_FINISHED_RESIZING);
+});
+
+let isPasswordBox = false;
+
+window.addEventListener('focusin', (event) => {
+    const targetIsPasswordBox = event.target.tagName === 'INPUT' && event.target.type === 'password';
+    if (targetIsPasswordBox && !isPasswordBox) {
+        ipcRenderer.send(TOGGLE_SECURE_INPUT, true);
+    } else if (!targetIsPasswordBox && isPasswordBox) {
+        ipcRenderer.send(TOGGLE_SECURE_INPUT, false);
+    }
+
+    isPasswordBox = targetIsPasswordBox;
 });
