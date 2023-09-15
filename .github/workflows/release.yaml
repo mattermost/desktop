@@ -217,6 +217,5 @@ jobs:
           --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
           --arg username "MattermostRelease" \
           --arg text "$(bash -x scripts/generate_release_post.sh $(jq -r .version package.json))" \
-          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json \
-          cat /tmp/webhook-data.json
+          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
           curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
