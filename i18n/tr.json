@@ -290,5 +290,15 @@
     "renderer.components.configureServer.url.urlUpdated": "Belirtilen sunucu adresi, Mattermost sunucunuzdaki yapılandırılmış site adresi ile aynı olacak şekilde güncellendi. Sunucu sürümü: {serverVersion}",
     "renderer.components.newServerModal.warning.insecure": "Sunucu adresinizin güvenli olmama olasılığı var. En iyi sonucu almak için HTTPS iletişim kuralını kullanan bir adres yazın.",
     "renderer.components.newServerModal.warning.urlNotMatched": "Sunucu adresi Mattermost sunucunuzda yapılandırılmış site adresi ile aynı değil. Sunucu sürümü: {serverVersion}",
-    "renderer.components.newServerModal.warning.urlUpdated": "Belirtilen sunucu adresi, Mattermost sunucunuzdaki yapılandırılmış site adresi ile aynı olacak şekilde güncellendi. Sunucu sürümü: {serverVersion}"
+    "renderer.components.newServerModal.warning.urlUpdated": "Belirtilen sunucu adresi, Mattermost sunucunuzdaki yapılandırılmış site adresi ile aynı olacak şekilde güncellendi. Sunucu sürümü: {serverVersion}",
+    "label.allow": "İzin ver",
+    "label.deny": "Reddet",
+    "label.denyPermanently": "Kalıcı olarak reddet",
+    "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) size bildirimler göndermek istiyor.",
+    "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} saat diliminizi ayarlamak için konumu kullanacak. Bunu daha sonra istediğiniz zaman bilgisayar ayarlarından değiştirebilirsiniz.",
+    "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) mikrofon ve kameraya erişmek istiyor.",
+    "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} size iletiler ve aramalar için bildirimler gönderecek. Bildirim tercihlerinizi Ayarlar bölümünden yapılandırabilirsiniz.",
+    "main.permissionsManager.checkPermission.dialog.title": "İzin İstendi",
+    "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) konumunuza erişmek istiyor.",
+    "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} aramalar ve sesli iletiler için mikrofon ve kamerayı kullanacak. Bunu daha sonra istediğiniz zaman bilgisayar ayarlarından değiştirebilirsiniz."
 }
