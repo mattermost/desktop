@@ -289,5 +289,15 @@
     "renderer.components.configureServer.url.insecure": "Deine Server-URL ist potenziell unsicher. Die besten Ergebnisse erzielst du, wenn du eine URL mit dem HTTPS-Protokoll verwendest.",
     "renderer.components.newServerModal.warning.urlUpdated": "Die angegebene Server-URL wurde aktualisiert, damit sie mit der konfigurierten Site-URL auf deinem Mattermost-Server übereinstimmt. Server Version: {serverVersion}",
     "renderer.components.configureServer.url.ok": "Die Server-URL ist gültig. Server Version: {serverVersion}",
-    "renderer.components.configureServer.url.urlNotMatched": "Die angegebene Server-URL stimmt nicht mit der konfigurierten Site-URL auf deinem Mattermost-Server überein. Server Version: {serverVersion}"
+    "renderer.components.configureServer.url.urlNotMatched": "Die angegebene Server-URL stimmt nicht mit der konfigurierten Site-URL auf deinem Mattermost-Server überein. Server Version: {serverVersion}",
+    "label.allow": "Erlauben",
+    "label.deny": "Verweigern",
+    "label.denyPermanently": "Dauerhaft verweigern",
+    "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) würde dir gerne Benachrichtigungen schicken.",
+    "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} wird den Standort für die Einrichtung deiner Zeitzone verwendet. Du kannst dies später in den Einstellungen deines Computers jederzeit ändern.",
+    "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) würde gerne auf das Mikrofon und die Kamera zugreifen.",
+    "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} sendet dir Benachrichtigungen über Nachrichten und Anrufe. Du kannst deine Benachrichtigungseinstellungen in den Einstellungen konfigurieren.",
+    "main.permissionsManager.checkPermission.dialog.title": "Erlaubnis anfordern",
+    "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) würde gerne auf deinen Standort zugreifen.",
+    "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} verwendet das Mikrofon und die Kamera für Anrufe und Sprachnachrichten. Du kannst dies später in den Einstellungen deines Computers jederzeit ändern."
 }
