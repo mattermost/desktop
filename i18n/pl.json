@@ -289,5 +289,15 @@
     "renderer.components.configureServer.url.urlNotMatched": "Podany adres URL serwera nie jest zgodny ze skonfigurowanym adresem URL witryny na serwerze Mattermost. Wersja serwera: {serverVersion}",
     "renderer.components.newServerModal.success.ok": "Adres URL serwera jest prawidłowy. Wersja serwera: {serverVersion}",
     "renderer.components.newServerModal.warning.insecure": "Adres URL serwera jest potencjalnie niezabezpieczony. Aby uzyskać najlepsze wyniki, użyj adresu URL z protokołem HTTPS.",
-    "renderer.components.newServerModal.warning.urlNotMatched": "Adres URL serwera nie jest zgodny ze skonfigurowanym adresem URL witryny na serwerze Mattermost. Wersja serwera: {serverVersion}"
+    "renderer.components.newServerModal.warning.urlNotMatched": "Adres URL serwera nie jest zgodny ze skonfigurowanym adresem URL witryny na serwerze Mattermost. Wersja serwera: {serverVersion}",
+    "label.allow": "Zezwól",
+    "label.deny": "Odmów",
+    "label.denyPermanently": "Odmów na stałe",
+    "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) chciałby wysyłać Ci powiadomienia.",
+    "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} użyje lokalizacji do ustawienia strefy czasowej. Zawsze można to później zmienić w ustawieniach komputera.",
+    "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) chciałby uzyskać dostęp do mikrofonu i kamery.",
+    "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} będzie wysyłać powiadomienia o wiadomościach i połączeniach. Preferencje powiadomień można skonfigurować w Ustawieniach.",
+    "main.permissionsManager.checkPermission.dialog.title": "Wymagane pozwolenie",
+    "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) chciałby uzyskać dostęp do Twojej lokalizacji.",
+    "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} będzie używać mikrofonu i kamery do połączeń i wiadomości głosowych. Zawsze można to później zmienić w ustawieniach komputera."
 }
