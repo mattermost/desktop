@@ -289,5 +289,15 @@
     "renderer.components.newServerModal.warning.insecure": "サーバーURLが安全でない可能性があります。最良の結果を得るには、HTTPSプロトコルのURLを使用してください。",
     "renderer.components.newServerModal.warning.notMattermost": "指定されたサーバーURLは、有効なMattermostサーバーを指していないようです。URLを確認し、接続を確認してください。",
     "renderer.components.newServerModal.warning.urlNotMatched": "サーバーURLが、Mattermostサーバーで設定されたサイトURLと一致しません。Server version: {serverVersion}",
-    "renderer.components.newServerModal.warning.urlUpdated": "指定されたサーバーURLは、Mattermostサーバーで設定されたサイトURLと同じになるよう更新されました。Server version: {serverVersion}"
+    "renderer.components.newServerModal.warning.urlUpdated": "指定されたサーバーURLは、Mattermostサーバーで設定されたサイトURLと同じになるよう更新されました。Server version: {serverVersion}",
+    "label.allow": "許可",
+    "label.deny": "拒否",
+    "label.denyPermanently": "常に拒否",
+    "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) が通知を送信しようとしています。",
+    "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} はタイムゾーンの設定に位置情報を使用します。この設定はいつでもコンピュータの設定で変更できます。",
+    "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) がマイクとカメラにアクセスしようとしています。",
+    "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} は、メッセージや通話の通知を送信します。通知の設定は設定メニューから行えます。",
+    "main.permissionsManager.checkPermission.dialog.title": "権限要求",
+    "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) があなたの現在位置にアクセスしようとしています。",
+    "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} は通話とボイスメッセージにマイクとカメラを使用します。この設定はいつでもコンピュータの設定で変更できます。"
 }
