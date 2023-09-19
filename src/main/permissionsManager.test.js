@@ -175,4 +175,17 @@ describe('main/PermissionsManager', () => {
         expect(permissionsManager.writeToFile).toHaveBeenCalled();
         expect(cb).toHaveBeenCalledWith(false);
     });
+
+    it('should only pop dialog once upon multiple permission checks', async () => {
+        const permissionsManager = new PermissionsManager('anyfile.json');
+        permissionsManager.writeToFile = jest.fn();
+        const cb = jest.fn();
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+        await Promise.all([
+            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {securityOrigin: 'http://anyurl.com'}),
+            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {securityOrigin: 'http://anyurl.com'}),
+            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {securityOrigin: 'http://anyurl.com'}),
+        ]);
+        expect(dialog.showMessageBox).toHaveBeenCalledTimes(1);
+    });
 });
