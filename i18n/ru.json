@@ -278,5 +278,15 @@
     "renderer.components.configureServer.url.urlUpdated": "Указанный URL-адрес сервера был обновлен, чтобы соответствовать настроенному URL-адресу сайта на вашем сервере Mattermost. Версия сервера: {serverVersion}",
     "renderer.components.newServerModal.success.ok": "URL-адрес сервера действителен. Версия сервера: {serverVersion}",
     "renderer.components.newServerModal.warning.insecure": "URL-адрес вашего сервера потенциально небезопасен. Рекомендуется использовать протокол HTTPS.",
-    "renderer.components.newServerModal.warning.urlNotMatched": "URL сервера не соответствует настроенному URL сайта на вашем сервере Mattermost. Версия сервера: {serverVersion}"
+    "renderer.components.newServerModal.warning.urlNotMatched": "URL сервера не соответствует настроенному URL сайта на вашем сервере Mattermost. Версия сервера: {serverVersion}",
+    "label.allow": "Разрешить",
+    "label.deny": "Запретить",
+    "label.denyPermanently": "Запретить навсегда",
+    "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) хочет отправлять Вам уведомления.",
+    "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} будет использоваться для настройки часового пояса. Позже вы всегда сможете изменить это в настройках вашего компьютера.",
+    "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) хотел бы получить доступ к микрофону и камере.",
+    "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} будет присылать уведомления о сообщениях и вызовах. Настроить параметры уведомлений можно в Настройках.",
+    "main.permissionsManager.checkPermission.dialog.title": "Запрашиваемое разрешение",
+    "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) хотел бы получить доступ к вашему местоположению.",
+    "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} будет использовать микрофон и камеру для звонков и голосовых сообщений. Позже вы всегда сможете изменить это в настройках компьютера."
 }
