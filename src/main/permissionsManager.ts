@@ -50,6 +50,14 @@ type Permissions = {
 };
 
 export class PermissionsManager extends JsonFileManager<Permissions> {
+    private inflightPermissionChecks: Set<string>;
+
+    constructor(file: string) {
+        super(file);
+
+        this.inflightPermissionChecks = new Set();
+    }
+
     handlePermissionRequest = async (
         webContents: WebContents,
         permission: string,
@@ -120,6 +128,13 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
                 return false;
             }
 
+            // Make sure we don't pop multiple dialogs for the same permission check
+            const permissionKey = `${parsedURL.origin}:${permission}`;
+            if (this.inflightPermissionChecks.has(permissionKey)) {
+                return false;
+            }
+            this.inflightPermissionChecks.add(permissionKey);
+
             // Show the dialog to ask the user
             const {response} = await dialog.showMessageBox(mainWindow, {
                 title: localizeMessage('main.permissionsManager.checkPermission.dialog.title', 'Permission Requested'),
@@ -143,6 +158,8 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
                 [permission]: newPermission,
             };
             this.writeToFile();
+
+            this.inflightPermissionChecks.delete(permissionKey);
 
             if (response > 0) {
                 return false;
