@@ -35,6 +35,8 @@ jest.mock('electron', () => ({
     },
 }));
 
+jest.mock('electron-is-dev', () => false);
+
 jest.mock('common/config', () => ({
     setServers: jest.fn(),
 }));

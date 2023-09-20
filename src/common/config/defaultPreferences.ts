@@ -48,6 +48,7 @@ const defaultPreferences: ConfigV3 = {
     lastActiveTeam: 0,
     downloadLocation: getDefaultDownloadLocation(),
     startInFullscreen: false,
+    logLevel: 'info',
 };
 
 export default defaultPreferences;

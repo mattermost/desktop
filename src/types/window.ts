@@ -31,6 +31,8 @@ declare global {
             getThumbnailLocation: (location: string) => Promise<string>;
         };
         desktop: {
+            getAppName: () => string;
+
             quit: (reason: string, stack: string) => void;
             openAppMenu: () => void;
             closeServersDropdown: () => void;

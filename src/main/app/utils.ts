@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs-extra';
 
 import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage, screen} from 'electron';
+import isDev from 'electron-is-dev';
 
 import {MigrationInfo} from 'types/config';
 import {RemoteInfo} from 'types/server';
@@ -72,7 +73,8 @@ export function getDeeplinkingURL(args: string[]) {
     if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
         const url = args[args.length - 1];
-        if (url && mainProtocol && url.startsWith(mainProtocol) && isValidURI(url)) {
+        const protocol = isDev ? 'mattermost-dev' : mainProtocol;
+        if (url && protocol && url.startsWith(protocol) && isValidURI(url)) {
             return url;
         }
     }

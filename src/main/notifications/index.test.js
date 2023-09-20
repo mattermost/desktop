@@ -13,6 +13,7 @@ import {PLAY_SOUND} from 'common/communication';
 import Config from 'common/config';
 
 import {localizeMessage} from 'main/i18nManager';
+import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
 
@@ -79,6 +80,7 @@ jest.mock('../views/viewManager', () => ({
         view: {
             server: {
                 name: 'server_name',
+                url: new URL('http://someurl.com'),
             },
         },
     }),
@@ -93,6 +95,9 @@ jest.mock('../windows/mainWindow', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
+jest.mock('main/permissionsManager', () => ({
+    doPermissionRequest: jest.fn(),
+}));
 
 jest.mock('common/config', () => ({}));
 
@@ -103,6 +108,7 @@ describe('main/notifications', () => {
         };
 
         beforeEach(() => {
+            PermissionsManager.doPermissionRequest.mockReturnValue(Promise.resolve(true));
             Notification.isSupported.mockImplementation(() => true);
             getFocusAssist.mockReturnValue({value: false});
             getDarwinDoNotDisturb.mockReturnValue(false);
@@ -115,9 +121,9 @@ describe('main/notifications', () => {
             Config.notifications = {};
         });
 
-        it('should do nothing when Notification is not supported', () => {
+        it('should do nothing when Notification is not supported', async () => {
             Notification.isSupported.mockImplementation(() => false);
-            displayMention(
+            await displayMention(
                 'test',
                 'test body',
                 {id: 'channel_id'},
@@ -130,14 +136,14 @@ describe('main/notifications', () => {
             expect(Notification.didConstruct).not.toBeCalled();
         });
 
-        it('should do nothing when alarms only is enabled on windows', () => {
+        it('should do nothing when alarms only is enabled on windows', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
             });
 
             getFocusAssist.mockReturnValue({value: 2});
-            displayMention(
+            await displayMention(
                 'test',
                 'test body',
                 {id: 'channel_id'},
@@ -154,14 +160,14 @@ describe('main/notifications', () => {
             });
         });
 
-        it('should do nothing when dnd is enabled on mac', () => {
+        it('should do nothing when dnd is enabled on mac', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
 
             getDarwinDoNotDisturb.mockReturnValue(true);
-            displayMention(
+            await displayMention(
                 'test',
                 'test body',
                 {id: 'channel_id'},
@@ -178,8 +184,23 @@ describe('main/notifications', () => {
             });
         });
 
-        it('should play notification sound when custom sound is provided', () => {
-            displayMention(
+        it('should do nothing when the permission check fails', async () => {
+            PermissionsManager.doPermissionRequest.mockReturnValue(Promise.resolve(false));
+            await displayMention(
+                'test',
+                'test body',
+                {id: 'channel_id'},
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1},
+                {},
+            );
+            expect(Notification.didConstruct).not.toBeCalled();
+        });
+
+        it('should play notification sound when custom sound is provided', async () => {
+            await displayMention(
                 'test',
                 'test body',
                 {id: 'channel_id'},
@@ -192,13 +213,13 @@ describe('main/notifications', () => {
             expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
         });
 
-        it('should remove existing notification from the same channel/team on windows', () => {
+        it('should remove existing notification from the same channel/team on windows', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
             });
 
-            displayMention(
+            await displayMention(
                 'test',
                 'test body',
                 {id: 'channel_id'},
@@ -213,7 +234,7 @@ describe('main/notifications', () => {
 
             const existingMention = currentNotifications.get('team_id:channel_id');
             currentNotifications.delete = jest.fn();
-            displayMention(
+            await displayMention(
                 'test',
                 'test body 2',
                 {id: 'channel_id'},
@@ -232,8 +253,8 @@ describe('main/notifications', () => {
             });
         });
 
-        it('should switch view when clicking on notification', () => {
-            displayMention(
+        it('should switch view when clicking on notification', async () => {
+            await displayMention(
                 'click_test',
                 'mention_click_body',
                 {id: 'channel_id'},
@@ -249,12 +270,12 @@ describe('main/notifications', () => {
             expect(ViewManager.showById).toHaveBeenCalledWith('server_id');
         });
 
-        it('linux/windows - should not flash frame when config item is not set', () => {
+        it('linux/windows - should not flash frame when config item is not set', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'linux',
             });
-            displayMention(
+            await displayMention(
                 'click_test',
                 'mention_click_body',
                 {id: 'channel_id'},
@@ -270,7 +291,7 @@ describe('main/notifications', () => {
             expect(mainWindow.flashFrame).not.toBeCalled();
         });
 
-        it('linux/windows - should flash frame when config item is set', () => {
+        it('linux/windows - should flash frame when config item is set', async () => {
             Config.notifications = {
                 flashWindow: true,
             };
@@ -278,7 +299,7 @@ describe('main/notifications', () => {
             Object.defineProperty(process, 'platform', {
                 value: 'linux',
             });
-            displayMention(
+            await displayMention(
                 'click_test',
                 'mention_click_body',
                 {id: 'channel_id'},
@@ -294,12 +315,12 @@ describe('main/notifications', () => {
             expect(mainWindow.flashFrame).toBeCalledWith(true);
         });
 
-        it('mac - should not bounce icon when config item is not set', () => {
+        it('mac - should not bounce icon when config item is not set', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
-            displayMention(
+            await displayMention(
                 'click_test',
                 'mention_click_body',
                 {id: 'channel_id'},
@@ -315,7 +336,7 @@ describe('main/notifications', () => {
             expect(app.dock.bounce).not.toBeCalled();
         });
 
-        it('mac - should bounce icon when config item is set', () => {
+        it('mac - should bounce icon when config item is set', async () => {
             Config.notifications = {
                 bounceIcon: true,
                 bounceIconType: 'critical',
@@ -324,7 +345,7 @@ describe('main/notifications', () => {
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
-            displayMention(
+            await displayMention(
                 'click_test',
                 'mention_click_body',
                 {id: 'channel_id'},

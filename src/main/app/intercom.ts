@@ -147,3 +147,9 @@ export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promis
         throw new Error('Could not find server ' + url);
     });
 }
+
+export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolean) {
+    // Enforce macOS to restrict processes from reading the keyboard input when in a password field
+    log.debug('handleToggleSecureInput', secureInput);
+    app.setSecureKeyboardEntryEnabled(secureInput);
+}
