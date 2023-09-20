@@ -252,8 +252,13 @@ module.exports = {
         await window.waitForSelector('#input_password-input');
         await window.waitForSelector('#saveSetting');
 
-        await window.type('#input_loginId', 'sysadmin');
-        await window.type('#input_password-input', 'Sys@dmin123');
+        if ( process.platform === 'win32') {
+            await window.type('#input_loginId', 'user-mattermost-pr-23996@example.mattermost.com');
+            await window.type('#input_password-input', 'Cws@10102020');
+        } else {
+            await window.type('#input_loginId', 'sysadmin');
+            await window.type('#input_password-input', 'Sys@dmin123');
+        }
         await window.click('#saveSetting');
     },
 
