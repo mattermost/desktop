@@ -14,7 +14,6 @@ env:
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
   MM_TEST_SERVER_URL: "http://localhost:8065"
-  # MM_TEST_SERVER_URL: "https://mattermost-pr-24140.test.mattermost.cloud"
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
@@ -169,7 +168,6 @@ jobs:
 
       - name: Run Playwright tests (macOS)
         run: |
-          export MM_TEST_SERVER_URL="http://localhost:8065"
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
@@ -233,6 +231,8 @@ jobs:
   
       - name: Run Playwright tests (Windows OS)
         run: |
+          export MM_TEST_SERVER_URL="https://mattermost-pr-23996.test.mattermost.cloud/"
+          echo "********* ", $MM_TEST_SERVER_URL
           npm run test:e2e || true
           npm run test:e2e:send-report
         shell: bash
