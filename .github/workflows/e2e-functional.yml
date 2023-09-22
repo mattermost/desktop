@@ -13,7 +13,8 @@ env:
   BRANCH: ${{ github.ref }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
-  MM_TEST_SERVER_URL: "http://localhost:8065"
+  # MM_TEST_SERVER_URL: "http://localhost:8065"
+  MM_TEST_SERVER_URL: "https://mattermost-pr-23996.test.mattermost.cloud/"
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
@@ -70,24 +71,23 @@ jobs:
             echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
           fi
 
-      - name: Checkout mattermost
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          repository: mattermost/mattermost
-          path: mattermost
+      # - name: Checkout mattermost
+      #   uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      #   with:
+      #     repository: mattermost/mattermost
+      #     path: mattermost
 
-      - name: Run mattermsot server
-        run: |
-          LATEST_RELEASE_TAG=$(curl -L -s https://api.github.com/repos/mattermost/mattermost-server/releases/latest | jq -r '.tag_name')
-          LATEST_RELEASE_TAG="${LATEST_RELEASE_TAG#v}"
-          cd mattermost/e2e-tests
-          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:$LATEST_RELEASE_TAG" >.ci/env
-          make start-server && make prepare-server
+      # - name: Run mattermsot server
+      #   run: |
+      #     LATEST_RELEASE_TAG=$(curl -L -s https://api.github.com/repos/mattermost/mattermost-server/releases/latest | jq -r '.tag_name')
+      #     LATEST_RELEASE_TAG="${LATEST_RELEASE_TAG#v}"
+      #     cd mattermost/e2e-tests
+      #     echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:$LATEST_RELEASE_TAG" >.ci/env
+      #     make start-server && make prepare-server
 
       - name: Run Playwright tests (Ubuntu OS)
         run: |
           export DISPLAY=:99
-          export MM_TEST_SERVER_URL="http://localhost:8065"
           Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
@@ -125,12 +125,12 @@ jobs:
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
 
-      - name: Setup Docker on macOS
-        run: |
-          brew install docker docker-compose
-          colima start
-          mkdir -p ~/.docker/cli-plugins
-          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
+      # - name: Setup Docker on macOS
+      #   run: |
+      #     brew install docker docker-compose
+      #     colima start
+      #     mkdir -p ~/.docker/cli-plugins
+      #     ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
 
       - name: Set Environment Variables
         run: |
@@ -153,18 +153,18 @@ jobs:
             echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
           fi
 
-      - name: Checkout mattermost
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-        with:
-          repository: mattermost/mattermost
-          path: mattermost
-          ref: master
+      # - name: Checkout mattermost
+      #   uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      #   with:
+      #     repository: mattermost/mattermost
+      #     path: mattermost
+      #     ref: master
 
-      - name: Run mattermsot server & Playwright tests (macOS)
-        run: |
-          cd mattermost/e2e-tests
-          echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
-          make start-server && make prepare-server
+      # - name: Run mattermsot server & Playwright tests (macOS)
+      #   run: |
+      #     cd mattermost/e2e-tests
+      #     echo "SERVER_IMAGE=mattermost/mattermost-enterprise-edition:release-8.0" >.ci/env
+      #     make start-server && make prepare-server
 
       - name: Run Playwright tests (macOS)
         run: |
@@ -231,8 +231,6 @@ jobs:
   
       - name: Run Playwright tests (Windows OS)
         run: |
-          export MM_TEST_SERVER_URL="https://mattermost-pr-23996.test.mattermost.cloud/"
-          echo "********* ", $MM_TEST_SERVER_URL
           npm run test:e2e || true
           npm run test:e2e:send-report
         shell: bash
