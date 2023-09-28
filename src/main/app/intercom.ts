@@ -149,6 +149,10 @@ export function handlePingDomain(event: IpcMainInvokeEvent, url: string): Promis
 }
 
 export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolean) {
+    if (process.platform !== 'darwin') {
+        return;
+    }
+
     // Enforce macOS to restrict processes from reading the keyboard input when in a password field
     log.debug('handleToggleSecureInput', secureInput);
     app.setSecureKeyboardEntryEnabled(secureInput);
