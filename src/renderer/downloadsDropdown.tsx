@@ -18,6 +18,7 @@ type State = {
     darkMode?: boolean;
     windowBounds?: Electron.Rectangle;
     item?: DownloadedItem;
+    appName?: string;
 }
 
 class DownloadsDropdown extends React.PureComponent<Record<string, never>, State> {
@@ -40,6 +41,9 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
             window.desktop.downloadsDropdown.focus();
         });
 
+        window.desktop.getVersion().then(({name}) => {
+            this.setState({appName: name});
+        });
         window.desktop.downloadsDropdown.requestInfo();
     }
 
@@ -81,6 +85,10 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
     }
 
     render() {
+        if (!this.state.appName) {
+            return null;
+        }
+
         return (
             <IntlProvider>
                 <div
@@ -115,6 +123,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
                                     item={downloadItem}
                                     key={downloadItem.filename}
                                     activeItem={this.state.item}
+                                    appName={this.state.appName || ''}
                                 />
                             );
                         })}

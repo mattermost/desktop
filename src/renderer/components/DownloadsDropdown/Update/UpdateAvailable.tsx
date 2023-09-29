@@ -12,9 +12,10 @@ import Thumbnail from '../Thumbnail';
 
 type OwnProps = {
     item: DownloadedItem;
+    appName: string;
 }
 
-const UpdateAvailable = ({item}: OwnProps) => {
+const UpdateAvailable = ({item, appName}: OwnProps) => {
     const onButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         e?.preventDefault?.();
         window.desktop.downloadsDropdown.startUpdateDownload();
@@ -36,7 +37,7 @@ const UpdateAvailable = ({item}: OwnProps) => {
                         defaultMessage={`A new version of the {appName} Desktop App (version ${item.filename}) is available to install.`}
                         values={{
                             version: item.filename,
-                            appName: window.desktop.getAppName(),
+                            appName,
                         }}
                     />
                 </div>
