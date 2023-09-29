@@ -15,9 +15,10 @@ import FileSizeAndStatus from '../FileSizeAndStatus';
 
 type OwnProps = {
     item: DownloadedItem;
+    appName: string;
 }
 
-const UpdateAvailable = ({item}: OwnProps) => {
+const UpdateAvailable = ({item, appName}: OwnProps) => {
     const translate = useIntl();
 
     const onButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -31,7 +32,7 @@ const UpdateAvailable = ({item}: OwnProps) => {
                 <Thumbnail item={item}/>
                 <div className='DownloadsDropdown__File__Body__Details'>
                     <div className='DownloadsDropdown__File__Body__Details__Filename'>
-                        {translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName: window.desktop.getAppName()})}
+                        {translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName})}
                     </div>
                     <div
                         className={classNames('DownloadsDropdown__File__Body__Details__FileSizeAndStatus', {

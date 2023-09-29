@@ -15,9 +15,10 @@ import Thumbnail from './Thumbnail';
 type OwnProps = {
     activeItem?: DownloadedItem;
     item: DownloadedItem;
+    appName: string;
 }
 
-const DownloadsDropdownItemFile = ({item, activeItem}: OwnProps) => {
+const DownloadsDropdownItemFile = ({item, activeItem, appName}: OwnProps) => {
     const [threeDotButtonVisible, setThreeDotButtonVisible] = useState(false);
     const translate = useIntl();
 
@@ -28,7 +29,7 @@ const DownloadsDropdownItemFile = ({item, activeItem}: OwnProps) => {
     };
 
     const itemFilename = item.type === 'update' ?
-        translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName: window.desktop.getAppName()}) :
+        translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName}) :
         item.filename;
 
     return (
