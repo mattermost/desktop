@@ -289,5 +289,15 @@
     "renderer.components.newServerModal.success.ok": "Server-URL:en är riktig. Serverversion: {serverVersion}",
     "renderer.components.newServerModal.validating": "Validerar...",
     "renderer.components.newServerModal.warning.urlNotMatched": "Den angivna URL:en matchar inte den konfigurerade sajt-URL:en på din Mattermost-server. Serverversion: {serverVersion}",
-    "renderer.components.newServerModal.warning.urlUpdated": "Den angivna server-URL:en har uppdaterats med den URL som konfigurerats på Mattermost-server. Serverversion: {serverVersion}"
+    "renderer.components.newServerModal.warning.urlUpdated": "Den angivna server-URL:en har uppdaterats med den URL som konfigurerats på Mattermost-server. Serverversion: {serverVersion}",
+    "label.allow": "Tillåt",
+    "label.deny": "Tillåt inte",
+    "label.denyPermanently": "Tillåt inte fortsättningsvis",
+    "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} {url} vill kunna notifiera dig.",
+    "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} kommer använda platsinformation för att konfigurera tidszon. Du kan ändra detta senare i inställningar.",
+    "main.permissionsManager.checkPermission.dialog.message.media": "{appName} {url} vill använda din mikrofon och kamera.",
+    "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} kommer skicka notifieringar för meddelanden och samtal. Du kan konfigurera dina notifieringsinställningar i Inställningar.",
+    "main.permissionsManager.checkPermission.dialog.title": "Efterfrågar tillåtelse",
+    "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} {url} vill använda din platsinformation.",
+    "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} kommer använda mikrofon och kamera för samtal och röstmeddelanden. Du kan ändra detta senare i inställningar."
 }
