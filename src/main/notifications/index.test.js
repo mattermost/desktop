@@ -19,7 +19,7 @@ import ViewManager from 'main/views/viewManager';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 
-import {displayMention, displayDownloadCompleted, currentNotifications} from './index';
+import {displayMention, displayDownloadCompleted, mentionsPerChannel} from './index';
 
 const mentions = [];
 
@@ -230,10 +230,10 @@ describe('main/notifications', () => {
                 {},
             );
 
-            expect(currentNotifications.has('team_id:channel_id')).toBe(true);
+            expect(mentionsPerChannel.has('team_id:channel_id')).toBe(true);
 
-            const existingMention = currentNotifications.get('team_id:channel_id');
-            currentNotifications.delete = jest.fn();
+            const existingMention = mentionsPerChannel.get('team_id:channel_id');
+            mentionsPerChannel.delete = jest.fn();
             await displayMention(
                 'test',
                 'test body 2',
@@ -245,7 +245,7 @@ describe('main/notifications', () => {
                 {},
             );
 
-            expect(currentNotifications.delete).toHaveBeenCalled();
+            expect(mentionsPerChannel.delete).toHaveBeenCalled();
             expect(existingMention.close).toHaveBeenCalled();
 
             Object.defineProperty(process, 'platform', {

@@ -21,7 +21,8 @@ import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
 
-export const currentNotifications = new Map();
+export const mentionsPerChannel = new Map();
+const allActiveNotifications = new Map<string, Mention>();
 
 const log = new Logger('Notifications');
 
@@ -56,18 +57,19 @@ export async function displayMention(title: string, body: string, channel: {id: 
 
     const mention = new Mention(options, channel, teamId);
     const mentionKey = `${mention.teamId}:${mention.channel.id}`;
+    allActiveNotifications.set(mention.uId, mention);
 
     mention.on('show', () => {
         log.debug('displayMention.show');
 
         // On Windows, manually dismiss notifications from the same channel and only show the latest one
         if (process.platform === 'win32') {
-            if (currentNotifications.has(mentionKey)) {
+            if (mentionsPerChannel.has(mentionKey)) {
                 log.debug(`close ${mentionKey}`);
-                currentNotifications.get(mentionKey).close();
-                currentNotifications.delete(mentionKey);
+                mentionsPerChannel.get(mentionKey).close();
+                mentionsPerChannel.delete(mentionKey);
             }
-            currentNotifications.set(mentionKey, mention);
+            mentionsPerChannel.set(mentionKey, mention);
         }
         const notificationSound = mention.getNotificationSound();
         if (notificationSound) {
@@ -78,11 +80,21 @@ export async function displayMention(title: string, body: string, channel: {id: 
 
     mention.on('click', () => {
         log.debug('notification click', serverName, mention);
+
+        allActiveNotifications.delete(mention.uId);
         MainWindow.show();
         if (serverName) {
             ViewManager.showById(view.id);
             webcontents.send('notification-clicked', {channel, teamId, url});
         }
+    });
+
+    mention.on('close', () => {
+        allActiveNotifications.delete(mention.uId);
+    });
+
+    mention.on('failed', () => {
+        allActiveNotifications.delete(mention.uId);
     });
     mention.show();
 }
