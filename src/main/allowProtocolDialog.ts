@@ -44,29 +44,31 @@ export class AllowProtocolDialog {
         }
     }
 
-    handleDialogEvent = (protocol: string, URL: string) => {
-        if (this.allowedProtocols.indexOf(protocol) !== -1) {
-            shell.openExternal(URL);
-            return;
-        }
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            return;
-        }
-        dialog.showMessageBox(mainWindow, {
-            title: localizeMessage('main.allowProtocolDialog.title', 'Non http(s) protocol'),
-            message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
-            detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL}),
-            defaultId: 2,
-            type: 'warning',
-            buttons: [
-                localizeMessage('label.yes', 'Yes'),
-                localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes (Save {protocol} as allowed)', {protocol}),
-                localizeMessage('label.no', 'No'),
-            ],
-            cancelId: 2,
-            noLink: true,
-        }).then(({response}) => {
+    handleDialogEvent = async (protocol: string, URL: string) => {
+        try {
+            if (this.allowedProtocols.indexOf(protocol) !== -1) {
+                await shell.openExternal(URL);
+                return;
+            }
+            const mainWindow = MainWindow.get();
+            if (!mainWindow) {
+                return;
+            }
+            const {response} = await dialog.showMessageBox(mainWindow, {
+                title: localizeMessage('main.allowProtocolDialog.title', 'Non http(s) protocol'),
+                message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
+                detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL}),
+                defaultId: 2,
+                type: 'warning',
+                buttons: [
+                    localizeMessage('label.yes', 'Yes'),
+                    localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes (Save {protocol} as allowed)', {protocol}),
+                    localizeMessage('label.no', 'No'),
+                ],
+                cancelId: 2,
+                noLink: true,
+            });
+
             switch (response) {
             case 1: {
                 this.allowedProtocols.push(protocol);
@@ -76,16 +78,16 @@ export class AllowProtocolDialog {
                     }
                 }
                 fs.writeFile(allowedProtocolFile, JSON.stringify(this.allowedProtocols), handleError);
-                shell.openExternal(URL);
+                await shell.openExternal(URL);
                 break;
             }
             case 0:
-                shell.openExternal(URL);
-                break;
-            default:
+                await shell.openExternal(URL);
                 break;
             }
-        });
+        } catch (error) {
+            log.warn('Could not open external URL', error);
+        }
     }
 }
 

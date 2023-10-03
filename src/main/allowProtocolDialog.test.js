@@ -160,6 +160,16 @@ describe('main/allowProtocolDialog', () => {
                 expect(allowProtocolDialog.allowedProtocols).not.toContain('mattermost:');
                 expect(fs.writeFile).not.toBeCalled();
             });
+
+            it('should not throw error when shell.openExternal fails', async () => {
+                const promise = Promise.resolve({response: 0});
+                dialog.showMessageBox.mockImplementation(() => promise);
+                shell.openExternal.mockReturnValue(Promise.reject(new Error('bad protocol')));
+                allowProtocolDialog.handleDialogEvent('bad-protocol:', 'bad-protocol://community.mattermost.com');
+                await promise;
+
+                expect(shell.openExternal).toBeCalledWith('bad-protocol://community.mattermost.com');
+            });
         });
     });
 });
