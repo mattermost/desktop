@@ -18,8 +18,8 @@ jq.run(
 
 // For linux dev, drop a desktop shortcut so deep linking works correctly
 if (process.platform === 'linux') {
-    const xdgDir = path.resolve(process.env.HOME, '.local/share/applications')
-    if (!fs.existsSync(path.resolve(xdgDir, 'mattermost-desktop-dev.desktop'))) {
+    const xdgDir = path.resolve(process.env.HOME, '.local/share/applications');
+    if (fs.existsSync(xdgDir) && !fs.existsSync(path.resolve(xdgDir, 'mattermost-desktop-dev.desktop'))) {
         fs.writeFileSync(
             path.resolve(xdgDir, 'mattermost-desktop-dev.desktop'),
 `[Desktop Entry]
