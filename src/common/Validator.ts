@@ -201,7 +201,7 @@ export function validateV0ConfigData(data: ConfigV0) {
 function cleanURL(url: string): string {
     let updatedURL = url;
     if (updatedURL.includes('\\')) {
-        updatedURL = updatedURL.toLowerCase().replace(/\\/gi, '/');
+        updatedURL = updatedURL.replace(/\\/gi, '/');
     }
     return updatedURL;
 }

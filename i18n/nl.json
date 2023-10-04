@@ -289,5 +289,15 @@
     "renderer.components.newServerModal.success.ok": "Server-URL is correct. Serverversie: {serverVersion}",
     "renderer.components.newServerModal.warning.insecure": "De URL van jouw server is mogelijk onveilig. Voor de beste resultaten gebruik je een URL met het HTTPS-protocol.",
     "renderer.components.configureServer.url.insecure": "De URL van jouw server is mogelijk onveilig. Voor de beste resultaten gebruik je een URL met het HTTPS-protocol.",
-    "renderer.components.newServerModal.warning.urlNotMatched": "De opgegeven server-URL komt niet overeen met de geconfigureerde Site-URL op jouw Mattermost server. Serverversie: {serverVersion}"
+    "renderer.components.newServerModal.warning.urlNotMatched": "De opgegeven server-URL komt niet overeen met de geconfigureerde Site-URL op jouw Mattermost server. Serverversie: {serverVersion}",
+    "label.allow": "Toestaan",
+    "label.deny": "Weigeren",
+    "label.denyPermanently": "Permanent weigeren",
+    "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) wil je graag meldingen sturen.",
+    "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} zal de locatie gebruiken voor het instellen van je tijdzone. Je kan dit later altijd wijzigen in de instellingen van je computer.",
+    "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) wil graag toegang tot de microfoon en camera.",
+    "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} stuurt je meldingen voor berichten en oproepen. Je kan je voorkeuren voor meldingen instellen in Instellingen.",
+    "main.permissionsManager.checkPermission.dialog.title": "Toestemming gevraagd",
+    "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) wil graag toegang tot jouw locatie.",
+    "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} zal de microfoon en camera gebruiken voor oproepen en gesproken berichten. Je kunt dit later altijd wijzigen in de instellingen van je computer."
 }

@@ -25,14 +25,9 @@ jest.mock('common/views/View', () => ({
 
 describe('common/utils/url', () => {
     describe('getFormattedPathName', () => {
-        it('should format all to lower case', () => {
-            const unformattedPathName = '/aAbBbB/cC/DdeR/';
-            expect(getFormattedPathName(unformattedPathName)).toBe('/aabbbb/cc/dder/');
-        });
-
         it('should add trailing slash', () => {
             const unformattedPathName = '/aAbBbB/cC/DdeR';
-            expect(getFormattedPathName(unformattedPathName)).toBe('/aabbbb/cc/dder/');
+            expect(getFormattedPathName(unformattedPathName)).toBe('/aAbBbB/cC/DdeR/');
         });
     });
     describe('parseURL', () => {

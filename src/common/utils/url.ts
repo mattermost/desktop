@@ -6,7 +6,7 @@ import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 import buildConfig from 'common/config/buildConfig';
 import {customLoginRegexPaths, nonTeamUrlPaths, CALLS_PLUGIN_ID} from 'common/utils/constants';
 
-export const getFormattedPathName = (pn: string) => (pn.endsWith('/') ? pn.toLowerCase() : `${pn.toLowerCase()}/`);
+export const getFormattedPathName = (pn: string) => (pn.endsWith('/') ? pn : `${pn}/`);
 export const parseURL = (inputURL: string | URL) => {
     if (inputURL instanceof URL) {
         return inputURL;

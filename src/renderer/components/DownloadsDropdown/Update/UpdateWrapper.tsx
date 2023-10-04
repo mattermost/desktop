@@ -11,14 +11,25 @@ import 'renderer/css/components/Button.scss';
 
 type OwnProps = {
     item: DownloadedItem;
+    appName: string;
 }
 
-const UpdateWrapper = ({item}: OwnProps) => {
+const UpdateWrapper = ({item, appName}: OwnProps) => {
     if (item.state === 'available') {
-        return <UpdateAvailable item={item}/>;
+        return (
+            <UpdateAvailable
+                item={item}
+                appName={appName}
+            />
+        );
     }
     if (item.state === 'completed') {
-        return <UpdateDownloaded item={item}/>;
+        return (
+            <UpdateDownloaded
+                item={item}
+                appName={appName}
+            />
+        );
     }
     return null;
 };
