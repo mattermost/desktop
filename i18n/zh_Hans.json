@@ -1,0 +1,10 @@
+{
+    "label.close": "关闭",
+    "label.login": "登录",
+    "label.no": "否",
+    "label.ok": "好的",
+    "label.remove": "移除",
+    "label.save": "保存",
+    "label.yes": "是",
+    "main.allowProtocolDialog.detail": "请求的链接是 {URL}. 您希望继续?"
+}
