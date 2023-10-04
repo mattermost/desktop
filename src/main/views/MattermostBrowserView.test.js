@@ -3,6 +3,8 @@
 
 'use strict';
 
+import {app} from 'electron';
+
 import AppState from 'common/appState';
 import {LOAD_FAILED, TOGGLE_BACK_BUTTON, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -484,10 +486,11 @@ describe('main/views/MattermostBrowserView', () => {
     });
 
     describe('updateMainWindowTitle', () => {
+        app.name = 'bar';
         const mattermostView = new MattermostBrowserView(view, {}, {});
         it('should propagate the window title prefixed by the initial title', () => {
             mattermostView.handleTitleUpdate(null, 'foo');
-            expect(MainWindow.get().setTitle).toHaveBeenCalledWith('Initial Title - foo');
+            expect(MainWindow.get().setTitle).toHaveBeenCalledWith('bar - foo');
         });
     });
 });

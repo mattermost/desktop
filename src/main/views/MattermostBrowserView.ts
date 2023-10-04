@@ -58,9 +58,6 @@ export class MattermostBrowserView extends EventEmitter {
     private maxRetries: number;
     private altPressStatus: boolean;
 
-    // this static holds the initial window title the app came up with
-    private static initialTitle = '';
-
     constructor(view: MattermostView, options: BrowserViewConstructorOptions) {
         super();
         this.view = view;
@@ -386,14 +383,8 @@ export class MattermostBrowserView extends EventEmitter {
     }
 
     private handleTitleUpdate = (e: Event, title: string) => {
-        // Capture whatever the initial title of the application was, so we can
-        // derive new titles reflecting the window title from the server app from it.
-        if (MattermostBrowserView.initialTitle.length === 0) {
-            MattermostBrowserView.initialTitle = MainWindow.get()?.getTitle() || '';
-        }
-
         this.log.debug('handleTitleUpdate', title);
-        MainWindow.get()?.setTitle(MattermostBrowserView.initialTitle + ' - ' + title);
+        MainWindow.get()?.setTitle(app.name + ' - ' + title);
         this.updateMentionsFromTitle(title);
     }
 
