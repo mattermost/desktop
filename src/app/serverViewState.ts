@@ -16,6 +16,7 @@ import {
     SHOW_NEW_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
     SWITCH_SERVER,
+    TOGGLE_SECURE_INPUT,
     UPDATE_SERVER_ORDER,
     UPDATE_SHORTCUT_MENU,
     UPDATE_TAB_ORDER,
@@ -87,6 +88,7 @@ export class ServerViewState {
             ServerManager.getServerLog(serverId, 'WindowManager').error('Cannot find server in config');
             return;
         }
+        ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
         this.currentServerId = serverId;
         const nextView = ServerManager.getLastActiveTabForServer(serverId);
         if (waitForViewToExist) {
