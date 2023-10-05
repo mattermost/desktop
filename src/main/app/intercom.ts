@@ -12,7 +12,7 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 
-import {displayMention} from 'main/notifications';
+import NotificationManager from 'main/notifications';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -116,7 +116,7 @@ export function handleWelcomeScreenModal() {
 
 export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
     log.debug('handleMentionNotification', {title, body, channel, teamId, url, silent, data});
-    displayMention(title, body, channel, teamId, url, silent, event.sender, data);
+    NotificationManager.displayMention(title, body, channel, teamId, url, silent, event.sender, data);
 }
 
 export function handleOpenAppMenu() {

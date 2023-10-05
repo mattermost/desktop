@@ -10,7 +10,7 @@ import {Logger} from 'common/log';
 
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
-import {displayUpgrade, displayRestartToUpgrade} from 'main/notifications';
+import NotificationManager from 'main/notifications';
 
 import {
     CANCEL_UPGRADE,
@@ -113,12 +113,12 @@ export class UpdateManager {
 
     notifyUpgrade = (): void => {
         ipcMain.emit(UPDATE_AVAILABLE, null, this.versionAvailable);
-        displayUpgrade(this.versionAvailable || 'unknown', this.handleDownload);
+        NotificationManager.displayUpgrade(this.versionAvailable || 'unknown', this.handleDownload);
     }
 
     notifyDownloaded = (): void => {
         ipcMain.emit(UPDATE_DOWNLOADED, null, this.downloadedInfo);
-        displayRestartToUpgrade(this.versionDownloaded || 'unknown', this.handleUpdate);
+        NotificationManager.displayRestartToUpgrade(this.versionDownloaded || 'unknown', this.handleUpdate);
     }
 
     handleDownload = (): void => {

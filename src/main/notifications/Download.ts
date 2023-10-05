@@ -4,6 +4,8 @@
 import os from 'os';
 import path from 'path';
 
+import {v4 as uuid} from 'uuid';
+
 import {app, Notification} from 'electron';
 
 import Utils from 'common/utils/util';
@@ -22,6 +24,8 @@ const defaultOptions = {
 };
 
 export class DownloadNotification extends Notification {
+    uId: string;
+
     constructor(fileName: string, serverName: string) {
         const options = {...defaultOptions};
         if (process.platform === 'darwin' || (process.platform === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '10.0'))) {
@@ -33,5 +37,7 @@ export class DownloadNotification extends Notification {
         options.body = process.platform === 'win32' ? localizeMessage('main.notifications.download.complete.body', 'Download Complete \n {fileName}', {fileName}) : fileName;
 
         super(options);
+
+        this.uId = uuid();
     }
 }
