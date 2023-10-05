@@ -1,0 +1,21 @@
+{
+    "common.tabs.TAB_FOCALBOARD": "บอร์ด",
+    "common.tabs.TAB_MESSAGING": "ช่องทาง",
+    "label.accept": "ยอมรับ",
+    "label.add": "เพิ่ม",
+    "common.permissions.canBasicAuth": "การยืนยันตัวตนเว็ปไซต์",
+    "label.cancel": "ยกเลิก",
+    "label.change": "เปลี่ยนแปลง",
+    "label.close": "ปิด",
+    "label.login": "เข้าสู่ระบบ",
+    "label.no": "ไม่ใช่",
+    "label.ok": "ตกลง",
+    "label.remove": "ยกเลิก",
+    "label.save": "บันทึก",
+    "label.yes": "ใช่",
+    "main.allowProtocolDialog.detail": "ลิ้งที่ร้องขอคือ {URL}. คุณต้องการดำเนินการต่อหรือไม่ ?",
+    "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "ยกเลิกการเชื่อมต่อ",
+    "main.app.app.handleAppCertificateError.certError.button.moreDetails": "รายละเอียดเพิ่มเติม",
+    "main.app.app.handleAppCertificateError.certError.dialog.title": "ข้อผิดพลาดของใบรับรอง",
+    "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "ยกเลิกการเชื่อมต่อ"
+}
