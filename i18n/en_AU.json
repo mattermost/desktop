@@ -289,5 +289,15 @@
     "renderer.components.newServerModal.warning.urlNotMatched": "The server URL does not match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
     "renderer.components.newServerModal.warning.urlUpdated": "The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
     "main.downloadsManager.resetDownloadsFolder": "Please reset the folder where files will download",
-    "main.downloadsManager.specifyDownloadsFolder": "Specify the folder where files will download"
+    "main.downloadsManager.specifyDownloadsFolder": "Specify the folder where files will download",
+    "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} will use the microphone and camera for calls and voice messages. You can always change this later in your computer's settings.",
+    "label.allow": "Allow",
+    "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} will use the location for setting up your timezone. You can always change this later in your computer's settings.",
+    "label.deny": "Deny",
+    "label.denyPermanently": "Deny Permanently",
+    "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} will send you notifications for messages and calls. You can configure your notification preferences in Settings.",
+    "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) would like to access your location.",
+    "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) would like to access the microphone and camera.",
+    "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) would like to send you notifications.",
+    "main.permissionsManager.checkPermission.dialog.title": "Permission Requested"
 }
