@@ -6,7 +6,7 @@
     "renderer.components.settingsPage.header": "設定",
     "renderer.components.settingsPage.startAppOnLogin": "在登入時啟動應用程式",
     "common.tabs.TAB_MESSAGING": "頻道",
-    "common.tabs.TAB_PLAYBOOKS": "劇本",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_FOCALBOARD": "板",
     "common.permissions.canBasicAuth": "網路驗證",
     "main.app.utils.migrateMacAppStore.dialog.detail": "看來已經存在一個現有的 {appName} 設定，您想要導入嗎？您將被要求選擇正確的設定目錄。",
