@@ -64,7 +64,7 @@
     "label.cancel": "Cancelar",
     "label.add": "Adicionar",
     "label.accept": "Aceitar",
-    "common.tabs.TAB_PLAYBOOKS": "Manuais",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "Canais",
     "common.tabs.TAB_FOCALBOARD": "Quadros",
     "common.permissions.canBasicAuth": "Autenticação Web",
