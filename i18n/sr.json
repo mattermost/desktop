@@ -3,7 +3,7 @@
     "renderer.components.settingsPage.trayIcon.theme.systemDefault": "koristi podrazumevani sistem",
     "renderer.components.settingsPage.bounceIcon": "skakanje ikone doka",
     "main.menus.app.help.commitString": " commit: {hashVersion}",
-    "common.tabs.TAB_PLAYBOOKS": "Plejbuci",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "renderer.time.sec": "sekunde",
     "renderer.time.mins": "minute",
     "renderer.time.hours": "sati",
