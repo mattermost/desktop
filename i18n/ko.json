@@ -27,7 +27,7 @@
     "label.cancel": "취소",
     "label.add": "추가",
     "label.accept": "수락",
-    "common.tabs.TAB_PLAYBOOKS": "플레이북",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "채널",
     "common.tabs.TAB_FOCALBOARD": "보드",
     "common.permissions.canBasicAuth": "Web 인증",
