@@ -227,7 +227,7 @@
     "label.cancel": "İptal",
     "label.add": "Ekle",
     "label.accept": "Kabul et",
-    "common.tabs.TAB_PLAYBOOKS": "Senaryolar",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "Kanallar",
     "common.tabs.TAB_FOCALBOARD": "Panolar",
     "common.permissions.canBasicAuth": "İnternet kimlik doğrulaması",
