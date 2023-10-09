@@ -229,7 +229,7 @@
     "label.close": "Zavřít",
     "label.add": "Přidat",
     "label.accept": "Přijmout",
-    "common.tabs.TAB_PLAYBOOKS": "Scénáře",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "Kanály",
     "common.tabs.TAB_FOCALBOARD": "Nástěnky",
     "main.CriticalErrorHandler.uncaughtException.dialog.message": "Aplikace {appName} neočekávaně skončila. Kliknutím na \"{showDetails}\" se dozvíte více nebo \"{reopen}\" aplikaci znovu otevřete.\n\nVnitřní chyba: Vnitřní chyba: {err}",
