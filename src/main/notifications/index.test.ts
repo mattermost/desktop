@@ -248,7 +248,8 @@ describe('main/notifications', () => {
                 {soundName: ''},
             );
 
-            const mentionsPerChannel = NotificationManager.TEST__getMentionsPerChannel();
+            // convert to any to access private field
+            const mentionsPerChannel = (NotificationManager as any).mentionsPerChannel;
             expect(mentionsPerChannel.has('team_id:channel_id')).toBe(true);
 
             const existingMention = mentionsPerChannel.get('team_id:channel_id');

@@ -172,10 +172,6 @@ class NotificationManager {
         });
         this.restartToUpgradeNotification.show();
     }
-
-    public TEST__getMentionsPerChannel() {
-        return this.mentionsPerChannel;
-    }
 }
 
 function getDoNotDisturb() {
