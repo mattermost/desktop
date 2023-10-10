@@ -236,7 +236,7 @@ function initializeBeforeAppReady() {
     AllowProtocolDialog.init();
 
     if (isDev && process.env.NODE_ENV !== 'test') {
-        app.setAsDefaultProtocolClient('mattermost-dev');
+        app.setAsDefaultProtocolClient('mattermost-dev', process.execPath, [path.resolve(process.cwd(), 'dist/')]);
     } else if (mainProtocol) {
         app.setAsDefaultProtocolClient(mainProtocol);
     }
