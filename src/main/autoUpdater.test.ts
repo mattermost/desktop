@@ -1,13 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcMain} from 'electron';
-import {autoUpdater} from 'electron-updater';
+import {ipcMain as notMockedIpcMain} from 'electron';
+import {autoUpdater as notMockedAutoUpdater} from 'electron-updater';
 
 import {CHECK_FOR_UPDATES} from 'common/communication';
 
+import NotificationManager from 'main/notifications';
+
 import {UpdateManager} from './autoUpdater';
-import {displayRestartToUpgrade, displayUpgrade} from './notifications';
+
+const autoUpdater = jest.mocked(notMockedAutoUpdater);
+const ipcMain = jest.mocked(notMockedIpcMain);
 
 jest.mock('electron', () => ({
     app: {
@@ -44,6 +48,7 @@ jest.mock('main/notifications', () => ({
     displayUpgrade: jest.fn(),
     displayRestartToUpgrade: jest.fn(),
 }));
+
 jest.mock('main/windows/mainWindow', () => ({
     sendToRenderer: jest.fn(),
 }));
@@ -55,6 +60,7 @@ jest.mock('main/i18nManager', () => ({
 jest.mock('main/downloadsManager', () => ({
     removeUpdateBeforeRestart: jest.fn(),
 }));
+
 describe('main/autoUpdater', () => {
     describe('constructor', () => {
         afterEach(() => {
@@ -62,11 +68,12 @@ describe('main/autoUpdater', () => {
         });
 
         it('should notify user on update-available', () => {
-            let cb;
+            let cb: any;
             autoUpdater.on.mockImplementation((event, callback) => {
                 if (event === 'update-available') {
                     cb = callback;
                 }
+                return autoUpdater;
             });
 
             const updateManager = new UpdateManager();
@@ -78,11 +85,12 @@ describe('main/autoUpdater', () => {
         });
 
         it('should notify user on update-downloaded', () => {
-            let cb;
+            let cb: any;
             autoUpdater.on.mockImplementation((event, callback) => {
                 if (event === 'update-downloaded') {
                     cb = callback;
                 }
+                return autoUpdater;
             });
 
             const updateManager = new UpdateManager();
@@ -94,11 +102,12 @@ describe('main/autoUpdater', () => {
         });
 
         it('should check for updates when emitted', () => {
-            let cb;
+            let cb: any;
             ipcMain.on.mockImplementation((event, callback) => {
                 if (event === CHECK_FOR_UPDATES) {
                     cb = callback;
                 }
+                return ipcMain;
             });
 
             const updateManager = new UpdateManager();
@@ -133,7 +142,7 @@ describe('main/autoUpdater', () => {
             updateManager.versionAvailable = '5.1.0';
             updateManager.notify();
             updateManager.notify = jest.fn();
-            expect(displayUpgrade).toHaveBeenCalledWith('5.1.0', expect.any(Function));
+            expect(NotificationManager.displayUpgrade).toHaveBeenCalledWith('5.1.0', expect.any(Function));
         });
 
         it('should display downloaded upgrade notification', () => {
@@ -141,13 +150,13 @@ describe('main/autoUpdater', () => {
             updateManager.versionDownloaded = '5.1.0';
             updateManager.notify();
             updateManager.notify = jest.fn();
-            expect(displayRestartToUpgrade).toHaveBeenCalledWith('5.1.0', expect.any(Function));
+            expect(NotificationManager.displayRestartToUpgrade).toHaveBeenCalledWith('5.1.0', expect.any(Function));
         });
     });
 
     describe('checkForUpdates', () => {
         beforeEach(() => {
-            autoUpdater.checkForUpdates.mockReturnValue(Promise.resolve());
+            autoUpdater.checkForUpdates.mockReturnValue(Promise.resolve(null));
             jest.useFakeTimers();
         });
 
@@ -164,8 +173,9 @@ describe('main/autoUpdater', () => {
         it('should show dialog if update is not available', () => {
             autoUpdater.once.mockImplementation((event, callback) => {
                 if (event === 'update-not-available') {
-                    callback();
+                    (callback as any)();
                 }
+                return autoUpdater;
             });
 
             const updateManager = new UpdateManager();
@@ -177,7 +187,7 @@ describe('main/autoUpdater', () => {
 
         it('should check again at the next interval', () => {
             const updateManager = new UpdateManager();
-            updateManager.checkForUpdates();
+            updateManager.checkForUpdates(false);
             updateManager.checkForUpdates = jest.fn();
             jest.runAllTimers();
             expect(updateManager.checkForUpdates).toBeCalled();

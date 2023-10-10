@@ -4,6 +4,8 @@
 import os from 'os';
 import path from 'path';
 
+import {v4 as uuid} from 'uuid';
+
 import {app, Notification} from 'electron';
 
 import {MentionOptions} from 'types/notification';
@@ -27,6 +29,7 @@ export class Mention extends Notification {
     customSound: string;
     channel: {id: string}; // TODO: Channel from mattermost-redux
     teamId: string;
+    uId: string;
 
     constructor(customOptions: MentionOptions, channel: {id: string}, teamId: string) {
         const options = {...defaultOptions, ...customOptions};
@@ -44,6 +47,7 @@ export class Mention extends Notification {
         this.customSound = customSound;
         this.channel = channel;
         this.teamId = teamId;
+        this.uId = uuid();
     }
 
     getNotificationSound = () => {

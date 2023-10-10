@@ -21,134 +21,157 @@ import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
 
-export const currentNotifications = new Map();
-
 const log = new Logger('Notifications');
 
-export async function displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
-    log.debug('displayMention', {title, body, channel, teamId, url, silent, data});
+class NotificationManager {
+    private mentionsPerChannel: Map<string, Mention> = new Map();
+    private allActiveNotifications: Map<string, Notification> = new Map();
+    private upgradeNotification?: NewVersionNotification;
+    private restartToUpgradeNotification?: UpgradeNotification;
 
-    if (!Notification.isSupported()) {
-        log.error('notification not supported');
-        return;
-    }
+    public async displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
+        log.debug('displayMention', {title, body, channel, teamId, url, silent, data});
 
-    if (getDoNotDisturb()) {
-        return;
-    }
+        if (!Notification.isSupported()) {
+            log.error('notification not supported');
+            return;
+        }
 
-    const view = ViewManager.getViewByWebContentsId(webcontents.id);
-    if (!view) {
-        return;
-    }
-    const serverName = view.view.server.name;
+        if (getDoNotDisturb()) {
+            return;
+        }
 
-    const options = {
-        title: `${serverName}: ${title}`,
-        body,
-        silent,
-        data,
-    };
+        const view = ViewManager.getViewByWebContentsId(webcontents.id);
+        if (!view) {
+            return;
+        }
+        const serverName = view.view.server.name;
 
-    if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', view.view.server.url.toString())) {
-        return;
-    }
+        const options = {
+            title: `${serverName}: ${title}`,
+            body,
+            silent,
+            data,
+        };
 
-    const mention = new Mention(options, channel, teamId);
-    const mentionKey = `${mention.teamId}:${mention.channel.id}`;
+        if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', view.view.server.url.toString())) {
+            return;
+        }
 
-    mention.on('show', () => {
-        log.debug('displayMention.show');
+        const mention = new Mention(options, channel, teamId);
+        const mentionKey = `${mention.teamId}:${mention.channel.id}`;
+        this.allActiveNotifications.set(mention.uId, mention);
 
-        // On Windows, manually dismiss notifications from the same channel and only show the latest one
-        if (process.platform === 'win32') {
-            if (currentNotifications.has(mentionKey)) {
-                log.debug(`close ${mentionKey}`);
-                currentNotifications.get(mentionKey).close();
-                currentNotifications.delete(mentionKey);
+        mention.on('show', () => {
+            log.debug('displayMention.show');
+
+            // On Windows, manually dismiss notifications from the same channel and only show the latest one
+            if (process.platform === 'win32') {
+                if (this.mentionsPerChannel.has(mentionKey)) {
+                    log.debug(`close ${mentionKey}`);
+                    this.mentionsPerChannel.get(mentionKey)?.close();
+                    this.mentionsPerChannel.delete(mentionKey);
+                }
+                this.mentionsPerChannel.set(mentionKey, mention);
             }
-            currentNotifications.set(mentionKey, mention);
+            const notificationSound = mention.getNotificationSound();
+            if (notificationSound) {
+                MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
+            }
+            flashFrame(true);
+        });
+
+        mention.on('click', () => {
+            log.debug('notification click', serverName, mention);
+
+            this.allActiveNotifications.delete(mention.uId);
+            MainWindow.show();
+            if (serverName) {
+                ViewManager.showById(view.id);
+                webcontents.send('notification-clicked', {channel, teamId, url});
+            }
+        });
+
+        mention.on('close', () => {
+            this.allActiveNotifications.delete(mention.uId);
+        });
+
+        mention.on('failed', () => {
+            this.allActiveNotifications.delete(mention.uId);
+        });
+        mention.show();
+    }
+
+    public displayDownloadCompleted(fileName: string, path: string, serverName: string) {
+        log.debug('displayDownloadCompleted', {fileName, path, serverName});
+
+        if (!Notification.isSupported()) {
+            log.error('notification not supported');
+            return;
         }
-        const notificationSound = mention.getNotificationSound();
-        if (notificationSound) {
-            MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
+
+        if (getDoNotDisturb()) {
+            return;
         }
-        flashFrame(true);
-    });
 
-    mention.on('click', () => {
-        log.debug('notification click', serverName, mention);
-        MainWindow.show();
-        if (serverName) {
-            ViewManager.showById(view.id);
-            webcontents.send('notification-clicked', {channel, teamId, url});
+        const download = new DownloadNotification(fileName, serverName);
+        this.allActiveNotifications.set(download.uId, download);
+
+        download.on('show', () => {
+            flashFrame(true);
+        });
+
+        download.on('click', () => {
+            shell.showItemInFolder(path.normalize());
+            this.allActiveNotifications.delete(download.uId);
+        });
+
+        download.on('close', () => {
+            this.allActiveNotifications.delete(download.uId);
+        });
+
+        download.on('failed', () => {
+            this.allActiveNotifications.delete(download.uId);
+        });
+        download.show();
+    }
+
+    public displayUpgrade(version: string, handleUpgrade: () => void): void {
+        if (!Notification.isSupported()) {
+            log.error('notification not supported');
+            return;
         }
-    });
-    mention.show();
-}
+        if (getDoNotDisturb()) {
+            return;
+        }
 
-export function displayDownloadCompleted(fileName: string, path: string, serverName: string) {
-    log.debug('displayDownloadCompleted', {fileName, path, serverName});
-
-    if (!Notification.isSupported()) {
-        log.error('notification not supported');
-        return;
+        if (this.upgradeNotification) {
+            this.upgradeNotification.close();
+        }
+        this.upgradeNotification = new NewVersionNotification();
+        this.upgradeNotification.on('click', () => {
+            log.info(`User clicked to upgrade to ${version}`);
+            handleUpgrade();
+        });
+        this.upgradeNotification.show();
     }
 
-    if (getDoNotDisturb()) {
-        return;
+    public displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
+        if (!Notification.isSupported()) {
+            log.error('notification not supported');
+            return;
+        }
+        if (getDoNotDisturb()) {
+            return;
+        }
+
+        this.restartToUpgradeNotification = new UpgradeNotification();
+        this.restartToUpgradeNotification.on('click', () => {
+            log.info(`User requested perform the upgrade now to ${version}`);
+            handleUpgrade();
+        });
+        this.restartToUpgradeNotification.show();
     }
-
-    const download = new DownloadNotification(fileName, serverName);
-
-    download.on('show', () => {
-        flashFrame(true);
-    });
-
-    download.on('click', () => {
-        shell.showItemInFolder(path.normalize());
-    });
-    download.show();
-}
-
-let upgrade: NewVersionNotification;
-
-export function displayUpgrade(version: string, handleUpgrade: () => void): void {
-    if (!Notification.isSupported()) {
-        log.error('notification not supported');
-        return;
-    }
-    if (getDoNotDisturb()) {
-        return;
-    }
-
-    if (upgrade) {
-        upgrade.close();
-    }
-    upgrade = new NewVersionNotification();
-    upgrade.on('click', () => {
-        log.info(`User clicked to upgrade to ${version}`);
-        handleUpgrade();
-    });
-    upgrade.show();
-}
-
-let restartToUpgrade;
-export function displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
-    if (!Notification.isSupported()) {
-        log.error('notification not supported');
-        return;
-    }
-    if (getDoNotDisturb()) {
-        return;
-    }
-
-    restartToUpgrade = new UpgradeNotification();
-    restartToUpgrade.on('click', () => {
-        log.info(`User requested perform the upgrade now to ${version}`);
-        handleUpgrade();
-    });
-    restartToUpgrade.show();
 }
 
 function getDoNotDisturb() {
@@ -177,3 +200,6 @@ function flashFrame(flash: boolean) {
         app.dock.bounce(Config.notifications.bounceIconType);
     }
 }
+
+const notificationManager = new NotificationManager();
+export default notificationManager;
