@@ -153,6 +153,11 @@ export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolea
         return;
     }
 
+    // Don't allow this to turn on if the main window isn't focused
+    if (secureInput && !MainWindow.get()?.isFocused()) {
+        return;
+    }
+
     // Enforce macOS to restrict processes from reading the keyboard input when in a password field
     log.debug('handleToggleSecureInput', secureInput);
     app.setSecureKeyboardEntryEnabled(secureInput);

@@ -27,6 +27,7 @@ import {
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
     VIEW_FINISHED_RESIZING,
+    TOGGLE_SECURE_INPUT,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -314,6 +315,7 @@ export class MainWindow extends EventEmitter {
         globalShortcut.unregisterAll();
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
+        ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
 
         // App should save bounds when a window is closed.
         // However, 'close' is not fired in some situations(shutdown, ctrl+c)

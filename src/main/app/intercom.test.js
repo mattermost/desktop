@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {app} from 'electron';
+
 import {getLocalURLString, getLocalPreload} from 'main/utils';
 import ServerManager from 'common/servers/serverManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -9,7 +11,14 @@ import ModalManager from 'main/views/modalManager';
 import {
     handleWelcomeScreenModal,
     handleMainWindowIsShown,
+    handleToggleSecureInput,
 } from './intercom';
+
+jest.mock('electron', () => ({
+    app: {
+        setSecureKeyboardEntryEnabled: jest.fn(),
+    },
+}));
 
 jest.mock('app/serverViewState', () => ({}));
 jest.mock('common/config', () => ({
@@ -71,6 +80,40 @@ describe('main/app/intercom', () => {
 
             handleMainWindowIsShown();
             expect(ModalManager.addModal).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleToggleSecureInput', () => {
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue({
+                isFocused: () => true,
+            });
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should not fire for OSes that are not macOS', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+
+            handleToggleSecureInput({}, true);
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+
+            expect(app.setSecureKeyboardEntryEnabled).not.toHaveBeenCalled();
+        });
+
+        it('should not fire if window is not focused', () => {
+            MainWindow.get.mockReturnValue({isFocused: () => false});
+            handleToggleSecureInput({}, true);
+
+            expect(app.setSecureKeyboardEntryEnabled).not.toHaveBeenCalled();
         });
     });
 });
