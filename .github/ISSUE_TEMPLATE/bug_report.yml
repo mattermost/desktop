@@ -12,7 +12,7 @@ body:
       If it does, the issue should be reported to the [main Mattermost repository](https://github.com/mattermost/mattermost/issues).
 - type: checkboxes
   attributes:
-    label: Before you file a bug report
+    label: Checks before filing an issue
     description: Please ensure you can confirm the following
     options:
       - label: This issue doesn't reproduce on web browsers (such as in Chrome). If it does, [issue reports go to the Mattermost Server repository](https://github.com/mattermost/mattermost-server/issues).
