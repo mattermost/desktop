@@ -17,5 +17,16 @@
   "label.remove": "הסר",
   "label.save": "שמור",
   "label.yes": "כן",
-  "main.allowProtocolDialog.button.saveProtocolAsAllowed": "כן (שמירת {protocol} מאופשרת)"
+  "main.CriticalErrorHandler.uncaughtException.button.reopen": "פתח מחדש",
+  "main.CriticalErrorHandler.uncaughtException.button.showDetails": "הצג פרטים",
+  "main.allowProtocolDialog.button.saveProtocolAsAllowed": "כן (שמירת {protocol} מאופשרת)",
+  "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "בטל חיבור",
+  "main.app.app.handleAppCertificateError.certError.button.moreDetails": "עוד פרטים",
+  "main.app.app.handleAppCertificateError.certError.dialog.title": "בעיה עם התעודה",
+  "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "בטל חיבור",
+  "main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate": "בטח בתעודה לא בטוחה",
+  "main.app.app.handleAppCertificateError.certNotTrusted.dialog.message": "תעודה מ-\"{issuerName}\" לא מהימנה.",
+  "main.app.app.handleAppCertificateError.certNotTrusted.dialog.title": "תעודה לא מהימנה",
+  "main.app.app.handleAppCertificateError.dialog.extraDetail": "תעודה שונה מהתעודה הקודמת.\n\n",
+  "main.app.initialize.downloadBox.allFiles": "כל הקבצים"
 }
