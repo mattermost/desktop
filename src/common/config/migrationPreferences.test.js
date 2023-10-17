@@ -29,7 +29,7 @@ describe('common/config/migrationPreferences', () => {
                 getValue: () => false,
                 setValue: jest.fn(),
             }));
-            expect(migrateConfigItems({})).toBe(true);
+            expect(migrateConfigItems({teams: []})).toBe(true);
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
