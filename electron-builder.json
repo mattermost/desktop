@@ -48,7 +48,6 @@
       "libxtst6",
       "libnss3"
     ],
-    "category": "contrib/net",
     "priority": "optional"
   },
   "asarUnpack": [
