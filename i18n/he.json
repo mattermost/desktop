@@ -19,7 +19,7 @@
   "label.yes": "כן",
   "main.CriticalErrorHandler.uncaughtException.button.reopen": "פתח מחדש",
   "main.CriticalErrorHandler.uncaughtException.button.showDetails": "הצג פרטים",
-  "main.CriticalErrorHandler.uncaughtException.dialog.message": "יישומון {appName} נסגר באופן בלתי צפוי. לחץ על \"{showDetails}\"  כדי ללמוד עוד או \"{reopen}\" כדי לפתוח את היישומון שוב.\n\nשגיאה פנימית:  {err}",
+  "main.CriticalErrorHandler.uncaughtException.dialog.message": "יישומון {appName} נסגר באופן בלתי צפוי. לחץ על \"{showDetails}\" כדי ללמוד עוד או \"{reopen}\" כדי לפתוח את היישומון שוב.\n\nשגיאה פנימית:  {err}",
   "main.CriticalErrorHandler.unresponsive.dialog.message": "החלון לא מגיב יותר.\nהאם אתה רוצה לחכות עד שהחלון חוזר להגיב שוב?",
   "main.allowProtocolDialog.button.saveProtocolAsAllowed": "כן (שמירת {protocol} מאופשרת)",
   "main.allowProtocolDialog.detail": "הקישור המבוקש הוא {URL}. האם אתה רוצה להמשיך?",
