@@ -175,7 +175,7 @@
     "main.menus.app.help.RunDiagnostics": "Запуск діагностики",
     "main.menus.app.help.commitString": " commit: {hashVersion}",
     "main.badge.unreadChannels": "У вас є непрочитані канали",
-    "common.tabs.TAB_PLAYBOOKS": "Сценарії",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "Канали",
     "common.tabs.TAB_FOCALBOARD": "Дошки",
     "renderer.components.welcomeScreen.slides.boards.title": "Дошки",

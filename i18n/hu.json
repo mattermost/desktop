@@ -227,7 +227,7 @@
     "label.cancel": "Mégsem",
     "label.add": "Hozzáadás",
     "label.accept": "Elfogadás",
-    "common.tabs.TAB_PLAYBOOKS": "Forgatókönyvek",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_MESSAGING": "Csatornák",
     "common.tabs.TAB_FOCALBOARD": "Táblák",
     "common.permissions.canBasicAuth": "Webes hitelesítés",

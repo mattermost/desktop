@@ -76,7 +76,7 @@
     "prune": "ts-prune",
     "mmjstool": "mmjstool",
     "i18n-extract": "npm run mmjstool -- i18n extract-desktop",
-    "postinstall": "node scripts/patch_macos_notification_state.js && electron-builder install-app-deps"
+    "postinstall": "node scripts/postinstall.js && electron-builder install-app-deps"
   },
   "jest": {
     "clearMocks": true,
@@ -96,7 +96,8 @@
       "src/main/**/*.ts"
     ],
     "testMatch": [
-      "**/src/**/*.test.js"
+      "**/src/**/*.test.js",
+      "**/src/**/*.test.ts"
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",

@@ -227,7 +227,7 @@
     "main.app.utils.migrateMacAppStore.button.dontImport": "وارد نکن",
     "main.app.utils.migrateMacAppStore.dialog.message": "وارد کردن تنظیمات فعلی",
     "main.app.utils.migrateMacAppStore.button.selectAndImport": "انتخاب پوشه و وارد کردن",
-    "common.tabs.TAB_PLAYBOOKS": "اجرانامه‌ها",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "common.tabs.TAB_FOCALBOARD": "تابلوها",
     "main.allowProtocolDialog.button.saveProtocolAsAllowed": "بله (ذخیره {protocol} مجاز است)",
     "main.allowProtocolDialog.message": "پیوند {protocol} نیازمند یک برنامه بیرونی است.",

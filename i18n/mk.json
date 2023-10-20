@@ -14,7 +14,7 @@
     "main.allowProtocolDialog.title": "Не-http(s) протокол",
     "main.allowProtocolDialog.message": "{protocol} линк треба надворешна апликација.",
     "main.allowProtocolDialog.detail": "Побараниот линк е {URL}. Дали сакате да продолжите?",
-    "common.tabs.TAB_PLAYBOOKS": "Плејбукс",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "main.allowProtocolDialog.button.saveProtocolAsAllowed": "Да (Сочувај {protocol} како дозволен)",
     "label.yes": "Да",
     "label.save": "Сочувај",

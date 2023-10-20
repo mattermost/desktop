@@ -376,14 +376,21 @@ window.addEventListener('resize', () => {
 });
 
 let isPasswordBox = false;
-
-window.addEventListener('focusin', (event) => {
-    const targetIsPasswordBox = event.target.tagName === 'INPUT' && event.target.type === 'password';
-    if (targetIsPasswordBox && !isPasswordBox) {
+const shouldSecureInput = (element, force = false) => {
+    const targetIsPasswordBox = (element && element.tagName === 'INPUT' && element.type === 'password');
+    if (targetIsPasswordBox && (!isPasswordBox || force)) {
         ipcRenderer.send(TOGGLE_SECURE_INPUT, true);
-    } else if (!targetIsPasswordBox && isPasswordBox) {
+    } else if (!targetIsPasswordBox && (isPasswordBox || force)) {
         ipcRenderer.send(TOGGLE_SECURE_INPUT, false);
     }
 
     isPasswordBox = targetIsPasswordBox;
+};
+
+window.addEventListener('focusin', (event) => {
+    shouldSecureInput(event.target);
+});
+
+window.addEventListener('focus', () => {
+    shouldSecureInput(document.activeElement, true);
 });

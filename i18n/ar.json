@@ -112,7 +112,7 @@
     "main.allowProtocolDialog.button.saveProtocolAsAllowed": "نعم (احفظ {protocol} على النحو المسموح به)",
     "main.menus.app.help.RunDiagnostics": "تشغيل التشخيصات",
     "main.menus.app.help.commitString": " commit: {hashVersion}",
-    "common.tabs.TAB_PLAYBOOKS": "أدلة التشغيل",
+    "common.tabs.TAB_PLAYBOOKS": "Playbooks",
     "renderer.components.configureServer.connect.saving": "توصيل",
     "renderer.components.configureServer.connect.default": "يتصل",
     "renderer.components.configureServer.cardtitle": "أدخل تفاصيل الخادم الخاص بك",
