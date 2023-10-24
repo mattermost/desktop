@@ -106,7 +106,7 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
         }
 
         // is the requesting url trusted?
-        if (!isTrustedURL(parsedURL, serverURL)) {
+        if (!(isTrustedURL(parsedURL, serverURL) || (permission === 'media' && parsedURL.origin === serverURL.origin))) {
             return false;
         }
 

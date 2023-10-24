@@ -65,7 +65,7 @@ describe('main/PermissionsManager', () => {
                 return null;
             }
         });
-        isTrustedURL.mockImplementation((url, baseURL) => baseURL.toString().startsWith(url.toString()));
+        isTrustedURL.mockImplementation((url, baseURL) => url.toString().startsWith(baseURL.toString()));
     });
 
     afterEach(() => {
@@ -187,5 +187,21 @@ describe('main/PermissionsManager', () => {
             permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {securityOrigin: 'http://anyurl.com'}),
         ]);
         expect(dialog.showMessageBox).toHaveBeenCalledTimes(1);
+    });
+
+    it('should still pop dialog for media requests from the servers origin', async () => {
+        ViewManager.getViewByWebContentsId.mockImplementation((id) => {
+            if (id === 2) {
+                return {view: {server: {url: new URL('http://anyurl.com/subpath')}}};
+            }
+
+            return null;
+        });
+        const permissionsManager = new PermissionsManager('anyfile.json');
+        permissionsManager.writeToFile = jest.fn();
+        const cb = jest.fn();
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+        expect(dialog.showMessageBox).toHaveBeenCalled();
     });
 });
