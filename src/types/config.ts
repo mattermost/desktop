@@ -131,4 +131,5 @@ export type LocalConfiguration = Config & {
 export type MigrationInfo = {
     updateTrayIconWin32: boolean;
     masConfigs: boolean;
+    closeExtraTabs: boolean;
 }
