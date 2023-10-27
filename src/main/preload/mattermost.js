@@ -39,6 +39,7 @@ import {
     CALLS_JOIN_REQUEST,
     GET_IS_DEV_MODE,
     TOGGLE_SECURE_INPUT,
+    GET_APP_INFO,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -60,9 +61,12 @@ if (process.env.NODE_ENV === 'test') {
 
 contextBridge.exposeInMainWorld('desktopAPI', {
     isDev: () => ipcRenderer.invoke(GET_IS_DEV_MODE),
+
+    getAppInfo: () => ipcRenderer.invoke(GET_APP_INFO),
+
 });
 
-ipcRenderer.invoke('get-app-version').then(({name, version}) => {
+ipcRenderer.invoke(GET_APP_INFO).then(({name, version}) => {
     appVersion = version;
     appName = name;
 });

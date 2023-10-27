@@ -89,6 +89,7 @@ import {
     GET_ORDERED_TABS_FOR_SERVER,
     SERVERS_UPDATE,
     VALIDATE_SERVER_URL,
+    GET_APP_INFO,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -139,7 +140,7 @@ contextBridge.exposeInMainWorld('desktop', {
     validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
 
     getConfiguration: () => ipcRenderer.invoke(GET_CONFIGURATION),
-    getVersion: () => ipcRenderer.invoke('get-app-version'),
+    getVersion: () => ipcRenderer.invoke(GET_APP_INFO),
     getDarkMode: () => ipcRenderer.invoke(GET_DARK_MODE),
     requestHasDownloads: () => ipcRenderer.invoke(REQUEST_HAS_DOWNLOADS),
     getFullScreenStatus: () => ipcRenderer.invoke(GET_FULL_SCREEN_STATUS),

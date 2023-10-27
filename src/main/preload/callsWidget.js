@@ -17,6 +17,7 @@ import {
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_LINK_CLICK,
     CALLS_JOIN_REQUEST,
+    GET_APP_INFO,
 } from 'common/communication';
 
 //
@@ -30,8 +31,8 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     }
 
     switch (type) {
-    case 'get-app-version': {
-        ipcRenderer.invoke('get-app-version').then(({name, version}) => {
+    case 'get-app-version': { // TODO: Legacy constant
+        ipcRenderer.invoke(GET_APP_INFO).then(({name, version}) => {
             window.postMessage(
                 {
                     type: 'register-desktop',

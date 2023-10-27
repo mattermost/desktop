@@ -30,6 +30,7 @@ import {
     WINDOW_RESTORE,
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
+    GET_APP_INFO,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -249,7 +250,7 @@ function initializeBeforeAppReady() {
 
 function initializeInterCommunicationEventListeners() {
     ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
-    ipcMain.handle('get-app-version', handleAppVersion);
+    ipcMain.handle(GET_APP_INFO, handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);
 
