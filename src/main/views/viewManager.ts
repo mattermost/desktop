@@ -19,7 +19,6 @@ import {
     UPDATE_URL_VIEW_WIDTH,
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
-    BROWSER_HISTORY_BUTTON,
     APP_LOGGED_OUT,
     APP_LOGGED_IN,
     RELOAD_CURRENT_VIEW,
@@ -32,6 +31,7 @@ import {
     MAIN_WINDOW_FOCUSED,
     SWITCH_TAB,
     GET_IS_DEV_MODE,
+    REQUEST_BROWSER_HISTORY_STATUS,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -70,10 +70,10 @@ export class ViewManager {
         MainWindow.on(MAIN_WINDOW_FOCUSED, this.focusCurrentView);
         ipcMain.handle(GET_VIEW_INFO_FOR_TEST, this.handleGetViewInfoForTest);
         ipcMain.handle(GET_IS_DEV_MODE, () => isDev);
+        ipcMain.handle(REQUEST_BROWSER_HISTORY_STATUS, this.handleRequestBrowserHistoryStatus);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
-        ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
         ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
@@ -505,20 +505,20 @@ export class ViewManager {
         // Special case check for Channels to not force a redirect to "/", causing a refresh
         if (!(redirectedView !== currentView && redirectedView?.view.type === TAB_MESSAGING && cleanedPathName === '/')) {
             redirectedView?.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
-            if (redirectedView) {
-                this.handleBrowserHistoryButton(e, redirectedView.id);
-            }
+            redirectedView?.updateHistoryButton();
         }
     }
 
-    private handleBrowserHistoryButton = (e: IpcMainEvent, viewId: string) => {
-        this.getView(viewId)?.updateHistoryButton();
+    private handleRequestBrowserHistoryStatus = (e: IpcMainInvokeEvent) => {
+        log.silly('handleRequestBrowserHistoryStatus', e.sender.id);
+
+        return this.getViewByWebContentsId(e.sender.id)?.getBrowserHistoryStatus();
     }
 
-    private handleReactAppInitialized = (e: IpcMainEvent, viewId: string) => {
-        log.debug('handleReactAppInitialized', viewId);
+    private handleReactAppInitialized = (e: IpcMainEvent) => {
+        log.debug('handleReactAppInitialized', e.sender.id);
 
-        const view = this.views.get(viewId);
+        const view = this.getViewByWebContentsId(e.sender.id);
         if (view) {
             view.setInitialized();
             if (this.getCurrentView() === view) {

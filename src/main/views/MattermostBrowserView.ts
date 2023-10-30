@@ -17,8 +17,8 @@ import {
     TOGGLE_BACK_BUTTON,
     SET_VIEW_OPTIONS,
     LOADSCREEN_END,
-    BROWSER_HISTORY_BUTTON,
     SERVERS_URL_MODIFIED,
+    BROWSER_HISTORY_STATUS_UPDATED,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
@@ -148,14 +148,22 @@ export class MattermostBrowserView extends EventEmitter {
         }
     }
 
-    updateHistoryButton = () => {
+    getBrowserHistoryStatus = () => {
         if (this.currentURL?.toString() === this.view.url.toString()) {
             this.browserView.webContents.clearHistory();
             this.atRoot = true;
         } else {
             this.atRoot = false;
         }
-        this.browserView.webContents.send(BROWSER_HISTORY_BUTTON, this.browserView.webContents.canGoBack(), this.browserView.webContents.canGoForward());
+
+        return {
+            canGoBack: this.browserView.webContents.canGoBack(),
+            canGoForward: this.browserView.webContents.canGoForward(),
+        };
+    }
+
+    updateHistoryButton = () => {
+        this.browserView.webContents.send(BROWSER_HISTORY_STATUS_UPDATED, this.getBrowserHistoryStatus());
     }
 
     load = (someURL?: URL | string) => {

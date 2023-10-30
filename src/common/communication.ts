@@ -95,7 +95,6 @@ export const START_UPGRADE = 'start-upgrade';
 export const CHECK_FOR_UPDATES = 'check-for-updates';
 export const NO_UPDATE_AVAILABLE = 'no-update-available';
 
-export const BROWSER_HISTORY_BUTTON = 'browser-history-button';
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const APP_LOGGED_IN = 'app-logged-in';
 export const APP_LOGGED_OUT = 'app-logged-out';
@@ -179,3 +178,6 @@ export const VALIDATE_SERVER_URL = 'validate-server-url';
 export const GET_IS_DEV_MODE = 'get-is-dev-mode';
 
 export const TOGGLE_SECURE_INPUT = 'toggle-secure-input';
+
+export const REQUEST_BROWSER_HISTORY_STATUS = 'request-browser-history-status';
+export const BROWSER_HISTORY_STATUS_UPDATED = 'browser-history-status-updated';

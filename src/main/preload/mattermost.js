@@ -21,7 +21,6 @@ import {
     REACT_APP_INITIALIZED,
     USER_ACTIVITY_UPDATE,
     CLOSE_SERVERS_DROPDOWN,
-    BROWSER_HISTORY_BUTTON,
     BROWSER_HISTORY_PUSH,
     APP_LOGGED_IN,
     APP_LOGGED_OUT,
@@ -40,6 +39,8 @@ import {
     GET_IS_DEV_MODE,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
+    REQUEST_BROWSER_HISTORY_STATUS,
+    BROWSER_HISTORY_STATUS_UPDATED,
 } from 'common/communication';
 
 const UNREAD_COUNT_INTERVAL = 1000;
@@ -61,10 +62,14 @@ if (process.env.NODE_ENV === 'test') {
 
 contextBridge.exposeInMainWorld('desktopAPI', {
     isDev: () => ipcRenderer.invoke(GET_IS_DEV_MODE),
-
     getAppInfo: () => ipcRenderer.invoke(GET_APP_INFO),
+    reactAppInitialized: () => ipcRenderer.send(REACT_APP_INITIALIZED),
 
+    requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
+    onBrowserHistoryStatusUpdated: (listener) => ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, listener),
 });
+
+// legacy code - all deprecated
 
 ipcRenderer.invoke(GET_APP_INFO).then(({name, version}) => {
     appVersion = version;
@@ -101,8 +106,8 @@ window.addEventListener('load', () => {
         return;
     }
     watchReactAppUntilInitialized(() => {
-        ipcRenderer.send(REACT_APP_INITIALIZED, viewId);
-        ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewId);
+        ipcRenderer.send(REACT_APP_INITIALIZED);
+        ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS).then(sendHistoryButtonReturn);
     });
 });
 
@@ -165,7 +170,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         break;
     }
     case 'history-button': {
-        ipcRenderer.send(BROWSER_HISTORY_BUTTON, viewId);
+        ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS).then(sendHistoryButtonReturn);
         break;
     }
     case 'get-desktop-sources': {
@@ -302,18 +307,20 @@ ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
     );
 });
 
-ipcRenderer.on(BROWSER_HISTORY_BUTTON, (event, enableBack, enableForward) => {
+const sendHistoryButtonReturn = (status) => {
     window.postMessage(
         {
             type: 'history-button-return',
             message: {
-                enableBack,
-                enableForward,
+                enableBack: status.canGoBack,
+                enableForward: status.canGoForward,
             },
         },
         window.location.origin,
     );
-});
+};
+
+ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, (event, status) => sendHistoryButtonReturn(status));
 
 window.addEventListener('storage', (e) => {
     if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
