@@ -61,5 +61,7 @@
   "main.menus.app.view.actualSize": "Stvarna veličina",
   "main.menus.tray.settings": "Postavke …",
   "main.tray.tray.unread": "Imaš nepročitanih kanala",
-  "renderer.components.extraBar.back": "Natrag"
+  "renderer.components.extraBar.back": "Natrag",
+  "renderer.components.saveButton.saving": "Spremanje",
+  "renderer.components.welcomeScreen.slides.channels.title": "Kanali"
 }
