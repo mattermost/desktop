@@ -9,6 +9,7 @@ import enAU from './en_AU.json';
 import es from './es.json';
 import fa from './fa.json';
 import fr from './fr.json';
+import he from './he.json';
 import hu from './hu.json';
 import it from './it.json';
 import ja from './ja.json';
@@ -63,106 +64,112 @@ export const languages: Record<string, Language> = {
         order: 4,
         url: fr,
     },
+    he: {
+        value: 'he',
+        name: 'עברית (Beta)',
+        order: 5,
+        url: he,
+    },
     it: {
         value: 'it',
         name: 'Italiano (Alpha)',
-        order: 5,
+        order: 6,
         url: it,
     },
     hu: {
         value: 'hu',
         name: 'Magyar',
-        order: 6,
+        order: 7,
         url: hu,
     },
     nl: {
         value: 'nl',
         name: 'Nederlands',
-        order: 7,
+        order: 8,
         url: nl,
     },
     pl: {
         value: 'pl',
         name: 'Polski',
-        order: 8,
+        order: 9,
         url: pl,
     },
     'pt-BR': {
         value: 'pt-BR',
         name: 'Português (Brasil) (Beta)',
-        order: 9,
+        order: 10,
         url: ptBR,
     },
     ro: {
         value: 'ro',
         name: 'Română (Beta)',
-        order: 10,
+        order: 11,
         url: ro,
     },
     sv: {
         value: 'sv',
         name: 'Svenska',
-        order: 11,
+        order: 12,
         url: sv,
     },
     vi: {
         value: 'vi',
         name: 'Tiếng Việt (Beta)',
-        order: 12,
+        order: 13,
         url: vi,
     },
     tr: {
         value: 'tr',
         name: 'Türkçe',
-        order: 13,
+        order: 14,
         url: tr,
     },
     bg: {
         value: 'bg',
         name: 'Български',
-        order: 14,
+        order: 15,
         url: bg,
     },
     ru: {
         value: 'ru',
         name: 'Pусский',
-        order: 15,
+        order: 16,
         url: ru,
     },
     uk: {
         value: 'uk',
         name: 'Yкраїнська (Alpha)',
-        order: 16,
+        order: 17,
         url: uk,
     },
     fa: {
         value: 'fa',
         name: 'فارسی (Beta)',
-        order: 17,
+        order: 18,
         url: fa,
     },
     ko: {
         value: 'ko',
         name: '한국어 (Alpha)',
-        order: 18,
+        order: 19,
         url: ko,
     },
     'zh-CN': {
         value: 'zh-CN',
         name: '中文 (简体)',
-        order: 19,
+        order: 20,
         url: zhCN,
     },
     'zh-TW': {
         value: 'zh-TW',
         name: '中文 (繁體)',
-        order: 20,
+        order: 21,
         url: zhTW,
     },
     ja: {
         value: 'ja',
         name: '日本語',
-        order: 21,
+        order: 22,
         url: ja,
     },
 };

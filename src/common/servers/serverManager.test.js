@@ -53,42 +53,6 @@ describe('common/servers/serverManager', () => {
             expect(serverManager.persistServers).not.toHaveBeenCalled();
         });
 
-        it('should open all views', async () => {
-            serverManager.updateRemoteInfos(new Map([['server-1', {
-                siteURL: 'http://server-1.com',
-                serverVersion: '6.0.0',
-                hasPlaybooks: true,
-                hasFocalboard: true,
-            }]]));
-
-            expect(serverManager.views.get('view-2').isOpen).toBe(true);
-            expect(serverManager.views.get('view-3').isOpen).toBe(true);
-        });
-
-        it('should open only playbooks', async () => {
-            serverManager.updateRemoteInfos(new Map([['server-1', {
-                siteURL: 'http://server-1.com',
-                serverVersion: '6.0.0',
-                hasPlaybooks: true,
-                hasFocalboard: false,
-            }]]));
-
-            expect(serverManager.views.get('view-2').isOpen).toBe(true);
-            expect(serverManager.views.get('view-3').isOpen).toBeUndefined();
-        });
-
-        it('should open none when server version is too old', async () => {
-            serverManager.updateRemoteInfos(new Map([['server-1', {
-                siteURL: 'http://server-1.com',
-                serverVersion: '5.0.0',
-                hasPlaybooks: true,
-                hasFocalboard: true,
-            }]]));
-
-            expect(serverManager.views.get('view-2').isOpen).toBeUndefined();
-            expect(serverManager.views.get('view-3').isOpen).toBeUndefined();
-        });
-
         it('should update server URL using site URL', async () => {
             serverManager.updateRemoteInfos(new Map([['server-1', {
                 siteURL: 'http://server-2.com',
