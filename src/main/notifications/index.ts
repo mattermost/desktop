@@ -5,8 +5,6 @@ import {app, shell, Notification} from 'electron';
 
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
-import {MentionData} from 'types/notification';
-
 import Config from 'common/config';
 import {PLAY_SOUND, NOTIFICATION_CLICKED} from 'common/communication';
 import {Logger} from 'common/log';
@@ -29,7 +27,7 @@ class NotificationManager {
     private upgradeNotification?: NewVersionNotification;
     private restartToUpgradeNotification?: UpgradeNotification;
 
-    public async displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
+    public async displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: {soundName: string}) {
         log.debug('displayMention', {title, body, channel, teamId, url, silent, data});
 
         if (!Notification.isSupported()) {

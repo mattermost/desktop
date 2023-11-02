@@ -24,3 +24,5 @@ fastlane/README.md
 fastlane/report.xml
 
 *.provisionprofile
+
+src/types/api/lib/*

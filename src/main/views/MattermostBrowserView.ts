@@ -20,6 +20,7 @@ import {
     SERVERS_URL_MODIFIED,
     BROWSER_HISTORY_STATUS_UPDATED,
     CLOSE_SERVERS_DROPDOWN,
+    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
@@ -93,6 +94,7 @@ export class MattermostBrowserView extends EventEmitter {
         this.browserView.webContents.on('input-event', (_, inputEvent) => {
             if (inputEvent.type === 'mouseDown') {
                 ipcMain.emit(CLOSE_SERVERS_DROPDOWN);
+                ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
 
@@ -521,7 +523,7 @@ export class MattermostBrowserView extends EventEmitter {
     }
 
     private handleUpdateTarget = (e: Event, url: string) => {
-        this.log.silly('handleUpdateTarget', url);
+        this.log.debug('handleUpdateTarget', e, url);
         const parsedURL = parseURL(url);
         if (parsedURL && isInternalURL(parsedURL, this.view.server.url)) {
             this.emit(UPDATE_TARGET_URL);

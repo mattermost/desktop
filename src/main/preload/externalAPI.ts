@@ -1,8 +1,9 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 import {contextBridge, ipcRenderer, webFrame} from 'electron';
+
+import {DesktopAPI} from 'types/api/main';
 
 import {
     NOTIFY_MENTION,
@@ -22,7 +23,6 @@ import {
     CALLS_LEAVE_CALL,
     DESKTOP_SOURCES_MODAL_REQUEST,
     CALLS_WIDGET_SHARE_SCREEN,
-    CLOSE_DOWNLOADS_DROPDOWN,
     CALLS_ERROR,
     CALLS_JOIN_REQUEST,
     GET_IS_DEV_MODE,
@@ -49,41 +49,41 @@ contextBridge.exposeInMainWorld('desktopAPI', {
     loggedIn: () => ipcRenderer.send(APP_LOGGED_IN),
     loggedOut: () => ipcRenderer.send(APP_LOGGED_OUT),
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),
-    onUserActivityUpdate: (listener) => ipcRenderer.on(USER_ACTIVITY_UPDATE, listener),
+    onUserActivityUpdate: (listener) => ipcRenderer.on(USER_ACTIVITY_UPDATE, (_, status) => listener(status)),
 
     // Unreads/mentions/notifications
     sendNotification: (title, body, channel, teamId, url, silent, messageData) =>
         ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, url, silent, messageData),
-    onNotificationClicked: (listener) => ipcRenderer.on(NOTIFICATION_CLICKED, listener),
+    onNotificationClicked: (listener) => ipcRenderer.on(NOTIFICATION_CLICKED, (_, info) => listener(info)),
     updateUnread: (isUnread) => ipcRenderer.send(UNREAD_RESULT, isUnread),
 
     // Navigation
     requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
-    onBrowserHistoryStatusUpdated: (listener) => ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, listener),
-    onBrowserHistoryPush: (listener) => ipcRenderer.on(BROWSER_HISTORY_PUSH, listener),
+    onBrowserHistoryStatusUpdated: (listener) => ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, (_, status) => listener(status)),
+    onBrowserHistoryPush: (listener) => ipcRenderer.on(BROWSER_HISTORY_PUSH, (_, path) => listener(path)),
 
     // Calls widget
     openLinkFromCallsWidget: (url) => ipcRenderer.send(CALLS_LINK_CLICK, url),
     openScreenShareModal: () => ipcRenderer.send(DESKTOP_SOURCES_MODAL_REQUEST),
-    onScreenShared: (listener) => ipcRenderer.on(CALLS_WIDGET_SHARE_SCREEN, listener),
+    onScreenShared: (listener) => ipcRenderer.on(CALLS_WIDGET_SHARE_SCREEN, (_, sourceID, withAudio) => listener(sourceID, withAudio)),
     callsWidgetConnected: (callID) => ipcRenderer.send(CALLS_JOINED_CALL, callID),
-    onJoinCallRequest: (listener) => ipcRenderer.on(CALLS_JOIN_REQUEST, listener),
+    onJoinCallRequest: (listener) => ipcRenderer.on(CALLS_JOIN_REQUEST, (_, callID) => listener(callID)),
     resizeCallsWidget: (width, height) => ipcRenderer.send(CALLS_WIDGET_RESIZE, width, height),
     focusPopout: () => ipcRenderer.send(CALLS_POPOUT_FOCUS),
     leaveCall: () => ipcRenderer.send(CALLS_LEAVE_CALL),
     sendCallsError: (error) => ipcRenderer.send(CALLS_ERROR, error),
 
     // Calls plugin
-    getDesktopSources: (opts) => ipcRenderer.send(GET_DESKTOP_SOURCES, opts),
-    onOpenScreenShareModal: (listener) => ipcRenderer.on(DESKTOP_SOURCES_MODAL_REQUEST, listener),
+    getDesktopSources: (opts) => ipcRenderer.invoke(GET_DESKTOP_SOURCES, opts),
+    onOpenScreenShareModal: (listener) => ipcRenderer.on(DESKTOP_SOURCES_MODAL_REQUEST, () => listener()),
     shareScreen: (sourceID, withAudio) => ipcRenderer.send(CALLS_WIDGET_SHARE_SCREEN, sourceID, withAudio),
     joinCall: (opts) => ipcRenderer.invoke(CALLS_JOIN_CALL, opts),
     sendJoinCallRequest: (callId) => ipcRenderer.send(CALLS_JOIN_REQUEST, callId),
-    onCallsError: (listener) => ipcRenderer.on(CALLS_ERROR, listener),
+    onCallsError: (listener) => ipcRenderer.on(CALLS_ERROR, (_, err, callID, errMsg) => listener(err, callID, errMsg)),
 
     // Utility
     unregister: (channel) => ipcRenderer.removeAllListeners(channel),
-});
+} as DesktopAPI);
 
 // Specific info for the testing environment
 if (process.env.NODE_ENV === 'test') {
@@ -94,43 +94,20 @@ if (process.env.NODE_ENV === 'test') {
 
 /****************************************************************************
  * window/document listeners
- * These are here to perform specific tasks when global window events happen
- * TODO: Rework these if possible to avoid using them, have the control be in the Main Process
+ * These are here to perform specific tasks when global window or document events happen
+ * Avoid using these unless absolutely necessary
  ****************************************************************************
  */
 
-// TODO: Can we just have the webapp tell us this?
-window.addEventListener('click', (e) => {
-    if (!isDownloadLink(e.target)) {
-        ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN);
-    }
-});
-
+// Let the main process know when the window has finished resizing
+// This is to reduce the amount of white box that happens when expand the BrowserView
 window.addEventListener('resize', () => {
     ipcRenderer.send(VIEW_FINISHED_RESIZING);
 });
 
-window.addEventListener('focusin', (event) => {
-    shouldSecureInput(event.target);
-});
-
-window.addEventListener('focus', () => {
-    shouldSecureInput(document.activeElement, true);
-});
-
-const isDownloadLink = (el) => {
-    if (typeof el !== 'object') {
-        return false;
-    }
-    const parentEl = el.parentElement;
-    if (typeof parentEl !== 'object') {
-        return el.className?.includes?.('download') || el.tagName?.toLowerCase?.() === 'svg';
-    }
-    return el.closest('a[download]') !== null;
-};
-
+// Enable secure input on macOS clients when the user is on a password input
 let isPasswordBox = false;
-const shouldSecureInput = (element, force = false) => {
+const shouldSecureInput = (element: {tagName?: string; type?: string} | null, force = false) => {
     const targetIsPasswordBox = (element && element.tagName === 'INPUT' && element.type === 'password');
     if (targetIsPasswordBox && (!isPasswordBox || force)) {
         ipcRenderer.send(TOGGLE_SECURE_INPUT, true);
@@ -138,8 +115,14 @@ const shouldSecureInput = (element, force = false) => {
         ipcRenderer.send(TOGGLE_SECURE_INPUT, false);
     }
 
-    isPasswordBox = targetIsPasswordBox;
+    isPasswordBox = Boolean(targetIsPasswordBox);
 };
+window.addEventListener('focusin', (event) => {
+    shouldSecureInput(event.target as Element);
+});
+window.addEventListener('focus', () => {
+    shouldSecureInput(document.activeElement, true);
+});
 
 // exit fullscreen embedded elements like youtube - https://mattermost.atlassian.net/browse/MM-19226
 ipcRenderer.on('exit-fullscreen', () => {
@@ -148,7 +131,6 @@ ipcRenderer.on('exit-fullscreen', () => {
     }
 });
 
-// TODO: Do we still need this?
 // mattermost-webapp is SPA. So cache is not cleared due to no navigation.
 // We needed to manually clear cache to free memory in long-term-use.
 // http://seenaburns.com/debugging-electron-memory-usage/
@@ -164,8 +146,19 @@ setInterval(() => {
  ****************************************************************************
  */
 
+window.addEventListener('load', () => {
+    if (document.getElementById('root') === null) {
+        console.log('The guest is not assumed as mattermost-webapp');
+        return;
+    }
+    watchReactAppUntilInitialized(() => {
+        ipcRenderer.send(REACT_APP_INITIALIZED);
+        ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS).then(sendHistoryButtonReturn);
+    });
+});
+
 const UNREAD_COUNT_INTERVAL = 1000;
-let sessionExpired;
+let sessionExpired: boolean;
 
 console.log('Preload initialized');
 
@@ -180,7 +173,7 @@ function isReactAppInitialized() {
     return initializedRoot.children.length !== 0;
 }
 
-function watchReactAppUntilInitialized(callback) {
+function watchReactAppUntilInitialized(callback: () => void) {
     let count = 0;
     const interval = 500;
     const timeout = 30000;
@@ -193,19 +186,10 @@ function watchReactAppUntilInitialized(callback) {
     }, interval);
 }
 
-window.addEventListener('load', () => {
-    if (document.getElementById('root') === null) {
-        console.log('The guest is not assumed as mattermost-webapp');
-        return;
-    }
-    watchReactAppUntilInitialized(() => {
-        ipcRenderer.send(REACT_APP_INITIALIZED);
-        ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS).then(sendHistoryButtonReturn);
-    });
-});
-
 // listen for messages from the webapp
-window.addEventListener('message', ({origin, data = {}} = {}) => {
+// Disabling no-explicity-any for this legacy code
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+window.addEventListener('message', ({origin, data = {}}: {origin?: string; data?: {type?: string; message?: any}} = {}) => {
     const {type, message = {}} = data;
     if (origin !== window.location.origin) {
         return;
@@ -232,7 +216,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         break;
     }
     case BROWSER_HISTORY_PUSH: {
-        const {path} = message;
+        const {path} = message as {path: string};
         ipcRenderer.send(BROWSER_HISTORY_PUSH, path);
         break;
     }
@@ -269,7 +253,7 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
         break;
     }
     case CALLS_ERROR: {
-        ipcRenderer.send(CALLS_ERROR, message);
+        ipcRenderer.send(CALLS_ERROR, message.error, message.callID, message.errMsg);
         break;
     }
     case CALLS_WIDGET_CHANNEL_LINK_CLICK:
@@ -281,7 +265,11 @@ window.addEventListener('message', ({origin, data = {}} = {}) => {
     }
 });
 
-const handleNotificationClick = ({channel, teamId, url}) => {
+const handleNotificationClick = ({channel, teamId, url}: {
+    channel: {id: string};
+    teamId: string;
+    url: string;
+}) => {
     window.postMessage(
         {
             type: NOTIFICATION_CLICKED,
@@ -311,7 +299,7 @@ ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
     );
 });
 
-const sendHistoryButtonReturn = (status) => {
+const sendHistoryButtonReturn = (status: {canGoBack: boolean; canGoForward: boolean}) => {
     window.postMessage(
         {
             type: 'history-button-return',
@@ -359,6 +347,7 @@ function getUnreadCount() {
         ipcRenderer.send(SESSION_EXPIRED, sessionExpired);
     }
 }
+
 setInterval(getUnreadCount, UNREAD_COUNT_INTERVAL);
 
 // push user activity updates to the webapp
@@ -377,7 +366,11 @@ window.addEventListener('storage', (e) => {
     }
 });
 
-const sendDesktopSourcesResult = (sources) => {
+const sendDesktopSourcesResult = (sources: Array<{
+    id: string;
+    name: string;
+    thumbnailURL: string;
+}>) => {
     window.postMessage(
         {
             type: DESKTOP_SOURCES_RESULT,
@@ -387,7 +380,7 @@ const sendDesktopSourcesResult = (sources) => {
     );
 };
 
-const sendCallsJoinedCall = (callID) => {
+const sendCallsJoinedCall = (callID: string) => {
     window.postMessage(
         {
             type: CALLS_JOINED_CALL,
@@ -426,11 +419,11 @@ ipcRenderer.on(CALLS_WIDGET_SHARE_SCREEN, (_, sourceID, withAudio) => {
     );
 });
 
-ipcRenderer.on(CALLS_ERROR, (_, message) => {
+ipcRenderer.on(CALLS_ERROR, (_, err, callID, errMsg) => {
     window.postMessage(
         {
             type: CALLS_ERROR,
-            message,
+            message: {err, callID, errMsg},
         },
         window.location.origin,
     );

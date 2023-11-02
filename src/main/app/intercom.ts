@@ -4,7 +4,6 @@
 import {app, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 
 import {UniqueServer} from 'types/config';
-import {MentionData} from 'types/notification';
 
 import ServerViewState from 'app/serverViewState';
 
@@ -114,7 +113,7 @@ export function handleWelcomeScreenModal() {
     }
 }
 
-export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
+export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: {soundName: string}) {
     log.debug('handleMentionNotification', {title, body, channel, teamId, url, silent, data});
     NotificationManager.displayMention(title, body, channel, teamId, url, silent, event.sender, data);
 }
