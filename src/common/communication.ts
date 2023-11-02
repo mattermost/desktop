@@ -119,7 +119,7 @@ export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
 export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
 
 // Calls
-export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
+export const GET_DESKTOP_SOURCES = 'get-desktop-sources';
 export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
 export const DESKTOP_SOURCES_MODAL_REQUEST = 'desktop-sources-modal-request';
 export const CALLS_JOIN_CALL = 'calls-join-call';
@@ -181,3 +181,5 @@ export const TOGGLE_SECURE_INPUT = 'toggle-secure-input';
 
 export const REQUEST_BROWSER_HISTORY_STATUS = 'request-browser-history-status';
 export const BROWSER_HISTORY_STATUS_UPDATED = 'browser-history-status-updated';
+
+export const NOTIFICATION_CLICKED = 'notification-clicked';

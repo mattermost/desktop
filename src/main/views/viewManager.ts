@@ -469,18 +469,18 @@ export class ViewManager {
         this.getCurrentView()?.goToOffset(offset);
     }
 
-    private handleAppLoggedIn = (event: IpcMainEvent, viewId: string) => {
-        this.getView(viewId)?.onLogin(true);
+    private handleAppLoggedIn = (event: IpcMainEvent) => {
+        this.getViewByWebContentsId(event.sender.id)?.onLogin(true);
     }
 
-    private handleAppLoggedOut = (event: IpcMainEvent, viewId: string) => {
-        this.getView(viewId)?.onLogin(false);
+    private handleAppLoggedOut = (event: IpcMainEvent) => {
+        this.getViewByWebContentsId(event.sender.id)?.onLogin(false);
     }
 
-    private handleBrowserHistoryPush = (e: IpcMainEvent, viewId: string, pathName: string) => {
-        log.debug('handleBrowserHistoryPush', {viewId, pathName});
+    private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
+        log.debug('handleBrowserHistoryPush', e.sender.id, pathName);
 
-        const currentView = this.getView(viewId);
+        const currentView = this.getViewByWebContentsId(e.sender.id);
         if (!currentView) {
             return;
         }
@@ -488,7 +488,7 @@ export class ViewManager {
         if (currentView.view.server.url.pathname !== '/' && pathName.startsWith(currentView.view.server.url.pathname)) {
             cleanedPathName = pathName.replace(currentView.view.server.url.pathname, '');
         }
-        const redirectedviewId = ServerManager.lookupViewByURL(`${currentView.view.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
+        const redirectedviewId = ServerManager.lookupViewByURL(`${currentView.view.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || currentView.id;
         if (this.isViewClosed(redirectedviewId)) {
             // If it's a closed view, just open it and stop
             this.openClosedView(redirectedviewId, `${currentView.view.server.url}${cleanedPathName}`);
@@ -496,8 +496,8 @@ export class ViewManager {
         }
         let redirectedView = this.getView(redirectedviewId) || currentView;
         if (redirectedView !== currentView && redirectedView?.view.server.id === ServerViewState.getCurrentServer().id && redirectedView?.isLoggedIn) {
-            log.info('redirecting to a new view', redirectedView?.id || viewId);
-            this.showById(redirectedView?.id || viewId);
+            log.info('redirecting to a new view', redirectedView?.id || currentView.id);
+            this.showById(redirectedView?.id || currentView.id);
         } else {
             redirectedView = currentView;
         }
@@ -540,16 +540,24 @@ export class ViewManager {
 
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
-    private handleFaviconIsUnread = (e: Event, favicon: string, viewId: string, result: boolean) => {
-        log.silly('handleFaviconIsUnread', {favicon, viewId, result});
+    private handleFaviconIsUnread = (e: IpcMainEvent, result: boolean) => {
+        log.silly('handleFaviconIsUnread', {webContentsId: e.sender.id, result});
 
-        AppState.updateUnreads(viewId, result);
+        const view = this.getViewByWebContentsId(e.sender.id);
+        if (!view) {
+            return;
+        }
+        AppState.updateUnreads(view.id, result);
     }
 
-    private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean, viewId: string) => {
-        ServerManager.getViewLog(viewId, 'ViewManager').debug('handleSessionExpired', isExpired);
+    private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean) => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+        ServerManager.getViewLog(view.id, 'ViewManager').debug('handleSessionExpired', isExpired);
 
-        AppState.updateExpired(viewId, isExpired);
+        AppState.updateExpired(view.id, isExpired);
     }
 
     private handleSetCurrentViewBounds = (newBounds: Electron.Rectangle) => {

@@ -144,7 +144,7 @@ export class ServerDropdownView {
     }
 
     private handleClose = () => {
-        log.debug('handleClose');
+        log.silly('handleClose');
 
         this.view?.setBounds(this.getBounds(0, 0));
         MainWindow.sendToRenderer(CLOSE_SERVERS_DROPDOWN);

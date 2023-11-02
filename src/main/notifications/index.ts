@@ -8,7 +8,7 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 import {MentionData} from 'types/notification';
 
 import Config from 'common/config';
-import {PLAY_SOUND} from 'common/communication';
+import {PLAY_SOUND, NOTIFICATION_CLICKED} from 'common/communication';
 import {Logger} from 'common/log';
 
 import PermissionsManager from '../permissionsManager';
@@ -43,6 +43,9 @@ class NotificationManager {
 
         const view = ViewManager.getViewByWebContentsId(webcontents.id);
         if (!view) {
+            return;
+        }
+        if (!view.view.shouldNotify) {
             return;
         }
         const serverName = view.view.server.name;
@@ -88,7 +91,7 @@ class NotificationManager {
             MainWindow.show();
             if (serverName) {
                 ViewManager.showById(view.id);
-                webcontents.send('notification-clicked', {channel, teamId, url});
+                webcontents.send(NOTIFICATION_CLICKED, {channel, teamId, url});
             }
         });
 

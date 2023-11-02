@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app} from 'electron';
+import {BrowserView, app, ipcMain} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 
 import {EventEmitter} from 'events';
@@ -19,6 +19,7 @@ import {
     LOADSCREEN_END,
     SERVERS_URL_MODIFIED,
     BROWSER_HISTORY_STATUS_UPDATED,
+    CLOSE_SERVERS_DROPDOWN,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
@@ -89,6 +90,11 @@ export class MattermostBrowserView extends EventEmitter {
         if (process.platform !== 'darwin') {
             this.browserView.webContents.on('before-input-event', this.handleInputEvents);
         }
+        this.browserView.webContents.on('input-event', (_, inputEvent) => {
+            if (inputEvent.type === 'mouseDown') {
+                ipcMain.emit(CLOSE_SERVERS_DROPDOWN);
+            }
+        });
 
         WebContentsEventManager.addWebContentsEventListeners(this.browserView.webContents);
 

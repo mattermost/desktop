@@ -103,7 +103,7 @@
                 "src/main/downloadURL.ts",
                 "src/main/SpellChecker.ts",
                 "src/main/menus/app.ts",
-                "src/main/preload/mattermost.js",
+                "src/main/preload/externalAPI.js",
                 "src/renderer/components/RemoveServerModal.tsx",
                 "src/renderer/components/MainPage.tsx",
                 "src/renderer/components/HoveringURL.tsx",

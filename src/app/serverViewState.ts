@@ -68,7 +68,7 @@ export class ServerViewState {
     }
 
     getCurrentServer = () => {
-        log.debug('getCurrentServer');
+        log.silly('getCurrentServer');
 
         if (!this.currentServerId) {
             throw new Error('No server set as current');

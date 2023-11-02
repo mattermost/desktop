@@ -83,7 +83,7 @@ export class DownloadsDropdownMenuView {
      * the downloads dropdown at the correct position
      */
     private updateWindowBounds = (newBounds: Electron.Rectangle) => {
-        log.debug('updateWindowBounds');
+        log.silly('updateWindowBounds');
 
         this.windowBounds = newBounds;
         this.updateDownloadsDropdownMenu();
@@ -98,7 +98,7 @@ export class DownloadsDropdownMenuView {
     }
 
     private updateDownloadsDropdownMenu = () => {
-        log.debug('updateDownloadsDropdownMenu');
+        log.silly('updateDownloadsDropdownMenu');
 
         this.view?.webContents.send(
             UPDATE_DOWNLOADS_DROPDOWN_MENU,
@@ -131,7 +131,7 @@ export class DownloadsDropdownMenuView {
     }
 
     private handleClose = () => {
-        log.debug('handleClose');
+        log.silly('handleClose');
 
         this.open = false;
         this.item = undefined;
