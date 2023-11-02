@@ -63,5 +63,6 @@
   "main.tray.tray.unread": "Imaš nepročitanih kanala",
   "renderer.components.extraBar.back": "Natrag",
   "renderer.components.saveButton.saving": "Spremanje",
-  "renderer.components.welcomeScreen.slides.channels.title": "Kanali"
+  "renderer.components.welcomeScreen.slides.channels.title": "Kanali",
+  "renderer.modals.login.loginModal.password": "Lozinka"
 }
