@@ -7,7 +7,7 @@ import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electr
 
 import ServerViewState from 'app/serverViewState';
 
-import {CALLS_WIDGET_SHARE_SCREEN, CALLS_JOINED_CALL} from 'common/communication';
+import {CALLS_WIDGET_SHARE_SCREEN} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
