@@ -61,8 +61,11 @@
   "main.menus.app.view.actualSize": "Stvarna veličina",
   "main.menus.tray.settings": "Postavke …",
   "main.tray.tray.unread": "Imaš nepročitanih kanala",
+  "renderer.components.autoSaveIndicator.saved": "Spremljeno",
+  "renderer.components.autoSaveIndicator.saving": "Spremanje …",
   "renderer.components.extraBar.back": "Natrag",
   "renderer.components.saveButton.saving": "Spremanje",
+  "renderer.components.settingsPage.header": "Postavke",
   "renderer.components.welcomeScreen.slides.channels.title": "Kanali",
   "renderer.modals.login.loginModal.password": "Lozinka"
 }
