@@ -92,6 +92,7 @@ jest.mock('../views/viewManager', () => ({
                 name: 'server_name',
                 url: new URL('http://someurl.com'),
             },
+            shouldNotify: true,
         },
     }),
     showById: jest.fn(),
