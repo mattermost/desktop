@@ -59,6 +59,7 @@
   "main.menus.app.history.forward": "Naprijed",
   "main.menus.app.view": "Prika&z",
   "main.menus.app.view.actualSize": "Stvarna veličina",
+  "main.menus.app.window.zoom": "Zoom",
   "main.menus.tray.settings": "Postavke …",
   "main.tray.tray.unread": "Imaš nepročitanih kanala",
   "renderer.components.autoSaveIndicator.saved": "Spremljeno",
