@@ -8,15 +8,8 @@ const fs = require('fs');
 const path = require('path');
 
 const async = require('async');
-
-const {
-    Upload
-} = require("@aws-sdk/lib-storage");
-
-const {
-    S3
-} = require("@aws-sdk/client-s3");
-
+const { Upload } = require('@aws-sdk/lib-storage');
+const { S3 } = require('@aws-sdk/client-s3');
 const mime = require('mime-types');
 const readdir = require('recursive-readdir');
 
@@ -38,10 +31,6 @@ const s3 = new S3({
         accessKeyId: AWS_ACCESS_KEY_ID,
         secretAccessKey: AWS_SECRET_ACCESS_KEY
     },
-
-    // The key signatureVersion is no longer supported in v3, and can be removed.
-    // @deprecated SDK v3 only supports signature v4.
-    signatureVersion: 'v4'
 });
 
 function getFiles(dirPath) {
@@ -71,13 +60,12 @@ async function saveArtifacts() {
                 try {
                     await new Upload({
                         client: s3,
-
                         params: {
                             Key,
                             Bucket: AWS_S3_BUCKET,
                             Body: fs.readFileSync(file),
                             ContentType: `${contentType}${charset ? '; charset=' + charset : ''}`,
-                        }
+                        },
                     }).done();
                     return {success: true};
                 } catch (e) {
