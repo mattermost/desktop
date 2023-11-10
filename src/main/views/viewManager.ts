@@ -196,7 +196,8 @@ export class ViewManager {
                     }
 
                     if (browserView.isReady() && ServerManager.getRemoteInfo(browserView.view.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(browserView.view.server.id)?.serverVersion ?? '', '6.0.0')) {
-                        const pathName = `/${urlWithSchema.replace(browserView.view.server.url.toString(), '')}`;
+                        const formattedServerURL = `${browserView.view.server.url.origin}${getFormattedPathName(browserView.view.server.url.pathname)}`;
+                        const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
                         browserView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
                         this.deeplinkSuccess(browserView.id);
                     } else {
