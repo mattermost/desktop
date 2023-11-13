@@ -12,21 +12,22 @@ export type DesktopAPI = {
     loggedIn: () => void;
     loggedOut: () => void;
     setSessionExpired: (isExpired: boolean) => void;
-    onUserActivityUpdate: (listener: (status: {
-        userIsActive: boolean;
-        idleTime: number;
-        isSystemEvent: boolean;
-    }) => void) => void;
+    onUserActivityUpdate: (listener: (
+        userIsActive: boolean,
+        idleTime: number,
+        isSystemEvent: boolean,
+    ) => void) => void;
 
     // Unreads/mentions/notifications
-    sendNotification: (title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: {soundName: string}) => void;
-    onNotificationClicked: (listener: (info: {channel: {id: string}; teamId: string; url: string}) => void) => void;
+    sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => void;
+    onNotificationClicked: (listener: (channelId: string, teamId: string, url: string) => void) => void;
     updateUnread: (isUnread: boolean) => void;
 
     // Navigation
     requestBrowserHistoryStatus: () => Promise<{canGoBack: boolean; canGoForward: boolean}>;
-    onBrowserHistoryStatusUpdated: (listener: (status: {canGoBack: boolean; canGoForward: boolean}) => void) => void;
+    onBrowserHistoryStatusUpdated: (listener: (canGoBack: boolean, canGoForward: boolean) => void) => void;
     onBrowserHistoryPush: (listener: (pathName: string) => void) => void;
+    sendBrowserHistoryPush: (path: string) => void;
 
     // Calls widget
     openLinkFromCallsWidget: (url: string) => void;

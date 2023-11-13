@@ -171,7 +171,8 @@ export class MattermostBrowserView extends EventEmitter {
     }
 
     updateHistoryButton = () => {
-        this.browserView.webContents.send(BROWSER_HISTORY_STATUS_UPDATED, this.getBrowserHistoryStatus());
+        const {canGoBack, canGoForward} = this.getBrowserHistoryStatus();
+        this.browserView.webContents.send(BROWSER_HISTORY_STATUS_UPDATED, canGoBack, canGoForward);
     }
 
     load = (someURL?: URL | string) => {

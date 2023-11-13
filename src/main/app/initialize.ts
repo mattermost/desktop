@@ -367,7 +367,7 @@ async function initializeAfterAppReady() {
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
         log.debug('UserActivityMonitor.on(status)', status);
-        ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status);
+        ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
     });
 
     // start monitoring user activity (needs to be started after the app is ready)

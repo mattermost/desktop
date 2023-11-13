@@ -4,5 +4,5 @@
 import {NotificationConstructorOptions} from 'electron/common';
 
 export type MentionOptions = NotificationConstructorOptions & {
-    data: {soundName: string};
+    soundName: string;
 }

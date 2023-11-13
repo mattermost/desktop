@@ -113,9 +113,9 @@ export function handleWelcomeScreenModal() {
     }
 }
 
-export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: {soundName: string}) {
-    log.debug('handleMentionNotification', {title, body, channel, teamId, url, silent, data});
-    NotificationManager.displayMention(title, body, channel, teamId, url, silent, event.sender, data);
+export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) {
+    log.debug('handleMentionNotification', {title, body, channelId, teamId, url, silent, soundName});
+    NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
 export function handleOpenAppMenu() {

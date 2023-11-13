@@ -27,8 +27,8 @@ class NotificationManager {
     private upgradeNotification?: NewVersionNotification;
     private restartToUpgradeNotification?: UpgradeNotification;
 
-    public async displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: {soundName: string}) {
-        log.debug('displayMention', {title, body, channel, teamId, url, silent, data});
+    public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
+        log.debug('displayMention', {title, body, channelId, teamId, url, silent, soundName});
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');
@@ -52,15 +52,15 @@ class NotificationManager {
             title: `${serverName}: ${title}`,
             body,
             silent,
-            data,
+            soundName,
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', view.view.server.url.toString())) {
             return;
         }
 
-        const mention = new Mention(options, channel, teamId);
-        const mentionKey = `${mention.teamId}:${mention.channel.id}`;
+        const mention = new Mention(options, channelId, teamId);
+        const mentionKey = `${mention.teamId}:${mention.channelId}`;
         this.allActiveNotifications.set(mention.uId, mention);
 
         mention.on('show', () => {
@@ -89,7 +89,7 @@ class NotificationManager {
             MainWindow.show();
             if (serverName) {
                 ViewManager.showById(view.id);
-                webcontents.send(NOTIFICATION_CLICKED, {channel, teamId, url});
+                webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
             }
         });
 

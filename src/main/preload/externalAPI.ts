@@ -49,18 +49,19 @@ contextBridge.exposeInMainWorld('desktopAPI', {
     loggedIn: () => ipcRenderer.send(APP_LOGGED_IN),
     loggedOut: () => ipcRenderer.send(APP_LOGGED_OUT),
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),
-    onUserActivityUpdate: (listener) => ipcRenderer.on(USER_ACTIVITY_UPDATE, (_, status) => listener(status)),
+    onUserActivityUpdate: (listener) => ipcRenderer.on(USER_ACTIVITY_UPDATE, (_, userIsActive, idleTime, isSystemEvent) => listener(userIsActive, idleTime, isSystemEvent)),
 
     // Unreads/mentions/notifications
-    sendNotification: (title, body, channel, teamId, url, silent, messageData) =>
-        ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, url, silent, messageData),
-    onNotificationClicked: (listener) => ipcRenderer.on(NOTIFICATION_CLICKED, (_, info) => listener(info)),
+    sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>
+        ipcRenderer.send(NOTIFY_MENTION, title, body, channelId, teamId, url, silent, soundName),
+    onNotificationClicked: (listener) => ipcRenderer.on(NOTIFICATION_CLICKED, (_, channelId, teamId, url) => listener(channelId, teamId, url)),
     updateUnread: (isUnread) => ipcRenderer.send(UNREAD_RESULT, isUnread),
 
     // Navigation
     requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
-    onBrowserHistoryStatusUpdated: (listener) => ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, (_, status) => listener(status)),
+    onBrowserHistoryStatusUpdated: (listener) => ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, (_, canGoBack, canGoForward) => listener(canGoBack, canGoForward)),
     onBrowserHistoryPush: (listener) => ipcRenderer.on(BROWSER_HISTORY_PUSH, (_, path) => listener(path)),
+    sendBrowserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
 
     // Calls widget
     openLinkFromCallsWidget: (url) => ipcRenderer.send(CALLS_LINK_CLICK, url),
@@ -212,7 +213,8 @@ window.addEventListener('message', ({origin, data = {}}: {origin?: string; data?
     }
     case 'dispatch-notification': {
         const {title, body, channel, teamId, url, silent, data: messageData} = message;
-        ipcRenderer.send(NOTIFY_MENTION, title, body, channel, teamId, url, silent, messageData);
+        channels.set(channel.id, channel);
+        ipcRenderer.send(NOTIFY_MENTION, title, body, channel.id, teamId, url, silent, messageData.soundName);
         break;
     }
     case BROWSER_HISTORY_PUSH: {
@@ -265,11 +267,11 @@ window.addEventListener('message', ({origin, data = {}}: {origin?: string; data?
     }
 });
 
-const handleNotificationClick = ({channel, teamId, url}: {
-    channel: {id: string};
-    teamId: string;
-    url: string;
-}) => {
+// Legacy support to hold the full channel object so that it can be used for the click event
+const channels: Map<string, {id: string}> = new Map();
+ipcRenderer.on(NOTIFICATION_CLICKED, (event, channelId, teamId, url) => {
+    const channel = channels.get(channelId) ?? {id: channelId};
+    channels.delete(channelId);
     window.postMessage(
         {
             type: NOTIFICATION_CLICKED,
@@ -281,10 +283,6 @@ const handleNotificationClick = ({channel, teamId, url}: {
         },
         window.location.origin,
     );
-};
-
-ipcRenderer.on(NOTIFICATION_CLICKED, (event, data) => {
-    handleNotificationClick(data);
 });
 
 ipcRenderer.on(BROWSER_HISTORY_PUSH, (event, pathName) => {
@@ -312,59 +310,7 @@ const sendHistoryButtonReturn = (status: {canGoBack: boolean; canGoForward: bool
     );
 };
 
-ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, (event, status) => sendHistoryButtonReturn(status));
-
-const findUnread = () => {
-    const classes = ['team-container unread', 'SidebarChannel unread', 'sidebar-item unread-title'];
-    const isUnread = classes.some((classPair) => {
-        const result = document.getElementsByClassName(classPair);
-        return result && result.length > 0;
-    });
-    ipcRenderer.send(UNREAD_RESULT, isUnread);
-};
-
-ipcRenderer.on(IS_UNREAD, () => {
-    if (isReactAppInitialized()) {
-        findUnread();
-    } else {
-        watchReactAppUntilInitialized(() => {
-            findUnread();
-        });
-    }
-});
-
-function getUnreadCount() {
-    // LHS not found => Log out => Count should be 0, but session may be expired.
-    let isExpired;
-    if (document.getElementById('sidebar-left') === null) {
-        const extraParam = (new URLSearchParams(window.location.search)).get('extra');
-        isExpired = extraParam === 'expired';
-    } else {
-        isExpired = false;
-    }
-    if (isExpired !== sessionExpired) {
-        sessionExpired = isExpired;
-        ipcRenderer.send(SESSION_EXPIRED, sessionExpired);
-    }
-}
-
-setInterval(getUnreadCount, UNREAD_COUNT_INTERVAL);
-
-// push user activity updates to the webapp
-ipcRenderer.on(USER_ACTIVITY_UPDATE, (event, {userIsActive, isSystemEvent}) => {
-    if (window.location.origin !== 'null') {
-        window.postMessage({type: USER_ACTIVITY_UPDATE, message: {userIsActive, manual: isSystemEvent}}, window.location.origin);
-    }
-});
-
-window.addEventListener('storage', (e) => {
-    if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
-        ipcRenderer.send(APP_LOGGED_IN);
-    }
-    if (e.key === '__logout__' && e.storageArea === localStorage && e.newValue) {
-        ipcRenderer.send(APP_LOGGED_OUT);
-    }
-});
+ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, (event, canGoBack, canGoForward) => sendHistoryButtonReturn({canGoBack, canGoForward}));
 
 const sendDesktopSourcesResult = (sources: Array<{
     id: string;
@@ -427,4 +373,60 @@ ipcRenderer.on(CALLS_ERROR, (_, err, callID, errMsg) => {
         },
         window.location.origin,
     );
+});
+
+// push user activity updates to the webapp
+ipcRenderer.on(USER_ACTIVITY_UPDATE, (event, userIsActive, isSystemEvent) => {
+    if (window.location.origin !== 'null') {
+        window.postMessage({type: USER_ACTIVITY_UPDATE, message: {userIsActive, manual: isSystemEvent}}, window.location.origin);
+    }
+});
+
+const findUnread = () => {
+    const classes = ['team-container unread', 'SidebarChannel unread', 'sidebar-item unread-title'];
+    const isUnread = classes.some((classPair) => {
+        const result = document.getElementsByClassName(classPair);
+        return result && result.length > 0;
+    });
+    ipcRenderer.send(UNREAD_RESULT, isUnread);
+};
+
+function getUnreadCount() {
+    // LHS not found => Log out => Count should be 0, but session may be expired.
+    let isExpired;
+    if (document.getElementById('sidebar-left') === null) {
+        const extraParam = (new URLSearchParams(window.location.search)).get('extra');
+        isExpired = extraParam === 'expired';
+    } else {
+        isExpired = false;
+    }
+    if (isExpired !== sessionExpired) {
+        sessionExpired = isExpired;
+        ipcRenderer.send(SESSION_EXPIRED, sessionExpired);
+    }
+}
+
+/**
+ * MIGRATION LINE
+ */
+
+ipcRenderer.on(IS_UNREAD, () => {
+    if (isReactAppInitialized()) {
+        findUnread();
+    } else {
+        watchReactAppUntilInitialized(() => {
+            findUnread();
+        });
+    }
+});
+
+setInterval(getUnreadCount, UNREAD_COUNT_INTERVAL);
+
+window.addEventListener('storage', (e) => {
+    if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_IN);
+    }
+    if (e.key === '__logout__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_OUT);
+    }
 });
