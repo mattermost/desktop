@@ -9,8 +9,6 @@ export type DesktopAPI = {
     reactAppInitialized: () => void;
 
     // Session
-    loggedIn: () => void;
-    loggedOut: () => void;
     setSessionExpired: (isExpired: boolean) => void;
     onUserActivityUpdate: (listener: (
         userIsActive: boolean,

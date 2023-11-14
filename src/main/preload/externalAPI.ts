@@ -55,8 +55,6 @@ contextBridge.exposeInMainWorld('desktopAPI', {
     reactAppInitialized: () => ipcRenderer.send(REACT_APP_INITIALIZED),
 
     // Session
-    loggedIn: () => ipcRenderer.send(APP_LOGGED_IN),
-    loggedOut: () => ipcRenderer.send(APP_LOGGED_OUT),
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),
     onUserActivityUpdate: (listener) => ipcRenderer.on(USER_ACTIVITY_UPDATE, (_, userIsActive, idleTime, isSystemEvent) => listener(userIsActive, idleTime, isSystemEvent)),
 

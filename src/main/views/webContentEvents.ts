@@ -14,6 +14,7 @@ import {
     isHelpUrl,
     isImageProxyUrl,
     isInternalURL,
+    isLoginUrl,
     isManagedResource,
     isPluginUrl,
     isPublicFilesUrl,
@@ -91,7 +92,9 @@ export class WebContentsEventManager {
             const parsedURL = parseURL(url)!;
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
-            if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
+            this.log(webContentsId).info(serverURL?.toString());
+
+            if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
                 return;
             }
 
