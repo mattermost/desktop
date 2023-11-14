@@ -514,7 +514,7 @@ export class MattermostBrowserView extends EventEmitter {
     }
 
     private handleUpdateTarget = (e: Event, url: string) => {
-        this.log.debug('handleUpdateTarget', e, url);
+        this.log.silly('handleUpdateTarget', e, url);
         const parsedURL = parseURL(url);
         if (parsedURL && isInternalURL(parsedURL, this.view.server.url)) {
             this.emit(UPDATE_TARGET_URL);

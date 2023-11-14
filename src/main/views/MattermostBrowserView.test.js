@@ -45,6 +45,7 @@ jest.mock('../windows/mainWindow', () => ({
 jest.mock('common/appState', () => ({
     clear: jest.fn(),
     updateMentions: jest.fn(),
+    updateExpired: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({
     addWebContentsEventListeners: jest.fn(),
