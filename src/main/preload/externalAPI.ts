@@ -36,13 +36,22 @@ import {
     CALLS_LINK_CLICK,
     CALLS_POPOUT_FOCUS,
     GET_DESKTOP_SOURCES,
+    MENTIONS_RESULT,
+    LEGACY_OFF,
 } from 'common/communication';
 
 contextBridge.exposeInMainWorld('desktopAPI', {
 
     // Initialization
     isDev: () => ipcRenderer.invoke(GET_IS_DEV_MODE),
-    getAppInfo: () => ipcRenderer.invoke(GET_APP_INFO),
+    getAppInfo: () => {
+        // Using this signal as the sign to disable the legacy code, since it is run before the app is rendered
+        if (legacyEnabled) {
+            legacyOff();
+        }
+
+        return ipcRenderer.invoke(GET_APP_INFO);
+    },
     reactAppInitialized: () => ipcRenderer.send(REACT_APP_INITIALIZED),
 
     // Session
@@ -56,6 +65,7 @@ contextBridge.exposeInMainWorld('desktopAPI', {
         ipcRenderer.send(NOTIFY_MENTION, title, body, channelId, teamId, url, silent, soundName),
     onNotificationClicked: (listener) => ipcRenderer.on(NOTIFICATION_CLICKED, (_, channelId, teamId, url) => listener(channelId, teamId, url)),
     updateUnread: (isUnread) => ipcRenderer.send(UNREAD_RESULT, isUnread),
+    updateMentions: (mentionCount) => ipcRenderer.send(MENTIONS_RESULT, mentionCount),
 
     // Navigation
     requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
@@ -147,23 +157,32 @@ setInterval(() => {
  ****************************************************************************
  */
 
-window.addEventListener('load', () => {
+/**
+ * Legacy helper functions
+ */
+
+const onLoad = () => {
     if (document.getElementById('root') === null) {
         console.log('The guest is not assumed as mattermost-webapp');
         return;
     }
     watchReactAppUntilInitialized(() => {
+        console.log('Legacy preload initialized');
         ipcRenderer.send(REACT_APP_INITIALIZED);
         ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS).then(sendHistoryButtonReturn);
     });
-});
+};
 
-const UNREAD_COUNT_INTERVAL = 1000;
-let sessionExpired: boolean;
+const onStorageChanged = (e: StorageEvent) => {
+    if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_IN);
+    }
+    if (e.key === '__logout__' && e.storageArea === localStorage && e.newValue) {
+        ipcRenderer.send(APP_LOGGED_OUT);
+    }
+};
 
-console.log('Preload initialized');
-
-function isReactAppInitialized() {
+const isReactAppInitialized = () => {
     const initializedRoot =
     document.querySelector('#root.channel-view') || // React 16 webapp
     document.querySelector('#root .signup-team__container') || // React 16 login
@@ -172,9 +191,9 @@ function isReactAppInitialized() {
         return false;
     }
     return initializedRoot.children.length !== 0;
-}
+};
 
-function watchReactAppUntilInitialized(callback: () => void) {
+const watchReactAppUntilInitialized = (callback: () => void) => {
     let count = 0;
     const interval = 500;
     const timeout = 30000;
@@ -185,10 +204,48 @@ function watchReactAppUntilInitialized(callback: () => void) {
             callback();
         }
     }, interval);
-}
+};
 
-// listen for messages from the webapp
-// Disabling no-explicity-any for this legacy code
+const checkUnread = () => {
+    if (isReactAppInitialized()) {
+        findUnread();
+    } else {
+        watchReactAppUntilInitialized(() => {
+            findUnread();
+        });
+    }
+};
+
+const findUnread = () => {
+    const classes = ['team-container unread', 'SidebarChannel unread', 'sidebar-item unread-title'];
+    const isUnread = classes.some((classPair) => {
+        const result = document.getElementsByClassName(classPair);
+        return result && result.length > 0;
+    });
+    ipcRenderer.send(UNREAD_RESULT, isUnread);
+};
+
+let sessionExpired: boolean;
+const getUnreadCount = () => {
+    // LHS not found => Log out => Count should be 0, but session may be expired.
+    let isExpired;
+    if (document.getElementById('sidebar-left') === null) {
+        const extraParam = (new URLSearchParams(window.location.search)).get('extra');
+        isExpired = extraParam === 'expired';
+    } else {
+        isExpired = false;
+    }
+    if (isExpired !== sessionExpired) {
+        sessionExpired = isExpired;
+        ipcRenderer.send(SESSION_EXPIRED, sessionExpired);
+    }
+};
+
+/**
+ * Legacy message passing code - can be running alongside the new API stuff
+ */
+
+// Disabling no-explicit-any for this legacy code
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 window.addEventListener('message', ({origin, data = {}}: {origin?: string; data?: {type?: string; message?: any}} = {}) => {
     const {type, message = {}} = data;
@@ -382,51 +439,23 @@ ipcRenderer.on(USER_ACTIVITY_UPDATE, (event, userIsActive, isSystemEvent) => {
     }
 });
 
-const findUnread = () => {
-    const classes = ['team-container unread', 'SidebarChannel unread', 'sidebar-item unread-title'];
-    const isUnread = classes.some((classPair) => {
-        const result = document.getElementsByClassName(classPair);
-        return result && result.length > 0;
-    });
-    ipcRenderer.send(UNREAD_RESULT, isUnread);
-};
-
-function getUnreadCount() {
-    // LHS not found => Log out => Count should be 0, but session may be expired.
-    let isExpired;
-    if (document.getElementById('sidebar-left') === null) {
-        const extraParam = (new URLSearchParams(window.location.search)).get('extra');
-        isExpired = extraParam === 'expired';
-    } else {
-        isExpired = false;
-    }
-    if (isExpired !== sessionExpired) {
-        sessionExpired = isExpired;
-        ipcRenderer.send(SESSION_EXPIRED, sessionExpired);
-    }
-}
-
 /**
- * MIGRATION LINE
+ * Legacy functionality that needs to be disabled with the new API
  */
 
-ipcRenderer.on(IS_UNREAD, () => {
-    if (isReactAppInitialized()) {
-        findUnread();
-    } else {
-        watchReactAppUntilInitialized(() => {
-            findUnread();
-        });
-    }
-});
+let legacyEnabled = true;
+ipcRenderer.on(IS_UNREAD, checkUnread);
+const unreadInterval = setInterval(getUnreadCount, 1000);
+window.addEventListener('storage', onStorageChanged);
+window.addEventListener('load', onLoad);
 
-setInterval(getUnreadCount, UNREAD_COUNT_INTERVAL);
+function legacyOff() {
+    ipcRenderer.send(LEGACY_OFF);
+    ipcRenderer.off(IS_UNREAD, checkUnread);
+    clearInterval(unreadInterval);
+    window.removeEventListener('storage', onStorageChanged);
+    window.removeEventListener('load', onLoad);
 
-window.addEventListener('storage', (e) => {
-    if (e.key === '__login__' && e.storageArea === localStorage && e.newValue) {
-        ipcRenderer.send(APP_LOGGED_IN);
-    }
-    if (e.key === '__logout__' && e.storageArea === localStorage && e.newValue) {
-        ipcRenderer.send(APP_LOGGED_OUT);
-    }
-});
+    legacyEnabled = false;
+    console.log('New API preload initialized');
+}

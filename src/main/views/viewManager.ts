@@ -23,6 +23,7 @@ import {
     APP_LOGGED_IN,
     RELOAD_CURRENT_VIEW,
     UNREAD_RESULT,
+    MENTIONS_RESULT,
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
     SESSION_EXPIRED,
@@ -32,6 +33,7 @@ import {
     SWITCH_TAB,
     GET_IS_DEV_MODE,
     REQUEST_BROWSER_HISTORY_STATUS,
+    LEGACY_OFF,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -77,8 +79,10 @@ export class ViewManager {
         ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
-        ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
+        ipcMain.on(UNREAD_RESULT, this.handleUnreadChanged);
+        ipcMain.on(MENTIONS_RESULT, this.handleMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
+        ipcMain.on(LEGACY_OFF, this.handleLegacyOff);
 
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 
@@ -539,9 +543,19 @@ export class ViewManager {
         this.showById(view?.id);
     }
 
+    private handleLegacyOff = (e: IpcMainEvent) => {
+        log.silly('handleLegacyOff', {webContentsId: e.sender.id});
+
+        const view = this.getViewByWebContentsId(e.sender.id);
+        if (!view) {
+            return;
+        }
+        view.offLegacyUnreads();
+    }
+
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
-    private handleFaviconIsUnread = (e: IpcMainEvent, result: boolean) => {
+    private handleUnreadChanged = (e: IpcMainEvent, result: boolean) => {
         log.silly('handleFaviconIsUnread', {webContentsId: e.sender.id, result});
 
         const view = this.getViewByWebContentsId(e.sender.id);
@@ -549,6 +563,16 @@ export class ViewManager {
             return;
         }
         AppState.updateUnreads(view.id, result);
+    }
+
+    private handleMentionsChanged = (e: IpcMainEvent, mentionCount: number) => {
+        log.silly('handleFaviconIsUnread', {webContentsId: e.sender.id, mentionCount});
+
+        const view = this.getViewByWebContentsId(e.sender.id);
+        if (!view) {
+            return;
+        }
+        AppState.updateMentions(view.id, mentionCount);
     }
 
     private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean) => {

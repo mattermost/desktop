@@ -25,7 +25,7 @@ export class AppState extends EventEmitter {
     updateExpired = (viewId: string, expired: boolean) => {
         ServerManager.getViewLog(viewId, 'AppState').silly('updateExpired', expired);
 
-        this.unreads.set(viewId, expired);
+        this.expired.set(viewId, expired);
         this.emitStatusForView(viewId);
     }
 

@@ -22,6 +22,7 @@ export type DesktopAPI = {
     sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => void;
     onNotificationClicked: (listener: (channelId: string, teamId: string, url: string) => void) => void;
     updateUnread: (isUnread: boolean) => void;
+    updateMentions: (mentionCount: number) => void;
 
     // Navigation
     requestBrowserHistoryStatus: () => Promise<{canGoBack: boolean; canGoForward: boolean}>;

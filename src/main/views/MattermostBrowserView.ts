@@ -15,7 +15,6 @@ import {
     UPDATE_TARGET_URL,
     IS_UNREAD,
     TOGGLE_BACK_BUTTON,
-    SET_VIEW_OPTIONS,
     LOADSCREEN_END,
     SERVERS_URL_MODIFIED,
     BROWSER_HISTORY_STATUS_UPDATED,
@@ -83,9 +82,6 @@ export class MattermostBrowserView extends EventEmitter {
         this.log = ServerManager.getViewLog(this.id, 'MattermostBrowserView');
         this.log.verbose('View created');
 
-        this.browserView.webContents.on('did-finish-load', this.handleDidFinishLoad);
-        this.browserView.webContents.on('page-title-updated', this.handleTitleUpdate);
-        this.browserView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
         this.browserView.webContents.on('update-target-url', this.handleUpdateTarget);
         this.browserView.webContents.on('did-navigate', this.handleDidNavigate);
         if (process.platform !== 'darwin') {
@@ -97,6 +93,10 @@ export class MattermostBrowserView extends EventEmitter {
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
+
+        // Legacy handlers using the title/favicon
+        this.browserView.webContents.on('page-title-updated', this.handleTitleUpdate);
+        this.browserView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
 
         WebContentsEventManager.addWebContentsEventListeners(this.browserView.webContents);
 
@@ -192,6 +192,7 @@ export class MattermostBrowserView extends EventEmitter {
         } else {
             loadURL = this.view.url.toString();
         }
+        AppState.updateExpired(this.id, false);
         this.log.verbose(`Loading ${loadURL}`);
         const loading = this.browserView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
@@ -272,6 +273,15 @@ export class MattermostBrowserView extends EventEmitter {
         if (this.removeLoading) {
             clearTimeout(this.removeLoading);
         }
+    }
+
+    /**
+     * Code to turn off the old method of getting unreads
+     * Newer web apps will send the mentions/unreads directly
+     */
+    offLegacyUnreads = () => {
+        this.browserView.webContents.off('page-title-updated', this.handleTitleUpdate);
+        this.browserView.webContents.off('page-favicon-updated', this.handleFaviconUpdate);
     }
 
     /**
@@ -479,26 +489,6 @@ export class MattermostBrowserView extends EventEmitter {
     /**
      * WebContents event handlers
      */
-
-    private handleDidFinishLoad = () => {
-        this.log.debug('did-finish-load');
-
-        // wait for screen to truly finish loading before sending the message down
-        const timeout = setInterval(() => {
-            if (!this.browserView.webContents) {
-                return;
-            }
-
-            if (!this.browserView.webContents.isLoading()) {
-                try {
-                    this.browserView.webContents.send(SET_VIEW_OPTIONS, this.id, this.view.shouldNotify);
-                    clearTimeout(timeout);
-                } catch (e) {
-                    this.log.error('failed to send view options to view');
-                }
-            }
-        }, 100);
-    }
 
     private handleDidNavigate = (event: Event, url: string) => {
         this.log.debug('handleDidNavigate', url);

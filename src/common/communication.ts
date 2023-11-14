@@ -60,9 +60,9 @@ export const GET_DOWNLOAD_LOCATION = 'get_download_location';
 export const UPDATE_MENTIONS = 'update_mentions';
 export const IS_UNREAD = 'is_unread';
 export const UNREAD_RESULT = 'unread_result';
+export const MENTIONS_RESULT = 'mentions-changed';
 export const SESSION_EXPIRED = 'session_expired';
 
-export const SET_VIEW_OPTIONS = 'set-view-name';
 export const REACT_APP_INITIALIZED = 'react-app-initialized';
 
 export const TOGGLE_BACK_BUTTON = 'toggle-back-button';
@@ -183,3 +183,6 @@ export const REQUEST_BROWSER_HISTORY_STATUS = 'request-browser-history-status';
 export const BROWSER_HISTORY_STATUS_UPDATED = 'browser-history-status-updated';
 
 export const NOTIFICATION_CLICKED = 'notification-clicked';
+
+// Legacy code remove signal
+export const LEGACY_OFF = 'legacy-off';
