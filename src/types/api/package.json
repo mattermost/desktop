@@ -1,5 +1,5 @@
 {
-  "name": "@mattermost/desktop-api-types",
+  "name": "@mattermost/desktop-api",
   "version": "5.7.0",
   "description": "Shared types for the Desktop App API provided to the Web App",
   "files": [
