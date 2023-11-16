@@ -133,6 +133,8 @@
     ]
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "3.445.0",
+    "@aws-sdk/lib-storage": "3.445.0",
     "@babel/cli": "7.17.6",
     "@babel/core": "7.17.8",
     "@babel/plugin-proposal-class-properties": "7.16.7",
@@ -158,7 +160,6 @@
     "@typescript-eslint/parser": "5.18.0",
     "7zip-bin": "5.1.1",
     "auto-launch": "5.0.5",
-    "aws-sdk": "^2.1190.0",
     "axios": "0.26.1",
     "babel-eslint": "10.1.0",
     "babel-loader": "8.2.4",
