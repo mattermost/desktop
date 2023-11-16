@@ -75,7 +75,7 @@ export class ServerDropdownView {
 
     private init = () => {
         log.info('init');
-        const preload = getLocalPreload('desktopAPI.js');
+        const preload = getLocalPreload('internalAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,
 

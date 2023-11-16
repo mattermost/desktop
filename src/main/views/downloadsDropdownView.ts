@@ -57,7 +57,7 @@ export class DownloadsDropdownView {
         }
         this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
 
-        const preload = getLocalPreload('desktopAPI.js');
+        const preload = getLocalPreload('internalAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,
 

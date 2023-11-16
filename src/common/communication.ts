@@ -60,7 +60,7 @@ export const GET_DOWNLOAD_LOCATION = 'get_download_location';
 export const UPDATE_MENTIONS = 'update_mentions';
 export const IS_UNREAD = 'is_unread';
 export const UNREAD_RESULT = 'unread_result';
-export const MENTIONS_RESULT = 'mentions-changed';
+export const UNREADS_AND_MENTIONS = 'unreads-and-mentions';
 export const SESSION_EXPIRED = 'session_expired';
 
 export const REACT_APP_INITIALIZED = 'react-app-initialized';

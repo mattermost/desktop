@@ -86,7 +86,7 @@ export class MainWindow extends EventEmitter {
             backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
             webPreferences: {
                 disableBlinkFeatures: 'Auxclick',
-                preload: getLocalPreload('desktopAPI.js'),
+                preload: getLocalPreload('internalAPI.js'),
                 spellcheck: typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker,
             },
         });

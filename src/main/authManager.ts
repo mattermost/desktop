@@ -16,7 +16,7 @@ import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
 
 const log = new Logger('AuthManager');
-const preload = getLocalPreload('desktopAPI.js');
+const preload = getLocalPreload('internalAPI.js');
 const loginModalHtml = getLocalURLString('loginModal.html');
 const permissionModalHtml = getLocalURLString('permissionModal.html');
 

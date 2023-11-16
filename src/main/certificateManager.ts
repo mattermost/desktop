@@ -12,7 +12,7 @@ import {getLocalURLString, getLocalPreload} from './utils';
 import MainWindow from './windows/mainWindow';
 
 const log = new Logger('CertificateManager');
-const preload = getLocalPreload('desktopAPI.js');
+const preload = getLocalPreload('internalAPI.js');
 const html = getLocalURLString('certificateModal.html');
 
 type CertificateModalResult = {

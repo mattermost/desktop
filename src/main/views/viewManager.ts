@@ -23,7 +23,6 @@ import {
     APP_LOGGED_IN,
     RELOAD_CURRENT_VIEW,
     UNREAD_RESULT,
-    MENTIONS_RESULT,
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
     SESSION_EXPIRED,
@@ -34,6 +33,7 @@ import {
     GET_IS_DEV_MODE,
     REQUEST_BROWSER_HISTORY_STATUS,
     LEGACY_OFF,
+    UNREADS_AND_MENTIONS,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -80,7 +80,7 @@ export class ViewManager {
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(UNREAD_RESULT, this.handleUnreadChanged);
-        ipcMain.on(MENTIONS_RESULT, this.handleMentionsChanged);
+        ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
         ipcMain.on(LEGACY_OFF, this.handleLegacyOff);
 
@@ -330,7 +330,7 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
-            const preload = getLocalPreload('desktopAPI.js');
+            const preload = getLocalPreload('internalAPI.js');
             const urlView = new BrowserView({
                 webPreferences: {
                     preload,
@@ -556,7 +556,7 @@ export class ViewManager {
     // if favicon is null, it means it is the initial load,
     // so don't memoize as we don't have the favicons and there is no rush to find out.
     private handleUnreadChanged = (e: IpcMainEvent, result: boolean) => {
-        log.silly('handleFaviconIsUnread', {webContentsId: e.sender.id, result});
+        log.silly('handleUnreadChanged', {webContentsId: e.sender.id, result});
 
         const view = this.getViewByWebContentsId(e.sender.id);
         if (!view) {
@@ -565,13 +565,14 @@ export class ViewManager {
         AppState.updateUnreads(view.id, result);
     }
 
-    private handleMentionsChanged = (e: IpcMainEvent, mentionCount: number) => {
-        log.silly('handleFaviconIsUnread', {webContentsId: e.sender.id, mentionCount});
+    private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {
+        log.silly('handleUnreadsAndMentionsChanged', {webContentsId: e.sender.id, isUnread, mentionCount});
 
         const view = this.getViewByWebContentsId(e.sender.id);
         if (!view) {
             return;
         }
+        AppState.updateUnreads(view.id, isUnread);
         AppState.updateMentions(view.id, mentionCount);
     }
 

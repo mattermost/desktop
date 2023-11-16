@@ -77,7 +77,7 @@ export class LoadingScreen {
     }
 
     private create = () => {
-        const preload = getLocalPreload('desktopAPI.js');
+        const preload = getLocalPreload('internalAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,
 

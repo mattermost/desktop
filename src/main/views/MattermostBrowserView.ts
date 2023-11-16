@@ -63,7 +63,7 @@ export class MattermostBrowserView extends EventEmitter {
         super();
         this.view = view;
 
-        const preload = getLocalPreload('preload.js');
+        const preload = getLocalPreload('externalAPI.js');
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
             preload,

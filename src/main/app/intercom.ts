@@ -91,7 +91,7 @@ export function handleWelcomeScreenModal() {
 
     const html = getLocalURLString('welcomeScreen.html');
 
-    const preload = getLocalPreload('desktopAPI.js');
+    const preload = getLocalPreload('internalAPI.js');
 
     const mainWindow = MainWindow.get();
     if (!mainWindow) {

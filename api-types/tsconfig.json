@@ -15,6 +15,6 @@
         "composite": true
     },
     "include": [
-        "./main.ts"
+        "./index.ts"
     ]
 }

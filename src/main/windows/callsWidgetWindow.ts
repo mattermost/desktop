@@ -135,7 +135,7 @@ export class CallsWidgetWindow {
             hasShadow: false,
             backgroundColor: '#00ffffff',
             webPreferences: {
-                preload: getLocalPreload('preload.js'),
+                preload: getLocalPreload('externalAPI.js'),
             },
         });
         this.mainView = view;
@@ -356,13 +356,13 @@ export class CallsWidgetWindow {
 
         if (event.sender.id !== this.mainView?.webContentsId) {
             log.warn('handleGetDesktopSources', 'Blocked on wrong webContentsId');
-            return Promise.resolve([]);
+            return [];
         }
 
         const view = ViewManager.getViewByWebContentsId(event.sender.id);
         if (!view) {
             log.error('handleGetDesktopSources: view not found');
-            return Promise.resolve([]);
+            return [];
         }
 
         if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {

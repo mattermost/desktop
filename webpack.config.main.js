@@ -15,8 +15,8 @@ const base = require('./webpack.config.base');
 module.exports = merge(base, {
     entry: {
         index: './src/main/app/index.ts',
-        desktopAPI: './src/main/preload/desktopAPI.js',
-        preload: './src/main/preload/externalAPI.ts',
+        internalAPI: './src/main/preload/internalAPI.js',
+        externalAPI: './src/main/preload/externalAPI.ts',
     },
     externals: {
         'macos-notification-state': 'require("macos-notification-state")',

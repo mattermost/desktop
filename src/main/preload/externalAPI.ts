@@ -3,7 +3,7 @@
 
 import {contextBridge, ipcRenderer, webFrame} from 'electron';
 
-import {DesktopAPI} from 'types/api/main';
+import {DesktopAPI} from '@mattermost/desktop-api';
 
 import {
     NOTIFY_MENTION,
@@ -36,7 +36,7 @@ import {
     CALLS_LINK_CLICK,
     CALLS_POPOUT_FOCUS,
     GET_DESKTOP_SOURCES,
-    MENTIONS_RESULT,
+    UNREADS_AND_MENTIONS,
     LEGACY_OFF,
 } from 'common/communication';
 
@@ -62,8 +62,7 @@ contextBridge.exposeInMainWorld('desktopAPI', {
     sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>
         ipcRenderer.send(NOTIFY_MENTION, title, body, channelId, teamId, url, silent, soundName),
     onNotificationClicked: (listener) => ipcRenderer.on(NOTIFICATION_CLICKED, (_, channelId, teamId, url) => listener(channelId, teamId, url)),
-    updateUnread: (isUnread) => ipcRenderer.send(UNREAD_RESULT, isUnread),
-    updateMentions: (mentionCount) => ipcRenderer.send(MENTIONS_RESULT, mentionCount),
+    setUnreadsAndMentions: (isUnread, mentionCount) => ipcRenderer.send(UNREADS_AND_MENTIONS, isUnread, mentionCount),
 
     // Navigation
     requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
