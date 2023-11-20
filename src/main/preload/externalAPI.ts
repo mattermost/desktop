@@ -40,7 +40,7 @@ import {
     LEGACY_OFF,
 } from 'common/communication';
 
-contextBridge.exposeInMainWorld('desktopAPI', {
+const desktopAPI: DesktopAPI = {
 
     // Initialization
     isDev: () => ipcRenderer.invoke(GET_IS_DEV_MODE),
@@ -91,7 +91,8 @@ contextBridge.exposeInMainWorld('desktopAPI', {
 
     // Utility
     unregister: (channel) => ipcRenderer.removeAllListeners(channel),
-} as DesktopAPI);
+};
+contextBridge.exposeInMainWorld('desktopAPI', desktopAPI);
 
 // Specific info for the testing environment
 if (process.env.NODE_ENV === 'test') {
