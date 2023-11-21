@@ -1,7 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {contextBridge, ipcRenderer, webFrame} from 'electron';
+import {IpcRendererEvent, contextBridge, ipcRenderer, webFrame} from 'electron';
+
+import {ExternalAPI} from 'types/externalAPI';
 
 import {DesktopAPI} from '@mattermost/desktop-api';
 
@@ -40,6 +42,15 @@ import {
     LEGACY_OFF,
 } from 'common/communication';
 
+const createListener: ExternalAPI['createListener'] = (channel: string, listener: (...args: never[]) => void) => {
+    const listenerWithEvent = (_: IpcRendererEvent, ...args: unknown[]) =>
+        listener(...args as never[]);
+    ipcRenderer.on(channel, listenerWithEvent);
+    return () => {
+        ipcRenderer.off(channel, listenerWithEvent);
+    };
+};
+
 const desktopAPI: DesktopAPI = {
 
     // Initialization
@@ -56,26 +67,26 @@ const desktopAPI: DesktopAPI = {
 
     // Session
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),
-    onUserActivityUpdate: (listener) => ipcRenderer.on(USER_ACTIVITY_UPDATE, (_, userIsActive, idleTime, isSystemEvent) => listener(userIsActive, idleTime, isSystemEvent)),
+    onUserActivityUpdate: (listener) => createListener(USER_ACTIVITY_UPDATE, listener),
 
     // Unreads/mentions/notifications
     sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>
         ipcRenderer.send(NOTIFY_MENTION, title, body, channelId, teamId, url, silent, soundName),
-    onNotificationClicked: (listener) => ipcRenderer.on(NOTIFICATION_CLICKED, (_, channelId, teamId, url) => listener(channelId, teamId, url)),
+    onNotificationClicked: (listener) => createListener(NOTIFICATION_CLICKED, listener),
     setUnreadsAndMentions: (isUnread, mentionCount) => ipcRenderer.send(UNREADS_AND_MENTIONS, isUnread, mentionCount),
 
     // Navigation
     requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
-    onBrowserHistoryStatusUpdated: (listener) => ipcRenderer.on(BROWSER_HISTORY_STATUS_UPDATED, (_, canGoBack, canGoForward) => listener(canGoBack, canGoForward)),
-    onBrowserHistoryPush: (listener) => ipcRenderer.on(BROWSER_HISTORY_PUSH, (_, path) => listener(path)),
+    onBrowserHistoryStatusUpdated: (listener) => createListener(BROWSER_HISTORY_STATUS_UPDATED, listener),
+    onBrowserHistoryPush: (listener) => createListener(BROWSER_HISTORY_PUSH, listener),
     sendBrowserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
 
     // Calls widget
     openLinkFromCallsWidget: (url) => ipcRenderer.send(CALLS_LINK_CLICK, url),
     openScreenShareModal: () => ipcRenderer.send(DESKTOP_SOURCES_MODAL_REQUEST),
-    onScreenShared: (listener) => ipcRenderer.on(CALLS_WIDGET_SHARE_SCREEN, (_, sourceID, withAudio) => listener(sourceID, withAudio)),
+    onScreenShared: (listener) => createListener(CALLS_WIDGET_SHARE_SCREEN, listener),
     callsWidgetConnected: (callID) => ipcRenderer.send(CALLS_JOINED_CALL, callID),
-    onJoinCallRequest: (listener) => ipcRenderer.on(CALLS_JOIN_REQUEST, (_, callID) => listener(callID)),
+    onJoinCallRequest: (listener) => createListener(CALLS_JOIN_REQUEST, listener),
     resizeCallsWidget: (width, height) => ipcRenderer.send(CALLS_WIDGET_RESIZE, width, height),
     focusPopout: () => ipcRenderer.send(CALLS_POPOUT_FOCUS),
     leaveCall: () => ipcRenderer.send(CALLS_LEAVE_CALL),
@@ -83,11 +94,11 @@ const desktopAPI: DesktopAPI = {
 
     // Calls plugin
     getDesktopSources: (opts) => ipcRenderer.invoke(GET_DESKTOP_SOURCES, opts),
-    onOpenScreenShareModal: (listener) => ipcRenderer.on(DESKTOP_SOURCES_MODAL_REQUEST, () => listener()),
+    onOpenScreenShareModal: (listener) => createListener(DESKTOP_SOURCES_MODAL_REQUEST, listener),
     shareScreen: (sourceID, withAudio) => ipcRenderer.send(CALLS_WIDGET_SHARE_SCREEN, sourceID, withAudio),
     joinCall: (opts) => ipcRenderer.invoke(CALLS_JOIN_CALL, opts),
     sendJoinCallRequest: (callId) => ipcRenderer.send(CALLS_JOIN_REQUEST, callId),
-    onCallsError: (listener) => ipcRenderer.on(CALLS_ERROR, (_, err, callID, errMsg) => listener(err, callID, errMsg)),
+    onCallsError: (listener) => createListener(CALLS_ERROR, listener),
 
     // Utility
     unregister: (channel) => ipcRenderer.removeAllListeners(channel),

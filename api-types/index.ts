@@ -25,25 +25,25 @@ export type DesktopAPI = {
         userIsActive: boolean,
         idleTime: number,
         isSystemEvent: boolean,
-    ) => void) => void;
+    ) => void) => () => void;
 
     // Unreads/mentions/notifications
     sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => void;
-    onNotificationClicked: (listener: (channelId: string, teamId: string, url: string) => void) => void;
+    onNotificationClicked: (listener: (channelId: string, teamId: string, url: string) => void) => () => void;
     setUnreadsAndMentions: (isUnread: boolean, mentionCount: number) => void;
 
     // Navigation
     requestBrowserHistoryStatus: () => Promise<{canGoBack: boolean; canGoForward: boolean}>;
-    onBrowserHistoryStatusUpdated: (listener: (canGoBack: boolean, canGoForward: boolean) => void) => void;
-    onBrowserHistoryPush: (listener: (pathName: string) => void) => void;
+    onBrowserHistoryStatusUpdated: (listener: (canGoBack: boolean, canGoForward: boolean) => void) => () => void;
+    onBrowserHistoryPush: (listener: (pathName: string) => void) => () => void;
     sendBrowserHistoryPush: (path: string) => void;
 
     // Calls widget
     openLinkFromCallsWidget: (url: string) => void;
     openScreenShareModal: () => void;
-    onScreenShared: (listener: (sourceID: string, withAudio: boolean) => void) => void;
+    onScreenShared: (listener: (sourceID: string, withAudio: boolean) => void) => () => void;
     callsWidgetConnected: (callID: string) => void;
-    onJoinCallRequest: (listener: (callID: string) => void) => void;
+    onJoinCallRequest: (listener: (callID: string) => void) => () => void;
     resizeCallsWidget: (width: number, height: number) => void;
     focusPopout: () => void;
     leaveCall: () => void;
@@ -51,7 +51,7 @@ export type DesktopAPI = {
 
     // Calls plugin
     getDesktopSources: (opts: DesktopSourcesOptions) => Promise<DesktopCaptureSource[]>;
-    onOpenScreenShareModal: (listener: () => void) => void;
+    onOpenScreenShareModal: (listener: () => void) => () => void;
     shareScreen: (sourceID: string, withAudi: boolean) => void;
     joinCall: (opts: {
         callID: string;
@@ -60,7 +60,7 @@ export type DesktopAPI = {
         channelURL: string;
     }) => Promise<string>;
     sendJoinCallRequest: (callId: string) => void;
-    onCallsError: (listener: (err: string, callID?: string, errMsg?: string) => void) => void;
+    onCallsError: (listener: (err: string, callID?: string, errMsg?: string) => void) => () => void;
 
     // Utility
     unregister: (channel: string) => void;
