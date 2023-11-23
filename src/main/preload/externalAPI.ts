@@ -85,7 +85,7 @@ const desktopAPI: DesktopAPI = {
     openLinkFromCallsWidget: (url) => ipcRenderer.send(CALLS_LINK_CLICK, url),
     openScreenShareModal: () => ipcRenderer.send(DESKTOP_SOURCES_MODAL_REQUEST),
     onScreenShared: (listener) => createListener(CALLS_WIDGET_SHARE_SCREEN, listener),
-    callsWidgetConnected: (callID) => ipcRenderer.send(CALLS_JOINED_CALL, callID),
+    callsWidgetConnected: (callID, sessionID) => ipcRenderer.send(CALLS_JOINED_CALL, callID, sessionID),
     onJoinCallRequest: (listener) => createListener(CALLS_JOIN_REQUEST, listener),
     resizeCallsWidget: (width, height) => ipcRenderer.send(CALLS_WIDGET_RESIZE, width, height),
     focusPopout: () => ipcRenderer.send(CALLS_POPOUT_FOCUS),
@@ -309,7 +309,7 @@ window.addEventListener('message', ({origin, data = {}}: {origin?: string; data?
         break;
     }
     case CALLS_JOINED_CALL: {
-        ipcRenderer.send(CALLS_JOINED_CALL, message.callID);
+        ipcRenderer.send(CALLS_JOINED_CALL, message.callID, message.sessionID);
         break;
     }
     case CALLS_JOIN_REQUEST: {
@@ -392,11 +392,11 @@ const sendDesktopSourcesResult = (sources: Array<{
     );
 };
 
-const sendCallsJoinedCall = (callID: string) => {
+const sendCallsJoinedCall = (message: {callID: string; sessionID: string}) => {
     window.postMessage(
         {
             type: CALLS_JOINED_CALL,
-            message: {callID},
+            message,
         },
         window.location.origin,
     );

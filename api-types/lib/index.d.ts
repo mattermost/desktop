@@ -33,7 +33,7 @@ export declare type DesktopAPI = {
     openLinkFromCallsWidget: (url: string) => void;
     openScreenShareModal: () => void;
     onScreenShared: (listener: (sourceID: string, withAudio: boolean) => void) => () => void;
-    callsWidgetConnected: (callID: string) => void;
+    callsWidgetConnected: (callID: string, sessionID: string) => void;
     onJoinCallRequest: (listener: (callID: string) => void) => () => void;
     resizeCallsWidget: (width: number, height: number) => void;
     focusPopout: () => void;
@@ -47,7 +47,10 @@ export declare type DesktopAPI = {
         title: string;
         rootID: string;
         channelURL: string;
-    }) => Promise<string>;
+    }) => Promise<{
+        callID: string;
+        sessionID: string;
+    }>;
     sendJoinCallRequest: (callId: string) => void;
     onCallsError: (listener: (err: string, callID?: string, errMsg?: string) => void) => () => void;
     unregister: (channel: string) => void;

@@ -440,7 +440,7 @@ export class CallsWidgetWindow {
         }
 
         const promise = new Promise((resolve) => {
-            const connected = (ev: IpcMainEvent, incomingCallId: string) => {
+            const connected = (ev: IpcMainEvent, incomingCallId: string, incomingSessionId: string) => {
                 log.debug('onJoinedCall', incomingCallId);
 
                 if (!this.isCallsWidget(ev.sender.id)) {
@@ -454,7 +454,7 @@ export class CallsWidgetWindow {
                 }
 
                 ipcMain.off(CALLS_JOINED_CALL, connected);
-                resolve(msg.callID);
+                resolve({callID: msg.callID, sessionID: incomingSessionId});
             };
             ipcMain.on(CALLS_JOINED_CALL, connected);
         });
