@@ -321,7 +321,7 @@ window.addEventListener('message', ({origin, data = {}}: {origin?: string; data?
         break;
     }
     case CALLS_ERROR: {
-        ipcRenderer.send(CALLS_ERROR, message.error, message.callID, message.errMsg);
+        ipcRenderer.send(CALLS_ERROR, message.err, message.callID, message.errMsg);
         break;
     }
     case CALLS_WIDGET_CHANNEL_LINK_CLICK:
