@@ -13,7 +13,9 @@ env:
   BRANCH: ${{ github.ref }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
-  MM_TEST_SERVER_URL: "https://mattermost-pr-23996.test.mattermost.cloud/"
+  MM_TEST_SERVER_URL: "https://desktop-e2e-test-instance.test.mattermost.cloud/"
+  MM_TEST_USER_NAME: 'admin'
+  MM_TEST_PASSWORD: 'admin@7k831gmpy7da5xr8d1hka5k3cr'
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
