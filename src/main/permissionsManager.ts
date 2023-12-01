@@ -105,13 +105,17 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
             return false;
         }
 
+        // Exception for embedded videos such as YouTube
+        // We still want to ask permission to do this though
+        const isExternalFullscreen = permission === 'fullscreen' && parsedURL.origin !== serverURL.origin;
+
         // is the requesting url trusted?
-        if (!isTrustedURL(parsedURL, serverURL)) {
+        if (!(isTrustedURL(parsedURL, serverURL) || (permission === 'media' && parsedURL.origin === serverURL.origin) || isExternalFullscreen)) {
             return false;
         }
 
         // For certain permission types, we need to confirm with the user
-        if (authorizablePermissionTypes.includes(permission)) {
+        if (authorizablePermissionTypes.includes(permission) || isExternalFullscreen) {
             const currentPermission = this.json[parsedURL.origin]?.[permission];
 
             // If previously allowed, just allow
