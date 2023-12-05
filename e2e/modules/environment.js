@@ -33,7 +33,7 @@ const downloadsLocation = path.join(userDataDir, 'Downloads');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
 const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const exampleURL = 'http://example.com/';
-const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
+const mattermostURL = process.env.MM_DESKTOP_E2E_SERVER_URL || 'http://localhost:8065/';
 
 if (process.platform === 'win32') {
     const robot = require('robotjs');
@@ -252,8 +252,8 @@ module.exports = {
         await window.waitForSelector('#input_password-input');
         await window.waitForSelector('#saveSetting');
 
-        await window.type('#input_loginId', process.env.MM_TEST_USER_NAME);
-        await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
+        await window.type('#input_loginId', process.env.MM_DESKTOP_E2E_USER_NAME);
+        await window.type('#input_password-input', process.env.MM_DESKTOP_E2E_USER_CREDENTIALS);
         await window.click('#saveSetting');
     },
 
