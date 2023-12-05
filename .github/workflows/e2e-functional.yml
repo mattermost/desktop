@@ -13,9 +13,9 @@ env:
   BRANCH: ${{ github.ref }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
-  MM_TEST_SERVER_URL: "https://desktop-e2e-test-instance.test.mattermost.cloud/"
+  MM_TEST_SERVER_URL: "https://desktop-e2e-instance.test.mattermost.cloud/"
   MM_TEST_USER_NAME: 'admin'
-  MM_TEST_PASSWORD: 'admin@7k831gmpy7da5xr8d1hka5k3cr'
+  MM_TEST_PASSWORD: 'admin@o88wkm1my7y67xhjahgnqzgdsc'
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
@@ -140,7 +140,7 @@ jobs:
 
   e2e-windows:
     if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -173,6 +173,7 @@ jobs:
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
+          npm ci --openssl_fips=''
 
       - name: Set Environment Variables
         shell: bash
