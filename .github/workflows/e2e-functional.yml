@@ -103,7 +103,7 @@ jobs:
         run: |
           brew install yq rename
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-          npm ci
+          npm install
 
       - name: Set Environment Variables
         run: |
