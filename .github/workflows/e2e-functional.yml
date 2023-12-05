@@ -88,7 +88,7 @@ jobs:
       - name: ci/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
-          node-version: 18
+          node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
 
@@ -101,10 +101,9 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
-          brew install yq
+          brew install yq rename
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
-          npm install distutils
 
       - name: Set Environment Variables
         run: |
@@ -198,12 +197,11 @@ jobs:
   #       shell: bash
 
   e2e-remove-label:
-    needs: [ e2e-macos]
+    needs: [e2e-macos]
     if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
     runs-on: ubuntu-latest
     steps:
       - name: Remove "Run Desktop E2E Tests" label
-        if: always()
         uses: actions-ecosystem/action-remove-labels@v1
         with:
           labels: |
