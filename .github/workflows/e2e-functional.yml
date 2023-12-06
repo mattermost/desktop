@@ -81,14 +81,14 @@ jobs:
     
   e2e-macos:
     if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: ci/setup-node
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
-          node-version: 18
+          node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
 
@@ -101,9 +101,12 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
-          brew install yq
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
+          npm i robotjs
+          npm i -D electron-rebuild
+          npm install -g node-gyp
+          npx electron-rebuild -f -t prod,optional,dev -w robotjs
 
       - name: Set Environment Variables
         run: |
@@ -202,7 +205,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Remove "Run Desktop E2E Tests" label
-        if: always()
         uses: actions-ecosystem/action-remove-labels@v1
         with:
           labels: |
