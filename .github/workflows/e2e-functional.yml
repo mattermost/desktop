@@ -202,7 +202,7 @@ jobs:
 
   e2e-remove-label:
     needs: [e2e-linux, e2e-macos, e2e-windows]
-    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
+    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }} && always()
     runs-on: ubuntu-latest
     steps:
       - name: Remove "Run Desktop E2E Tests" label
