@@ -103,6 +103,10 @@ jobs:
         run: |
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
+          npm i robotjs
+          npm i -D electron-rebuild
+          npm install -g node-gyp
+          npx electron-rebuild -f -t prod,optional,dev -w robotjs
 
       - name: Set Environment Variables
         run: |
