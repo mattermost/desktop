@@ -81,7 +81,7 @@ jobs:
     
   e2e-macos:
     if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -101,9 +101,8 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
-          brew install yq rename
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-          npm install
+          npm ci
 
       - name: Set Environment Variables
         run: |
