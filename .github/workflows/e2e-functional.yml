@@ -98,6 +98,14 @@ jobs:
         with:
           go-version: '1.20'
 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install distutils
+        run: python -m ensurepip --default-pip
+        
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -108,7 +116,8 @@ jobs:
           npm i robotjs
           npm i -D electron-rebuild
           npx electron-rebuild -f -t prod,optional,dev -w robotjs
-          # npm rebuild --runtime=electron --target=1.1.3 --disturl=https://atom.io/download/atom-shell --abi=48
+          # 27.0.2 is the electron version
+          # npm rebuild --runtime=electron --target=27.0.2 --disturl=https://atom.io/download/atom-shell --abi=48
 
       - name: Set Environment Variables
         run: |
