@@ -104,7 +104,11 @@ jobs:
         run: |
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
-          npm rebuild --runtime=electron --target=1.1.3 --disturl=https://atom.io/download/atom-shell --abi=48
+          npm install -g node-gyp
+          npm i robotjs
+          npm i -D electron-rebuild
+          npx electron-rebuild -f -t prod,optional,dev -w robotjs
+          # npm rebuild --runtime=electron --target=1.1.3 --disturl=https://atom.io/download/atom-shell --abi=48
 
       - name: Set Environment Variables
         run: |
