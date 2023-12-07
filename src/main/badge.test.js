@@ -54,10 +54,10 @@ describe('main/badge', () => {
             jest.clearAllMocks();
         });
 
-        it('should show dot when session expired', async () => {
+        it('should show exclamation when session expired', async () => {
             Badge.showBadgeWindows(true, 0, false);
             await promise;
-            expect(window.setOverlayIcon).toBeCalledWith(expect.stringContaining('window.drawBadge(\'•\', false)'), expect.any(String));
+            expect(window.setOverlayIcon).toBeCalledWith(expect.stringContaining('window.drawBadge(\'!\', false)'), expect.any(String));
         });
 
         it('should show mention count when has mention count', async () => {
@@ -95,9 +95,9 @@ describe('main/badge', () => {
             jest.clearAllMocks();
         });
 
-        it('should show dot when session expired', () => {
+        it('should show exclamation when session expired', () => {
             Badge.showBadgeOSX(true, 0, false);
-            expect(app.dock.setBadge).toBeCalledWith('•');
+            expect(app.dock.setBadge).toBeCalledWith('!');
         });
 
         it('should show mention count when has mention count', () => {
