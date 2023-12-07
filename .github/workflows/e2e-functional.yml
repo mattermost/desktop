@@ -98,16 +98,26 @@ jobs:
         with:
           go-version: '1.20'
 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install distutils
+        run: python -m ensurepip --default-pip
+        
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
+          npm install -g node-gyp
           npm i robotjs
           npm i -D electron-rebuild
-          npm install -g node-gyp
           npx electron-rebuild -f -t prod,optional,dev -w robotjs
+          # 27.0.2 is the electron version
+          # npm rebuild --runtime=electron --target=27.0.2 --disturl=https://atom.io/download/atom-shell --abi=48
 
       - name: Set Environment Variables
         run: |
@@ -202,7 +212,7 @@ jobs:
 
   e2e-remove-label:
     needs: [e2e-linux, e2e-macos, e2e-windows]
-    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
+    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }} && ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Remove "Run Desktop E2E Tests" label
