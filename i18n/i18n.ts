@@ -149,7 +149,7 @@ export const languages: Record<string, Language> = {
     },
     'zh-CN': {
         value: 'zh-CN',
-        name: '中文 (简体)',
+        name: '中文 (简体) (Beta)',
         order: 19,
         url: zhCN,
     },
