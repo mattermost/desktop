@@ -103,11 +103,6 @@ jobs:
         with:
           python-version: 3.x
 
-      - name: Install distutils
-        run: |
-          python -m ensurepip --default-pip
-          pip install distutils
-        
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
