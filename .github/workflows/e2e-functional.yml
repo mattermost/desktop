@@ -104,7 +104,9 @@ jobs:
           python-version: 3.x
 
       - name: Install distutils
-        run: python -m ensurepip --default-pip
+        run: |
+          python -m ensurepip --default-pip
+          pip install distutils
         
       - name: ci/install-dependencies
         env:
@@ -116,8 +118,6 @@ jobs:
           npm i robotjs
           npm i -D electron-rebuild
           npx electron-rebuild -f -t prod,optional,dev -w robotjs
-          # 27.0.2 is the electron version
-          # npm rebuild --runtime=electron --target=27.0.2 --disturl=https://atom.io/download/atom-shell --abi=48
 
       - name: Set Environment Variables
         run: |
