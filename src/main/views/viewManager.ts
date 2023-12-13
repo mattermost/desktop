@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent, Event} from 'electron';
+import {BrowserView, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import isDev from 'electron-is-dev';
 
 import ServerViewState from 'app/serverViewState';
@@ -19,7 +19,6 @@ import {
     UPDATE_URL_VIEW_WIDTH,
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
-    BROWSER_HISTORY_BUTTON,
     APP_LOGGED_OUT,
     APP_LOGGED_IN,
     RELOAD_CURRENT_VIEW,
@@ -32,6 +31,9 @@ import {
     MAIN_WINDOW_FOCUSED,
     SWITCH_TAB,
     GET_IS_DEV_MODE,
+    REQUEST_BROWSER_HISTORY_STATUS,
+    LEGACY_OFF,
+    UNREADS_AND_MENTIONS,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -70,15 +72,17 @@ export class ViewManager {
         MainWindow.on(MAIN_WINDOW_FOCUSED, this.focusCurrentView);
         ipcMain.handle(GET_VIEW_INFO_FOR_TEST, this.handleGetViewInfoForTest);
         ipcMain.handle(GET_IS_DEV_MODE, () => isDev);
+        ipcMain.handle(REQUEST_BROWSER_HISTORY_STATUS, this.handleRequestBrowserHistoryStatus);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
-        ipcMain.on(BROWSER_HISTORY_BUTTON, this.handleBrowserHistoryButton);
         ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
-        ipcMain.on(UNREAD_RESULT, this.handleFaviconIsUnread);
+        ipcMain.on(UNREAD_RESULT, this.handleUnreadChanged);
+        ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
+        ipcMain.on(LEGACY_OFF, this.handleLegacyOff);
 
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 
@@ -326,7 +330,7 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
-            const preload = getLocalPreload('desktopAPI.js');
+            const preload = getLocalPreload('internalAPI.js');
             const urlView = new BrowserView({
                 webPreferences: {
                     preload,
@@ -470,18 +474,18 @@ export class ViewManager {
         this.getCurrentView()?.goToOffset(offset);
     }
 
-    private handleAppLoggedIn = (event: IpcMainEvent, viewId: string) => {
-        this.getView(viewId)?.onLogin(true);
+    private handleAppLoggedIn = (event: IpcMainEvent) => {
+        this.getViewByWebContentsId(event.sender.id)?.onLogin(true);
     }
 
-    private handleAppLoggedOut = (event: IpcMainEvent, viewId: string) => {
-        this.getView(viewId)?.onLogin(false);
+    private handleAppLoggedOut = (event: IpcMainEvent) => {
+        this.getViewByWebContentsId(event.sender.id)?.onLogin(false);
     }
 
-    private handleBrowserHistoryPush = (e: IpcMainEvent, viewId: string, pathName: string) => {
-        log.debug('handleBrowserHistoryPush', {viewId, pathName});
+    private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
+        log.debug('handleBrowserHistoryPush', e.sender.id, pathName);
 
-        const currentView = this.getView(viewId);
+        const currentView = this.getViewByWebContentsId(e.sender.id);
         if (!currentView) {
             return;
         }
@@ -489,7 +493,7 @@ export class ViewManager {
         if (currentView.view.server.url.pathname !== '/' && pathName.startsWith(currentView.view.server.url.pathname)) {
             cleanedPathName = pathName.replace(currentView.view.server.url.pathname, '');
         }
-        const redirectedviewId = ServerManager.lookupViewByURL(`${currentView.view.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || viewId;
+        const redirectedviewId = ServerManager.lookupViewByURL(`${currentView.view.server.url.toString().replace(/\/$/, '')}${cleanedPathName}`)?.id || currentView.id;
         if (this.isViewClosed(redirectedviewId)) {
             // If it's a closed view, just open it and stop
             this.openClosedView(redirectedviewId, `${currentView.view.server.url}${cleanedPathName}`);
@@ -497,8 +501,8 @@ export class ViewManager {
         }
         let redirectedView = this.getView(redirectedviewId) || currentView;
         if (redirectedView !== currentView && redirectedView?.view.server.id === ServerViewState.getCurrentServer().id && redirectedView?.isLoggedIn) {
-            log.info('redirecting to a new view', redirectedView?.id || viewId);
-            this.showById(redirectedView?.id || viewId);
+            log.info('redirecting to a new view', redirectedView?.id || currentView.id);
+            this.showById(redirectedView?.id || currentView.id);
         } else {
             redirectedView = currentView;
         }
@@ -506,20 +510,20 @@ export class ViewManager {
         // Special case check for Channels to not force a redirect to "/", causing a refresh
         if (!(redirectedView !== currentView && redirectedView?.view.type === TAB_MESSAGING && cleanedPathName === '/')) {
             redirectedView?.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
-            if (redirectedView) {
-                this.handleBrowserHistoryButton(e, redirectedView.id);
-            }
+            redirectedView?.updateHistoryButton();
         }
     }
 
-    private handleBrowserHistoryButton = (e: IpcMainEvent, viewId: string) => {
-        this.getView(viewId)?.updateHistoryButton();
+    private handleRequestBrowserHistoryStatus = (e: IpcMainInvokeEvent) => {
+        log.silly('handleRequestBrowserHistoryStatus', e.sender.id);
+
+        return this.getViewByWebContentsId(e.sender.id)?.getBrowserHistoryStatus();
     }
 
-    private handleReactAppInitialized = (e: IpcMainEvent, viewId: string) => {
-        log.debug('handleReactAppInitialized', viewId);
+    private handleReactAppInitialized = (e: IpcMainEvent) => {
+        log.debug('handleReactAppInitialized', e.sender.id);
 
-        const view = this.views.get(viewId);
+        const view = this.getViewByWebContentsId(e.sender.id);
         if (view) {
             view.setInitialized();
             if (this.getCurrentView() === view) {
@@ -539,18 +543,47 @@ export class ViewManager {
         this.showById(view?.id);
     }
 
-    // if favicon is null, it means it is the initial load,
-    // so don't memoize as we don't have the favicons and there is no rush to find out.
-    private handleFaviconIsUnread = (e: Event, favicon: string, viewId: string, result: boolean) => {
-        log.silly('handleFaviconIsUnread', {favicon, viewId, result});
+    private handleLegacyOff = (e: IpcMainEvent) => {
+        log.silly('handleLegacyOff', {webContentsId: e.sender.id});
 
-        AppState.updateUnreads(viewId, result);
+        const view = this.getViewByWebContentsId(e.sender.id);
+        if (!view) {
+            return;
+        }
+        view.offLegacyUnreads();
     }
 
-    private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean, viewId: string) => {
-        ServerManager.getViewLog(viewId, 'ViewManager').debug('handleSessionExpired', isExpired);
+    // if favicon is null, it means it is the initial load,
+    // so don't memoize as we don't have the favicons and there is no rush to find out.
+    private handleUnreadChanged = (e: IpcMainEvent, result: boolean) => {
+        log.silly('handleUnreadChanged', {webContentsId: e.sender.id, result});
 
-        AppState.updateExpired(viewId, isExpired);
+        const view = this.getViewByWebContentsId(e.sender.id);
+        if (!view) {
+            return;
+        }
+        AppState.updateUnreads(view.id, result);
+    }
+
+    private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {
+        log.silly('handleUnreadsAndMentionsChanged', {webContentsId: e.sender.id, isUnread, mentionCount});
+
+        const view = this.getViewByWebContentsId(e.sender.id);
+        if (!view) {
+            return;
+        }
+        AppState.updateUnreads(view.id, isUnread);
+        AppState.updateMentions(view.id, mentionCount);
+    }
+
+    private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean) => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+        ServerManager.getViewLog(view.id, 'ViewManager').debug('handleSessionExpired', isExpired);
+
+        AppState.updateExpired(view.id, isExpired);
     }
 
     private handleSetCurrentViewBounds = (newBounds: Electron.Rectangle) => {

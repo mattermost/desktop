@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+export const GET_APP_INFO = 'get-app-info';
+
 export const SWITCH_SERVER = 'switch-server';
 export const SWITCH_TAB = 'switch-tab';
 export const CLOSE_VIEW = 'close-view';
@@ -58,9 +60,9 @@ export const GET_DOWNLOAD_LOCATION = 'get_download_location';
 export const UPDATE_MENTIONS = 'update_mentions';
 export const IS_UNREAD = 'is_unread';
 export const UNREAD_RESULT = 'unread_result';
+export const UNREADS_AND_MENTIONS = 'unreads-and-mentions';
 export const SESSION_EXPIRED = 'session_expired';
 
-export const SET_VIEW_OPTIONS = 'set-view-name';
 export const REACT_APP_INITIALIZED = 'react-app-initialized';
 
 export const TOGGLE_BACK_BUTTON = 'toggle-back-button';
@@ -93,7 +95,6 @@ export const START_UPGRADE = 'start-upgrade';
 export const CHECK_FOR_UPDATES = 'check-for-updates';
 export const NO_UPDATE_AVAILABLE = 'no-update-available';
 
-export const BROWSER_HISTORY_BUTTON = 'browser-history-button';
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const APP_LOGGED_IN = 'app-logged-in';
 export const APP_LOGGED_OUT = 'app-logged-out';
@@ -118,7 +119,7 @@ export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
 export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
 
 // Calls
-export const DISPATCH_GET_DESKTOP_SOURCES = 'dispatch-get-desktop-sources';
+export const GET_DESKTOP_SOURCES = 'get-desktop-sources';
 export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
 export const DESKTOP_SOURCES_MODAL_REQUEST = 'desktop-sources-modal-request';
 export const CALLS_JOIN_CALL = 'calls-join-call';
@@ -177,3 +178,11 @@ export const VALIDATE_SERVER_URL = 'validate-server-url';
 export const GET_IS_DEV_MODE = 'get-is-dev-mode';
 
 export const TOGGLE_SECURE_INPUT = 'toggle-secure-input';
+
+export const REQUEST_BROWSER_HISTORY_STATUS = 'request-browser-history-status';
+export const BROWSER_HISTORY_STATUS_UPDATED = 'browser-history-status-updated';
+
+export const NOTIFICATION_CLICKED = 'notification-clicked';
+
+// Legacy code remove signal
+export const LEGACY_OFF = 'legacy-off';

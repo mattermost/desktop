@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app} from 'electron';
+import {BrowserView, app, ipcMain} from 'electron';
 import {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
 
 import {EventEmitter} from 'events';
@@ -15,10 +15,11 @@ import {
     UPDATE_TARGET_URL,
     IS_UNREAD,
     TOGGLE_BACK_BUTTON,
-    SET_VIEW_OPTIONS,
     LOADSCREEN_END,
-    BROWSER_HISTORY_BUTTON,
     SERVERS_URL_MODIFIED,
+    BROWSER_HISTORY_STATUS_UPDATED,
+    CLOSE_SERVERS_DROPDOWN,
+    CLOSE_DOWNLOADS_DROPDOWN,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {Logger} from 'common/log';
@@ -62,7 +63,7 @@ export class MattermostBrowserView extends EventEmitter {
         super();
         this.view = view;
 
-        const preload = getLocalPreload('preload.js');
+        const preload = getLocalPreload('externalAPI.js');
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
             preload,
@@ -81,14 +82,21 @@ export class MattermostBrowserView extends EventEmitter {
         this.log = ServerManager.getViewLog(this.id, 'MattermostBrowserView');
         this.log.verbose('View created');
 
-        this.browserView.webContents.on('did-finish-load', this.handleDidFinishLoad);
-        this.browserView.webContents.on('page-title-updated', this.handleTitleUpdate);
-        this.browserView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
         this.browserView.webContents.on('update-target-url', this.handleUpdateTarget);
         this.browserView.webContents.on('did-navigate', this.handleDidNavigate);
         if (process.platform !== 'darwin') {
             this.browserView.webContents.on('before-input-event', this.handleInputEvents);
         }
+        this.browserView.webContents.on('input-event', (_, inputEvent) => {
+            if (inputEvent.type === 'mouseDown') {
+                ipcMain.emit(CLOSE_SERVERS_DROPDOWN);
+                ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
+            }
+        });
+
+        // Legacy handlers using the title/favicon
+        this.browserView.webContents.on('page-title-updated', this.handleTitleUpdate);
+        this.browserView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
 
         WebContentsEventManager.addWebContentsEventListeners(this.browserView.webContents);
 
@@ -148,14 +156,23 @@ export class MattermostBrowserView extends EventEmitter {
         }
     }
 
-    updateHistoryButton = () => {
+    getBrowserHistoryStatus = () => {
         if (this.currentURL?.toString() === this.view.url.toString()) {
             this.browserView.webContents.clearHistory();
             this.atRoot = true;
         } else {
             this.atRoot = false;
         }
-        this.browserView.webContents.send(BROWSER_HISTORY_BUTTON, this.browserView.webContents.canGoBack(), this.browserView.webContents.canGoForward());
+
+        return {
+            canGoBack: this.browserView.webContents.canGoBack(),
+            canGoForward: this.browserView.webContents.canGoForward(),
+        };
+    }
+
+    updateHistoryButton = () => {
+        const {canGoBack, canGoForward} = this.getBrowserHistoryStatus();
+        this.browserView.webContents.send(BROWSER_HISTORY_STATUS_UPDATED, canGoBack, canGoForward);
     }
 
     load = (someURL?: URL | string) => {
@@ -175,6 +192,7 @@ export class MattermostBrowserView extends EventEmitter {
         } else {
             loadURL = this.view.url.toString();
         }
+        AppState.updateExpired(this.id, false);
         this.log.verbose(`Loading ${loadURL}`);
         const loading = this.browserView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
@@ -255,6 +273,15 @@ export class MattermostBrowserView extends EventEmitter {
         if (this.removeLoading) {
             clearTimeout(this.removeLoading);
         }
+    }
+
+    /**
+     * Code to turn off the old method of getting unreads
+     * Newer web apps will send the mentions/unreads directly
+     */
+    offLegacyUnreads = () => {
+        this.browserView.webContents.off('page-title-updated', this.handleTitleUpdate);
+        this.browserView.webContents.off('page-favicon-updated', this.handleFaviconUpdate);
     }
 
     /**
@@ -463,26 +490,6 @@ export class MattermostBrowserView extends EventEmitter {
      * WebContents event handlers
      */
 
-    private handleDidFinishLoad = () => {
-        this.log.debug('did-finish-load');
-
-        // wait for screen to truly finish loading before sending the message down
-        const timeout = setInterval(() => {
-            if (!this.browserView.webContents) {
-                return;
-            }
-
-            if (!this.browserView.webContents.isLoading()) {
-                try {
-                    this.browserView.webContents.send(SET_VIEW_OPTIONS, this.id, this.view.shouldNotify);
-                    clearTimeout(timeout);
-                } catch (e) {
-                    this.log.error('failed to send view options to view');
-                }
-            }
-        }, 100);
-    }
-
     private handleDidNavigate = (event: Event, url: string) => {
         this.log.debug('handleDidNavigate', url);
 
@@ -507,7 +514,7 @@ export class MattermostBrowserView extends EventEmitter {
     }
 
     private handleUpdateTarget = (e: Event, url: string) => {
-        this.log.silly('handleUpdateTarget', url);
+        this.log.silly('handleUpdateTarget', e, url);
         const parsedURL = parseURL(url);
         if (parsedURL && isInternalURL(parsedURL, this.view.server.url)) {
             this.emit(UPDATE_TARGET_URL);

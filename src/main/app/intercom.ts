@@ -4,7 +4,6 @@
 import {app, IpcMainEvent, IpcMainInvokeEvent, Menu} from 'electron';
 
 import {UniqueServer} from 'types/config';
-import {MentionData} from 'types/notification';
 
 import ServerViewState from 'app/serverViewState';
 
@@ -92,7 +91,7 @@ export function handleWelcomeScreenModal() {
 
     const html = getLocalURLString('welcomeScreen.html');
 
-    const preload = getLocalPreload('desktopAPI.js');
+    const preload = getLocalPreload('internalAPI.js');
 
     const mainWindow = MainWindow.get();
     if (!mainWindow) {
@@ -114,9 +113,9 @@ export function handleWelcomeScreenModal() {
     }
 }
 
-export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, data: MentionData) {
-    log.debug('handleMentionNotification', {title, body, channel, teamId, url, silent, data});
-    NotificationManager.displayMention(title, body, channel, teamId, url, silent, event.sender, data);
+export function handleMentionNotification(event: IpcMainEvent, title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) {
+    log.debug('handleMentionNotification', {title, body, channelId, teamId, url, silent, soundName});
+    NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
 export function handleOpenAppMenu() {

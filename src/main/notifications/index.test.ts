@@ -92,6 +92,7 @@ jest.mock('../views/viewManager', () => ({
                 name: 'server_name',
                 url: new URL('http://someurl.com'),
             },
+            shouldNotify: true,
         },
     }),
     showById: jest.fn(),
@@ -144,12 +145,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'test',
                 'test body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1} as WebContents,
-                {soundName: ''},
+                '',
             );
             expect(MainWindow.show).not.toBeCalled();
         });
@@ -164,12 +165,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'test',
                 'test body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1} as WebContents,
-                {soundName: ''},
+                '',
             );
             expect(MainWindow.show).not.toBeCalled();
 
@@ -188,12 +189,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'test',
                 'test body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1} as WebContents,
-                {soundName: ''},
+                '',
             );
             expect(MainWindow.show).not.toBeCalled();
 
@@ -207,12 +208,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'test',
                 'test body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1} as WebContents,
-                {soundName: ''},
+                '',
             );
             expect(MainWindow.show).not.toBeCalled();
         });
@@ -221,12 +222,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'test',
                 'test body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1} as WebContents,
-                {soundName: 'test_sound'},
+                'test_sound',
             );
             expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
         });
@@ -240,12 +241,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'test',
                 'test body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1} as WebContents,
-                {soundName: ''},
+                '',
             );
 
             // convert to any to access private field
@@ -257,12 +258,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'test',
                 'test body 2',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1} as WebContents,
-                {soundName: ''},
+                '',
             );
 
             expect(mentionsPerChannel.delete).toHaveBeenCalled();
@@ -277,12 +278,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'click_test',
                 'mention_click_body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1, send: jest.fn()} as unknown as WebContents,
-                {soundName: ''},
+                '',
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention?.value.click();
@@ -298,12 +299,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'click_test',
                 'mention_click_body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1, send: jest.fn()} as unknown as WebContents,
-                {soundName: ''},
+                '',
             );
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -324,12 +325,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'click_test',
                 'mention_click_body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1, send: jest.fn()} as unknown as WebContents,
-                {soundName: ''},
+                '',
             );
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -345,12 +346,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'click_test',
                 'mention_click_body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1, send: jest.fn()} as unknown as WebContents,
-                {soundName: ''},
+                '',
             );
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -371,12 +372,12 @@ describe('main/notifications', () => {
             await NotificationManager.displayMention(
                 'click_test',
                 'mention_click_body',
-                {id: 'channel_id'},
+                'channel_id',
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1, send: jest.fn()} as unknown as WebContents,
-                {soundName: ''},
+                '',
             );
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,

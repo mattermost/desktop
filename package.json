@@ -145,6 +145,7 @@
     "@electron/fuses": "1.6.0",
     "@electron/universal": "1.3.1",
     "@mattermost/compass-icons": "0.1.32",
+    "@mattermost/desktop-api": "*",
     "@storybook/addon-actions": "6.4.20",
     "@storybook/react": "6.4.20",
     "@types/auto-launch": "5.0.2",

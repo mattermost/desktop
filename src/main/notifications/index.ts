@@ -5,10 +5,8 @@ import {app, shell, Notification} from 'electron';
 
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
-import {MentionData} from 'types/notification';
-
 import Config from 'common/config';
-import {PLAY_SOUND} from 'common/communication';
+import {PLAY_SOUND, NOTIFICATION_CLICKED} from 'common/communication';
 import {Logger} from 'common/log';
 
 import PermissionsManager from '../permissionsManager';
@@ -29,8 +27,8 @@ class NotificationManager {
     private upgradeNotification?: NewVersionNotification;
     private restartToUpgradeNotification?: UpgradeNotification;
 
-    public async displayMention(title: string, body: string, channel: {id: string}, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, data: MentionData) {
-        log.debug('displayMention', {title, body, channel, teamId, url, silent, data});
+    public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
+        log.debug('displayMention', {title, body, channelId, teamId, url, silent, soundName});
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');
@@ -45,21 +43,24 @@ class NotificationManager {
         if (!view) {
             return;
         }
+        if (!view.view.shouldNotify) {
+            return;
+        }
         const serverName = view.view.server.name;
 
         const options = {
             title: `${serverName}: ${title}`,
             body,
             silent,
-            data,
+            soundName,
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', view.view.server.url.toString())) {
             return;
         }
 
-        const mention = new Mention(options, channel, teamId);
-        const mentionKey = `${mention.teamId}:${mention.channel.id}`;
+        const mention = new Mention(options, channelId, teamId);
+        const mentionKey = `${mention.teamId}:${mention.channelId}`;
         this.allActiveNotifications.set(mention.uId, mention);
 
         mention.on('show', () => {
@@ -88,7 +89,7 @@ class NotificationManager {
             MainWindow.show();
             if (serverName) {
                 ViewManager.showById(view.id);
-                webcontents.send('notification-clicked', {channel, teamId, url});
+                webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
             }
         });
 

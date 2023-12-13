@@ -57,7 +57,7 @@ export class DownloadsDropdownView {
         }
         this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
 
-        const preload = getLocalPreload('desktopAPI.js');
+        const preload = getLocalPreload('internalAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,
 
@@ -77,7 +77,7 @@ export class DownloadsDropdownView {
      * the downloads dropdown at the correct position
      */
     private updateWindowBounds = (newBounds: Electron.Rectangle) => {
-        log.debug('updateWindowBounds');
+        log.silly('updateWindowBounds');
 
         this.windowBounds = newBounds;
         this.updateDownloadsDropdown();
@@ -85,13 +85,13 @@ export class DownloadsDropdownView {
     }
 
     private updateDownloadsDropdownMenuItem = (event: IpcMainEvent, item?: DownloadedItem) => {
-        log.debug('updateDownloadsDropdownMenuItem', {item});
+        log.silly('updateDownloadsDropdownMenuItem', {item});
         this.item = item;
         this.updateDownloadsDropdown();
     }
 
     private updateDownloadsDropdown = () => {
-        log.debug('updateDownloadsDropdown');
+        log.silly('updateDownloadsDropdown');
 
         this.view?.webContents.send(
             UPDATE_DOWNLOADS_DROPDOWN,
@@ -117,7 +117,7 @@ export class DownloadsDropdownView {
     }
 
     private handleClose = () => {
-        log.debug('handleClose');
+        log.silly('handleClose');
 
         this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
         downloadsManager.onClose();

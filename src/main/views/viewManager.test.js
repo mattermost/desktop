@@ -407,6 +407,7 @@ describe('main/views/viewManager', () => {
         ];
         const view1 = {
             id: 'server-1_view-messaging',
+            webContentsId: 1,
             isLoggedIn: true,
             view: {
                 type: TAB_MESSAGING,
@@ -415,10 +416,12 @@ describe('main/views/viewManager', () => {
                 },
             },
             sendToRenderer: jest.fn(),
+            updateHistoryButton: jest.fn(),
         };
         const view2 = {
             ...view1,
             id: 'server-1_other_type_1',
+            webContentsId: 2,
             view: {
                 ...view1.view,
                 type: 'other_type_1',
@@ -427,6 +430,7 @@ describe('main/views/viewManager', () => {
         const view3 = {
             ...view1,
             id: 'server-1_other_type_2',
+            webContentsId: 3,
             view: {
                 ...view1.view,
                 type: 'other_type_2',
@@ -442,6 +446,7 @@ describe('main/views/viewManager', () => {
         viewManager.getView = (viewId) => views.get(viewId);
         viewManager.isViewClosed = (viewId) => closedViews.has(viewId);
         viewManager.openClosedView = jest.fn();
+        viewManager.getViewByWebContentsId = (webContentsId) => [...views.values()].find((view) => view.webContentsId === webContentsId);
 
         beforeEach(() => {
             ServerManager.getAllServers.mockReturnValue(servers);
@@ -460,19 +465,19 @@ describe('main/views/viewManager', () => {
                 views.set(name, view);
             });
             ServerManager.lookupViewByURL.mockReturnValue({id: 'server-1_other_type_2'});
-            viewManager.handleBrowserHistoryPush(null, 'server-1_view-messaging', '/other_type_2/subpath');
+            viewManager.handleBrowserHistoryPush({sender: {id: 1}}, '/other_type_2/subpath');
             expect(viewManager.openClosedView).toBeCalledWith('server-1_other_type_2', 'http://server-1.com/other_type_2/subpath');
         });
 
         it('should open redirect view if different from current view', () => {
             ServerManager.lookupViewByURL.mockReturnValue({id: 'server-1_other_type_1'});
-            viewManager.handleBrowserHistoryPush(null, 'server-1_view-messaging', '/other_type_1/subpath');
+            viewManager.handleBrowserHistoryPush({sender: {id: 1}}, '/other_type_1/subpath');
             expect(viewManager.showById).toBeCalledWith('server-1_other_type_1');
         });
 
         it('should ignore redirects to "/" to Messages from other views', () => {
             ServerManager.lookupViewByURL.mockReturnValue({id: 'server-1_view-messaging'});
-            viewManager.handleBrowserHistoryPush(null, 'server-1_other_type_1', '/');
+            viewManager.handleBrowserHistoryPush({sender: {id: 2}}, '/');
             expect(view1.sendToRenderer).not.toBeCalled();
         });
     });

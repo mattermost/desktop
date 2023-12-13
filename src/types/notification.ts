@@ -3,10 +3,6 @@
 
 import {NotificationConstructorOptions} from 'electron/common';
 
-export type MentionData = {
-    soundName: string;
-}
-
 export type MentionOptions = NotificationConstructorOptions & {
-    data: MentionData;
+    soundName: string;
 }

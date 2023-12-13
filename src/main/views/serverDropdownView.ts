@@ -75,7 +75,7 @@ export class ServerDropdownView {
 
     private init = () => {
         log.info('init');
-        const preload = getLocalPreload('desktopAPI.js');
+        const preload = getLocalPreload('internalAPI.js');
         this.view = new BrowserView({webPreferences: {
             preload,
 
@@ -144,7 +144,7 @@ export class ServerDropdownView {
     }
 
     private handleClose = () => {
-        log.debug('handleClose');
+        log.silly('handleClose');
 
         this.view?.setBounds(this.getBounds(0, 0));
         MainWindow.sendToRenderer(CLOSE_SERVERS_DROPDOWN);

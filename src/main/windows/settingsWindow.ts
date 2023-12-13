@@ -43,7 +43,7 @@ export class SettingsWindow {
             return;
         }
 
-        const preload = getLocalPreload('desktopAPI.js');
+        const preload = getLocalPreload('internalAPI.js');
         const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
         this.win = new BrowserWindow({
             parent: mainWindow,
