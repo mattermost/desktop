@@ -74,11 +74,7 @@ describe('downloads/downloads_manager', function desc() {
     });
 
     it('MM-22239 should open downloads dropdown when a download starts', async () => {
-        await firstServer.locator('#file-attachment-link', {hasText: filename}).click();
-        await asyncSleep(1000);
-        await Promise.all([
-            firstServer.locator(`div[role="dialog"] a[download="${filename}"]`).click(), // Triggers the download.
-        ]);
+        await firstServer.locator(`a[download="${filename}"]`).click();
         await asyncSleep(1000);
         (await env.downloadsDropdownIsOpen(this.app)).should.equal(true);
     });

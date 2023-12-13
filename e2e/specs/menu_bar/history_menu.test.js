@@ -34,16 +34,14 @@ describe('history_menu', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
-
-        // click on sint channel
-        await firstServer.click('#sidebarItem_suscipit-4');
-
+        await firstServer.waitForSelector('#sidebarItem_off-topic');
+        // click on Off topic channel
+        await firstServer.click('#sidebarItem_off-topic');
         // click on town square channel
         await firstServer.click('#sidebarItem_town-square');
         await firstServer.locator('[aria-label="Back"]').click();
         let channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => el.firstChild.innerHTML);
-        channelHeaderText.should.equal('sint');
+        channelHeaderText.should.equal('Off-Topic');
         await firstServer.locator('[aria-label="Forward"]').click();
         channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => el.firstChild.innerHTML);
         channelHeaderText.should.equal('Town Square');

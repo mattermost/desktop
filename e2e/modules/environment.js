@@ -252,8 +252,8 @@ module.exports = {
         await window.waitForSelector('#input_password-input');
         await window.waitForSelector('#saveSetting');
 
-        await window.type('#input_loginId', 'sysadmin');
-        await window.type('#input_password-input', 'Sys@dmin123');
+        await window.type('#input_loginId', process.env.MM_TEST_USER_NAME);
+        await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
         await window.click('#saveSetting');
     },
 

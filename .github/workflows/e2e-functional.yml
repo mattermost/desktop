@@ -13,7 +13,9 @@ env:
   BRANCH: ${{ github.ref }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
-  MM_TEST_SERVER_URL: "https://mattermost-pr-23996.test.mattermost.cloud/"
+  MM_TEST_SERVER_URL: ${{ secrets.MM_DESKTOP_E2E_SERVER_URL }}
+  MM_TEST_USER_NAME: ${{ secrets.MM_DESKTOP_E2E_USER_NAME }}
+  MM_TEST_PASSWORD: ${{ secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
   TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
@@ -21,6 +23,7 @@ env:
   TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
   AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: "us-east-1"
   WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
 
@@ -76,17 +79,10 @@ jobs:
           Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
-
-      - name: Remove "Run Desktop E2E Tests" label
-        if: always()
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-          labels: |
-            Run Desktop E2E Tests
     
   e2e-macos:
     if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -102,13 +98,21 @@ jobs:
         with:
           go-version: '1.20'
 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
-          brew install yq
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
+          npm install -g node-gyp
+          npm i robotjs
+          npm i -D electron-rebuild
+          npx electron-rebuild -f -t prod,optional,dev -w robotjs
 
       - name: Set Environment Variables
         run: |
@@ -138,7 +142,7 @@ jobs:
 
   e2e-windows:
     if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -171,6 +175,7 @@ jobs:
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
+          npm ci --openssl_fips=''
 
       - name: Set Environment Variables
         shell: bash
@@ -199,3 +204,14 @@ jobs:
           npm run test:e2e || true
           npm run test:e2e:send-report
         shell: bash
+
+  e2e-remove-label:
+    needs: [e2e-linux, e2e-macos, e2e-windows]
+    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }} && ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove "Run Desktop E2E Tests" label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: |
+            Run Desktop E2E Tests
