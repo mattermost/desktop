@@ -137,7 +137,7 @@ case "${1}" in
         if [[ "${branch_name}" =~ "release-" ]]; then
             print_info "Releasing v${current_version}"
             new_pkg_version="${current_version}"
-            write_package_version "${new_pkg_version}"
+            #write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Released on $(date -u)"
             print_info "Locally created an final version. In order to build you'll have to:"
             print_info "$ git push --follow-tags ${git_origin} ${branch_name}:${branch_name}"
