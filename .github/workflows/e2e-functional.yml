@@ -101,10 +101,6 @@ jobs:
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
 
-          if [ -n "${ZEPHYR_ENABLE}" ]; then
-            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
-          fi
-
       - name: Run Playwright tests (Ubuntu OS)
         run: |
           export DISPLAY=:99
@@ -177,10 +173,6 @@ jobs:
           echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-
-          if [ -n "${ZEPHYR_ENABLE}" ]; then
-            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
-          fi
 
       - name: Run Playwright tests (macOS)
         run: |
@@ -256,10 +248,6 @@ jobs:
           echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
           echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-
-          if [ -n "${ZEPHYR_ENABLE}" ]; then
-            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
-          fi
 
       - name: Run Playwright tests (Windows OS)
         run: |
