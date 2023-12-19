@@ -192,7 +192,6 @@ export class MattermostBrowserView extends EventEmitter {
         } else {
             loadURL = this.view.url.toString();
         }
-        AppState.updateExpired(this.id, false);
         this.log.verbose(`Loading ${loadURL}`);
         const loading = this.browserView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
@@ -240,6 +239,7 @@ export class MattermostBrowserView extends EventEmitter {
 
     reload = () => {
         this.resetLoadingStatus();
+        AppState.updateExpired(this.id, false);
         this.load();
     }
 
