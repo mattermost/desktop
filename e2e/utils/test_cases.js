@@ -78,7 +78,7 @@ function saveToEndpoint(url, data) {
         },
         data,
     }).catch((error) => {
-        console.log('Something went wrong:', error.response.data.message);
+        console.log('Something went wrong:', error.response.data);
         return error.response.data;
     });
 }

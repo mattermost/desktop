@@ -84,29 +84,14 @@ const saveReport = async () => {
 
     // Create or use an existing test cycle
     let testCycle = {};
-    console.log("******************* ZEPHYR_ENABLE =========" , ZEPHYR_ENABLE);
     if (ZEPHYR_ENABLE === 'true') {
-        console.log("******************* ZEPHYR_ENABLE =========" , ZEPHYR_ENABLE);
         const {start, end} = jsonReport.stats;
-        console.log("******************* {start, end} =========" , start, end);
         testCycle = ZEPHYR_CYCLE_KEY ? {key: ZEPHYR_CYCLE_KEY} : await createTestCycle(start, end);
-        console.log("******************* test cycle =========" , testCycle);
     }
-    
-    console.log("******************* WEBHOOK_URL =========" , WEBHOOK_URL);
-    console.log("******************* TYPE =========" , TYPE);
 
     // Send test report to "QA: UI Test Automation" channel via webhook
     if (TYPE && TYPE !== 'NONE' && WEBHOOK_URL) {
-        console.log("******************* 1");
-        console.log("*******************", WEBHOOK_URL);
-        console.log("******************* 2");
-        console.log("*******************", testCycle);
-        console.log("******************* 3");
         const data = generateTestReport(summary, result && result.success, result && result.reportLink, testCycle.key);
-        console.log("******************* 4");
-        console.log("*******************", data);
-        console.log("******************* 5");
         await sendReport('summary report to Community channel', WEBHOOK_URL, data);
     }
 
