@@ -20,6 +20,7 @@ import downloadsManager from 'main/downloadsManager';
 import Diagnostics from 'main/diagnostics';
 import ViewManager from 'main/views/viewManager';
 import SettingsWindow from 'main/windows/settingsWindow';
+import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -199,6 +200,15 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             ViewManager.getCurrentView()?.openDevTools();
         },
     }];
+
+    if (CallsWidgetWindow.isOpen()) {
+        viewSubMenu.push({
+            label: localizeMessage('main.menus.app.view.devToolsCurrentCallWidget', 'Developer Tools for Call Widget'),
+            click() {
+                CallsWidgetWindow.openDevTools();
+            },
+        });
+    }
 
     if (process.platform !== 'darwin' && process.platform !== 'win32') {
         viewSubMenu.push(separatorItem);
