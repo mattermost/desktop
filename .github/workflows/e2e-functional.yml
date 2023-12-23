@@ -90,7 +90,7 @@ jobs:
 
       - name: Set Environment Variables
         run: |
-          source ${GITHUB_ACTION_PATH}/scripts/e2e-job-env.sh
+          source .github/scripts/e2e-job-env.sh
           # if [ "${{ github.event_name }}" == "pull_request" ]; then
           #   echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
           #   echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
@@ -157,7 +157,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: Cache Electron Headers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.electron
@@ -170,7 +170,7 @@ jobs:
           go-version: '1.20'
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
 
@@ -187,7 +187,7 @@ jobs:
 
       - name: Set Environment Variables
         run: |
-          source ${GITHUB_ACTION_PATH}/scripts/e2e-job-env.sh
+          source .github/scripts/e2e-job-env.sh
 
           # if [ "${{ github.event_name }}" == "pull_request" ]; then
           #   echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
@@ -279,7 +279,7 @@ jobs:
       - name: Set Environment Variables
         shell: bash
         run: |
-          source ${GITHUB_ACTION_PATH}/scripts/e2e-job-env.sh
+          source .github/scripts/e2e-job-env.sh
 
           # if [ "${{ github.event_name }}" == "pull_request" ]; then
           #   echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
