@@ -164,20 +164,16 @@ jobs:
             ~/.cache/electron
           key: electron-headers-${{ runner.os }}-${{ hashFiles('**/*.gyp') }}
 
-      - name: Setup Go environment
-        uses: actions/setup-go@v4.0.1
-        with:
-          go-version: '1.20'
-
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version: '3.7.0'
 
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
+          # pip install distutils==3.7
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
           npm install -g node-gyp
