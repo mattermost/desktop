@@ -45,7 +45,6 @@ env:
   WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
 
-
 jobs:
   e2e-linux:
     if: ${{ 
