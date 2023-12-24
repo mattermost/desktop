@@ -119,7 +119,6 @@ jobs:
 
       - name: Run Playwright tests (Ubuntu OS)
         run: |
-          cat $GITHUB_ENV
           export DISPLAY=:99
           Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
