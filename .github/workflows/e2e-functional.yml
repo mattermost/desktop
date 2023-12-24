@@ -89,7 +89,7 @@ jobs:
           npm ci
 
       - name: Set Environment Variables
-        run: source .github/scripts/e2e-job-env.sh
+        run: bash .github/scripts/e2e-job-env.sh
 
       - name: Run Playwright tests (Ubuntu OS)
         run: |
@@ -119,8 +119,6 @@ jobs:
           github.event_name == 'schedule'
       )
       }}
-    strategy:
-      fail-fast: false
     runs-on: macos-13
     steps:
       - name: ci/checkout-repo
@@ -155,7 +153,7 @@ jobs:
           npx electron-rebuild -f -t prod,optional,dev -w robotjs
 
       - name: Set Environment Variables
-        run: source .github/scripts/e2e-job-env.sh
+        run: bash .github/scripts/e2e-job-env.sh
 
       - name: Run Playwright tests (macOS)
         run: |
@@ -220,7 +218,7 @@ jobs:
 
       - name: Set Environment Variables
         shell: bash
-        run: source .github/scripts/e2e-job-env.sh
+        run: bash .github/scripts/e2e-job-env.sh
 
       - name: Run Playwright tests (Windows OS)
         run: |
