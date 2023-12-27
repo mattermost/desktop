@@ -1,3 +1,5 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 export declare type DesktopSourcesOptions = {
     types: Array<'screen' | 'window'>;
     thumbnailSize?: {
@@ -30,18 +32,6 @@ export declare type DesktopAPI = {
     onBrowserHistoryStatusUpdated: (listener: (canGoBack: boolean, canGoForward: boolean) => void) => () => void;
     onBrowserHistoryPush: (listener: (pathName: string) => void) => () => void;
     sendBrowserHistoryPush: (path: string) => void;
-    openLinkFromCallsWidget: (url: string) => void;
-    openScreenShareModal: () => void;
-    onScreenShared: (listener: (sourceID: string, withAudio: boolean) => void) => () => void;
-    callsWidgetConnected: (callID: string, sessionID: string) => void;
-    onJoinCallRequest: (listener: (callID: string) => void) => () => void;
-    resizeCallsWidget: (width: number, height: number) => void;
-    focusPopout: () => void;
-    leaveCall: () => void;
-    sendCallsError: (err: string, callID?: string, errMsg?: string) => void;
-    getDesktopSources: (opts: DesktopSourcesOptions) => Promise<DesktopCaptureSource[]>;
-    onOpenScreenShareModal: (listener: () => void) => () => void;
-    shareScreen: (sourceID: string, withAudi: boolean) => void;
     joinCall: (opts: {
         callID: string;
         title: string;
@@ -51,7 +41,20 @@ export declare type DesktopAPI = {
         callID: string;
         sessionID: string;
     }>;
-    sendJoinCallRequest: (callId: string) => void;
+    leaveCall: () => void;
+    callsWidgetConnected: (callID: string, sessionID: string) => void;
+    resizeCallsWidget: (width: number, height: number) => void;
+    sendCallsError: (err: string, callID?: string, errMsg?: string) => void;
     onCallsError: (listener: (err: string, callID?: string, errMsg?: string) => void) => () => void;
+    getDesktopSources: (opts: DesktopSourcesOptions) => Promise<DesktopCaptureSource[]>;
+    openScreenShareModal: () => void;
+    onOpenScreenShareModal: (listener: () => void) => () => void;
+    shareScreen: (sourceID: string, withAudio: boolean) => void;
+    onScreenShared: (listener: (sourceID: string, withAudio: boolean) => void) => () => void;
+    sendJoinCallRequest: (callId: string) => void;
+    onJoinCallRequest: (listener: (callID: string) => void) => () => void;
+    openLinkFromCalls: (url: string) => void;
+    onOpenLinkFromCalls: (listener: (url: string) => void) => () => void;
+    focusPopout: () => void;
     unregister: (channel: string) => void;
 };

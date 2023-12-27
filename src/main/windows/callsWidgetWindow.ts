@@ -382,7 +382,7 @@ export class CallsWidgetWindow {
             }
         }
 
-        const screenPermissionsErrMsg = {err: 'screen-permissions'};
+        const screenPermissionsErrArgs = ['screen-permissions', this.callID];
 
         return desktopCapturer.getSources(opts).then((sources) => {
             let hasScreenPermissions = true;
@@ -397,8 +397,8 @@ export class CallsWidgetWindow {
 
             if (!hasScreenPermissions || !sources.length) {
                 log.info('missing screen permissions');
-                view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
-                this.win?.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+                view.sendToRenderer(CALLS_ERROR, ...screenPermissionsErrArgs);
+                this.win?.webContents.send(CALLS_ERROR, ...screenPermissionsErrArgs);
                 return [];
             }
 
@@ -414,8 +414,8 @@ export class CallsWidgetWindow {
         }).catch((err) => {
             log.error('desktopCapturer.getSources failed', err);
 
-            view.sendToRenderer(CALLS_ERROR, screenPermissionsErrMsg);
-            this.win?.webContents.send(CALLS_ERROR, screenPermissionsErrMsg);
+            view.sendToRenderer(CALLS_ERROR, ...screenPermissionsErrArgs);
+            this.win?.webContents.send(CALLS_ERROR, ...screenPermissionsErrArgs);
 
             return [];
         });
