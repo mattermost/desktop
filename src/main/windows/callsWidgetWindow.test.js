@@ -532,6 +532,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
     describe('handleGetDesktopSources', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.options = {callID: 'callID'};
         callsWidgetWindow.win = {
             webContents: {
                 send: jest.fn(),
@@ -624,12 +625,8 @@ describe('main/windows/callsWidgetWindow', () => {
         it('should send error with no sources', async () => {
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
             await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
-            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
-            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
 
@@ -647,12 +644,8 @@ describe('main/windows/callsWidgetWindow', () => {
             await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
 
             expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
-            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
-            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledTimes(1);
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
@@ -678,12 +671,8 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(callsWidgetWindow.missingScreensharePermissions).toBe(true);
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(1);
             expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(0);
-            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
-            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
 
             await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
 
