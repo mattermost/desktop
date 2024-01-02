@@ -8,7 +8,7 @@ on:
     types:
         - labeled
   schedule:
-    - cron: '0 0 * * *' #12 AM Daily
+    - cron: 0 4 * * 0-5
   workflow_dispatch:
     inputs:
       version_name:
