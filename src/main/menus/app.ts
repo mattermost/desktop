@@ -126,6 +126,43 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         }],
     });
 
+    const devToolsSubMenu = [
+        {
+            label: localizeMessage('main.menus.app.view.devToolsAppWrapper', 'Developer Tools for Application Wrapper'),
+            accelerator: (() => {
+                if (process.platform === 'darwin') {
+                    return 'Alt+Command+I';
+                }
+                return 'Ctrl+Shift+I';
+            })(),
+            click(item: Electron.MenuItem, focusedWindow?: WebContents) {
+                if (focusedWindow) {
+                    // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
+                    if (focusedWindow.isDevToolsOpened()) {
+                        focusedWindow.closeDevTools();
+                    } else {
+                        focusedWindow.openDevTools({mode: 'detach'});
+                    }
+                }
+            },
+        },
+        {
+            label: localizeMessage('main.menus.app.view.devToolsCurrentServer', 'Developer Tools for Current Server'),
+            click() {
+                ViewManager.getCurrentView()?.openDevTools();
+            },
+        },
+    ];
+
+    if (CallsWidgetWindow.isOpen()) {
+        devToolsSubMenu.push({
+            label: localizeMessage('main.menus.app.view.devToolsCurrentCallWidget', 'Developer Tools for Call Widget'),
+            click() {
+                CallsWidgetWindow.openDevTools();
+            },
+        });
+    }
+
     const viewSubMenu = [{
         label: localizeMessage('main.menus.app.view.find', 'Find..'),
         accelerator: 'CmdOrCtrl+F',
@@ -177,38 +214,9 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             return downloadsManager.openDownloadsDropdown();
         },
     }, separatorItem, {
-        label: localizeMessage('main.menus.app.view.devToolsAppWrapper', 'Developer Tools for Application Wrapper'),
-        accelerator: (() => {
-            if (process.platform === 'darwin') {
-                return 'Alt+Command+I';
-            }
-            return 'Ctrl+Shift+I';
-        })(),
-        click(item: Electron.MenuItem, focusedWindow?: WebContents) {
-            if (focusedWindow) {
-                // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
-                if (focusedWindow.isDevToolsOpened()) {
-                    focusedWindow.closeDevTools();
-                } else {
-                    focusedWindow.openDevTools({mode: 'detach'});
-                }
-            }
-        },
-    }, {
-        label: localizeMessage('main.menus.app.view.devToolsCurrentServer', 'Developer Tools for Current Server'),
-        click() {
-            ViewManager.getCurrentView()?.openDevTools();
-        },
+        label: localizeMessage('main.menus.app.view.devToolsSubMenu', 'Developer Tools'),
+        submenu: devToolsSubMenu,
     }];
-
-    if (CallsWidgetWindow.isOpen()) {
-        viewSubMenu.push({
-            label: localizeMessage('main.menus.app.view.devToolsCurrentCallWidget', 'Developer Tools for Call Widget'),
-            click() {
-                CallsWidgetWindow.openDevTools();
-            },
-        });
-    }
 
     if (process.platform !== 'darwin' && process.platform !== 'win32') {
         viewSubMenu.push(separatorItem);

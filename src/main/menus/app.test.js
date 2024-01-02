@@ -336,26 +336,44 @@ describe('main/menus/app', () => {
         expect(helpSubmenu).toContainObject({id: 'diagnostics'});
     });
 
+    it('should show developer tools submenu', () => {
+        const menu = createTemplate(config);
+
+        const appMenu = menu.find((item) => item.label === 'main.menus.app.view');
+
+        expect(appMenu).not.toBe(undefined);
+
+        const devToolsSubMenu = appMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+
+        expect(devToolsSubMenu.submenu.length).toBe(2);
+        expect(devToolsSubMenu.submenu[0].label).toBe('main.menus.app.view.devToolsAppWrapper');
+        expect(devToolsSubMenu.submenu[1].label).toBe('main.menus.app.view.devToolsCurrentServer');
+    });
+
     it('should not show menu item if widget window is not open', () => {
         const menu = createTemplate(config);
-        const menuItem = menu.find((item) => {
-            if (item.label === 'main.menus.app.view') {
-                return item.submenu.find((subItem) => subItem.label === 'main.menus.app.view.devToolsCurrentCallWidget');
-            }
-            return false;
-        });
+
+        const appMenu = menu.find((item) => item.label === 'main.menus.app.view');
+        expect(appMenu).not.toBe(undefined);
+
+        const devToolsSubMenu = appMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+        expect(devToolsSubMenu).not.toBe(undefined);
+
+        const menuItem = devToolsSubMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsCurrentCallWidget');
         expect(menuItem).toBe(undefined);
     });
 
     it('should show menu item if widget window is open', () => {
         CallsWidgetWindow.isOpen = jest.fn(() => true);
         const menu = createTemplate(config);
-        const menuItem = menu.find((item) => {
-            if (item.label === 'main.menus.app.view') {
-                return item.submenu.find((subItem) => subItem.label === 'main.menus.app.view.devToolsCurrentCallWidget');
-            }
-            return false;
-        });
+
+        const appMenu = menu.find((item) => item.label === 'main.menus.app.view');
+        expect(appMenu).not.toBe(undefined);
+
+        const devToolsSubMenu = appMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+        expect(devToolsSubMenu).not.toBe(undefined);
+
+        const menuItem = devToolsSubMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsCurrentCallWidget');
         expect(menuItem).not.toBe(undefined);
     });
 });
