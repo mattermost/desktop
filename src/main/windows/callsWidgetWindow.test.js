@@ -7,7 +7,7 @@ import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electr
 
 import ServerViewState from 'app/serverViewState';
 
-import {CALLS_WIDGET_SHARE_SCREEN} from 'common/communication';
+import {CALLS_WIDGET_SHARE_SCREEN, BROWSER_HISTORY_PUSH} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -783,6 +783,49 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith('some-channel', 'thecallchannelid');
+        });
+    });
+
+    describe('handleCallsLinkClick', () => {
+        const view = {
+            view: {
+                server: {
+                    id: 'server-1',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = view;
+        callsWidgetWindow.win = {webContents: {id: 1}};
+
+        const focus = jest.fn();
+
+        beforeEach(() => {
+            urlUtils.parseURL.mockImplementation((url) => {
+                try {
+                    return new URL(url);
+                } catch (e) {
+                    return undefined;
+                }
+            });
+            MainWindow.get.mockReturnValue({focus});
+            ViewManager.getView.mockReturnValue(view);
+            ViewManager.handleDeepLink = jest.fn();
+        });
+
+        it('should switch server, focus and send history push event', () => {
+            const url = '/team/channel';
+            callsWidgetWindow.handleCallsLinkClick({sender: {id: 1}}, url);
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(focus).toHaveBeenCalled();
+            expect(view.sendToRenderer).toBeCalledWith(BROWSER_HISTORY_PUSH, url);
+        });
+
+        it('should call ViewManager.handleDeepLink for parseable urls', () => {
+            const url = 'http://localhost:8065/team/channel';
+            callsWidgetWindow.handleCallsLinkClick({sender: {id: 1}}, url);
+            expect(ViewManager.handleDeepLink).toHaveBeenCalledWith(new URL(url));
         });
     });
 });

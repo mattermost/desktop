@@ -102,7 +102,6 @@ const desktopAPI: DesktopAPI = {
     onJoinCallRequest: (listener) => createListener(CALLS_JOIN_REQUEST, listener),
 
     openLinkFromCalls: (url) => ipcRenderer.send(CALLS_LINK_CLICK, url),
-    onOpenLinkFromCalls: (listener) => createListener(CALLS_LINK_CLICK, listener),
 
     focusPopout: () => ipcRenderer.send(CALLS_POPOUT_FOCUS),
 

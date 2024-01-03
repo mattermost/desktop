@@ -68,7 +68,7 @@ export class CallsWidgetWindow {
         // forwards to the main app
         ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.forwardToMainApp(DESKTOP_SOURCES_MODAL_REQUEST));
         ipcMain.on(CALLS_ERROR, this.forwardToMainApp(CALLS_ERROR));
-        ipcMain.on(CALLS_LINK_CLICK, this.forwardToMainApp(CALLS_LINK_CLICK));
+        ipcMain.on(CALLS_LINK_CLICK, this.handleCallsLinkClick);
         ipcMain.on(CALLS_JOIN_REQUEST, this.forwardToMainApp(CALLS_JOIN_REQUEST));
 
         // deprecated in favour of CALLS_LINK_CLICK
@@ -491,6 +491,31 @@ export class CallsWidgetWindow {
             MainWindow.get()?.focus();
             this.mainView?.sendToRenderer(channel, ...args);
         };
+    }
+
+    private handleCallsLinkClick = (event: IpcMainEvent, url: string) => {
+        log.debug('handleCallsLinkClick', url);
+
+        if (!this.isCallsWidget(event.sender.id)) {
+            return;
+        }
+
+        if (!this.serverID) {
+            return;
+        }
+
+        const parsedURL = parseURL(url);
+        if (parsedURL) {
+            ViewManager.handleDeepLink(parsedURL);
+            return;
+        }
+
+        // If parsing above fails it means it's a relative path (e.g.
+        // pointing to a channel).
+
+        ServerViewState.switchServer(this.serverID);
+        MainWindow.get()?.focus();
+        this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, url);
     }
 
     /**

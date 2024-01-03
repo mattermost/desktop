@@ -54,7 +54,6 @@ export declare type DesktopAPI = {
     sendJoinCallRequest: (callId: string) => void;
     onJoinCallRequest: (listener: (callID: string) => void) => () => void;
     openLinkFromCalls: (url: string) => void;
-    onOpenLinkFromCalls: (listener: (url: string) => void) => () => void;
     focusPopout: () => void;
     unregister: (channel: string) => void;
 };
