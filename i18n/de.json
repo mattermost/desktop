@@ -266,7 +266,7 @@
     "renderer.downloadsDropdown.Update.RestartAndUpdate": "Erneut starten und aktualisieren",
     "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "Neue Desktop Version verfügbar",
     "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName}-Version {version}",
-    "renderer.downloadsDropdown.Update.DownloadUpdate": "Aktualisierung runterladen",
+    "renderer.downloadsDropdown.Update.DownloadUpdate": "Aktualisierung herunterladen",
     "renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall": "Eine neue Version der {appName} Desktop App (Version {version}) steht zur Installation bereit.",
     "renderer.downloadsDropdown.remaining": "verbleibend",
     "renderer.downloadsDropdown.Downloads": "Downloads",
