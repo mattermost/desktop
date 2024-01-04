@@ -56,7 +56,7 @@
   "main.badge.unreadMentions": "Masz nieprzeczytane wzmianki ({mentionCount})",
   "main.downloadsManager.resetDownloadsFolder": "Proszę zresetować folder, do którego będą pobierane pliki",
   "main.downloadsManager.specifyDownloadsFolder": "Określ folder, do którego będą pobierane pliki",
-  "main.menus.app.edit": "&Edycja",
+  "main.menus.app.edit": "&Edytuj",
   "main.menus.app.edit.copy": "Kopiuj",
   "main.menus.app.edit.cut": "Wytnij",
   "main.menus.app.edit.paste": "Wstaw",
