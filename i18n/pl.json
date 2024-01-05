@@ -78,7 +78,7 @@
   "main.menus.app.help.RunDiagnostics": "Uruchom diagnostykę",
   "main.menus.app.help.ShowLogs": "Pokaż logi",
   "main.menus.app.help.checkForUpdates": "Sprawdź Aktualizacje",
-  "main.menus.app.help.commitString": " commit: {hashVersion}",
+  "main.menus.app.help.commitString": " zobowiązanie: {hashVersion}",
   "main.menus.app.help.downloadUpdate": "Pobierz Aktualizację",
   "main.menus.app.help.learnMore": "Dowiedz się Więcej...",
   "main.menus.app.help.restartAndUpdate": "Uruchom ponownie i Zaktualizuj",
