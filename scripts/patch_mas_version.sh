@@ -3,7 +3,7 @@
 set -e
 
 STABLE_VERSION=$(./node_modules/.bin/semver $(jq -r .version package.json) -c)
-BUILD_VERSION=$(jq -r .version package.json | sed "s/$STABLE_VERSION-.*\.//g")
+BUILD_VERSION=$(jq -r .version package.json | sed "s/$STABLE_VERSION~.*\.//g")
 
 if [ "$BUILD_VERSION" == "" ]; then
     BUILD_VERSION=$STABLE_VERSION

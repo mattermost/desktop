@@ -67,8 +67,8 @@ fi
 # get version
 pkg_version="$(jq -r .version package.json)"
 # remove trailing
-current_version="${pkg_version%-develop.*}"
-current_version="${current_version%-rc.*}"
+current_version="${pkg_version%~develop.*}"
+current_version="${current_version%~rc.*}"
 # parse version
 IFS='.' read -r major minor micro <<<"${current_version}"
 case "${1}" in
@@ -77,8 +77,8 @@ case "${1}" in
     ;;
     "rc")
         if [[ "${branch_name}" =~ "release-" ]]; then
-            if [[ "${pkg_version}" =~ "-rc." ]]; then
-                rc="${pkg_version#*-rc.}"
+            if [[ "${pkg_version}" =~ "~rc." ]]; then
+                rc="${pkg_version#*~rc.}"
             else
                 print_warning "No release candidate on the version, assuming 0"
                 rc=0
@@ -93,7 +93,7 @@ case "${1}" in
                 ;;
             esac
             print_info "Generating ${current_version} release candidate ${rc}"
-            new_pkg_version="${current_version}-rc.${rc}"
+            new_pkg_version="${current_version}~rc.${rc}"
             write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Release candidate ${rc}"
             print_info "Locally created an rc. In order to build you'll have to:"
@@ -153,7 +153,7 @@ case "${1}" in
     ;;
     "patch")
         if [[ "${branch_name}" =~ "release-" ]]; then
-            new_pkg_version="${major}.${minor}.$(( micro + 1 ))-rc.1"
+            new_pkg_version="${major}.${minor}.$(( micro + 1 ))~rc.1"
             print_info "Releasing v${new_pkg_version}"
             write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Released on $(date -u)"
@@ -176,7 +176,7 @@ case "${1}" in
                 exit 3
             fi
 
-            new_pkg_version="${new_branch_version}.0-rc.1"
+            new_pkg_version="${new_branch_version}.0~rc.1"
             git checkout -b "${new_branch_name}"
             write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Quality branch"
@@ -193,7 +193,7 @@ case "${1}" in
             fi
             new_branch_version="${major}.${minor}"
             new_branch_name="release-${new_branch_version}"
-            new_pkg_version="${new_branch_version}.0-rc.1"
+            new_pkg_version="${new_branch_version}.0~rc.1"
             master_pkg_version="${major}.$(( minor + 1 )).0-develop"
             print_info "Creating a new features branch: ${new_branch_name}"
 

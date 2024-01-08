@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-VERSION="$(jq -r '.version' <package.json)"
+VERSION="$(jq -r '.version' <package.json | tr '~' '-')"
 SRC="${1}/${VERSION}"
 DEST="${2}/${VERSION}"
 SOMETHING_COPIED=0

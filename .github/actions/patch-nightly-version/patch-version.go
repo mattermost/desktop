@@ -28,7 +28,7 @@ func main() {
 	json.Unmarshal(packageBytes, &packageInfo)
 
 	originalVersion := fmt.Sprintf("%s", packageInfo["version"])
-	nightlyVersion := fmt.Sprintf("%s~nightly.%s", strings.Split(originalVersion, "~")[0], time.Now().Format("20060102"))
+	nightlyVersion := fmt.Sprintf("%s~1nightly.%s", strings.Split(originalVersion, "~")[0], time.Now().Format("20060102"))
 	packageInfo["version"] = nightlyVersion
 
 	newPackageJson := strings.Replace(string(packageBytes), originalVersion, nightlyVersion, 1)

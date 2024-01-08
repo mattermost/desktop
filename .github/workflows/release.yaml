@@ -197,7 +197,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MATTERMOST_BUILD_GH_TOKEN }}
         run: |
-          VERSION=$(jq -r .version package.json)
+          VERSION=$(jq -r .version package.json | tr '~' '-')
           ./scripts/generate_release_markdown.sh ${VERSION} > release-notes.md
           RELEASE_TITLE="v${VERSION} ($(date -u "+%Y-%m-%d"))"
           [[ $VERSION =~ "-rc" ]] && PRERELEASE="--prerelease"
@@ -218,6 +218,6 @@ jobs:
           jq --null-input \
           --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
           --arg username "MattermostRelease" \
-          --arg text "$(bash -x scripts/generate_release_post.sh $(jq -r .version package.json))" \
+          --arg text "$(bash -x scripts/generate_release_post.sh $(jq -r .version package.json | tr '~' '-'))" \
           '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
           curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"

@@ -1,6 +1,7 @@
 Thumbs.db
 .DS_Store
 *.log
+**.swp
 
 node_modules/
 *_bundle.js

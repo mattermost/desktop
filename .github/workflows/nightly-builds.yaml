@@ -18,14 +18,15 @@ jobs:
       - name: nightly/create-nightly-build-tag
         id: tag-creation
         run: |
+          TAG_NAME="$(jq -r .version package.json | tr '~' '-')"
           git config --global user.email "nightly-build@mattermost.com"
           git config --global user.name "Nightly Build"
-          git checkout -b "$(jq -r .version package.json)"
+          git checkout -b "$TAG_NAME"
           git add package.json
-          git commit -m "Nightly build $(jq -r .version package.json)"
-          git tag "$(jq -r .version package.json)" -m "Nightly build $(jq -r .version package.json)"
+          git commit -m "Nightly build $TAG_NAME"
+          git tag "$TAG_NAME" -m "Nightly build $TAG_NAME"
           git push --tags --force
-          echo "tag=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
 
   nightly-main:
     needs:
