@@ -7,7 +7,7 @@ import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electr
 
 import ServerViewState from 'app/serverViewState';
 
-import {CALLS_WIDGET_SHARE_SCREEN} from 'common/communication';
+import {CALLS_WIDGET_SHARE_SCREEN, UPDATE_SHORTCUT_MENU} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -34,6 +34,7 @@ jest.mock('electron', () => ({
         on: jest.fn(),
         off: jest.fn(),
         handle: jest.fn(),
+        emit: jest.fn(),
     },
     desktopCapturer: {
         getSources: jest.fn(),
@@ -114,6 +115,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
                 height: MINIMUM_CALLS_WIDGET_HEIGHT,
             });
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
         });
 
         it('should open dev tools when environment variable is set', async () => {
@@ -794,6 +796,28 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith('some-channel', 'thecallchannelid');
+        });
+    });
+
+    describe('isOpen', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        it('undefined', () => {
+            expect(callsWidgetWindow.isOpen()).toBe(false);
+        });
+
+        it('open', () => {
+            callsWidgetWindow.win = {
+                isDestroyed: jest.fn(() => false),
+            };
+            expect(callsWidgetWindow.isOpen()).toBe(true);
+        });
+
+        it('destroyed', () => {
+            callsWidgetWindow.win = {
+                isDestroyed: jest.fn(() => true),
+            };
+            expect(callsWidgetWindow.isOpen()).toBe(false);
         });
     });
 });

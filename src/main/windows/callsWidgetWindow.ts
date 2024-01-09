@@ -28,6 +28,7 @@ import {
     CALLS_WIDGET_SHARE_SCREEN,
     DESKTOP_SOURCES_MODAL_REQUEST,
     GET_DESKTOP_SOURCES,
+    UPDATE_SHORTCUT_MENU,
 } from 'common/communication';
 
 import {MattermostBrowserView} from 'main/views/MattermostBrowserView';
@@ -87,9 +88,17 @@ export class CallsWidgetWindow {
         return this.mainView?.view.server.id;
     }
 
+    public isOpen() {
+        return Boolean(this.win && !this.win.isDestroyed());
+    }
+
     /**
      * Helper functions
      */
+
+    public openDevTools = () => {
+        this.win?.webContents.openDevTools({mode: 'detach'});
+    }
 
     getViewURL = () => {
         return this.mainView?.view.server.url;
@@ -203,6 +212,7 @@ export class CallsWidgetWindow {
      */
 
     private onClosed = () => {
+        ipcMain.emit(UPDATE_SHORTCUT_MENU);
         delete this.win;
         delete this.mainView;
         delete this.options;
@@ -238,8 +248,10 @@ export class CallsWidgetWindow {
         this.win.setMenuBarVisibility(false);
 
         if (process.env.MM_DEBUG_CALLS_WIDGET) {
-            this.win.webContents.openDevTools({mode: 'detach'});
+            this.openDevTools();
         }
+
+        ipcMain.emit(UPDATE_SHORTCUT_MENU);
 
         this.setBounds(initialBounds);
     }

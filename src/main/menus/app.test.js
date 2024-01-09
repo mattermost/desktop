@@ -10,7 +10,26 @@ import ServerManager from 'common/servers/serverManager';
 
 import ServerViewState from 'app/serverViewState';
 
+import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
+
 import {createTemplate} from './app';
+
+jest.mock('fs-extra', () => ({
+    readFileSync: jest.fn(),
+    writeFileSync: jest.fn(),
+    existsSync: jest.fn(),
+    copySync: jest.fn(),
+}));
+
+jest.mock('electron-extension-installer', () => {
+    return () => ({
+        REACT_DEVELOPER_TOOLS: 'react-developer-tools',
+    });
+});
+
+jest.mock('electron-context-menu', () => {
+    return () => jest.fn();
+});
 
 jest.mock('electron', () => {
     class NotificationMock {
@@ -38,6 +57,9 @@ jest.mock('electron', () => {
             removeListener: jest.fn(),
         },
         Notification: NotificationMock,
+        nativeImage: {
+            createFromPath: jest.fn(),
+        },
     };
 });
 jest.mock('fs', () => ({
@@ -67,10 +89,18 @@ jest.mock('main/downloadsManager', () => ({
 jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/windows/mainWindow', () => ({
     sendToRenderer: jest.fn(),
+    on: jest.fn(),
 }));
 jest.mock('main/windows/settingsWindow', () => ({}));
 jest.mock('common/views/View', () => ({
     getViewDisplayName: (name) => name,
+}));
+jest.mock('main/AutoLauncher', () => ({
+    enable: jest.fn(),
+    disable: jest.fn(),
+}));
+jest.mock('main/windows/callsWidgetWindow', () => ({
+    isOpen: jest.fn(),
 }));
 
 describe('main/menus/app', () => {
@@ -304,5 +334,46 @@ describe('main/menus/app', () => {
         const menu = createTemplate(config);
         const helpSubmenu = menu.find((subMenu) => subMenu.id === 'help')?.submenu;
         expect(helpSubmenu).toContainObject({id: 'diagnostics'});
+    });
+
+    it('should show developer tools submenu', () => {
+        const menu = createTemplate(config);
+
+        const appMenu = menu.find((item) => item.label === 'main.menus.app.view');
+
+        expect(appMenu).not.toBe(undefined);
+
+        const devToolsSubMenu = appMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+
+        expect(devToolsSubMenu.submenu.length).toBe(2);
+        expect(devToolsSubMenu.submenu[0].label).toBe('main.menus.app.view.devToolsAppWrapper');
+        expect(devToolsSubMenu.submenu[1].label).toBe('main.menus.app.view.devToolsCurrentServer');
+    });
+
+    it('should not show menu item if widget window is not open', () => {
+        const menu = createTemplate(config);
+
+        const appMenu = menu.find((item) => item.label === 'main.menus.app.view');
+        expect(appMenu).not.toBe(undefined);
+
+        const devToolsSubMenu = appMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+        expect(devToolsSubMenu).not.toBe(undefined);
+
+        const menuItem = devToolsSubMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsCurrentCallWidget');
+        expect(menuItem).toBe(undefined);
+    });
+
+    it('should show menu item if widget window is open', () => {
+        CallsWidgetWindow.isOpen = jest.fn(() => true);
+        const menu = createTemplate(config);
+
+        const appMenu = menu.find((item) => item.label === 'main.menus.app.view');
+        expect(appMenu).not.toBe(undefined);
+
+        const devToolsSubMenu = appMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+        expect(devToolsSubMenu).not.toBe(undefined);
+
+        const menuItem = devToolsSubMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsCurrentCallWidget');
+        expect(menuItem).not.toBe(undefined);
     });
 });
