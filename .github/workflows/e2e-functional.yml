@@ -1,14 +1,18 @@
 name: Electron Playwright Tests
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Reference tag of the nightly build"
+        required: true
+        type: string
   push:
     branches:
       - master
   pull_request:
     types:
         - labeled
-  schedule:
-    - cron: 0 4 * * 0-5
   workflow_dispatch:
     inputs:
       version_name:
@@ -110,7 +114,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" ]; then
+          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
@@ -201,7 +205,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" ]; then
+          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
@@ -294,7 +298,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" ]; then
+          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
