@@ -66,7 +66,7 @@ jobs:
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
           (
-              github.event_name == 'schedule'
+              github.event_name == 'schedule' || github.event_name == 'workflow_call'
           )
       }}
     runs-on: ubuntu-latest
@@ -145,7 +145,7 @@ jobs:
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
          (
-          github.event_name == 'schedule'
+          github.event_name == 'schedule' || github.event_name == 'workflow_call'
       )
       }}
     runs-on: macos-13
@@ -235,7 +235,7 @@ jobs:
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
          (
-          github.event_name == 'schedule'
+          github.event_name == 'schedule' || github.event_name == 'workflow_call'
       )
       }}
     runs-on: windows-2022
