@@ -58,7 +58,7 @@ jobs:
             github.event_name == 'workflow_dispatch'
         ) || 
         (
-            github.event_name == 'push' && github.ref == 'refs/heads/main'
+            github.event_name == 'push' && github.ref == 'refs/heads/fix-push-trigger'
         ) || 
         (
             github.event_name == 'pull_request' && 
@@ -108,7 +108,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
+          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/fix-push-trigger" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
@@ -137,7 +137,7 @@ jobs:
             github.event_name == 'workflow_dispatch'
         ) || 
         (
-            github.event_name == 'push' && github.ref == 'refs/heads/main'
+            github.event_name == 'push' && github.ref == 'refs/heads/fix-push-trigger'
         ) || 
         (
             github.event_name == 'pull_request' && 
@@ -199,7 +199,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
+          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/fix-push-trigger" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
@@ -227,7 +227,7 @@ jobs:
             github.event_name == 'workflow_dispatch'
         ) || 
         (
-            github.event_name == 'push' && github.ref == 'refs/heads/main'
+            github.event_name == 'push' && github.ref == 'refs/heads/fix-push-trigger'
         ) || 
         (
             github.event_name == 'pull_request' && 
@@ -292,7 +292,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
   
-          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
+          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/fix-push-trigger" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
