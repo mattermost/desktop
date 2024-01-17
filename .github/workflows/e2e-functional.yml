@@ -1,13 +1,35 @@
 name: Electron Playwright Tests
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Reference tag of the nightly build"
+        required: true
+        type: string
   push:
     branches:
       - master
   pull_request:
     types:
         - labeled
-
+  workflow_dispatch:
+    inputs:
+      version_name:
+        type: string
+        description: 'Desktop Version name eg: 5.6'
+        required: true
+      job_name:
+        type: choice
+        description: 'Job name'
+        required: true
+        default: 'e2e-linux'
+        options:
+          - 'e2e-linux'
+          - 'e2e-macos'
+          - 'e2e-windows'
+          - 'All'
+      
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.ref }}
@@ -17,7 +39,6 @@ env:
   MM_TEST_USER_NAME: ${{ secrets.MM_DESKTOP_E2E_USER_NAME }}
   MM_TEST_PASSWORD: ${{ secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
   PULL_REQUEST_BASE_URL: "https://github.com/mattermost/desktop/pull/"
-  TYPE: ${{ github.event_name == 'pull_request' && 'PR' || '' }}
   ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
   ZEPHYR_FOLDER_ID: "3256491"
   TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
@@ -27,10 +48,27 @@ env:
   WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
 
-
 jobs:
   e2e-linux:
-    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
+    if: ${{ 
+        (
+          (inputs.job_name == 'e2e-linux' || 
+          inputs.job_name == 'All')
+          &&
+            github.event_name == 'workflow_dispatch'
+        ) || 
+        (
+            github.event_name == 'push' && github.ref == 'refs/heads/main'
+        ) || 
+        (
+            github.event_name == 'pull_request' && 
+            github.event.pull_request.labels && 
+            contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+        ) ||
+          (
+              github.event_name == 'schedule' || github.event_name == 'workflow_call'
+          )
+      }}
     runs-on: ubuntu-latest
     steps:
 
@@ -55,22 +93,32 @@ jobs:
       - name: Set Environment Variables
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-          echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
-          echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+            echo "TYPE=PR" >> $GITHUB_ENV
+
           elif [ "${{ github.event_name }}" == "release" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-          elif [ "${{ github.event_name }}" == "schedule" ]; then
+
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
+            echo "TYPE=MANUAL" >> $GITHUB_ENV
+
+          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "TYPE=MASTER" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+
+          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
-          fi
-          echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
-          echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-
-          if [ -n "${ZEPHYR_ENABLE}" ]; then
-            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
+            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
 
       - name: Run Playwright tests (Ubuntu OS)
@@ -79,9 +127,27 @@ jobs:
           Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
-    
+
   e2e-macos:
-    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
+    if: ${{ 
+        (
+          (inputs.job_name == 'e2e-macos' || 
+          inputs.job_name == 'All')
+          &&
+            github.event_name == 'workflow_dispatch'
+        ) || 
+        (
+            github.event_name == 'push' && github.ref == 'refs/heads/main'
+        ) || 
+        (
+            github.event_name == 'pull_request' && 
+            github.event.pull_request.labels && 
+            contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+        ) ||
+         (
+          github.event_name == 'schedule' || github.event_name == 'workflow_call'
+      )
+      }}
     runs-on: macos-13
     steps:
       - name: ci/checkout-repo
@@ -92,16 +158,18 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-
-      - name: Setup Go environment
-        uses: actions/setup-go@v4.0.1
+      - name: Cache Electron Headers
+        uses: actions/cache@v3
         with:
-          go-version: '1.20'
+          path: |
+            ~/.electron
+            ~/.cache/electron
+          key: electron-headers-${{ runner.os }}-${{ hashFiles('**/*.gyp') }}
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version: '3.10'
 
       - name: ci/install-dependencies
         env:
@@ -111,7 +179,6 @@ jobs:
           npm ci
           npm install -g node-gyp
           npm i robotjs
-          npm i -D electron-rebuild
           npx electron-rebuild -f -t prod,optional,dev -w robotjs
 
       - name: Set Environment Variables
@@ -119,29 +186,58 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+            echo "TYPE=PR" >> $GITHUB_ENV
+
           elif [ "${{ github.event_name }}" == "release" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-          elif [ "${{ github.event_name }}" == "schedule" ]; then
+
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
+            echo "TYPE=MANUAL" >> $GITHUB_ENV
+
+          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "TYPE=MASTER" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+
+          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
-          fi
-          echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
-          echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-
-          if [ -n "${ZEPHYR_ENABLE}" ]; then
-            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
+            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
 
       - name: Run Playwright tests (macOS)
         run: |
+          cat $GITHUB_ENV
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
   e2e-windows:
-    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }}
+    if: ${{ 
+        (
+          (inputs.job_name == 'e2e-windows' || 
+          inputs.job_name == 'All')
+          &&
+            github.event_name == 'workflow_dispatch'
+        ) || 
+        (
+            github.event_name == 'push' && github.ref == 'refs/heads/main'
+        ) || 
+        (
+            github.event_name == 'pull_request' && 
+            github.event.pull_request.labels && 
+            contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+        ) ||
+         (
+          github.event_name == 'schedule' || github.event_name == 'workflow_call'
+      )
+      }}
     runs-on: windows-2022
     steps:
       - name: ci/checkout-repo
@@ -183,31 +279,42 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+            echo "TYPE=PR" >> $GITHUB_ENV
+
           elif [ "${{ github.event_name }}" == "release" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-          elif [ "${{ github.event_name }}" == "schedule" ]; then
+
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
+            echo "TYPE=MANUAL" >> $GITHUB_ENV
+  
+          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+            echo "TYPE=MASTER" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+
+          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
-          fi
-          echo "BUILD_ID=${{ github.run_id }}-${BUILD_SUFFIX}-${{ runner.os }}" >> $GITHUB_ENV
-          echo "BUILD_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "PULL_REQUEST=${PULL_REQUEST_BASE_URL}${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-
-          if [ -n "${ZEPHYR_ENABLE}" ]; then
-            echo "ZEPHYR_ENABLE=${ZEPHYR_ENABLE}" >> $GITHUB_ENV
+            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
   
       - name: Run Playwright tests (Windows OS)
         run: |
+          cat $GITHUB_ENV
           npm run test:e2e || true
           npm run test:e2e:send-report
         shell: bash
 
   e2e-remove-label:
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
     needs: [e2e-linux, e2e-macos, e2e-windows]
-    if: ${{ github.event.label.name == 'Run Desktop E2E Tests' }} && ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Remove "Run Desktop E2E Tests" label
