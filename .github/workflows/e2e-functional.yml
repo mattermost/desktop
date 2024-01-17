@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - master
+      - fix-push-trigger
   pull_request:
     types:
         - labeled
