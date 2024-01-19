@@ -3,7 +3,7 @@ name: nightly-builds
 on:
   workflow_dispatch:
   schedule:
-    - cron: 0 4 * * 0-5
+    - cron: '*/5 * * * *'
 
 jobs:
   tag-nightly-build:
