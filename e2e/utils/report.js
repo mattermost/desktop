@@ -251,6 +251,12 @@ function generateTitle() {
     case 'NIGHTLY':
         title = 'E2E for Master Nightly Build';
         break;
+    case 'MASTER':
+        title = 'E2E for Post Merge to Master';
+        break;
+    case 'MANUAL':
+        title = `E2E for Manually triggered for ${BRANCH}`;
+        break;
     default:
         title = 'E2E for Build$';
     }

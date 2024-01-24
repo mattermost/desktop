@@ -42,3 +42,12 @@ jobs:
     secrets: inherit
     with:
       tag: ${{ needs.tag-nightly-build.outputs.tag }}
+
+  nightly-e2e:
+    needs:
+      - tag-nightly-build
+    uses: ./.github/workflows/e2e-functional.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.tag-nightly-build.outputs.tag }}
+    
