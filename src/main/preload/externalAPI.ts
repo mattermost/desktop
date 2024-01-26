@@ -81,24 +81,29 @@ const desktopAPI: DesktopAPI = {
     onBrowserHistoryPush: (listener) => createListener(BROWSER_HISTORY_PUSH, listener),
     sendBrowserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
 
-    // Calls widget
-    openLinkFromCallsWidget: (url) => ipcRenderer.send(CALLS_LINK_CLICK, url),
-    openScreenShareModal: () => ipcRenderer.send(DESKTOP_SOURCES_MODAL_REQUEST),
-    onScreenShared: (listener) => createListener(CALLS_WIDGET_SHARE_SCREEN, listener),
-    callsWidgetConnected: (callID, sessionID) => ipcRenderer.send(CALLS_JOINED_CALL, callID, sessionID),
-    onJoinCallRequest: (listener) => createListener(CALLS_JOIN_REQUEST, listener),
-    resizeCallsWidget: (width, height) => ipcRenderer.send(CALLS_WIDGET_RESIZE, width, height),
-    focusPopout: () => ipcRenderer.send(CALLS_POPOUT_FOCUS),
-    leaveCall: () => ipcRenderer.send(CALLS_LEAVE_CALL),
-    sendCallsError: (error) => ipcRenderer.send(CALLS_ERROR, error),
-
-    // Calls plugin
-    getDesktopSources: (opts) => ipcRenderer.invoke(GET_DESKTOP_SOURCES, opts),
-    onOpenScreenShareModal: (listener) => createListener(DESKTOP_SOURCES_MODAL_REQUEST, listener),
-    shareScreen: (sourceID, withAudio) => ipcRenderer.send(CALLS_WIDGET_SHARE_SCREEN, sourceID, withAudio),
+    // Calls
     joinCall: (opts) => ipcRenderer.invoke(CALLS_JOIN_CALL, opts),
-    sendJoinCallRequest: (callId) => ipcRenderer.send(CALLS_JOIN_REQUEST, callId),
+    leaveCall: () => ipcRenderer.send(CALLS_LEAVE_CALL),
+
+    callsWidgetConnected: (callID, sessionID) => ipcRenderer.send(CALLS_JOINED_CALL, callID, sessionID),
+    resizeCallsWidget: (width, height) => ipcRenderer.send(CALLS_WIDGET_RESIZE, width, height),
+
+    sendCallsError: (err, callID, errMsg) => ipcRenderer.send(CALLS_ERROR, err, callID, errMsg),
     onCallsError: (listener) => createListener(CALLS_ERROR, listener),
+
+    getDesktopSources: (opts) => ipcRenderer.invoke(GET_DESKTOP_SOURCES, opts),
+    openScreenShareModal: () => ipcRenderer.send(DESKTOP_SOURCES_MODAL_REQUEST),
+    onOpenScreenShareModal: (listener) => createListener(DESKTOP_SOURCES_MODAL_REQUEST, listener),
+
+    shareScreen: (sourceID, withAudio) => ipcRenderer.send(CALLS_WIDGET_SHARE_SCREEN, sourceID, withAudio),
+    onScreenShared: (listener) => createListener(CALLS_WIDGET_SHARE_SCREEN, listener),
+
+    sendJoinCallRequest: (callId) => ipcRenderer.send(CALLS_JOIN_REQUEST, callId),
+    onJoinCallRequest: (listener) => createListener(CALLS_JOIN_REQUEST, listener),
+
+    openLinkFromCalls: (url) => ipcRenderer.send(CALLS_LINK_CLICK, url),
+
+    focusPopout: () => ipcRenderer.send(CALLS_POPOUT_FOCUS),
 
     // Utility
     unregister: (channel) => ipcRenderer.removeAllListeners(channel),

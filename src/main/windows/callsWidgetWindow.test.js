@@ -7,7 +7,7 @@ import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electr
 
 import ServerViewState from 'app/serverViewState';
 
-import {CALLS_WIDGET_SHARE_SCREEN, UPDATE_SHORTCUT_MENU} from 'common/communication';
+import {CALLS_WIDGET_SHARE_SCREEN, BROWSER_HISTORY_PUSH, UPDATE_SHORTCUT_MENU} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -534,6 +534,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
     describe('handleGetDesktopSources', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.options = {callID: 'callID'};
         callsWidgetWindow.win = {
             webContents: {
                 send: jest.fn(),
@@ -626,12 +627,8 @@ describe('main/windows/callsWidgetWindow', () => {
         it('should send error with no sources', async () => {
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
             await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
-            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
-            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
 
@@ -649,12 +646,8 @@ describe('main/windows/callsWidgetWindow', () => {
             await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
 
             expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
-            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
-            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledTimes(1);
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
@@ -680,12 +673,8 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(callsWidgetWindow.missingScreensharePermissions).toBe(true);
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(1);
             expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(0);
-            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
-            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', {
-                err: 'screen-permissions',
-            });
+            expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
+            expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
 
             await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
 
@@ -799,6 +788,49 @@ describe('main/windows/callsWidgetWindow', () => {
         });
     });
 
+    describe('handleCallsLinkClick', () => {
+        const view = {
+            view: {
+                server: {
+                    id: 'server-1',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = view;
+        callsWidgetWindow.win = {webContents: {id: 1}};
+
+        const focus = jest.fn();
+
+        beforeEach(() => {
+            urlUtils.parseURL.mockImplementation((url) => {
+                try {
+                    return new URL(url);
+                } catch (e) {
+                    return undefined;
+                }
+            });
+            MainWindow.get.mockReturnValue({focus});
+            ViewManager.getView.mockReturnValue(view);
+            ViewManager.handleDeepLink = jest.fn();
+        });
+
+        it('should switch server, focus and send history push event', () => {
+            const url = '/team/channel';
+            callsWidgetWindow.handleCallsLinkClick({sender: {id: 1}}, url);
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(focus).toHaveBeenCalled();
+            expect(view.sendToRenderer).toBeCalledWith(BROWSER_HISTORY_PUSH, url);
+        });
+
+        it('should call ViewManager.handleDeepLink for parseable urls', () => {
+            const url = 'http://localhost:8065/team/channel';
+            callsWidgetWindow.handleCallsLinkClick({sender: {id: 1}}, url);
+            expect(ViewManager.handleDeepLink).toHaveBeenCalledWith(new URL(url));
+        });
+    });
+  
     describe('isOpen', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
 

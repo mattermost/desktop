@@ -20,5 +20,6 @@ export interface ExternalAPI {
     createListener(event: 'calls-widget-share-screen', listener: (sourceID: string, withAudio: boolean) => void): () => void;
     createListener(event: 'calls-join-request', listener: (callID: string) => void): () => void;
     createListener(event: 'calls-error', listener: (err: string, callID?: string, errMsg?: string) => void): () => void;
+    createListener(event: 'calls-link-click', listener: (url: string) => void): () => void;
     createListener(event: 'desktop-sources-modal-request', listener: () => void): () => void;
 }
