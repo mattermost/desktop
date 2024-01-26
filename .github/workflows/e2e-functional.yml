@@ -10,7 +10,7 @@ on:
   push:
     branches:
       - master
-      - post-zephry-link-channel
+      # - post-zephry-link-channel
   pull_request:
     types:
         - labeled
@@ -67,9 +67,15 @@ jobs:
             github.event.pull_request.labels && 
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
-          (
-              github.event_name == 'schedule' || github.event_name == 'workflow_call'
-          )
+        (
+            github.event_name == 'schedule' 
+        ) ||
+        (
+            github.event_name == 'workflow_call'
+        ) ||
+        (
+            github.event_name == 'workflow_dispatch'
+        )
       }}
     runs-on: ubuntu-latest
     steps:
@@ -147,9 +153,15 @@ jobs:
             github.event.pull_request.labels && 
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
-         (
-          github.event_name == 'schedule' || github.event_name == 'workflow_call'
-      )
+        (
+            github.event_name == 'schedule' 
+        ) ||
+        (
+            github.event_name == 'workflow_call'
+        ) ||
+        (
+            github.event_name == 'workflow_dispatch'
+        )
       }}
     runs-on: macos-13
     steps:
@@ -238,9 +250,15 @@ jobs:
             github.event.pull_request.labels && 
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
-         (
-          github.event_name == 'schedule' || github.event_name == 'workflow_call'
-      )
+        (
+            github.event_name == 'schedule' 
+        ) ||
+        (
+            github.event_name == 'workflow_call'
+        ) ||
+        (
+            github.event_name == 'workflow_dispatch'
+        )
       }}
     runs-on: windows-2022
     steps:
