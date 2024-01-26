@@ -53,9 +53,8 @@ jobs:
   e2e-linux:
     if: ${{ 
         (
-          (inputs.job_name == 'e2e-linux' || 
-          inputs.job_name == 'All')
-          &&
+          (inputs.job_name == 'e2e-linux' || inputs.job_name == 'All')
+          ||
             github.event_name == 'workflow_dispatch'
         ) || 
         (
@@ -135,9 +134,8 @@ jobs:
   e2e-macos:
     if: ${{ 
         (
-          (inputs.job_name == 'e2e-macos' || 
-          inputs.job_name == 'All')
-          &&
+          (inputs.job_name == 'e2e-macos' || inputs.job_name == 'All')
+          ||
             github.event_name == 'workflow_dispatch'
         ) || 
         (
@@ -229,9 +227,8 @@ jobs:
   e2e-windows:
     if: ${{ 
         (
-          (inputs.job_name == 'e2e-windows' || 
-          inputs.job_name == 'All')
-          &&
+          (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
+          ||
             github.event_name == 'workflow_dispatch'
         ) || 
         (
