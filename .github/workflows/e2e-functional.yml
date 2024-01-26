@@ -72,16 +72,10 @@ jobs:
         ) ||
         (
             github.event_name == 'workflow_call'
-        ) ||
-        (
-            github.event_name == 'workflow_dispatch'
         )
       }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check Trigger Event
-        run: |
-          echo "Triggered by: ${{ github.event_name }}"
 
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -161,16 +155,10 @@ jobs:
         ) ||
         (
             github.event_name == 'workflow_call'
-        )||
-        (
-            github.event_name == 'workflow_dispatch'
         )
       }}
     runs-on: macos-13
     steps:
-      - name: Check Trigger Event
-        run: |
-          echo "Triggered by: ${{ github.event_name }}"
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: ci/setup-node
@@ -261,16 +249,10 @@ jobs:
         ) ||
         (
             github.event_name == 'workflow_call'
-        ) ||
-        (
-            github.event_name == 'workflow_dispatch'
         )
       }}
     runs-on: windows-2022
     steps:
-      - name: Check Trigger Event
-        run: |
-          echo "Triggered by: ${{ github.event_name }}"
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: ci/setup-node
