@@ -10,7 +10,6 @@ on:
   push:
     branches:
       - master
-      # - post-zephry-link-channel
   pull_request:
     types:
         - labeled
@@ -120,13 +119,12 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
+          elif [ "${{ github.event_name }}" == "schedule" ] || [ "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
-
       - name: Run Playwright tests (Ubuntu OS)
         run: |
           export DISPLAY=:99
@@ -215,7 +213,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
+          elif [ "${{ github.event_name }}" == "schedule" ] || [ "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
@@ -312,7 +310,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_call" ]; then
+          elif [ "${{ github.event_name }}" == "schedule" ] || [ "${{ github.event_name }}" == "workflow_call" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
