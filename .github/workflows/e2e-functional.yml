@@ -7,6 +7,10 @@ on:
         description: "Reference tag of the nightly build"
         required: true
         type: string
+      trigger_type:
+        description: "Nightly Schedule Trigger"
+        required: true
+        type: string
   push:
     branches:
       - master
@@ -48,6 +52,7 @@ env:
   WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   BUILD_ID: ${{ github.run_id }}
+  TRIGGER_TYPE: ${{ inputs.trigger_type }}
 
 jobs:
   e2e-linux:
@@ -74,7 +79,10 @@ jobs:
       }}
     runs-on: ubuntu-latest
     steps:
-
+      - name: Run E2E Tests
+        run: |
+          echo "Running E2E Tests..."
+          echo "Trigger Type: ${{ matrix.trigger_type }}"
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: ci/setup-node
@@ -95,7 +103,7 @@ jobs:
 
       - name: Set Environment Variables
         run: |
-          echo "*********", $BUILD_ID
+
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
@@ -188,7 +196,7 @@ jobs:
 
       - name: Set Environment Variables
         run: |
-          echo "*********", $BUILD_ID
+
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
@@ -284,7 +292,7 @@ jobs:
       - name: Set Environment Variables
         shell: bash
         run: |
-          echo "*********", $BUILD_ID
+
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV

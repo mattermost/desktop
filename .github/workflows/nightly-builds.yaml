@@ -1,6 +1,10 @@
 name: nightly-builds
 
 on:
+  workflow_run:
+    workflows: ["e2e-functional.yml"]
+    types:
+      - completed
   workflow_dispatch:
   schedule:
     - cron: '*/5 * * * *'
@@ -43,10 +47,26 @@ jobs:
   #   with:
   #     tag: ${{ needs.tag-nightly-build.outputs.tag }}
 
+  # nightly-e2e:
+  #   needs:
+  #     - tag-nightly-build
+  #   uses: ./.github/workflows/e2e-functional.yml
+  #   secrets: inherit
+  #   with:
+  #     tag: ${{ needs.tag-nightly-build.outputs.tag }}
+  #     trigger_type: ${{ github.event.inputs.trigger_event }}
+
   nightly-e2e:
-    needs:
-      - tag-nightly-build
-    uses: ./.github/workflows/e2e-functional.yml
-    secrets: inherit
-    with:
-      tag: ${{ needs.tag-nightly-build.outputs.tag }}
+    runs-on: ubuntu-latest
+    needs: tag-nightly-build
+    steps:
+      - name: Trigger e2e-test.yml workflow
+        uses: aurelien-baudet/workflow-dispatch@v2.1.1
+        with:
+          workflow: "e2e-functional.yml"
+          token: ${{ secrets.MATTERMOST_BUILD_GH_TOKEN }}
+          inputs: |
+            {
+              "tag": "${{ needs.tag-nightly-build.outputs.tag }}",
+              "trigger_event": "workflow_call"
+            }
