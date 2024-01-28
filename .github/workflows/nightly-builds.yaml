@@ -63,10 +63,6 @@ jobs:
       - name: Trigger e2e-test.yml workflow
         uses: aurelien-baudet/workflow-dispatch@v2.1.1
         with:
-          workflow: "e2e-functional.yml"
           token: ${{ secrets.MATTERMOST_BUILD_GH_TOKEN }}
-          inputs: |
-            {
-              "tag": "${{ needs.tag-nightly-build.outputs.tag }}",
-              "trigger_event": "workflow_call"
-            }
+          workflow: e2e-functional.yml
+          inputs: '{ "tag": "${{ needs.tag-nightly-build.outputs.tag }}", "trigger_event": "workflow_call" }'
