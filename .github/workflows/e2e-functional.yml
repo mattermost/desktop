@@ -93,6 +93,7 @@ jobs:
       - name: Set Environment Variables
         run: |
 
+          echo "BRANCH = ${{ env.BRANCH }}"
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
             echo "TYPE=PR" >> $GITHUB_ENV
