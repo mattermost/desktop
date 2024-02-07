@@ -31,21 +31,21 @@ jobs:
           git push --tags --force
           echo "tag=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
 
-  nightly-main:
-    needs:
-      - tag-nightly-build
-    uses: ./.github/workflows/nightly-main.yml
-    secrets: inherit
-    with:
-      tag: ${{ needs.tag-nightly-build.outputs.tag }}
+  # nightly-main:
+  #   needs:
+  #     - tag-nightly-build
+  #   uses: ./.github/workflows/nightly-main.yml
+  #   secrets: inherit
+  #   with:
+  #     tag: ${{ needs.tag-nightly-build.outputs.tag }}
 
-  nightly-rainforest:
-    needs:
-      - tag-nightly-build
-    uses: ./.github/workflows/nightly-rainforest.yml
-    secrets: inherit
-    with:
-      tag: ${{ needs.tag-nightly-build.outputs.tag }}
+  # nightly-rainforest:
+  #   needs:
+  #     - tag-nightly-build
+  #   uses: ./.github/workflows/nightly-rainforest.yml
+  #   secrets: inherit
+  #   with:
+  #     tag: ${{ needs.tag-nightly-build.outputs.tag }}
 
   nightly-e2e:
     needs:
