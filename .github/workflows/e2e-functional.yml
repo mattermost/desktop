@@ -32,7 +32,8 @@ on:
       
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
-  BRANCH: ${{ github.ref }}
+  BRANCH: ${{ github.event_name == 'pull_request' && ('${GITHUB_HEAD_REF##*/}') || ('${GITHUB_REF#refs/heads/}') }}
+  BUILD_TAG: ${{ github.sha }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
   MM_TEST_SERVER_URL: ${{ secrets.MM_DESKTOP_E2E_SERVER_URL }}
@@ -93,29 +94,24 @@ jobs:
         run: |
 
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
             echo "TYPE=PR" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/post-zephry-link-channel" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
@@ -183,29 +179,24 @@ jobs:
         run: |
 
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
             echo "TYPE=PR" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/post-zephry-link-channel" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
@@ -276,29 +267,24 @@ jobs:
         run: |
 
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
             echo "TYPE=PR" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
   
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/post-zephry-link-channel" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
