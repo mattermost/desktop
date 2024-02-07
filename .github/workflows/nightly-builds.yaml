@@ -31,38 +31,26 @@ jobs:
           git push --tags --force
           echo "tag=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
 
-  # nightly-main:
-  #   needs:
-  #     - tag-nightly-build
-  #   uses: ./.github/workflows/nightly-main.yml
-  #   secrets: inherit
-  #   with:
-  #     tag: ${{ needs.tag-nightly-build.outputs.tag }}
+  nightly-main:
+    needs:
+      - tag-nightly-build
+    uses: ./.github/workflows/nightly-main.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.tag-nightly-build.outputs.tag }}
 
-  # nightly-rainforest:
-  #   needs:
-  #     - tag-nightly-build
-  #   uses: ./.github/workflows/nightly-rainforest.yml
-  #   secrets: inherit
-  #   with:
-  #     tag: ${{ needs.tag-nightly-build.outputs.tag }}
-
-  # nightly-e2e:
-  #   needs:
-  #     - tag-nightly-build
-  #   uses: ./.github/workflows/e2e-functional.yml
-  #   secrets: inherit
-  #   with:
-  #     tag: ${{ needs.tag-nightly-build.outputs.tag }}
-  #     trigger_type: ${{ github.event.inputs.trigger_event }}
+  nightly-rainforest:
+    needs:
+      - tag-nightly-build
+    uses: ./.github/workflows/nightly-rainforest.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.tag-nightly-build.outputs.tag }}
 
   nightly-e2e:
-    runs-on: ubuntu-latest
-    needs: tag-nightly-build
-    steps:
-      - name: Trigger e2e-test.yml workflow
-        uses: aurelien-baudet/workflow-dispatch@v2.1.1
-        with:
-          token: ${{ secrets.MATTERMOST_BUILD_GH_TOKEN }}
-          workflow: e2e-functional.yml
-          inputs: '{ "tag": "${{ needs.tag-nightly-build.outputs.tag }}", "trigger_event": "workflow_call" }'
+    needs:
+      - tag-nightly-build
+    uses: ./.github/workflows/e2e-functional.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.tag-nightly-build.outputs.tag }}

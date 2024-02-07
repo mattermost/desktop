@@ -7,10 +7,6 @@ on:
         description: "Reference tag of the nightly build"
         required: true
         type: string
-      trigger_type:
-        description: "Nightly Schedule Trigger"
-        required: true
-        type: string
   push:
     branches:
       - master
@@ -52,14 +48,13 @@ env:
   WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   BUILD_ID: ${{ github.run_id }}
-  TRIGGER_TYPE: ${{ inputs.trigger_type }}
 
 jobs:
   e2e-linux:
     if: ${{ 
         (
           (inputs.job_name == 'e2e-linux' || inputs.job_name == 'All')
-          ||
+          &&
             github.event_name == 'workflow_dispatch'
         ) || 
         (
@@ -71,18 +66,11 @@ jobs:
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
         (
-            github.event_name == 'schedule' 
-        ) ||
-        (
-            github.event_name == 'workflow_call'
+          (inputs.tag != '')
         )
       }}
     runs-on: ubuntu-latest
     steps:
-      - name: Run E2E Tests
-        run: |
-          echo "Running E2E Tests..."
-          echo "Trigger Type: ${{ matrix.trigger_type }}"
       - name: ci/checkout-repo
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       - name: ci/setup-node
@@ -126,7 +114,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" ] || [ "${{ github.event_name }}" == "workflow_call" ]; then
+          elif [ "${{ inputs.tag }}" != "" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
@@ -143,7 +131,7 @@ jobs:
     if: ${{ 
         (
           (inputs.job_name == 'e2e-macos' || inputs.job_name == 'All')
-          ||
+          &&
             github.event_name == 'workflow_dispatch'
         ) || 
         (
@@ -155,10 +143,7 @@ jobs:
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
         (
-            github.event_name == 'schedule' 
-        ) ||
-        (
-            github.event_name == 'workflow_call'
+          (inputs.tag != '')
         )
       }}
     runs-on: macos-13
@@ -219,7 +204,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" ] || [ "${{ github.event_name }}" == "workflow_call" ]; then
+          elif [ "${{ inputs.tag }}" != "" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
@@ -236,7 +221,7 @@ jobs:
     if: ${{ 
         (
           (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
-          ||
+          &&
             github.event_name == 'workflow_dispatch'
         ) || 
         (
@@ -248,10 +233,7 @@ jobs:
             contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
         ) ||
         (
-            github.event_name == 'schedule' 
-        ) ||
-        (
-            github.event_name == 'workflow_call'
+          (inputs.tag != '')
         )
       }}
     runs-on: windows-2022
@@ -315,7 +297,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "schedule" ] || [ "${{ github.event_name }}" == "workflow_call" ]; then
+          elif [ "${{ inputs.tag }}" != "" ]; then
             echo "BRANCH=${{ github.ref }}" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
