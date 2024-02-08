@@ -93,7 +93,6 @@ jobs:
       - name: Set Environment Variables
         run: |
 
-          echo "BRANCH = ${{ env.BRANCH }}"
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
             echo "TYPE=PR" >> $GITHUB_ENV
@@ -103,13 +102,13 @@ jobs:
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/post-zephry-link-channel" ]; then
-            echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
+            echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
@@ -188,13 +187,13 @@ jobs:
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/post-zephry-link-channel" ]; then
-            echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
+            echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
@@ -276,7 +275,7 @@ jobs:
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
             echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
   
@@ -286,8 +285,8 @@ jobs:
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
   
