@@ -83,13 +83,36 @@ function saveToEndpoint(url, data) {
     });
 }
 
+async function getZEPHYRFolderID() {
+    const {
+        ZEPHYR_FOLDER_ID,
+    } = process.env;
+    const platform = os.platform();
+    let folderID;
+
+    switch (platform) {
+        case 'darwin':
+            folderID = 12358650;
+            break;
+        case 'win32':
+            folderID = 12358651;
+            break;
+        case 'linux':
+            folderID = 12358649;
+            break;
+        default:
+            folderID = ZEPHYR_FOLDER_ID;
+    }
+
+    return folderID;
+}
+
 async function createTestCycle(startDate, endDate) {
     const {
         BRANCH,
         BUILD_ID,
         JIRA_PROJECT_KEY,
         ZEPHYR_CYCLE_NAME,
-        ZEPHYR_FOLDER_ID,
     } = process.env;
 
     const testCycle = {
@@ -99,7 +122,7 @@ async function createTestCycle(startDate, endDate) {
         plannedStartDate: startDate,
         plannedEndDate: endDate,
         statusName: 'Done',
-        folderId: ZEPHYR_FOLDER_ID,
+        folderId: getZEPHYRFolderID(),
     };
 
     const response = await saveToEndpoint('https://api.zephyrscale.smartbear.com/v2/testcycles', testCycle);
