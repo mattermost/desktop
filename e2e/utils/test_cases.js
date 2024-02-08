@@ -96,7 +96,7 @@ async function getZEPHYRFolderID(TYPE) {
 
     // Define Zephyr folder IDs for different run types and platforms.
     // For PR we dont generate reports.
-    // Post Merge master default folderID will be used.
+    // Post Merge to master branch, default folderID will be used.
     const folderIDs = {
         RELEASE: {
             darwin: 12358650,
@@ -134,7 +134,7 @@ async function createTestCycle(startDate, endDate) {
         plannedStartDate: startDate,
         plannedEndDate: endDate,
         statusName: 'Done',
-        folderId: getZEPHYRFolderID(),
+        folderId: await getZEPHYRFolderID(),
     };
 
     const response = await saveToEndpoint('https://api.zephyrscale.smartbear.com/v2/testcycles', testCycle);
