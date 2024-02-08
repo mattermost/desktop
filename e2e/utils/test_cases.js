@@ -85,8 +85,9 @@ function saveToEndpoint(url, data) {
     });
 }
 
-async function getZEPHYRFolderID(TYPE) {
+async function getZEPHYRFolderID() {
     const {
+        TYPE,
         ZEPHYR_FOLDER_ID,
     } = process.env;
     if (TYPE === 'MASTER') {
