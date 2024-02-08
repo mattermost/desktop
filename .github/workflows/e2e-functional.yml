@@ -32,7 +32,7 @@ on:
       
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
-  BRANCH: ${{ github.event_name == 'pull_request' && ('${GITHUB_HEAD_REF##*/}') || ('${GITHUB_REF#refs/heads/}') }}
+  BRANCH: ${{ github.head_ref || github.ref_name }} 
   BUILD_TAG: ${{ github.sha }}
   BUILD_SUFFIX: 'desktop-pr'
   JIRA_PROJECT_KEY: 'MM'
