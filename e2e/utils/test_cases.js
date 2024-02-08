@@ -5,6 +5,8 @@
 
 // See reference: https://support.smartbear.com/tm4j-cloud/api-docs/
 
+const os = require('os');
+
 const axios = require('axios');
 const chalk = require('chalk');
 
@@ -83,26 +85,36 @@ function saveToEndpoint(url, data) {
     });
 }
 
-async function getZEPHYRFolderID() {
+async function getZEPHYRFolderID(TYPE) {
     const {
         ZEPHYR_FOLDER_ID,
     } = process.env;
-    const platform = os.platform();
-    let folderID;
-
-    switch (platform) {
-        case 'darwin':
-            folderID = 12358650;
-            break;
-        case 'win32':
-            folderID = 12358651;
-            break;
-        case 'linux':
-            folderID = 12358649;
-            break;
-        default:
-            folderID = ZEPHYR_FOLDER_ID;
+    if (TYPE === 'MASTER') {
+        return ZEPHYR_FOLDER_ID;
     }
+    const platform = os.platform();
+
+    // Define Zephyr folder IDs for different run types and platforms.
+    // For PR we dont generate reports.
+    // Post Merge master default folderID will be used.
+    const folderIDs = {
+        RELEASE: {
+            darwin: 12358650,
+            win32: 12358651,
+            linux: 12358649,
+            default: ZEPHYR_FOLDER_ID,
+        },
+        NIGHTLY: {
+            darwin: 12363687,
+            win32: 12363690,
+            linux: 12363689,
+            default: ZEPHYR_FOLDER_ID,
+        },
+    };
+
+    // Get the folder ID based on the type and platform
+    const typeFolderIDs = folderIDs[TYPE];
+    const folderID = typeFolderIDs?.[platform] ?? typeFolderIDs?.default ?? ZEPHYR_FOLDER_ID;
 
     return folderID;
 }

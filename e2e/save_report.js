@@ -29,7 +29,6 @@
 
 const path = require('path');
 
-const chai = require('chai');
 const generator = require('mochawesome-report-generator');
 
 const {
@@ -51,7 +50,6 @@ const saveReport = async () => {
         BRANCH,
         BUILD_ID,
         BUILD_TAG,
-        FAILURE_MESSAGE,
         ZEPHYR_ENABLE,
         ZEPHYR_CYCLE_KEY,
         TYPE,
