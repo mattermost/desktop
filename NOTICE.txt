@@ -472,7 +472,7 @@ Apache License
 
 ---
 
-## @babel/core
+## @babel/cli
 
 Babel comes with a built-in CLI which can be used to compile files from the command line.
 
