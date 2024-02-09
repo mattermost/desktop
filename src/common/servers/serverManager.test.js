@@ -13,7 +13,7 @@ jest.mock('common/config', () => ({
 jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
     isInternalURL: jest.fn(),
-    getFormattedPathName: (pathname) => (pathname.length ? pathname : '/'),
+    getFormattedPathName: (pathname) => (pathname.endsWith('/') ? pathname : `${pathname}/`),
 }));
 jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),
@@ -126,6 +126,11 @@ describe('common/servers/serverManager', () => {
         it('should match the correct server with a subpath - base URL', () => {
             const inputURL = new URL('http://server-2.com/subpath');
             expect(serverManager.lookupViewByURL(inputURL)).toStrictEqual({id: 'view-2', url: new URL('http://server-2.com/subpath')});
+        });
+
+        it('should not match a server where the subpaths are substrings of each other ', () => {
+            const inputURL = new URL('http://server-2.com/subpath2');
+            expect(serverManager.lookupViewByURL(inputURL)).toBe(undefined);
         });
 
         it('should match the correct server with a subpath - base view', () => {
