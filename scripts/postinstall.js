@@ -2,10 +2,8 @@
 // See LICENSE.txt for license information.
 
 const fs = require('fs');
-
-const path = require('path');
-
 const jq = require('node-jq');
+const path = require('path');
 
 // Patch the macos-notification-state library so we can build correctly
 jq.run(
@@ -24,7 +22,7 @@ if (process.platform === 'linux') {
     if (fs.existsSync(xdgDir) && !fs.existsSync(path.resolve(xdgDir, 'mattermost-desktop-dev.desktop'))) {
         fs.writeFileSync(
             path.resolve(xdgDir, 'mattermost-desktop-dev.desktop'),
-            `[Desktop Entry]
+`[Desktop Entry]
 Name=Mattermost.Dev
 Exec=${path.resolve(process.cwd(), 'node_modules/electron/dist/electron')} ${path.resolve(process.cwd(), 'dist')} %U
 Terminal=false
@@ -34,7 +32,7 @@ StartupWMClass=Mattermost
 Comment=Mattermost
 MimeType=x-scheme-handler/mattermost-dev;
 Categories=contrib/net;
-`,
+`
         );
 
         const defaultsListPath = path.resolve(xdgDir, 'defaults.list');
