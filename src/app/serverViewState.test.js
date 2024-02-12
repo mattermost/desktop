@@ -446,6 +446,22 @@ describe('app/serverViewState', () => {
             expect(result.validatedURL).toBe('https://mainserver.com/');
         });
 
+        it('should not update the users URL when the Site URL is blank', async () => {
+            ServerInfo.mockImplementation(() => ({
+                fetchConfigData: jest.fn().mockImplementation(() => {
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: '',
+                    };
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
         it('should warn the user when the Site URL is different but unreachable', async () => {
             ServerInfo.mockImplementation(({url}) => ({
                 fetchConfigData: jest.fn().mockImplementation(() => {
