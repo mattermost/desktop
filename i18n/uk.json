@@ -154,7 +154,7 @@
   "renderer.components.extraBar.back": "Назад",
   "renderer.components.input.required": "Це поле є обов'язковим",
   "renderer.components.mainPage.contextMenu.ariaLabel": "Контекстне меню",
-  "renderer.components.mainPage.titleBar": "Mattermost",
+  "renderer.components.mainPage.titleBar": "{appName}",
   "renderer.components.newServerModal.error.nameRequired": "Необхідне ім'я.",
   "renderer.components.newServerModal.error.serverNameExists": "Сервер з таким ім'ям вже існує.",
   "renderer.components.newServerModal.error.serverUrlExists": "Сервер з таким посиланням URL вже існує.",
