@@ -123,7 +123,7 @@ export class ServerManager extends EventEmitter {
         }
         const server = this.getAllServers().find((server) => {
             return isInternalURL(parsedURL, server.url, ignoreScheme) &&
-                getFormattedPathName(parsedURL.pathname).startsWith(server.url.pathname);
+                getFormattedPathName(parsedURL.pathname).startsWith(getFormattedPathName(server.url.pathname));
         });
         if (!server) {
             return undefined;
@@ -134,7 +134,7 @@ export class ServerManager extends EventEmitter {
         views.
             filter((view) => view && view.type !== TAB_MESSAGING).
             forEach((view) => {
-                if (getFormattedPathName(parsedURL.pathname).startsWith(view.url.pathname)) {
+                if (getFormattedPathName(parsedURL.pathname).startsWith(getFormattedPathName(view.url.pathname))) {
                     selectedView = view;
                 }
             });
