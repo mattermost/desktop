@@ -29,7 +29,7 @@
     "build:renderer": "webpack-cli --config webpack.config.renderer.js",
     "build-prod": "cross-env NODE_ENV=production npm-run-all check-build-config build",
     "build-prod-upgrade": "cross-env NODE_ENV=production CAN_UPGRADE=true npm-run-all check-build-config build",
-    "build-robotjs": "cross-env CL='/std:c++17' ./node_modules/.bin/electron-rebuild -w robotjs",
+    "build-robotjs": "cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs",
     "start": "electron dist/ --disable-dev-mode",
     "restart": "npm run build && npm run start",
     "storybook": "start-storybook -p 9001 -c src/.storybook",
