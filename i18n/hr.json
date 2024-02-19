@@ -1,5 +1,5 @@
 {
-  "common.permissions.canBasicAuth": "Web autentikacija",
+  "common.permissions.canBasicAuth": "Web autentifikacija",
   "common.tabs.TAB_FOCALBOARD": "Ploče",
   "common.tabs.TAB_MESSAGING": "Kanali",
   "common.tabs.TAB_PLAYBOOKS": "Priručnici",
@@ -80,7 +80,9 @@
   "main.menus.app.view.actualSize": "Stvarna veličina",
   "main.menus.app.view.clearCacheAndReload": "Isprazni predmemoriju i učitaj ponovo",
   "main.menus.app.view.devToolsAppWrapper": "Programerski alati za oblikovanje aplikacije dodavanjem CSS-a",
+  "main.menus.app.view.devToolsCurrentCallWidget": "Programerski alati za widget poziva",
   "main.menus.app.view.devToolsCurrentServer": "Programerski alati za trenutačni server",
+  "main.menus.app.view.devToolsSubMenu": "Programerski alati",
   "main.menus.app.view.downloads": "Preuzimanja",
   "main.menus.app.view.find": "Pronađi …",
   "main.menus.app.view.fullscreen": "Uključi cjeloekranski prikaz",
