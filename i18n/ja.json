@@ -257,7 +257,7 @@
   "renderer.components.showCertificateModal.publicKeyInfo": "公開鍵情報",
   "renderer.components.showCertificateModal.serialNumber": "Serial Number",
   "renderer.components.showCertificateModal.subjectName": "Subject Name",
-  "renderer.components.welcomeScreen.button.getStarted": "はじめに",
+  "renderer.components.welcomeScreen.button.getStarted": "はじめる",
   "renderer.components.welcomeScreen.slides.boards.subtitle": "デジタルオペレーション向けに構築されたプロジェクト/タスク管理ソリューションにより、いつも時間通りに作業を完了することができます。",
   "renderer.components.welcomeScreen.slides.boards.title": "Boards",
   "renderer.components.welcomeScreen.slides.channels.subtitle": "チーム内のコミュニケーションの全てを一箇所で。<br></br>開発者のために構築されたセキュアなコラボレーション。",
