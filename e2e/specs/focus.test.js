@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 
-const robot = require('robotjs');
+const robot = require('@jitsi/robotjs');
 
 const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 

@@ -36,7 +36,7 @@ const exampleURL = 'http://example.com/';
 const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
 
 if (process.platform === 'win32') {
-    const robot = require('robotjs');
+    const robot = require('@jitsi/robotjs');
     robot.mouseClick();
 }
 
