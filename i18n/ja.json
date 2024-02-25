@@ -85,7 +85,7 @@
   "main.menus.app.help.versionString": "Version {version}{commit}",
   "main.menus.app.history": "&History",
   "main.menus.app.history.back": "戻る",
-  "main.menus.app.history.forward": "前へ",
+  "main.menus.app.history.forward": "進む",
   "main.menus.app.view": "&View",
   "main.menus.app.view.actualSize": "実際のサイズ",
   "main.menus.app.view.clearCacheAndReload": "キャッシュのクリアと再読み込み",
