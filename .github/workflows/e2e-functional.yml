@@ -83,6 +83,7 @@ jobs:
         run: |
           chmod +x scripts/e2e_electron_version.sh
           ./scripts/e2e_electron_version.sh
+          rm -rf package-lock.json
 
       - name: Install dependencies
         env:
@@ -179,6 +180,7 @@ jobs:
         run: |
           chmod +x scripts/e2e_electron_version.sh
           ./scripts/e2e_electron_version.sh
+          rm -rf package-lock.json
   
       - name: ci/install-dependencies
         env:
@@ -272,6 +274,7 @@ jobs:
         run: |
           chmod +x scripts/e2e_electron_version.sh
           ./scripts/e2e_electron_version.sh
+          rm -rf package-lock.json
       
       - name: ci/install-node-gyp
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
