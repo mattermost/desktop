@@ -288,7 +288,7 @@ jobs:
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
-          npm i --openssl_fips='''
+          npm i --openssl_fips=''
           npm i robotjs
           npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs
 
