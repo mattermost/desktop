@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 
-const robot = require('@jitsi/robotjs');
+const robot = require('robotjs');
 
 const env = require('../modules/environment');
 const {asyncSleep} = require('../modules/utils');
