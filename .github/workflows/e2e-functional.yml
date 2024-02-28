@@ -79,12 +79,6 @@ jobs:
           cache: "npm"
           cache-dependency-path: package-lock.json
 
-      - name: Change electron version to 27.0.2
-        run: |
-          chmod +x scripts/e2e_electron_version.sh
-          ./scripts/e2e_electron_version.sh
-          rm -rf package-lock.json
-
       - name: Install dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
@@ -92,7 +86,7 @@ jobs:
           wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
           wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
           sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
-          npm i
+          npm ci
           npm install -g node-gyp
           npm i robotjs
           npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
@@ -175,12 +169,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: Change electron version to 27.0.2
-        run: |
-          chmod +x scripts/e2e_electron_version.sh
-          ./scripts/e2e_electron_version.sh
-          rm -rf package-lock.json
   
       - name: ci/install-dependencies
         env:
@@ -188,7 +176,7 @@ jobs:
         run: |
           npm cache clean --force
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-          npm i
+          npm ci
           npm install -g node-gyp
           npm i robotjs
           npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs
@@ -268,13 +256,6 @@ jobs:
             ${{ runner.os }}-build-node-modules
             ${{ runner.os }}-build-
             ${{ runner.os }}-
-
-      - name: Change electron version to 27.0.2
-        shell: bash
-        run: |
-          chmod +x scripts/e2e_electron_version.sh
-          ./scripts/e2e_electron_version.sh
-          rm -rf package-lock.json
       
       - name: ci/install-node-gyp
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -288,7 +269,7 @@ jobs:
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
-          npm i --openssl_fips=''
+          npm ci --openssl_fips=''
           npm i robotjs
           npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs
 
