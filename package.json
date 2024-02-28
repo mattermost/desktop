@@ -76,7 +76,7 @@
     "prune": "ts-prune",
     "mmjstool": "mmjstool",
     "i18n-extract": "npm run mmjstool -- i18n extract-desktop",
-    "postinstall": "node scripts/postinstall.js && electron-builder install-app-deps"
+    "postinstall": "node scripts/postinstall.js && patch-package && electron-builder install-app-deps"
   },
   "jest": {
     "clearMocks": true,
