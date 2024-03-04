@@ -151,7 +151,7 @@
   "renderer.components.extraBar.back": "返回",
   "renderer.components.input.required": "此欄位為必填項目",
   "renderer.components.mainPage.contextMenu.ariaLabel": "內容選單",
-  "renderer.components.mainPage.titleBar": "Mattermost",
+  "renderer.components.mainPage.titleBar": "{appName}",
   "renderer.components.newServerModal.error.nameRequired": "名稱為必填項目。",
   "renderer.components.newServerModal.error.serverUrlExists": "已存在相同 URL 的伺服器。",
   "renderer.components.newServerModal.error.urlIncorrectFormatting": "URL 格式不正確。",

@@ -830,7 +830,7 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(ViewManager.handleDeepLink).toHaveBeenCalledWith(new URL(url));
         });
     });
-  
+
     describe('isOpen', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
 

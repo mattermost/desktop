@@ -136,7 +136,7 @@
   "renderer.components.extraBar.back": "Voltar",
   "renderer.components.input.required": "Este campo é obrigatório",
   "renderer.components.mainPage.contextMenu.ariaLabel": "Menu de contexto",
-  "renderer.components.mainPage.titleBar": "Mattermost",
+  "renderer.components.mainPage.titleBar": "{appName}",
   "renderer.components.newTeamModal.error.nameRequired": "Nome é obrigatório.",
   "renderer.components.newTeamModal.error.serverNameExists": "Um servidor com esse nome já existe.",
   "renderer.components.newTeamModal.error.serverUrlExists": "Um servidor com esse URL já existe.",

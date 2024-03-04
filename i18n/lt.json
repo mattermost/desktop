@@ -154,7 +154,7 @@
   "renderer.components.extraBar.back": "Atgal",
   "renderer.components.input.required": "Šį lauką būtina užpildyti",
   "renderer.components.mainPage.contextMenu.ariaLabel": "Kontekstinis meniu",
-  "renderer.components.mainPage.titleBar": "Mattermost",
+  "renderer.components.mainPage.titleBar": "{appName}",
   "renderer.components.newServerModal.error.nameRequired": "Pavadinimas būtinas.",
   "renderer.components.newServerModal.error.serverUrlExists": "Serveris su tokiu pačiu adresu jau egzistuoja.",
   "renderer.components.newServerModal.error.urlIncorrectFormatting": "Adresas neteisingai suformatuotas.",

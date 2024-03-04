@@ -50,4 +50,3 @@ jobs:
     secrets: inherit
     with:
       tag: ${{ needs.tag-nightly-build.outputs.tag }}
-    

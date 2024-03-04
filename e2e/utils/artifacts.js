@@ -29,7 +29,7 @@ const {
 const s3 = new S3({
     credentials: {
         accessKeyId: AWS_ACCESS_KEY_ID,
-        secretAccessKey: AWS_SECRET_ACCESS_KEY
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
     },
 });
 
