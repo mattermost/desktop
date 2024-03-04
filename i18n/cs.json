@@ -224,7 +224,7 @@
   "renderer.components.settingsPage.loggingLevel.description": "Protokolování je užitečné pro vývojáře a podporu, aby mohli izolovat problémy, které se mohou vyskytnout v desktopové aplikaci.",
   "renderer.components.settingsPage.loggingLevel.description.subtitle": "Zvýšení úrovně protokolu zvyšuje využití místa na disku a může mít vliv na výkon. Úroveň protokolu doporučujeme zvyšovat pouze v případě problémů.",
   "renderer.components.settingsPage.loggingLevel.level.debug": "Ladění (debug)",
-  "renderer.components.settingsPage.loggingLevel.level.error": "Chyba {error}",
+  "renderer.components.settingsPage.loggingLevel.level.error": "Chyby (error)",
   "renderer.components.settingsPage.loggingLevel.level.info": "Informace (info)",
   "renderer.components.settingsPage.loggingLevel.level.silly": "Finest (hloupé)",
   "renderer.components.settingsPage.loggingLevel.level.verbose": "Verbose (slovní)",
