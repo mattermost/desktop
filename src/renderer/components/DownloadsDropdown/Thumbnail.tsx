@@ -2,11 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {DownloadedItem} from 'types/downloads';
 
 import {CheckCircleIcon, CloseCircleIcon} from '@mattermost/compass-icons/components';
 
 import {getIconClassName, isImageFile} from 'renderer/utils';
+
+import type {DownloadedItem} from 'types/downloads';
 
 type OwnProps = {
     item: DownloadedItem;

@@ -1,11 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 
-import {DownloadItem, Event, WebContents, FileFilter, ipcMain, dialog, shell, Menu, app, IpcMainInvokeEvent} from 'electron';
-import {ProgressInfo, UpdateInfo} from 'electron-updater';
-import {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
+import type {DownloadItem, Event, WebContents, FileFilter, IpcMainInvokeEvent} from 'electron';
+import {ipcMain, dialog, shell, Menu, app} from 'electron';
+import type {ProgressInfo, UpdateInfo} from 'electron-updater';
 
 import {
     CANCEL_UPDATE_DOWNLOAD,
@@ -25,16 +25,18 @@ import {
     UPDATE_PROGRESS,
 } from 'common/communication';
 import Config from 'common/config';
+import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
-import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
 import NotificationManager from 'main/notifications';
+import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
-import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
+
+import type {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
 
 import appVersionManager from './AppVersionManager';
 import {downloadsJson} from './constants';
@@ -189,7 +191,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                 this.clearFile(file);
             }
         }
-    }
+    };
 
     checkForDeletedFiles = () => {
         log.debug('checkForDeletedFiles');
@@ -388,7 +390,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             startFrom,
             localizeMessage('main.downloadsManager.specifyDownloadsFolder', 'Specify the folder where files will download'),
         );
-    }
+    };
 
     private selectDefaultDownloadDirectory = async (startFrom: string, message: string) => {
         log.debug('handleSelectDownload', startFrom);
@@ -398,7 +400,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             properties:
         ['openDirectory', 'createDirectory', 'dontAddToRecent', 'promptToCreate']});
         return result.filePaths[0];
-    }
+    };
 
     private verifyMacAppStoreDownloadFolder = async (fileName: string) => {
         let downloadLocation = Config.downloadLocation;
@@ -421,7 +423,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         }
 
         return downloadLocation;
-    }
+    };
 
     private markFileAsDeleted = (item: DownloadedItem) => {
         const fileId = this.getDownloadedFileId(item);
@@ -647,7 +649,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
     private getBookmark = (item: DownloadItem) => {
         return this.bookmarks.get(this.getFileId(item))?.bookmark;
-    }
+    };
 
     private getFileSize = (item: DownloadItem) => {
         const itemTotalBytes = item.getTotalBytes();

@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import fs from 'fs';
-
 import path from 'path';
 
 import {BrowserWindow, screen, app, globalShortcut, dialog} from 'electron';
@@ -12,10 +11,10 @@ import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
 
+import {MainWindow} from './mainWindow';
+
 import ContextMenu from '../contextMenu';
 import {isInsideRectangle} from '../utils';
-
-import {MainWindow} from './mainWindow';
 
 jest.mock('path', () => ({
     join: jest.fn(),

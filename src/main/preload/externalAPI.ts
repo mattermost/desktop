@@ -1,11 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {IpcRendererEvent, contextBridge, ipcRenderer, webFrame} from 'electron';
+import type {IpcRendererEvent} from 'electron';
+import {contextBridge, ipcRenderer, webFrame} from 'electron';
 
-import {ExternalAPI} from 'types/externalAPI';
-
-import {DesktopAPI} from '@mattermost/desktop-api';
+import type {DesktopAPI} from '@mattermost/desktop-api';
 
 import {
     NOTIFY_MENTION,
@@ -41,6 +40,8 @@ import {
     UNREADS_AND_MENTIONS,
     LEGACY_OFF,
 } from 'common/communication';
+
+import type {ExternalAPI} from 'types/externalAPI';
 
 const createListener: ExternalAPI['createListener'] = (channel: string, listener: (...args: never[]) => void) => {
     const listenerWithEvent = (_: IpcRendererEvent, ...args: unknown[]) =>

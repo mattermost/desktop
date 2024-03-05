@@ -3,10 +3,10 @@
 
 import {app} from 'electron';
 
-import {getLocalURLString, getLocalPreload} from 'main/utils';
 import ServerManager from 'common/servers/serverManager';
-import MainWindow from 'main/windows/mainWindow';
+import {getLocalURLString, getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {
     handleWelcomeScreenModal,

@@ -1,14 +1,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcRenderer, Rectangle} from 'electron/renderer';
+import type {ipcRenderer, Rectangle} from 'electron/renderer';
 
-import {Language} from '../../i18n/i18n';
+import type {CombinedConfig, LocalConfiguration, UniqueView, UniqueServer} from './config';
+import type {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
+import type {URLValidationResult} from './server';
+import type {SaveQueueItem} from './settings';
 
-import {CombinedConfig, LocalConfiguration, UniqueView, UniqueServer} from './config';
-import {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
-import {SaveQueueItem} from './settings';
-import {URLValidationResult} from './server';
+import type {Language} from '../../i18n/i18n';
 
 declare global {
     interface Window {

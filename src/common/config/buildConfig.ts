@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BuildConfig} from 'types/config';
+import type {BuildConfig} from 'types/config';
 
 // For detailed guides, please refer to https://docs.mattermost.com/deployment/desktop-app-deployment.html
 

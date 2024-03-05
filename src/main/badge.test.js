@@ -4,9 +4,8 @@
 
 import {app, nativeImage} from 'electron';
 
-import MainWindow from './windows/mainWindow';
-
 import * as Badge from './badge';
+import MainWindow from './windows/mainWindow';
 
 jest.mock('electron', () => ({
     app: {

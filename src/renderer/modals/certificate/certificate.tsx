@@ -1,19 +1,19 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {Certificate} from 'electron/renderer';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {Certificate} from 'electron/renderer';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
 import 'renderer/css/components/CertificateModal.css';
 
-import {CertificateModalInfo} from 'types/modals';
-
-import setupDarkMode from '../darkMode';
+import type {CertificateModalInfo} from 'types/modals';
 
 import SelectCertificateModal from './certificateModal';
+
+import setupDarkMode from '../darkMode';
 
 setupDarkMode();
 

@@ -35,8 +35,10 @@ describe('history_menu', function desc() {
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#sidebarItem_off-topic');
+
         // click on Off topic channel
         await firstServer.click('#sidebarItem_off-topic');
+
         // click on town square channel
         await firstServer.click('#sidebarItem_town-square');
         await firstServer.locator('[aria-label="Back"]').click();

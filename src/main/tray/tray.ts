@@ -8,7 +8,6 @@ import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
 import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
-
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
 import SettingsWindow from 'main/windows/settingsWindow';
@@ -44,7 +43,7 @@ export class TrayIcon {
         this.tray.on('click', this.onClick);
         this.tray.on('right-click', () => this.tray?.popUpContextMenu());
         this.tray.on('balloon-click', this.onClick);
-    }
+    };
 
     refreshImages = (trayIconTheme: string) => {
         const systemTheme = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
@@ -98,13 +97,13 @@ export class TrayIcon {
             this.update(this.status, this.message);
         }
         return this.images;
-    }
+    };
 
     destroy = () => {
         if (process.platform === 'win32') {
             this.tray?.destroy();
         }
-    }
+    };
 
     setMenu = (tMenu: Electron.Menu) => this.tray?.setContextMenu(tMenu);
 
@@ -117,7 +116,7 @@ export class TrayIcon {
         this.message = message;
         this.tray.setImage(this.images[status]);
         this.tray.setToolTip(message);
-    }
+    };
 
     // Linux note: the click event was fixed in Electron v23, but only fires when the OS supports StatusIconLinuxDbus
     // There is a fallback case that will make sure the icon is displayed, but will only support the context menu
@@ -163,7 +162,7 @@ export class TrayIcon {
         } else {
             this.update('normal', app.name);
         }
-    }
+    };
 }
 
 const tray = new TrayIcon();

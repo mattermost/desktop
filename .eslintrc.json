@@ -27,7 +27,8 @@
         "react/no-find-dom-node": 2,
         "multiline-ternary": 0,
         "max-lines": ["warn", 650],
-        "no-underscore-dangle": ["warn"]
+        "no-underscore-dangle": ["warn"],
+        "@mattermost/use-external-link": 0
     },
     "overrides": [
         {

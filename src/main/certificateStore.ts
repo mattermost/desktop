@@ -5,13 +5,14 @@
 
 import fs from 'fs';
 
-import {Certificate, ipcMain} from 'electron';
-
-import {ComparableCertificate} from 'types/certificate';
+import type {Certificate} from 'electron';
+import {ipcMain} from 'electron';
 
 import {UPDATE_PATHS} from 'common/communication';
 import {Logger} from 'common/log';
 import * as Validator from 'common/Validator';
+
+import type {ComparableCertificate} from 'types/certificate';
 
 import {certificateStorePath} from './constants';
 
@@ -83,7 +84,7 @@ export class CertificateStore {
         // clicking "Don't ask again" checkbox before cancelling the connection.
         const dontTrust = this.data[targetURL.origin]?.dontTrust;
         return dontTrust === undefined ? false : dontTrust;
-    }
+    };
 }
 
 let certificateStore = new CertificateStore(certificateStorePath);

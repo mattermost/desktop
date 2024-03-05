@@ -7,11 +7,11 @@ import fs from 'fs';
 
 import {ipcMain} from 'electron';
 
-import {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
-
 import {UPDATE_PATHS} from 'common/communication';
 import {Logger} from 'common/log';
 import * as Validator from 'common/Validator';
+
+import type {TrustedOrigin, PermissionType} from 'types/trustedOrigin';
 
 import {trustedOriginsStoreFile} from './constants';
 
@@ -34,7 +34,7 @@ export class TrustedOriginsStore {
             storeData = null;
         }
         return storeData;
-    }
+    };
 
     load = () => {
         const storeData = this.readFromFile();
@@ -46,7 +46,7 @@ export class TrustedOriginsStore {
             }
         }
         this.data = new Map(Object.entries(result));
-    }
+    };
 
     // don't use this, is for ease of mocking it on testing
     saveToFile(stringMap: string) {
@@ -77,11 +77,11 @@ export class TrustedOriginsStore {
     // enables usage of `targetURL` for `permission`
     addPermission = (targetURL: URL, permission: PermissionType) => {
         this.set(targetURL, {[permission]: true});
-    }
+    };
 
     delete = (targetURL: URL) => {
         return this.data?.delete(targetURL.origin);
-    }
+    };
 
     isExisting = (targetURL: URL) => {
         return this.data?.has(targetURL.origin) || false;
@@ -95,7 +95,7 @@ export class TrustedOriginsStore {
 
         const urlPermissions = this.data?.get(targetURL.origin);
         return urlPermissions ? urlPermissions[permission] : undefined;
-    }
+    };
 }
 
 const trustedOriginsStore = new TrustedOriginsStore(trustedOriginsStoreFile);

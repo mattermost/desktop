@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {DownloadedItem} from 'types/downloads';
+import type {DownloadItemTypeEnum} from 'main/downloadsManager';
 
-import {DownloadItemTypeEnum} from 'main/downloadsManager';
+import type {DownloadedItem} from 'types/downloads';
 
 /**
  * This string includes special characters so that it's not confused with

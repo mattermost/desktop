@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {TrustedOriginsStore} from 'main/trustedOrigins';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
+import {TrustedOriginsStore} from 'main/trustedOrigins';
 
 jest.mock('path', () => ({
     resolve: jest.fn(),

@@ -1,17 +1,15 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import classNames from 'classnames';
 import React from 'react';
-import {DownloadedItem} from 'types/downloads';
-
+import {Button} from 'react-bootstrap';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {Button} from 'react-bootstrap';
+import type {DownloadedItem} from 'types/downloads';
 
-import classNames from 'classnames';
-
-import Thumbnail from '../Thumbnail';
 import FileSizeAndStatus from '../FileSizeAndStatus';
+import Thumbnail from '../Thumbnail';
 
 type OwnProps = {
     item: DownloadedItem;

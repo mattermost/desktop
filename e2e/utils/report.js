@@ -8,9 +8,9 @@ const os = require('os');
 const axios = require('axios');
 const fse = require('fs-extra');
 
-const package = require('../../package.json');
-
 const {MOCHAWESOME_REPORT_DIR} = require('./constants');
+
+const package = require('../../package.json');
 
 const MAX_FAILED_TITLES = 5;
 

@@ -5,11 +5,9 @@
 
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
-import {localizeMessage} from 'main/i18nManager';
-import ServerManager from 'common/servers/serverManager';
-
 import ServerViewState from 'app/serverViewState';
-
+import ServerManager from 'common/servers/serverManager';
+import {localizeMessage} from 'main/i18nManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 
 import {createTemplate} from './app';

@@ -10,7 +10,6 @@ import ReactDOM from 'react-dom';
 import IntlProvider from 'renderer/intl_provider';
 
 import RemoveServerModal from '../../components/RemoveServerModal';
-
 import setupDarkMode from '../darkMode';
 
 setupDarkMode();

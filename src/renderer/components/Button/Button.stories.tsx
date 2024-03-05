@@ -2,10 +2,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import {storiesOf} from '@storybook/react';
-
 import {action} from '@storybook/addon-actions';
+import {storiesOf} from '@storybook/react';
+import React from 'react';
 import {Button, ButtonToolbar} from 'react-bootstrap';
 
 storiesOf('Button', module).

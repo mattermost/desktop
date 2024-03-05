@@ -1,15 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import classNames from 'classnames';
 import React from 'react';
+import type {DraggingStyle, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
+import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import ReactDOM from 'react-dom';
 import {FormattedMessage} from 'react-intl';
-import classNames from 'classnames';
-import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
-
-import {UniqueServer} from 'types/config';
 
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH_MAC} from 'common/utils/constants';
+
+import type {UniqueServer} from 'types/config';
 
 import './css/dropdown.scss';
 
@@ -80,7 +81,7 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
             expired,
             windowBounds,
         });
-    }
+    };
 
     selectServer = (server: UniqueServer) => {
         return () => {
@@ -90,31 +91,31 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
             window.desktop.serverDropdown.switchServer(server.id);
             this.closeMenu();
         };
-    }
+    };
 
     closeMenu = () => {
         if (!this.state.isAnyDragging) {
             (document.activeElement as HTMLElement).blur();
             window.desktop.closeServersDropdown();
         }
-    }
+    };
 
     preventPropagation = (event: React.MouseEvent<HTMLDivElement>) => {
         event.stopPropagation();
-    }
+    };
 
     addServer = () => {
         window.desktop.serverDropdown.showNewServerModal();
         this.closeMenu();
-    }
+    };
 
     isActiveServer = (server: UniqueServer) => {
         return server.id === this.state.activeServer;
-    }
+    };
 
     onDragStart = () => {
         this.setState({isAnyDragging: true});
-    }
+    };
 
     onDragEnd = (result: DropResult) => {
         const removedIndex = result.source.index;
@@ -134,7 +135,7 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
 
         this.setState({servers: serversCopy, isAnyDragging: false});
         window.desktop.updateServerOrder(serversCopy.map((server) => server.id!));
-    }
+    };
 
     componentDidMount() {
         window.desktop.serverDropdown.requestInfo();
@@ -156,7 +157,7 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
             this.addButtonRef(serverIndex, ref);
             refMethod?.(ref);
         };
-    }
+    };
 
     addButtonRef = (serverIndex: number, ref: HTMLButtonElement | null) => {
         if (ref) {
@@ -168,7 +169,7 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
                 this.focusedIndex = null;
             });
         }
-    }
+    };
 
     handleKeyboardShortcuts = (event: KeyboardEvent) => {
         if (event.key === 'ArrowDown') {
@@ -195,13 +196,13 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
                 button.focus();
             }
         });
-    }
+    };
 
     handleClickOnDragHandle = (event: React.MouseEvent<HTMLDivElement>) => {
         if (this.state.isAnyDragging) {
             event.stopPropagation();
         }
-    }
+    };
 
     editServer = (serverId: string) => {
         if (this.serverIsPredefined(serverId)) {
@@ -212,7 +213,7 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
             window.desktop.serverDropdown.showEditServerModal(serverId);
             this.closeMenu();
         };
-    }
+    };
 
     removeServer = (serverId: string) => {
         if (this.serverIsPredefined(serverId)) {
@@ -223,11 +224,11 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
             window.desktop.serverDropdown.showRemoveServerModal(serverId);
             this.closeMenu();
         };
-    }
+    };
 
     serverIsPredefined = (serverId: string) => {
         return this.state.servers?.some((server) => server.id === serverId && server.isPredefined);
-    }
+    };
 
     render() {
         return (

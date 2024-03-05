@@ -3,7 +3,6 @@
 'use strict';
 
 import {spawn} from 'child_process';
-
 import path from 'path';
 
 import {app, dialog} from 'electron';

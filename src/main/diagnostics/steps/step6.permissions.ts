@@ -3,13 +3,16 @@
 import fs from 'fs';
 
 import {Notification, systemPreferences} from 'electron';
-import log, {ElectronLog} from 'electron-log';
-import {DiagnosticStepResponse} from 'types/diagnostics';
+import type {ElectronLog} from 'electron-log';
+import log from 'electron-log';
 
-import DiagnosticsStep from '../DiagnosticStep';
 import config from 'common/config';
 
+import type {DiagnosticStepResponse} from 'types/diagnostics';
+
 import {checkPathPermissions} from './internal/utils';
+
+import DiagnosticsStep from '../DiagnosticStep';
 
 const stepName = 'Step-6';
 const stepDescriptiveName = 'PermissionsCheck';

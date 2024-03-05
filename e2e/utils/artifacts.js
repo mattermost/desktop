@@ -4,12 +4,11 @@
 /* eslint-disable no-console,consistent-return */
 
 const fs = require('fs');
-
 const path = require('path');
 
-const async = require('async');
-const {Upload} = require('@aws-sdk/lib-storage');
 const {S3} = require('@aws-sdk/client-s3');
+const {Upload} = require('@aws-sdk/lib-storage');
+const async = require('async');
 const mime = require('mime-types');
 const readdir = require('recursive-readdir');
 
@@ -29,7 +28,7 @@ const {
 const s3 = new S3({
     credentials: {
         accessKeyId: AWS_ACCESS_KEY_ID,
-        secretAccessKey: AWS_SECRET_ACCESS_KEY
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
     },
 });
 

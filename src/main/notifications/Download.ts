@@ -4,12 +4,10 @@
 import os from 'os';
 import path from 'path';
 
+import {app, Notification} from 'electron';
 import {v4 as uuid} from 'uuid';
 
-import {app, Notification} from 'electron';
-
 import Utils from 'common/utils/util';
-
 import {localizeMessage} from 'main/i18nManager';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');

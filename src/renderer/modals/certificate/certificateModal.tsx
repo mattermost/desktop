@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Certificate} from 'electron/renderer';
+import type {Certificate} from 'electron/renderer';
 import React, {Fragment} from 'react';
 import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
@@ -82,7 +82,7 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
                 defaultMessage='No certificates available'
             />
         </td><td/></tr></Fragment>);
-    }
+    };
 
     getSelectedCert = () => {
         if (this.state.list && this.state.selectedIndex !== undefined) {
@@ -96,16 +96,16 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
         if (cert) {
             this.props.onSelect(cert);
         }
-    }
+    };
 
     handleCertificateInfo = () => {
         const certificate = this.getSelectedCert();
         this.setState({showCertificate: certificate});
-    }
+    };
 
     certificateInfoClose = () => {
         this.setState({showCertificate: undefined});
-    }
+    };
 
     render() {
         if (this.state.showCertificate) {

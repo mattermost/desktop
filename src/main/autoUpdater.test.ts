@@ -5,7 +5,6 @@ import {ipcMain as notMockedIpcMain} from 'electron';
 import {autoUpdater as notMockedAutoUpdater} from 'electron-updater';
 
 import {CHECK_FOR_UPDATES} from 'common/communication';
-
 import NotificationManager from 'main/notifications';
 
 import {UpdateManager} from './autoUpdater';

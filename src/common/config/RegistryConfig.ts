@@ -6,9 +6,9 @@ import {EventEmitter} from 'events';
 import WindowsRegistry from 'winreg';
 import WindowsRegistryUTF8 from 'winreg-utf8';
 
-import {RegistryConfig as RegistryConfigType, Server} from 'types/config';
-
 import {Logger} from 'common/log';
+
+import type {RegistryConfig as RegistryConfigType, Server} from 'types/config';
 
 const log = new Logger('RegistryConfig');
 const REGISTRY_HIVE_LIST = [WindowsRegistry.HKLM, WindowsRegistry.HKCU];

@@ -7,10 +7,10 @@ import {SHOW_SETTINGS_WINDOW} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 
+import MainWindow from './mainWindow';
+
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString} from '../utils';
-
-import MainWindow from './mainWindow';
 
 const log = new Logger('SettingsWindow');
 
@@ -27,15 +27,15 @@ export class SettingsWindow {
         } else {
             this.create();
         }
-    }
+    };
 
     get = () => {
         return this.win;
-    }
+    };
 
     sendToRenderer = (channel: string, ...args: any[]) => {
         this.win?.webContents.send(channel, ...args);
-    }
+    };
 
     private create = () => {
         const mainWindow = MainWindow.get();
@@ -77,7 +77,7 @@ export class SettingsWindow {
             // Adding this arbitrary delay seems to get rid of it (it happens very frequently)
             setTimeout(() => MainWindow.get()?.focus(), 10);
         });
-    }
+    };
 }
 
 const settingsWindow = new SettingsWindow();

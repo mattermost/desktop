@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {ConfigV0, ConfigV1, ConfigV2} from 'types/config';
+import type {ConfigV0, ConfigV1, ConfigV2} from 'types/config';
 
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 

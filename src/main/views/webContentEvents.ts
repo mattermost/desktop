@@ -1,7 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, session, shell, WebContents, Event} from 'electron';
+import type {WebContents, Event} from 'electron';
+import {BrowserWindow, session, shell} from 'electron';
 
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -23,16 +24,13 @@ import {
     isValidURI,
     parseURL,
 } from 'common/utils/url';
-
 import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
-
-import MainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
+import MainWindow from 'main/windows/mainWindow';
 
 import {protocols} from '../../../electron-builder.json';
-
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
 
@@ -64,14 +62,14 @@ export class WebContentsEventManager {
         }
 
         return ServerManager.getViewLog(view.id, 'WebContentsEventManager');
-    }
+    };
 
     private isTrustedPopupWindow = (webContentsId: number) => {
         if (!this.popupWindow) {
             return false;
         }
         return webContentsId === this.popupWindow.win.webContents.id;
-    }
+    };
 
     private getServerURLFromWebContentsId = (webContentsId: number) => {
         if (this.popupWindow && webContentsId === this.popupWindow.win.webContents.id) {
@@ -83,7 +81,7 @@ export class WebContentsEventManager {
         }
 
         return ViewManager.getViewByWebContentsId(webContentsId)?.view.server.url;
-    }
+    };
 
     private generateWillNavigate = (webContentsId: number) => {
         return (event: Event, url: string) => {

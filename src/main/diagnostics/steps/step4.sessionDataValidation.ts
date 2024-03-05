@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 
 import {session} from 'electron';
-import {ElectronLog} from 'electron-log';
-import {DiagnosticStepResponse} from 'types/diagnostics';
+import type {ElectronLog} from 'electron-log';
 
 import {COOKIE_NAME_AUTH_TOKEN, COOKIE_NAME_CSRF, COOKIE_NAME_USER_ID} from 'common/constants';
+
+import type {DiagnosticStepResponse} from 'types/diagnostics';
 
 import DiagnosticsStep from '../DiagnosticStep';
 

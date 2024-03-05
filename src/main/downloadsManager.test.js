@@ -1,15 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 
 import {shell} from 'electron';
-
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import Config from 'common/config';
 import {APP_UPDATE_KEY} from 'common/constants';
-
 import {DownloadsManager} from 'main/downloadsManager';
 
 const downloadLocationMock = '/path/to/downloads';

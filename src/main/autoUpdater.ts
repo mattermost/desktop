@@ -4,13 +4,8 @@
 import path from 'path';
 
 import {dialog, ipcMain, app, nativeImage} from 'electron';
-import {autoUpdater, CancellationToken, ProgressInfo, UpdateInfo} from 'electron-updater';
-
-import {Logger} from 'common/log';
-
-import downloadsManager from 'main/downloadsManager';
-import {localizeMessage} from 'main/i18nManager';
-import NotificationManager from 'main/notifications';
+import type {ProgressInfo, UpdateInfo} from 'electron-updater';
+import {autoUpdater, CancellationToken} from 'electron-updater';
 
 import {
     CANCEL_UPGRADE,
@@ -24,6 +19,10 @@ import {
     UPDATE_REMIND_LATER,
 } from 'common/communication';
 import Config from 'common/config';
+import {Logger} from 'common/log';
+import downloadsManager from 'main/downloadsManager';
+import {localizeMessage} from 'main/i18nManager';
+import NotificationManager from 'main/notifications';
 
 const NEXT_NOTIFY = 86400000; // 24 hours
 const NEXT_CHECK = 3600000; // 1 hour
@@ -109,44 +108,44 @@ export class UpdateManager {
         } else if (this.versionAvailable) {
             this.notifyUpgrade();
         }
-    }
+    };
 
     notifyUpgrade = (): void => {
         ipcMain.emit(UPDATE_AVAILABLE, null, this.versionAvailable);
         NotificationManager.displayUpgrade(this.versionAvailable || 'unknown', this.handleDownload);
-    }
+    };
 
     notifyDownloaded = (): void => {
         ipcMain.emit(UPDATE_DOWNLOADED, null, this.downloadedInfo);
         NotificationManager.displayRestartToUpgrade(this.versionDownloaded || 'unknown', this.handleUpdate);
-    }
+    };
 
     handleDownload = (): void => {
         if (this.lastCheck) {
             clearTimeout(this.lastCheck);
         }
         autoUpdater.downloadUpdate(this.cancellationToken);
-    }
+    };
 
     handleCancelDownload = (): void => {
         this.cancellationToken?.cancel();
         this.cancellationToken = new CancellationToken();
-    }
+    };
 
     handleRemindLater = (): void => {
         // TODO
-    }
+    };
 
     handleOnQuit = (): void => {
         if (this.versionDownloaded) {
             autoUpdater.quitAndInstall(true, false);
         }
-    }
+    };
 
     handleUpdate = (): void => {
         downloadsManager.removeUpdateBeforeRestart();
         autoUpdater.quitAndInstall();
-    }
+    };
 
     displayNoUpgrade = (): void => {
         const version = app.getVersion();
@@ -159,7 +158,7 @@ export class UpdateManager {
             buttons: [localizeMessage('label.ok', 'OK')],
             detail: localizeMessage('main.autoUpdater.noUpdate.detail', 'You are using the latest version of the {appName} Desktop App (version {version}). You\'ll be notified when a new version is available to install.', {appName: app.name, version}),
         });
-    }
+    };
 
     checkForUpdates = (manually: boolean): void => {
         if (!Config.canUpgrade) {
@@ -183,7 +182,7 @@ export class UpdateManager {
             });
             this.lastCheck = setTimeout(() => this.checkForUpdates(false), NEXT_CHECK);
         }
-    }
+    };
 }
 
 const updateManager = new UpdateManager();

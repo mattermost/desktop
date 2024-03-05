@@ -1,10 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef} from 'react';
-import {DownloadedItem} from 'types/downloads';
-
 import classNames from 'classnames';
+import React, {useRef} from 'react';
+
+import type {DownloadedItem} from 'types/downloads';
 
 type OwnProps = {
     activeItem?: DownloadedItem;

@@ -1,8 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect, useRef} from 'react';
 import classNames from 'classnames';
+import React, {useState, useEffect, useRef} from 'react';
 
 import CarouselButton, {ButtonDirection} from './CarouselButton';
 import CarouselPaginationIndicator from './CarouselPaginationIndicator';

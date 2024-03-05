@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {handleConfigUpdate} from 'main/app/config';
-
 import AutoLauncher from 'main/AutoLauncher';
 
 import Tray from './tray';

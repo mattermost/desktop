@@ -3,24 +3,24 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import {app, ipcMain, Menu, MenuItemConstructorOptions, MenuItem, session, shell, WebContents, clipboard} from 'electron';
+import type {MenuItemConstructorOptions, MenuItem, WebContents} from 'electron';
+import {app, ipcMain, Menu, session, shell, clipboard} from 'electron';
 import log from 'electron-log';
 
 import ServerViewState from 'app/serverViewState';
-
 import {OPEN_SERVERS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
-import {t} from 'common/utils/util';
-import {getViewDisplayName, ViewType} from 'common/views/View';
-import {Config} from 'common/config';
-
-import {localizeMessage} from 'main/i18nManager';
+import type {Config} from 'common/config';
 import ServerManager from 'common/servers/serverManager';
-import {UpdateManager} from 'main/autoUpdater';
-import downloadsManager from 'main/downloadsManager';
+import {t} from 'common/utils/util';
+import {getViewDisplayName} from 'common/views/View';
+import type {ViewType} from 'common/views/View';
+import type {UpdateManager} from 'main/autoUpdater';
 import Diagnostics from 'main/diagnostics';
+import downloadsManager from 'main/downloadsManager';
+import {localizeMessage} from 'main/i18nManager';
 import ViewManager from 'main/views/viewManager';
-import SettingsWindow from 'main/windows/settingsWindow';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
+import SettingsWindow from 'main/windows/settingsWindow';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {

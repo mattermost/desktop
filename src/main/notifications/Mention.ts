@@ -4,15 +4,13 @@
 import os from 'os';
 import path from 'path';
 
+import {app, Notification} from 'electron';
 import {v4 as uuid} from 'uuid';
 
-import {app, Notification} from 'electron';
-
-import {MentionOptions} from 'types/notification';
-
 import Utils from 'common/utils/util';
-
 import {localizeMessage} from 'main/i18nManager';
+
+import type {MentionOptions} from 'types/notification';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const appIconURL = path.resolve(assetsDir, 'appicon_48.png');
@@ -52,5 +50,5 @@ export class Mention extends Notification {
 
     getNotificationSound = () => {
         return this.customSound;
-    }
+    };
 }
