@@ -46,8 +46,8 @@
     "test:e2e:nobuild": "cross-env NODE_ENV=test npm-run-all test:e2e:build test:e2e:run",
     "test:e2e:build": "webpack-cli --config webpack.config.test.js",
     "test:e2e:build-performance": "webpack-cli --config webpack.config.performance.test.js",
-    "test:e2e:run-performance": "electron-mocha -r @babel/register --reporter json --reporter-option output=./e2e/performance/perf-test-report.json dist/tests/e2e_bundle.js",
-    "test:e2e:run": "electron-mocha -r @babel/register --reporter mochawesome dist/tests/e2e_bundle.js",
+    "test:e2e:run-performance": "electron-mocha --reporter json --reporter-option output=./e2e/performance/perf-test-report.json dist/tests/e2e_bundle.js",
+    "test:e2e:run": "electron-mocha --reporter mochawesome dist/tests/e2e_bundle.js",
     "test:e2e:send-report": "node ./e2e/save_report.js",
     "test:unit": "cross-env NODE_ENV=jest jest",
     "test:unit-ci": "cross-env NODE_ENV=jest jest",
@@ -71,7 +71,7 @@
     "fix:js": "eslint --ignore-path .gitignore --ignore-pattern node_modules --quiet --ext .js --ext .jsx --ext .ts --ext .tsx . --fix",
     "check-build-config": "npm-run-all check-build-config:build check-build-config:run",
     "check-build-config:build": "babel ./src/common/config/buildConfig.ts -o ./dist/buildConfig.js",
-    "check-build-config:run": "node -r @babel/register scripts/check_build_config.js",
+    "check-build-config:run": "node scripts/check_build_config.js",
     "check-types": "tsc",
     "prune": "ts-prune",
     "mmjstool": "mmjstool",
@@ -141,10 +141,8 @@
     "@babel/plugin-proposal-object-rest-spread": "7.17.3",
     "@babel/preset-env": "7.16.11",
     "@babel/preset-react": "7.16.7",
-    "@babel/register": "7.17.7",
     "@electron/fuses": "1.6.0",
     "@electron/rebuild": "3.6.0",
-    "@electron/universal": "1.3.1",
     "@mattermost/compass-icons": "0.1.32",
     "@mattermost/desktop-api": "5.8.0-1",
     "@mattermost/eslint-plugin": "1.0.0",
@@ -163,7 +161,6 @@
     "7zip-bin": "5.1.1",
     "auto-launch": "5.0.5",
     "axios": "0.26.1",
-    "babel-eslint": "10.1.0",
     "babel-loader": "8.2.4",
     "bootstrap": "4.6.1",
     "bootstrap-dark": "1.0.3",
@@ -196,7 +193,6 @@
     "joi": "17.6.0",
     "mini-css-extract-plugin": "2.6.0",
     "mmjstool": "github:mattermost/mattermost-utilities#3b4506b0f6b14fbb402f9f8ef932370e459e3773",
-    "mocha-circleci-reporter": "0.0.3",
     "mochawesome": "7.1.3",
     "nan": "2.18.0",
     "node-abi": "3.56.0",
@@ -219,7 +215,6 @@
     "sass": "1.49.11",
     "sass-loader": "12.6.0",
     "semver": "7.3.5",
-    "shebang-loader": "0.0.1",
     "style-loader": "3.3.1",
     "ts-prune": "0.10.3",
     "typescript": "5.3.3",
@@ -235,8 +230,5 @@
   "dependencies": {
     "macos-notification-state": "2.0.2",
     "windows-focus-assist": "1.3.0"
-  },
-  "overrides": {
-    "@electron/universal": "1.3.1"
   }
 }
