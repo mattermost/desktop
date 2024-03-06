@@ -95,25 +95,25 @@ jobs:
         run: |
 
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-pr-linux" >> $GITHUB_ENV
             echo "TYPE=PR" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-release-linux" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-manual-trigger-linux" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-master-push-linux" >> $GITHUB_ENV
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-nightly-linux" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
@@ -185,25 +185,25 @@ jobs:
         run: |
 
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-pr-macos" >> $GITHUB_ENV
             echo "TYPE=PR" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-release-macos" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-manual-trigger-macos" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-master-push-macos" >> $GITHUB_ENV
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-nightly-macos" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
@@ -278,26 +278,26 @@ jobs:
         run: |
 
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-pr-windows" >> $GITHUB_ENV
             echo "TYPE=PR" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BUILD_SUFFIX=desktop-release" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-release-windows" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-manual-trigger-windows" >> $GITHUB_ENV
             echo "TYPE=MANUAL" >> $GITHUB_ENV
   
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
             echo "TYPE=MASTER" >> $GITHUB_ENV
-            echo "BUILD_SUFFIX=desktop-master-push" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-master-push-windows" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif [ "${{ inputs.tag }}" != "" ]; then
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-            echo "BUILD_SUFFIX=desktop-nightly" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-nightly-windows" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
           fi
 
