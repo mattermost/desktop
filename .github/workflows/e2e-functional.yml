@@ -303,7 +303,8 @@ jobs:
 
       - name: Set Build ID
         run: echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX }}" >> $GITHUB_ENV
-  
+        shell: bash
+
       - name: Run Playwright tests (Windows OS)
         run: |
           npm run test:e2e || true
