@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 
 const path = require('path');
-const {spawn} = require('child_process');
 
 const {flipFuses, FuseVersion, FuseV1Options} = require('@electron/fuses');
+const {spawn} = require('@electron/notarize/lib/spawn.js');
 
 const SETUID_PERMISSIONS = '4755';
 
