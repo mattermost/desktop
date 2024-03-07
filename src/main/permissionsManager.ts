@@ -1,9 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {
+import type {
     PermissionRequestHandlerHandlerDetails,
-    WebContents,
+    WebContents} from 'electron';
+import {
     app,
     dialog,
     ipcMain,
@@ -12,9 +13,8 @@ import {
 import {UPDATE_PATHS} from 'common/communication';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
-import {t} from 'common/utils/util';
 import {isTrustedURL, parseURL} from 'common/utils/url';
-
+import {t} from 'common/utils/util';
 import {permissionsJson} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import ViewManager from 'main/views/viewManager';
@@ -69,7 +69,7 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
             permission,
             details.securityOrigin ?? details.requestingUrl,
         ));
-    }
+    };
 
     doPermissionRequest = async (
         webContentsId: number,
@@ -172,7 +172,7 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
 
         // We've checked everything so we're okay to grant the remaining cases
         return true;
-    }
+    };
 }
 
 t('main.permissionsManager.checkPermission.dialog.message.media');

@@ -4,7 +4,8 @@
 import {getFormattedPathName} from 'common/utils/url';
 
 import BaseView from './BaseView';
-import {ViewType, TAB_FOCALBOARD} from './View';
+import type {ViewType} from './View';
+import {TAB_FOCALBOARD} from './View';
 
 export default class FocalboardView extends BaseView {
     get url(): URL {

@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {UniqueView, Server} from 'types/config';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 
-import {MattermostServer} from 'common/servers/MattermostServer';
+import type {UniqueView, Server} from 'types/config';
 
 export const TAB_MESSAGING = 'TAB_MESSAGING';
 export const TAB_FOCALBOARD = 'TAB_FOCALBOARD';

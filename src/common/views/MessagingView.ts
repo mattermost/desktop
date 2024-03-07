@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import BaseView from './BaseView';
-import {ViewType, TAB_MESSAGING} from './View';
+import type {ViewType} from './View';
+import {TAB_MESSAGING} from './View';
 
 export default class MessagingView extends BaseView {
     get url(): URL {

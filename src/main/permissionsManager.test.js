@@ -4,7 +4,6 @@
 import {dialog} from 'electron';
 
 import {parseURL, isTrustedURL} from 'common/utils/url';
-
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';

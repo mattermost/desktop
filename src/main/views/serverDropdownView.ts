@@ -1,12 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
-
-import {UniqueServer} from 'types/config';
+import type {IpcMainEvent} from 'electron';
+import {BrowserView, ipcMain} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
-
 import AppState from 'common/appState';
 import {
     CLOSE_SERVERS_DROPDOWN,
@@ -22,10 +20,11 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
-import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import ServerManager from 'common/servers/serverManager';
-
+import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import {getLocalPreload, getLocalURLString} from 'main/utils';
+
+import type {UniqueServer} from 'types/config';
 
 import MainWindow from '../windows/mainWindow';
 
@@ -71,7 +70,7 @@ export class ServerDropdownView {
     private updateWindowBounds = (newBounds: Electron.Rectangle) => {
         this.windowBounds = newBounds;
         this.updateDropdown();
-    }
+    };
 
     private init = () => {
         log.info('init');
@@ -90,7 +89,7 @@ export class ServerDropdownView {
         this.windowBounds = MainWindow.getBounds();
         this.updateDropdown();
         MainWindow.get()?.addBrowserView(this.view);
-    }
+    };
 
     private updateDropdown = () => {
         log.silly('updateDropdown');
@@ -107,12 +106,12 @@ export class ServerDropdownView {
             this.mentions,
             this.unreads,
         );
-    }
+    };
 
     private updateServers = () => {
         this.setOrderedServers();
         this.updateDropdown();
-    }
+    };
 
     private updateMentions = (expired: Map<string, boolean>, mentions: Map<string, number>, unreads: Map<string, boolean>) => {
         log.silly('updateMentions', {expired, mentions, unreads});
@@ -121,7 +120,7 @@ export class ServerDropdownView {
         this.mentions = this.reduceNotifications(this.mentions, mentions, (base, value) => (base ?? 0) + (value ?? 0));
         this.expired = this.reduceNotifications(this.expired, expired, (base, value) => base || value || false);
         this.updateDropdown();
-    }
+    };
 
     /**
      * Menu open/close/size handlers
@@ -141,7 +140,7 @@ export class ServerDropdownView {
         this.view.webContents.focus();
         MainWindow.sendToRenderer(OPEN_SERVERS_DROPDOWN);
         this.isOpen = true;
-    }
+    };
 
     private handleClose = () => {
         log.silly('handleClose');
@@ -149,7 +148,7 @@ export class ServerDropdownView {
         this.view?.setBounds(this.getBounds(0, 0));
         MainWindow.sendToRenderer(CLOSE_SERVERS_DROPDOWN);
         this.isOpen = false;
-    }
+    };
 
     private handleReceivedMenuSize = (event: IpcMainEvent, width: number, height: number) => {
         log.silly('handleReceivedMenuSize', {width, height});
@@ -158,7 +157,7 @@ export class ServerDropdownView {
         if (this.isOpen) {
             this.view?.setBounds(this.bounds);
         }
-    }
+    };
 
     /**
      * Helpers
@@ -171,7 +170,7 @@ export class ServerDropdownView {
             width,
             height,
         };
-    }
+    };
 
     private reduceNotifications = <T>(inputMap: Map<string, T>, items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
         inputMap.clear();
@@ -183,12 +182,12 @@ export class ServerDropdownView {
             map.set(view.server.id, modifier(map.get(view.server.id), items.get(key)));
             return map;
         }, inputMap);
-    }
+    };
 
     private setOrderedServers = () => {
         this.servers = ServerManager.getOrderedServers().map((server) => server.toUniqueServer());
         this.hasGPOServers = this.servers.some((srv) => srv.isPredefined);
-    }
+    };
 }
 
 const serverDropdownView = new ServerDropdownView();

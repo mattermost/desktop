@@ -2,15 +2,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import {Nav, NavItem, NavLink} from 'react-bootstrap';
-import {DragDropContext, Draggable, DraggingStyle, Droppable, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
-import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
 import classNames from 'classnames';
+import React from 'react';
+import type {DraggingStyle, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
+import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
+import {Nav, NavItem, NavLink} from 'react-bootstrap';
+import type {IntlShape} from 'react-intl';
+import {FormattedMessage, injectIntl} from 'react-intl';
 
-import {UniqueView} from 'types/config';
+import type {ViewType} from 'common/views/View';
+import {canCloseView, getViewDisplayName} from 'common/views/View';
 
-import {ViewType, canCloseView, getViewDisplayName} from 'common/views/View';
+import type {UniqueView} from 'types/config';
 
 type Props = {
     activeTabId?: string;
@@ -46,7 +49,7 @@ class TabBar extends React.PureComponent<Props> {
             event.stopPropagation();
             this.props.onCloseTab(id);
         };
-    }
+    };
 
     render() {
         const tabs = this.props.tabs.map((tab, index) => {

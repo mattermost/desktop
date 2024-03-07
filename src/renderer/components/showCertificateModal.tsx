@@ -1,10 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {Certificate} from 'electron/renderer';
 import React, {Fragment} from 'react';
 import {Modal, Button, Row, Col} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
-import {Certificate} from 'electron/renderer';
 
 type Props = {
     certificate: Certificate;
@@ -26,7 +26,7 @@ export default class ShowCertificateModal extends React.PureComponent<Props, Sta
     handleOk = () => {
         this.setState({certificate: undefined});
         this.props.onOk();
-    }
+    };
 
     render() {
         const certificateSection = (descriptor: React.ReactNode) => {

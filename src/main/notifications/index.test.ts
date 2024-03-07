@@ -4,18 +4,17 @@
 'use strict';
 import notMockedCP from 'child_process';
 
-import {Notification as NotMockedNotification, shell, app, BrowserWindow, WebContents} from 'electron';
-
-import {getFocusAssist as notMockedGetFocusAssist} from 'windows-focus-assist';
+import type {BrowserWindow, WebContents} from 'electron';
+import {Notification as NotMockedNotification, shell, app} from 'electron';
 import {getDoNotDisturb as notMockedGetDarwinDoNotDisturb} from 'macos-notification-state';
+import {getFocusAssist as notMockedGetFocusAssist} from 'windows-focus-assist';
 
 import {PLAY_SOUND} from 'common/communication';
 import notMockedConfig from 'common/config';
-
 import {localizeMessage as notMockedLocalizeMessage} from 'main/i18nManager';
 import notMockedPermissionsManager from 'main/permissionsManager';
-import notMockedMainWindow from 'main/windows/mainWindow';
 import ViewManager from 'main/views/viewManager';
+import notMockedMainWindow from 'main/windows/mainWindow';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 
@@ -50,7 +49,7 @@ jest.mock('electron', () => {
 
         on = (event: string, callback: () => void) => {
             this.callbackMap.set(event, callback);
-        }
+        };
 
         show = jest.fn().mockImplementation(() => {
             this.callbackMap.get('show')?.();

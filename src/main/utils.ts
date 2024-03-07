@@ -2,21 +2,20 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import path from 'path';
-import fs from 'fs';
-
 import {exec as execOriginal} from 'child_process';
-
+import fs from 'fs';
+import path from 'path';
 import {promisify} from 'util';
 const exec = promisify(execOriginal);
 
-import {app, BrowserWindow} from 'electron';
-
-import {Args} from 'types/args';
+import type {BrowserWindow} from 'electron';
+import {app} from 'electron';
 
 import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT} from 'common/utils/constants';
-import Utils from 'common/utils/util';
 import {isAdminUrl, isPluginUrl, isTeamUrl, isUrlType, parseURL} from 'common/utils/url';
+import Utils from 'common/utils/util';
+
+import type {Args} from 'types/args';
 
 export function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
     return container.x <= rect.x && container.y <= rect.y && container.width >= rect.width && container.height >= rect.height;

@@ -4,18 +4,16 @@
 'use strict';
 
 const fs = require('fs');
-
 const path = require('path');
 
-const ps = require('ps-node');
-
-const {_electron: electron} = require('playwright');
 const chai = require('chai');
 const {ipcRenderer} = require('electron');
-
-const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
+const {_electron: electron} = require('playwright');
+const ps = require('ps-node');
 
 const {asyncSleep, mkDirAsync, rmDirAsync, unlinkAsync} = require('./utils');
+
+const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');

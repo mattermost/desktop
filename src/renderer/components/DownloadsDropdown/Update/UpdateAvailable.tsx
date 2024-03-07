@@ -2,11 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {DownloadedItem} from 'types/downloads';
-
+import {Button} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
-import {Button} from 'react-bootstrap';
+import type {DownloadedItem} from 'types/downloads';
 
 import Thumbnail from '../Thumbnail';
 

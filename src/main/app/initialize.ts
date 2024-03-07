@@ -34,7 +34,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
-
+import ServerManager from 'common/servers/serverManager';
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
 import AuthManager from 'main/authManager';
@@ -48,14 +48,11 @@ import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import parseArgs from 'main/ParseArgs';
 import PermissionsManager from 'main/permissionsManager';
-import ServerManager from 'common/servers/serverManager';
-import TrustedOriginsStore from 'main/trustedOrigins';
 import Tray from 'main/tray/tray';
+import TrustedOriginsStore from 'main/trustedOrigins';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
-
-import {protocols} from '../../../electron-builder.json';
 
 import {
     handleAppBeforeQuit,
@@ -102,6 +99,8 @@ import {
     handleMinimize,
     handleRestore,
 } from './windows';
+
+import {protocols} from '../../../electron-builder.json';
 
 export const mainProtocol = protocols?.[0]?.schemes?.[0];
 

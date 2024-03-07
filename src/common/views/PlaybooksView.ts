@@ -4,7 +4,8 @@
 import {getFormattedPathName} from 'common/utils/url';
 
 import BaseView from './BaseView';
-import {ViewType, TAB_PLAYBOOKS} from './View';
+import type {ViewType} from './View';
+import {TAB_PLAYBOOKS} from './View';
 
 export default class PlaybooksView extends BaseView {
     get url(): URL {

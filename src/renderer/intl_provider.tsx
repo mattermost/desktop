@@ -4,7 +4,7 @@
 import React from 'react';
 import {IntlProvider as BaseIntlProvider} from 'react-intl';
 
-import {Language} from '../../i18n/i18n';
+import type {Language} from '../../i18n/i18n';
 
 type State = {
     language?: Language;
@@ -23,7 +23,7 @@ export default class IntlProvider extends React.PureComponent<any, State> {
     getLanguageInformation = async () => {
         const language = await window.desktop.getLanguageInformation();
         this.setState({language});
-    }
+    };
 
     render() {
         if (!this.state.language) {

@@ -1,7 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, BrowserWindow} from 'electron';
+import type {BrowserWindow} from 'electron';
+import {BrowserView} from 'electron';
 
 import {Logger} from 'common/log';
 
@@ -90,7 +91,7 @@ export class ModalView<T, T2> {
             this.log.info(`showing dev tools for ${this.key}`);
             this.view.webContents.openDevTools({mode: 'detach'});
         }
-    }
+    };
 
     hide = () => {
         if (this.windowAttached) {
@@ -108,11 +109,11 @@ export class ModalView<T, T2> {
             delete this.windowAttached;
             this.status = Status.ACTIVE;
         }
-    }
+    };
 
     handleInfoRequest = () => {
         return this.data;
-    }
+    };
 
     reject = (data: T2) => {
         if (this.onReject) {
@@ -120,7 +121,7 @@ export class ModalView<T, T2> {
         }
         this.hide();
         this.status = Status.DONE;
-    }
+    };
 
     resolve = (data: T2) => {
         if (this.onResolve) {
@@ -128,7 +129,7 @@ export class ModalView<T, T2> {
         }
         this.hide();
         this.status = Status.DONE;
-    }
+    };
 
     isActive = () => this.status !== Status.DONE;
 }

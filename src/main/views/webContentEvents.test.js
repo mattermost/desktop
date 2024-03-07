@@ -6,13 +6,12 @@
 import {shell, BrowserWindow} from 'electron';
 
 import {getLevel} from 'common/log';
-
 import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
 
-import allowProtocolDialog from '../allowProtocolDialog';
-
 import {WebContentsEventManager} from './webContentEvents';
+
+import allowProtocolDialog from '../allowProtocolDialog';
 
 jest.mock('electron', () => ({
     app: {},

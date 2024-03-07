@@ -6,9 +6,8 @@
 /* eslint-disable import/no-commonjs */
 'use strict';
 
-const {merge} = require('webpack-merge');
-
 const CopyPlugin = require('copy-webpack-plugin');
+const {merge} = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 

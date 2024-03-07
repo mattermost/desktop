@@ -1,13 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {
+import type {
     AuthInfo,
     AuthenticationResponseDetails,
     Certificate,
 } from 'electron/common';
 
-import {PermissionType} from './trustedOrigin';
+import type {PermissionType} from './trustedOrigin';
 
 export type CertificateModalInfo = {
     url: string;

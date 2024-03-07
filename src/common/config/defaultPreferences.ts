@@ -2,15 +2,15 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import path from 'path';
 import os from 'os';
+import path from 'path';
 
 /**
  * Default user preferences. End-users can change these parameters by editing config.json
  * @param {number} version - Scheme version. (Not application version)
  */
 
-import {ConfigV3} from 'types/config';
+import type {ConfigV3} from 'types/config';
 
 export const getDefaultDownloadLocation = (): string | undefined => {
     // eslint-disable-next-line no-undef

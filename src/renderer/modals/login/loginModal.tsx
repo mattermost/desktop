@@ -2,15 +2,15 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
+import type {AuthenticationResponseDetails, AuthInfo} from 'electron/renderer';
 import React from 'react';
 import {Button, Col, FormLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
-import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
-
-import {AuthenticationResponseDetails, AuthInfo} from 'electron/renderer';
-
-import {LoginModalInfo} from 'types/modals';
+import type {IntlShape} from 'react-intl';
+import {FormattedMessage, injectIntl} from 'react-intl';
 
 import {parseURL} from 'common/utils/url';
+
+import type {LoginModalInfo} from 'types/modals';
 
 type Props = {
     onCancel: (request: AuthenticationResponseDetails) => void;
@@ -42,7 +42,7 @@ class LoginModal extends React.PureComponent<Props, State> {
     getAuthInfo = async () => {
         const {request, authInfo} = await this.props.getAuthInfo();
         this.setState({request, authInfo});
-    }
+    };
 
     handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -53,7 +53,7 @@ class LoginModal extends React.PureComponent<Props, State> {
             request: undefined,
             authInfo: undefined,
         });
-    }
+    };
 
     handleCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -64,15 +64,15 @@ class LoginModal extends React.PureComponent<Props, State> {
             request: undefined,
             authInfo: undefined,
         });
-    }
+    };
 
     setUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({username: e.target.value});
-    }
+    };
 
     setPassword = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({password: e.target.value});
-    }
+    };
 
     renderLoginModalMessage = () => {
         if (!(this.state.request && this.state.authInfo)) {
@@ -94,7 +94,7 @@ class LoginModal extends React.PureComponent<Props, State> {
                 values={{url: `${tmpURL?.protocol}//${tmpURL?.host}`}}
             />
         );
-    }
+    };
 
     render() {
         const {intl} = this.props;

@@ -1,12 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
 import classNames from 'classnames';
-
-import useAnimationEnd from '../../hooks/useAnimationEnd';
+import React from 'react';
 
 import LoadingIcon from './LoadingIcon';
+
+import useAnimationEnd from '../../hooks/useAnimationEnd';
 
 const LOADING_STATE = {
     INITIALIZING: 'initializing', // animation graphics are hidden

@@ -6,7 +6,6 @@ import path from 'path';
 import {app, session} from 'electron';
 
 import Config from 'common/config';
-
 import parseArgs from 'main/ParseArgs';
 import ViewManager from 'main/views/viewManager';
 

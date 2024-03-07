@@ -3,9 +3,9 @@
 
 import {v4 as uuid} from 'uuid';
 
-import {UniqueServer, Server} from 'types/config';
-
 import {parseURL} from 'common/utils/url';
+
+import type {UniqueServer, Server} from 'types/config';
 
 export class MattermostServer {
     id: string;
@@ -27,7 +27,7 @@ export class MattermostServer {
         if (!this.url) {
             throw new Error('Invalid url for creating a server');
         }
-    }
+    };
 
     toUniqueServer = (): UniqueServer => {
         return {
@@ -36,5 +36,5 @@ export class MattermostServer {
             id: this.id,
             isPredefined: this.isPredefined,
         };
-    }
+    };
 }

@@ -2,11 +2,12 @@
 // See LICENSE.txt for license information.
 
 import {shell} from 'electron';
-import log, {ElectronLog} from 'electron-log';
-import {DiagnosticsReport} from 'types/diagnostics';
+import type {ElectronLog} from 'electron-log';
+import log from 'electron-log';
+
+import type {DiagnosticsReport} from 'types/diagnostics';
 
 import DiagnosticsStep from './DiagnosticStep';
-
 import Step0 from './steps/step0.logLevel';
 import Step1 from './steps/step1.internetConnection';
 import Step10 from './steps/step10.crashReports';
@@ -62,7 +63,7 @@ class DiagnosticsModule {
             this.logger.error('Diagnostics.run Error: ', {error});
             this.initializeValues(true);
         }
-    }
+    };
 
     initializeValues = (clear = false) => {
         this.logger.transports.file.level = 'silly';
@@ -72,14 +73,14 @@ class DiagnosticsModule {
         this.stepCurrent = 0;
         this.stepTotal = clear ? 0 : this.getStepCount();
         this.report = [];
-    }
+    };
 
     getStepCount = () => {
         const stepsCount = SORTED_STEPS.length;
         this.logger.debug('Diagnostics.getStepCount', {stepsCount});
 
         return stepsCount;
-    }
+    };
 
     executeSteps = async () => {
         this.logger.info('Diagnostics.executeSteps Started');
@@ -112,7 +113,7 @@ class DiagnosticsModule {
             this.stepCurrent = index;
         }
         this.logger.info('Diagnostics.executeSteps Finished');
-    }
+    };
 
     printReport = () => {
         const totalStepsCount = this.getStepCount();
@@ -129,42 +130,42 @@ class DiagnosticsModule {
         this.logger.info(`| ---${this.fillSpaces(3)}| ---${this.fillSpaces(maxStepNameLength - 3)} | ---${this.fillSpaces(7)}|`);
         this.logger.info(`${successfulStepsCount} out of ${totalStepsCount} steps succeeded`);
         this.printStepEnd('Report');
-    }
+    };
 
     showLogFile = () => {
         const pathToFile = this.getLoggerFilePath();
 
         this.logger.debug('Diagnostics.showLogFile', {pathToFile});
         shell.showItemInFolder(pathToFile);
-    }
+    };
 
     sendNotificationDiagnosticsStarted = () => {
         this.logger.debug('Diagnostics sendNotification DiagnosticsStarted');
-    }
+    };
 
     isValidStep = (step: unknown) => {
         return step instanceof DiagnosticsStep;
-    }
+    };
 
     getLoggerFilePath = () => {
         return this.logger.transports.file.getFile()?.path;
-    }
+    };
 
     isRunning = () => {
         return this.stepTotal > 0 && this.stepCurrent >= 0;
-    }
+    };
 
     getSuccessfulStepsCount = () => {
         return this.report.filter((step) => step.succeeded).length;
-    }
+    };
 
     private printStepStart = (name: string) => {
         this.logger.info(`${HASHTAGS} ${name} START ${HASHTAGS}`);
-    }
+    };
 
     private printStepEnd = (name: string) => {
         this.logger.info(`${HASHTAGS} ${name} END ${HASHTAGS}`);
-    }
+    };
 
     private addToReport(data: DiagnosticsReport[number]): void {
         this.report = [
@@ -178,7 +179,7 @@ class DiagnosticsModule {
             return '';
         }
         return ' '.repeat(i);
-    }
+    };
 }
 
 const Diagnostics = new DiagnosticsModule();

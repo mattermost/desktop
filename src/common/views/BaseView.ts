@@ -3,11 +3,11 @@
 
 import {v4 as uuid} from 'uuid';
 
-import {UniqueView} from 'types/config';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 
-import {MattermostServer} from 'common/servers/MattermostServer';
+import type {UniqueView} from 'types/config';
 
-import {ViewType, MattermostView} from './View';
+import type {ViewType, MattermostView} from './View';
 
 export default abstract class BaseView implements MattermostView {
     id: string;
@@ -35,5 +35,5 @@ export default abstract class BaseView implements MattermostView {
             name: this.type,
             isOpen: this.isOpen,
         };
-    }
+    };
 }

@@ -3,13 +3,14 @@
 
 import React from 'react';
 import {Modal, Button} from 'react-bootstrap';
-import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
+import type {IntlShape} from 'react-intl';
+import {FormattedMessage, injectIntl} from 'react-intl';
 
-import {PermissionModalInfo} from 'types/modals';
-
-import {t} from 'common/utils/util';
 import {PERMISSION_DESCRIPTION} from 'common/permissions';
 import {parseURL} from 'common/utils/url';
+import {t} from 'common/utils/util';
+
+import type {PermissionModalInfo} from 'types/modals';
 
 type Props = {
     handleDeny: React.MouseEventHandler<HTMLButtonElement>;
@@ -30,7 +31,7 @@ class PermissionModal extends React.PureComponent<Props, State> {
     getPermissionInfo = async () => {
         const {url, permission} = await this.props.getPermissionInfo();
         this.setState({url, permission});
-    }
+    };
 
     async componentDidMount() {
         await this.getPermissionInfo();

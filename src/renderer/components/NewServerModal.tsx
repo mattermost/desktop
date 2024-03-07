@@ -4,12 +4,13 @@
 
 import React from 'react';
 import {Modal, Button, FormGroup, FormControl, FormLabel, FormText, Spinner} from 'react-bootstrap';
-import {FormattedMessage, injectIntl, IntlShape} from 'react-intl';
-
-import {UniqueServer} from 'types/config';
-import {URLValidationResult} from 'types/server';
+import type {IntlShape} from 'react-intl';
+import {FormattedMessage, injectIntl} from 'react-intl';
 
 import {URLValidationStatus} from 'common/utils/constants';
+
+import type {UniqueServer} from 'types/config';
+import type {URLValidationResult} from 'types/server';
 
 import 'renderer/css/components/NewServerModal.scss';
 
@@ -80,19 +81,19 @@ class NewServerModal extends React.PureComponent<Props, State> {
         if (this.props.editMode && this.props.server) {
             this.validateServerURL(this.props.server.url);
         }
-    }
+    };
 
     handleServerNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({
             serverName: e.target.value,
         });
-    }
+    };
 
     handleServerUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const serverUrl = e.target.value;
         this.setState({serverUrl, validationResult: undefined});
         this.validateServerURL(serverUrl);
-    }
+    };
 
     validateServerURL = (serverUrl: string) => {
         clearTimeout(this.validationTimeout as unknown as number);
@@ -112,12 +113,12 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 this.setState({validationResult, validationStarted: false, serverUrl: validationResult.validatedURL ?? serverUrl, serverName: this.state.serverName ? this.state.serverName : validationResult.serverName ?? ''});
             });
         }, 1000);
-    }
+    };
 
     isServerURLErrored = () => {
         return this.state.validationResult?.status === URLValidationStatus.Invalid ||
             this.state.validationResult?.status === URLValidationStatus.Missing;
-    }
+    };
 
     getServerURLMessage = () => {
         if (this.state.validationStarted) {
@@ -250,7 +251,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 />
             </div>
         );
-    }
+    };
 
     getServerNameMessage = () => {
         if (!this.state.serverName.length) {
@@ -268,7 +269,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
             );
         }
         return null;
-    }
+    };
 
     save = () => {
         if (!this.state.validationResult) {
@@ -288,7 +289,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 id: this.state.serverId,
             });
         });
-    }
+    };
 
     getSaveButtonLabel() {
         if (this.props.editMode) {

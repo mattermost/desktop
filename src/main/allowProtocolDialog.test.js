@@ -6,9 +6,8 @@ import fs from 'fs';
 
 import {shell, dialog} from 'electron';
 
-import MainWindow from './windows/mainWindow';
-
 import {AllowProtocolDialog} from './allowProtocolDialog';
+import MainWindow from './windows/mainWindow';
 
 jest.mock('fs', () => ({
     readFile: jest.fn(),

@@ -4,7 +4,8 @@
 
 import React from 'react';
 import {Alert} from 'react-bootstrap';
-import {IntlShape, useIntl} from 'react-intl';
+import type {IntlShape} from 'react-intl';
+import {useIntl} from 'react-intl';
 
 const baseClassName = 'AutoSaveIndicator';
 const leaveClassName = `${baseClassName}-Leave`;

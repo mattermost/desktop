@@ -2,22 +2,21 @@
 // See LICENSE.txt for license information.
 
 import {app, shell, Notification} from 'electron';
-
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
-import Config from 'common/config';
 import {PLAY_SOUND, NOTIFICATION_CLICKED} from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
+
+import getLinuxDoNotDisturb from './dnd-linux';
+import getWindowsDoNotDisturb from './dnd-windows';
+import {DownloadNotification} from './Download';
+import {Mention} from './Mention';
+import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
 import PermissionsManager from '../permissionsManager';
 import ViewManager from '../views/viewManager';
 import MainWindow from '../windows/mainWindow';
-
-import {Mention} from './Mention';
-import {DownloadNotification} from './Download';
-import {NewVersionNotification, UpgradeNotification} from './Upgrade';
-import getLinuxDoNotDisturb from './dnd-linux';
-import getWindowsDoNotDisturb from './dnd-windows';
 
 const log = new Logger('Notifications');
 

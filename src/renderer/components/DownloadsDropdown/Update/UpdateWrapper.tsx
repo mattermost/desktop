@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {DownloadedItem} from 'types/downloads';
+
+import type {DownloadedItem} from 'types/downloads';
 
 import UpdateAvailable from './UpdateAvailable';
 import UpdateDownloaded from './UpdateDownloaded';

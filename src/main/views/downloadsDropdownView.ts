@@ -1,9 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, ipcMain, IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-
-import {DownloadedItem} from 'types/downloads';
+import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {BrowserView, ipcMain} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -19,13 +18,14 @@ import {
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
 } from 'common/communication';
-import {Logger} from 'common/log';
 import Config from 'common/config';
+import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
-
-import {getLocalPreload, getLocalURLString} from 'main/utils';
 import downloadsManager from 'main/downloadsManager';
+import {getLocalPreload, getLocalURLString} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
+
+import type {DownloadedItem} from 'types/downloads';
 
 const log = new Logger('DownloadsDropdownView');
 
@@ -70,7 +70,7 @@ export class DownloadsDropdownView {
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
         this.view.webContents.session.webRequest.onHeadersReceived(downloadsManager.webRequestOnHeadersReceivedHandler);
         MainWindow.get()?.addBrowserView(this.view);
-    }
+    };
 
     /**
      * This is called every time the "window" is resized so that we can position
@@ -82,13 +82,13 @@ export class DownloadsDropdownView {
         this.windowBounds = newBounds;
         this.updateDownloadsDropdown();
         this.repositionDownloadsDropdown();
-    }
+    };
 
     private updateDownloadsDropdownMenuItem = (event: IpcMainEvent, item?: DownloadedItem) => {
         log.silly('updateDownloadsDropdownMenuItem', {item});
         this.item = item;
         this.updateDownloadsDropdown();
-    }
+    };
 
     private updateDownloadsDropdown = () => {
         log.silly('updateDownloadsDropdown');
@@ -100,7 +100,7 @@ export class DownloadsDropdownView {
             MainWindow.getBounds(),
             this.item,
         );
-    }
+    };
 
     private handleOpen = () => {
         log.debug('handleOpen', {bounds: this.bounds});
@@ -114,7 +114,7 @@ export class DownloadsDropdownView {
         this.view.webContents.focus();
         downloadsManager.onOpen();
         MainWindow.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);
-    }
+    };
 
     private handleClose = () => {
         log.silly('handleClose');
@@ -122,18 +122,18 @@ export class DownloadsDropdownView {
         this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
         downloadsManager.onClose();
         MainWindow.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
-    }
+    };
 
     private clearDownloads = () => {
         downloadsManager.clearDownloadsDropDown();
         this.handleClose();
-    }
+    };
 
     private openFile = (e: IpcMainEvent, item: DownloadedItem) => {
         log.debug('openFile', {item});
 
         downloadsManager.openFile(item);
-    }
+    };
 
     private getBounds = (windowWidth: number, width: number, height: number) => {
         // Must always use integers
@@ -143,7 +143,7 @@ export class DownloadsDropdownView {
             width: Math.round(width),
             height: Math.round(height),
         };
-    }
+    };
 
     private getX = (windowWidth: number) => {
         const result = windowWidth - DOWNLOADS_DROPDOWN_FULL_WIDTH;
@@ -151,11 +151,11 @@ export class DownloadsDropdownView {
             return 0;
         }
         return Math.round(result);
-    }
+    };
 
     private getY = () => {
         return Math.round(TAB_BAR_HEIGHT);
-    }
+    };
 
     private repositionDownloadsDropdown = () => {
         if (!(this.bounds && this.windowBounds)) {
@@ -169,7 +169,7 @@ export class DownloadsDropdownView {
         if (downloadsManager.getIsOpen()) {
             this.view?.setBounds(this.bounds);
         }
-    }
+    };
 
     private handleReceivedDownloadsDropdownSize = (event: IpcMainEvent, width: number, height: number) => {
         log.silly('handleReceivedDownloadsDropdownSize', {width, height});
@@ -182,11 +182,11 @@ export class DownloadsDropdownView {
         if (downloadsManager.getIsOpen()) {
             this.view?.setBounds(this.bounds);
         }
-    }
+    };
 
     private getDownloadImageThumbnailLocation = (event: IpcMainInvokeEvent, location: string) => {
         return location;
-    }
+    };
 }
 
 const downloadsDropdownView = new DownloadsDropdownView();

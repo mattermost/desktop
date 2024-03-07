@@ -1,20 +1,20 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {AuthenticationResponseDetails} from 'electron/renderer';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {AuthenticationResponseDetails} from 'electron/renderer';
-
-import {LoginModalInfo} from 'types/modals';
 
 import IntlProvider from 'renderer/intl_provider';
+
+import type {LoginModalInfo} from 'types/modals';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/modals.css';
 
-import setupDarkMode from '../darkMode';
-
 import LoginModal from './loginModal';
+
+import setupDarkMode from '../darkMode';
 
 setupDarkMode();
 

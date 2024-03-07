@@ -7,17 +7,15 @@
 import {dialog} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
-
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SET_ACTIVE_VIEW} from 'common/communication';
-import {TAB_MESSAGING} from 'common/views/View';
 import ServerManager from 'common/servers/serverManager';
 import urlUtils from 'common/utils/url';
-
+import {TAB_MESSAGING} from 'common/views/View';
 import MainWindow from 'main/windows/mainWindow';
 
+import LoadingScreen from './loadingScreen';
 import {MattermostBrowserView} from './MattermostBrowserView';
 import {ViewManager} from './viewManager';
-import LoadingScreen from './loadingScreen';
 
 jest.mock('electron', () => ({
     app: {

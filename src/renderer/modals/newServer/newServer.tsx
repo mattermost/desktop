@@ -7,12 +7,11 @@ import 'renderer/css/modals.css';
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
-import {UniqueServer} from 'types/config';
-
 import IntlProvider from 'renderer/intl_provider';
 
-import NewServerModal from '../../components/NewServerModal';
+import type {UniqueServer} from 'types/config';
 
+import NewServerModal from '../../components/NewServerModal';
 import setupDarkMode from '../darkMode';
 
 setupDarkMode();
