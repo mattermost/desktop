@@ -50,7 +50,7 @@ export class MattermostBrowserView extends EventEmitter {
     private loggedIn: boolean;
     private atRoot: boolean;
     private options: BrowserViewConstructorOptions;
-    private removeLoading?: number;
+    private removeLoading?: NodeJS.Timeout;
     private contextMenu: ContextMenu;
     private status?: Status;
     private retryLoad?: NodeJS.Timeout;

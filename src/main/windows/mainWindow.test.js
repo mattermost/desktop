@@ -53,10 +53,6 @@ jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),
 }));
 
-jest.mock('global', () => ({
-    willAppQuit: false,
-}));
-
 jest.mock('fs', () => ({
     readFileSync: jest.fn(),
     writeFileSync: jest.fn(),

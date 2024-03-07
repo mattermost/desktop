@@ -255,7 +255,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
             data: {
                 ...this.state.notifications,
                 flashWindow: this.flashWindowRef.current?.checked ? 2 : 0,
-            },
+            } as CombinedConfig['notifications'],
         });
         this.setState({
             notifications: {
@@ -271,7 +271,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
             data: {
                 ...this.state.notifications,
                 bounceIcon: this.bounceIconRef.current?.checked,
-            },
+            } as CombinedConfig['notifications'],
         });
         this.setState({
             notifications: {
@@ -287,7 +287,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
             data: {
                 ...this.state.notifications,
                 bounceIconType: event.target.value,
-            },
+            } as CombinedConfig['notifications'],
         });
         this.setState({
             notifications: {
@@ -398,7 +398,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
 
     resetSpellCheckerURL = (): void => {
         this.setState({spellCheckerURL: undefined, allowSaveSpellCheckerURL: false});
-        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'spellCheckerURL', data: null});
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'spellCheckerURL', data: undefined});
     };
 
     handleChangeSpellCheckerURL = (e: React.ChangeEvent<HTMLInputElement>): void => {

@@ -5,11 +5,11 @@
 import {exec as execOriginal} from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import {promisify} from 'util';
+const exec = promisify(execOriginal);
 
 import type {BrowserWindow} from 'electron';
 import {app} from 'electron';
-import {promisify} from 'util';
-const exec = promisify(execOriginal);
 
 import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {isAdminUrl, isPluginUrl, isTeamUrl, isUrlType, parseURL} from 'common/utils/url';
