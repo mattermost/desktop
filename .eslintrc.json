@@ -1,10 +1,12 @@
 {
+    "root": true,
     "extends": [
-        "./.eslintrc-webapp.json"
+        "plugin:@mattermost/react"
     ],
-    "parserOptions": {
-        "ecmaVersion": 2017
-    },
+    "plugins": [
+        "formatjs",
+        "no-only-tests"
+    ],
     "settings": {
         "import/resolver": {
             "webpack": {

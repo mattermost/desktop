@@ -74,8 +74,6 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
-'use strict';
-
 describe('main/windows/mainWindow', () => {
     describe('init', () => {
         const baseWindow = {

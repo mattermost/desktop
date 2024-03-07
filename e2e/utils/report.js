@@ -116,11 +116,11 @@ function getOS() {
 
 function getEnvironmentValues() {
     return {
-        playwright_version: package.devDependencies.playwright,
-        electron_version: package.devDependencies.electron,
-        os_name: getOS(),
-        os_version: os.release(),
-        node_version: process.version,
+        playwrightVersion: package.devDependencies.playwright,
+        electronVersion: package.devDependencies.electron,
+        osName: getOS(),
+        osVersion: os.release(),
+        nodeVersion: process.version,
     };
 }
 
@@ -138,11 +138,11 @@ function generateTestReport(summary, isUploadedToS3, reportLink, testCycleKey) {
     } = process.env;
     const {statsFieldValue, stats} = summary;
     const {
-        playwright_version,
-        electron_version,
-        os_name,
-        os_version,
-        node_version,
+        playwrightVersion,
+        electronVersion,
+        osName,
+        osVersion,
+        nodeVersion,
     } = getEnvironmentValues();
 
     let testResult;
@@ -154,7 +154,7 @@ function generateTestReport(summary, isUploadedToS3, reportLink, testCycleKey) {
     }
 
     const title = generateTitle();
-    const envValue = `playwright@${playwright_version} | node@${node_version} | electron@${electron_version} | ${os_name}@${os_version}`;
+    const envValue = `playwright@${playwrightVersion} | node@${nodeVersion} | electron@${electronVersion} | ${osName}@${osVersion}`;
 
     if (FULL_REPORT === 'true') {
         let reportField;
