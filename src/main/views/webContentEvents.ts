@@ -1,11 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import path from 'path';
+
 import type {WebContents, Event} from 'electron';
 import {BrowserWindow, session, shell} from 'electron';
 
 import Config from 'common/config';
-import {Logger} from 'common/log';
+import {Logger, getLevel} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {
     isAdminUrl,
@@ -36,6 +38,13 @@ import {composeUserAgent} from '../utils';
 
 type CustomLogin = {
     inProgress: boolean;
+}
+
+enum ConsoleMessageLevel {
+    Verbose,
+    Info,
+    Warning,
+    Error
 }
 
 const log = new Logger('WebContentsEventManager');
@@ -287,6 +296,30 @@ export class WebContentsEventManager {
         };
     };
 
+    private generateHandleConsoleMessage = (webContentsId: number) => (_: Event, level: number, message: string, line: number, sourceId: string) => {
+        const wcLog = this.log(webContentsId).withPrefix('renderer');
+        let logFn = wcLog.verbose;
+        switch (level) {
+        case ConsoleMessageLevel.Error:
+            logFn = wcLog.error;
+            break;
+        case ConsoleMessageLevel.Warning:
+            logFn = wcLog.warn;
+            break;
+        case ConsoleMessageLevel.Info:
+            logFn = wcLog.info;
+            break;
+        }
+
+        // Only include line entries if we're debugging
+        const entries = [message];
+        if (['debug', 'silly'].includes(getLevel())) {
+            entries.push(`(${path.basename(sourceId)}:${line})`);
+        }
+
+        logFn(...entries);
+    }
+
     removeWebContentsListeners = (id: number) => {
         if (this.listeners[id]) {
             this.listeners[id]();
@@ -322,12 +355,16 @@ export class WebContentsEventManager {
         const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
         contents.setWindowOpenHandler(newWindow);
 
+        const consoleMessage = this.generateHandleConsoleMessage(contents.id);
+        contents.on('console-message', consoleMessage);
+
         addListeners?.(contents);
 
         const removeWebContentsListeners = () => {
             try {
                 contents.removeListener('will-navigate', willNavigate);
                 contents.removeListener('did-start-navigation', didStartNavigation);
+                contents.removeListener('console-message', consoleMessage);
                 removeListeners?.(contents);
             } catch (e) {
                 this.log(contents.id).error(`Error while trying to detach listeners, this might be ok if the process crashed: ${e}`);
