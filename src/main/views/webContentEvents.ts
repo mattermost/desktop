@@ -318,7 +318,7 @@ export class WebContentsEventManager {
         }
 
         logFn(...entries);
-    }
+    };
 
     removeWebContentsListeners = (id: number) => {
         if (this.listeners[id]) {

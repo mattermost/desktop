@@ -6,7 +6,6 @@
 import {shell, BrowserWindow} from 'electron';
 
 import {getLevel} from 'common/log';
-
 import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
 
