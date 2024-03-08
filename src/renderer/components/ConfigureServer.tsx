@@ -1,20 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import classNames from 'classnames';
 import React, {useState, useCallback, useEffect, useRef} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
-import classNames from 'classnames';
-
-import {UniqueServer} from 'types/config';
 
 import {MODAL_TRANSITION_TIMEOUT, URLValidationStatus} from 'common/utils/constants';
-
 import womanLaptop from 'renderer/assets/svg/womanLaptop.svg';
-
 import Header from 'renderer/components/Header';
 import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
+
+import type {UniqueServer} from 'types/config';
 
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/ConfigureServer.scss';

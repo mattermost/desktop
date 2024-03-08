@@ -27,7 +27,7 @@ describe('main/AppVersionManager', () => {
         fs.readFileSync.mockReturnValue('some bad JSON');
         Validator.validateAppState.mockReturnValue(false);
 
-        // eslint-disable-next-line no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const appVersionManager = new AppVersionManager('somefilename.txt');
 
         expect(fs.writeFile).toBeCalledWith('somefilename.txt', '{}', expect.any(Function));

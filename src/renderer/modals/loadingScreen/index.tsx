@@ -42,15 +42,15 @@ class LoadingScreenRoot extends React.PureComponent<Props, State> {
 
     setDarkMode = (darkMode: boolean) => {
         this.setState({darkMode});
-    }
+    };
 
     onToggleLoadingScreenVisibility = (showLoadingScreen: boolean) => {
         this.setState({showLoadingScreen});
-    }
+    };
 
     onFadeOutComplete = () => {
         window.desktop.loadingScreen.loadingScreenAnimationFinished();
-    }
+    };
 
     render() {
         return (

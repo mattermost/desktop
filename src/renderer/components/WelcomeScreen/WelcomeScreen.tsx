@@ -1,20 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import classNames from 'classnames';
 import React, {useState, useEffect, useMemo} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
-import classNames from 'classnames';
 
+import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 import bullseye from 'renderer/assets/svg/bullseye.svg';
 import channels from 'renderer/assets/svg/channels.svg';
 import chat2 from 'renderer/assets/svg/chat2.svg';
 import clipboard from 'renderer/assets/svg/clipboard.svg';
-
 import Carousel from 'renderer/components/Carousel';
 import Header from 'renderer/components/Header';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
-
-import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 
 import WelcomeScreenSlide from './WelcomeScreenSlide';
 

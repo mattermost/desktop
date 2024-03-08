@@ -3,23 +3,18 @@
 
 import path from 'path';
 
+import type {BrowserWindow, Rectangle, Session} from 'electron';
+import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
+import isDev from 'electron-is-dev';
 import fs from 'fs-extra';
 
-import {app, BrowserWindow, Menu, Rectangle, Session, session, dialog, nativeImage, screen} from 'electron';
-import isDev from 'electron-is-dev';
-
-import {MigrationInfo} from 'types/config';
-import {RemoteInfo} from 'types/server';
-import {Boundaries} from 'types/utils';
-
-import Config from 'common/config';
-import {Logger} from 'common/log';
-import JsonFileManager from 'common/JsonFileManager';
-import ServerManager from 'common/servers/serverManager';
-import {MattermostServer} from 'common/servers/MattermostServer';
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
+import Config from 'common/config';
+import JsonFileManager from 'common/JsonFileManager';
+import {Logger} from 'common/log';
+import type {MattermostServer} from 'common/servers/MattermostServer';
+import ServerManager from 'common/servers/serverManager';
 import {isValidURI} from 'common/utils/url';
-
 import updateManager from 'main/autoUpdater';
 import {migrationInfoPath, updatePaths} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
@@ -29,6 +24,10 @@ import {ServerInfo} from 'main/server/serverInfo';
 import Tray from 'main/tray/tray';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
+
+import type {MigrationInfo} from 'types/config';
+import type {RemoteInfo} from 'types/server';
+import type {Boundaries} from 'types/utils';
 
 import {mainProtocol} from './initialize';
 

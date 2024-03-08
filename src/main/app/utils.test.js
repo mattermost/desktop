@@ -1,12 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {dialog, screen} from 'electron';
 import fs from 'fs-extra';
 
-import {dialog, screen} from 'electron';
-
 import JsonFileManager from 'common/JsonFileManager';
-
 import {updatePaths} from 'main/constants';
 
 import {getDeeplinkingURL, resizeScreen, migrateMacAppStore} from './utils';

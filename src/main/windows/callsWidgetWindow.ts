@@ -1,19 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, desktopCapturer, ipcMain, IpcMainEvent, Rectangle, systemPreferences, Event, IpcMainInvokeEvent} from 'electron';
-
-import {
-    CallsJoinCallMessage,
-    CallsWidgetWindowConfig,
-} from 'types/calls';
+import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent} from 'electron';
+import {BrowserWindow, desktopCapturer, ipcMain, systemPreferences} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
-
-import {Logger} from 'common/log';
-import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
-import Utils from 'common/utils/util';
-import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import {
     BROWSER_HISTORY_PUSH,
     CALLS_ERROR,
@@ -30,17 +21,25 @@ import {
     GET_DESKTOP_SOURCES,
     UPDATE_SHORTCUT_MENU,
 } from 'common/communication';
-
-import {MattermostBrowserView} from 'main/views/MattermostBrowserView';
+import {Logger} from 'common/log';
+import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
+import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
+import Utils from 'common/utils/util';
 import {
     composeUserAgent,
     getLocalPreload,
     openScreensharePermissionsSettingsMacOS,
     resetScreensharePermissionsMacOS,
 } from 'main/utils';
+import type {MattermostBrowserView} from 'main/views/MattermostBrowserView';
+import ViewManager from 'main/views/viewManager';
 import webContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
-import ViewManager from 'main/views/viewManager';
+
+import type {
+    CallsJoinCallMessage,
+    CallsWidgetWindowConfig,
+} from 'types/calls';
 
 const log = new Logger('CallsWidgetWindow');
 
@@ -98,15 +97,15 @@ export class CallsWidgetWindow {
 
     public openDevTools = () => {
         this.win?.webContents.openDevTools({mode: 'detach'});
-    }
+    };
 
     getViewURL = () => {
         return this.mainView?.view.server.url;
-    }
+    };
 
     isCallsWidget = (webContentsId: number) => {
         return webContentsId === this.win?.webContents.id || webContentsId === this.popOut?.webContents.id;
-    }
+    };
 
     private getWidgetURL = () => {
         if (!this.mainView) {
@@ -128,7 +127,7 @@ export class CallsWidgetWindow {
         }
 
         return u.toString();
-    }
+    };
 
     private init = (view: MattermostBrowserView, options: CallsWidgetWindowConfig) => {
         this.win = new BrowserWindow({
@@ -170,7 +169,7 @@ export class CallsWidgetWindow {
         }).catch((reason) => {
             log.error(`failed to load: ${reason}`);
         });
-    }
+    };
 
     private close = async () => {
         log.debug('close');
@@ -189,7 +188,7 @@ export class CallsWidgetWindow {
             this.win?.on('closed', resolve);
             this.win?.close();
         });
-    }
+    };
 
     private setBounds(bounds: Rectangle) {
         if (!this.win) {
@@ -216,7 +215,7 @@ export class CallsWidgetWindow {
         delete this.win;
         delete this.mainView;
         delete this.options;
-    }
+    };
 
     private onNavigate = (ev: Event, url: string) => {
         if (url === this.getWidgetURL()) {
@@ -224,7 +223,7 @@ export class CallsWidgetWindow {
         }
         log.warn(`prevented widget window from navigating to: ${url}`);
         ev.preventDefault();
-    }
+    };
 
     private onShow = () => {
         log.debug('onShow');
@@ -254,7 +253,7 @@ export class CallsWidgetWindow {
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
 
         this.setBounds(initialBounds);
-    }
+    };
 
     private onPopOutOpen = ({url}: { url: string }) => {
         if (!(this.mainView && this.options)) {
@@ -276,7 +275,7 @@ export class CallsWidgetWindow {
 
         log.warn(`onPopOutOpen: prevented window open to ${url}`);
         return {action: 'deny' as const};
-    }
+    };
 
     private onPopOutCreate = (win: BrowserWindow) => {
         this.popOut = win;
@@ -312,7 +311,7 @@ export class CallsWidgetWindow {
                 log.error('did-frame-finish-load, failed to reload with correct userAgent', e);
             }
         });
-    }
+    };
 
     /************************
      * IPC HANDLERS
@@ -340,7 +339,7 @@ export class CallsWidgetWindow {
         };
 
         this.setBounds(newBounds);
-    }
+    };
 
     private handleShareScreen = (ev: IpcMainEvent, sourceID: string, withAudio: boolean) => {
         log.debug('handleShareScreen', {sourceID, withAudio});
@@ -351,7 +350,7 @@ export class CallsWidgetWindow {
         }
 
         this.win?.webContents.send(CALLS_WIDGET_SHARE_SCREEN, sourceID, withAudio);
-    }
+    };
 
     private handlePopOutFocus = () => {
         if (!this.popOut) {
@@ -361,7 +360,7 @@ export class CallsWidgetWindow {
             this.popOut.restore();
         }
         this.popOut.focus();
-    }
+    };
 
     private handleGetDesktopSources = async (event: IpcMainInvokeEvent, opts: Electron.SourcesOptions) => {
         log.debug('handleGetDesktopSources', opts);
@@ -431,7 +430,7 @@ export class CallsWidgetWindow {
 
             return [];
         });
-    }
+    };
 
     private handleCreateCallsWidgetWindow = async (event: IpcMainInvokeEvent, msg: CallsJoinCallMessage) => {
         log.debug('createCallsWidgetWindow');
@@ -479,13 +478,13 @@ export class CallsWidgetWindow {
         });
 
         return promise;
-    }
+    };
 
     private handleCallsLeave = () => {
         log.debug('handleCallsLeave');
 
         this.close();
-    }
+    };
 
     private forwardToMainApp = (channel: string) => {
         return (event: IpcMainEvent, ...args: any) => {
@@ -503,7 +502,7 @@ export class CallsWidgetWindow {
             MainWindow.get()?.focus();
             this.mainView?.sendToRenderer(channel, ...args);
         };
-    }
+    };
 
     private handleCallsLinkClick = (event: IpcMainEvent, url: string) => {
         log.debug('handleCallsLinkClick', url);
@@ -528,7 +527,7 @@ export class CallsWidgetWindow {
         ServerViewState.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, url);
-    }
+    };
 
     /**
      * @deprecated
@@ -547,7 +546,7 @@ export class CallsWidgetWindow {
         ServerViewState.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, this.options?.channelURL);
-    }
+    };
 }
 
 const callsWidgetWindow = new CallsWidgetWindow();

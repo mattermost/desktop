@@ -2,12 +2,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, app, nativeImage} from 'electron';
+import type {BrowserWindow} from 'electron';
+import {app, nativeImage} from 'electron';
 
 import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
-
 import {localizeMessage} from 'main/i18nManager';
 
 import MainWindow from './windows/mainWindow';

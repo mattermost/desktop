@@ -1,8 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {BrowserView, ipcMain, IpcMainEvent} from 'electron';
-
-import {CoordinatesToJsonType, DownloadedItem, DownloadsMenuOpenEventPayload} from 'types/downloads';
+import type {IpcMainEvent} from 'electron';
+import {BrowserView, ipcMain} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
@@ -19,17 +18,19 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
 } from 'common/communication';
-import {Logger} from 'common/log';
 import Config from 'common/config';
+import {Logger} from 'common/log';
 import {
     DOWNLOADS_DROPDOWN_FULL_WIDTH,
     DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT,
     DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH,
     TAB_BAR_HEIGHT,
 } from 'common/utils/constants';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
 import downloadsManager from 'main/downloadsManager';
+import {getLocalPreload, getLocalURLString} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
+
+import type {CoordinatesToJsonType, DownloadedItem, DownloadsMenuOpenEventPayload} from 'types/downloads';
 
 const log = new Logger('DownloadsDropdownMenuView');
 
@@ -76,7 +77,7 @@ export class DownloadsDropdownMenuView {
         }});
         this.view.webContents.loadURL(getLocalURLString('downloadsDropdownMenu.html'));
         MainWindow.get()?.addBrowserView(this.view);
-    }
+    };
 
     /**
      * This is called every time the "window" is resized so that we can position
@@ -88,14 +89,14 @@ export class DownloadsDropdownMenuView {
         this.windowBounds = newBounds;
         this.updateDownloadsDropdownMenu();
         this.repositionDownloadsDropdownMenu();
-    }
+    };
 
     private updateItem = (event: IpcMainEvent, item: DownloadedItem) => {
         log.debug('updateItem', {item});
 
         this.item = item;
         this.updateDownloadsDropdownMenu();
-    }
+    };
 
     private updateDownloadsDropdownMenu = () => {
         log.silly('updateDownloadsDropdownMenu');
@@ -107,7 +108,7 @@ export class DownloadsDropdownMenuView {
         );
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, true, this.item);
         this.repositionDownloadsDropdownMenu();
-    }
+    };
 
     private handleOpen = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload = {} as DownloadsMenuOpenEventPayload) => {
         log.debug('handleOpen', {bounds: this.bounds, payload});
@@ -128,7 +129,7 @@ export class DownloadsDropdownMenuView {
         MainWindow.get()?.setTopBrowserView(this.view);
         this.view.webContents.focus();
         this.updateDownloadsDropdownMenu();
-    }
+    };
 
     private handleClose = () => {
         log.silly('handleClose');
@@ -138,7 +139,7 @@ export class DownloadsDropdownMenuView {
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM);
         this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
         MainWindow.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN_MENU);
-    }
+    };
 
     private handleToggle = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload) => {
         if (this.open) {
@@ -153,27 +154,27 @@ export class DownloadsDropdownMenuView {
         } else {
             this.handleOpen(event, payload);
         }
-    }
+    };
 
     private openFile = () => {
         downloadsManager.openFile(this.item);
         this.handleClose();
-    }
+    };
 
     private showFileInFolder = (e: IpcMainEvent, item: DownloadedItem) => {
         downloadsManager.showFileInFolder(item);
         this.handleClose();
-    }
+    };
 
     private clearFile = () => {
         downloadsManager.clearFile(this.item);
         this.handleClose();
-    }
+    };
 
     private cancelDownload = () => {
         downloadsManager.cancelDownload(this.item);
         this.handleClose();
-    }
+    };
 
     private getBounds = (windowWidth: number, width: number, height: number) => {
         // MUST return integers
@@ -183,7 +184,7 @@ export class DownloadsDropdownMenuView {
             width: Math.round(width),
             height: Math.round(height),
         };
-    }
+    };
 
     private getX = (windowWidth: number) => {
         const result = (windowWidth - DOWNLOADS_DROPDOWN_FULL_WIDTH - DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH) + (this.coordinates?.x || 0) + (this.coordinates?.width || 0);
@@ -191,12 +192,12 @@ export class DownloadsDropdownMenuView {
             return 0;
         }
         return Math.round(result);
-    }
+    };
 
     private getY = () => {
         const result = TAB_BAR_HEIGHT + (this.coordinates?.y || 0) + (this.coordinates?.height || 0);
         return Math.round(result);
-    }
+    };
 
     private repositionDownloadsDropdownMenu = () => {
         if (!this.windowBounds) {
@@ -207,7 +208,7 @@ export class DownloadsDropdownMenuView {
         if (this.open) {
             this.view?.setBounds(this.bounds);
         }
-    }
+    };
 }
 
 const downloadsDropdownMenuView = new DownloadsDropdownMenuView();

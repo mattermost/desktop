@@ -8,11 +8,11 @@ import {LOAD_FAILED, TOGGLE_BACK_BUTTON, UPDATE_TARGET_URL} from 'common/communi
 import {MattermostServer} from 'common/servers/MattermostServer';
 import MessagingView from 'common/views/MessagingView';
 
-import MainWindow from '../windows/mainWindow';
+import {MattermostBrowserView} from './MattermostBrowserView';
+
 import ContextMenu from '../contextMenu';
 import Utils from '../utils';
-
-import {MattermostBrowserView} from './MattermostBrowserView';
+import MainWindow from '../windows/mainWindow';
 
 jest.mock('electron', () => ({
     app: {

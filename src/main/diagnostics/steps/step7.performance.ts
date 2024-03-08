@@ -3,12 +3,13 @@
 import path from 'path';
 
 import {app, powerMonitor} from 'electron';
-import {ElectronLog} from 'electron-log';
-import {DiagnosticStepResponse} from 'types/diagnostics';
+import type {ElectronLog} from 'electron-log';
 
-import DiagnosticsStep from '../DiagnosticStep';
+import type {DiagnosticStepResponse} from 'types/diagnostics';
 
 import {dateTimeInFilename} from './internal/utils';
+
+import DiagnosticsStep from '../DiagnosticStep';
 
 const stepName = 'Step-7';
 const stepDescriptiveName = 'PerformanceAndMemory';

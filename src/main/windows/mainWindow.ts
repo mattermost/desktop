@@ -2,16 +2,12 @@
 // See LICENSE.txt for license information.
 
 import fs from 'fs';
-
+import os from 'os';
 import path from 'path';
 
-import os from 'os';
-
+import type {BrowserWindowConstructorOptions, Event, Input} from 'electron';
+import {app, BrowserWindow, dialog, globalShortcut, ipcMain, screen} from 'electron';
 import {EventEmitter} from 'events';
-
-import {app, BrowserWindow, BrowserWindowConstructorOptions, dialog, Event, globalShortcut, Input, ipcMain, screen} from 'electron';
-
-import {SavedWindowState} from 'types/mainWindow';
 
 import AppState from 'common/appState';
 import {
@@ -35,9 +31,10 @@ import ServerManager from 'common/servers/serverManager';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
-
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
+
+import type {SavedWindowState} from 'types/mainWindow';
 
 import ContextMenu from '../contextMenu';
 import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
@@ -51,7 +48,7 @@ export class MainWindow extends EventEmitter {
     private savedWindowState?: SavedWindowState;
     private ready: boolean;
     private isResizing: boolean;
-    private lastEmittedBounds?: Electron.Rectangle
+    private lastEmittedBounds?: Electron.Rectangle;
 
     constructor() {
         super();
@@ -158,7 +155,7 @@ export class MainWindow extends EventEmitter {
             });
 
         this.emit(MAIN_WINDOW_CREATED);
-    }
+    };
 
     get isReady() {
         return this.ready;
@@ -166,7 +163,7 @@ export class MainWindow extends EventEmitter {
 
     get = () => {
         return this.win;
-    }
+    };
 
     show = () => {
         if (this.win && this.isReady) {
@@ -186,7 +183,7 @@ export class MainWindow extends EventEmitter {
         } else {
             this.init();
         }
-    }
+    };
 
     getBounds = (): Electron.Rectangle | undefined => {
         if (!this.win) {
@@ -202,18 +199,18 @@ export class MainWindow extends EventEmitter {
         }
 
         return this.win.getContentBounds();
-    }
+    };
 
     focusThreeDotMenu = () => {
         if (this.win) {
             this.win.webContents.focus();
             this.win.webContents.send(FOCUS_THREE_DOT_MENU);
         }
-    }
+    };
 
     sendToRenderer = (channel: string, ...args: unknown[]) => {
         this.sendToRendererWithRetry(3, channel, ...args);
-    }
+    };
 
     private sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
         if (!this.win || !this.isReady) {
@@ -228,7 +225,7 @@ export class MainWindow extends EventEmitter {
             return;
         }
         this.win.webContents.send(channel, ...args);
-    }
+    };
 
     private shouldStartFullScreen = () => {
         if (global?.args?.fullscreen !== undefined) {
@@ -239,11 +236,11 @@ export class MainWindow extends EventEmitter {
             return Config.startInFullscreen;
         }
         return this.savedWindowState?.fullscreen || false;
-    }
+    };
 
     private isFramelessWindow = () => {
         return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
-    }
+    };
 
     private getSavedWindowState = () => {
         let savedWindowState: any;
@@ -264,7 +261,7 @@ export class MainWindow extends EventEmitter {
             savedWindowState = {width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT};
         }
         return savedWindowState;
-    }
+    };
 
     private saveWindowState = (file: string, window: BrowserWindow) => {
         const windowState: SavedWindowState = {
@@ -278,7 +275,7 @@ export class MainWindow extends EventEmitter {
         // [Linux] error happens only when the window state is changed before the config dir is created.
             log.error('failed to save window state', e);
         }
-    }
+    };
 
     private onBeforeInputEvent = (event: Event, input: Input) => {
         // Register keyboard shortcuts
@@ -293,7 +290,7 @@ export class MainWindow extends EventEmitter {
                 }
             }
         }
-    }
+    };
 
     private onFocus = () => {
         // Only add shortcuts when window is in focus
@@ -305,7 +302,7 @@ export class MainWindow extends EventEmitter {
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
         this.emit(MAIN_WINDOW_FOCUSED);
-    }
+    };
 
     private onBlur = () => {
         if (!this.win) {
@@ -323,7 +320,7 @@ export class MainWindow extends EventEmitter {
         // 'blur' event was effective in order to avoid this.
         // Ideally, app should detect that OS is shutting down.
         this.saveWindowState(boundsInfoPath, this.win);
-    }
+    };
 
     private onClose = (event: Event) => {
         log.debug('onClose');
@@ -394,13 +391,13 @@ export class MainWindow extends EventEmitter {
             default:
             }
         }
-    }
+    };
 
     private onClosed = () => {
         log.verbose('main window closed');
         delete this.win;
         this.ready = false;
-    }
+    };
 
     private onUnresponsive = () => {
         if (!this.win) {
@@ -421,7 +418,7 @@ export class MainWindow extends EventEmitter {
                 app.relaunch();
             }
         });
-    }
+    };
 
     private emitBounds = (bounds?: Electron.Rectangle, force?: boolean) => {
         // Workaround since the window bounds aren't updated immediately when the window is maximized for some reason
@@ -438,27 +435,27 @@ export class MainWindow extends EventEmitter {
             this.emit(MAIN_WINDOW_RESIZED, newBounds);
             this.lastEmittedBounds = newBounds;
         }, 10);
-    }
+    };
 
     private onMaximize = () => {
         this.win?.webContents.send(MAXIMIZE_CHANGE, true);
         this.emitBounds();
-    }
+    };
 
     private onUnmaximize = () => {
         this.win?.webContents.send(MAXIMIZE_CHANGE, false);
         this.emitBounds();
-    }
+    };
 
     private onEnterFullScreen = () => {
         this.win?.webContents.send('enter-full-screen');
         this.emitBounds();
-    }
+    };
 
     private onLeaveFullScreen = () => {
         this.win?.webContents.send('leave-full-screen');
         this.emitBounds();
-    }
+    };
 
     /**
      * Resizing code
@@ -487,7 +484,7 @@ export class MainWindow extends EventEmitter {
 
         this.isResizing = true;
         this.emitBounds(newBounds);
-    }
+    };
 
     private onResize = () => {
         log.silly('onResize');
@@ -497,7 +494,7 @@ export class MainWindow extends EventEmitter {
             return;
         }
         this.emitBounds();
-    }
+    };
 
     private onResized = () => {
         log.debug('onResized');
@@ -505,18 +502,18 @@ export class MainWindow extends EventEmitter {
         // Because this is the final window state after a resize, we force the size here
         this.emitBounds(this.getBounds(), true);
         this.isResizing = false;
-    }
+    };
 
     private handleViewFinishedResizing = () => {
         this.isResizing = false;
-    }
+    };
 
     /**
      * Server Manager update handler
      */
     private handleUpdateConfig = () => {
         this.win?.webContents.send(SERVERS_UPDATE);
-    }
+    };
 
     /**
      * App State update handler
@@ -524,7 +521,7 @@ export class MainWindow extends EventEmitter {
 
     private handleUpdateAppStateForViewId = (viewId: string, isExpired: boolean, newMentions: number, newUnreads: boolean) => {
         this.win?.webContents.send(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
-    }
+    };
 }
 
 const mainWindow = new MainWindow();

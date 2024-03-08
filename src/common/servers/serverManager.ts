@@ -3,21 +3,22 @@
 
 import EventEmitter from 'events';
 
-import {Server, ConfigServer, ConfigView} from 'types/config';
-import {RemoteInfo} from 'types/server';
-
-import Config from 'common/config';
 import {
     SERVERS_URL_MODIFIED,
     SERVERS_UPDATE,
 } from 'common/communication';
+import Config from 'common/config';
 import {Logger, getLevel} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS, MattermostView, getDefaultViews} from 'common/views/View';
-import MessagingView from 'common/views/MessagingView';
-import FocalboardView from 'common/views/FocalboardView';
-import PlaybooksView from 'common/views/PlaybooksView';
 import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
+import FocalboardView from 'common/views/FocalboardView';
+import MessagingView from 'common/views/MessagingView';
+import PlaybooksView from 'common/views/PlaybooksView';
+import type {MattermostView} from 'common/views/View';
+import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS, getDefaultViews} from 'common/views/View';
+
+import type {Server, ConfigServer, ConfigView} from 'types/config';
+import type {RemoteInfo} from 'types/server';
 
 const log = new Logger('ServerManager');
 
@@ -55,7 +56,7 @@ export class ServerManager extends EventEmitter {
             }
             return views;
         }, [] as MattermostView[]);
-    }
+    };
 
     getOrderedServers = () => {
         log.debug('getOrderedServers');
@@ -67,7 +68,7 @@ export class ServerManager extends EventEmitter {
             }
             return servers;
         }, [] as MattermostServer[]);
-    }
+    };
 
     getLastActiveTabForServer = (serverId: string) => {
         log.withPrefix(serverId).debug('getLastActiveTabForServer');
@@ -80,27 +81,27 @@ export class ServerManager extends EventEmitter {
             }
         }
         return this.getFirstOpenViewForServer(serverId);
-    }
+    };
 
     getServer = (id: string) => {
         return this.servers.get(id);
-    }
+    };
 
     getView = (id: string) => {
         return this.views.get(id);
-    }
+    };
 
     getAllServers = () => {
         return [...this.servers.values()];
-    }
+    };
 
     hasServers = () => {
         return Boolean(this.servers.size);
-    }
+    };
 
     getRemoteInfo = (serverId: string) => {
         return this.remoteInfo.get(serverId);
-    }
+    };
 
     updateRemoteInfos = (remoteInfos: Map<string, RemoteInfo>) => {
         let hasUpdates = false;
@@ -112,7 +113,7 @@ export class ServerManager extends EventEmitter {
         if (hasUpdates) {
             this.persistServers();
         }
-    }
+    };
 
     lookupViewByURL = (inputURL: URL | string, ignoreScheme = false) => {
         log.silly('lookupViewByURL', `${inputURL}`, ignoreScheme);
@@ -139,21 +140,21 @@ export class ServerManager extends EventEmitter {
                 }
             });
         return selectedView;
-    }
+    };
 
     updateServerOrder = (serverOrder: string[]) => {
         log.debug('updateServerOrder', serverOrder);
 
         this.serverOrder = serverOrder;
         this.persistServers();
-    }
+    };
 
     updateTabOrder = (serverId: string, viewOrder: string[]) => {
         log.withPrefix(serverId).debug('updateTabOrder', viewOrder);
 
         this.viewOrder.set(serverId, viewOrder);
         this.persistServers();
-    }
+    };
 
     addServer = (server: Server) => {
         const newServer = new MattermostServer(server, false);
@@ -176,7 +177,7 @@ export class ServerManager extends EventEmitter {
         this.emit(SERVERS_URL_MODIFIED, [newServer.id]);
         this.persistServers();
         return newServer;
-    }
+    };
 
     editServer = (serverId: string, server: Server) => {
         const existingServer = this.servers.get(serverId);
@@ -203,7 +204,7 @@ export class ServerManager extends EventEmitter {
 
         urlModified?.();
         this.persistServers();
-    }
+    };
 
     removeServer = (serverId: string) => {
         this.viewOrder.get(serverId)?.forEach((viewId) => this.views.delete(viewId));
@@ -216,7 +217,7 @@ export class ServerManager extends EventEmitter {
         this.servers.delete(serverId);
 
         this.persistServers();
-    }
+    };
 
     setViewIsOpen = (viewId: string, isOpen: boolean) => {
         const view = this.views.get(viewId);
@@ -226,7 +227,7 @@ export class ServerManager extends EventEmitter {
         view.isOpen = isOpen;
 
         this.persistServers();
-    }
+    };
 
     updateLastActive = (viewId: string) => {
         const view = this.views.get(viewId);
@@ -241,7 +242,7 @@ export class ServerManager extends EventEmitter {
         }
 
         this.persistServers(serverOrder);
-    }
+    };
 
     reloadFromConfig = () => {
         const serverOrder: string[] = [];
@@ -257,7 +258,7 @@ export class ServerManager extends EventEmitter {
         }
         this.filterOutDuplicateServers();
         this.serverOrder = serverOrder;
-    }
+    };
 
     private filterOutDuplicateServers = () => {
         const servers = [...this.servers.keys()].map((key) => ({key, value: this.servers.get(key)!}));
@@ -269,7 +270,7 @@ export class ServerManager extends EventEmitter {
                 uniqueServers.add(`${server.value.name}:${server.value.url}`);
             }
         });
-    }
+    };
 
     private initServer = (configServer: ConfigServer, isPredefined: boolean) => {
         const server = new MattermostServer(configServer, isPredefined);
@@ -290,7 +291,7 @@ export class ServerManager extends EventEmitter {
             this.lastActiveView.set(server.id, viewOrder[configServer.lastActiveTab]);
         }
         return server.id;
-    }
+    };
 
     private getFirstOpenViewForServer = (serverId: string) => {
         const viewOrder = this.getOrderedTabsForServer(serverId);
@@ -300,7 +301,7 @@ export class ServerManager extends EventEmitter {
             throw new Error(`No views open for server id ${serverId}`);
         }
         return firstView;
-    }
+    };
 
     private persistServers = async (lastActiveServer?: number) => {
         this.emit(SERVERS_UPDATE);
@@ -314,7 +315,7 @@ export class ServerManager extends EventEmitter {
                 return servers;
             }, [] as ConfigServer[]);
         await Config.setServers(localServers, lastActiveServer);
-    }
+    };
 
     private getLastActiveView = (serverId: string) => {
         let lastActiveView: number | undefined;
@@ -325,7 +326,7 @@ export class ServerManager extends EventEmitter {
             }
         }
         return lastActiveView;
-    }
+    };
 
     private toConfigServer = (server: MattermostServer): ConfigServer => {
         return {
@@ -346,7 +347,7 @@ export class ServerManager extends EventEmitter {
                 return views;
             }, [] as ConfigView[]) ?? [],
         };
-    }
+    };
 
     private getNewView = (srv: MattermostServer, viewName: string, isOpen?: boolean) => {
         switch (viewName) {
@@ -359,7 +360,7 @@ export class ServerManager extends EventEmitter {
         default:
             throw new Error('Not implemeneted');
         }
-    }
+    };
 
     private updateServerURL = (serverId: string) => {
         const server = this.servers.get(serverId);
@@ -375,7 +376,7 @@ export class ServerManager extends EventEmitter {
             return true;
         }
         return false;
-    }
+    };
 
     private includeId = (id: string, ...prefixes: string[]) => {
         const shouldInclude = ['debug', 'silly'].includes(getLevel());

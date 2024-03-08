@@ -2,12 +2,13 @@
 // See LICENSE.txt for license information.
 
 import {app} from 'electron';
-import {Args} from 'types/args';
 import yargs from 'yargs';
 
-import {protocols} from '../../electron-builder.json';
-
 import * as Validator from 'common/Validator';
+
+import type {Args} from 'types/args';
+
+import {protocols} from '../../electron-builder.json';
 
 export default function parse(args: string[]) {
     return validateArgs(parseArgs(triageArgs(args)));

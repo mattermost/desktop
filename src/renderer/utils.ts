@@ -2,8 +2,9 @@
 // See LICENSE.txt for license information.
 
 import prettyBytes from 'pretty-bytes';
-import {IntlShape} from 'react-intl';
-import {DownloadedItem} from 'types/downloads';
+import type {IntlShape} from 'react-intl';
+
+import type {DownloadedItem} from 'types/downloads';
 
 import {Constants} from './constants';
 

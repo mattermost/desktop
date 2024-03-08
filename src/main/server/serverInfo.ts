@@ -1,10 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ClientConfig, RemoteInfo} from 'types/server';
-
-import {MattermostServer} from 'common/servers/MattermostServer';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 import {parseURL} from 'common/utils/url';
+
+import type {ClientConfig, RemoteInfo} from 'types/server';
 
 import {getServerAPI} from './serverAPI';
 
@@ -24,7 +24,7 @@ export class ServerInfo {
         );
 
         return this.remoteInfo;
-    }
+    };
 
     fetchRemoteInfo = async () => {
         await this.fetchConfigData();
@@ -34,7 +34,7 @@ export class ServerInfo {
         );
 
         return this.remoteInfo;
-    }
+    };
 
     private getRemoteInfo = <T>(
         callback: (data: T) => void,
@@ -54,17 +54,17 @@ export class ServerInfo {
                 () => reject(new Error('Aborted')),
                 (error: Error) => reject(error));
         });
-    }
+    };
 
     private onGetConfig = (data: ClientConfig) => {
         this.remoteInfo.serverVersion = data.Version;
         this.remoteInfo.siteURL = data.SiteURL;
         this.remoteInfo.siteName = data.SiteName;
         this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.BuildBoards === 'true';
-    }
+    };
 
     private onGetPlugins = (data: Array<{id: string; version: string}>) => {
         this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.some((plugin) => plugin.id === 'focalboard');
         this.remoteInfo.hasPlaybooks = data.some((plugin) => plugin.id === 'playbooks');
-    }
+    };
 }

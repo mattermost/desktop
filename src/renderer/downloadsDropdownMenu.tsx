@@ -1,12 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import classNames from 'classnames';
 import React, {useCallback, useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
-import classNames from 'classnames';
 import {FormattedMessage} from 'react-intl';
 
-import {DownloadedItem} from 'types/downloads';
+import type {DownloadedItem} from 'types/downloads';
 
 import IntlProvider from './intl_provider';
 

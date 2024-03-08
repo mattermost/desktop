@@ -1,10 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, IpcMainEvent, systemPreferences} from 'electron';
+import type {IpcMainEvent} from 'electron';
+import {BrowserWindow, systemPreferences} from 'electron';
 
-import {Logger} from 'common/log';
 import Config from 'common/config';
+import {Logger} from 'common/log';
 
 const log = new Logger('App.Windows');
 

@@ -1,12 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Config, MigrationInfo} from 'types/config';
-
 import JsonFileManager from 'common/JsonFileManager';
 import {TAB_MESSAGING} from 'common/views/View';
-
 import {migrationInfoPath} from 'main/constants';
+
+import type {Config, MigrationInfo} from 'types/config';
 
 export default function migrateConfigItems(config: Config) {
     const migrationPrefs = new JsonFileManager<MigrationInfo>(migrationInfoPath);

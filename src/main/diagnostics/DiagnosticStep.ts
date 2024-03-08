@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {DiagnosticsStepConstructorPayload} from 'types/diagnostics';
+import type {DiagnosticsStepConstructorPayload} from 'types/diagnostics';
 
 import {addDurationToFnReturnObject} from './steps/internal/utils';
 

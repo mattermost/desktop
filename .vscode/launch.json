@@ -38,8 +38,6 @@
             "name": "E2E Tests",
             "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
             "args": [
-                "-r",
-                "@babel/register",
                 "--recursive",
                 "--timeout",
                 "999999",
@@ -55,8 +53,6 @@
             "name": "E2E Performance Tests",
             "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
             "args": [
-                "-r",
-                "@babel/register",
                 "--recursive",
                 "--timeout",
                 "999999",

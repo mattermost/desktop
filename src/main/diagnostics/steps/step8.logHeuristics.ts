@@ -1,15 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import log, {ElectronLog} from 'electron-log';
-
-import {DiagnosticStepResponse} from 'types/diagnostics';
+import type {ElectronLog} from 'electron-log';
+import log from 'electron-log';
 
 import {getPercentage} from 'main/utils';
 
-import DiagnosticsStep from '../DiagnosticStep';
+import type {DiagnosticStepResponse} from 'types/diagnostics';
 
 import {readFileLineByLine} from './internal/utils';
+
+import DiagnosticsStep from '../DiagnosticStep';
 
 const stepName = 'Step-8';
 const stepDescriptiveName = 'LogHeuristics';

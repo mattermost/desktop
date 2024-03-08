@@ -1,14 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
 import classNames from 'classnames';
-
-import useTransitionEnd from '../../hooks/useTransitionEnd';
-
-import LoadingAnimation from '../LoadingAnimation';
+import React from 'react';
 
 import LoadingBackground from './LoadingBackground';
+
+import useTransitionEnd from '../../hooks/useTransitionEnd';
+import LoadingAnimation from '../LoadingAnimation';
 
 type Props = {
     loading?: boolean;

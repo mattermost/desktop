@@ -1,10 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {IpcMainEvent, IpcMainInvokeEvent, ipcMain} from 'electron';
-
-import {UniqueServer, Server} from 'types/config';
-import {URLValidationResult} from 'types/server';
+import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {ipcMain} from 'electron';
 
 import {
     CLOSE_VIEW,
@@ -22,18 +20,20 @@ import {
     UPDATE_TAB_ORDER,
     VALIDATE_SERVER_URL,
 } from 'common/communication';
-import {Logger} from 'common/log';
-import ServerManager from 'common/servers/serverManager';
-import {MattermostServer} from 'common/servers/MattermostServer';
-import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
-import {URLValidationStatus} from 'common/utils/constants';
 import Config from 'common/config';
-
-import ViewManager from 'main/views/viewManager';
-import ModalManager from 'main/views/modalManager';
-import MainWindow from 'main/windows/mainWindow';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {Logger} from 'common/log';
+import {MattermostServer} from 'common/servers/MattermostServer';
+import ServerManager from 'common/servers/serverManager';
+import {URLValidationStatus} from 'common/utils/constants';
+import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import {ServerInfo} from 'main/server/serverInfo';
+import {getLocalPreload, getLocalURLString} from 'main/utils';
+import ModalManager from 'main/views/modalManager';
+import ViewManager from 'main/views/viewManager';
+import MainWindow from 'main/windows/mainWindow';
+
+import type {UniqueServer, Server} from 'types/config';
+import type {URLValidationResult} from 'types/server';
 
 const log = new Logger('App', 'ServerViewState');
 
@@ -65,7 +65,7 @@ export class ServerViewState {
                 this.currentServerId = orderedServers[0].id;
             }
         }
-    }
+    };
 
     getCurrentServer = () => {
         log.silly('getCurrentServer');
@@ -78,7 +78,7 @@ export class ServerViewState {
             throw new Error('Current server does not exist');
         }
         return server;
-    }
+    };
 
     switchServer = (serverId: string, waitForViewToExist = false) => {
         ServerManager.getServerLog(serverId, 'WindowManager').debug('switchServer');
@@ -102,7 +102,7 @@ export class ServerViewState {
             ViewManager.showById(nextView.id);
         }
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
-    }
+    };
 
     selectNextView = () => {
         this.selectView((order) => order + 1);
@@ -115,7 +115,7 @@ export class ServerViewState {
     updateCurrentView = (serverId: string, viewId: string) => {
         this.currentServerId = serverId;
         ServerManager.updateLastActive(viewId);
-    }
+    };
 
     /**
      * Server Modals

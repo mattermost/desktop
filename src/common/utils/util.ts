@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-import {Rectangle} from 'electron';
+import type {Rectangle} from 'electron';
 
 import {DEVELOPMENT, PRODUCTION} from './constants';
 

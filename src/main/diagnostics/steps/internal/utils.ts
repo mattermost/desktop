@@ -4,11 +4,13 @@ import fs from 'fs';
 import https from 'https';
 import readline from 'readline';
 
-import {BrowserWindow, Rectangle, WebContents} from 'electron';
-import log, {ElectronLog, LogLevel} from 'electron-log';
-import {AddDurationToFnReturnObject, LogFileLineData, LogLevelAmounts, WindowStatus} from 'types/diagnostics';
+import type {BrowserWindow, Rectangle, WebContents} from 'electron';
+import type {ElectronLog, LogLevel} from 'electron-log';
+import log from 'electron-log';
 
 import {IS_ONLINE_ENDPOINT, LOGS_MAX_STRING_LENGTH, REGEX_LOG_FILE_LINE} from 'common/constants';
+
+import type {AddDurationToFnReturnObject, LogFileLineData, LogLevelAmounts, WindowStatus} from 'types/diagnostics';
 
 export function dateTimeInFilename(date?: Date) {
     const now = date ?? new Date();
@@ -79,7 +81,7 @@ export async function isOnline(logger: ElectronLog = log, url = IS_ONLINE_ENDPOI
                             return;
                         }
                     } catch (e) {
-                        logger.error('Cannot parse response')
+                        logger.error('Cannot parse response');
                     }
                 }
                 resolve(false);

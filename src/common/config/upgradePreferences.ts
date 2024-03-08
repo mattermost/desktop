@@ -2,9 +2,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ConfigV3, ConfigV2, ConfigV1, ConfigV0, AnyConfig} from 'types/config';
-
 import {getDefaultViewsForConfigServer} from 'common/views/View';
+
+import type {ConfigV3, ConfigV2, ConfigV1, ConfigV0, AnyConfig} from 'types/config';
 
 import pastDefaultPreferences from './pastDefaultPreferences';
 

@@ -3,11 +3,10 @@
 
 const path = require('path');
 
-const {spawn} = require('electron-notarize/lib/spawn.js');
+const {flipFuses, FuseVersion, FuseV1Options} = require('@electron/fuses');
+const {spawn} = require('@electron/notarize/lib/spawn.js');
 
 const SETUID_PERMISSIONS = '4755';
-
-const {flipFuses, FuseVersion, FuseV1Options} = require('@electron/fuses');
 
 function fixSetuid(context) {
     return async (target) => {

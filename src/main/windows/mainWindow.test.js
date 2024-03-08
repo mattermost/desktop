@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import fs from 'fs';
-
 import path from 'path';
 
 import {BrowserWindow, screen, app, globalShortcut, dialog} from 'electron';
@@ -12,10 +11,10 @@ import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
 
+import {MainWindow} from './mainWindow';
+
 import ContextMenu from '../contextMenu';
 import {isInsideRectangle} from '../utils';
-
-import {MainWindow} from './mainWindow';
 
 jest.mock('path', () => ({
     join: jest.fn(),
@@ -54,10 +53,6 @@ jest.mock('common/utils/util', () => ({
     isVersionGreaterThanOrEqualTo: jest.fn(),
 }));
 
-jest.mock('global', () => ({
-    willAppQuit: false,
-}));
-
 jest.mock('fs', () => ({
     readFileSync: jest.fn(),
     writeFileSync: jest.fn(),
@@ -78,8 +73,6 @@ jest.mock('../utils', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-
-'use strict';
 
 describe('main/windows/mainWindow', () => {
     describe('init', () => {

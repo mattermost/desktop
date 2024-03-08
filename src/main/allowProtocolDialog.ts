@@ -7,14 +7,13 @@ import fs from 'fs';
 
 import {dialog, shell} from 'electron';
 
-import {localizeMessage} from 'main/i18nManager';
-
 import buildConfig from 'common/config/buildConfig';
 import {Logger} from 'common/log';
 import * as Validator from 'common/Validator';
+import {localizeMessage} from 'main/i18nManager';
 
-import MainWindow from './windows/mainWindow';
 import {allowedProtocolFile} from './constants';
+import MainWindow from './windows/mainWindow';
 
 const log = new Logger('AllowProtocolDialog');
 
@@ -35,14 +34,14 @@ export class AllowProtocolDialog {
             this.addScheme('https');
             buildConfig.allowedProtocols.forEach(this.addScheme);
         });
-    }
+    };
 
     addScheme = (scheme: string) => {
         const proto = `${scheme}:`;
         if (!this.allowedProtocols.includes(proto)) {
             this.allowedProtocols.push(proto);
         }
-    }
+    };
 
     handleDialogEvent = async (protocol: string, URL: string) => {
         try {
@@ -88,7 +87,7 @@ export class AllowProtocolDialog {
         } catch (error) {
             log.warn('Could not open external URL', error);
         }
-    }
+    };
 }
 
 const allowProtocolDialog = new AllowProtocolDialog();

@@ -31,6 +31,8 @@ const path = require('path');
 
 const generator = require('mochawesome-report-generator');
 
+const {saveArtifacts} = require('./utils/artifacts');
+const {MOCHAWESOME_REPORT_DIR} = require('./utils/constants');
 const {
     generateShortSummary,
     generateTestReport,
@@ -39,8 +41,6 @@ const {
     readJsonFromFile,
     writeJsonToFile,
 } = require('./utils/report');
-const {saveArtifacts} = require('./utils/artifacts');
-const {MOCHAWESOME_REPORT_DIR} = require('./utils/constants');
 const {createTestCycle, createTestExecutions} = require('./utils/test_cases');
 
 require('dotenv').config();

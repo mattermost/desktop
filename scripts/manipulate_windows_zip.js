@@ -4,7 +4,6 @@
 'use strict';
 
 const spawnSync = require('child_process').spawnSync;
-
 const path = require('path');
 
 const path7za = require('7zip-bin').path7za;

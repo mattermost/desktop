@@ -4,12 +4,12 @@
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
-import {UniqueServer} from 'types/config';
-
 import IntlProvider from 'renderer/intl_provider';
 
-import WelcomeScreen from '../../components/WelcomeScreen';
+import type {UniqueServer} from 'types/config';
+
 import ConfigureServer from '../../components/ConfigureServer';
+import WelcomeScreen from '../../components/WelcomeScreen';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 

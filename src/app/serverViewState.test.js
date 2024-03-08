@@ -5,12 +5,11 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
 import {getDefaultViewsForConfigServer} from 'common/views/View';
-
 import {ServerInfo} from 'main/server/serverInfo';
-import ModalManager from 'main/views/modalManager';
 import {getLocalURLString, getLocalPreload} from 'main/utils';
-import MainWindow from 'main/windows/mainWindow';
+import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
+import MainWindow from 'main/windows/mainWindow';
 
 import {ServerViewState} from './serverViewState';
 

@@ -3,9 +3,9 @@
 'use strict';
 
 import {AuthManager} from 'main/authManager';
-import MainWindow from 'main/windows/mainWindow';
 import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
+import MainWindow from 'main/windows/mainWindow';
 
 jest.mock('common/utils/url', () => {
     const actualUrl = jest.requireActual('common/utils/url');

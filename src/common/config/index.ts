@@ -2,13 +2,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import fs from 'fs';
-
 import os from 'os';
 import path from 'path';
 
 import {EventEmitter} from 'events';
 
-import {
+import {Logger} from 'common/log';
+import Utils, {copy} from 'common/utils/util';
+import * as Validator from 'common/Validator';
+import {getDefaultViewsForConfigServer} from 'common/views/View';
+
+import type {
     AnyConfig,
     BuildConfig,
     CombinedConfig,
@@ -17,16 +21,11 @@ import {
     RegistryConfig as RegistryConfigType,
 } from 'types/config';
 
-import {Logger} from 'common/log';
-import {getDefaultViewsForConfigServer} from 'common/views/View';
-import Utils, {copy} from 'common/utils/util';
-import * as Validator from 'common/Validator';
-
-import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
-import upgradeConfigData from './upgradePreferences';
 import buildConfig from './buildConfig';
-import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
+import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import migrateConfigItems from './migrationPreferences';
+import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
+import upgradeConfigData from './upgradePreferences';
 
 const log = new Logger('Config');
 
@@ -67,7 +66,7 @@ export class Config extends EventEmitter {
         this.canUpgradeValue = this.checkWriteableApp();
 
         this.reload();
-    }
+    };
 
     initRegistry = () => {
         if (process.platform !== 'win32') {
@@ -82,7 +81,7 @@ export class Config extends EventEmitter {
             });
             this.registryConfig.init();
         });
-    }
+    };
 
     /**
      * Reload all sources of config data
@@ -101,7 +100,7 @@ export class Config extends EventEmitter {
         this.regenerateCombinedConfigData();
 
         this.emit('update', this.combinedData);
-    }
+    };
 
     /*********************
      * Setters and Getters
@@ -116,11 +115,11 @@ export class Config extends EventEmitter {
     set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
         log.debug('set');
         this.setMultiple({[key]: data});
-    }
+    };
 
     setConfigPath = (configPath: string) => {
         this.configFilePath = configPath;
-    }
+    };
 
     /**
      * Used to save an array of config properties in one go
@@ -136,7 +135,7 @@ export class Config extends EventEmitter {
         this.localConfigData = Object.assign({}, this.localConfigData, {...newData, teams: this.localConfigData?.teams});
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
-    }
+    };
 
     setServers = (servers: ConfigServer[], lastActiveServer?: number) => {
         log.debug('setServers', servers, lastActiveServer);
@@ -144,7 +143,7 @@ export class Config extends EventEmitter {
         this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveServer ?? this.localConfigData?.lastActiveTeam});
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
-    }
+    };
 
     // getters for accessing the various config data inputs
 
@@ -265,7 +264,7 @@ export class Config extends EventEmitter {
             this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
         }
         this.reload();
-    }
+    };
 
     /**
      * Config file loading methods
@@ -299,7 +298,7 @@ export class Config extends EventEmitter {
         } catch (error) {
             this.emit('error', error);
         }
-    }
+    };
 
     /**
      * Loads and returns locally stored config data from the filesystem or returns app defaults if no file is found
@@ -326,7 +325,7 @@ export class Config extends EventEmitter {
             this.writeFile(this.configFilePath, configData);
         }
         return configData;
-    }
+    };
 
     /**
      * Determines if locally stored data needs to be updated and upgrades as needed
@@ -357,7 +356,7 @@ export class Config extends EventEmitter {
         }
 
         return configData as ConfigType;
-    }
+    };
 
     /**
      * Properly combines all sources of data into a single, manageable set of all config data
@@ -384,7 +383,7 @@ export class Config extends EventEmitter {
         if (this.combinedData) {
             this.combinedData.appName = this.appName;
         }
-    }
+    };
 
     // helper functions
     private writeFile = (filePath: string, configData: Partial<ConfigType>, callback?: fs.NoParamCallback) => {
@@ -407,7 +406,7 @@ export class Config extends EventEmitter {
 
             fs.writeFileSync(filePath, json, 'utf8');
         }
-    }
+    };
 
     private checkWriteableApp = () => {
         if (!this.appPath) {
@@ -440,7 +439,7 @@ export class Config extends EventEmitter {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         return process.platform !== 'darwin' && __CAN_UPGRADE__;
-    }
+    };
 }
 
 const config = new Config();

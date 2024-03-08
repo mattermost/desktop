@@ -16,7 +16,7 @@ export default class ExtraBar extends React.PureComponent<Props> {
         if (this.props.goBack) {
             this.props.goBack();
         }
-    }
+    };
     render() {
         let barClass = 'clear-mode';
         if (!this.props.show) {

@@ -1,8 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useCallback} from 'react';
 import classNames from 'classnames';
+import React, {useCallback} from 'react';
 
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/CarouselPaginationIndicator.scss';

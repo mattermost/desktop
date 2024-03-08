@@ -1,8 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {upgradeV0toV1, upgradeV1toV2, upgradeV2toV3} from 'common/config/upgradePreferences';
 import pastDefaultPreferences from 'common/config/pastDefaultPreferences';
+import {upgradeV0toV1, upgradeV1toV2, upgradeV2toV3} from 'common/config/upgradePreferences';
 
 jest.mock('common/views/View', () => ({
     getDefaultViewsForConfigServer: (value) => ({

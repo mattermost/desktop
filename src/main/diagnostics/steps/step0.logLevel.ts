@@ -4,14 +4,14 @@
 import path from 'path';
 
 import {app} from 'electron';
-import {ElectronLog} from 'electron-log';
+import type {ElectronLog} from 'electron-log';
 
-import {DiagnosticStepResponse} from 'types/diagnostics';
-
-import DiagnosticsStep from '../DiagnosticStep';
+import type {DiagnosticStepResponse} from 'types/diagnostics';
 
 import loggerHooks from './internal/loggerHooks';
 import {dateTimeInFilename} from './internal/utils';
+
+import DiagnosticsStep from '../DiagnosticStep';
 
 const stepName = 'Step-0';
 const stepDescriptiveName = 'logConfig';

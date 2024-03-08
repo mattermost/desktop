@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {TAB_MESSAGING, TAB_FOCALBOARD, TAB_PLAYBOOKS} from 'common/views/View';
 import {parseURL, isInternalURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import {TAB_MESSAGING, TAB_FOCALBOARD, TAB_PLAYBOOKS} from 'common/views/View';
 
 import {ServerManager} from './serverManager';
 

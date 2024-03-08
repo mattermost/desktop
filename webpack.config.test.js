@@ -25,7 +25,7 @@ module.exports = merge(base, {
     module: {
         rules: [{
             test: /\.(js|jsx|ts|tsx)?$/,
-            use: ['babel-loader', 'shebang-loader'],
+            use: ['babel-loader'],
         }],
     },
     externals: {
