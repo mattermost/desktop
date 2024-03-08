@@ -1,12 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {ElectronLog, LogLevel} from 'electron-log';
+import type {MainLogger, LogLevel} from 'electron-log';
 
 export type DiagnosticsStepConstructorPayload = {
     name: string;
     retries: number;
-    run: (logger: ElectronLog) => Promise<DiagnosticStepResponse>;
+    run: (logger: MainLogger) => Promise<DiagnosticStepResponse>;
 }
 
 export type DiagnosticStepResponse = {
@@ -22,8 +22,8 @@ export type DiagnosticsReportObject = DiagnosticStepResponse & {
 }
 
 export type AddDurationToFnReturnObject =
-    (run: (logger: ElectronLog) => Promise<DiagnosticStepResponse>)
-    => (logger: ElectronLog)
+    (run: (logger: MainLogger) => Promise<DiagnosticStepResponse>)
+    => (logger: MainLogger)
     => Promise<Omit<DiagnosticStepResponse, 'duration'> & {duration: number}>;
 
 export type DiagnosticsReport = DiagnosticsReportObject[];
