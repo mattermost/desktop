@@ -100,7 +100,7 @@
     "hardenedRuntime": true,
     "gatekeeperAssess": true,
     "entitlements": "./entitlements.mac.plist",
-    "entitlementsInherit": "./entitlements.mac.plist",
+    "entitlementsInherit": "./entitlements.mac.inherit.plist",
     "extendInfo": {
       "NSMicrophoneUsageDescription": "Microphone access may be used by Mattermost plugins, such as Jitsi video conferencing.",
       "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing.",
