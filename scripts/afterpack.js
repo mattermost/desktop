@@ -1,10 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+const {spawn} = require('child_process');
 const path = require('path');
 
 const {flipFuses, FuseVersion, FuseV1Options} = require('@electron/fuses');
-const {spawn} = require('@electron/notarize/lib/spawn.js');
 
 const SETUID_PERMISSIONS = '4755';
 

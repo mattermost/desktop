@@ -30,16 +30,24 @@ if (isTest) {
 }
 
 module.exports = {
-
-    // Some plugins cause errors on the app, so use few plugins.
-    // https://webpack.js.org/concepts/mode/#mode-production
-    mode: isProduction ? 'none' : 'development',
+    mode: isProduction ? 'production' : 'development',
     bail: true,
     plugins: [
         new webpack.DefinePlugin(codeDefinitions),
     ],
+    module: {
+        rules: [{
+            test: /\.(js|jsx|ts|tsx)?$/,
+            exclude: /node_modules/,
+            loader: 'babel-loader',
+        }],
+    },
     devtool: isProduction ? undefined : 'inline-source-map',
     resolve: {
+        modules: [
+            'node_modules',
+            './src',
+        ],
         alias: {
             renderer: path.resolve(__dirname, 'src/renderer'),
             main: path.resolve(__dirname, './src/main'),

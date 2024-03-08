@@ -1,19 +1,20 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import fs from 'fs';
+
 import {dialog, screen} from 'electron';
-import fs from 'fs-extra';
 
 import JsonFileManager from 'common/JsonFileManager';
 import {updatePaths} from 'main/constants';
 
 import {getDeeplinkingURL, resizeScreen, migrateMacAppStore} from './utils';
 
-jest.mock('fs-extra', () => ({
+jest.mock('fs', () => ({
     readFileSync: jest.fn(),
     writeFileSync: jest.fn(),
     existsSync: jest.fn(),
-    copySync: jest.fn(),
+    cpSync: jest.fn(),
 }));
 
 jest.mock('electron', () => ({
@@ -188,7 +189,7 @@ describe('main/app/utils', () => {
                 dialog.showMessageBoxSync.mockReturnValue(0);
                 dialog.showOpenDialogSync.mockReturnValue(['/old/data/path']);
                 migrateMacAppStore();
-                expect(fs.copySync).toHaveBeenCalledWith('/old/data/path', '/path/to/data');
+                expect(fs.cpSync).toHaveBeenCalledWith('/old/data/path', '/path/to/data');
                 expect(updatePaths).toHaveBeenCalled();
                 expect(migrationPrefs.setValue).toHaveBeenCalledWith('masConfigs', true);
             });

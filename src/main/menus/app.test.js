@@ -12,13 +12,6 @@ import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 
 import {createTemplate} from './app';
 
-jest.mock('fs-extra', () => ({
-    readFileSync: jest.fn(),
-    writeFileSync: jest.fn(),
-    existsSync: jest.fn(),
-    copySync: jest.fn(),
-}));
-
 jest.mock('electron-extension-installer', () => {
     return () => ({
         REACT_DEVELOPER_TOOLS: 'react-developer-tools',

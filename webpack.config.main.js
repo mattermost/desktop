@@ -14,27 +14,16 @@ const base = require('./webpack.config.base');
 module.exports = merge(base, {
     entry: {
         index: './src/main/app/index.ts',
-        internalAPI: './src/main/preload/internalAPI.js',
-        externalAPI: './src/main/preload/externalAPI.ts',
     },
     externals: {
         'macos-notification-state': 'require("macos-notification-state")',
         'windows-focus-assist': 'require("windows-focus-assist")',
     },
+    externalsPresets: {
+        electronMain: true,
+    },
     module: {
         rules: [{
-            test: /\.(js|ts)?$/,
-            use: {
-                loader: 'babel-loader',
-                options: {
-                    include: ['@babel/plugin-proposal-class-properties'],
-                },
-            },
-        }, {
-            test: /\.mp3$/,
-            type: 'asset/inline',
-        },
-        {
             test: /\.node$/,
             loader: 'node-loader',
         }],

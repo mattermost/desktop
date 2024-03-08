@@ -12,8 +12,6 @@ const {merge} = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 
-const WEBSERVER_PORT = process.env.WEBSERVER_PORT ?? 9001;
-
 module.exports = merge(base, {
     entry: {
         e2e: glob.sync('./e2e/specs/**/*.test.js'),
@@ -21,12 +19,6 @@ module.exports = merge(base, {
     output: {
         path: path.resolve(__dirname, 'dist/tests'),
         filename: '[name]_bundle.js',
-    },
-    module: {
-        rules: [{
-            test: /\.(js|jsx|ts|tsx)?$/,
-            use: ['babel-loader'],
-        }],
     },
     externals: {
         fs: 'require("fs")',
@@ -43,9 +35,6 @@ module.exports = merge(base, {
     node: {
         __filename: false,
         __dirname: false,
-    },
-    devServer: {
-        port: WEBSERVER_PORT,
     },
     target: 'electron-main',
 });
