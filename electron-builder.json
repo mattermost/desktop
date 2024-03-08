@@ -104,8 +104,10 @@
     "extendInfo": {
       "NSMicrophoneUsageDescription": "Microphone access may be used by Mattermost plugins, such as Jitsi video conferencing.",
       "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing.",
+      "NSFocusStatusUsageDescription": "Focus status is used by Mattermost to determine whether to send notifications or not.",
       "LSFileQuarantineEnabled": true
-  }
+    },
+    "provisioningProfile": "./mac.provisionprofile"
   },
   "mas": {
     "hardenedRuntime": false,
@@ -119,7 +121,7 @@
     "singleArchFiles": "*"
   },
   "masDev": {
-    "provisioningProfile": "./mas-dev.provisionprofile"
+    "provisioningProfile": "./dev.provisionprofile"
   },
   "dmg": {
     "background": "src/assets/osx/DMG_BG.png",

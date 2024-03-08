@@ -220,7 +220,7 @@
     "yargs": "17.4.0"
   },
   "dependencies": {
-    "macos-notification-state": "2.0.2",
+    "macos-notification-state": "3.0.0",
     "windows-focus-assist": "1.3.0"
   }
 }
