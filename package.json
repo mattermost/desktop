@@ -200,7 +200,7 @@
     "electron-log": "4.4.8",
     "electron-updater": "6.1.8",
     "joi": "17.12.2",
-    "macos-notification-state": "3.0.0",
+    "macos-notification-state": "2.0.2",
     "pretty-bytes": "6.1.1",
     "react": "17.0.2",
     "react-beautiful-dnd": "13.1.1",

@@ -34,7 +34,7 @@ class NotificationManager {
             return;
         }
 
-        if (await getDoNotDisturb()) {
+        if (getDoNotDisturb()) {
             return;
         }
 
@@ -102,7 +102,7 @@ class NotificationManager {
         mention.show();
     }
 
-    public async displayDownloadCompleted(fileName: string, path: string, serverName: string) {
+    public displayDownloadCompleted(fileName: string, path: string, serverName: string) {
         log.debug('displayDownloadCompleted', {fileName, path, serverName});
 
         if (!Notification.isSupported()) {
@@ -110,7 +110,7 @@ class NotificationManager {
             return;
         }
 
-        if (await getDoNotDisturb()) {
+        if (getDoNotDisturb()) {
             return;
         }
 
@@ -136,12 +136,12 @@ class NotificationManager {
         download.show();
     }
 
-    public async displayUpgrade(version: string, handleUpgrade: () => void) {
+    public displayUpgrade(version: string, handleUpgrade: () => void): void {
         if (!Notification.isSupported()) {
             log.error('notification not supported');
             return;
         }
-        if (await getDoNotDisturb()) {
+        if (getDoNotDisturb()) {
             return;
         }
 
@@ -156,12 +156,12 @@ class NotificationManager {
         this.upgradeNotification.show();
     }
 
-    public async displayRestartToUpgrade(version: string, handleUpgrade: () => void) {
+    public displayRestartToUpgrade(version: string, handleUpgrade: () => void): void {
         if (!Notification.isSupported()) {
             log.error('notification not supported');
             return;
         }
-        if (await getDoNotDisturb()) {
+        if (getDoNotDisturb()) {
             return;
         }
 
@@ -174,7 +174,7 @@ class NotificationManager {
     }
 }
 
-async function getDoNotDisturb() {
+function getDoNotDisturb() {
     if (process.platform === 'win32') {
         return getWindowsDoNotDisturb();
     }
