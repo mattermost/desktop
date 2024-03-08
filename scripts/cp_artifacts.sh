@@ -93,6 +93,18 @@ if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-arm64.tar.gz ]]; then
     SOMETHING_COPIED=$((SOMETHING_COPIED + 11))
 fi
 
+if [[ -f "${SRC}"/mattermost-desktop_${VERSION}-1_amd64*.deb ]]; then
+    echo -e "Copying linux-deb\n"
+    cp "${SRC}"/mattermost-desktop_"${VERSION}"-1_amd64*.deb "${DEST}/"
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 12))
+fi
+
+if [[ -f "${SRC}"/mattermost-desktop_${VERSION}-1_arm64*.deb ]]; then
+    echo -e "Copying linux-deb\n"
+    cp "${SRC}"/mattermost-desktop_"${VERSION}"-1_arm64*.deb "${DEST}/"
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 11))
+fi
+
 if [[ $SOMETHING_COPIED -eq 0 ]]; then
     echo "Didn't find anything to copy, it seems like something failed"
     # Bash only returns 0-255 values
