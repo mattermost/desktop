@@ -5,6 +5,8 @@
 
 // See reference: https://support.smartbear.com/tm4j-cloud/api-docs/
 
+const os = require('os');
+
 const axios = require('axios');
 const chalk = require('chalk');
 
@@ -83,13 +85,47 @@ function saveToEndpoint(url, data) {
     });
 }
 
+async function getZEPHYRFolderID() {
+    const {
+        TYPE,
+        ZEPHYR_FOLDER_ID,
+    } = process.env;
+    if (TYPE === 'MASTER') {
+        return ZEPHYR_FOLDER_ID;
+    }
+    const platform = os.platform();
+
+    // Define Zephyr folder IDs for different run types and platforms.
+    // For PR we dont generate reports.
+    // Post Merge to master branch, default folderID will be used.
+    const folderIDs = {
+        RELEASE: {
+            darwin: 12358650,
+            win32: 12358651,
+            linux: 12358649,
+            default: ZEPHYR_FOLDER_ID,
+        },
+        NIGHTLY: {
+            darwin: 12363687,
+            win32: 12363690,
+            linux: 12363689,
+            default: ZEPHYR_FOLDER_ID,
+        },
+    };
+
+    // Get the folder ID based on the type and platform
+    const typeFolderIDs = folderIDs[TYPE];
+    const folderID = typeFolderIDs?.[platform] ?? typeFolderIDs?.default ?? ZEPHYR_FOLDER_ID;
+
+    return folderID;
+}
+
 async function createTestCycle(startDate, endDate) {
     const {
         BRANCH,
         BUILD_ID,
         JIRA_PROJECT_KEY,
         ZEPHYR_CYCLE_NAME,
-        ZEPHYR_FOLDER_ID,
     } = process.env;
 
     const testCycle = {
@@ -99,7 +135,7 @@ async function createTestCycle(startDate, endDate) {
         plannedStartDate: startDate,
         plannedEndDate: endDate,
         statusName: 'Done',
-        folderId: ZEPHYR_FOLDER_ID,
+        folderId: await getZEPHYRFolderID(),
     };
 
     const response = await saveToEndpoint('https://api.zephyrscale.smartbear.com/v2/testcycles', testCycle);
