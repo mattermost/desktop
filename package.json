@@ -29,7 +29,7 @@
     "clean-install": "npm run clean && npm install",
     "clean-dist": "rm -rf dist/",
     "check": "run-p lint:js-quiet check-build-config check-types test:unit",
-    "check-build-config": "tsc ./src/common/config/buildConfig.ts --outDir ./dist --baseUrl './src' --skipLibCheck && node scripts/check_build_config.js",
+    "check-build-config": "tsc ./src/common/config/buildConfig.ts --outDir dist --baseUrl src --skipLibCheck && node scripts/check_build_config.js",
     "check-types": "tsc",
     "prune": "ts-prune",
     "i18n-extract": "mmjstool -- i18n extract-desktop",
