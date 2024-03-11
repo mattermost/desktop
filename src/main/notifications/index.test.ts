@@ -121,7 +121,7 @@ describe('main/notifications', () => {
             PermissionsManager.doPermissionRequest.mockReturnValue(Promise.resolve(true));
             Notification.isSupported.mockImplementation(() => true);
             getFocusAssist.mockReturnValue({value: 0, name: ''});
-            getDarwinDoNotDisturb.mockReturnValue(false);
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(false));
             Config.notifications = {
                 flashWindow: 0,
                 bounceIcon: false,
@@ -184,7 +184,7 @@ describe('main/notifications', () => {
                 value: 'darwin',
             });
 
-            getDarwinDoNotDisturb.mockReturnValue(true);
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
             await NotificationManager.displayMention(
                 'test',
                 'test body',
@@ -389,13 +389,13 @@ describe('main/notifications', () => {
         beforeEach(() => {
             Notification.isSupported.mockImplementation(() => true);
             getFocusAssist.mockReturnValue({value: 0, name: ''});
-            getDarwinDoNotDisturb.mockReturnValue(false);
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(false));
         });
 
-        it('should open file when clicked', () => {
-            getDarwinDoNotDisturb.mockReturnValue(false);
+        it('should open file when clicked', async () => {
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(false));
             localizeMessage.mockReturnValue('test_filename');
-            NotificationManager.displayDownloadCompleted(
+            await NotificationManager.displayDownloadCompleted(
                 'test_filename',
                 '/path/to/file',
                 'server_name',

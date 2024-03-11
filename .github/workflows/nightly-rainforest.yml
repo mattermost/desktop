@@ -102,7 +102,9 @@ jobs:
           CSC_FOR_PULL_REQUEST: true
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
+          MAC_PROFILE: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_DMG_PROFILE }}
         run: |
+          echo $MAC_PROFILE | base64 -D > ./mac.provisionprofile
           mkdir -p ./build/macos
           npm run package:mac-with-universal
           bash -x ./scripts/patch_updater_yml.sh
