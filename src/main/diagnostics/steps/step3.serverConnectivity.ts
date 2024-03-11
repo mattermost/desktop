@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {ElectronLog} from 'electron-log';
+import type {MainLogger} from 'electron-log';
 
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
@@ -15,7 +15,7 @@ import DiagnosticsStep from '../DiagnosticStep';
 const stepName = 'Step-3';
 const stepDescriptiveName = 'serverConnectivity';
 
-const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
+const run = async (logger: MainLogger): Promise<DiagnosticStepResponse> => {
     try {
         const servers = ServerManager.getAllServers();
 
