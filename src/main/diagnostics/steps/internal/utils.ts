@@ -5,7 +5,7 @@ import https from 'https';
 import readline from 'readline';
 
 import type {BrowserWindow, Rectangle, WebContents} from 'electron';
-import type {ElectronLog, LogLevel} from 'electron-log';
+import type {MainLogger, LogLevel} from 'electron-log';
 import log from 'electron-log';
 
 import {IS_ONLINE_ENDPOINT, LOGS_MAX_STRING_LENGTH, REGEX_LOG_FILE_LINE} from 'common/constants';
@@ -60,7 +60,7 @@ export function truncateString(str: string, maxLength = LOGS_MAX_STRING_LENGTH):
     return str;
 }
 
-export async function isOnline(logger: ElectronLog = log, url = IS_ONLINE_ENDPOINT): Promise<boolean> {
+export async function isOnline(logger: MainLogger = log, url = IS_ONLINE_ENDPOINT): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
         https.get(url, (resp) => {
             let data = '';

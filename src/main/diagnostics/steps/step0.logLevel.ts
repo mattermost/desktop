@@ -4,7 +4,7 @@
 import path from 'path';
 
 import {app} from 'electron';
-import type {ElectronLog} from 'electron-log';
+import type {MainLogger} from 'electron-log';
 
 import type {DiagnosticStepResponse} from 'types/diagnostics';
 
@@ -16,7 +16,7 @@ import DiagnosticsStep from '../DiagnosticStep';
 const stepName = 'Step-0';
 const stepDescriptiveName = 'logConfig';
 
-const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
+const run = async (logger: MainLogger): Promise<DiagnosticStepResponse> => {
     try {
         const filename = `diagnostics_${dateTimeInFilename()}.txt`;
         const pathToFile = path.join(app.getPath('userData'), `diagnostics/${filename}`);

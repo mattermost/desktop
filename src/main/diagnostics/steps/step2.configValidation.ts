@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 import fs from 'fs';
 
-import type {ElectronLog} from 'electron-log';
+import type {MainLogger} from 'electron-log';
 
 import Config from 'common/config';
 import * as Validator from 'common/Validator';
@@ -15,7 +15,7 @@ import DiagnosticsStep from '../DiagnosticStep';
 const stepName = 'Step-2';
 const stepDescriptiveName = 'configValidation';
 
-const run = async (logger: ElectronLog): Promise<DiagnosticStepResponse> => {
+const run = async (logger: MainLogger): Promise<DiagnosticStepResponse> => {
     try {
         const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
