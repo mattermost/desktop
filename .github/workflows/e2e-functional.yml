@@ -321,5 +321,4 @@ jobs:
       - name: Remove "Run Desktop E2E Tests" label
         uses: actions-ecosystem/action-remove-labels@v1
         with:
-          labels: |
-            Run Desktop E2E Tests
+          labels: Run Desktop E2E Tests
