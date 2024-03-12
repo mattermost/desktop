@@ -100,6 +100,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-release-linux" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_LINUX_REPORT=12358649" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
             echo "BUILD_SUFFIX=desktop-manual-trigger-linux" >> $GITHUB_ENV
@@ -114,6 +115,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-nightly-linux" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_LINUX_REPORT=12363689" >> $GITHUB_ENV
           fi
 
       - name: Set Build ID
@@ -188,6 +190,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-release-macos" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_MACOS_REPORT=12358650" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
             echo "BUILD_SUFFIX=desktop-manual-trigger-macos" >> $GITHUB_ENV
@@ -202,6 +205,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-nightly-macos" >> $GITHUB_ENV
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_MACOS_REPORT=12363687" >> $GITHUB_ENV
           fi
 
       - name: Set Build ID
@@ -281,6 +285,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-release-windows" >> $GITHUB_ENV
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_WIN_REPORT=12358651" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
             echo "BUILD_SUFFIX=desktop-manual-trigger-windows" >> $GITHUB_ENV
@@ -295,6 +300,7 @@ jobs:
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "BUILD_SUFFIX=desktop-nightly-windows" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_WIN_REPORT=12363690" >> $GITHUB_ENV
           fi
 
       - name: Set Build ID

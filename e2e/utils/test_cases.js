@@ -89,6 +89,9 @@ async function getZEPHYRFolderID() {
     const {
         TYPE,
         ZEPHYR_FOLDER_ID,
+        ZEPHYR_FOLDER_LINUX_REPORT,
+        ZEPHYR_FOLDER_MACOS_REPORT,
+        ZEPHYR_FOLDER_WIN_REPORT
     } = process.env;
     if (TYPE === 'MASTER') {
         return ZEPHYR_FOLDER_ID;
@@ -100,15 +103,15 @@ async function getZEPHYRFolderID() {
     // Post Merge to master branch, default folderID will be used.
     const folderIDs = {
         RELEASE: {
-            darwin: 12358650,
-            win32: 12358651,
-            linux: 12358649,
+            darwin: ZEPHYR_FOLDER_MACOS_REPORT,
+            win32: ZEPHYR_FOLDER_WIN_REPORT,
+            linux: ZEPHYR_FOLDER_LINUX_REPORT,
             default: ZEPHYR_FOLDER_ID,
         },
         NIGHTLY: {
-            darwin: 12363687,
-            win32: 12363690,
-            linux: 12363689,
+            darwin: ZEPHYR_FOLDER_MACOS_REPORT,
+            win32: ZEPHYR_FOLDER_WIN_REPORT,
+            linux: ZEPHYR_FOLDER_LINUX_REPORT,
             default: ZEPHYR_FOLDER_ID,
         },
     };
