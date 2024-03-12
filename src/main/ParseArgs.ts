@@ -33,7 +33,7 @@ function triageArgs(args: string[]) {
 // TODO: Translations?
 
 function parseArgs(args: string[]) {
-    return yargs.
+    return yargs().
         alias('dataDir', 'd').
         string('dataDir').
         describe('dataDir', 'Set the path to where user data is stored.').

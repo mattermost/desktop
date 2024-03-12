@@ -15,8 +15,11 @@
     "main": "index.js"
   },
   "files": [
-    "node_modules/bootstrap/dist/**",
-    "node_modules/font-awesome/{css,fonts}/**",
+    "!node_modules/**/*",
+    "node_modules/bindings/**/*",
+    "node_modules/file-uri-to-path/**/*",
+    "node_modules/macos-notification-state/**/*",
+    "node_modules/windows-focus-assist/**/*",
     "!**/node_modules/macos-notification-state/bin/**/*",
     "!**/node_modules/macos-notification-state/build/**/*",
     "!**/node_modules/windows-focus-assist/bin/**/*",
@@ -38,7 +41,6 @@
     }
   ],
   "afterPack": "scripts/afterpack.js",
-  "afterSign": "scripts/notarize.js",
   "afterAllArtifactBuild": "scripts/afterbuild.js",
   "deb": {
     "artifactName": "${version}/${name}_${version}-1_${arch}.${ext}",
@@ -99,21 +101,23 @@
     ],
     "hardenedRuntime": true,
     "gatekeeperAssess": true,
-    "entitlements": "./entitlements.mac.plist",
-    "entitlementsInherit": "./entitlements.mac.inherit.plist",
+    "entitlements": "./resources/mac/entitlements.mac.plist",
+    "entitlementsInherit": "./resources/mac/entitlements.mac.inherit.plist",
     "extendInfo": {
       "NSMicrophoneUsageDescription": "Microphone access may be used by Mattermost plugins, such as Jitsi video conferencing.",
       "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing.",
       "NSFocusStatusUsageDescription": "Focus status is used by Mattermost to determine whether to send notifications or not.",
       "LSFileQuarantineEnabled": true
     },
-    "provisioningProfile": "./mac.provisionprofile"
+    "notarize": {
+      "teamId": "UQ8HT4Q2XM"
+    }
   },
   "mas": {
     "hardenedRuntime": false,
-    "entitlements": "./entitlements.mas.plist",
-    "entitlementsInherit": "./entitlements.mas.inherit.plist",
-    "entitlementsLoginHelper": "./entitlements.mas.inherit.plist",
+    "entitlements": "./resources/mac/entitlements.mas.plist",
+    "entitlementsInherit": "./resources/mac/entitlements.mas.inherit.plist",
+    "entitlementsLoginHelper": "./resources/mac/entitlements.mas.inherit.plist",
     "provisioningProfile": "./mas.provisionprofile",
     "extendInfo": {
       "ITSAppUsesNonExemptEncryption": false

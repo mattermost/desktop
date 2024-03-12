@@ -14,8 +14,6 @@ const {merge} = require('webpack-merge');
 
 const base = require('./webpack.config.base');
 
-const WEBSERVER_PORT = process.env.WEBSERVER_PORT ?? 9065;
-
 module.exports = merge(base, {
     entry: {
         index: './src/renderer/index.tsx',
@@ -37,6 +35,11 @@ module.exports = merge(base, {
         path: path.resolve(__dirname, 'dist/renderer'),
         filename: '[name]_bundle.js',
         assetModuleFilename: '[name].[ext]',
+    },
+    optimization: {
+        splitChunks: {
+            chunks: 'all',
+        },
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -131,11 +134,6 @@ module.exports = merge(base, {
     ],
     module: {
         rules: [{
-            test: /\.(js|jsx|ts|tsx)?$/,
-            use: {
-                loader: 'babel-loader',
-            },
-        }, {
             test: /\.css$/,
             exclude: /\.lazy\.css$/,
             use: [
@@ -175,10 +173,7 @@ module.exports = merge(base, {
         __filename: false,
         __dirname: false,
     },
-    target: 'electron-renderer',
-    devServer: {
-        port: WEBSERVER_PORT,
-    },
+    target: 'web',
 });
 
 /* eslint-enable import/no-commonjs */

@@ -17,11 +17,11 @@ runs:
     - name: ci/run-i18n-check
       shell: ${{ inputs.shell }}
       run: |
-        npm run mmjstool -- i18n extract-desktop --desktop-dir .
+        npm run i18n-extract -- --desktop-dir .
         git --no-pager diff --exit-code i18n/en.json
     - name: ci/run-unit-ci
       shell: ${{ inputs.shell }}
       env:
         ELECTRON_DISABLE_SANDBOX: "1"
       run: |
-        npm run test:unit-ci
+        npm run test:unit
