@@ -120,7 +120,8 @@
     "entitlementsLoginHelper": "./resources/mac/entitlements.mas.inherit.plist",
     "provisioningProfile": "./mas.provisionprofile",
     "extendInfo": {
-      "ITSAppUsesNonExemptEncryption": false
+      "ITSAppUsesNonExemptEncryption": false,
+      "NSUserActivityTypes": ["INSendMessageIntent"]
     },
     "singleArchFiles": "*"
   },
