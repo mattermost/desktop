@@ -111,8 +111,7 @@
     },
     "notarize": {
       "teamId": "UQ8HT4Q2XM"
-    },
-    "provisioningProfile": "./mac.provisionprofile"
+    }
   },
   "mas": {
     "hardenedRuntime": false,
