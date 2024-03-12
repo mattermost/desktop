@@ -17,7 +17,6 @@ jobs:
   mac-app-store-preflight:
     runs-on: macos-12
     env:
-      MAC_PROFILE: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_DMG_PROFILE }}
       MAS_PROFILE: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MAS_PROFILE }}
       MACOS_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}
       MACOS_API_KEY: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY }}
@@ -39,9 +38,7 @@ jobs:
           brew install yq
           npm ci
       - name: release/copy-provisioning-profile
-        run: |
-          echo $MAC_PROFILE | base64 -D > ./mac.provisionprofile
-          echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
+        run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
       - name: release/patch-version-number-for-MAS
         run: ./scripts/patch_mas_version.sh
       - name: release/test
