@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-const buildConfig = require('../dist/buildConfig');
+const buildConfig = require('../dist/common/config/buildConfig').default;
 
 function validateBuildConfig(config) {
     if (config.enableServerManagement === false && config.defaultServers && config.defaultServers.length === 0) {

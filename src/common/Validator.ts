@@ -309,5 +309,5 @@ function validateAgainstSchema<T>(data: T, schema: Joi.ObjectSchema<T> | Joi.Arr
         log.error(`Validation failed due to: ${error}`);
         return null;
     }
-    return value;
+    return value as T;
 }

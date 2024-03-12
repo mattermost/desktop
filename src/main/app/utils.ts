@@ -1,12 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import fs from 'fs';
 import path from 'path';
 
 import type {BrowserWindow, Rectangle, Session} from 'electron';
 import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
 import isDev from 'electron-is-dev';
-import fs from 'fs-extra';
 
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
 import Config from 'common/config';
@@ -235,7 +235,7 @@ export function migrateMacAppStore() {
     }
 
     try {
-        fs.copySync(result[0], app.getPath('userData'));
+        fs.cpSync(result[0], app.getPath('userData'));
         updatePaths(true);
         migrationPrefs.setValue('masConfigs', true);
     } catch (e) {

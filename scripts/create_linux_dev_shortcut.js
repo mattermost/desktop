@@ -4,19 +4,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const jq = require('node-jq');
-
-// Patch the macos-notification-state library so we can build correctly
-jq.run(
-    '.scripts.install = "node-gyp rebuild"',
-    './node_modules/macos-notification-state/package.json',
-).then((result) => {
-    fs.writeFileSync(
-        './node_modules/macos-notification-state/package.json',
-        result,
-    );
-});
-
 // For linux dev, drop a desktop shortcut so deep linking works correctly
 if (process.platform === 'linux') {
     const xdgDir = path.resolve(process.env.HOME, '.local/share/applications');

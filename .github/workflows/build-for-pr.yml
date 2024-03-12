@@ -38,7 +38,7 @@ jobs:
       - name: ci/build
         run: |
           mkdir -p ./build/linux
-          npm run package:linux
+          npm run package:linux-tar
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-build
@@ -158,8 +158,8 @@ jobs:
           npm ci
       - name: ci/build
         env:
-          APPLEID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}
-          APPLEIDPASS: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID_PASS }}
+          APPLE_ID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID_PASS }}
           CSC_FOR_PULL_REQUEST: true
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}

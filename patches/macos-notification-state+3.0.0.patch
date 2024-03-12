@@ -1,0 +1,14 @@
+diff --git a/node_modules/macos-notification-state/package.json b/node_modules/macos-notification-state/package.json
+index 9a863a5..2e02960 100644
+--- a/node_modules/macos-notification-state/package.json
++++ b/node_modules/macos-notification-state/package.json
+@@ -5,7 +5,8 @@
+   "main": "lib/index.js",
+   "scripts": {
+     "preinstall": "node ensure-sdk.js",
+-    "test": "standard && mocha ./test/test.js"
++    "test": "standard && mocha ./test/test.js",
++    "install": "node-gyp rebuild"
+   },
+   "repository": "https://github.com/felixrieseberg/macos-notification-state",
+   "license": "MIT",
