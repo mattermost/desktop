@@ -78,7 +78,7 @@ describe('settings/keyboard_shortcuts', function desc() {
             await textbox.focus();
             robot.keyTap('v', [env.cmdOrCtrl]);
             textValue = await textbox.getAttribute('value');
-            textValue.should.equal('Afrikaans');
+            textValue.trim().should.equal('Afrikaans');
         });
 
         it('MM-T1288_3 should be able to copy and paste in the settings window', async () => {

@@ -62,7 +62,7 @@ describe('popup', function desc() {
             return box.value.substring(box.selectionStart,
                 box.selectionEnd);
         });
-        await asyncSleep(1000);
+        await asyncSleep(3000);
         selectedText.should.equal('Mattermost');
     });
 

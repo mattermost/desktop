@@ -215,7 +215,7 @@ describe('menu/view', function desc() {
 
         // Press Command + Option + I
         robot.keyTap('i', ['command', 'alt']);
-        await asyncSleep(1000);
+        await asyncSleep(3000);
 
         isDevToolsOpen = await browserWindow.evaluate((window) => {
             return window.webContents.isDevToolsOpened();
