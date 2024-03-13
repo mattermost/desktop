@@ -3,9 +3,9 @@ description: 'Analyzes flaky tests and sets the job status based on new failed t
 
 inputs:
   shell:
-    description: The shell to run the scripts
+    description: 'The shell to run the scripts'
     required: true
-    default: bash
+    default: 'bash'
 
 runs:
   using: 'composite'
@@ -23,7 +23,6 @@ runs:
     - name: Add results in PR comment
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v6
-      shell: ${{ inputs.shell }}
       with:
         script: |
           const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
