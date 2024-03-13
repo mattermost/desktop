@@ -11,7 +11,6 @@ runs:
         script: |
           const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
           const { commentBody, newFailedTests } = analyzeFlakyTests();
-          console.log(`commentBody=<<EOM\n${commentBody}\nEOM`);
           echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
 
     - name: Add results in PR comment
@@ -33,3 +32,4 @@ runs:
       if: env.no-new-failed-tests == 'false'
       run: exit 1
       shell: bash
+
