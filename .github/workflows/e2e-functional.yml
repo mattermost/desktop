@@ -125,7 +125,7 @@ jobs:
         run: |
           export DISPLAY=:99
           Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test:e2e || true # making job pass even if the tests fail due to flakyness
+          npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
       - name: Add results in PR comment
