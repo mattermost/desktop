@@ -31,6 +31,7 @@ const path = require('path');
 
 const generator = require('mochawesome-report-generator');
 
+const {analyzeFlakyTests} = require('./utils/analyze-flaky-test');
 const {saveArtifacts} = require('./utils/artifacts');
 const {MOCHAWESOME_REPORT_DIR} = require('./utils/constants');
 const {
@@ -71,8 +72,9 @@ const saveReport = async () => {
     );
 
     // Generate short summary, write to file and then send report via webhook
-    const summary = generateShortSummary(jsonReport);
-    console.log(summary);
+    const {stats, statsFieldValue, failedFullTitles} = generateShortSummary(jsonReport);
+    analyzeFlakyTests(process.platform, failedFullTitles);
+    const summary = {stats, statsFieldValue};
     writeJsonToFile(summary, 'summary.json', MOCHAWESOME_REPORT_DIR);
 
     const result = await saveArtifacts();

@@ -42,7 +42,7 @@ describe('popup', function desc() {
         const loginField = await popupWindow.waitForSelector('#login_field');
         await loginField.focus();
         robot.typeString('Mattermost');
-        await asyncSleep(1000);
+        await asyncSleep(3000);
     });
 
     after(async () => {
@@ -53,46 +53,46 @@ describe('popup', function desc() {
     });
 
     // NOTE: These tests requires that the test server have the GitHub plugin configured
-        it('MM-T2827_1 should be able to select all in popup windows', async () => {
-            robot.keyTap('a', env.cmdOrCtrl);
-            await asyncSleep(1000);
+    it('MM-T2827_1 should be able to select all in popup windows', async () => {
+        robot.keyTap('a', env.cmdOrCtrl);
+        await asyncSleep(1000);
 
-            const selectedText = await popupWindow.evaluate(() => {
-                const box = document.querySelectorAll('#login_field')[0];
-                return box.value.substring(box.selectionStart,
-                    box.selectionEnd);
-                });
-            await asyncSleep(1000);
-            selectedText.should.equal('Mattermost');
+        const selectedText = await popupWindow.evaluate(() => {
+            const box = document.querySelectorAll('#login_field')[0];
+            return box.value.substring(box.selectionStart,
+                box.selectionEnd);
         });
+        await asyncSleep(1000);
+        selectedText.should.equal('Mattermost');
+    });
 
-        it('MM-T2827_2 should be able to cut and paste in popup windows', async () => {
-            await asyncSleep(1000);
-            const textbox = await popupWindow.waitForSelector('#login_field');
+    it('MM-T2827_2 should be able to cut and paste in popup windows', async () => {
+        await asyncSleep(1000);
+        const textbox = await popupWindow.waitForSelector('#login_field');
 
-            await textbox.selectText({force: true});
-            robot.keyTap('x', env.cmdOrCtrl);
-            let textValue = await textbox.inputValue();
-            textValue.should.equal('');
+        await textbox.selectText({force: true});
+        robot.keyTap('x', env.cmdOrCtrl);
+        let textValue = await textbox.inputValue();
+        textValue.should.equal('');
 
-            await textbox.focus();
-            robot.keyTap('v', env.cmdOrCtrl);
-            textValue = await textbox.inputValue();
-            textValue.should.equal('Mattermost');
-        });
+        await textbox.focus();
+        robot.keyTap('v', env.cmdOrCtrl);
+        textValue = await textbox.inputValue();
+        textValue.should.equal('Mattermost');
+    });
 
-        it('MM-T2827_3 should be able to copy and paste in popup windows', async () => {
-            await asyncSleep(1000);
-            const textbox = await popupWindow.waitForSelector('#login_field');
+    it('MM-T2827_3 should be able to copy and paste in popup windows', async () => {
+        await asyncSleep(1000);
+        const textbox = await popupWindow.waitForSelector('#login_field');
 
-            await textbox.selectText({force: true});
-            robot.keyTap('c', env.cmdOrCtrl);
-            await textbox.focus();
-            await textbox.type('other-text');
-            robot.keyTap('v', env.cmdOrCtrl);
-            const textValue = await textbox.inputValue();
-            textValue.should.equal('other-textMattermost');
-        });
+        await textbox.selectText({force: true});
+        robot.keyTap('c', env.cmdOrCtrl);
+        await textbox.focus();
+        await textbox.type('other-text');
+        robot.keyTap('v', env.cmdOrCtrl);
+        const textValue = await textbox.inputValue();
+        textValue.should.equal('other-textMattermost');
+    });
 
     it('MM-T1659 should not be able to go Back or Forward in the popup window', async () => {
         const currentURL = popupWindow.url();

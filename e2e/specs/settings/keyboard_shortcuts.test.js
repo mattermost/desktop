@@ -33,7 +33,6 @@ describe('settings/keyboard_shortcuts', function desc() {
 
         const textbox = await settingsWindow.waitForSelector('#inputSpellCheckerLocalesDropdown');
         await textbox.scrollIntoViewIfNeeded();
-
     });
 
     after(async () => {
@@ -44,7 +43,6 @@ describe('settings/keyboard_shortcuts', function desc() {
     });
 
     describe('MM-T1288 Manipulating Text', () => {
-
         it('MM-T1288_1 should be able to select and deselect language in the settings window', async () => {
             let textboxString;
             await settingsWindow.click('#inputSpellCheckerLocalesDropdown');

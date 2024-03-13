@@ -3,9 +3,9 @@
 // See LICENSE.txt for license information.
 'use strict';
 
+const {execSync} = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const chai = require('chai');
 const {ipcRenderer} = require('electron');
@@ -192,20 +192,18 @@ module.exports = {
         }
     },
 
-    clipboard(textToCopy){
+    clipboard(textToCopy) {
         switch (process.platform) {
-            case 'linux':
-                execSync(`echo "${textToCopy}" | xclip -selection clipboard`);
-              break;
-            case 'win32':
-                execSync(`echo ${textToCopy} | clip`);
-              break;
-            case 'darwin':
-                execSync(`pbcopy <<< ${textToCopy}`);
-              break;
-            default:
-              console.log('Unknown OS');
-          }
+        case 'linux':
+            execSync(`echo "${textToCopy}" | xclip -selection clipboard`);
+            break;
+        case 'win32':
+            execSync(`echo ${textToCopy} | clip`);
+            break;
+        case 'darwin':
+            execSync(`pbcopy <<< ${textToCopy}`);
+            break;
+        }
     },
 
     async createTestUserDataDirAsync() {

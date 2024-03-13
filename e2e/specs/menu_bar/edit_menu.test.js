@@ -28,7 +28,6 @@ describe('edit_menu', function desc() {
         await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-
     });
 
     after(async () => {
@@ -39,7 +38,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T807 Undo in the Menu Bar', async () => {
-
         // click on sint channel
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', '');
@@ -52,7 +50,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T808 Redo in the Menu Bar', async () => {
-
         // click on sint channel
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', '');
@@ -70,7 +67,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T809 Cut in the Menu Bar', async () => {
-
         // click on sint channel
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', '');
@@ -84,7 +80,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T810 Copy in the Menu Bar', async () => {
-
         // click on sint channel
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', '');
@@ -101,7 +96,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T811 Paste in the Menu Bar', async () => {
-
         // click on sint channel
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', '');
@@ -119,7 +113,6 @@ describe('edit_menu', function desc() {
     });
 
     it('MM-T812 Select All in the Menu Bar', async () => {
-
         // click on sint channel
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', '');

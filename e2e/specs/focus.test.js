@@ -71,7 +71,6 @@ describe('focus', function desc() {
     });
 
     describe('Focus textbox tests', () => {
-
         it('MM-T1315 should return focus to the message box when closing the settings window', async () => {
             this.app.evaluate(({ipcMain}, showWindow) => {
                 ipcMain.emit(showWindow);

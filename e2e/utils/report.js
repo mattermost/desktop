@@ -76,6 +76,7 @@ function generateShortSummary(report) {
     return {
         stats,
         statsFieldValue,
+        failedFullTitles,
     };
 }
 
