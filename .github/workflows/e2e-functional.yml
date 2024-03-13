@@ -128,8 +128,20 @@ jobs:
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
-      - name: Analyze Flaky Tests
-        uses: ./.github/actions/analyze-flaky-tests
+      - name: Add results in PR comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+            const { commentBody } = analyzeFlakyTests();
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody,
+            });
+  
 
   e2e-macos:
     if: ${{ 
@@ -219,9 +231,20 @@ jobs:
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
-      - name: Analyze Flaky Tests
-        uses: ./.github/actions/analyze-flaky-tests
+      - name: Add results in PR comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+            const { commentBody } = analyzeFlakyTests();
 
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody,
+            });
+  
   e2e-windows:
     if: ${{ 
         (
@@ -319,9 +342,20 @@ jobs:
           npm run test:e2e:send-report
         shell: bash
 
-      - name: Analyze Flaky Tests
-        uses: ./.github/actions/analyze-flaky-tests
-              
+      - name: Add results in PR comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+            const { commentBody } = analyzeFlakyTests();
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody,
+            });
+
   e2e-remove-label:
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }} && always()
     needs: [e2e-linux, e2e-macos, e2e-windows]
