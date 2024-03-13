@@ -55,14 +55,14 @@ describe('popup', function desc() {
     // NOTE: These tests requires that the test server have the GitHub plugin configured
         it('MM-T2827_1 should be able to select all in popup windows', async () => {
             robot.keyTap('a', env.cmdOrCtrl);
-            await asyncSleep(500);
+            await asyncSleep(1000);
 
             const selectedText = await popupWindow.evaluate(() => {
                 const box = document.querySelectorAll('#login_field')[0];
                 return box.value.substring(box.selectionStart,
                     box.selectionEnd);
                 });
-            await asyncSleep(500);
+            await asyncSleep(1000);
             selectedText.should.equal('Mattermost');
         });
 
