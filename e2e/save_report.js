@@ -31,7 +31,6 @@ const path = require('path');
 
 const generator = require('mochawesome-report-generator');
 
-const {analyzeFlakyTests} = require('./utils/analyze-flaky-test');
 const {saveArtifacts} = require('./utils/artifacts');
 const {MOCHAWESOME_REPORT_DIR} = require('./utils/constants');
 const {
@@ -74,6 +73,7 @@ const saveReport = async () => {
     // Generate short summary, write to file and then send report via webhook
     const {stats, statsFieldValue} = generateShortSummary(jsonReport);
     const summary = {stats, statsFieldValue};
+    console.log(summary);
     writeJsonToFile(summary, 'summary.json', MOCHAWESOME_REPORT_DIR);
 
     const result = await saveArtifacts();
@@ -89,10 +89,10 @@ const saveReport = async () => {
     }
 
     // Send test report to "QA: UI Test Automation" channel via webhook
-    // if (TYPE && TYPE !== 'NONE' && WEBHOOK_URL) {
-    //     const data = generateTestReport(summary, result && result.success, result && result.reportLink, testCycle.key);
-    //     await sendReport('summary report to Community channel', WEBHOOK_URL, data);
-    // }
+    if (TYPE && TYPE !== 'NONE' && WEBHOOK_URL) {
+        const data = generateTestReport(summary, result && result.success, result && result.reportLink, testCycle.key);
+        await sendReport('summary report to Community channel', WEBHOOK_URL, data);
+    }
 
     // Save test cases to Test Management
     if (ZEPHYR_ENABLE === 'true') {

@@ -14,7 +14,7 @@ const base = require('./webpack.config.base');
 
 module.exports = merge(base, {
     entry: {
-        e2e: glob.sync('./e2e/specs/**/view_menu.test.js'),
+        e2e: glob.sync('./e2e/specs/**/*.js'),
     },
     output: {
         path: path.resolve(__dirname, 'dist/tests'),

@@ -128,7 +128,17 @@ jobs:
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
+      - name: Analyze flaky tests
+        id: analyze-flaky-tests
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+            const { commentBody, newFailedTests } = analyzeFlakyTests();
+            echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
+    
       - name: Add results in PR comment
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           script: |
@@ -141,7 +151,11 @@ jobs:
               repo: context.repo.repo,
               body: commentBody,
             });
-  
+
+      - name: Mark job as failed if there are new failed tests
+        if: env.no-new-failed-tests == 'false'
+        run: exit 1
+        shell: bash
 
   e2e-macos:
     if: ${{ 
@@ -231,7 +245,17 @@ jobs:
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
+      - name: Analyze flaky tests
+        id: analyze-flaky-tests
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+            const { commentBody, newFailedTests } = analyzeFlakyTests();
+            echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
+
       - name: Add results in PR comment
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           script: |
@@ -244,6 +268,11 @@ jobs:
               repo: context.repo.repo,
               body: commentBody,
             });
+
+      - name: Mark job as failed if there are new failed tests
+        if: env.no-new-failed-tests == 'false'
+        run: exit 1
+        shell: bash
   
   e2e-windows:
     if: ${{ 
@@ -342,7 +371,17 @@ jobs:
           npm run test:e2e:send-report
         shell: bash
 
+      - name: Analyze flaky tests
+        id: analyze-flaky-tests
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+            const { commentBody, newFailedTests } = analyzeFlakyTests();
+            echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
+
       - name: Add results in PR comment
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           script: |
@@ -355,6 +394,11 @@ jobs:
               repo: context.repo.repo,
               body: commentBody,
             });
+
+      - name: Mark job as failed if there are new failed tests
+        if: env.no-new-failed-tests == 'false'
+        run: exit 1
+        shell: bash
 
   e2e-remove-label:
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }} && always()

@@ -27,7 +27,11 @@ function analyzeFlakyTests() {
         // Filter out the new flaky tests from the failed test titles
         const fixedTests = Array.from(knownFlakyTestsForOS).filter((test) => !failedFullTitles.includes(test));
 
-        const commentBody = generateCommentBodyFunctionalTest(fixedTests, newFailedTests, knownFlakyTestsForOS);
+        const commentBody = generateCommentBodyFunctionalTest(fixedTests, newFailedTests);
+
+        // Print on CI
+        console.log(commentBody);
+        console.log(newFailedTests);
 
         return {commentBody, newFailedTests}
     } catch (error) {
@@ -35,41 +39,31 @@ function analyzeFlakyTests() {
     }
 }
 
-function generateCommentBodyFunctionalTest(fixedTests, newFailedTests, knownFlakyTestsForOS) {
+function generateCommentBodyFunctionalTest(fixedTests, newFailedTests) {
     const osName = process.env.RUNNER_OS;
 
     const newTestFailure = newFailedTests.length === 0 ?
         `No new failed tests found on ${osName}.` :
-        `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `| ${test}`).join('|\n')}`;
+        `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `- ${test}`).join('\n')}`;
 
     const flakytestFailure = fixedTests.length === 0 ?
-        `No known flaky tests were fixed on ${osName}.` :
-        `Known flaky tests fixed on ${osName}:\n${fixedTests.map((test) => `| ${test}`).join('|\n')}`;
-
-    const knownFlakyTestsMessage = knownFlakyTestsForOS.size === 0 ?
-        `No known flaky tests found for ${osName}.` :
-        `Known flaky tests for ${osName}:\n${Array.from(knownFlakyTestsForOS).map((test) => `| ${test} |`).join('\n')}`;
+        `No flaky tests were fixed on ${osName}.` :
+        `Known flaky tests fixed on ${osName}:\n${fixedTests.map((test) => `- ${test}`).join('\n')}`;
 
     const commentBody = `
         ## Flaky Tests Analysis for ${osName}
-        
-        ### Known Flaky Tests
-        
-        | Test |
-        | --- |
-        | ${knownFlakyTestsMessage} |
         
         ### Fixed Tests (Known Flaky Tests Passed)
         
         | Test |
         | --- |
-        | ${flakytestFailure} |
+        ${flakytestFailure}
         
         ### New Failed Tests
         
         | Test |
         | --- |
-        | ${newTestFailure} |
+        ${newTestFailure}
     `;
 
     return commentBody;
