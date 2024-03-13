@@ -8,7 +8,7 @@ import {Logger} from 'common/log';
 
 const log = new Logger('serverAPI');
 
-export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSuccess?: (data: T) => void, onAbort?: () => void, onError?: (error: Error) => void) {
+export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess?: (raw: string) => void, onAbort?: () => void, onError?: (error: Error) => void) {
     if (isAuthenticated) {
         const cookies = await session.defaultSession.cookies.get({});
         if (!cookies) {
@@ -47,8 +47,7 @@ export async function getServerAPI<T>(url: URL, isAuthenticated: boolean, onSucc
                 });
                 response.on('end', () => {
                     try {
-                        const data = JSON.parse(raw) as T;
-                        onSuccess(data);
+                        onSuccess(raw);
                     } catch (e) {
                         const error = `Error parsing server data from ${url.toString()}`;
                         log.error(error);
