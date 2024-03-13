@@ -67,6 +67,7 @@ describe('popup', function desc() {
         });
 
         it('MM-T2827_2 should be able to cut and paste in popup windows', async () => {
+            await asyncSleep(1000);
             const textbox = await popupWindow.waitForSelector('#login_field');
 
             await textbox.selectText({force: true});
@@ -81,6 +82,7 @@ describe('popup', function desc() {
         });
 
         it('MM-T2827_3 should be able to copy and paste in popup windows', async () => {
+            await asyncSleep(1000);
             const textbox = await popupWindow.waitForSelector('#login_field');
 
             await textbox.selectText({force: true});

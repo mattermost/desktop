@@ -212,11 +212,8 @@ describe('menu/view', function desc() {
         });
         isDevToolsOpen.should.be.false;
 
-        robot.keyTap('alt');
-        robot.keyTap('enter');
-        robot.keyTap('v');
-        robot.keyTap('d');
-        robot.keyTap('enter');
+        // Press Command + Option + I
+        robot.keyTap('i', ['command', 'alt']);
         await asyncSleep(1000);
 
         isDevToolsOpen = await browserWindow.evaluate((window) => {
@@ -239,13 +236,8 @@ describe('menu/view', function desc() {
             }, webContentsId);
             isDevToolsOpen.should.be.false;
 
-            // Open Developer Tools for Current Server
-            robot.keyTap('alt');
-            robot.keyTap('enter');
-            robot.keyTap('v');
-            robot.keyTap('d');
-            robot.keyTap('d');
-            robot.keyTap('enter');
+            // Press Control + Shift + I
+            robot.keyTap('i', ['control', 'shift']);
             await asyncSleep(1000);
 
             isDevToolsOpen = await browserWindow.evaluate((window, id) => {

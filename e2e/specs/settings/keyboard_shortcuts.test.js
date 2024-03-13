@@ -6,7 +6,6 @@
 const fs = require('fs');
 
 const robot = require('robotjs');
-const { execSync } = require('child_process');
 
 const {SHOW_SETTINGS_WINDOW} = require('../../../src/common/communication');
 const env = require('../../modules/environment');
@@ -69,7 +68,7 @@ describe('settings/keyboard_shortcuts', function desc() {
 
         it('MM-T1288_2 should be able to cut and paste in the settings window', async () => {
             const textToCopy = 'Afrikaans';
-            execSync(process.platform === 'darwin' ? `pbcopy <<< ${textToCopy}` : `echo ${textToCopy} | clip`);
+            env.clipboard(textToCopy);
 
             const textbox = await settingsWindow.waitForSelector('#inputSpellCheckerLocalesDropdown');
 
@@ -86,7 +85,7 @@ describe('settings/keyboard_shortcuts', function desc() {
 
         it('MM-T1288_3 should be able to copy and paste in the settings window', async () => {
             const textToCopy = 'Afrikaans';
-            execSync(process.platform === 'darwin' ? `pbcopy <<< ${textToCopy}` : `echo ${textToCopy} | clip`);
+            env.clipboard(textToCopy);
 
             const textbox = await settingsWindow.waitForSelector('#inputSpellCheckerLocalesDropdown');
 
@@ -96,7 +95,7 @@ describe('settings/keyboard_shortcuts', function desc() {
             await textbox.type('other-text');
             robot.keyTap('v', [env.cmdOrCtrl]);
             const textValue = await textbox.getAttribute('value');
-            textValue.should.equal('other-textAfrikaans');
+            textValue.trim().should.equal('other-textAfrikaans');
         });
     });
 });
