@@ -91,7 +91,7 @@ async function getZEPHYRFolderID() {
         ZEPHYR_FOLDER_ID,
         ZEPHYR_FOLDER_LINUX_REPORT,
         ZEPHYR_FOLDER_MACOS_REPORT,
-        ZEPHYR_FOLDER_WIN_REPORT
+        ZEPHYR_FOLDER_WIN_REPORT,
     } = process.env;
     if (TYPE === 'MASTER') {
         return ZEPHYR_FOLDER_ID;

@@ -85,7 +85,7 @@ jobs:
         run: |
           wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
           wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
-          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
+          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xclip
           npm ci
           npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
 
@@ -124,9 +124,13 @@ jobs:
       - name: Run Playwright tests (Ubuntu OS)
         run: |
           export DISPLAY=:99
-          Xvfb $DISPLAY -screen 0 1024x768x24 > /dev/null 2>&1 &
+          Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
+
+      - name: Analyze Flaky Tests
+        uses: ./.github/actions/analyze-flaky-tests
+  
 
   e2e-macos:
     if: ${{ 
@@ -215,6 +219,9 @@ jobs:
         run: |
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
+
+      - name: Analyze Flaky Tests
+        uses: ./.github/actions/analyze-flaky-tests
 
   e2e-windows:
     if: ${{ 
@@ -313,8 +320,12 @@ jobs:
           npm run test:e2e:send-report
         shell: bash
 
+      - name: Analyze Flaky Tests
+        uses: ./.github/actions/analyze-flaky-tests
+
+              
   e2e-remove-label:
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }} && always()
     needs: [e2e-linux, e2e-macos, e2e-windows]
     runs-on: ubuntu-latest
     steps:

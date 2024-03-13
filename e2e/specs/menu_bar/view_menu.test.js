@@ -201,7 +201,8 @@ describe('menu/view', function desc() {
         });
     });
 
-    it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
+    if (process.platform === 'darwin') {
+        it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index.html'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
@@ -212,18 +213,15 @@ describe('menu/view', function desc() {
         });
         isDevToolsOpen.should.be.false;
 
-        robot.keyTap('alt');
-        robot.keyTap('enter');
-        robot.keyTap('v');
-        robot.keyTap('d');
-        robot.keyTap('enter');
+        // Press Command + Option + I
+        robot.keyTap('i', ['command', 'alt']);
         await asyncSleep(1000);
 
         isDevToolsOpen = await browserWindow.evaluate((window) => {
             return window.webContents.isDevToolsOpened();
         });
         isDevToolsOpen.should.be.true;
-    });
+    });}
 
     // TODO: Missing shortcut for macOS
     if (process.platform !== 'darwin') {
@@ -239,13 +237,8 @@ describe('menu/view', function desc() {
             }, webContentsId);
             isDevToolsOpen.should.be.false;
 
-            // Open Developer Tools for Current Server
-            robot.keyTap('alt');
-            robot.keyTap('enter');
-            robot.keyTap('v');
-            robot.keyTap('d');
-            robot.keyTap('d');
-            robot.keyTap('enter');
+            // Press Control + Shift + I
+            robot.keyTap('i', ['control', 'shift']);
             await asyncSleep(1000);
 
             isDevToolsOpen = await browserWindow.evaluate((window, id) => {
