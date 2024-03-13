@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-function generateCommentBody(fileContents) {
+function generateCommentBodyPerformanceTest(fileContents) {
     const data = JSON.parse(fileContents);
 
     return `
@@ -32,5 +32,5 @@ ${fileContents}
 }
 
 module.exports = {
-    generateCommentBody,
+    generateCommentBodyPerformanceTest,
 };

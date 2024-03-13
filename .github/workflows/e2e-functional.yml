@@ -128,6 +128,19 @@ jobs:
           xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
 
+      - name: Add results in PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+              const {analyzeFlakyTests} = require('./e2e/utils/analyze-flaky-test.js');
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: analyzeFlakyTests(),
+              });
+
   e2e-macos:
     if: ${{ 
         (
@@ -215,6 +228,18 @@ jobs:
         run: |
           npm run test:e2e || true # making job pass even if the tests fail due to flakyness
           npm run test:e2e:send-report
+      - name: Add results in PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+              const {analyzeFlakyTests} = require('./e2e/utils/analyze-flaky-test.js');
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: analyzeFlakyTests(),
+              });
 
   e2e-windows:
     if: ${{ 
@@ -312,6 +337,19 @@ jobs:
           npm run test:e2e || true
           npm run test:e2e:send-report
         shell: bash
+
+      - name: Add results in PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+              const {analyzeFlakyTests} = require('./e2e/utils/analyze-flaky-test.js');
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: analyzeFlakyTests(),
+              });
 
   e2e-remove-label:
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}

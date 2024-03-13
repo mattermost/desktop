@@ -72,8 +72,7 @@ const saveReport = async () => {
     );
 
     // Generate short summary, write to file and then send report via webhook
-    const {stats, statsFieldValue, failedFullTitles} = generateShortSummary(jsonReport);
-    analyzeFlakyTests(process.platform, failedFullTitles);
+    const {stats, statsFieldValue} = generateShortSummary(jsonReport);
     const summary = {stats, statsFieldValue};
     writeJsonToFile(summary, 'summary.json', MOCHAWESOME_REPORT_DIR);
 
