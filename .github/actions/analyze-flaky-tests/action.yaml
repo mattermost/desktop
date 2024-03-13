@@ -5,7 +5,7 @@ inputs:
   shell:
     description: 'The shell to run the scripts'
     required: true
-    default: 'bash'
+    default: "bash"
 
 runs:
   using: 'composite'
