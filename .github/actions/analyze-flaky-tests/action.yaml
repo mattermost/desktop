@@ -7,11 +7,13 @@ runs:
   steps:
     - name: Analyze flaky tests
       id: analyze-flaky-tests
-      run: |
-        const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-        const { commentBody, newFailedTests } = analyzeFlakyTests();
-        console.log(`commentBody=<<EOM\n${commentBody}\nEOM`);
-        echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+          const { commentBody, newFailedTests } = analyzeFlakyTests();
+          console.log(`commentBody=<<EOM\n${commentBody}\nEOM`);
+          echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
       shell: bash
 
     - name: Add results in PR comment
