@@ -130,8 +130,6 @@ jobs:
 
       - name: Analyze Flaky Tests
         uses: ./.github/actions/analyze-flaky-tests
-        with:
-          shell: 'bash'
 
   e2e-macos:
     if: ${{ 
@@ -223,8 +221,6 @@ jobs:
 
       - name: Analyze Flaky Tests
         uses: ./.github/actions/analyze-flaky-tests
-        with:
-          shell: 'bash'
 
   e2e-windows:
     if: ${{ 
@@ -325,9 +321,6 @@ jobs:
 
       - name: Analyze Flaky Tests
         uses: ./.github/actions/analyze-flaky-tests
-        with:
-          shell: 'bash'
-
               
   e2e-remove-label:
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }} && always()
