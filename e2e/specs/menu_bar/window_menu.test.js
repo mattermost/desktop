@@ -44,7 +44,6 @@ describe('Menu/window_menu', function desc() {
     };
 
     const beforeFunc = async () => {
-        env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
