@@ -1,0 +1,34 @@
+name: 'Analyze Flaky Tests'
+description: 'Analyzes flaky tests and sets the job status based on new failed tests'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Analyze flaky tests
+      id: analyze-flaky-tests
+      run: |
+        const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+        const { commentBody, newFailedTests } = analyzeFlakyTests();
+        console.log(`commentBody=<<EOM\n${commentBody}\nEOM`);
+        console.log(`no-new-failed-tests=${newFailedTests.length === 0}`);
+        echo "no-new-failed-tests=$(newFailedTests.length === 0)" >> $GITHUB_ENV
+      shell: node
+
+    - name: Add results in PR comment
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+          const { commentBody } = analyzeFlakyTests();
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: commentBody,
+          });
+
+    - name: Mark job as failed if there are new failed tests
+      if: ${{ env.no-new-failed-tests == 'false' }}
+      run: exit 1

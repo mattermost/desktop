@@ -193,6 +193,7 @@ module.exports = {
     },
 
     clipboard(textToCopy) {
+        console.log(`********${textToCopy}*********`)
         switch (process.platform) {
         case 'linux':
             execSync(`echo "${textToCopy}" | xclip -selection clipboard`);

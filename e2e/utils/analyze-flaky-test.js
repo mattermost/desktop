@@ -27,8 +27,9 @@ function analyzeFlakyTests() {
         // Filter out the new flaky tests from the failed test titles
         const fixedTests = Array.from(knownFlakyTestsForOS).filter((test) => !failedFullTitles.includes(test));
 
-        const body = generateCommentBodyFunctionalTest(fixedTests, newFailedTests, knownFlakyTestsForOS);
-        console.log(body);
+        const commentBody = generateCommentBodyFunctionalTest(fixedTests, newFailedTests, knownFlakyTestsForOS);
+
+        return {commentBody, newFailedTests}
     } catch (error) {
         console.error('Error analyzing failures:', error);
     }

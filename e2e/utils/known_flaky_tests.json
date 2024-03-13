@@ -5,6 +5,6 @@
         "application MM-T1304/MM-T1306 should open the app on the requested deep link",
         "menu/view MM-T820 should open Developer Tools For Application Wrapper for main window",
         "menu/view MM-T821 should open Developer Tools For Current Server for the active tab",
-        "popup MM-T2827_1 should be able to select all in popup windows"
+        "settings/keyboard_shortcuts MM-T1288 Manipulating Text MM-T1288_2 should be able to cut and paste in the settings window"
     ]
 }
