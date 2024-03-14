@@ -130,16 +130,19 @@ jobs:
 
       - name: Analyze flaky tests
         id: analyze-flaky-tests
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { commentBody, newFailedTests } = analyzeFlakyTests();
-            echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
+            const { newFailedTests } = analyzeFlakyTests();
+            if (newFailedTests)
+              ${{ env.NEW_FAILED_TESTS }}=true
+        env:
+          NEW_FAILED_TESTS: false
     
       - name: Add results in PR comment
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
@@ -247,16 +250,19 @@ jobs:
 
       - name: Analyze flaky tests
         id: analyze-flaky-tests
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { commentBody, newFailedTests } = analyzeFlakyTests();
-            echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
+            const { newFailedTests } = analyzeFlakyTests();
+            if (newFailedTests)
+              ${{ env.NEW_FAILED_TESTS }}=true
+        env:
+          NEW_FAILED_TESTS: false
 
       - name: Add results in PR comment
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
@@ -373,16 +379,19 @@ jobs:
 
       - name: Analyze flaky tests
         id: analyze-flaky-tests
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { commentBody, newFailedTests } = analyzeFlakyTests();
-            echo "no-new-failed-tests=$(test ${#newFailedTests[@]} -eq 0)" >> $GITHUB_ENV
+            const { newFailedTests } = analyzeFlakyTests();
+            if (newFailedTests)
+              ${{ env.NEW_FAILED_TESTS }}=true
+        env:
+          NEW_FAILED_TESTS: false
 
       - name: Add results in PR comment
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
