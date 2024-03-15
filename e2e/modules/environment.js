@@ -306,7 +306,6 @@ module.exports = {
 
     // execute the test only when `condition` is true
     shouldTest(it, condition) {
-    // eslint-disable-next-line no-only-tests/no-only-tests
         return condition ? it : it.skip;
     },
     isOneOf(platforms) {

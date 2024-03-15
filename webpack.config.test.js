@@ -1,10 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// This file uses CommonJS.
-/* eslint-disable import/no-commonjs */
-'use strict';
-
 const path = require('path');
 
 const glob = require('glob');
@@ -38,5 +34,3 @@ module.exports = merge(base, {
     },
     target: 'electron-main',
 });
-
-/* eslint-enable import/no-commonjs */

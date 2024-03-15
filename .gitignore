@@ -25,3 +25,5 @@ fastlane/report.xml
 
 *.provisionprofile
 *.tsbuildinfo
+
+.eslintcache

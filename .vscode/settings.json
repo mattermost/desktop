@@ -3,7 +3,7 @@
         "i18n"
     ],
     "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": true
+        "source.fixAll.eslint": "always",
     },
     "cSpell.words": [
         "appimage",

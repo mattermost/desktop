@@ -2,10 +2,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// This file uses CommonJS.
-/* eslint-disable import/no-commonjs */
-'use strict';
-
 const path = require('path');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -175,5 +171,3 @@ module.exports = merge(base, {
     },
     target: 'web',
 });
-
-/* eslint-enable import/no-commonjs */

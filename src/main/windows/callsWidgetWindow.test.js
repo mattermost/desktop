@@ -1,8 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/* eslint-disable max-lines */
-
 import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electron';
 
 import ServerViewState from 'app/serverViewState';

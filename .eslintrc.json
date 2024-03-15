@@ -27,10 +27,45 @@
         "no-process-env": 0,
         "no-var": 2,
         "react/no-find-dom-node": 2,
-        "multiline-ternary": 0,
-        "max-lines": ["warn", 650],
         "no-underscore-dangle": ["warn"],
-        "@mattermost/use-external-link": 0
+        "@mattermost/use-external-link": 0,
+        "import/order": [
+            2,
+            {
+                "newlines-between": "always",
+                "groups": [
+                    "builtin",
+                    "external",
+                    "internal",
+                    "sibling",
+                    "parent",
+                    "index"
+                ],
+                "pathGroups": [
+                    {
+                        "pattern": "@mattermost/**",
+                        "group": "external",
+                        "position": "after"
+                    },
+                    {
+                        "pattern": "(app|common|main|renderer){,/**}",
+                        "group": "external",
+                        "position": "after"
+                    },
+                    {
+                        "pattern": "types{,/**}",
+                        "group": "internal",
+                        "position": "after"
+                    }
+                ],
+                "alphabetize": {
+                    "order": "asc",
+                    "caseInsensitive": true
+                },
+                "distinctGroup": true,
+                "pathGroupsExcludedImportTypes": ["builtin"]
+            }
+        ]
     },
     "overrides": [
         {
@@ -45,6 +80,16 @@
         },
         {
             "files": [
+                "scripts/**/*",
+                "babel.config.js",
+                "webpack.config.*.js"
+            ],
+            "rules": {
+                "import/no-commonjs": 0
+            }
+        },
+        {
+            "files": [
                 "e2e/**/*",
                 "src/**/*.test.js"
             ],
@@ -52,13 +97,14 @@
                 "jest": true
             },
             "rules": {
-                "babel/no-unused-expressions": "off", //TODO: rework tests to use correct notation
+                "no-unused-expressions": 0, //TODO: rework tests to use correct notation
                 "func-names": 0,
                 "global-require": 0,
                 "new-cap": 0,
                 "prefer-arrow-callback": 0,
                 "no-import-assign": 0,
-                "no-only-tests/no-only-tests": "warn"
+                "no-only-tests/no-only-tests": 1,
+                "import/no-commonjs": 0
             }
         },
         {
@@ -72,58 +118,31 @@
                 "webpack.config.base.js",
                 "babel.config.js",
                 "README.md",
-                "scripts/watch_main_and_preload.js",
-                "scripts/extract_dict.js",
-                "scripts/manipulate_windows_zip.js",
                 "scripts/check_build_config.js",
                 "LICENSE.txt",
-                "src/utils/util.ts",
                 "src/main/contextMenu.ts",
-                "src/renderer/updater.tsx",
                 "src/main/badge.ts",
-                "src/common/deepmerge.ts",
                 "src/common/config/index.ts",
                 "src/common/config/buildConfig.ts",
                 "src/common/config/pastDefaultPreferences.ts",
                 "src/common/config/upgradePreferences.ts",
                 "src/common/config/RegistryConfig.ts",
-                "src/common/osVersion.ts",
                 "src/common/config/defaultPreferences.ts",
                 "src/common/JsonFileManager.ts",
                 "src/main/certificateStore.ts",
-                "src/main/mainWindow.ts",
                 "src/main/allowProtocolDialog.ts",
-                "src/main/permissionRequestHandler.ts",
-                "src/main/squirrelStartup.ts",
-                "src/main/autoLaunch.ts",
-                "src/main/PermissionManager.ts",
                 "src/main/AutoLauncher.ts",
-                "src/main/AppStateManager.ts",
                 "src/main/menus/tray.ts",
                 "src/main/CriticalErrorHandler.ts",
-                "src/main/cookieManager.ts",
                 "src/main/utils.ts",
-                "src/main/downloadURL.ts",
-                "src/main/SpellChecker.ts",
                 "src/main/menus/app.ts",
-                "src/main/preload/externalAPI.js",
                 "src/renderer/components/RemoveServerModal.tsx",
                 "src/renderer/components/MainPage.tsx",
-                "src/renderer/components/HoveringURL.tsx",
                 "src/renderer/components/AutoSaveIndicator.tsx",
-                "src/renderer/components/MattermostView.tsx",
                 "src/renderer/components/TabBar.tsx",
                 "src/renderer/components/DestructiveConfirmModal.tsx",
                 "src/renderer/components/ErrorView.tsx",
-                "src/renderer/components/UpdaterPage.tsx",
-                "src/renderer/components/PermissionRequestDialog.tsx",
-                "src/renderer/components/Finder.tsx",
                 "src/renderer/components/SettingsPage.tsx",
-                "src/renderer/components/TeamListItem.tsx",
-                "src/renderer/components/UpdaterPage/UpdaterPage.stories.tsx",
-                "src/renderer/components/Button/Button.stories.tsx",
-                "src/renderer/components/TeamList.tsx",
-                "src/renderer/components/LoginModal.tsx",
                 "src/renderer/components/NewServerModal.tsx",
                 "src/renderer/settings.tsx",
                 "src/renderer/index.tsx"
