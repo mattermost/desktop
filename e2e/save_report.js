@@ -54,7 +54,6 @@ const saveReport = async () => {
         ZEPHYR_CYCLE_KEY,
         TYPE,
         WEBHOOK_URL,
-        REPORT_LINK,
     } = process.env;
 
     removeOldGeneratedReports();
