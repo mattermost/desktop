@@ -413,7 +413,7 @@ jobs:
         shell: bash
 
   e2e-remove-label:
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }} && always()
+    if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
     needs: [e2e-linux, e2e-macos, e2e-windows]
     runs-on: ubuntu-latest
     steps:

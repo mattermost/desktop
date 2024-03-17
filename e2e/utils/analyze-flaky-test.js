@@ -63,7 +63,6 @@ function generateCommentBodyFunctionalTest(newFailedTests) {
     return commentBody;
 }
 
-// module.exports = {
-//     analyzeFlakyTests,
-// };
-analyzeFlakyTests()
+module.exports = {
+    analyzeFlakyTests,
+};
