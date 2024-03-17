@@ -136,7 +136,7 @@ jobs:
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
             if (newFailedTests.length === 0) {
-              echo "NEW_FAILED_TESTS=true" >> $GITHUB_ENV
+              process.env.NEW_FAILED_TESTS = 'true';
             }
         env:
           NEW_FAILED_TESTS: false
@@ -257,7 +257,7 @@ jobs:
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
             if (newFailedTests.length === 0) {
-              echo "NEW_FAILED_TESTS=true" >> $GITHUB_ENV
+              process.env.NEW_FAILED_TESTS = 'true';
             }
 
       - name: Add results in PR comment
@@ -385,7 +385,7 @@ jobs:
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
             if (newFailedTests.length === 0) {
-              echo "NEW_FAILED_TESTS=true" >> $GITHUB_ENV
+              process.env.NEW_FAILED_TESTS = 'true';
             }
 
       - name: Add results in PR comment

@@ -31,9 +31,8 @@ function analyzeFlakyTests() {
 
         // Print on CI
         console.log(commentBody);
-        console.log(newFailedTests);
 
-        return { commentBody, newFailedTests, fixedTests };
+        return { commentBody, newFailedTests };
     } catch (error) {
         console.error('Error analyzing failures:', error);
     }
@@ -57,7 +56,7 @@ function generateCommentBodyFunctionalTest(newFailedTests, fixedTests) {
     `;
 
     if (newFailedTests.length > 0) {
-        const newTestFailure = `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `- ${test}`).join('\n')}`;
+        const newTestFailure = `New failed tests found on ${osName}:\n\t${newFailedTests.map((test) => `- ${test}`).join('\n\t')}`;
         commentBody += `
         ### New Failed Tests
         
@@ -68,7 +67,7 @@ function generateCommentBodyFunctionalTest(newFailedTests, fixedTests) {
     }
 
     if (fixedTests.length > 0) {
-        const fixedTestMessage = `The following known failed tests have been fixed on ${osName}:\n${fixedTests.map((test) => `- ${test}`).join('\n')}`;
+        const fixedTestMessage = `The following known failed tests have been fixed on ${osName}:\n\t${fixedTests.map((test) => `- ${test}`).join('\n\t')}`;
         commentBody += `
         ### Fixed Tests
         
