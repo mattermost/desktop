@@ -54,6 +54,7 @@ const saveReport = async () => {
         ZEPHYR_CYCLE_KEY,
         TYPE,
         WEBHOOK_URL,
+        REPORT_LINK,
     } = process.env;
 
     removeOldGeneratedReports();
@@ -79,6 +80,7 @@ const saveReport = async () => {
     const result = await saveArtifacts();
     if (result && result.success) {
         console.log('Successfully uploaded artifacts to S3:', result.reportLink);
+        process.env.REPORT_LINK=result.reportLink;
     }
 
     // Create or use an existing test cycle
@@ -91,7 +93,7 @@ const saveReport = async () => {
     // Send test report to "QA: UI Test Automation" channel via webhook
     if (TYPE && TYPE !== 'NONE' && WEBHOOK_URL) {
         const data = generateTestReport(summary, result && result.success, result && result.reportLink, testCycle.key);
-        // await sendReport('summary report to Community channel', WEBHOOK_URL, data);
+        await sendReport('summary report to Community channel', WEBHOOK_URL, data);
     }
 
     // Save test cases to Test Management
