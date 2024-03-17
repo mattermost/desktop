@@ -135,8 +135,9 @@ jobs:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests)
-              ${{ env.NEW_FAILED_TESTS }}=true
+            if (newFailedTests) {
+              process.env.NEW_FAILED_TESTS = 'true';
+            }
         env:
           NEW_FAILED_TESTS: false
     
@@ -156,7 +157,7 @@ jobs:
             });
 
       - name: Mark job as failed if there are new failed tests
-        if: env.no-new-failed-tests == 'false'
+        if: env.NEW_FAILED_TESTS == 'true'
         run: exit 1
         shell: bash
 
@@ -255,8 +256,9 @@ jobs:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests)
-              ${{ env.NEW_FAILED_TESTS }}=true
+            if (newFailedTests) {
+              process.env.NEW_FAILED_TESTS = 'true';
+            }
         env:
           NEW_FAILED_TESTS: false
 
@@ -276,7 +278,7 @@ jobs:
             });
 
       - name: Mark job as failed if there are new failed tests
-        if: env.no-new-failed-tests == 'false'
+        if: env.NEW_FAILED_TESTS == 'true'
         run: exit 1
         shell: bash
   
@@ -384,8 +386,9 @@ jobs:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests)
-              ${{ env.NEW_FAILED_TESTS }}=true
+            if (newFailedTests) {
+              process.env.NEW_FAILED_TESTS = 'true';
+            }
         env:
           NEW_FAILED_TESTS: false
 
@@ -405,7 +408,7 @@ jobs:
             });
 
       - name: Mark job as failed if there are new failed tests
-        if: env.no-new-failed-tests == 'false'
+        if: env.NEW_FAILED_TESTS == 'true'
         run: exit 1
         shell: bash
 

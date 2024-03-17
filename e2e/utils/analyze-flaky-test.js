@@ -3,7 +3,7 @@
 /* eslint-disable no-console */
 const path = require('path');
 
-const {MOCHAWESOME_REPORT_DIR} = require('./constants');
+const { MOCHAWESOME_REPORT_DIR } = require('./constants');
 const knownFlakyTests = require('./known_flaky_tests.json');
 const {
     generateShortSummary,
@@ -16,7 +16,7 @@ function analyzeFlakyTests() {
         // Import
         const jsonReport = readJsonFromFile(path.join(MOCHAWESOME_REPORT_DIR, 'mochawesome.json'));
 
-        const {failedFullTitles} = generateShortSummary(jsonReport);
+        const { failedFullTitles } = generateShortSummary(jsonReport);
 
         // Get the list of known flaky tests for the provided operating system
         const knownFlakyTestsForOS = new Set(knownFlakyTests[os] || []);
@@ -24,41 +24,35 @@ function analyzeFlakyTests() {
         // Filter out the known flaky tests from the failed test titles
         const newFailedTests = failedFullTitles.filter((test) => !knownFlakyTestsForOS.has(test));
 
-        // Filter out the new flaky tests from the failed test titles
-        const fixedTests = Array.from(knownFlakyTestsForOS).filter((test) => !failedFullTitles.includes(test));
-
-        const commentBody = generateCommentBodyFunctionalTest(fixedTests, newFailedTests);
+        const commentBody = generateCommentBodyFunctionalTest(newFailedTests);
 
         // Print on CI
         console.log(commentBody);
         console.log(newFailedTests);
 
-        return {commentBody, newFailedTests}
+        return { commentBody, newFailedTests };
     } catch (error) {
         console.error('Error analyzing failures:', error);
     }
 }
 
-function generateCommentBodyFunctionalTest(fixedTests, newFailedTests) {
+function generateCommentBodyFunctionalTest(newFailedTests) {
     const osName = process.env.RUNNER_OS;
 
-    const newTestFailure = newFailedTests.length === 0 ?
-        `No new failed tests found on ${osName}.` :
-        `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `- ${test}`).join('\n')}`;
+    if (newFailedTests.length === 0) {
+        const commentBody = `
+            ## Test Summary for ${osName}
+            
+            All stable tests passed on ${osName}.
+        `;
+        return commentBody;
+    }
 
-    const flakytestFailure = fixedTests.length === 0 ?
-        `No flaky tests were fixed on ${osName}.` :
-        `Known flaky tests fixed on ${osName}:\n${fixedTests.map((test) => `- ${test}`).join('\n')}`;
+    const newTestFailure = `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `- ${test}`).join('\n')}`;
 
     const commentBody = `
-        ## Flaky Tests Analysis for ${osName}
-        
-        ### Fixed Tests (Known Flaky Tests Passed)
-        
-        | Test |
-        | --- |
-        ${flakytestFailure}
-        
+        ## Test Summary for ${osName}
+
         ### New Failed Tests
         
         | Test |
@@ -69,6 +63,7 @@ function generateCommentBodyFunctionalTest(fixedTests, newFailedTests) {
     return commentBody;
 }
 
-module.exports = {
-    analyzeFlakyTests,
-};
+// module.exports = {
+//     analyzeFlakyTests,
+// };
+analyzeFlakyTests()
