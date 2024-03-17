@@ -28,6 +28,7 @@ Place an '[x]' (no spaces) in all applicable fields. Please remove unrelated fie
 - [ ] read and understood our [Contributing Guidelines](https://github.com/mattermost/desktop/blob/master/CONTRIBUTING.md)
 - [ ] completed [Mattermost Contributor Agreement](https://mattermost.com/contribute/)
 - [ ] executed `npm run lint:js` for proper code formatting
+- [ ] Run E2E tests by adding label `Run Desktop E2E Tests`
 
 #### Device Information
 This PR was tested on: <!-- Device name(s), OS version(s) -->
