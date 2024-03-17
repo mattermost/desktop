@@ -8,7 +8,6 @@ const knownFlakyTests = require('./known_flaky_tests.json');
 const {
     generateShortSummary,
     readJsonFromFile,
-    getReportLink,
 } = require('./report');
 
 function analyzeFlakyTests() {
@@ -28,7 +27,7 @@ function analyzeFlakyTests() {
         // Check if any known failed tests are fixed
         const fixedTests = [...knownFlakyTestsForOS].filter((test) => !failedFullTitles.includes(test));
 
-        const commentBody = generateCommentBodyFunctionalTest(newFailedTests, fixedTests, getReportLink());
+        const commentBody = generateCommentBodyFunctionalTest(newFailedTests, fixedTests);
 
         // Print on CI
         console.log(commentBody);
@@ -39,7 +38,7 @@ function analyzeFlakyTests() {
     }
 }
 
-function generateCommentBodyFunctionalTest(newFailedTests, fixedTests, reportLink) {
+function generateCommentBodyFunctionalTest(newFailedTests, fixedTests) {
     const osName = process.env.RUNNER_OS;
     const build = process.env.BUILD_TAG;
 
@@ -71,13 +70,6 @@ function generateCommentBodyFunctionalTest(newFailedTests, fixedTests, reportLin
     ### Fixed Tests
     
     ${fixedTestMessage}
-    `;
-    }
-
-    // Add the REPORT_LINK
-    if (reportLink !== 'none') {
-        commentBody += `
-    [${osName} report](${reportLink})
     `;
     }
 

@@ -16,16 +16,6 @@ const MAX_FAILED_TITLES = 5;
 
 let incrementalDuration = 0;
 
-let testReportLink;
-
-function setReportLink(link){
-    testReportLink=link;
-}
-
-function getReportLink(){
-    return testReportLink;
-}
-
 function getAllTests(results) {
     const tests = [];
     results.forEach((result) => {
@@ -299,6 +289,4 @@ module.exports = {
     sendReport,
     readJsonFromFile,
     writeJsonToFile,
-    setReportLink,
-    getReportLink,
 };
