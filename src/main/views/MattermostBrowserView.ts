@@ -24,6 +24,7 @@ import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
 import type {MattermostView} from 'common/views/View';
+import {getServerAPI} from 'main/server/serverAPI';
 import MainWindow from 'main/windows/mainWindow';
 
 import WebContentsEventManager from './webContentEvents';
@@ -235,10 +236,10 @@ export class MattermostBrowserView extends EventEmitter {
         }
     };
 
-    reload = () => {
+    reload = (loadURL?: URL | string) => {
         this.resetLoadingStatus();
         AppState.updateExpired(this.id, false);
-        this.load();
+        this.load(loadURL);
     };
 
     getBounds = () => {
@@ -452,10 +453,19 @@ export class MattermostBrowserView extends EventEmitter {
             if (!this.browserView || !this.browserView.webContents) {
                 return;
             }
-            const loading = this.browserView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
-            loading.then(this.loadSuccess(loadURL)).catch(() => {
-                this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
-            });
+            const parsedURL = parseURL(loadURL);
+            if (!parsedURL) {
+                return;
+            }
+            getServerAPI(
+                parsedURL,
+                false,
+                () => this.reload(loadURL),
+                () => {},
+                (error: Error) => {
+                    this.log.debug(`Cannot reach server: ${error}`);
+                    this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
+                });
         };
     };
 

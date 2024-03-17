@@ -8,7 +8,6 @@ import {net, session} from 'electron';
 import {getServerAPI} from './serverAPI';
 
 const validURL = 'http://server-1.com/api/endpoint';
-const badDataURL = 'http://server-1.com/api/bad/endpoint';
 const testData = {
     name: 'some data',
     value: 'some more data',
@@ -21,13 +20,13 @@ jest.mock('electron', () => ({
                 requestCallback({
                     on: jest.fn().mockImplementation((event, responseCallback) => {
                         if (event === 'data') {
-                            responseCallback(url === badDataURL ? '98&H09986t&(*6BV789RhN^t97rb6Ev^*e5v89 re5bg^&' : JSON.stringify(testData));
+                            responseCallback(JSON.stringify(testData));
                         }
                         if (event === 'end') {
                             responseCallback();
                         }
                     }),
-                    statusCode: (url === validURL || url === badDataURL) ? 200 : 404,
+                    statusCode: url === validURL ? 200 : 404,
                 });
             }),
             end: jest.fn(),
@@ -50,7 +49,7 @@ describe('main/server/serverAPI', () => {
             false,
             successFn,
         );
-        expect(successFn).toHaveBeenCalledWith(testData);
+        expect(successFn).toHaveBeenCalledWith(JSON.stringify(testData));
     });
 
     it('should call onError when bad status code received', async () => {
@@ -58,20 +57,6 @@ describe('main/server/serverAPI', () => {
         const errorFn = jest.fn();
         await getServerAPI(
             'http://badurl.com',
-            false,
-            successFn,
-            null,
-            errorFn,
-        );
-        expect(successFn).not.toHaveBeenCalled();
-        expect(errorFn).toHaveBeenCalled();
-    });
-
-    it('should call onError when data parsing fails', async () => {
-        const successFn = jest.fn();
-        const errorFn = jest.fn();
-        await getServerAPI(
-            badDataURL,
             false,
             successFn,
             null,
@@ -90,7 +75,7 @@ describe('main/server/serverAPI', () => {
                             responseCallback();
                         }
                     }),
-                    statusCode: (url === validURL || url === badDataURL) ? 200 : 404,
+                    statusCode: url === validURL ? 200 : 404,
                 });
             }),
             end: jest.fn(),

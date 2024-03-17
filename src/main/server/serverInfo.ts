@@ -44,12 +44,17 @@ export class ServerInfo {
             return Promise.reject(new Error('Malformed URL'));
         }
         return new Promise<void>((resolve, reject) => {
-            getServerAPI<T>(
+            getServerAPI(
                 url,
                 false,
-                (data: T) => {
-                    callback(data);
-                    resolve();
+                (raw: string) => {
+                    try {
+                        const data = JSON.parse(raw) as T;
+                        callback(data);
+                        resolve();
+                    } catch (e) {
+                        reject(e);
+                    }
                 },
                 () => reject(new Error('Aborted')),
                 (error: Error) => reject(error));
