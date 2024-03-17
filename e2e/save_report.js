@@ -80,6 +80,7 @@ const saveReport = async () => {
     if (result && result.success) {
         console.log('Successfully uploaded artifacts to S3:', result.reportLink);
         process.env.REPORT_LINK=result.reportLink;
+        console.log('**', process.env.REPORT_LINK);
     }
 
     // Create or use an existing test cycle
