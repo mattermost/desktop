@@ -75,7 +75,7 @@ function generateCommentBodyFunctionalTest(newFailedTests, fixedTests) {
     }
 
     // Add the REPORT_LINK
-    if (reportLink) {
+    if (reportLink !== 'none') {
         commentBody += `
     [${osName} report](${reportLink})
     `;
