@@ -40,6 +40,7 @@ const {
     sendReport,
     readJsonFromFile,
     writeJsonToFile,
+    setReportLink,
 } = require('./utils/report');
 const {createTestCycle, createTestExecutions} = require('./utils/test_cases');
 
@@ -54,7 +55,6 @@ const saveReport = async () => {
         ZEPHYR_CYCLE_KEY,
         TYPE,
         WEBHOOK_URL,
-        REPORT_LINK,
     } = process.env;
 
     removeOldGeneratedReports();
@@ -80,7 +80,7 @@ const saveReport = async () => {
     const result = await saveArtifacts();
     if (result && result.success) {
         console.log('Successfully uploaded artifacts to S3:', result.reportLink);
-        REPORT_LINK = result.reportLink;
+        setReportLink(result.reportLink)
     }
 
     // Create or use an existing test cycle
