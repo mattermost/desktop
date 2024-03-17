@@ -54,6 +54,7 @@ const saveReport = async () => {
         ZEPHYR_CYCLE_KEY,
         TYPE,
         WEBHOOK_URL,
+        REPORT_LINK,
     } = process.env;
 
     removeOldGeneratedReports();
@@ -79,8 +80,7 @@ const saveReport = async () => {
     const result = await saveArtifacts();
     if (result && result.success) {
         console.log('Successfully uploaded artifacts to S3:', result.reportLink);
-        process.env.REPORT_LINK=result.reportLink;
-        console.log('**', process.env.REPORT_LINK);
+        REPORT_LINK = result.reportLink;
     }
 
     // Create or use an existing test cycle

@@ -3,7 +3,7 @@
 /* eslint-disable no-console */
 const path = require('path');
 
-const { MOCHAWESOME_REPORT_DIR } = require('./constants');
+const {MOCHAWESOME_REPORT_DIR} = require('./constants');
 const knownFlakyTests = require('./known_flaky_tests.json');
 const {
     generateShortSummary,
@@ -16,7 +16,7 @@ function analyzeFlakyTests() {
         // Import
         const jsonReport = readJsonFromFile(path.join(MOCHAWESOME_REPORT_DIR, 'mochawesome.json'));
 
-        const { failedFullTitles } = generateShortSummary(jsonReport);
+        const {failedFullTitles} = generateShortSummary(jsonReport);
 
         // Get the list of known flaky tests for the provided operating system
         const knownFlakyTestsForOS = new Set(knownFlakyTests[os] || []);
@@ -32,7 +32,7 @@ function analyzeFlakyTests() {
         // Print on CI
         console.log(commentBody);
 
-        return { commentBody, newFailedTests };
+        return {commentBody, newFailedTests};
     } catch (error) {
         console.error('Error analyzing failures:', error);
     }
