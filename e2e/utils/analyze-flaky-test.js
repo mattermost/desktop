@@ -24,41 +24,57 @@ function analyzeFlakyTests() {
         // Filter out the known flaky tests from the failed test titles
         const newFailedTests = failedFullTitles.filter((test) => !knownFlakyTestsForOS.has(test));
 
-        const commentBody = generateCommentBodyFunctionalTest(newFailedTests);
+        // Check if any known failed tests are fixed
+        const fixedTests = [...knownFlakyTestsForOS].filter((test) => !failedFullTitles.includes(test));
+
+        const commentBody = generateCommentBodyFunctionalTest(newFailedTests, fixedTests);
 
         // Print on CI
         console.log(commentBody);
         console.log(newFailedTests);
 
-        return { commentBody, newFailedTests };
+        return { commentBody, newFailedTests, fixedTests };
     } catch (error) {
         console.error('Error analyzing failures:', error);
     }
 }
 
-function generateCommentBodyFunctionalTest(newFailedTests) {
+function generateCommentBodyFunctionalTest(newFailedTests, fixedTests) {
     const osName = process.env.RUNNER_OS;
+    const build = process.env.BUILD_TAG;
 
-    if (newFailedTests.length === 0) {
+    if (newFailedTests.length === 0 && fixedTests.length === 0) {
         const commentBody = `
-            ## Test Summary for ${osName}
+            ## Test Summary for ${osName} on commit ${build}
             
             All stable tests passed on ${osName}.
         `;
         return commentBody;
     }
 
-    const newTestFailure = `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `- ${test}`).join('\n')}`;
+    let commentBody = `
+        ## Test Summary for ${osName} on commit ${build}
+    `;
 
-    const commentBody = `
-        ## Test Summary for ${osName}
-
+    if (newFailedTests.length > 0) {
+        const newTestFailure = `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `- ${test}`).join('\n')}`;
+        commentBody += `
         ### New Failed Tests
         
         | Test |
         | --- |
-        ${newTestFailure}
-    `;
+           ${newTestFailure}
+        `;
+    }
+
+    if (fixedTests.length > 0) {
+        const fixedTestMessage = `The following known failed tests have been fixed on ${osName}:\n${fixedTests.map((test) => `- ${test}`).join('\n')}`;
+        commentBody += `
+        ### Fixed Tests
+        
+         ${fixedTestMessage}
+        `;
+    }
 
     return commentBody;
 }

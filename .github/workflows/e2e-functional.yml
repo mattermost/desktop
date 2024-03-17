@@ -135,8 +135,8 @@ jobs:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests) {
-              process.env.NEW_FAILED_TESTS = 'true';
+            if (newFailedTests.length === 0) {
+              echo "NEW_FAILED_TESTS=true" >> $GITHUB_ENV
             }
         env:
           NEW_FAILED_TESTS: false
@@ -256,11 +256,9 @@ jobs:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests) {
-              process.env.NEW_FAILED_TESTS = 'true';
+            if (newFailedTests.length === 0) {
+              echo "NEW_FAILED_TESTS=true" >> $GITHUB_ENV
             }
-        env:
-          NEW_FAILED_TESTS: false
 
       - name: Add results in PR comment
         if: github.event_name == 'pull_request'
@@ -386,11 +384,9 @@ jobs:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests) {
-              process.env.NEW_FAILED_TESTS = 'true';
+            if (newFailedTests.length === 0) {
+              echo "NEW_FAILED_TESTS=true" >> $GITHUB_ENV
             }
-        env:
-          NEW_FAILED_TESTS: false
 
       - name: Add results in PR comment
         if: github.event_name == 'pull_request'
