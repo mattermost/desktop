@@ -2,10 +2,6 @@
 // See LICENSE.txt for license information.
 // Copyright (c) 2015-2016 Yuya Ochiai
 
-// This files uses CommonJS.
-/* eslint-disable import/no-commonjs */
-'use strict';
-
 const {merge} = require('webpack-merge');
 
 const base = require('./webpack.config.base');
@@ -24,5 +20,3 @@ module.exports = merge(base, {
     },
     target: 'electron-preload',
 });
-
-/* eslint-enable import/no-commonjs */

@@ -1,9 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/* eslint-disable max-lines */
-'use strict';
-
 import {dialog} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
