@@ -2,10 +2,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// This file uses CommonJS.
-/* eslint-disable import/no-commonjs */
-'use strict';
-
 const childProcess = require('child_process');
 const path = require('path');
 
@@ -58,5 +54,3 @@ module.exports = {
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     },
 };
-
-/* eslint-enable import/no-commonjs */
