@@ -71,7 +71,8 @@ const saveReport = async () => {
     );
 
     // Generate short summary, write to file and then send report via webhook
-    const summary = generateShortSummary(jsonReport);
+    const {stats, statsFieldValue} = generateShortSummary(jsonReport);
+    const summary = {stats, statsFieldValue};
     console.log(summary);
     writeJsonToFile(summary, 'summary.json', MOCHAWESOME_REPORT_DIR);
 

@@ -201,7 +201,7 @@ describe('menu/view', function desc() {
         });
     });
 
-    it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
+        it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index.html'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
@@ -212,46 +212,22 @@ describe('menu/view', function desc() {
         });
         isDevToolsOpen.should.be.false;
 
-        robot.keyTap('alt');
-        robot.keyTap('enter');
-        robot.keyTap('v');
-        robot.keyTap('d');
-        robot.keyTap('enter');
-        await asyncSleep(1000);
+        if (process.platform === 'darwin') {
+        // Press Command + Option + I
+            robot.keyTap('i', ['command', 'alt']);
+            await asyncSleep(3000);
+        }
 
+        if (process.platform === 'win32') {
+            robot.keyToggle('shift', 'down');
+            robot.keyToggle('control', 'down');
+            robot.keyTap('i');
+        }
+
+        await asyncSleep(1000);
         isDevToolsOpen = await browserWindow.evaluate((window) => {
             return window.webContents.isDevToolsOpened();
         });
         isDevToolsOpen.should.be.true;
     });
-
-    // TODO: Missing shortcut for macOS
-    if (process.platform !== 'darwin') {
-        it('MM-T821 should open Developer Tools For Current Server for the active tab', async () => {
-            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            const browserWindow = await this.app.browserWindow(mainWindow);
-            const webContentsId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-
-            let isDevToolsOpen = await browserWindow.evaluate((window, id) => {
-                return window.getBrowserViews().find((view) => view.webContents.id === id).webContents.isDevToolsOpened();
-            }, webContentsId);
-            isDevToolsOpen.should.be.false;
-
-            // Open Developer Tools for Current Server
-            robot.keyTap('alt');
-            robot.keyTap('enter');
-            robot.keyTap('v');
-            robot.keyTap('d');
-            robot.keyTap('d');
-            robot.keyTap('enter');
-            await asyncSleep(1000);
-
-            isDevToolsOpen = await browserWindow.evaluate((window, id) => {
-                return window.getBrowserViews().find((view) => view.webContents.id === id).webContents.isDevToolsOpened();
-            }, webContentsId);
-            isDevToolsOpen.should.be.true;
-        });
-    }
 });

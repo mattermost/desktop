@@ -13,8 +13,10 @@ describe('popup', function desc() {
     this.timeout(40000);
 
     const config = env.demoMattermostConfig;
+    let popupWindow;
+    let firstServer;
 
-    beforeEach(async () => {
+    before(async () => {
         env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
@@ -22,9 +24,28 @@ describe('popup', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
+
+        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
+        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
+        firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        await env.loginToMattermost(firstServer);
+
+        await firstServer.click('#post_textbox');
+        await firstServer.fill('#post_textbox', '');
+        await firstServer.type('#post_textbox', '/github connect ');
+        await firstServer.click('button[data-testid="SendMessageButton"]');
+
+        const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
+        githubLink.click();
+        popupWindow = await this.app.waitForEvent('window');
+
+        const loginField = await popupWindow.waitForSelector('#login_field');
+        await loginField.focus();
+        robot.typeString('Mattermost');
+        await asyncSleep(3000);
     });
 
-    afterEach(async () => {
+    after(async () => {
         if (this.app) {
             await this.app.close();
         }
@@ -32,80 +53,48 @@ describe('popup', function desc() {
     });
 
     // NOTE: These tests requires that the test server have the GitHub plugin configured
-    describe('MM-T2827 Keyboard shortcuts in popup windows', () => {
-        let popupWindow;
+    it('MM-T2827_1 should be able to select all in popup windows', async () => {
+        robot.keyTap('a', env.cmdOrCtrl);
+        await asyncSleep(1000);
 
-        beforeEach(async () => {
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
-            await env.loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#sidebarItem_suscipit-4');
-            await firstServer.click('#sidebarItem_suscipit-4');
-            await firstServer.click('#post_textbox');
-            await firstServer.type('#post_textbox', '/github connect ');
-            await firstServer.click('button[data-testid="SendMessageButton"]');
-
-            const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
-            githubLink.click();
-            popupWindow = await this.app.waitForEvent('window');
-            const loginField = await popupWindow.waitForSelector('#login_field');
-            await loginField.focus();
-            await loginField.type('mattermost');
+        const selectedText = await popupWindow.evaluate(() => {
+            const box = document.querySelectorAll('#login_field')[0];
+            return box.value.substring(box.selectionStart,
+                box.selectionEnd);
         });
+        await asyncSleep(3000);
+        selectedText.should.equal('Mattermost');
+    });
 
-        it('MM-T2827_1 should be able to select all in popup windows', async () => {
-            robot.keyTap('a', [process.platform === 'darwin' ? 'command' : 'control']);
-            const selectedText = await popupWindow.evaluate(() => {
-                const box = document.querySelectorAll('#login_field')[0];
-                return box.value.substring(box.selectionStart,
-                    box.selectionEnd);
-            });
-            selectedText.should.equal('mattermost');
-        });
+    it('MM-T2827_2 should be able to cut and paste in popup windows', async () => {
+        await asyncSleep(1000);
+        const textbox = await popupWindow.waitForSelector('#login_field');
 
-        it('MM-T2827_2 should be able to cut and paste in popup windows', async () => {
-            const textbox = await popupWindow.waitForSelector('#login_field');
+        await textbox.selectText({force: true});
+        robot.keyTap('x', env.cmdOrCtrl);
+        let textValue = await textbox.inputValue();
+        textValue.should.equal('');
 
-            await textbox.selectText({force: true});
-            robot.keyTap('x', [process.platform === 'darwin' ? 'command' : 'control']);
-            let textValue = await textbox.inputValue();
-            textValue.should.equal('');
+        await textbox.focus();
+        robot.keyTap('v', env.cmdOrCtrl);
+        textValue = await textbox.inputValue();
+        textValue.should.equal('Mattermost');
+    });
 
-            await textbox.focus();
-            robot.keyTap('v', [process.platform === 'darwin' ? 'command' : 'control']);
-            textValue = await textbox.inputValue();
-            textValue.should.equal('mattermost');
-        });
+    it('MM-T2827_3 should be able to copy and paste in popup windows', async () => {
+        await asyncSleep(1000);
+        const textbox = await popupWindow.waitForSelector('#login_field');
 
-        it('MM-T2827_3 should be able to copy and paste in popup windows', async () => {
-            const textbox = await popupWindow.waitForSelector('#login_field');
-
-            await textbox.selectText({force: true});
-            robot.keyTap('c', [process.platform === 'darwin' ? 'command' : 'control']);
-            await textbox.focus();
-            await textbox.type('other-text');
-            robot.keyTap('v', [process.platform === 'darwin' ? 'command' : 'control']);
-            const textValue = await textbox.inputValue();
-            textValue.should.equal('other-textmattermost');
-        });
+        await textbox.selectText({force: true});
+        robot.keyTap('c', env.cmdOrCtrl);
+        await textbox.focus();
+        await textbox.type('other-text');
+        robot.keyTap('v', env.cmdOrCtrl);
+        const textValue = await textbox.inputValue();
+        textValue.should.equal('other-textMattermost');
     });
 
     it('MM-T1659 should not be able to go Back or Forward in the popup window', async () => {
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
-        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
-        await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_suscipit-4');
-        await firstServer.click('#sidebarItem_suscipit-4');
-        await firstServer.click('#post_textbox');
-        await firstServer.type('#post_textbox', '/github connect ');
-        await firstServer.click('button[data-testid="SendMessageButton"]');
-
-        const githubLink = await firstServer.waitForSelector('a.theme.markdown__link:has-text("GitHub account")');
-        githubLink.click();
-        const popupWindow = await this.app.waitForEvent('window');
-        await popupWindow.bringToFront();
         const currentURL = popupWindow.url();
 
         // Try and go back

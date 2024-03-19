@@ -3,6 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
+const {execSync} = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -180,6 +181,7 @@ module.exports = {
             }
         }
     },
+
     cleanDataDirAsync() {
         return rmDirAsync(userDataDir);
     },
@@ -189,6 +191,21 @@ module.exports = {
             fs.mkdirSync(userDataDir);
         }
     },
+
+    clipboard(textToCopy) {
+        switch (process.platform) {
+        case 'linux':
+            execSync(`echo "${textToCopy}" | xsel --clipboard`);
+            break;
+        case 'win32':
+            execSync(`echo ${textToCopy} | clip`);
+            break;
+        case 'darwin':
+            execSync(`pbcopy <<< ${textToCopy}`);
+            break;
+        }
+    },
+
     async createTestUserDataDirAsync() {
         await mkDirAsync(userDataDir);
     },
