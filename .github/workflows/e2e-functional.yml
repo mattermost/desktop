@@ -116,7 +116,13 @@ jobs:
               body: process.env.PR_COMMENT,
             });
 
-      - name: Remove "Run Desktop E2E Tests" label
-        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0 # v1.3.0
+      - name: e2e/remove-label-from-pr
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
-          labels: Run Desktop E2E Tests
+          script: |
+            github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Run Desktop E2E Tests',
+            });
