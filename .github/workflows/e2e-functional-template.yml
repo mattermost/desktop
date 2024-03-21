@@ -106,7 +106,6 @@ jobs:
           node-version-file: "package.json"
           # cache: "npm"
           # cache-dependency-path: package-lock.json
-          cache: false
 
       - name: e2e/cache-node-modules
         id: cache-node-modules
