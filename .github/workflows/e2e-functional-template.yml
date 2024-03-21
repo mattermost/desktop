@@ -57,6 +57,9 @@ env:
 jobs:
   e2e:
     runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        shell: bash
     outputs:
       COMMENT_BODY: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY }}
     steps:
@@ -109,11 +112,16 @@ jobs:
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         with:
           path: node_modules
-          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('./package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-node-modules
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+
+      - name: e2e/setup-python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        with:
+          python-version: "3.10"
 
       ## Linux Depdendencies
       - name: e2e/install-dependencies-linux
@@ -126,13 +134,6 @@ jobs:
           sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xsel
           npm ci
           npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
-
-      ## macOS Depdendencies
-      - name: e2e/setup-python
-        if: runner.os == 'macOS'
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
-        with:
-          python-version: "3.10"
 
       - name: e2e/install-dependencies-macos
         if: runner.os == 'macOS'
@@ -151,7 +152,7 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
           choco install yq --version 4.15.1 -y
-          npm install -g windows-build-tools
+          npm install -g windows-build-tools@4.0.0
           npm i -g node-gyp
           node-gyp install
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
@@ -175,10 +176,10 @@ jobs:
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
-            const core = require('@actions/core');
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { commentBody, newFailedTests } = analyzeFlakyTests();
-            core.setOutput('COMMENT_BODY', commentBody)
+            console.log(commentBody);
+            core.setOutput('COMMENT_BODY', commentBody);
             if (newFailedTests.length > 0) {
               core.setFailed('E2E tests failed.');
             }
