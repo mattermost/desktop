@@ -33,12 +33,12 @@ on:
     outputs:
       COMMENT_BODY:
         description: "The output to comment"
-        value: ${{ jobs.e2e-linux.outputs.COMMENT_BODY }}
+        value: ${{ jobs.e2e.outputs.COMMENT_BODY }}
 
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
-  BUILD_TAG: ${{ github.sha }}
+  BUILD_TAG: ${{ github.head_sha || github.sha }}
   JIRA_PROJECT_KEY: "MM"
   MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}
   MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
@@ -181,7 +181,6 @@ jobs:
           script: |
             const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
             const { commentBody, newFailedTests } = analyzeFlakyTests();
-            console.log(commentBody);
             core.setOutput('COMMENT_BODY', commentBody);
             if (newFailedTests.length > 0) {
               core.setFailed('E2E tests failed.');
