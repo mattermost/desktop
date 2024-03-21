@@ -104,8 +104,9 @@ jobs:
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
           node-version-file: "package.json"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
+          # cache: "npm"
+          # cache-dependency-path: package-lock.json
+          cache: false
 
       - name: e2e/cache-node-modules
         id: cache-node-modules
@@ -154,7 +155,7 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
           choco install yq --version 4.15.1 -y
-          npm install -g windows-build-tools@4.0.0
+          npm install -g windows-build-tools
           npm i -g node-gyp
           node-gyp install
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
