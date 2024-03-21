@@ -99,6 +99,7 @@ jobs:
       - name: e2e/unify-comments-in-single-comment
         run: |
           echo "PR_COMMENT<<EOF" >> "${GITHUB_ENV}"
+          echo "Here are the test results below:" >> "${GITHUB_ENV}"
           echo "${{ needs.e2e-linux.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
           echo "${{ needs.e2e-macos.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
           echo "${{ needs.e2e-windows.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
