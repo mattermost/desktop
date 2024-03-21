@@ -111,7 +111,9 @@ jobs:
         id: cache-node-modules
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         with:
-          path: node_modules
+          path: |
+            node_modules
+            C:\Users\runneradmin\.electron-gyp
           key: ${{ runner.os }}-build-node-modules-${{ hashFiles('./package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-node-modules
