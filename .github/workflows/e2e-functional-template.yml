@@ -1,0 +1,184 @@
+name: E2E Functional Tests Template
+
+on:
+  workflow_call:
+    inputs:
+      MM_TEST_SERVER_URL:
+        description: "The test server URL"
+        required: false
+        type: string
+      MM_TEST_USER_NAME:
+        description: "The admin username of the test instance"
+        required: false
+        type: string
+      MM_TEST_PASSWORD:
+        description: "The admin password of the test instance"
+        required: false
+        type: string
+      DESKTOP_VERSION:
+        description: "The desktop version to test"
+        required: false
+        default: ${{ github.ref }}
+        type: string
+      runs-on:
+        type: string
+        description: "The E2E tests underlying OS"
+        required: true
+        default: "ubuntu-22.04"
+      nightly:
+        type: boolean
+        description: "True if this is nigtly build"
+        required: false
+        default: false
+    outputs:
+      COMMENT_BODY:
+        description: "The output to comment"
+        value: ${{ jobs.e2e-linux.outputs.COMMENT_BODY }}
+
+env:
+  AWS_S3_BUCKET: "mattermost-cypress-report"
+  BRANCH: ${{ github.head_ref || github.ref_name }}
+  BUILD_TAG: ${{ github.sha }}
+  JIRA_PROJECT_KEY: "MM"
+  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}
+  MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
+  MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
+  PULL_REQUEST: "https://github.com/mattermost/desktop/pull/${{ github.event.number }}"
+  ZEPHYR_ENVIRONMENT_NAME: "Desktop app"
+  ZEPHYR_FOLDER_ID: "12413253"
+  TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: "us-east-1"
+  WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
+  ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
+  REPORT_LINK: "none"
+
+jobs:
+  e2e:
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      COMMENT_BODY: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY }}
+    steps:
+      - name: e2e/set-required-variables
+        id: variables
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BUILD_SUFFIX=desktop-pr-linux" >> $GITHUB_ENV
+            echo "TYPE=PR" >> $GITHUB_ENV
+
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "BUILD_SUFFIX=desktop-release-linux" >> $GITHUB_ENV
+            echo "TYPE=RELEASE" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_LINUX_REPORT=12358649" >> $GITHUB_ENV
+
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && ! ${{ inputs.nightly }}; then
+            echo "BUILD_SUFFIX=desktop-manual-trigger-linux" >> $GITHUB_ENV
+            echo "TYPE=MANUAL" >> $GITHUB_ENV
+
+          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            echo "BUILD_SUFFIX=desktop-master-push-linux" >> $GITHUB_ENV
+            echo "TYPE=MASTER" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+
+          elif ${{ inputs.nightly }}; then
+            echo "BUILD_SUFFIX=desktop-nightly-linux" >> $GITHUB_ENV
+            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
+            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_LINUX_REPORT=12363689" >> $GITHUB_ENV
+          fi
+
+      - name: e2e/set-build-id
+        run: echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX }}" >> $GITHUB_ENV
+
+      - name: e2e/checkout-repo
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/setup-node
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: e2e/cache-node-modules
+        id: cache-node-modules
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-node-modules
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      ## Linux Depdendencies
+      - name: e2e/install-dependencies-linux
+        if: runner.os == 'Linux'
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
+        run: |
+          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xsel
+          npm ci
+          npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
+
+      ## macOS Depdendencies
+      - name: e2e/setup-python
+        if: runner.os == 'macOS'
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        with:
+          python-version: "3.10"
+
+      - name: e2e/install-dependencies-macos
+        if: runner.os == 'macOS'
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          npm cache clean --force
+          jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
+          npm ci
+          npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs
+
+      ## Windows Dependencies
+      - name: e2e/install-dependencies-windows
+        if: steps.cache-node-modules.outputs.cache-hit != 'true' && runner.os == 'Windows'
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          choco install yq --version 4.15.1 -y
+          npm install -g windows-build-tools
+          npm i -g node-gyp
+          node-gyp install
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
+          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
+          npm ci --openssl_fips=''
+          npm i robotjs
+          npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs
+
+      - name: e2e/run-playright-tests-${{ runner.os }}
+        run: |
+          if [ ${{ runner.os }} == 'Linux' ]; then
+            export DISPLAY=:99
+            Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
+          fi
+          npm run test:e2e || true # making job pass even if the tests fail due to flakyness
+          npm run test:e2e:send-report
+
+      - name: e2e/analyze-flaky-tests
+        id: analyze-flaky-tests
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const core = require('@actions/core');
+            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+            const { commentBody, newFailedTests } = analyzeFlakyTests();
+            core.setOutput('COMMENT_BODY', commentBody)
+            if (newFailedTests.length > 0) {
+              core.setFailed('E2E tests failed.');
+            }

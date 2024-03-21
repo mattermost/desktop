@@ -1,420 +1,121 @@
 name: Electron Playwright Tests
 
 on:
-  workflow_call:
-    inputs:
-      tag:
-        description: "Reference tag of the nightly build"
-        required: true
-        type: string
   push:
     branches:
       - master
   pull_request:
     types:
-        - labeled
+      - labeled
   workflow_dispatch:
     inputs:
       version_name:
         type: string
-        description: 'Desktop Version name eg: 5.6'
+        description: "Desktop Version name eg: 5.6"
         required: true
       job_name:
         type: choice
-        description: 'Job name'
+        description: "Job name"
         required: true
-        default: 'e2e-linux'
+        default: "All"
         options:
-          - 'e2e-linux'
-          - 'e2e-macos'
-          - 'e2e-windows'
-          - 'All'
-      
-env:
-  AWS_S3_BUCKET: "mattermost-cypress-report"
-  BRANCH: ${{ github.head_ref || github.ref_name }} 
-  BUILD_TAG: ${{ github.sha }}
-  JIRA_PROJECT_KEY: 'MM'
-  MM_TEST_SERVER_URL: ${{ secrets.MM_DESKTOP_E2E_SERVER_URL }}
-  MM_TEST_USER_NAME: ${{ secrets.MM_DESKTOP_E2E_USER_NAME }}
-  MM_TEST_PASSWORD: ${{ secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
-  PULL_REQUEST: "https://github.com/mattermost/desktop/pull/${{ github.event.number }}"
-  ZEPHYR_ENVIRONMENT_NAME: 'Desktop app'
-  ZEPHYR_FOLDER_ID: "12413253"
-  TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
-  AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
-  AWS_REGION: "us-east-1"
-  WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
-  ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
-  REPORT_LINK: "none"
+          - "e2e-linux"
+          - "e2e-macos"
+          - "e2e-windows"
+          - "All"
 
 jobs:
   e2e-linux:
-    if: ${{ 
-        (
-          (inputs.job_name == 'e2e-linux' || inputs.job_name == 'All')
-          &&
-            github.event_name == 'workflow_dispatch'
-        ) || 
-        (
-            github.event_name == 'push' && github.ref == 'refs/heads/master'
-        ) || 
-        (
-            github.event_name == 'pull_request' && 
-            github.event.pull_request.labels && 
-            contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
-        ) ||
-        (
-          (inputs.tag != '')
-        )
+    if: ${{
+      (
+      (inputs.job_name == 'e2e-linux' || inputs.job_name == 'All')
+      &&
+      github.event_name == 'workflow_dispatch'
+      ) ||
+      (
+      github.event_name == 'push'
+      ) ||
+      (
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.labels &&
+      contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+      )
       }}
-    runs-on: ubuntu-22.04
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: ci/setup-node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: "package.json"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
-        run: |
-          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
-          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
-          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xsel
-          npm ci
-          npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
-
-      - name: Set Environment Variables
-        run: |
-
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr-linux" >> $GITHUB_ENV
-            echo "TYPE=PR" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BUILD_SUFFIX=desktop-release-linux" >> $GITHUB_ENV
-            echo "TYPE=RELEASE" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_LINUX_REPORT=12358649" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger-linux" >> $GITHUB_ENV
-            echo "TYPE=MANUAL" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            echo "BUILD_SUFFIX=desktop-master-push-linux" >> $GITHUB_ENV
-            echo "TYPE=MASTER" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-
-          elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "BUILD_SUFFIX=desktop-nightly-linux" >> $GITHUB_ENV
-            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_LINUX_REPORT=12363689" >> $GITHUB_ENV
-          fi
-
-      - name: Set Build ID
-        run: echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX }}" >> $GITHUB_ENV
-
-      - name: Run Playwright tests (Ubuntu OS)
-        run: |
-          export DISPLAY=:99
-          Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
-          npm run test:e2e || true # making job pass even if the tests fail due to flakyness
-          npm run test:e2e:send-report
-
-      - name: Analyze flaky tests
-        id: analyze-flaky-tests
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests.length === 0) {
-              process.env.NEW_FAILED_TESTS = 'true';
-            }
-        env:
-          NEW_FAILED_TESTS: false
-    
-      - name: Add results in PR comment
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { commentBody } = analyzeFlakyTests();
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: commentBody,
-            });
-
-      - name: Mark job as failed if there are new failed tests
-        if: env.NEW_FAILED_TESTS == 'true'
-        run: exit 1
-        shell: bash
+    uses: ./.github/workflows/e2e-functional-template.yml
+    secrets: inherit
+    with:
+      runs-on: ubuntu-22.04
+      DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
   e2e-macos:
-    if: ${{ 
-        (
-          (inputs.job_name == 'e2e-macos' || inputs.job_name == 'All')
-          &&
-            github.event_name == 'workflow_dispatch'
-        ) || 
-        (
-            github.event_name == 'push' && github.ref == 'refs/heads/master'
-        ) || 
-        (
-            github.event_name == 'pull_request' && 
-            github.event.pull_request.labels && 
-            contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
-        ) ||
-        (
-          (inputs.tag != '')
-        )
+    if: ${{
+      (
+      (inputs.job_name == 'e2e-macos' || inputs.job_name == 'All')
+      &&
+      github.event_name == 'workflow_dispatch'
+      ) ||
+      (
+      github.event_name == 'push'
+      ) ||
+      (
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.labels &&
+      contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+      )
       }}
-    runs-on: macos-13
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: ci/setup-node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: "package.json"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-      - name: Cache Electron Headers
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.electron
-            ~/.cache/electron
-          key: electron-headers-${{ runner.os }}-${{ hashFiles('**/*.gyp') }}
+    uses: ./.github/workflows/e2e-functional-template.yml
+    secrets: inherit
+    with:
+      runs-on: macos-13
+      DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-  
-      - name: ci/install-dependencies
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-        run: |
-          npm cache clean --force
-          jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-          npm ci
-          npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs
-
-      - name: Set Environment Variables
-        run: |
-
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr-macos" >> $GITHUB_ENV
-            echo "TYPE=PR" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BUILD_SUFFIX=desktop-release-macos" >> $GITHUB_ENV
-            echo "TYPE=RELEASE" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_MACOS_REPORT=12358650" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger-macos" >> $GITHUB_ENV
-            echo "TYPE=MANUAL" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            echo "BUILD_SUFFIX=desktop-master-push-macos" >> $GITHUB_ENV
-            echo "TYPE=MASTER" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-
-          elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "BUILD_SUFFIX=desktop-nightly-macos" >> $GITHUB_ENV
-            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_MACOS_REPORT=12363687" >> $GITHUB_ENV
-          fi
-
-      - name: Set Build ID
-        run: echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX }}" >> $GITHUB_ENV
-  
-      - name: Run Playwright tests (macOS)
-        run: |
-          npm run test:e2e || true # making job pass even if the tests fail due to flakyness
-          npm run test:e2e:send-report
-
-      - name: Analyze flaky tests
-        id: analyze-flaky-tests
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests.length === 0) {
-              process.env.NEW_FAILED_TESTS = 'true';
-            }
-
-      - name: Add results in PR comment
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { commentBody } = analyzeFlakyTests();
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: commentBody,
-            });
-
-      - name: Mark job as failed if there are new failed tests
-        if: env.NEW_FAILED_TESTS == 'true'
-        run: exit 1
-        shell: bash
-  
   e2e-windows:
-    if: ${{ 
-        (
-          (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
-          &&
-            github.event_name == 'workflow_dispatch'
-        ) || 
-        (
-            github.event_name == 'push' && github.ref == 'refs/heads/master'
-        ) || 
-        (
-            github.event_name == 'pull_request' && 
-            github.event.pull_request.labels && 
-            contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
-        ) ||
-        (
-          (inputs.tag != '')
-        )
+    if: ${{
+      (
+      (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
+      &&
+      github.event_name == 'workflow_dispatch'
+      ) ||
+      (
+      github.event_name == 'push'
+      ) ||
+      (
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.labels &&
+      contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+      )
       }}
-    runs-on: windows-2022
-    steps:
-      - name: ci/checkout-repo
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
-      - name: ci/setup-node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: "package.json"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-
-      - name: ci/cache-node-modules
-        id: cache-node-modules
-        uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920 # v3.2.4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-node-modules
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-
-      - name: ci/install-node-gyp
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-        run: |
-          choco install yq --version 4.15.1 -y
-          npm install -g windows-build-tools
-          npm i -g node-gyp
-          node-gyp install
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
-          npm ci --openssl_fips=''
-          npm i robotjs
-          npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs
-
-      - name: Set Environment Variables
-        shell: bash
-        run: |
-
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr-windows" >> $GITHUB_ENV
-            echo "TYPE=PR" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BUILD_SUFFIX=desktop-release-windows" >> $GITHUB_ENV
-            echo "TYPE=RELEASE" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_WIN_REPORT=12358651" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.tag }}" == "" ]; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger-windows" >> $GITHUB_ENV
-            echo "TYPE=MANUAL" >> $GITHUB_ENV
-  
-          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            echo "TYPE=MASTER" >> $GITHUB_ENV
-            echo "BUILD_SUFFIX=desktop-master-push-windows" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-
-          elif [ "${{ inputs.tag }}" != "" ]; then
-            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-            echo "BUILD_SUFFIX=desktop-nightly-windows" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_WIN_REPORT=12363690" >> $GITHUB_ENV
-          fi
-
-      - name: Set Build ID
-        run: echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX }}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Run Playwright tests (Windows OS)
-        run: |
-          npm run test:e2e || true
-          npm run test:e2e:send-report
-        shell: bash
-
-      - name: Analyze flaky tests
-        id: analyze-flaky-tests
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests.length === 0) {
-              process.env.NEW_FAILED_TESTS = 'true';
-            }
-
-      - name: Add results in PR comment
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
-            const { commentBody } = analyzeFlakyTests();
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: commentBody,
-            });
-
-      - name: Mark job as failed if there are new failed tests
-        if: env.NEW_FAILED_TESTS == 'true'
-        run: exit 1
-        shell: bash
+    uses: ./.github/workflows/e2e-functional-template.yml
+    secrets: inherit
+    with:
+      runs-on: windows-2022
+      DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
   e2e-remove-label:
     if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
     needs: [e2e-linux, e2e-macos, e2e-windows]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
+      - name: e2e/unify-comments-in-single-comment
+        run: |
+          echo "PR_COMMENT<<EOF" >> "${GITHUB_ENV}"
+          echo "${{ needs.e2e-linux.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
+          echo "${{ needs.e2e-macos.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
+          echo "${{ needs.e2e-windows.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
+          echo "EOF" >> "${GITHUB_ENV}"
+
+      - name: e2e/send-comment-results-in-pr
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: process.env.PR_COMMENT,
+            });
+
       - name: Remove "Run Desktop E2E Tests" label
-        uses: actions-ecosystem/action-remove-labels@v1
+        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0 # v1.3.0
         with:
           labels: Run Desktop E2E Tests
