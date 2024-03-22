@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {app, shell, Notification} from 'electron';
+import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {PLAY_SOUND, NOTIFICATION_CLICKED} from 'common/communication';
@@ -179,7 +180,8 @@ async function getDoNotDisturb() {
         return getWindowsDoNotDisturb();
     }
 
-    if (process.platform === 'darwin') {
+    // We have to turn this off for dev mode because the Electron binary doesn't have the focus center API entitlement
+    if (process.platform === 'darwin' && !isDev) {
         return getDarwinDoNotDisturb();
     }
 
