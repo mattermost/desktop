@@ -258,12 +258,7 @@ export class MattermostBrowserView extends EventEmitter {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         AppState.clear(this.id);
         MainWindow.get()?.removeBrowserView(this.browserView);
-
-        // workaround to eliminate zombie processes
-        // https://github.com/mattermost/desktop/pull/1519
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        this.browserView.webContents.destroy();
+        this.browserView.webContents.close();
 
         this.isVisible = false;
         if (this.retryLoad) {

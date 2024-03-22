@@ -15,7 +15,7 @@ jest.mock('electron', () => ({
             openDevTools: jest.fn(),
             isDevToolsOpened: jest.fn(),
             closeDevTools: jest.fn(),
-            destroy: jest.fn(),
+            close: jest.fn(),
         },
         setBounds: jest.fn(),
         setAutoResize: jest.fn(),
@@ -106,7 +106,7 @@ describe('main/views/modalView', () => {
 
         it('should remove browser view and destroy web contents on hide', () => {
             modalView.hide();
-            expect(modalView.view.webContents.destroy).toBeCalled();
+            expect(modalView.view.webContents.close).toBeCalled();
             expect(window.removeBrowserView).toBeCalledWith(modalView.view);
         });
 

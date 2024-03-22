@@ -99,12 +99,7 @@ export class ModalView<T, T2> {
                 this.view.webContents.closeDevTools();
             }
             this.windowAttached.removeBrowserView(this.view);
-
-            // workaround to eliminate zombie processes
-            // https://github.com/mattermost/desktop/pull/1519
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            this.view.webContents.destroy();
+            this.view.webContents.close();
 
             delete this.windowAttached;
             this.status = Status.ACTIVE;
