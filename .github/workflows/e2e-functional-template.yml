@@ -30,6 +30,11 @@ on:
         description: "True if this is nigtly build"
         required: false
         default: false
+      cmt:
+        type: boolean
+        description: "True if this is Comatibility Matrix Testing"        
+        required: false
+        default: false
     outputs:
       COMMENT_BODY:
         description: "The output to comment"
@@ -66,34 +71,40 @@ jobs:
       - name: e2e/set-required-variables
         id: variables
         run: |
+          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr-linux" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=PR" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "release" ]; then
-            echo "BUILD_SUFFIX=desktop-release-linux" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
             echo "ZEPHYR_FOLDER_LINUX_REPORT=12358649" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_MACOS_REPORT=12358650" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_WIN_REPORT=12358651" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && ! ${{ inputs.nightly }}; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger-linux" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=MANUAL" >> $GITHUB_ENV
 
           elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            echo "BUILD_SUFFIX=desktop-master-push-linux" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=MASTER" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
 
           elif ${{ inputs.nightly }}; then
-            echo "BUILD_SUFFIX=desktop-nightly-linux" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
             echo "ZEPHYR_FOLDER_LINUX_REPORT=12363689" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_MACOS_REPORT=12363687" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_WIN_REPORT=12363690" >> $GITHUB_ENV
           fi
 
       - name: e2e/set-build-id
-        run: echo "BUILD_ID=${{ github.run_id }}-${{ env.BUILD_SUFFIX }}" >> $GITHUB_ENV
+        run: echo "BUILD_ID=${{ github.run_id }}-${{ steps.variables.outputs.BUILD_SUFFIX }}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
