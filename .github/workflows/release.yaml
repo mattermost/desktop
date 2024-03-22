@@ -30,7 +30,7 @@ jobs:
           curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
 
   build-linux:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-22.04
     needs:
       - begin-notification
     steps:
