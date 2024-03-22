@@ -43,33 +43,27 @@ function generateCommentBodyFunctionalTest(newFailedTests, fixedTests) {
     const build = process.env.BUILD_TAG;
 
     let commentBody = `
-    ## Test Summary for ${osName} on commit ${build}
-`;
+## Test Summary for ${osName} on commit ${build}
+    `;
 
     if (newFailedTests.length === 0 && fixedTests.length === 0) {
         commentBody += `
-        All stable tests passed on ${osName}.
+All stable tests passed on ${osName}.
     `;
         return commentBody;
     }
 
     if (newFailedTests.length > 0) {
-        const newTestFailure = `New failed tests found on ${osName}:\n\t${newFailedTests.map((test) => `- ${test}`).join('\n\t')}`;
+        const newTestFailure = `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `- ${test}`).join('\n')}`;
         commentBody += `
-    ### New Failed Tests
-    
-    | Test |
-    | --- |
-       ${newTestFailure}
+${newTestFailure}
     `;
     }
 
     if (fixedTests.length > 0) {
         const fixedTestMessage = `The following known failed tests have been fixed on ${osName}:\n\t${fixedTests.map((test) => `- ${test}`).join('\n\t')}`;
         commentBody += `
-    ### Fixed Tests
-    
-    ${fixedTestMessage}
+${fixedTestMessage}
     `;
     }
 

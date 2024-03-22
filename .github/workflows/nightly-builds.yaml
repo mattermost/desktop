@@ -46,8 +46,15 @@ jobs:
   nightly-e2e:
     needs:
       - tag-nightly-build
-    uses: ./.github/workflows/e2e-functional.yml
+    strategy:
+      matrix:
+        runs-on:
+          - macos-13
+          - ubuntu-22.04
+          - windows-2022
+    uses: ./.github/workflows/e2e-functional-template.yml
     secrets: inherit
     with:
-      tag: ${{ needs.tag-nightly-build.outputs.tag }}
-    
+      runs-on: ${{ matrix.runs-on }}
+      nightly: true
+      DESKTOP_VERSION: ${{ needs.tag-nightly-build.outputs.tag }}
