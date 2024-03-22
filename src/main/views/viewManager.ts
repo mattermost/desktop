@@ -354,11 +354,7 @@ export class ViewManager {
                     log.error('Failed to remove URL view', e);
                 }
 
-                // workaround to eliminate zombie processes
-                // https://github.com/mattermost/desktop/pull/1519
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                urlView.webContents.destroy();
+                urlView.webContents.close();
             };
 
             const adjustWidth = (event: IpcMainEvent, width: number) => {
