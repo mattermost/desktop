@@ -32,7 +32,7 @@ on:
         default: false
       cmt:
         type: boolean
-        description: "True if this is Comatibility Matrix Testing"        
+        description: "True if this is Compatibility Matrix Testing"
         required: false
         default: false
     outputs:
