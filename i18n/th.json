@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "การยืนยันตัวตนเว็ปไซต์",
-  "common.tabs.TAB_FOCALBOARD": "บอร์ด",
-  "common.tabs.TAB_MESSAGING": "ห้อง",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "ยอมรับ",
   "label.add": "เพิ่ม",
