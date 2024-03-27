@@ -1,0 +1,110 @@
+name: Compatibility Matrix Testing
+
+on:
+  workflow_dispatch:
+    inputs:
+      MM_TEST_SERVER_URL:
+        description: "The test server URL"
+        required: true
+        type: string
+      DESKTOP_VERSION:
+        description: "The desktop version to test"
+        required: true
+
+jobs:
+  calculate-commit-hash:
+    runs-on: delivery-runners
+    outputs:
+      DESKTOP_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
+    steps:
+      - name: cmt/checkout-desktop
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: cmt/calculate-mattermost-sha
+        id: repo
+        run: echo "DESKTOP_SHA=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
+
+  update-initial-status:
+    runs-on: delivery-runners
+    needs:
+      - calculate-commit-hash
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@a74f6d87f847326c04d326bf1908da40cb9b3556
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          repository_full_name: mattermost/desktop
+          commit_sha: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          context: e2e/compatibility-matrix-testing
+          description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
+          status: pending
+
+  e2e-linux:
+    uses: ./.github/workflows/e2e-functional-template.yml
+    secrets: inherit
+    with:
+      runs-on: ubuntu-22.04
+      cmt: true
+      MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
+      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+  e2e-macos:
+    uses: ./.github/workflows/e2e-functional-template.yml
+    secrets: inherit
+    with:
+      runs-on: macos-13
+      cmt: true
+      MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
+      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+  e2e-windows:
+    uses: ./.github/workflows/e2e-functional-template.yml
+    secrets: inherit
+    with:
+      runs-on: windows-2022
+      cmt: true
+      MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
+      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+  # We need to duplicate here in order to set the proper commit status
+  # https://mattermost.atlassian.net/browse/CLD-5815
+  update-failure-final-status:
+    runs-on: delivery-runners
+    if: failure() || cancelled()
+    needs:
+      - calculate-commit-hash
+      - e2e-linux
+      - e2e-macos
+      - e2e-windows
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@a74f6d87f847326c04d326bf1908da40cb9b3556
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          repository_full_name: mattermost/desktop
+          commit_sha: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          context: e2e/compatibility-matrix-testing
+          description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
+          status: failure
+
+  # https://mattermost.atlassian.net/browse/CLD-5815
+  update-success-final-status:
+    runs-on: delivery-runners
+    if: success()
+    needs:
+      - calculate-commit-hash
+      - e2e-linux
+      - e2e-macos
+      - e2e-windows
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@a74f6d87f847326c04d326bf1908da40cb9b3556
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          repository_full_name: mattermost/desktop
+          commit_sha: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          context: e2e/compatibility-matrix-testing
+          description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
+          status: success
