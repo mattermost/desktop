@@ -31,7 +31,7 @@ jobs:
     needs:
       - calculate-commit-hash
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@a74f6d87f847326c04d326bf1908da40cb9b3556
+      - uses: mattermost/actions/delivery/update-commit-status@746563b58e737a17a8ceb00b84a813b9e6e1b236
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -65,6 +65,7 @@ jobs:
     needs:
       - update-initial-status
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(inputs.CMT_MATRIX) }}
     secrets: inherit
     with:
@@ -82,7 +83,7 @@ jobs:
       - calculate-commit-hash
       - e2e
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@a74f6d87f847326c04d326bf1908da40cb9b3556
+      - uses: mattermost/actions/delivery/update-commit-status@746563b58e737a17a8ceb00b84a813b9e6e1b236
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -100,7 +101,7 @@ jobs:
       - calculate-commit-hash
       - e2e
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@a74f6d87f847326c04d326bf1908da40cb9b3556
+      - uses: mattermost/actions/delivery/update-commit-status@746563b58e737a17a8ceb00b84a813b9e6e1b236
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
