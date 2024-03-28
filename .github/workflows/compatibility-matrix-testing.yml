@@ -13,7 +13,7 @@ on:
 
 jobs:
   calculate-commit-hash:
-    runs-on: delivery-runners
+    runs-on: ubuntu-22.04
     outputs:
       DESKTOP_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
     steps:
@@ -27,7 +27,7 @@ jobs:
         run: echo "DESKTOP_SHA=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
 
   update-initial-status:
-    runs-on: delivery-runners
+    runs-on: ubuntu-22.04
     needs:
       - calculate-commit-hash
     steps:
@@ -71,7 +71,7 @@ jobs:
   # We need to duplicate here in order to set the proper commit status
   # https://mattermost.atlassian.net/browse/CLD-5815
   update-failure-final-status:
-    runs-on: delivery-runners
+    runs-on: ubuntu-22.04
     if: failure() || cancelled()
     needs:
       - calculate-commit-hash
@@ -91,7 +91,7 @@ jobs:
 
   # https://mattermost.atlassian.net/browse/CLD-5815
   update-success-final-status:
-    runs-on: delivery-runners
+    runs-on: ubuntu-22.04
     if: success()
     needs:
       - calculate-commit-hash
