@@ -3,8 +3,8 @@ name: Compatibility Matrix Testing
 on:
   workflow_dispatch:
     inputs:
-      MM_TEST_SERVER_URL:
-        description: "The test server URL"
+      CMT_SERVERS:
+        description: "A JSON object representing the e2e servers we are going to execute"
         required: true
         type: string
       DESKTOP_VERSION:
@@ -41,31 +41,31 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
 
-  e2e-linux:
+  # Input follows the below schema
+  # [
+  #  {
+  #    "server-url": "https://<generated-name>.test.mattermost.cloud",
+  #    "server-version": "9.6.1"
+  #  },
+  #  ...
+  # ]
+  e2e:
+    name: e2e-${{ matrix.runs-on }}-${{ matrix.server-version }}
     uses: ./.github/workflows/e2e-functional-template.yml
+    needs:
+      - update-initial-status
+    strategy:
+      matrix:
+        runs-on:
+          - ubuntu-22.04
+          - macos-13
+          - windows-2022
+        include: ${{ inputs.CMT_SERVERS }}
     secrets: inherit
     with:
-      runs-on: ubuntu-22.04
+      runs-on: ${{ matrix.runs-on }}
       cmt: true
-      MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
-      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-
-  e2e-macos:
-    uses: ./.github/workflows/e2e-functional-template.yml
-    secrets: inherit
-    with:
-      runs-on: macos-13
-      cmt: true
-      MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
-      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-
-  e2e-windows:
-    uses: ./.github/workflows/e2e-functional-template.yml
-    secrets: inherit
-    with:
-      runs-on: windows-2022
-      cmt: true
-      MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
+      MM_TEST_SERVER_URL: ${{ matrix.server-url }}
       DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
   # We need to duplicate here in order to set the proper commit status
@@ -75,9 +75,7 @@ jobs:
     if: failure() || cancelled()
     needs:
       - calculate-commit-hash
-      - e2e-linux
-      - e2e-macos
-      - e2e-windows
+      - e2e
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@a74f6d87f847326c04d326bf1908da40cb9b3556
         env:
@@ -95,9 +93,7 @@ jobs:
     if: success()
     needs:
       - calculate-commit-hash
-      - e2e-linux
-      - e2e-macos
-      - e2e-windows
+      - e2e
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@a74f6d87f847326c04d326bf1908da40cb9b3556
         env:
