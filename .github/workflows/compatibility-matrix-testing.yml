@@ -50,7 +50,7 @@ jobs:
   #  ...
   # ]
   e2e:
-    name: e2e-${{ matrix.runs-on }}-${{ matrix.server-version }}
+    name: e2e-${{ matrix.runs-on }}-${{ matrix.server.version }}
     uses: ./.github/workflows/e2e-functional-template.yml
     needs:
       - update-initial-status
@@ -60,7 +60,7 @@ jobs:
     with:
       runs-on: ${{ matrix.runs-on }}
       cmt: true
-      MM_TEST_SERVER_URL: ${{ matrix.server-url }}
+      MM_TEST_SERVER_URL: ${{ matrix.server.url }}
       DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
   # We need to duplicate here in order to set the proper commit status
