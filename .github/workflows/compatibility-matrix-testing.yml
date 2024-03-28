@@ -60,7 +60,7 @@ jobs:
           - ubuntu-22.04
           - macos-13
           - windows-2022
-        include: ${{ toJson(inputs.CMT_SERVERS) }}
+        include: ${{ fromJson(inputs.CMT_SERVERS) }}
     secrets: inherit
     with:
       runs-on: ${{ matrix.runs-on }}
