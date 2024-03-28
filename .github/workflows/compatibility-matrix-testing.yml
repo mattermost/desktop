@@ -55,12 +55,7 @@ jobs:
     needs:
       - update-initial-status
     strategy:
-      matrix:
-        runs-on:
-          - ubuntu-22.04
-          - macos-13
-          - windows-2022
-        include: ${{ fromJson(inputs.CMT_SERVERS) }}
+      matrix: ${{ fromJson(inputs.CMT_SERVERS) }}
     secrets: inherit
     with:
       runs-on: ${{ matrix.runs-on }}
