@@ -3,7 +3,7 @@ name: Compatibility Matrix Testing
 on:
   workflow_dispatch:
     inputs:
-      CMT_SERVERS:
+      CMT_MATRIX:
         description: "A JSON object representing the e2e servers we are going to execute"
         required: true
         type: string
@@ -42,20 +42,30 @@ jobs:
           status: pending
 
   # Input follows the below schema
-  # [
-  #  {
-  #    "server-url": "https://<generated-name>.test.mattermost.cloud",
-  #    "server-version": "9.6.1"
-  #  },
-  #  ...
-  # ]
+  # {
+  #   "runs-on": [
+  #     "ubuntu-22.04",
+  #     "macos-13",
+  #     "windows-2022"
+  #   ],
+  #   "server": [
+  #     {
+  #       "version": "9.6.1",
+  #       "url": "https://delivery-cmt-8467830017-9-6-1.test.mattermost.cloud/"
+  #     },
+  #     {
+  #       "version": "9.5.2",
+  #       "url": "https://delivery-cmt-8467830017-9-5-2.test.mattermost.cloud/"
+  #     }
+  #   ]
+  # }
   e2e:
     name: e2e-${{ matrix.runs-on }}-${{ matrix.server.version }}
     uses: ./.github/workflows/e2e-functional-template.yml
     needs:
       - update-initial-status
     strategy:
-      matrix: ${{ fromJson(inputs.CMT_SERVERS) }}
+      matrix: ${{ fromJson(inputs.CMT_MATRIX) }}
     secrets: inherit
     with:
       runs-on: ${{ matrix.runs-on }}
