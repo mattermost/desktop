@@ -28,7 +28,7 @@ export type DesktopAPI = {
     ) => void) => () => void;
 
     // Unreads/mentions/notifications
-    sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => void;
+    sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => Promise<{result: string; reason?: string; data?: string}>;
     onNotificationClicked: (listener: (channelId: string, teamId: string, url: string) => void) => () => void;
     setUnreadsAndMentions: (isUnread: boolean, mentionCount: number) => void;
 

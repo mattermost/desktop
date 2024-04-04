@@ -1,6 +1,4 @@
-// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
-// See LICENSE.txt for license information.
-export declare type DesktopSourcesOptions = {
+export type DesktopSourcesOptions = {
     types: Array<'screen' | 'window'>;
     thumbnailSize?: {
         height: number;
@@ -8,12 +6,12 @@ export declare type DesktopSourcesOptions = {
     };
     fetchWindowIcons?: boolean;
 };
-export declare type DesktopCaptureSource = {
+export type DesktopCaptureSource = {
     id: string;
     name: string;
     thumbnailURL: string;
 };
-export declare type DesktopAPI = {
+export type DesktopAPI = {
     isDev: () => Promise<boolean>;
     getAppInfo: () => Promise<{
         name: string;
@@ -22,7 +20,11 @@ export declare type DesktopAPI = {
     reactAppInitialized: () => void;
     setSessionExpired: (isExpired: boolean) => void;
     onUserActivityUpdate: (listener: (userIsActive: boolean, idleTime: number, isSystemEvent: boolean) => void) => () => void;
-    sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => void;
+    sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => Promise<{
+        result: string;
+        reason?: string;
+        data?: string;
+    }>;
     onNotificationClicked: (listener: (channelId: string, teamId: string, url: string) => void) => () => void;
     setUnreadsAndMentions: (isUnread: boolean, mentionCount: number) => void;
     requestBrowserHistoryStatus: () => Promise<{

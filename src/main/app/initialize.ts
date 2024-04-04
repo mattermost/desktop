@@ -248,7 +248,7 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.on(NOTIFY_MENTION, handleMentionNotification);
+    ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);

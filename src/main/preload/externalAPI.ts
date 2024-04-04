@@ -72,7 +72,7 @@ const desktopAPI: DesktopAPI = {
 
     // Unreads/mentions/notifications
     sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>
-        ipcRenderer.send(NOTIFY_MENTION, title, body, channelId, teamId, url, silent, soundName),
+        ipcRenderer.invoke(NOTIFY_MENTION, title, body, channelId, teamId, url, silent, soundName),
     onNotificationClicked: (listener) => createListener(NOTIFICATION_CLICKED, listener),
     setUnreadsAndMentions: (isUnread, mentionCount) => ipcRenderer.send(UNREADS_AND_MENTIONS, isUnread, mentionCount),
 
@@ -286,7 +286,7 @@ window.addEventListener('message', ({origin, data = {}}: {origin?: string; data?
     case 'dispatch-notification': {
         const {title, body, channel, teamId, url, silent, data: messageData} = message;
         channels.set(channel.id, channel);
-        ipcRenderer.send(NOTIFY_MENTION, title, body, channel.id, teamId, url, silent, messageData.soundName);
+        ipcRenderer.invoke(NOTIFY_MENTION, title, body, channel.id, teamId, url, silent, messageData.soundName);
         break;
     }
     case BROWSER_HISTORY_PUSH: {
