@@ -201,7 +201,7 @@ describe('menu/view', function desc() {
         });
     });
 
-        it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
+    it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index.html'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));

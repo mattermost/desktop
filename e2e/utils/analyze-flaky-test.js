@@ -35,6 +35,7 @@ function analyzeFlakyTests() {
         return {commentBody, newFailedTests};
     } catch (error) {
         console.error('Error analyzing failures:', error);
+        return {};
     }
 }
 

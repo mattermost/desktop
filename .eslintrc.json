@@ -48,9 +48,9 @@
                         "position": "after"
                     },
                     {
-                        "pattern": "(app|common|main|renderer){,/**}",
-                        "group": "external",
-                        "position": "after"
+                        "pattern": "@(app|common|main|renderer){,/**}",
+                        "group": "internal",
+                        "position": "before"
                     },
                     {
                         "pattern": "types{,/**}",
