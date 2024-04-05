@@ -12,7 +12,8 @@
         "jsx": "react",
         "outDir": "./lib",
         "rootDir": ".",
-        "composite": true
+        "composite": true,
+        "types": []
     },
     "include": [
         "./index.ts"

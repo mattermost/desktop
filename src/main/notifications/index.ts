@@ -32,19 +32,19 @@ class NotificationManager {
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');
-            return;
+            return {result: 'error', reason: 'notification_api', data: 'notification not supported'};
         }
 
         if (await getDoNotDisturb()) {
-            return;
+            return {result: 'not_sent', reason: 'os_dnd'};
         }
 
         const view = ViewManager.getViewByWebContentsId(webcontents.id);
         if (!view) {
-            return;
+            return {result: 'error', reason: 'missing_view'};
         }
         if (!view.view.shouldNotify) {
-            return;
+            return {result: 'error', reason: 'view_should_not_notify'};
         }
         const serverName = view.view.server.name;
 
@@ -56,31 +56,12 @@ class NotificationManager {
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', view.view.server.url.toString())) {
-            return;
+            return {result: 'not_sent', reason: 'notifications_permission_disallowed'};
         }
 
         const mention = new Mention(options, channelId, teamId);
         const mentionKey = `${mention.teamId}:${mention.channelId}`;
         this.allActiveNotifications.set(mention.uId, mention);
-
-        mention.on('show', () => {
-            log.debug('displayMention.show');
-
-            // On Windows, manually dismiss notifications from the same channel and only show the latest one
-            if (process.platform === 'win32') {
-                if (this.mentionsPerChannel.has(mentionKey)) {
-                    log.debug(`close ${mentionKey}`);
-                    this.mentionsPerChannel.get(mentionKey)?.close();
-                    this.mentionsPerChannel.delete(mentionKey);
-                }
-                this.mentionsPerChannel.set(mentionKey, mention);
-            }
-            const notificationSound = mention.getNotificationSound();
-            if (notificationSound) {
-                MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
-            }
-            flashFrame(true);
-        });
 
         mention.on('click', () => {
             log.debug('notification click', serverName, mention);
@@ -97,10 +78,40 @@ class NotificationManager {
             this.allActiveNotifications.delete(mention.uId);
         });
 
-        mention.on('failed', () => {
-            this.allActiveNotifications.delete(mention.uId);
+        return new Promise((resolve) => {
+            // If mention never shows somehow, resolve the promise after 10s
+            const timeout = setTimeout(() => {
+                resolve({result: 'error', reason: 'notification_timeout'});
+            }, 10000);
+
+            mention.on('show', () => {
+                log.debug('displayMention.show');
+
+                // On Windows, manually dismiss notifications from the same channel and only show the latest one
+                if (process.platform === 'win32') {
+                    if (this.mentionsPerChannel.has(mentionKey)) {
+                        log.debug(`close ${mentionKey}`);
+                        this.mentionsPerChannel.get(mentionKey)?.close();
+                        this.mentionsPerChannel.delete(mentionKey);
+                    }
+                    this.mentionsPerChannel.set(mentionKey, mention);
+                }
+                const notificationSound = mention.getNotificationSound();
+                if (notificationSound) {
+                    MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
+                }
+                flashFrame(true);
+                clearTimeout(timeout);
+                resolve({result: 'success'});
+            });
+
+            mention.on('failed', (_, error) => {
+                this.allActiveNotifications.delete(mention.uId);
+                clearTimeout(timeout);
+                resolve({result: 'error', reason: 'electron_notification_failed', data: error});
+            });
+            mention.show();
         });
-        mention.show();
     }
 
     public async displayDownloadCompleted(fileName: string, path: string, serverName: string) {
