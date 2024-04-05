@@ -116,7 +116,7 @@ export class WebContentsEventManager {
                 return;
             }
             if (this.customLogins[webContentsId]?.inProgress) {
-                flushCookiesStore(session.defaultSession);
+                flushCookiesStore();
                 return;
             }
 

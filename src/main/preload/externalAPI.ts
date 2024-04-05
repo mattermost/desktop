@@ -70,6 +70,9 @@ const desktopAPI: DesktopAPI = {
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),
     onUserActivityUpdate: (listener) => createListener(USER_ACTIVITY_UPDATE, listener),
 
+    onLogin: () => ipcRenderer.send(APP_LOGGED_IN),
+    onLogout: () => ipcRenderer.send(APP_LOGGED_OUT),
+
     // Unreads/mentions/notifications
     sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>
         ipcRenderer.invoke(NOTIFY_MENTION, title, body, channelId, teamId, url, silent, soundName),

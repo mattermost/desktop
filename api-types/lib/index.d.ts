@@ -20,6 +20,8 @@ export type DesktopAPI = {
     reactAppInitialized: () => void;
     setSessionExpired: (isExpired: boolean) => void;
     onUserActivityUpdate: (listener: (userIsActive: boolean, idleTime: number, isSystemEvent: boolean) => void) => () => void;
+    onLogin: () => void;
+    onLogout: () => void;
     sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => Promise<{
         result: string;
         reason?: string;

@@ -1,6 +1,6 @@
 {
   "name": "@mattermost/desktop-api",
-  "version": "5.8.0-3",
+  "version": "5.8.0-4",
   "description": "Shared types for the Desktop App API provided to the Web App",
   "keywords": [
     "mattermost"
@@ -28,6 +28,7 @@
   "scripts": {
     "build": "tsc --build --verbose",
     "run": "tsc --watch --preserveWatchOutput",
-    "clean": "rm -rf tsconfig.tsbuildinfo ./lib"
+    "clean": "rm -rf tsconfig.tsbuildinfo ./lib",
+    "prepublish": "npm run build && rm -rf tsconfig.tsbuildinfo"
   }
 }

@@ -87,9 +87,9 @@ import {
     shouldShowTrayIcon,
     updateSpellCheckerLocales,
     wasUpdated,
-    initCookieManager,
     migrateMacAppStore,
     updateServerInfos,
+    flushCookiesStore,
 } from './utils';
 import {
     handleClose,
@@ -200,6 +200,12 @@ function initializeAppEventListeners() {
     app.on('child-process-gone', handleChildProcessGone);
     app.on('login', AuthManager.handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
+
+    // Somehow cookies are not immediately saved to disk.
+    // So manually flush cookie store to disk on closing the app.
+    // https://github.com/electron/electron/issues/8416
+    // TODO: We can remove this once every server supported will flush on login/logout
+    app.on('before-quit', flushCookiesStore);
 }
 
 function initializeBeforeAppReady() {
@@ -347,7 +353,6 @@ async function initializeAfterAppReady() {
             catch((err) => log.error('An error occurred: ', err));
     }
 
-    initCookieManager(defaultSession);
     MainWindow.show();
 
     let deeplinkingURL;
