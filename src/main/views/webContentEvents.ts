@@ -4,7 +4,7 @@
 import path from 'path';
 
 import type {WebContents, Event} from 'electron';
-import {BrowserWindow, session, shell} from 'electron';
+import {BrowserWindow, shell} from 'electron';
 
 import Config from 'common/config';
 import {Logger, getLevel} from 'common/log';

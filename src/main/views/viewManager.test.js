@@ -13,7 +13,6 @@ import MainWindow from 'main/windows/mainWindow';
 import LoadingScreen from './loadingScreen';
 import {MattermostBrowserView} from './MattermostBrowserView';
 import {ViewManager} from './viewManager';
-import { flushCookiesStore } from 'main/app/utils';
 
 jest.mock('electron', () => ({
     app: {
