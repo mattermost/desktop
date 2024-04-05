@@ -245,8 +245,7 @@ describe('main/views/webContentsEvents', () => {
         const logObject = {
             error: jest.fn(),
             warn: jest.fn(),
-            info: jest.fn(),
-            verbose: jest.fn(),
+            debug: jest.fn(),
             withPrefix: jest.fn().mockReturnThis(),
         };
         webContentsEventManager.log = jest.fn().mockReturnValue(logObject);
@@ -258,10 +257,10 @@ describe('main/views/webContentsEvents', () => {
 
         it('should respect logging levels', () => {
             consoleMessage({}, 0, 'test0', 0, '');
-            expect(logObject.verbose).toHaveBeenCalledWith('test0');
+            expect(logObject.debug).toHaveBeenCalledWith('test0');
 
             consoleMessage({}, 1, 'test1', 0, '');
-            expect(logObject.info).toHaveBeenCalledWith('test1');
+            expect(logObject.debug).toHaveBeenCalledWith('test1');
 
             consoleMessage({}, 2, 'test2', 0, '');
             expect(logObject.warn).toHaveBeenCalledWith('test2');
@@ -273,11 +272,11 @@ describe('main/views/webContentsEvents', () => {
         it('should only add line numbers for debug and silly', () => {
             getLevel.mockReturnValue('debug');
             consoleMessage({}, 0, 'test1', 42, 'meaning_of_life.js');
-            expect(logObject.verbose).toHaveBeenCalledWith('test1', '(meaning_of_life.js:42)');
+            expect(logObject.debug).toHaveBeenCalledWith('test1', '(meaning_of_life.js:42)');
 
-            getLevel.mockReturnValue('info');
+            getLevel.mockReturnValue('warn');
             consoleMessage({}, 0, 'test2', 42, 'meaning_of_life.js');
-            expect(logObject.verbose).not.toHaveBeenCalledWith('test2', '(meaning_of_life.js:42)');
+            expect(logObject.warn).not.toHaveBeenCalledWith('test2', '(meaning_of_life.js:42)');
         });
     });
 });
