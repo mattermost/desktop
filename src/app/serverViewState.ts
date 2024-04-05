@@ -233,7 +233,7 @@ export class ServerViewState {
         if (!isValidURL(url)) {
             // If it already includes the protocol, tell them it's invalid
             if (isValidURI(url)) {
-                httpUrl = url.replace(/^(.+):/, 'https:');
+                httpUrl = url.replace(/^((.+):\/\/)?/, 'https://');
             } else {
                 // Otherwise add HTTPS for them
                 httpUrl = `https://${url}`;
@@ -260,11 +260,13 @@ export class ServerViewState {
 
         // Try and get remote info from the most secure URL, otherwise use the insecure one
         let remoteURL = secureURL;
+        const insecureURL = parseURL(secureURL.toString().replace(/^https:/, 'http:'));
         let remoteInfo = await this.testRemoteServer(secureURL);
-        if (!remoteInfo) {
-            if (secureURL.toString() !== parsedURL.toString()) {
-                remoteURL = parsedURL;
-                remoteInfo = await this.testRemoteServer(parsedURL);
+        if (!remoteInfo && insecureURL) {
+            // Try to fall back to HTTP
+            remoteInfo = await this.testRemoteServer(insecureURL);
+            if (remoteInfo) {
+                remoteURL = insecureURL;
             }
         }
 
