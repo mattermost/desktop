@@ -79,6 +79,11 @@ class NotificationManager {
         });
 
         return new Promise((resolve) => {
+            // If mention never shows somehow, resolve the promise after 10s
+            const timeout = setTimeout(() => {
+                resolve({result: 'error', reason: 'notification_timeout'});
+            }, 10000);
+
             mention.on('show', () => {
                 log.debug('displayMention.show');
 
@@ -96,11 +101,13 @@ class NotificationManager {
                     MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
                 }
                 flashFrame(true);
+                clearTimeout(timeout);
                 resolve({result: 'success'});
             });
 
             mention.on('failed', (_, error) => {
                 this.allActiveNotifications.delete(mention.uId);
+                clearTimeout(timeout);
                 resolve({result: 'error', reason: 'electron_notification_failed', data: error});
             });
             mention.show();
