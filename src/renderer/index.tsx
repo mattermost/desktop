@@ -56,7 +56,7 @@ class Root extends React.PureComponent<Record<string, never>, State> {
             const configRequest = await window.desktop.getConfiguration() as CombinedConfig;
             return configRequest;
         } catch (err: any) {
-            console.log(`there was an error with the config: ${err}`);
+            console.error(`there was an error with the config: ${err}`);
             if (exitOnError) {
                 window.desktop.quit(`unable to load configuration: ${err}`, err.stack);
             }

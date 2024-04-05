@@ -181,11 +181,11 @@ setInterval(() => {
 
 const onLoad = () => {
     if (document.getElementById('root') === null) {
-        console.log('The guest is not assumed as mattermost-webapp');
+        console.warn('The guest is not assumed as mattermost-webapp');
         return;
     }
     watchReactAppUntilInitialized(() => {
-        console.log('Legacy preload initialized');
+        console.warn('Legacy preload initialized');
         ipcRenderer.send(REACT_APP_INITIALIZED);
         ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS).then(sendHistoryButtonReturn);
     });

@@ -162,7 +162,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
         // set page on retry
         window.desktop.onLoadRetry((viewId, retry, err, loadUrl) => {
-            console.log(`${viewId}: failed to load ${err}, but retrying`);
+            console.error(`${viewId}: failed to load ${err}, but retrying`);
             const statusValue = {
                 status: Status.RETRY,
                 extra: {
@@ -179,7 +179,7 @@ class MainPage extends React.PureComponent<Props, State> {
         });
 
         window.desktop.onLoadFailed((viewId, err, loadUrl) => {
-            console.log(`${viewId}: failed to load ${err}`);
+            console.error(`${viewId}: failed to load ${err}`);
             const statusValue = {
                 status: Status.FAILED,
                 extra: {
