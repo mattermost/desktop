@@ -4,7 +4,7 @@
 import path from 'path';
 
 import type {WebContents, Event} from 'electron';
-import {BrowserWindow, session, shell} from 'electron';
+import {BrowserWindow, shell} from 'electron';
 
 import Config from 'common/config';
 import {Logger, getLevel} from 'common/log';
@@ -116,7 +116,7 @@ export class WebContentsEventManager {
                 return;
             }
             if (this.customLogins[webContentsId]?.inProgress) {
-                flushCookiesStore(session.defaultSession);
+                flushCookiesStore();
                 return;
             }
 
@@ -298,16 +298,13 @@ export class WebContentsEventManager {
 
     private generateHandleConsoleMessage = (webContentsId: number) => (_: Event, level: number, message: string, line: number, sourceId: string) => {
         const wcLog = this.log(webContentsId).withPrefix('renderer');
-        let logFn = wcLog.verbose;
+        let logFn = wcLog.debug;
         switch (level) {
         case ConsoleMessageLevel.Error:
             logFn = wcLog.error;
             break;
         case ConsoleMessageLevel.Warning:
             logFn = wcLog.warn;
-            break;
-        case ConsoleMessageLevel.Info:
-            logFn = wcLog.info;
             break;
         }
 

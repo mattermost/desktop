@@ -4,7 +4,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import type {BrowserWindow, Rectangle, Session} from 'electron';
+import type {BrowserWindow, Rectangle} from 'electron';
 import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
 import isDev from 'electron-is-dev';
 
@@ -166,23 +166,10 @@ export function resizeScreen(browserWindow: BrowserWindow) {
     handle();
 }
 
-export function flushCookiesStore(session: Session) {
+export function flushCookiesStore() {
     log.debug('flushCookiesStore');
-    session.cookies.flushStore().catch((err) => {
+    session.defaultSession.cookies.flushStore().catch((err) => {
         log.error(`There was a problem flushing cookies:\n${err}`);
-    });
-}
-
-export function initCookieManager(session: Session) {
-    // Somehow cookies are not immediately saved to disk.
-    // So manually flush cookie store to disk on closing the app.
-    // https://github.com/electron/electron/issues/8416
-    app.on('before-quit', () => {
-        flushCookiesStore(session);
-    });
-
-    app.on('browser-window-blur', () => {
-        flushCookiesStore(session);
     });
 }
 

@@ -56,6 +56,10 @@ jest.mock('common/utils/url', () => ({
     equalUrlsIgnoringSubpath: jest.fn(),
 }));
 
+jest.mock('main/app/utils', () => ({
+    flushCookiesStore: jest.fn(),
+}));
+
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));

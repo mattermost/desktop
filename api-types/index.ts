@@ -26,6 +26,8 @@ export type DesktopAPI = {
         idleTime: number,
         isSystemEvent: boolean,
     ) => void) => () => void;
+    onLogin: () => void;
+    onLogout: () => void;
 
     // Unreads/mentions/notifications
     sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => Promise<{result: string; reason?: string; data?: string}>;

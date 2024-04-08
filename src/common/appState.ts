@@ -49,6 +49,8 @@ export class AppState extends EventEmitter {
         this.expired.delete(viewId);
         this.mentions.delete(viewId);
         this.unreads.delete(viewId);
+
+        this.emitStatusForView(viewId);
     };
 
     emitStatus = () => {

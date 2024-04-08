@@ -70,6 +70,9 @@ const desktopAPI: DesktopAPI = {
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),
     onUserActivityUpdate: (listener) => createListener(USER_ACTIVITY_UPDATE, listener),
 
+    onLogin: () => ipcRenderer.send(APP_LOGGED_IN),
+    onLogout: () => ipcRenderer.send(APP_LOGGED_OUT),
+
     // Unreads/mentions/notifications
     sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>
         ipcRenderer.invoke(NOTIFY_MENTION, title, body, channelId, teamId, url, silent, soundName),
@@ -178,11 +181,11 @@ setInterval(() => {
 
 const onLoad = () => {
     if (document.getElementById('root') === null) {
-        console.log('The guest is not assumed as mattermost-webapp');
+        console.warn('The guest is not assumed as mattermost-webapp');
         return;
     }
     watchReactAppUntilInitialized(() => {
-        console.log('Legacy preload initialized');
+        console.warn('Legacy preload initialized');
         ipcRenderer.send(REACT_APP_INITIALIZED);
         ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS).then(sendHistoryButtonReturn);
     });

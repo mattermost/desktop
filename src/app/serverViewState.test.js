@@ -417,6 +417,26 @@ describe('app/serverViewState', () => {
             expect(result.validatedURL).toBe('http://server.com/');
         });
 
+        it('should be able to recognize localhost with a port and add the appropriate prefix', async () => {
+            ServerInfo.mockImplementation(({url}) => ({
+                fetchConfigData: jest.fn().mockImplementation(() => {
+                    if (url.startsWith('https:')) {
+                        return undefined;
+                    }
+
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: url,
+                    };
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'localhost:8065');
+            expect(result.status).toBe(URLValidationStatus.Insecure);
+            expect(result.validatedURL).toBe('http://localhost:8065/');
+        });
+
         it('should show a warning when the ping request times out', async () => {
             ServerInfo.mockImplementation(() => ({
                 fetchConfigData: jest.fn().mockImplementation(() => {

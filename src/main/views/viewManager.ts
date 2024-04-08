@@ -43,6 +43,7 @@ import {getFormattedPathName, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
+import {flushCookiesStore} from 'main/app/utils';
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -471,11 +472,24 @@ export class ViewManager {
     };
 
     private handleAppLoggedIn = (event: IpcMainEvent) => {
-        this.getViewByWebContentsId(event.sender.id)?.onLogin(true);
+        log.debug('handleAppLoggedIn', event.sender.id);
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+        view.onLogin(true);
+        flushCookiesStore();
     };
 
     private handleAppLoggedOut = (event: IpcMainEvent) => {
-        this.getViewByWebContentsId(event.sender.id)?.onLogin(false);
+        log.debug('handleAppLoggedOut', event.sender.id);
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+        view.onLogin(false);
+        AppState.clear(view.id);
+        flushCookiesStore();
     };
 
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
