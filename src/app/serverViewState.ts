@@ -276,9 +276,11 @@ export class ServerViewState {
             return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString()};
         }
 
+        const remoteServerName = remoteInfo.siteName === 'Mattermost' ? remoteURL.host.split('.')[0] : remoteInfo.siteName;
+
         // If we were only able to connect via HTTP, warn the user that the connection is not secure
         if (remoteURL.protocol === 'http:') {
-            return {status: URLValidationStatus.Insecure, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName === 'Mattermost' ? remoteURL.host.split('.')[0] : remoteInfo.siteName, validatedURL: remoteURL.toString()};
+            return {status: URLValidationStatus.Insecure, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
         }
 
         // If the URL doesn't match the Site URL, set the URL to the correct one
@@ -294,15 +296,15 @@ export class ServerViewState {
                 // If we can't reach the remote Site URL, there's probably a configuration issue
                 const remoteSiteURLInfo = await this.testRemoteServer(parsedSiteURL);
                 if (!remoteSiteURLInfo) {
-                    return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName === 'Mattermost' ? remoteURL.host.split('.')[0] : remoteInfo.siteName, validatedURL: remoteURL.toString()};
+                    return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
                 }
             }
 
             // Otherwise fix it for them and return
-            return {status: URLValidationStatus.URLUpdated, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName === 'Mattermost' ? remoteURL.host.split('.')[0] : remoteInfo.siteName, validatedURL: remoteInfo.siteURL};
+            return {status: URLValidationStatus.URLUpdated, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteInfo.siteURL};
         }
 
-        return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteInfo.siteName === 'Mattermost' ? remoteURL.host.split('.')[0] : remoteInfo.siteName, validatedURL: remoteURL.toString()};
+        return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
     };
 
     private handleCloseView = (event: IpcMainEvent, viewId: string) => {
