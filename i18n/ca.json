@@ -8,5 +8,12 @@
   "label.allow": "Permetre",
   "label.cancel": "Cancelar",
   "label.change": "Canvi",
-  "label.close": "Tancar"
+  "label.close": "Tancar",
+  "main.allowProtocolDialog.title": "Protocol de tipus no-http(s)",
+  "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "Cancel·lar connexió",
+  "main.app.app.handleAppCertificateError.certError.button.moreDetails": "Més detalls",
+  "main.app.app.handleAppCertificateError.certError.dialog.detail": "{extraDetail}Origen: {origin}\nError: {error}",
+  "main.app.app.handleAppCertificateError.certError.dialog.message": "Hi ha un error de connexió amb aquest servidor de Mattermost, o algú està intentant interceptar la connexió. Revisa si necesita també iniciar sessió al vostre Wi-Fi on està connectat utilitzant el navegador.",
+  "main.app.app.handleAppCertificateError.certError.dialog.title": "Error de certificat",
+  "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "Cancel·lar connexió"
 }
