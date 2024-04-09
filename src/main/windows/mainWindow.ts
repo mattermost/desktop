@@ -49,6 +49,7 @@ export class MainWindow extends EventEmitter {
     private ready: boolean;
     private isResizing: boolean;
     private lastEmittedBounds?: Electron.Rectangle;
+    private isMaximized: boolean;
 
     constructor() {
         super();
@@ -56,6 +57,7 @@ export class MainWindow extends EventEmitter {
         // Create the browser window.
         this.ready = false;
         this.isResizing = false;
+        this.isMaximized = false;
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
@@ -125,6 +127,7 @@ export class MainWindow extends EventEmitter {
         this.win.on('unresponsive', this.onUnresponsive);
         this.win.on('maximize', this.onMaximize);
         this.win.on('unmaximize', this.onUnmaximize);
+        this.win.on('restore', this.onRestore);
         this.win.on('enter-full-screen', this.onEnterFullScreen);
         this.win.on('leave-full-screen', this.onLeaveFullScreen);
         this.win.on('will-resize', this.onWillResize);
@@ -438,14 +441,22 @@ export class MainWindow extends EventEmitter {
     };
 
     private onMaximize = () => {
+        this.isMaximized = true;
         this.win?.webContents.send(MAXIMIZE_CHANGE, true);
         this.emitBounds();
     };
 
     private onUnmaximize = () => {
+        this.isMaximized = false;
         this.win?.webContents.send(MAXIMIZE_CHANGE, false);
         this.emitBounds();
     };
+
+    private onRestore = () => {
+        if (this.isMaximized && !this.win?.isMaximized()) {
+            this.win?.maximize();
+        }
+    }
 
     private onEnterFullScreen = () => {
         this.win?.webContents.send('enter-full-screen');
