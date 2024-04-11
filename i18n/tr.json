@@ -90,7 +90,7 @@
   "main.menus.app.view.actualSize": "Geçerli boyut",
   "main.menus.app.view.clearCacheAndReload": "Ön belleği temizle ve yeniden yükle",
   "main.menus.app.view.devToolsAppWrapper": "Uygulama kapsayıcısı için geliştirici araçları",
-  "main.menus.app.view.devToolsCurrentCallWidget": "Çağrı gereci için geliştirici araçları",
+  "main.menus.app.view.devToolsCurrentCallWidget": "Çağrı pano gereci için geliştirici araçları",
   "main.menus.app.view.devToolsCurrentServer": "Geçerli sunucu için geliştirici araçları",
   "main.menus.app.view.devToolsSubMenu": "Geliştirici araçları",
   "main.menus.app.view.downloads": "İndirmeler",
