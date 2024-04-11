@@ -23,7 +23,7 @@ export type DesktopAPI = {
     onLogin: () => void;
     onLogout: () => void;
     sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => Promise<{
-        result: string;
+        status: string;
         reason?: string;
         data?: string;
     }>;
