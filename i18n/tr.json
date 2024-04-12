@@ -159,7 +159,7 @@
   "renderer.components.errorView.havingTroubleConnecting": "{appName} ile bağlantı kurulurken sorun çıktı. Bağlantı kurmayı denemeyi sürdüreceğiz.",
   "renderer.components.errorView.refreshThenVerify": "Bu sayfayı yenilemek (Ctrl+R ya da Command+R) işe yaramazsa lütfen şunu denetleyin:",
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "Bir tarayıcı penceresinden <link>{url}</link> adresine erişebiliyor musunuz?",
-  "renderer.components.errorView.troubleshooting.computerIsConnected": "Bilgisayarınızın internet bağlantısı var mı?",
+  "renderer.components.errorView.troubleshooting.computerIsConnected": "Bilgisayarınızın İnternet bağlantısı var mı?",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "{appName} adresi <link>{url}</link> doğru mu?",
   "renderer.components.extraBar.back": "Geri",
   "renderer.components.input.required": "Bu alanın doldurulması zorunludur",
