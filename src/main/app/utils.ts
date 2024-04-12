@@ -144,8 +144,24 @@ function getValidWindowPosition(state: Rectangle) {
     return {x: state.x, y: state.y};
 }
 
+function getNewWindowPosition(browserWindow: BrowserWindow) {
+    const mainWindow = MainWindow.get();
+    if (!mainWindow) {
+        return browserWindow.getPosition();
+    }
+
+    const newWindowSize = browserWindow.getSize();
+    const mainWindowSize = mainWindow.getSize();
+    const mainWindowPosition = mainWindow.getPosition();
+
+    return [
+        mainWindowPosition[0] + ((mainWindowSize[0] - newWindowSize[0]) / 2),
+        mainWindowPosition[1] + ((mainWindowSize[1] - newWindowSize[1]) / 2),
+    ];
+}
+
 export function resizeScreen(browserWindow: BrowserWindow) {
-    const position = MainWindow.get()?.getPosition() ?? browserWindow.getPosition();
+    const position = getNewWindowPosition(browserWindow);
     const size = browserWindow.getSize();
     const validPosition = getValidWindowPosition({
         x: position[0],
