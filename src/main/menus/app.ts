@@ -18,9 +18,11 @@ import type {UpdateManager} from 'main/autoUpdater';
 import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
+import {getLocalPreload, getLocalURLString} from 'main/utils';
+import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
-import SettingsWindow from 'main/windows/settingsWindow';
+import MainWindow from 'main/windows/mainWindow';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -48,7 +50,18 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: settingsLabel,
         accelerator: 'CmdOrCtrl+,',
         click() {
-            SettingsWindow.show();
+            const mainWindow = MainWindow.get();
+            if (!mainWindow) {
+                return;
+            }
+
+            ModalManager.addModal(
+                'settingsModal',
+                getLocalURLString('settings.html'),
+                getLocalPreload('internalAPI.js'),
+                null,
+                mainWindow,
+            );
         },
     });
 

@@ -11,7 +11,6 @@ import {setUnreadBadgeSetting} from 'main/badge';
 import Tray from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
 import MainWindow from 'main/windows/mainWindow';
-import SettingsWindow from 'main/windows/settingsWindow';
 
 import type {CombinedConfig, Config as ConfigType} from 'types/config';
 
@@ -73,7 +72,7 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 
     if (app.isReady()) {
         MainWindow.sendToRenderer(RELOAD_CONFIGURATION);
-        SettingsWindow.sendToRenderer(RELOAD_CONFIGURATION);
+        ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
     }
 
     setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
@@ -113,7 +112,6 @@ export function handleDarkModeChange(darkMode: boolean) {
 
     Tray.refreshImages(Config.trayIconTheme);
     MainWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
-    SettingsWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
     LoadingScreen.setDarkMode(darkMode);
 
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);

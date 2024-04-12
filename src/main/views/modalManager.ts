@@ -15,6 +15,7 @@ import {
     DARK_MODE_CHANGE,
     GET_MODAL_UNCLOSEABLE,
     MAIN_WINDOW_RESIZED,
+    RELOAD_CONFIGURATION,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import {getAdjustedWindowBoundaries} from 'main/utils';
@@ -152,6 +153,7 @@ export class ModalManager {
         }
 
         this.modalQueue.forEach((modal) => {
+            modal.view.webContents.send(RELOAD_CONFIGURATION);
             modal.view.webContents.send(DARK_MODE_CHANGE, config.darkMode);
         });
     };

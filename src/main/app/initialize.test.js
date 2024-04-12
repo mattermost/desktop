@@ -166,9 +166,6 @@ jest.mock('main/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
     handleDeepLink: jest.fn(),
 }));
-jest.mock('main/windows/settingsWindow', () => ({
-    show: jest.fn(),
-}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     show: jest.fn(),

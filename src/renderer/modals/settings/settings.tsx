@@ -1,4 +1,3 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
@@ -9,27 +8,24 @@ import 'renderer/css/settings.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import darkStyles from 'renderer/css/lazy/settings-dark.lazy.css';
+import SettingsPage from '../../components/SettingsPage';
+import IntlProvider from '../../intl_provider';
+import setupDarkMode from '../darkMode';
 
-import SettingsPage from './components/SettingsPage';
-import IntlProvider from './intl_provider';
+setupDarkMode();
 
-const setDarkMode = (darkMode: boolean) => {
-    if (darkMode) {
-        darkStyles.use();
-    } else {
-        darkStyles.unuse();
-    }
+const onClose = () => {
+    window.desktop.modals.finishModal();
 };
-
-window.desktop.onDarkModeChange((darkMode) => setDarkMode(darkMode));
-window.desktop.getDarkMode().then(setDarkMode);
 
 const start = async () => {
     ReactDOM.render(
         (
             <IntlProvider>
-                <SettingsPage/>
+                <SettingsPage
+                    show={true}
+                    onClose={onClose}
+                />
             </IntlProvider>
         )
         ,
