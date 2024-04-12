@@ -145,25 +145,19 @@ function getValidWindowPosition(state: Rectangle) {
 }
 
 export function resizeScreen(browserWindow: BrowserWindow) {
-    function handle() {
-        log.debug('resizeScreen.handle');
-        const position = browserWindow.getPosition();
-        const size = browserWindow.getSize();
-        const validPosition = getValidWindowPosition({
-            x: position[0],
-            y: position[1],
-            width: size[0],
-            height: size[1],
-        });
-        if (typeof validPosition.x !== 'undefined' || typeof validPosition.y !== 'undefined') {
-            browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
-        } else {
-            browserWindow.center();
-        }
+    const position = MainWindow.get()?.getPosition() ?? browserWindow.getPosition();
+    const size = browserWindow.getSize();
+    const validPosition = getValidWindowPosition({
+        x: position[0],
+        y: position[1],
+        width: size[0],
+        height: size[1],
+    });
+    if (typeof validPosition.x !== 'undefined' || typeof validPosition.y !== 'undefined') {
+        browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
+    } else {
+        browserWindow.center();
     }
-
-    browserWindow.once('restore', handle);
-    handle();
 }
 
 export function flushCookiesStore() {
