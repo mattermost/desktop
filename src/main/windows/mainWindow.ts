@@ -456,7 +456,7 @@ export class MainWindow extends EventEmitter {
         if (this.isMaximized && !this.win?.isMaximized()) {
             this.win?.maximize();
         }
-    }
+    };
 
     private onEnterFullScreen = () => {
         this.win?.webContents.send('enter-full-screen');

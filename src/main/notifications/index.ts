@@ -32,19 +32,19 @@ class NotificationManager {
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');
-            return {result: 'error', reason: 'notification_api', data: 'notification not supported'};
+            return {status: 'error', reason: 'notification_api', data: 'notification not supported'};
         }
 
         if (await getDoNotDisturb()) {
-            return {result: 'not_sent', reason: 'os_dnd'};
+            return {status: 'not_sent', reason: 'os_dnd'};
         }
 
         const view = ViewManager.getViewByWebContentsId(webcontents.id);
         if (!view) {
-            return {result: 'error', reason: 'missing_view'};
+            return {status: 'error', reason: 'missing_view'};
         }
         if (!view.view.shouldNotify) {
-            return {result: 'error', reason: 'view_should_not_notify'};
+            return {status: 'error', reason: 'view_should_not_notify'};
         }
         const serverName = view.view.server.name;
 
@@ -56,7 +56,7 @@ class NotificationManager {
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', view.view.server.url.toString())) {
-            return {result: 'not_sent', reason: 'notifications_permission_disallowed'};
+            return {status: 'not_sent', reason: 'notifications_permission_disallowed'};
         }
 
         const mention = new Mention(options, channelId, teamId);
@@ -81,7 +81,7 @@ class NotificationManager {
         return new Promise((resolve) => {
             // If mention never shows somehow, resolve the promise after 10s
             const timeout = setTimeout(() => {
-                resolve({result: 'error', reason: 'notification_timeout'});
+                resolve({status: 'error', reason: 'notification_timeout'});
             }, 10000);
 
             mention.on('show', () => {
@@ -102,13 +102,13 @@ class NotificationManager {
                 }
                 flashFrame(true);
                 clearTimeout(timeout);
-                resolve({result: 'success'});
+                resolve({status: 'success'});
             });
 
             mention.on('failed', (_, error) => {
                 this.allActiveNotifications.delete(mention.uId);
                 clearTimeout(timeout);
-                resolve({result: 'error', reason: 'electron_notification_failed', data: error});
+                resolve({status: 'error', reason: 'electron_notification_failed', data: error});
             });
             mention.show();
         });
