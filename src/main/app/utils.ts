@@ -144,26 +144,36 @@ function getValidWindowPosition(state: Rectangle) {
     return {x: state.x, y: state.y};
 }
 
-export function resizeScreen(browserWindow: BrowserWindow) {
-    function handle() {
-        log.debug('resizeScreen.handle');
-        const position = browserWindow.getPosition();
-        const size = browserWindow.getSize();
-        const validPosition = getValidWindowPosition({
-            x: position[0],
-            y: position[1],
-            width: size[0],
-            height: size[1],
-        });
-        if (typeof validPosition.x !== 'undefined' || typeof validPosition.y !== 'undefined') {
-            browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
-        } else {
-            browserWindow.center();
-        }
+function getNewWindowPosition(browserWindow: BrowserWindow) {
+    const mainWindow = MainWindow.get();
+    if (!mainWindow) {
+        return browserWindow.getPosition();
     }
 
-    browserWindow.once('restore', handle);
-    handle();
+    const newWindowSize = browserWindow.getSize();
+    const mainWindowSize = mainWindow.getSize();
+    const mainWindowPosition = mainWindow.getPosition();
+
+    return [
+        mainWindowPosition[0] + ((mainWindowSize[0] - newWindowSize[0]) / 2),
+        mainWindowPosition[1] + ((mainWindowSize[1] - newWindowSize[1]) / 2),
+    ];
+}
+
+export function resizeScreen(browserWindow: BrowserWindow) {
+    const position = getNewWindowPosition(browserWindow);
+    const size = browserWindow.getSize();
+    const validPosition = getValidWindowPosition({
+        x: position[0],
+        y: position[1],
+        width: size[0],
+        height: size[1],
+    });
+    if (typeof validPosition.x !== 'undefined' || typeof validPosition.y !== 'undefined') {
+        browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
+    } else {
+        browserWindow.center();
+    }
 }
 
 export function flushCookiesStore() {

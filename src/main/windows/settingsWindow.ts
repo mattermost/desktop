@@ -46,7 +46,6 @@ export class SettingsWindow {
         const preload = getLocalPreload('internalAPI.js');
         const spellcheck = (typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker);
         this.win = new BrowserWindow({
-            parent: mainWindow,
             title: 'Desktop App Settings',
             fullscreen: false,
             webPreferences: {
