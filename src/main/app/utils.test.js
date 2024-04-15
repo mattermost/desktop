@@ -55,6 +55,7 @@ jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
+    getSize: jest.fn(),
 }));
 
 jest.mock('./initialize', () => ({
@@ -137,6 +138,7 @@ describe('main/app/utils', () => {
         it('should snap to main window if it exists', () => {
             MainWindow.get.mockReturnValue({
                 getPosition: () => [450, 350],
+                getSize: () => [1280, 720],
             });
             const browserWindow = {
                 getPosition: () => [500, 400],
@@ -147,6 +149,22 @@ describe('main/app/utils', () => {
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(450, 350);
+        });
+
+        it('should snap to the middle of the main window', () => {
+            MainWindow.get.mockReturnValue({
+                getPosition: () => [450, 350],
+                getSize: () => [1280, 720],
+            });
+            const browserWindow = {
+                getPosition: () => [500, 400],
+                getSize: () => [800, 600],
+                setPosition: jest.fn(),
+                center: jest.fn(),
+                once: jest.fn(),
+            };
+            resizeScreen(browserWindow);
+            expect(browserWindow.setPosition).toHaveBeenCalledWith(690, 410);
         });
     });
 
