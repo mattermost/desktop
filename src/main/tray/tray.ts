@@ -10,7 +10,6 @@ import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
 import {localizeMessage} from 'main/i18nManager';
 import MainWindow from 'main/windows/mainWindow';
-import SettingsWindow from 'main/windows/settingsWindow';
 
 const assetsDir = path.resolve(app.getAppPath(), 'assets');
 const log = new Logger('Tray');
@@ -144,12 +143,7 @@ export class TrayIcon {
             mainWindow.show();
         }
 
-        const settingsWindow = SettingsWindow.get();
-        if (settingsWindow) {
-            settingsWindow.focus();
-        } else {
-            mainWindow.focus();
-        }
+        mainWindow.focus();
     };
 
     private onAppStateUpdate = (anyExpired: boolean, anyMentions: number, anyUnreads: boolean) => {

@@ -7,7 +7,7 @@
 import 'renderer/css/settings.css';
 
 import React from 'react';
-import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl} from 'react-bootstrap';
+import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl, Modal} from 'react-bootstrap';
 import type {IntlShape} from 'react-intl';
 import {FormattedMessage, injectIntl} from 'react-intl';
 import type {ActionMeta, MultiValue} from 'react-select';
@@ -25,6 +25,8 @@ const CONFIG_TYPE_UPDATES = 'updates';
 const CONFIG_TYPE_APP_OPTIONS = 'appOptions';
 
 type Props = {
+    show: boolean;
+    onClose: () => void;
     intl: IntlShape;
 }
 
@@ -1228,35 +1230,36 @@ class SettingsPage extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div
-                className='container-fluid'
-                style={{
-                    height: '100%',
-                }}
+            <Modal
+                show={this.props.show}
+                id='settingsModal'
+                onHide={this.props.onClose}
             >
-                <div
-                    style={{
-                        overflowY: 'auto',
-                        height: '100%',
-                        margin: '0 -15px',
-                    }}
-                >
-                    <div style={{position: 'relative'}}>
-                        <h1 style={settingsPage.heading}>
-                            <FormattedMessage
-                                id='renderer.components.settingsPage.header'
-                                defaultMessage='Settings'
-                            />
-                        </h1>
-                        <hr/>
-                    </div>
-                    <Container
-                        className='settingsPage'
+                <Modal.Header closeButton={true}>
+                    <Modal.Title>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.header'
+                            defaultMessage='Settings'
+                        />
+                    </Modal.Title>
+                </Modal.Header>
+
+                <Modal.Body>
+                    <div
+                        style={{
+                            overflowY: 'auto',
+                            height: '100%',
+                            margin: '0 -15px',
+                        }}
                     >
-                        {waitForIpc}
-                    </Container>
-                </div>
-            </div>
+                        <Container
+                            className='settingsPage'
+                        >
+                            {waitForIpc}
+                        </Container>
+                    </div>
+                </Modal.Body>
+            </Modal>
         );
     }
 }

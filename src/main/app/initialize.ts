@@ -31,6 +31,7 @@ import {
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
+    SHOW_SETTINGS_WINDOW,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -79,6 +80,7 @@ import {
     handleQuit,
     handlePingDomain,
     handleToggleSecureInput,
+    handleShowSettingsModal,
 } from './intercom';
 import {
     clearAppCache,
@@ -281,6 +283,10 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
+
+    if (process.env.NODE_ENV === 'test') {
+        ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
+    }
 }
 
 async function initializeAfterAppReady() {

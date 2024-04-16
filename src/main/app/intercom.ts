@@ -160,3 +160,18 @@ export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolea
     log.debug('handleToggleSecureInput', secureInput);
     app.setSecureKeyboardEntryEnabled(secureInput);
 }
+
+export function handleShowSettingsModal() {
+    const mainWindow = MainWindow.get();
+    if (!mainWindow) {
+        return;
+    }
+
+    ModalManager.addModal(
+        'settingsModal',
+        getLocalURLString('settings.html'),
+        getLocalPreload('internalAPI.js'),
+        null,
+        mainWindow,
+    );
+}

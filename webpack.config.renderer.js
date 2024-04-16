@@ -13,7 +13,7 @@ const base = require('./webpack.config.base');
 module.exports = merge(base, {
     entry: {
         index: './src/renderer/index.tsx',
-        settings: './src/renderer/settings.tsx',
+        settings: './src/renderer/modals/settings/settings.tsx',
         dropdown: './src/renderer/dropdown.tsx',
         downloadsDropdownMenu: './src/renderer/downloadsDropdownMenu.tsx',
         downloadsDropdown: './src/renderer/downloadsDropdown.tsx',

@@ -41,3 +41,25 @@ body {
     margin-left: 16px;
     width: 50%;
 }
+
+#settingsModal .modal-content  {
+    padding: 16px;
+    max-height: calc(100vh - 50px);
+}
+
+#settingsModal .modal-body  {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--dark) rgba(255, 255, 255, 0);
+}
+
+#settingsModal .modal-header  {
+    align-items: center;
+}
+
+@media (min-width: 862px) {
+    #settingsModal {
+        max-width: 786px;
+    }
+}
