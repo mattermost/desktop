@@ -7,6 +7,7 @@ import {dialog, screen} from 'electron';
 
 import JsonFileManager from 'common/JsonFileManager';
 import {updatePaths} from 'main/constants';
+import MainWindow from 'main/windows/mainWindow';
 
 import {getDeeplinkingURL, resizeScreen, migrateMacAppStore} from './utils';
 
@@ -52,7 +53,10 @@ jest.mock('main/menus/app', () => ({}));
 jest.mock('main/menus/tray', () => ({}));
 jest.mock('main/tray/tray', () => ({}));
 jest.mock('main/views/viewManager', () => ({}));
-jest.mock('main/windows/mainWindow', () => ({}));
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+    getSize: jest.fn(),
+}));
 
 jest.mock('./initialize', () => ({
     mainProtocol: 'mattermost',
@@ -129,6 +133,38 @@ describe('main/app/utils', () => {
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).not.toHaveBeenCalled();
             expect(browserWindow.center).toHaveBeenCalled();
+        });
+
+        it('should snap to main window if it exists', () => {
+            MainWindow.get.mockReturnValue({
+                getPosition: () => [450, 350],
+                getSize: () => [1280, 720],
+            });
+            const browserWindow = {
+                getPosition: () => [500, 400],
+                getSize: () => [1280, 720],
+                setPosition: jest.fn(),
+                center: jest.fn(),
+                once: jest.fn(),
+            };
+            resizeScreen(browserWindow);
+            expect(browserWindow.setPosition).toHaveBeenCalledWith(450, 350);
+        });
+
+        it('should snap to the middle of the main window', () => {
+            MainWindow.get.mockReturnValue({
+                getPosition: () => [450, 350],
+                getSize: () => [1280, 720],
+            });
+            const browserWindow = {
+                getPosition: () => [500, 400],
+                getSize: () => [800, 600],
+                setPosition: jest.fn(),
+                center: jest.fn(),
+                once: jest.fn(),
+            };
+            resizeScreen(browserWindow);
+            expect(browserWindow.setPosition).toHaveBeenCalledWith(690, 410);
         });
     });
 
