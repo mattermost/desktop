@@ -42,6 +42,7 @@ exports.default = async function afterPack(context) {
             {
                 version: FuseVersion.V1,
                 [FuseV1Options.RunAsNode]: false, // Disables ELECTRON_RUN_AS_NODE
+                [FuseV1Options.EnableNodeCliInspectArguments]: false, // Disables --inspect
             });
 
         if (context.electronPlatformName === 'linux') {
