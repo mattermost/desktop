@@ -44,7 +44,7 @@ class NotificationManager {
             return {status: 'error', reason: 'missing_view'};
         }
         if (!view.view.shouldNotify) {
-            return {status: 'error', reason: 'view_should_not_notify'};
+            return {status: 'not_sent', reason: 'view_should_not_notify'};
         }
         const serverName = view.view.server.name;
 
