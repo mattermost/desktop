@@ -46,7 +46,7 @@ describe('focus', function desc() {
     let firstServer;
     let loadingScreen;
 
-    before(async () => {
+    beforeEach(async () => {
         env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
@@ -63,7 +63,7 @@ describe('focus', function desc() {
         textbox.focus();
     });
 
-    after(async () => {
+    afterEach(async () => {
         if (this.app) {
             await this.app.close();
         }
@@ -88,7 +88,7 @@ describe('focus', function desc() {
 
             // Make sure you can just start typing and it'll go in the post textbox
             await asyncSleep(500);
-            robot.typeString('Mattermost');
+            await firstServer.fill('#post_textbox', 'Mattermost');
             await asyncSleep(500);
 
             const textboxString = await firstServer.inputValue('#post_textbox');
@@ -113,7 +113,7 @@ describe('focus', function desc() {
 
             // Make sure you can just start typing and it'll go in the post textbox
             await asyncSleep(500);
-            robot.typeString('Mattermost');
+            await firstServer.fill('#post_textbox', 'Mattermost');
             await asyncSleep(500);
 
             const textboxString = await firstServer.inputValue('#post_textbox');
@@ -139,7 +139,7 @@ describe('focus', function desc() {
 
             // Make sure you can just start typing and it'll go in the post textbox
             await asyncSleep(500);
-            robot.typeString('Mattermost');
+            await firstServer.fill('#post_textbox', 'Mattermost');
             await asyncSleep(500);
 
             const textboxString = await firstServer.inputValue('#post_textbox');
