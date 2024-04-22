@@ -144,6 +144,8 @@
   "renderer.components.input.required": "Ovo je obavezno polje",
   "renderer.components.mainPage.contextMenu.ariaLabel": "Kontekstni izbornik",
   "renderer.components.mainPage.titleBar": "{appName}",
+  "renderer.components.newServerModal.error.serverUrlExists": "Server s istim URL-om već postoji.",
+  "renderer.components.newServerModal.error.urlIncorrectFormatting": "URL nije ispravno formatiran.",
   "renderer.components.newServerModal.serverDisplayName": "Prikazano ime servera",
   "renderer.components.newServerModal.serverURL": "URL servera",
   "renderer.components.newServerModal.success.ok": "URL servera je ispravna. Verzija servera: {serverVersion}",
