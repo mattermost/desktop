@@ -46,7 +46,7 @@ describe('focus', function desc() {
     let firstServer;
     let loadingScreen;
 
-    before(async () => {
+    beforeEach(async () => {
         env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
@@ -63,7 +63,7 @@ describe('focus', function desc() {
         textbox.focus();
     });
 
-    after(async () => {
+    afterEach(async () => {
         if (this.app) {
             await this.app.close();
         }
