@@ -20,14 +20,19 @@ jobs:
     steps:
       - name: release/checkout-repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: release/fetch-version
+        id: calc
+        run: echo "VERSION=$(jq -r .version package.json)" >> ${GITHUB_OUTPUT}
+
       - name: release/notify-channel
-        run: |
-          jq --null-input \
-          --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
-          --arg username "MattermostRelease" \
-          --arg text "[$(jq -r .version package.json)] Release process for the desktop app has started, it should take about 30 minutes to complete." \
-          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
-          curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+        uses: mattermost/action-mattermost-notify@60f5da6e1796b033cf5a038b57031fa011962e27
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }}
+          MATTERMOST_USERNAME: MattermostRelease
+          MATTERMOST_ICON_URL: https://mattermost.com/wp-content/uploads/2022/02/icon.png
+          TEXT: |
+            [${{ steps.calc.outputs.VERSION }}] Release process for the desktop app has started, it should take about 30 minutes to complete.
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -59,10 +64,11 @@ jobs:
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: release/upload-build
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
-          name: build
+          name: build-${{ runner.os }}
           path: ./build
+          compression-level: 0
           retention-days: 14 ## No need to keep CI builds more than 14 days
 
   build-msi-installer:
@@ -110,10 +116,11 @@ jobs:
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: release/upload-build
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
-          name: build
+          name: build-${{ runner.os }}
           path: ./build
+          compression-level: 0
           retention-days: 14
 
   build-mac-installer:
@@ -154,10 +161,11 @@ jobs:
       - name: release/rename-arm64-to-m1
         run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
       - name: release/upload-build
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
-          name: build
+          name: build-${{ runner.os }}
           path: ./build
+          compression-level: 0
           retention-days: 14
 
   upload-to-s3:
@@ -173,8 +181,14 @@ jobs:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.MM_DESKTOP_RELEASE_AWS_SECRET_ACCESS_KEY }}
+
       - name: release/download-builds
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+        with:
+          path: build
+          pattern: build-*
+          merge-multiple: true
+
       - name: release/setup-files-for-aws
         run: |
           mkdir -p ./aws-s3-dist
@@ -189,12 +203,19 @@ jobs:
     steps:
       - name: release/checkout-repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
       - name: release/download-builds
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+        with:
+          path: build
+          pattern: build-*
+          merge-multiple: true
+
       - name: release/setup-files-for-github-release
         run: |
           mkdir -p ./ghr-dist
           find ./build/{macos-release,win-release,linux} -type f -exec cp --backup=numbered -t ./ghr-dist {} +
+
       - name: release/publish-release
         env:
           GITHUB_TOKEN: ${{ secrets.MATTERMOST_BUILD_GH_TOKEN }}
@@ -214,12 +235,19 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 0
-      - name: release/notify-channel
+
+      - name: release/fetch-version
+        id: calc
         run: |
-          git fetch --all
-          jq --null-input \
-          --arg icon_url "https://mattermost.com/wp-content/uploads/2022/02/icon.png" \
-          --arg username "MattermostRelease" \
-          --arg text "$(bash -x scripts/generate_release_post.sh $(jq -r .version package.json))" \
-          '{"username":$username,"icon_url": $icon_url, "text": $text }' > /tmp/webhook-data.json
-          curl -i -H "Content-Type: application/json" -X POST -d @/tmp/webhook-data.json ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }} || echo "NOFICATION FAILED! check logs as this will succeed intentionally"
+          echo "BODY<<EOF" >> "${GITHUB_OUTPUT}"
+          bash -x scripts/generate_release_post.sh $(jq -r .version package.json) >> "${GITHUB_OUTPUT}"
+          echo "EOF" >> "${GITHUB_OUTPUT}"
+
+      - name: release/notify-channel
+        uses: mattermost/action-mattermost-notify@60f5da6e1796b033cf5a038b57031fa011962e27
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }}
+          MATTERMOST_USERNAME: MattermostRelease
+          MATTERMOST_ICON_URL: https://mattermost.com/wp-content/uploads/2022/02/icon.png
+          TEXT: |
+            ${{ steps.calc.outputs.BODY }}
