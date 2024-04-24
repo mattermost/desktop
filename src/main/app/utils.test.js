@@ -166,6 +166,22 @@ describe('main/app/utils', () => {
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(690, 410);
         });
+
+        it('should never return non-integer value', () => {
+            MainWindow.get.mockReturnValue({
+                getPosition: () => [450, 350],
+                getSize: () => [1280, 720],
+            });
+            const browserWindow = {
+                getPosition: () => [450, 350],
+                getSize: () => [1281, 721],
+                setPosition: jest.fn(),
+                center: jest.fn(),
+                once: jest.fn(),
+            };
+            resizeScreen(browserWindow);
+            expect(browserWindow.setPosition).toHaveBeenCalledWith(449, 349);
+        });
     });
 
     describe('migrateMacAppStore', () => {
