@@ -155,8 +155,8 @@ function getNewWindowPosition(browserWindow: BrowserWindow) {
     const mainWindowPosition = mainWindow.getPosition();
 
     return [
-        mainWindowPosition[0] + ((mainWindowSize[0] - newWindowSize[0]) / 2),
-        mainWindowPosition[1] + ((mainWindowSize[1] - newWindowSize[1]) / 2),
+        Math.floor(mainWindowPosition[0] + ((mainWindowSize[0] - newWindowSize[0]) / 2)),
+        Math.floor(mainWindowPosition[1] + ((mainWindowSize[1] - newWindowSize[1]) / 2)),
     ];
 }
 
@@ -169,6 +169,7 @@ export function resizeScreen(browserWindow: BrowserWindow) {
         width: size[0],
         height: size[1],
     });
+    log.info(validPosition);
     if (typeof validPosition.x !== 'undefined' || typeof validPosition.y !== 'undefined') {
         browserWindow.setPosition(validPosition.x || 0, validPosition.y || 0);
     } else {
