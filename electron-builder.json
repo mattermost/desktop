@@ -40,6 +40,7 @@
       ]
     }
   ],
+  "beforePack": "scripts/beforepack.js",
   "afterPack": "scripts/afterpack.js",
   "afterAllArtifactBuild": "scripts/afterbuild.js",
   "deb": {
