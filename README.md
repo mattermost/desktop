@@ -6,7 +6,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai.
 
 ![mm-desktop-screenshot](https://user-images.githubusercontent.com/52460000/146078917-e1ba8c1f-24e5-4613-8b4b-f3507422f4f2.png)
 
-[![Circle CI](https://circleci.com/gh/mattermost/desktop.svg?style=shield)](https://circleci.com/gh/mattermost/desktop)
+[![nightly-builds](https://github.com/mattermost/desktop/actions/workflows/nightly-builds.yaml/badge.svg)](https://github.com/mattermost/desktop/actions/workflows/nightly-builds.yaml)
 
 ## Features
 
