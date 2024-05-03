@@ -55,7 +55,7 @@ class NotificationManager {
             soundName,
         };
 
-        if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', view.view.server.url.toString())) {
+        if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: view.view.server.url.toString(), isMainFrame: false})) {
             return {status: 'not_sent', reason: 'notifications_permission_disallowed'};
         }
 
