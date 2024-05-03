@@ -203,4 +203,13 @@ describe('main/PermissionsManager', () => {
         await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
         expect(dialog.showMessageBox).toHaveBeenCalled();
     });
+
+    it('should pop dialog for external applications', async () => {
+        const permissionsManager = new PermissionsManager('anyfile.json');
+        permissionsManager.writeToFile = jest.fn();
+        const cb = jest.fn();
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+        await permissionsManager.handlePermissionRequest({id: 2}, 'openExternal', cb, {requestingUrl: 'http://anyurl.com', externalURL: 'ms-excel://differenturl.com'});
+        expect(dialog.showMessageBox).toHaveBeenCalled();
+    });
 });
