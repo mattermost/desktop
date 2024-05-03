@@ -21,15 +21,11 @@ Release notes can be found here: https://docs.mattermost.com/install/desktop-app
 
 The download links can be found below.
 
-#### Windows - msi files (beta)
+#### Windows - installer files
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-x64.msi")
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-x86.msi")
-
-#### Windows - setup exe files
-$(print_link "${BASE_URL}/mattermost-desktop-setup-${VERSION}-win.exe")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-arm64.msi")
 
 #### Windows - zip files
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win32.zip")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win64.zip")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-arm64.zip") (beta)
 
