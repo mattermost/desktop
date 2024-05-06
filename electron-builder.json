@@ -155,7 +155,8 @@
   "win": {
     "target": [
       "nsis",
-      "zip"
+      "zip",
+      "msi"
     ],
     "extraFiles": [
       {
@@ -163,8 +164,13 @@
           "LICENSE.txt",
           "NOTICE.txt"
         ]
+      },
+      {
+        "from": "resources/windows/gpo",
+        "to": "gpo"
       }
     ],
+    "signDlls": true,
     "publisherName": "CN=\"Mattermost, Inc.\", O=\"Mattermost, Inc.\", L=Palo Alto, S=California, C=US"
   },
   "nsis": {
