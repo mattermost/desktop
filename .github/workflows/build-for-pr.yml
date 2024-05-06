@@ -119,7 +119,6 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
           npm ci --openssl_fips=''
-          ./scripts/Makefile.ps1 install-cert
       - name: ci/build
         env:
           MM_WIN_INSTALLERS: 1
@@ -128,6 +127,7 @@ jobs:
           PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
         run: |
+          ./scripts/Makefile.ps1 install-cert
           mkdir -p ./build/win
           npm run package:windows-msi
           bash -x ./scripts/patch_updater_yml.sh
