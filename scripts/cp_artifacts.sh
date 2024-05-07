@@ -25,10 +25,15 @@ if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-setup-${VERS
     cp "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 3))
 fi
-if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-${VERSION}-x64.msi" ]]; then
+if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-${VERSION}-win-x64.msi" ]]; then
     echo -e "Copying win-msi-x64\n"
-    cp "${SRC}/mattermost-desktop-${VERSION}-x64.msi" "${DEST}/"
+    cp "${SRC}/mattermost-desktop-${VERSION}-win-x64.msi" "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 4))
+fi
+if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-${VERSION}-win-arm64.msi" ]]; then
+    echo -e "Copying win-msi-arm64\n"
+    cp "${SRC}/mattermost-desktop-${VERSION}-win-arm64.msi" "${DEST}/"
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 5))
 fi
 
 if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac.zip" ]]; then
@@ -37,7 +42,7 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac.zip" ]]; then
     if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-mac.dmg ]]; then
         cp "${SRC}"/*.blockmap "${DEST}/"
     fi
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 5))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 6))
 fi
 if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-x64.zip" ]]; then
     echo -e "Copying mac-x64\n"
@@ -46,7 +51,7 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-x64.zip" ]]; then
         cp "${SRC}/mattermost-desktop-${VERSION}-mac-x64.dmg.blockmap" "${DEST}/mattermost-desktop-${VERSION}-mac-x64.dmg.blockmap"
         cp "${SRC}/mattermost-desktop-${VERSION}-mac-x64.dmg" "${DEST}/mattermost-desktop-${VERSION}-mac-x64.dmg"
     fi
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 6))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 7))
 fi
 if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.zip" ]]; then
     echo -e "Copying mac-arm64\n"
@@ -55,7 +60,7 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.zip" ]]; then
         cp "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.dmg.blockmap" "${DEST}/mattermost-desktop-${VERSION}-mac-arm64.dmg.blockmap"
         cp "${SRC}/mattermost-desktop-${VERSION}-mac-arm64.dmg" "${DEST}/mattermost-desktop-${VERSION}-mac-arm64.dmg"
     fi
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 7))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 8))
 fi
 if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-universal.zip" ]]; then
     echo -e "Copying mac-universal\n"
@@ -64,43 +69,43 @@ if [[ -f "${SRC}/mattermost-desktop-${VERSION}-mac-universal.zip" ]]; then
         cp "${SRC}/mattermost-desktop-${VERSION}-mac-universal.dmg.blockmap" "${DEST}/mattermost-desktop-${VERSION}-mac-universal.dmg.blockmap"
         cp "${SRC}/mattermost-desktop-${VERSION}-mac-universal.dmg" "${DEST}/mattermost-desktop-${VERSION}-mac-universal.dmg"
     fi
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 8))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 9))
 fi
 
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-x64.tar.gz ]]; then
     echo -e "Copying linux\n"
     cp "${SRC}"/mattermost-desktop-*-linux-x64* "${DEST}/"
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 9))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 10))
 fi
 
 if [[ -f "${SRC}"/mattermost-desktop-${VERSION}-linux-arm64.tar.gz ]]; then
     echo -e "Copying linux\n"
     cp "${SRC}"/mattermost-desktop-*-linux-arm64* "${DEST}/"
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 10))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 11))
 fi
 
 if [[ -f "${SRC}"/mattermost-desktop-*-linux-x86_64* ]]; then
     echo -e "Copying linux-rpm\n"
     cp "${SRC}"/mattermost-desktop-*-linux-x86_64* "${DEST}/"
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 11))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 12))
 fi
 
 if [[ -f "${SRC}"/mattermost-desktop-*-linux-aarch64* ]]; then
     echo -e "Copying linux-rpm\n"
     cp "${SRC}"/mattermost-desktop-*-linux-aarch64* "${DEST}/"
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 12))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 13))
 fi
 
 if [[ -f "${SRC}"/mattermost-desktop_${VERSION}-1_amd64*.deb ]]; then
     echo -e "Copying linux-deb\n"
     cp "${SRC}"/mattermost-desktop_"${VERSION}"-1_amd64*.deb "${DEST}/"
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 13))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 14))
 fi
 
 if [[ -f "${SRC}"/mattermost-desktop_${VERSION}-1_arm64*.deb ]]; then
     echo -e "Copying linux-deb\n"
     cp "${SRC}"/mattermost-desktop_"${VERSION}"-1_arm64*.deb "${DEST}/"
-    SOMETHING_COPIED=$((SOMETHING_COPIED + 14))
+    SOMETHING_COPIED=$((SOMETHING_COPIED + 15))
 fi
 
 if [[ $SOMETHING_COPIED -eq 0 ]]; then
