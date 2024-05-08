@@ -9,6 +9,6 @@ exports.default = async function beforePack(context) {
     // So we have to manually create it first
     var dir = path.join(context.outDir, context.packager.appInfo.version)
     if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir);
+        fs.mkdirSync(dir, {recursive: true});
     }
 };
