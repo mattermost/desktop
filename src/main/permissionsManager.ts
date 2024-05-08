@@ -38,6 +38,7 @@ const authorizablePermissionTypes = [
     'media',
     'geolocation',
     'notifications',
+    'openExternal',
 ];
 
 type Permissions = {
@@ -67,16 +68,16 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
         callback(await this.doPermissionRequest(
             webContents.id,
             permission,
-            details.securityOrigin ?? details.requestingUrl,
+            details,
         ));
     };
 
     doPermissionRequest = async (
         webContentsId: number,
         permission: string,
-        requestingURL: string,
+        details: PermissionRequestHandlerHandlerDetails,
     ) => {
-        log.debug('doPermissionRequest', requestingURL, permission);
+        log.debug('doPermissionRequest', permission, details);
 
         // is the requested permission type supported?
         if (!supportedPermissionTypes.includes(permission)) {
@@ -89,7 +90,12 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
             return true;
         }
 
-        const parsedURL = parseURL(requestingURL);
+        let url = details.requestingUrl;
+        if (permission === 'media' && details.securityOrigin) {
+            url = details.securityOrigin;
+        }
+
+        const parsedURL = parseURL(url);
         if (!parsedURL) {
             return false;
         }
@@ -142,7 +148,7 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
             // Show the dialog to ask the user
             const {response} = await dialog.showMessageBox(mainWindow, {
                 title: localizeMessage('main.permissionsManager.checkPermission.dialog.title', 'Permission Requested'),
-                message: localizeMessage(`main.permissionsManager.checkPermission.dialog.message.${permission}`, '{appName} ({url}) is requesting the "{permission}" permission.', {appName: app.name, url: parsedURL.origin, permission}),
+                message: localizeMessage(`main.permissionsManager.checkPermission.dialog.message.${permission}`, '{appName} ({url}) is requesting the "{permission}" permission.', {appName: app.name, url: parsedURL.origin, permission, externalURL: details.externalURL}),
                 detail: localizeMessage(`main.permissionsManager.checkPermission.dialog.detail.${permission}`, 'Would you like to grant {appName} this permission?', {appName: app.name}),
                 type: 'question',
                 buttons: [
@@ -178,9 +184,11 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
 t('main.permissionsManager.checkPermission.dialog.message.media');
 t('main.permissionsManager.checkPermission.dialog.message.geolocation');
 t('main.permissionsManager.checkPermission.dialog.message.notifications');
+t('main.permissionsManager.checkPermission.dialog.message.openExternal');
 t('main.permissionsManager.checkPermission.dialog.detail.media');
 t('main.permissionsManager.checkPermission.dialog.detail.geolocation');
 t('main.permissionsManager.checkPermission.dialog.detail.notifications');
+t('main.permissionsManager.checkPermission.dialog.detail.openExternal');
 
 let permissionsManager = new PermissionsManager(permissionsJson);
 
