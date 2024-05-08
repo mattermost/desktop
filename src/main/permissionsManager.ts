@@ -152,16 +152,16 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
                 detail: localizeMessage(`main.permissionsManager.checkPermission.dialog.detail.${permission}`, 'Would you like to grant {appName} this permission?', {appName: app.name}),
                 type: 'question',
                 buttons: [
-                    localizeMessage('label.allow', 'Allow'),
                     localizeMessage('label.deny', 'Deny'),
                     localizeMessage('label.denyPermanently', 'Deny Permanently'),
+                    localizeMessage('label.allow', 'Allow'),
                 ],
             });
 
             // Save their response
             const newPermission = {
-                allowed: response === 0,
-                alwaysDeny: (response === 2) ? true : undefined,
+                allowed: response === 2,
+                alwaysDeny: (response === 1) ? true : undefined,
             };
             this.json[parsedURL.origin] = {
                 ...this.json[parsedURL.origin],
@@ -171,7 +171,7 @@ export class PermissionsManager extends JsonFileManager<Permissions> {
 
             this.inflightPermissionChecks.delete(permissionKey);
 
-            if (response > 0) {
+            if (response < 2) {
                 return false;
             }
         }

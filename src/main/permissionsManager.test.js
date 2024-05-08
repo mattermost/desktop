@@ -145,7 +145,7 @@ describe('main/PermissionsManager', () => {
         const permissionsManager = new PermissionsManager('anyfile.json');
         permissionsManager.writeToFile = jest.fn();
         const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
         await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
         expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
         expect(permissionsManager.writeToFile).toHaveBeenCalled();
@@ -156,7 +156,7 @@ describe('main/PermissionsManager', () => {
         const permissionsManager = new PermissionsManager('anyfile.json');
         permissionsManager.writeToFile = jest.fn();
         const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 1}));
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
         await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
         expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(false);
         expect(permissionsManager.writeToFile).toHaveBeenCalled();
@@ -167,7 +167,7 @@ describe('main/PermissionsManager', () => {
         const permissionsManager = new PermissionsManager('anyfile.json');
         permissionsManager.writeToFile = jest.fn();
         const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 1}));
         await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
         expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(false);
         expect(permissionsManager.json['http://anyurl.com'].media.alwaysDeny).toBe(true);
@@ -179,7 +179,7 @@ describe('main/PermissionsManager', () => {
         const permissionsManager = new PermissionsManager('anyfile.json');
         permissionsManager.writeToFile = jest.fn();
         const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
         await Promise.all([
             permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
             permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
@@ -199,7 +199,7 @@ describe('main/PermissionsManager', () => {
         const permissionsManager = new PermissionsManager('anyfile.json');
         permissionsManager.writeToFile = jest.fn();
         const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
         await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
         expect(dialog.showMessageBox).toHaveBeenCalled();
     });
@@ -208,7 +208,7 @@ describe('main/PermissionsManager', () => {
         const permissionsManager = new PermissionsManager('anyfile.json');
         permissionsManager.writeToFile = jest.fn();
         const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
         await permissionsManager.handlePermissionRequest({id: 2}, 'openExternal', cb, {requestingUrl: 'http://anyurl.com', externalURL: 'ms-excel://differenturl.com'});
         expect(dialog.showMessageBox).toHaveBeenCalled();
     });
