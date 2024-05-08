@@ -176,7 +176,9 @@
   },
   "nsis": {
     "artifactName": "${version}/${name}-setup-${version}-win.${ext}",
-    "packElevateHelper": false
+    "packElevateHelper": false,
+    "uninstallDisplayName": "${productName}",
+    "include": "scripts/installer.nsh"
   },
   "rpm": {
     "fpm": ["--rpm-rpmbuild-define", "_build_id_links none"]
