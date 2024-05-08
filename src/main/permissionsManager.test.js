@@ -109,7 +109,7 @@ describe('main/PermissionsManager', () => {
     it('should allow if dialog is not required', async () => {
         const permissionsManager = new PermissionsManager('anyfile.json');
         const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({id: 2}, 'fullscreen', cb, {securityOrigin: 'http://anyurl.com'});
+        await permissionsManager.handlePermissionRequest({id: 2}, 'fullscreen', cb, {requestingUrl: 'http://anyurl.com'});
         expect(cb).toHaveBeenCalledWith(true);
     });
 
@@ -181,9 +181,9 @@ describe('main/PermissionsManager', () => {
         const cb = jest.fn();
         dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
         await Promise.all([
-            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {securityOrigin: 'http://anyurl.com'}),
-            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {securityOrigin: 'http://anyurl.com'}),
-            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {securityOrigin: 'http://anyurl.com'}),
+            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
+            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
+            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
         ]);
         expect(dialog.showMessageBox).toHaveBeenCalledTimes(1);
     });
@@ -201,6 +201,15 @@ describe('main/PermissionsManager', () => {
         const cb = jest.fn();
         dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
         await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+        expect(dialog.showMessageBox).toHaveBeenCalled();
+    });
+
+    it('should pop dialog for external applications', async () => {
+        const permissionsManager = new PermissionsManager('anyfile.json');
+        permissionsManager.writeToFile = jest.fn();
+        const cb = jest.fn();
+        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+        await permissionsManager.handlePermissionRequest({id: 2}, 'openExternal', cb, {requestingUrl: 'http://anyurl.com', externalURL: 'ms-excel://differenturl.com'});
         expect(dialog.showMessageBox).toHaveBeenCalled();
     });
 });
