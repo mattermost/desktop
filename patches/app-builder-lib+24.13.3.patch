@@ -1,0 +1,43 @@
+diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
+index 2d5cd3c..04ed672 100644
+--- a/node_modules/app-builder-lib/templates/msi/template.xml
++++ b/node_modules/app-builder-lib/templates/msi/template.xml
+@@ -26,6 +26,11 @@
+     <Property Id="ARPPRODUCTICON" Value="${iconId}"/>
+     {{ } -}}
+ 
++    <CustomAction Id="removeExeInstaller" Directory="APPLICATIONFOLDER" ExeCommand="[APPLICATIONFOLDER]Uninstall ${productName}.exe /S" Execute="immediate" Impersonate="yes" Return="asyncWait"/>
++    <InstallExecuteSequence>
++      <Custom Action="removeExeInstaller" Before="InstallInitialize"/>
++    </InstallExecuteSequence>
++
+     {{ if (isRunAfterFinish) { }}
+       <CustomAction Id="runAfterFinish" FileKey="mainExecutable" ExeCommand="" Execute="immediate" Impersonate="yes" Return="asyncNoWait"/>
+       {{ if (!isAssisted) { }}
+@@ -42,6 +47,7 @@
+       <Property Id="ALLUSERS" Secure="yes" Value="2"/>
+     {{ } -}}
+     <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1"/>
++    <Property Id="DISABLEAUTOUPDATE" Value="0"/>
+ 
+     {{ if (isAssisted) { }}
+       <WixVariable Id="WixUISupportPerUser" Value="1" Overridable="yes"/>
+@@ -80,6 +86,7 @@
+       </UI>
+     {{ } -}}
+ 
++    <Directory Id="resourcesDir" Name="APPLICATIONFOLDER:\resources\"/>
+     <Directory Id="TARGETDIR" Name="SourceDir">
+       <Directory Id="${programFilesId}">
+         {{ if (menuCategory) { }}
+@@ -110,6 +117,10 @@
+     {{-dirs}}
+ 
+     <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
++      <Component Directory="resourcesDir">
++        <Condition>(NOT ALLUSERS = 1) AND DISABLEAUTOUPDATE = 0</Condition>
++        <File Name="app-update.yml" Source="$(var.appDir)\..\msi-app-update.yml" ReadOnly="yes" KeyPath="yes"/>
++      </Component>
+       {{-files}}
+     </ComponentGroup>
+   </Product>
