@@ -39,13 +39,9 @@ jobs:
           node-version-file: "package.json"
           cache: "npm"
           cache-dependency-path: package-lock.json
-      - name: nightly/optimize
-        shell: powershell
-        run: ./scripts/Makefile.ps1 optimize
       - name: nightly/install-deps
         shell: powershell
         run: |
-          ./scripts/Makefile.ps1 install-deps
           choco install yq --version 4.15.1 -y
           npm i -g node-gyp
           node-gyp install
@@ -62,7 +58,7 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_KEY_PASSWORD }}
           PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
-        run: ./scripts/Makefile.ps1 build
+        run: npm run package:windows-installers
       - name: nightly/package
         run: |
           mkdir -p ./build/win
