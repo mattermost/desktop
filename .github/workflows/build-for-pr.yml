@@ -113,7 +113,6 @@ jobs:
           node-gyp install
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch ia32
       - name: ci/install-dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         env:
@@ -123,6 +122,10 @@ jobs:
       - name: ci/build
         env:
           MM_WIN_INSTALLERS: 1
+          PFX_KEY: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX_KEY }}
+          CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_KEY_PASSWORD }}
+          PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
+          CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
         run: |
           mkdir -p ./build/win
           npm run package:windows

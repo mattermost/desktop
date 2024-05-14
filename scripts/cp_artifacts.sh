@@ -10,11 +10,6 @@ if [[ ! -d "${DEST}" ]]; then
     mkdir -p "${DEST}"
 fi
 
-if [[ -f "${SRC}/mattermost-desktop-${VERSION}-win-ia32.zip" ]]; then
-    echo -e "Copying Win32\n"
-    cp "${SRC}/mattermost-desktop-${VERSION}-win-ia32.zip" "${DEST}/mattermost-desktop-${VERSION}-win32.zip"
-    SOMETHING_COPIED=1
-fi
 if [[ -f "${SRC}/mattermost-desktop-${VERSION}-win-x64.zip" ]]; then
     echo -e "Copying Win64\n"
     cp "${SRC}/mattermost-desktop-${VERSION}-win-x64.zip" "${DEST}/mattermost-desktop-${VERSION}-win64.zip"
@@ -30,14 +25,14 @@ if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-setup-${VERS
     cp "${SRC}/mattermost-desktop-setup-${VERSION}-win.exe" "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 3))
 fi
-if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-${VERSION}-x64.msi" ]]; then
+if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-${VERSION}-win-x64.msi" ]]; then
     echo -e "Copying win-msi-x64\n"
-    cp "${SRC}/mattermost-desktop-${VERSION}-x64.msi" "${DEST}/"
+    cp "${SRC}/mattermost-desktop-${VERSION}-win-x64.msi" "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 4))
 fi
-if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-${VERSION}-x86.msi" ]]; then
-    echo -e "Copying win-msi-x86\n"
-    cp "${SRC}/mattermost-desktop-${VERSION}-x86.msi" "${DEST}/"
+if [[ ${MM_WIN_INSTALLERS-0} -eq 1 && -f "${SRC}/mattermost-desktop-${VERSION}-win-arm64.msi" ]]; then
+    echo -e "Copying win-msi-arm64\n"
+    cp "${SRC}/mattermost-desktop-${VERSION}-win-arm64.msi" "${DEST}/"
     SOMETHING_COPIED=$((SOMETHING_COPIED + 5))
 fi
 
