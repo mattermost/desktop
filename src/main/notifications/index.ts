@@ -28,7 +28,7 @@ class NotificationManager {
     private restartToUpgradeNotification?: UpgradeNotification;
 
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
-        log.debug('displayMention', {title, body, channelId, teamId, url, silent, soundName});
+        log.debug('displayMention', {title, channelId, teamId, url, silent, soundName});
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');
@@ -36,17 +36,20 @@ class NotificationManager {
         }
 
         if (await getDoNotDisturb()) {
+            log.debug('do not disturb is on, will not send');
             return {status: 'not_sent', reason: 'os_dnd'};
         }
 
         const view = ViewManager.getViewByWebContentsId(webcontents.id);
         if (!view) {
+            log.error('missing view', webcontents.id);
             return {status: 'error', reason: 'missing_view'};
         }
+        const serverName = view.view.server.name;
         if (!view.view.shouldNotify) {
+            log.debug('should not notify for this view', webcontents.id);
             return {status: 'not_sent', reason: 'view_should_not_notify'};
         }
-        const serverName = view.view.server.name;
 
         const options = {
             title: `${serverName}: ${title}`,
@@ -56,15 +59,15 @@ class NotificationManager {
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: view.view.server.url.toString(), isMainFrame: false})) {
+            log.verbose('permissions disallowed', webcontents.id, serverName, view.view.server.url.toString());
             return {status: 'not_sent', reason: 'notifications_permission_disallowed'};
         }
 
         const mention = new Mention(options, channelId, teamId);
-        const mentionKey = `${mention.teamId}:${mention.channelId}`;
         this.allActiveNotifications.set(mention.uId, mention);
 
         mention.on('click', () => {
-            log.debug('notification click', serverName, mention);
+            log.debug('notification click', serverName, mention.uId);
 
             this.allActiveNotifications.delete(mention.uId);
             MainWindow.show();
@@ -81,14 +84,16 @@ class NotificationManager {
         return new Promise((resolve) => {
             // If mention never shows somehow, resolve the promise after 10s
             const timeout = setTimeout(() => {
+                log.debug('notification timeout', serverName, mention.uId);
                 resolve({status: 'error', reason: 'notification_timeout'});
             }, 10000);
 
             mention.on('show', () => {
-                log.debug('displayMention.show');
+                log.debug('displayMention.show', serverName, mention.uId);
 
                 // On Windows, manually dismiss notifications from the same channel and only show the latest one
                 if (process.platform === 'win32') {
+                    const mentionKey = `${mention.teamId}:${mention.channelId}`;
                     if (this.mentionsPerChannel.has(mentionKey)) {
                         log.debug(`close ${mentionKey}`);
                         this.mentionsPerChannel.get(mentionKey)?.close();
@@ -108,6 +113,7 @@ class NotificationManager {
             mention.on('failed', (_, error) => {
                 this.allActiveNotifications.delete(mention.uId);
                 clearTimeout(timeout);
+                log.error('notification failed to show', serverName, mention.uId, error);
                 resolve({status: 'error', reason: 'electron_notification_failed', data: error});
             });
             mention.show();
