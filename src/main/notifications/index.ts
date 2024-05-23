@@ -78,10 +78,13 @@ class NotificationManager {
         });
 
         mention.on('close', () => {
+            log.debug('notification close', serverName, mention.uId);
             this.allActiveNotifications.delete(mention.uId);
         });
 
         return new Promise((resolve) => {
+            log.debug('should show notification', serverName, mention.uId);
+
             // If mention never shows somehow, resolve the promise after 10s
             const timeout = setTimeout(() => {
                 log.debug('notification timeout', serverName, mention.uId);
