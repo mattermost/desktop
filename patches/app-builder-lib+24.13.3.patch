@@ -1,12 +1,12 @@
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..04ed672 100644
+index 2d5cd3c..1e7223d 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -26,6 +26,11 @@
      <Property Id="ARPPRODUCTICON" Value="${iconId}"/>
      {{ } -}}
  
-+    <CustomAction Id="removeExeInstaller" Directory="APPLICATIONFOLDER" ExeCommand="[APPLICATIONFOLDER]Uninstall ${productName}.exe /S" Execute="immediate" Impersonate="yes" Return="asyncWait"/>
++    <CustomAction Id="removeExeInstaller" Directory="APPLICATIONFOLDER" ExeCommand="[APPLICATIONFOLDER]Uninstall ${productName}.exe /S" Execute="immediate" Impersonate="yes" Return="ignore"/>
 +    <InstallExecuteSequence>
 +      <Custom Action="removeExeInstaller" Before="InstallInitialize"/>
 +    </InstallExecuteSequence>
