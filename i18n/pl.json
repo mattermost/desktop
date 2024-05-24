@@ -249,7 +249,7 @@
   "renderer.components.settingsPage.updates": "Aktualizacje",
   "renderer.components.settingsPage.updates.automatic": "Automatycznie sprawdzaj aktualizacje",
   "renderer.components.settingsPage.updates.automatic.description": "Po włączeniu tej funkcji aktualizacje aplikacji desktopowej będą pobierane automatycznie, a użytkownik zostanie powiadomiony, gdy będą gotowe do zainstalowania.",
-  "renderer.components.settingsPage.updates.checkNow": "Sprawdź aktualizacje teraz",
+  "renderer.components.settingsPage.updates.checkNow": "Sprawdź teraz aktualizacje",
   "renderer.components.showCertificateModal.algorithm": "Algorytm",
   "renderer.components.showCertificateModal.commonName": "Nazwa zwyczajowa",
   "renderer.components.showCertificateModal.issuerName": "Nazwa zgłaszającego",
