@@ -179,7 +179,7 @@ export function validateArgs(data: Args) {
 }
 
 // validate bounds_info.json
-export function validateBoundsInfo(data: SavedWindowState) {
+export function validateBoundsInfo(data: SavedWindowState | null) {
     return validateAgainstSchema(data, boundsInfoSchema);
 }
 

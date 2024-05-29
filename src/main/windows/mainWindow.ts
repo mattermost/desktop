@@ -45,7 +45,7 @@ const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
 export class MainWindow extends EventEmitter {
     private win?: BrowserWindow;
 
-    private savedWindowState?: SavedWindowState;
+    private savedWindowState?: Partial<SavedWindowState>;
     private ready: boolean;
     private isResizing: boolean;
     private lastEmittedBounds?: Electron.Rectangle;
@@ -89,6 +89,7 @@ export class MainWindow extends EventEmitter {
                 spellcheck: typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker,
             },
         });
+        log.debug('main window options', windowOptions);
 
         if (process.platform === 'linux') {
             windowOptions.icon = path.join(path.resolve(app.getAppPath(), 'assets'), 'linux', 'app_icon.png');
@@ -245,25 +246,34 @@ export class MainWindow extends EventEmitter {
         return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
     };
 
-    private getSavedWindowState = () => {
-        let savedWindowState: any;
+    private getSavedWindowState = (): Partial<SavedWindowState> => {
         try {
-            savedWindowState = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
+            let savedWindowState: SavedWindowState | null = JSON.parse(fs.readFileSync(boundsInfoPath, 'utf-8'));
             savedWindowState = Validator.validateBoundsInfo(savedWindowState);
             if (!savedWindowState) {
                 throw new Error('Provided bounds info file does not validate, using defaults instead.');
             }
             const matchingScreen = screen.getDisplayMatching(savedWindowState);
+            log.debug('matching screen for main window', matchingScreen);
             if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
                 throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
             }
+            // We check for the monitor's scale factor when we want to set these bounds
+            // This is due to a long running Electron issue: https://github.com/electron/electron/issues/10862
+            return {
+                ...savedWindowState,
+                width: Math.floor(savedWindowState.width / matchingScreen.scaleFactor),
+                height: Math.floor(savedWindowState.height / matchingScreen.scaleFactor),
+            };
         } catch (e) {
             log.error(e);
 
             // Follow Electron's defaults, except for window dimensions which targets 1024x768 screen resolution.
-            savedWindowState = {width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT};
+            return {
+                width: DEFAULT_WINDOW_WIDTH,
+                height: DEFAULT_WINDOW_HEIGHT,
+            };
         }
-        return savedWindowState;
     };
 
     private saveWindowState = (file: string, window: BrowserWindow) => {
@@ -273,6 +283,7 @@ export class MainWindow extends EventEmitter {
             fullscreen: window.isFullScreen(),
         };
         try {
+            log.debug('saving window state', windowState);
             fs.writeFileSync(file, JSON.stringify(windowState));
         } catch (e) {
         // [Linux] error happens only when the window state is changed before the config dir is created.
