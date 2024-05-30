@@ -8,8 +8,7 @@ reviewers:
   - mattermost/team-desktop
 search:
   - "package.json"
-dependencies:
-  - "wix"
-devDependencies: []
-
+additionalDependencies:
+  - wix
+includeDevDependencies: true
 ...
