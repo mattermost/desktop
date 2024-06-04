@@ -1,11 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, shell, Notification} from 'electron';
+import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
-import {PLAY_SOUND, NOTIFICATION_CLICKED} from 'common/communication';
+import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 
@@ -70,11 +70,16 @@ class NotificationManager {
             log.debug('notification click', serverName, mention.uId);
 
             this.allActiveNotifications.delete(mention.uId);
-            MainWindow.show();
-            if (serverName) {
+
+            // Show the window after navigation has finished to avoid the focus handler
+            // being called before the current channel has updated
+            const focus = () => {
+                MainWindow.show();
                 ViewManager.showById(view.id);
-                webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
-            }
+                ipcMain.off(BROWSER_HISTORY_PUSH, focus);
+            };
+            ipcMain.on(BROWSER_HISTORY_PUSH, focus);
+            webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
         });
 
         mention.on('close', () => {
