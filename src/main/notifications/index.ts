@@ -27,6 +27,11 @@ class NotificationManager {
     private upgradeNotification?: NewVersionNotification;
     private restartToUpgradeNotification?: UpgradeNotification;
 
+    constructor() {
+        // Run this very early to perform an early permission check
+        getDoNotDisturb();
+    }
+
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
         log.debug('displayMention', {title, channelId, teamId, url, silent, soundName});
 
