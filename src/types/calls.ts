@@ -5,6 +5,7 @@ export type CallsWidgetWindowConfig = {
     title: string;
     rootID: string;
     channelURL: string;
+    startingCall?: boolean;
 }
 
 export type CallsJoinCallMessage = CallsWidgetWindowConfig;

@@ -41,6 +41,7 @@ export type DesktopAPI = {
         title: string;
         rootID: string;
         channelURL: string;
+        startingCall?: boolean;
     }) => Promise<{
         callID: string;
         sessionID: string;

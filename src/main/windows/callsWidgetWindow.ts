@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent} from 'electron';
+import type {Event, IpcMainEvent, IpcMainInvokeEvent, Rectangle} from 'electron';
 import {BrowserWindow, desktopCapturer, ipcMain, systemPreferences} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
@@ -36,10 +36,7 @@ import ViewManager from 'main/views/viewManager';
 import webContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
 
-import type {
-    CallsJoinCallMessage,
-    CallsWidgetWindowConfig,
-} from 'types/calls';
+import type {CallsJoinCallMessage, CallsWidgetWindowConfig} from 'types/calls';
 
 const log = new Logger('CallsWidgetWindow');
 
@@ -124,6 +121,9 @@ export class CallsWidgetWindow {
         }
         if (this.options?.rootID) {
             u.searchParams.append('root_id', this.options.rootID);
+        }
+        if (this.options?.startingCall) {
+            u.searchParams.append('starting_call', this.options.startingCall ? 'true' : 'false');
         }
 
         return u.toString();
@@ -475,6 +475,7 @@ export class CallsWidgetWindow {
             title: msg.title,
             rootID: msg.rootID,
             channelURL: msg.channelURL,
+            startingCall: msg.startingCall,
         });
 
         return promise;
