@@ -197,14 +197,20 @@ class NotificationManager {
     }
 }
 
-async function getDoNotDisturb() {
+export async function getDoNotDisturb() {
     if (process.platform === 'win32') {
         return getWindowsDoNotDisturb();
     }
 
     // We have to turn this off for dev mode because the Electron binary doesn't have the focus center API entitlement
     if (process.platform === 'darwin' && !isDev) {
-        return getDarwinDoNotDisturb();
+        try {
+            const dnd = await getDarwinDoNotDisturb();
+            return dnd;
+        } catch (e) {
+            log.warn('macOS DND check threw an error', e);
+            return false;
+        }
     }
 
     if (process.platform === 'linux') {
