@@ -143,6 +143,7 @@ jest.mock('main/CriticalErrorHandler', () => ({
 }));
 jest.mock('main/notifications', () => ({
     displayDownloadCompleted: jest.fn(),
+    getDoNotDisturb: jest.fn(),
 }));
 jest.mock('main/ParseArgs', () => jest.fn());
 jest.mock('common/servers/serverManager', () => ({
