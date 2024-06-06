@@ -47,6 +47,7 @@ import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
+import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PermissionsManager from 'main/permissionsManager';
 import Tray from 'main/tray/tray';
@@ -373,6 +374,9 @@ async function initializeAfterAppReady() {
             }
         }
     }
+
+    // Call this to initiate a permissions check for DND state
+    getDoNotDisturb();
 
     // listen for status updates and pass on to renderer
     UserActivityMonitor.on('status', (status) => {
