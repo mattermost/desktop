@@ -34,7 +34,7 @@ const mentions: Array<{body: string; value: any}> = [];
 jest.mock('child_process', () => ({
     execSync: jest.fn(),
 }));
-
+jest.mock('electron-is-dev', () => false);
 jest.mock('electron', () => {
     class NotificationMock {
         callbackMap: Map<string, () => void>;
@@ -132,6 +132,7 @@ describe('main/notifications', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
+            mentions.length = 0;
             Config.notifications = {
                 flashWindow: 0,
                 bounceIcon: false,
@@ -151,7 +152,7 @@ describe('main/notifications', () => {
                 {id: 1} as WebContents,
                 '',
             );
-            expect(MainWindow.show).not.toBeCalled();
+            expect(mentions.length).toBe(0);
         });
 
         it('should do nothing when alarms only is enabled on windows', async () => {
@@ -171,7 +172,7 @@ describe('main/notifications', () => {
                 {id: 1} as WebContents,
                 '',
             );
-            expect(MainWindow.show).not.toBeCalled();
+            expect(mentions.length).toBe(0);
 
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -195,7 +196,35 @@ describe('main/notifications', () => {
                 {id: 1} as WebContents,
                 '',
             );
-            expect(MainWindow.show).not.toBeCalled();
+            expect(mentions.length).toBe(0);
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should still show notification when dnd permission on mac is not authorized', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            getDarwinDoNotDisturb.mockImplementation(() => {
+                throw new Error('Unauthorized');
+            });
+            await NotificationManager.displayMention(
+                'test',
+                'test body',
+                'channel_id',
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1} as WebContents,
+                '',
+            );
+            expect(mentions.length).toBe(1);
+            const mention = mentions[0];
+            expect(mention.value.show).toHaveBeenCalled();
 
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -214,7 +243,7 @@ describe('main/notifications', () => {
                 {id: 1} as WebContents,
                 '',
             );
-            expect(MainWindow.show).not.toBeCalled();
+            expect(mentions.length).toBe(0);
         });
 
         it('should play notification sound when custom sound is provided', async () => {
