@@ -92,30 +92,37 @@ class NotificationManager {
                 log.debug('notification timeout', serverName, mention.uId);
                 resolve({status: 'error', reason: 'notification_timeout'});
             }, 10000);
+            let failed = false;
 
             mention.on('show', () => {
-                log.debug('displayMention.show', serverName, mention.uId);
+                // Ensure the failed event isn't also called, if it is we should resolve using its method
+                setTimeout(() => {
+                    if (!failed) {
+                        log.debug('displayMention.show', serverName, mention.uId);
 
-                // On Windows, manually dismiss notifications from the same channel and only show the latest one
-                if (process.platform === 'win32') {
-                    const mentionKey = `${mention.teamId}:${mention.channelId}`;
-                    if (this.mentionsPerChannel.has(mentionKey)) {
-                        log.debug(`close ${mentionKey}`);
-                        this.mentionsPerChannel.get(mentionKey)?.close();
-                        this.mentionsPerChannel.delete(mentionKey);
+                        // On Windows, manually dismiss notifications from the same channel and only show the latest one
+                        if (process.platform === 'win32') {
+                            const mentionKey = `${mention.teamId}:${mention.channelId}`;
+                            if (this.mentionsPerChannel.has(mentionKey)) {
+                                log.debug(`close ${mentionKey}`);
+                                this.mentionsPerChannel.get(mentionKey)?.close();
+                                this.mentionsPerChannel.delete(mentionKey);
+                            }
+                            this.mentionsPerChannel.set(mentionKey, mention);
+                        }
+                        const notificationSound = mention.getNotificationSound();
+                        if (notificationSound) {
+                            MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
+                        }
+                        flashFrame(true);
+                        clearTimeout(timeout);
+                        resolve({status: 'success'});
                     }
-                    this.mentionsPerChannel.set(mentionKey, mention);
-                }
-                const notificationSound = mention.getNotificationSound();
-                if (notificationSound) {
-                    MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
-                }
-                flashFrame(true);
-                clearTimeout(timeout);
-                resolve({status: 'success'});
+                }, 0);
             });
 
             mention.on('failed', (_, error) => {
+                failed = true;
                 this.allActiveNotifications.delete(mention.uId);
                 clearTimeout(timeout);
 
