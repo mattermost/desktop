@@ -32,7 +32,7 @@
     "check-build-config": "tsc ./src/common/config/buildConfig.ts --outDir dist --baseUrl src --skipLibCheck && node scripts/check_build_config.js",
     "check-types": "tsc",
     "prune": "ts-prune",
-    "i18n-extract": "mmjstool -- i18n extract-desktop",
+    "i18n-extract": "mmjstool i18n extract-desktop",
     "lint:js": "eslint --ext .js,.jsx,.tsx,.ts --cache .",
     "lint:js-quiet": "npm run lint:js -- --quiet",
     "fix:js": "npm run lint:js-quiet -- --fix",

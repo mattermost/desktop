@@ -90,6 +90,10 @@ import {
     SERVERS_UPDATE,
     VALIDATE_SERVER_URL,
     GET_APP_INFO,
+    OPEN_NOTIFICATION_PREFERENCES,
+    OPEN_WINDOWS_CAMERA_PREFERENCES,
+    OPEN_WINDOWS_MICROPHONE_PREFERENCES,
+    GET_MEDIA_ACCESS_STATUS,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -175,6 +179,10 @@ contextBridge.exposeInMainWorld('desktop', {
     onAppMenuWillClose: (listener) => ipcRenderer.on(APP_MENU_WILL_CLOSE, () => listener()),
     onFocusThreeDotMenu: (listener) => ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => listener()),
     updateURLViewWidth: (width) => ipcRenderer.send(UPDATE_URL_VIEW_WIDTH, width),
+    openNotificationPreferences: () => ipcRenderer.send(OPEN_NOTIFICATION_PREFERENCES),
+    openWindowsCameraPreferences: () => ipcRenderer.send(OPEN_WINDOWS_CAMERA_PREFERENCES),
+    openWindowsMicrophonePreferences: () => ipcRenderer.send(OPEN_WINDOWS_MICROPHONE_PREFERENCES),
+    getMediaAccessStatus: (mediaType) => ipcRenderer.invoke(GET_MEDIA_ACCESS_STATUS, mediaType),
 
     downloadsDropdown: {
         toggleDownloadsDropdownMenu: (payload) => ipcRenderer.send(TOGGLE_DOWNLOADS_DROPDOWN_MENU, payload),
