@@ -4,8 +4,8 @@
 'use strict';
 import notMockedCP from 'child_process';
 
-import type {BrowserWindow, WebContents} from 'electron';
-import {Notification as NotMockedNotification, shell, app} from 'electron';
+import type {BrowserWindow, IpcMain, IpcMainEvent, WebContents} from 'electron';
+import {Notification as NotMockedNotification, shell, app, ipcMain as NotMockedIpcMain} from 'electron';
 import {getDoNotDisturb as notMockedGetDarwinDoNotDisturb} from 'macos-notification-state';
 import {getFocusAssist as notMockedGetFocusAssist} from 'windows-focus-assist';
 
@@ -28,6 +28,7 @@ const Config = jest.mocked(notMockedConfig);
 const MainWindow = jest.mocked(notMockedMainWindow);
 const localizeMessage = jest.mocked(notMockedLocalizeMessage);
 const cp = jest.mocked(notMockedCP);
+const ipcMain = jest.mocked(NotMockedIpcMain);
 
 const mentions: Array<{body: string; value: any}> = [];
 
@@ -68,6 +69,10 @@ jest.mock('electron', () => {
             dock: {
                 bounce: jest.fn(),
             },
+        },
+        ipcMain: {
+            on: jest.fn(),
+            off: jest.fn(),
         },
         Notification: NotificationMock,
         shell: {
@@ -302,7 +307,12 @@ describe('main/notifications', () => {
             });
         });
 
-        it('should switch view when clicking on notification', async () => {
+        it('should switch view when clicking on notification, but after the navigation has happened', async () => {
+            let listener: (event: IpcMainEvent, ...args: any[]) => void;
+            ipcMain.on.mockImplementation((channel: string, cb: (event: IpcMainEvent, ...args: any[]) => void): IpcMain => {
+                listener = cb;
+                return ipcMain;
+            });
             await NotificationManager.displayMention(
                 'click_test',
                 'mention_click_body',
@@ -315,6 +325,12 @@ describe('main/notifications', () => {
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention?.value.click();
+            expect(MainWindow.show).not.toHaveBeenCalled();
+            expect(ViewManager.showById).not.toHaveBeenCalledWith('server_id');
+
+            // @ts-expect-error "Set by the click handler"
+            listener?.({} as unknown as IpcMainEvent);
+
             expect(MainWindow.show).toHaveBeenCalled();
             expect(ViewManager.showById).toHaveBeenCalledWith('server_id');
         });
