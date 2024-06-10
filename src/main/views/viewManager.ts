@@ -272,7 +272,7 @@ export class ViewManager {
         this.views.set(view.id, view);
 
         // Force a permission check for notifications
-        if (view.view.type === TAB_MESSAGING && process.env.NODE_ENV !== 'test') {
+        if (view.view.type === TAB_MESSAGING) {
             const notificationPermission = PermissionsManager.getForServer(view.view.server)?.notifications;
             if (!notificationPermission || (!notificationPermission.allowed && notificationPermission.alwaysDeny !== true)) {
                 PermissionsManager.doPermissionRequest(
