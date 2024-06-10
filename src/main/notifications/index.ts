@@ -118,8 +118,15 @@ class NotificationManager {
             mention.on('failed', (_, error) => {
                 this.allActiveNotifications.delete(mention.uId);
                 clearTimeout(timeout);
-                log.error('notification failed to show', serverName, mention.uId, error);
-                resolve({status: 'error', reason: 'electron_notification_failed', data: error});
+
+                // Special case for Windows - means that notifications are disabled at the OS level
+                if (error.includes('HRESULT:-2143420143')) {
+                    log.warn('notifications disabled in Windows settings');
+                    resolve({status: 'not_sent', reason: 'windows_permissions_denied'});
+                } else {
+                    log.error('notification failed to show', serverName, mention.uId, error);
+                    resolve({status: 'error', reason: 'electron_notification_failed', data: error});
+                }
             });
             mention.show();
         });
