@@ -104,7 +104,7 @@ describe('main/windows/mainWindow', () => {
             BrowserWindow.mockImplementation(() => baseWindow);
             fs.readFileSync.mockImplementation(() => '{"x":400,"y":300,"width":1280,"height":700,"maximized":false,"fullscreen":false}');
             path.join.mockImplementation(() => 'anyfile.txt');
-            screen.getDisplayMatching.mockImplementation(() => ({bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            screen.getDisplayMatching.mockImplementation(() => ({scaleFactor: 1, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
             isInsideRectangle.mockReturnValue(true);
             Validator.validateBoundsInfo.mockImplementation((data) => data);
             ContextMenu.mockImplementation(() => ({
@@ -124,6 +124,20 @@ describe('main/windows/mainWindow', () => {
                 y: 300,
                 width: 1280,
                 height: 700,
+                maximized: false,
+                fullscreen: false,
+            }));
+        });
+
+        it('should set scaled window size using bounds read from file', () => {
+            screen.getDisplayMatching.mockImplementation(() => ({scaleFactor: 2, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                x: 400,
+                y: 300,
+                width: 640,
+                height: 350,
                 maximized: false,
                 fullscreen: false,
             }));
