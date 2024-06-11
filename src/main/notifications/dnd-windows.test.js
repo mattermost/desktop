@@ -51,9 +51,9 @@ describe('main/notifications/dnd-windows', () => {
 
         getFocusAssist.mockReturnValue({value: 1});
         isPriority.mockReturnValue({value: 0});
-        expect(doNotDisturb()).toBe(false);
-        isPriority.mockReturnValue({value: 1});
         expect(doNotDisturb()).toBe(true);
+        isPriority.mockReturnValue({value: 1});
+        expect(doNotDisturb()).toBe(false);
 
         Object.defineProperty(process, 'platform', {
             value: originalPlatform,
