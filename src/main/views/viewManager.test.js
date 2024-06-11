@@ -158,6 +158,25 @@ describe('main/views/viewManager', () => {
         });
     });
 
+    describe('reload', () => {
+        const viewManager = new ViewManager();
+        const currentView = {
+            currentURL: new URL('http://server-1.com/team/channel'),
+            reload: jest.fn(),
+        };
+        viewManager.views.set('view1', currentView);
+        viewManager.currentView = 'view1';
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should reload using the current URL', () => {
+            viewManager.reload();
+            expect(currentView.reload).toBeCalledWith(new URL('http://server-1.com/team/channel'));
+        });
+    });
+
     describe('handleReloadConfiguration', () => {
         const viewManager = new ViewManager();
 
