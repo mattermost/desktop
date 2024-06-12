@@ -296,7 +296,7 @@
   "renderer.modals.login.loginModal.message.server": "Serwer {url} wymaga podania nazwy użytkownika i hasła.",
   "renderer.modals.login.loginModal.password": "Hasło",
   "renderer.modals.login.loginModal.title": "Wymagane uwierzytelnienie",
-  "renderer.modals.login.loginModal.username": "Nazwa użytkownika",
+  "renderer.modals.login.loginModal.username": "Nazwa Użytkownika",
   "renderer.modals.permission.permissionModal.body": "Witryna, która nie jest uwzględniona w konfiguracji serwera Mattermost, wymaga dostępu dla {permission}.",
   "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "To żądanie pochodzi z <link>{origin}</link>",
   "renderer.modals.permission.permissionModal.title": "{permission} Wymagane",
