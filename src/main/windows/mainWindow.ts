@@ -258,12 +258,15 @@ export class MainWindow extends EventEmitter {
             if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
                 throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
             }
+
             // We check for the monitor's scale factor when we want to set these bounds
             // This is due to a long running Electron issue: https://github.com/electron/electron/issues/10862
+            // This only needs to be done on Windows, it causes strange behaviour on Mac otherwise
+            const scaleFactor = process.platform === 'win32' ? matchingScreen.scaleFactor : 1;
             return {
                 ...savedWindowState,
-                width: Math.floor(savedWindowState.width / matchingScreen.scaleFactor),
-                height: Math.floor(savedWindowState.height / matchingScreen.scaleFactor),
+                width: Math.floor(savedWindowState.width / scaleFactor),
+                height: Math.floor(savedWindowState.height / scaleFactor),
             };
         } catch (e) {
             log.error(e);
