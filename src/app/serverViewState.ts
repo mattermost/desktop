@@ -33,8 +33,8 @@ import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import type {UniqueServer, Server} from 'types/config';
-import type {Permissions} from 'types/permissions';
+import type {Server} from 'types/config';
+import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
 
 const log = new Logger('App', 'ServerViewState');
@@ -163,7 +163,7 @@ export class ServerViewState {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<{server: UniqueServer; permissions: Permissions}, {server: UniqueServer; permissions: Permissions}>(
+        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
             'editServer',
             getLocalURLString('editServer.html'),
             getLocalPreload('internalAPI.js'),

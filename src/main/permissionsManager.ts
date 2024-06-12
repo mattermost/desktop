@@ -88,25 +88,22 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
 
     setForServer = (server: MattermostServer, permissions: Permissions) => {
         if (permissions.media?.allowed) {
-            if (systemPreferences.getMediaAccessStatus('microphone') !== 'granted') {
-                // For windows, this isn't likely normal, so just log it for now
-                if (process.platform === 'win32') {
-                    log.warn('Microphone access disabled in Windows settings');
-                }
-
-                systemPreferences.askForMediaAccess('microphone');
-            }
-            if (systemPreferences.getMediaAccessStatus('camera') !== 'granted') {
-                // For windows, this isn't likely normal, so just log it for now
-                if (process.platform === 'win32') {
-                    log.warn('Camera access disabled in Windows settings');
-                }
-
-                systemPreferences.askForMediaAccess('camera');
-            }
+            this.checkMediaAccess('microphone');
+            this.checkMediaAccess('camera');
         }
 
         return this.setValue(server.url.origin, permissions);
+    };
+
+    private checkMediaAccess = (mediaType: 'microphone' | 'camera') => {
+        if (systemPreferences.getMediaAccessStatus(mediaType) !== 'granted') {
+            // For windows, the user needs to enable these manually
+            if (process.platform === 'win32') {
+                log.warn(`${mediaType} access disabled in Windows settings`);
+            }
+
+            systemPreferences.askForMediaAccess(mediaType);
+        }
     };
 
     doPermissionRequest = async (
