@@ -129,7 +129,12 @@ describe('main/windows/mainWindow', () => {
             }));
         });
 
-        it('should set scaled window size using bounds read from file', () => {
+        it('should set scaled window size on Windows using bounds read from file', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
             screen.getDisplayMatching.mockImplementation(() => ({scaleFactor: 2, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
             const mainWindow = new MainWindow();
             mainWindow.init();
@@ -141,6 +146,33 @@ describe('main/windows/mainWindow', () => {
                 maximized: false,
                 fullscreen: false,
             }));
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should NOT set scaled window size on Mac using bounds read from file', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            screen.getDisplayMatching.mockImplementation(() => ({scaleFactor: 2, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                x: 400,
+                y: 300,
+                width: 1280,
+                height: 700,
+                maximized: false,
+                fullscreen: false,
+            }));
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
 
         it('should set default window size when failing to read bounds from file', () => {
