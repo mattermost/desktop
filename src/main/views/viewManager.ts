@@ -165,7 +165,7 @@ export class ViewManager {
         const currentView = this.getCurrentView();
         if (currentView) {
             LoadingScreen.show();
-            currentView.reload();
+            currentView.reload(currentView.currentURL);
         }
     };
 
