@@ -5,6 +5,7 @@
 const fs = require('fs');
 
 const {clipboard} = require('electron');
+const robot = require('robotjs');
 
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
@@ -38,7 +39,8 @@ describe('copylink', function desc() {
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#sidebarItem_town-square');
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
-        await firstServer.click('li.SidebarChannel.expanded.active > span > nav > div');
+        robot.keyTap('c');
+        robot.keyTap('enter');
         await firstServer.click('#sidebarItem_town-square');
         await firstServer.click('#post_textbox');
         const clipboardText = clipboard.readText();

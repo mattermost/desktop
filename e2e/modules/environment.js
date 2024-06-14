@@ -11,10 +11,9 @@ const chai = require('chai');
 const {ipcRenderer} = require('electron');
 const {_electron: electron} = require('playwright');
 const ps = require('ps-node');
+const {SHOW_SETTINGS_WINDOW} = require('src/common/communication');
 
 const {asyncSleep, mkDirAsync, rmDirAsync, unlinkAsync} = require('./utils');
-
-const {SHOW_SETTINGS_WINDOW} = require('../../src/common/communication');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -218,7 +217,7 @@ module.exports = {
                 RESOURCES_PATH: userDataDir,
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', ...args],
+            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', ...args],
         };
 
         // if (process.env.MM_DEBUG_SETTINGS) {

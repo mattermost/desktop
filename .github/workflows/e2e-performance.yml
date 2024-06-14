@@ -47,7 +47,7 @@ jobs:
         run: npm ci
 
       - name: E2E Performance Tests for Electron 🧪
-        run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test:e2e:performance
+        run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- cd e2e && npm run test:performance
 
       - name: Upload artifact to Github
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1

@@ -4,19 +4,22 @@
 const path = require('path');
 
 const glob = require('glob');
-const {merge} = require('webpack-merge');
+const webpack = require('webpack');
 
-const base = require('./webpack.config.base');
-
-module.exports = merge(base, {
+module.exports = {
+    mode: 'development',
     entry: {
-        e2e: glob.sync('./e2e/specs/**/*.js'),
+        e2e: glob.sync('./specs/**/*.js'),
     },
     output: {
-        path: path.resolve(__dirname, 'dist/tests'),
+        path: path.resolve(__dirname, 'dist/'),
         filename: '[name]_bundle.js',
     },
+    plugins: [
+        new webpack.DefinePlugin({__IS_MAC_APP_STORE__: false}),
+    ],
     externals: {
+        electron: 'require("electron")',
         fs: 'require("fs")',
         ws: 'require("ws")',
         child_process: 'require("child_process")',
@@ -28,9 +31,26 @@ module.exports = merge(base, {
         playwright: 'require("playwright")',
         robotjs: 'require("robotjs")',
     },
+    module: {
+        rules: [{
+            test: /\.(js|ts)?$/,
+            exclude: /node_modules/,
+            loader: 'babel-loader',
+        }],
+    },
     node: {
         __filename: false,
         __dirname: false,
     },
-    target: 'electron-main',
-});
+    target: 'node',
+    resolve: {
+        modules: [
+            'node_modules',
+            '../src',
+        ],
+        alias: {
+            src: path.resolve(__dirname, '../src'),
+        },
+        extensions: ['.ts', '.js'],
+    },
+};

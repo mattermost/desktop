@@ -109,6 +109,16 @@
             }
         },
         {
+            "files": ["e2e/**/*"],
+            "settings": {
+                "import/resolver": {
+                    "webpack": {
+                        "config": "webpack.config.js"
+                    }
+                }
+            }
+        },
+        {
             "files": [
                 "webpack.config.renderer.js",
                 "e2e/specs/startup/app.test.js",
@@ -117,7 +127,7 @@
                 "e2e/modules/environment.js",
                 "CHANGELOG.md",
                 "webpack.config.base.js",
-                "babel.config.js",
+                "./babel.config.js",
                 "README.md",
                 "scripts/check_build_config.js",
                 "LICENSE.txt",

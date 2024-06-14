@@ -28,7 +28,7 @@ module.exports = merge(base, {
         welcomeScreen: './src/renderer/modals/welcomeScreen/welcomeScreen.tsx',
     },
     output: {
-        path: path.resolve(__dirname, 'dist/renderer'),
+        path: process.env.NODE_ENV === 'test' ? path.resolve(__dirname, 'e2e/dist/renderer') : path.resolve(__dirname, 'dist/renderer'),
         filename: '[name]_bundle.js',
         assetModuleFilename: '[name].[ext]',
     },

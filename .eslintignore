@@ -1,4 +1,5 @@
 node_modules
 dist
 api-types/lib
-mochawesome-report
+e2e/mochawesome-report
+e2e/dist
