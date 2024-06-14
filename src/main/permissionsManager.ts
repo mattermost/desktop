@@ -179,6 +179,11 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
             }
 
             const promise = new Promise<boolean>((resolve) => {
+                if (process.env.NODE_ENV === 'test') {
+                    resolve(false);
+                    return;
+                }
+
                 // Show the dialog to ask the user
                 dialog.showMessageBox(mainWindow, {
                     title: localizeMessage('main.permissionsManager.checkPermission.dialog.title', 'Permission Requested'),

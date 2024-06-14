@@ -63,7 +63,10 @@ describe('main/PermissionsManager', () => {
     });
 
     describe('handlePermissionRequest', () => {
+        const env = process.env;
+
         beforeEach(() => {
+            process.env = {...env, NODE_ENV: 'jest'};
             MainWindow.get.mockReturnValue({webContents: {id: 1}});
             ViewManager.getViewByWebContentsId.mockImplementation((id) => {
                 if (id === 2) {
@@ -85,6 +88,7 @@ describe('main/PermissionsManager', () => {
 
         afterEach(() => {
             jest.resetAllMocks();
+            process.env = env;
         });
 
         it('should deny if the permission is not supported', async () => {
