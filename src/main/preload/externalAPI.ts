@@ -36,6 +36,7 @@ import {
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
     CALLS_LINK_CLICK,
     CALLS_POPOUT_FOCUS,
+    CALLS_WIDGET_OPEN_THREAD,
     GET_DESKTOP_SOURCES,
     UNREADS_AND_MENTIONS,
     LEGACY_OFF,
@@ -108,6 +109,9 @@ const desktopAPI: DesktopAPI = {
     openLinkFromCalls: (url) => ipcRenderer.send(CALLS_LINK_CLICK, url),
 
     focusPopout: () => ipcRenderer.send(CALLS_POPOUT_FOCUS),
+
+    openThread: (threadID) => ipcRenderer.send(CALLS_WIDGET_OPEN_THREAD, threadID),
+    onOpenThread: (listener) => createListener(CALLS_WIDGET_OPEN_THREAD, listener),
 
     // Utility
     unregister: (channel) => ipcRenderer.removeAllListeners(channel),

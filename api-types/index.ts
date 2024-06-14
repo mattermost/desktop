@@ -70,6 +70,9 @@ export type DesktopAPI = {
 
     focusPopout: () => void;
 
+    openThread: (threadID: string) => void;
+    onOpenThread: (listener: (threadID: string) => void) => () => void;
+
     // Utility
     unregister: (channel: string) => void;
 }
