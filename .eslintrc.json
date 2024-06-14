@@ -29,6 +29,7 @@
         "react/no-find-dom-node": 2,
         "no-underscore-dangle": ["warn"],
         "@mattermost/use-external-link": 0,
+        "linebreak-style": 0,
         "import/order": [
             2,
             {
