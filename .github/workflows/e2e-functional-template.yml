@@ -195,7 +195,7 @@ jobs:
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
-            cd e2e
+            process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
             const { commentBody, newFailedTests } = analyzeFlakyTests();
             core.setOutput('COMMENT_BODY', commentBody);
