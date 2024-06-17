@@ -31,10 +31,10 @@
         min-width: 40px;
         height: 24px;
         border-radius: 14px;
-        background: rgba(var(--center-channel-bg-rgb), 0.24);
+        background: rgba(var(--center-channel-color-rgb), 0.24);
 
         &.disabled {
-            background: rgba(var(--center-channel-bg-rgb), 0.08);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
         }
 
         // Inner circle
