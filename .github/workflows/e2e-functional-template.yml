@@ -146,7 +146,10 @@ jobs:
           wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
           sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xsel
           npm ci
+          cd e2e
+          npm ci
           npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
+          cd ../
 
       - name: e2e/install-dependencies-macos
         if: runner.os == 'macOS'
@@ -155,7 +158,10 @@ jobs:
         run: |
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
+          cd e2e
+          npm ci
           npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs
+          cd ../
 
       ## Windows Dependencies
       - name: e2e/install-dependencies-windows
@@ -169,8 +175,10 @@ jobs:
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
           npm ci --openssl_fips=''
-          npm i robotjs
+          cd e2e
+          npm ci
           npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs
+          cd ../
 
       - name: e2e/run-playright-tests-${{ runner.os }}
         run: |
@@ -178,15 +186,17 @@ jobs:
             export DISPLAY=:99
             Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           fi
-          npm run test:e2e || true # making job pass even if the tests fail due to flakyness
-          npm run test:e2e:send-report
+          npm run e2e || true # making job pass even if the tests fail due to flakyness
+          cd e2e
+          npm run send-report
 
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
-            const { analyzeFlakyTests } = require('./e2e/utils/analyze-flaky-test.js');
+            process.chdir('./e2e');
+            const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
             const { commentBody, newFailedTests } = analyzeFlakyTests();
             core.setOutput('COMMENT_BODY', commentBody);
             if (newFailedTests.length > 0) {

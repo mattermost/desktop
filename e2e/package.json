@@ -1,0 +1,39 @@
+{
+  "name": "desktop-e2e",
+  "version": "1.0.0",
+  "description": "E2E tests for the Desktop App",
+  "main": "dist/e2e_bundle.js",
+  "scripts": {
+    "clean": "rm -rf dist/ mochawesome-report/ node_modules/ testUserData/",
+    "run": "npm run build && npm run test",
+    "build": "webpack-cli --config webpack.config.js",
+    "build:performance": "webpack-cli --config webpack.config.performance.js",
+    "test": "electron-mocha --reporter mochawesome dist/e2e_bundle.js",
+    "test:performance": "electron-mocha --reporter json --reporter-option output=./performance/perf-test-report.json dist/e2e_bundle.js",
+    "send-report": "node ./save_report.js",
+    "postinstall": "cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/mattermost/desktop.git"
+  },
+  "author": "Mattermost, Inc. <feedback@mattermost.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/mattermost/desktop/issues"
+  },
+  "homepage": "https://github.com/mattermost/desktop#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.445.0",
+    "@aws-sdk/lib-storage": "3.445.0",
+    "@electron/rebuild": "3.6.0",
+    "axios": "1.6.7",
+    "chai": "4.3.6",
+    "electron-mocha": "12.2.0",
+    "mochawesome": "7.1.3",
+    "playwright": "1.42.0",
+    "ps-node": "0.1.6",
+    "recursive-readdir": "2.2.3",
+    "robotjs": "0.6.0"
+  }
+}

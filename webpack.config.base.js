@@ -53,4 +53,7 @@ module.exports = {
         },
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     },
+    output: {
+        path: process.env.NODE_ENV === 'test' ? path.resolve(__dirname, 'e2e/dist/') : undefined,
+    },
 };
