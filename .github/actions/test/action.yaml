@@ -11,6 +11,9 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: ci/run-eslint
+      run: npm run lint:js-quiet
+      shell: ${{ inputs.shell }}
     - name: ci/run-check-types
       run: npm run check-types
       shell: ${{ inputs.shell }}
