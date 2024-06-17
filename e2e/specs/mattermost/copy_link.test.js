@@ -40,13 +40,14 @@ describe('copylink', function desc() {
         await firstServer.waitForSelector('#sidebarItem_town-square');
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
         switch (process.platform) {
-            case 'linux':
-                robot.keyTap('down');
-                robot.keyTap('down');
-                break;
-            case 'darwin':
-                robot.keyTap('c');
-                break;
+        case 'linux':
+        case 'win32':
+            robot.keyTap('down');
+            robot.keyTap('down');
+            break;
+        case 'darwin':
+            robot.keyTap('c');
+            break;
         }
         robot.keyTap('enter');
         await firstServer.click('#sidebarItem_town-square');
