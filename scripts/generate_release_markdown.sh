@@ -26,8 +26,8 @@ $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-x64.msi")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-arm64.msi") (beta)
 
 #### Windows - zip files
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win64.zip")
-$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-arm64.zip") (beta)
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-x64.zip")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-win-arm64.zip") (beta)
 
 #### Mac
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-mac-universal.dmg")
