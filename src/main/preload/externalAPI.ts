@@ -37,6 +37,7 @@ import {
     CALLS_LINK_CLICK,
     CALLS_POPOUT_FOCUS,
     CALLS_WIDGET_OPEN_THREAD,
+    CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL,
     GET_DESKTOP_SOURCES,
     UNREADS_AND_MENTIONS,
     LEGACY_OFF,
@@ -112,6 +113,9 @@ const desktopAPI: DesktopAPI = {
 
     openThread: (threadID) => ipcRenderer.send(CALLS_WIDGET_OPEN_THREAD, threadID),
     onOpenThread: (listener) => createListener(CALLS_WIDGET_OPEN_THREAD, listener),
+
+    openStopRecordingModal: (channelID) => ipcRenderer.send(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, channelID),
+    onOpenStopRecordingModal: (listener) => createListener(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, listener),
 
     // Utility
     unregister: (channel) => ipcRenderer.removeAllListeners(channel),

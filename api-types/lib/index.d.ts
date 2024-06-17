@@ -61,5 +61,7 @@ export type DesktopAPI = {
     focusPopout: () => void;
     openThread: (threadID: string) => void;
     onOpenThread: (listener: (threadID: string) => void) => () => void;
+    openStopRecordingModal: (channelID: string) => void;
+    onOpenStopRecordingModal: (listener: (channelID: string) => void) => () => void;
     unregister: (channel: string) => void;
 };

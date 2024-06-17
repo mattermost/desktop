@@ -4,7 +4,13 @@
 import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
-import {CALLS_WIDGET_SHARE_SCREEN, BROWSER_HISTORY_PUSH, UPDATE_SHORTCUT_MENU, CALLS_WIDGET_OPEN_THREAD} from 'common/communication';
+import {
+    CALLS_WIDGET_SHARE_SCREEN,
+    BROWSER_HISTORY_PUSH,
+    UPDATE_SHORTCUT_MENU,
+    CALLS_WIDGET_OPEN_THREAD,
+    CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL,
+} from 'common/communication';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -876,6 +882,35 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith(CALLS_WIDGET_OPEN_THREAD, threadID);
+        });
+    });
+
+    describe('handleCallsOpenStopRecordingModal', () => {
+        const view = {
+            view: {
+                server: {
+                    id: 'server-1',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.mainView = view;
+        callsWidgetWindow.win = {webContents: {id: 1}};
+
+        const focus = jest.fn();
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue({focus});
+            ViewManager.getView.mockReturnValue(view);
+        });
+
+        it('should switch server, focus and send open modal event', () => {
+            const channelID = 'call-channel-id';
+            callsWidgetWindow.handleCallsOpenStopRecordingModal({sender: {id: 1}}, channelID);
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(focus).toHaveBeenCalled();
+            expect(view.sendToRenderer).toBeCalledWith(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, channelID);
         });
     });
 });
