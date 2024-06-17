@@ -39,7 +39,15 @@ describe('copylink', function desc() {
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#sidebarItem_town-square');
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
-        robot.keyTap('c');
+        switch (process.platform) {
+            case 'linux':
+                robot.keyTap('down');
+                robot.keyTap('down');
+                break;
+            case 'darwin':
+                robot.keyTap('c');
+                break;
+        }
         robot.keyTap('enter');
         await firstServer.click('#sidebarItem_town-square');
         await firstServer.click('#post_textbox');
