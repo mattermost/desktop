@@ -159,7 +159,7 @@
     "webpack-merge": "5.8.0"
   },
   "dependencies": {
-    "@mattermost/compass-icons": "0.1.43",
+    "@mattermost/compass-icons": "0.1.45",
     "auto-launch": "5.0.6",
     "bootstrap": "4.6.1",
     "bootstrap-dark": "1.0.3",

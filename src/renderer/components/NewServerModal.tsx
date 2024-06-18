@@ -571,7 +571,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                 isChecked={this.state.permissions.geolocation?.allowed}
                                 onChange={this.handleChangePermission('geolocation')}
                             >
-                                <i className='icon icon-pin-outline'/>
+                                <i className='icon icon-map-marker-outline'/>
                                 <FormattedMessage
                                     id='renderer.components.newServerModal.permissions.geolocation'
                                     defaultMessage='Location'
