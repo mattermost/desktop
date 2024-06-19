@@ -8,16 +8,19 @@ import type {IntlShape} from 'react-intl';
 import {FormattedMessage, injectIntl} from 'react-intl';
 
 import {URLValidationStatus} from 'common/utils/constants';
+import Toggle from 'renderer/components/Toggle';
 
 import type {UniqueServer} from 'types/config';
+import type {Permissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
 
 import 'renderer/css/components/NewServerModal.scss';
 
 type Props = {
     onClose?: () => void;
-    onSave?: (server: UniqueServer) => void;
+    onSave?: (server: UniqueServer, permissions?: Permissions) => void;
     server?: UniqueServer;
+    permissions?: Permissions;
     editMode?: boolean;
     show?: boolean;
     restoreFocus?: boolean;
@@ -34,6 +37,9 @@ type State = {
     saveStarted: boolean;
     validationStarted: boolean;
     validationResult?: URLValidationResult;
+    permissions: Permissions;
+    cameraDisabled: boolean;
+    microphoneDisabled: boolean;
 }
 
 class NewServerModal extends React.PureComponent<Props, State> {
@@ -57,6 +63,9 @@ class NewServerModal extends React.PureComponent<Props, State> {
             serverOrder: props.currentOrder || 0,
             saveStarted: false,
             validationStarted: false,
+            permissions: {},
+            cameraDisabled: false,
+            microphoneDisabled: false,
         };
     }
 
@@ -68,7 +77,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
         this.mounted = false;
     }
 
-    initializeOnShow = () => {
+    initializeOnShow = async () => {
+        const cameraDisabled = window.process.platform === 'win32' && await window.desktop.getMediaAccessStatus('camera') !== 'granted';
+        const microphoneDisabled = window.process.platform === 'win32' && await window.desktop.getMediaAccessStatus('microphone') !== 'granted';
+
         this.setState({
             serverName: this.props.server ? this.props.server.name : '',
             serverUrl: this.props.server ? this.props.server.url : '',
@@ -76,6 +88,9 @@ class NewServerModal extends React.PureComponent<Props, State> {
             saveStarted: false,
             validationStarted: false,
             validationResult: undefined,
+            permissions: this.props.permissions ?? {},
+            cameraDisabled,
+            microphoneDisabled,
         });
 
         if (this.props.editMode && this.props.server) {
@@ -93,6 +108,20 @@ class NewServerModal extends React.PureComponent<Props, State> {
         const serverUrl = e.target.value;
         this.setState({serverUrl, validationResult: undefined});
         this.validateServerURL(serverUrl);
+    };
+
+    handleChangePermission = (permissionKey: string) => {
+        return (e: React.ChangeEvent<HTMLInputElement>) => {
+            this.setState({
+                permissions: {
+                    ...this.state.permissions,
+                    [permissionKey]: {
+                        allowed: e.target.checked,
+                        alwaysDeny: e.target.checked ? undefined : true,
+                    },
+                },
+            });
+        };
     };
 
     validateServerURL = (serverUrl: string) => {
@@ -253,6 +282,18 @@ class NewServerModal extends React.PureComponent<Props, State> {
         );
     };
 
+    openNotificationPrefs = () => {
+        window.desktop.openNotificationPreferences();
+    };
+
+    openWindowsCameraPrefs = () => {
+        window.desktop.openWindowsCameraPreferences();
+    };
+
+    openWindowsMicrophonePrefs = () => {
+        window.desktop.openWindowsMicrophonePreferences();
+    };
+
     getServerNameMessage = () => {
         if (!this.state.serverName.length) {
             return (
@@ -287,7 +328,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 url: this.state.serverUrl,
                 name: this.state.serverName,
                 id: this.state.serverId,
-            });
+            }, this.state.permissions);
         });
     };
 
@@ -330,6 +371,17 @@ class NewServerModal extends React.PureComponent<Props, State> {
             this.initializeOnShow();
         }
         this.wasShown = this.props.show;
+
+        const notificationValues = {
+            link: (msg: React.ReactNode) => (
+                <a
+                    href='#'
+                    onClick={this.openNotificationPrefs}
+                >
+                    {msg}
+                </a>
+            ),
+        };
 
         return (
             <Modal
@@ -428,6 +480,105 @@ class NewServerModal extends React.PureComponent<Props, State> {
                         {this.getServerNameMessage()}
                         {this.getServerURLMessage()}
                     </div>
+                    {this.props.editMode &&
+                        <>
+                            <hr/>
+                            <h5>
+                                <FormattedMessage
+                                    id='renderer.components.newServerModal.permissions.title'
+                                    defaultMessage='Permissions'
+                                />
+                            </h5>
+                            <Toggle
+                                isChecked={this.state.permissions.media?.allowed}
+                                onChange={this.handleChangePermission('media')}
+                            >
+                                <i className='icon icon-microphone'/>
+                                <div>
+                                    <FormattedMessage
+                                        id='renderer.components.newServerModal.permissions.microphoneAndCamera'
+                                        defaultMessage='Microphone and Camera'
+                                    />
+                                    {this.state.cameraDisabled &&
+                                        <FormText>
+                                            <FormattedMessage
+                                                id='renderer.components.newServerModal.permissions.microphoneAndCamera.windowsCameraPermissions'
+                                                defaultMessage='Camera is disabled in Windows Settings. Click <link>here</link> to open the Camera Settings.'
+                                                values={{
+                                                    link: (msg: React.ReactNode) => (
+                                                        <a
+                                                            href='#'
+                                                            onClick={this.openWindowsCameraPrefs}
+                                                        >
+                                                            {msg}
+                                                        </a>
+                                                    ),
+                                                }}
+                                            />
+                                        </FormText>
+                                    }
+                                    {this.state.microphoneDisabled &&
+                                        <FormText>
+                                            <FormattedMessage
+                                                id='renderer.components.newServerModal.permissions.microphoneAndCamera.windowsMicrophoneaPermissions'
+                                                defaultMessage='Microphone is disabled in Windows Settings. Click <link>here</link> to open the Microphone Settings.'
+                                                values={{
+                                                    link: (msg: React.ReactNode) => (
+                                                        <a
+                                                            href='#'
+                                                            onClick={this.openWindowsMicrophonePrefs}
+                                                        >
+                                                            {msg}
+                                                        </a>
+                                                    ),
+                                                }}
+                                            />
+                                        </FormText>
+                                    }
+                                </div>
+                            </Toggle>
+                            <Toggle
+                                isChecked={this.state.permissions.notifications?.allowed}
+                                onChange={this.handleChangePermission('notifications')}
+                            >
+                                <i className='icon icon-bell-outline'/>
+                                <div>
+                                    <FormattedMessage
+                                        id='renderer.components.newServerModal.permissions.notifications'
+                                        defaultMessage='Notifications'
+                                    />
+                                    {window.process.platform === 'darwin' &&
+                                    <FormText>
+                                        <FormattedMessage
+                                            id='renderer.components.newServerModal.permissions.notifications.mac'
+                                            defaultMessage='You may also need to enable notifications in macOS for Mattermost. Click <link>here</link> to open the System Preferences.'
+                                            values={notificationValues}
+                                        />
+                                    </FormText>
+                                    }
+                                    {window.process.platform === 'win32' &&
+                                        <FormText>
+                                            <FormattedMessage
+                                                id='renderer.components.newServerModal.permissions.notifications.windows'
+                                                defaultMessage='You may also need to enable notifications in Windows for Mattermost. Click <link>here</link> to open the Notification Settings.'
+                                                values={notificationValues}
+                                            />
+                                        </FormText>
+                                    }
+                                </div>
+                            </Toggle>
+                            <Toggle
+                                isChecked={this.state.permissions.geolocation?.allowed}
+                                onChange={this.handleChangePermission('geolocation')}
+                            >
+                                <i className='icon icon-map-marker-outline'/>
+                                <FormattedMessage
+                                    id='renderer.components.newServerModal.permissions.geolocation'
+                                    defaultMessage='Location'
+                                />
+                            </Toggle>
+                        </>
+                    }
                 </Modal.Body>
 
                 <Modal.Footer>

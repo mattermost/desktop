@@ -5,7 +5,7 @@ import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
-import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH} from 'common/communication';
+import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 
@@ -26,6 +26,10 @@ class NotificationManager {
     private allActiveNotifications: Map<string, Notification> = new Map();
     private upgradeNotification?: NewVersionNotification;
     private restartToUpgradeNotification?: UpgradeNotification;
+
+    constructor() {
+        ipcMain.on(OPEN_NOTIFICATION_PREFERENCES, this.openNotificationPreferences);
+    }
 
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
         log.debug('displayMention', {title, channelId, teamId, url, silent, soundName});
@@ -208,6 +212,17 @@ class NotificationManager {
             handleUpgrade();
         });
         this.restartToUpgradeNotification.show();
+    }
+
+    private openNotificationPreferences() {
+        switch (process.platform) {
+        case 'darwin':
+            shell.openExternal('x-apple.systempreferences:com.apple.preference.notifications?Notifications');
+            break;
+        case 'win32':
+            shell.openExternal('ms-settings:notifications');
+            break;
+        }
     }
 }
 

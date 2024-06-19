@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {dialog} from 'electron';
+import {dialog, systemPreferences} from 'electron';
 
 import {parseURL, isTrustedURL} from 'common/utils/url';
 import ViewManager from 'main/views/viewManager';
@@ -21,9 +21,14 @@ jest.mock('electron', () => ({
     },
     ipcMain: {
         on: jest.fn(),
+        handle: jest.fn(),
     },
     dialog: {
         showMessageBox: jest.fn(),
+    },
+    systemPreferences: {
+        getMediaAccessStatus: jest.fn(),
+        askForMediaAccess: jest.fn(),
     },
 }));
 
@@ -47,169 +52,185 @@ jest.mock('main/windows/mainWindow', () => ({
 }));
 
 describe('main/PermissionsManager', () => {
-    beforeEach(() => {
-        MainWindow.get.mockReturnValue({webContents: {id: 1}});
-        ViewManager.getViewByWebContentsId.mockImplementation((id) => {
-            if (id === 2) {
-                return {view: {server: {url: new URL('http://anyurl.com')}}};
-            }
-
-            return null;
+    describe('setForServer', () => {
+        it('should ask for media permission when is not granted but the user explicitly granted it', () => {
+            systemPreferences.getMediaAccessStatus.mockReturnValue('denied');
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.setForServer({url: new URL('http://anyurl.com')}, {media: {allowed: true}});
+            expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(1, 'microphone');
+            expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(2, 'camera');
         });
-        CallsWidgetWindow.isCallsWidget.mockImplementation((id) => id === 3);
-        parseURL.mockImplementation((url) => {
-            try {
-                return new URL(url);
-            } catch {
+    });
+
+    describe('handlePermissionRequest', () => {
+        const env = process.env;
+
+        beforeEach(() => {
+            process.env = {...env, NODE_ENV: 'jest'};
+            MainWindow.get.mockReturnValue({webContents: {id: 1}});
+            ViewManager.getViewByWebContentsId.mockImplementation((id) => {
+                if (id === 2) {
+                    return {view: {server: {url: new URL('http://anyurl.com')}}};
+                }
+
                 return null;
-            }
+            });
+            CallsWidgetWindow.isCallsWidget.mockImplementation((id) => id === 3);
+            parseURL.mockImplementation((url) => {
+                try {
+                    return new URL(url);
+                } catch {
+                    return null;
+                }
+            });
+            isTrustedURL.mockImplementation((url, baseURL) => url.toString().startsWith(baseURL.toString()));
         });
-        isTrustedURL.mockImplementation((url, baseURL) => url.toString().startsWith(baseURL.toString()));
-    });
 
-    afterEach(() => {
-        jest.resetAllMocks();
-    });
-
-    it('should deny if the permission is not supported', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({}, 'some-other-permission', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(cb).toHaveBeenCalledWith(false);
-    });
-
-    it('should allow if the request came from the main window', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({id: 1}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(cb).toHaveBeenCalledWith(true);
-    });
-
-    it('should deny if the URL is malformed', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'abadurl!?'});
-        expect(cb).toHaveBeenCalledWith(false);
-    });
-
-    it('should deny if the server URL can not be found', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({id: 4}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(cb).toHaveBeenCalledWith(false);
-    });
-
-    it('should deny if the URL is not trusted', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://wrongurl.com'});
-        expect(cb).toHaveBeenCalledWith(false);
-    });
-
-    it('should allow if dialog is not required', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({id: 2}, 'fullscreen', cb, {requestingUrl: 'http://anyurl.com'});
-        expect(cb).toHaveBeenCalledWith(true);
-    });
-
-    it('should allow if already confirmed by user', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.json = {
-            'http://anyurl.com': {
-                media: {
-                    allowed: true,
-                },
-            },
-        };
-        const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(cb).toHaveBeenCalledWith(true);
-    });
-
-    it('should deny if set to permanently deny', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.json = {
-            'http://anyurl.com': {
-                media: {
-                    alwaysDeny: true,
-                },
-            },
-        };
-        const cb = jest.fn();
-        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(cb).toHaveBeenCalledWith(false);
-    });
-
-    it('should pop dialog and allow if the user allows, should save to file', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.writeToFile = jest.fn();
-        const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
-        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
-        expect(permissionsManager.writeToFile).toHaveBeenCalled();
-        expect(cb).toHaveBeenCalledWith(true);
-    });
-
-    it('should pop dialog and deny if the user denies', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.writeToFile = jest.fn();
-        const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
-        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(false);
-        expect(permissionsManager.writeToFile).toHaveBeenCalled();
-        expect(cb).toHaveBeenCalledWith(false);
-    });
-
-    it('should pop dialog and deny permanently if the user chooses', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.writeToFile = jest.fn();
-        const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 1}));
-        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(false);
-        expect(permissionsManager.json['http://anyurl.com'].media.alwaysDeny).toBe(true);
-        expect(permissionsManager.writeToFile).toHaveBeenCalled();
-        expect(cb).toHaveBeenCalledWith(false);
-    });
-
-    it('should only pop dialog once upon multiple permission checks', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.writeToFile = jest.fn();
-        const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
-        await Promise.all([
-            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
-            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
-            permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
-        ]);
-        expect(dialog.showMessageBox).toHaveBeenCalledTimes(1);
-    });
-
-    it('should still pop dialog for media requests from the servers origin', async () => {
-        ViewManager.getViewByWebContentsId.mockImplementation((id) => {
-            if (id === 2) {
-                return {view: {server: {url: new URL('http://anyurl.com/subpath')}}};
-            }
-
-            return null;
+        afterEach(() => {
+            jest.resetAllMocks();
+            process.env = env;
         });
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.writeToFile = jest.fn();
-        const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
-        await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-        expect(dialog.showMessageBox).toHaveBeenCalled();
-    });
 
-    it('should pop dialog for external applications', async () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.writeToFile = jest.fn();
-        const cb = jest.fn();
-        dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
-        await permissionsManager.handlePermissionRequest({id: 2}, 'openExternal', cb, {requestingUrl: 'http://anyurl.com', externalURL: 'ms-excel://differenturl.com'});
-        expect(dialog.showMessageBox).toHaveBeenCalled();
+        it('should deny if the permission is not supported', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({}, 'some-other-permission', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should allow if the request came from the main window', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 1}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(cb).toHaveBeenCalledWith(true);
+        });
+
+        it('should deny if the URL is malformed', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'abadurl!?'});
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should deny if the server URL can not be found', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 4}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should deny if the URL is not trusted', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://wrongurl.com'});
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should allow if dialog is not required', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 2}, 'fullscreen', cb, {requestingUrl: 'http://anyurl.com'});
+            expect(cb).toHaveBeenCalledWith(true);
+        });
+
+        it('should allow if already confirmed by user', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {
+                    media: {
+                        allowed: true,
+                    },
+                },
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(cb).toHaveBeenCalledWith(true);
+        });
+
+        it('should deny if set to permanently deny', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {
+                    media: {
+                        alwaysDeny: true,
+                    },
+                },
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should pop dialog and allow if the user allows, should save to file', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
+            expect(permissionsManager.writeToFile).toHaveBeenCalled();
+            expect(cb).toHaveBeenCalledWith(true);
+        });
+
+        it('should pop dialog and deny if the user denies', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(false);
+            expect(permissionsManager.writeToFile).toHaveBeenCalled();
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should pop dialog and deny permanently if the user chooses', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 1}));
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(false);
+            expect(permissionsManager.json['http://anyurl.com'].media.alwaysDeny).toBe(true);
+            expect(permissionsManager.writeToFile).toHaveBeenCalled();
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should only pop dialog once upon multiple permission checks', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            await Promise.all([
+                permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
+                permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
+                permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
+            ]);
+            expect(dialog.showMessageBox).toHaveBeenCalledTimes(1);
+        });
+
+        it('should still pop dialog for media requests from the servers origin', async () => {
+            ViewManager.getViewByWebContentsId.mockImplementation((id) => {
+                if (id === 2) {
+                    return {view: {server: {url: new URL('http://anyurl.com/subpath')}}};
+                }
+
+                return null;
+            });
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(dialog.showMessageBox).toHaveBeenCalled();
+        });
+
+        it('should pop dialog for external applications', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            await permissionsManager.handlePermissionRequest({id: 2}, 'openExternal', cb, {requestingUrl: 'http://anyurl.com', externalURL: 'ms-excel://differenturl.com'});
+            expect(dialog.showMessageBox).toHaveBeenCalled();
+        });
     });
 });

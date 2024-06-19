@@ -96,6 +96,10 @@ declare global {
             onFocusThreeDotMenu: (listener: () => void) => void;
 
             updateURLViewWidth: (width?: number) => void;
+            openNotificationPreferences: () => void;
+            openWindowsCameraPreferences: () => void;
+            openWindowsMicrophonePreferences: () => void;
+            getMediaAccessStatus: (mediaType: 'microphone' | 'camera' | 'screen') => Promise<'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown'>;
 
             modals: {
                 cancelModal: <T>(data?: T) => void;

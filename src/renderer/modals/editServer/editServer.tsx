@@ -9,7 +9,8 @@ import ReactDOM from 'react-dom';
 
 import IntlProvider from 'renderer/intl_provider';
 
-import type {UniqueServer} from 'types/config';
+import type {Server} from 'types/config';
+import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';
 
 import NewServerModal from '../../components/NewServerModal';
 import setupDarkMode from '../darkMode';
@@ -20,17 +21,18 @@ const onClose = () => {
     window.desktop.modals.cancelModal();
 };
 
-const onSave = (data: UniqueServer) => {
-    window.desktop.modals.finishModal(data);
+const onSave = (server: Server, permissions?: Permissions) => {
+    window.desktop.modals.finishModal({server, permissions});
 };
 
 const EditServerModalWrapper: React.FC = () => {
-    const [server, setServer] = useState<UniqueServer>();
+    const [data, setData] = useState<UniqueServerWithPermissions>();
 
     useEffect(() => {
-        window.desktop.modals.getModalInfo<UniqueServer>().then((server) => {
-            setServer(server);
-        });
+        window.desktop.modals.getModalInfo<UniqueServerWithPermissions>().
+            then((data) => {
+                setData(data);
+            });
     }, []);
 
     return (
@@ -39,8 +41,9 @@ const EditServerModalWrapper: React.FC = () => {
                 onClose={onClose}
                 onSave={onSave}
                 editMode={true}
-                show={Boolean(server)}
-                server={server}
+                show={Boolean(data?.server)}
+                server={data?.server}
+                permissions={data?.permissions}
             />
         </IntlProvider>
     );
