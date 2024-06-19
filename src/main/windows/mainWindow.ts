@@ -260,9 +260,10 @@ export class MainWindow extends EventEmitter {
             }
 
             // We check for the monitor's scale factor when we want to set these bounds
+            // But only if it's not the primary monitor, otherwise it works fine as is
             // This is due to a long running Electron issue: https://github.com/electron/electron/issues/10862
             // This only needs to be done on Windows, it causes strange behaviour on Mac otherwise
-            const scaleFactor = process.platform === 'win32' ? matchingScreen.scaleFactor : 1;
+            const scaleFactor = process.platform === 'win32' && matchingScreen.id !== screen.getPrimaryDisplay().id ? matchingScreen.scaleFactor : 1;
             return {
                 ...savedWindowState,
                 width: Math.floor(savedWindowState.width / scaleFactor),
