@@ -111,8 +111,8 @@ const desktopAPI: DesktopAPI = {
 
     focusPopout: () => ipcRenderer.send(CALLS_POPOUT_FOCUS),
 
-    openThread: (threadID) => ipcRenderer.send(CALLS_WIDGET_OPEN_THREAD, threadID),
-    onOpenThread: (listener) => createListener(CALLS_WIDGET_OPEN_THREAD, listener),
+    openThreadForCalls: (threadID) => ipcRenderer.send(CALLS_WIDGET_OPEN_THREAD, threadID),
+    onOpenThreadForCalls: (listener) => createListener(CALLS_WIDGET_OPEN_THREAD, listener),
 
     openStopRecordingModal: (channelID) => ipcRenderer.send(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, channelID),
     onOpenStopRecordingModal: (listener) => createListener(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, listener),
