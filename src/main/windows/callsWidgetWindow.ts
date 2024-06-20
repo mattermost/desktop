@@ -17,6 +17,8 @@ import {
     CALLS_WIDGET_CHANNEL_LINK_CLICK,
     CALLS_WIDGET_RESIZE,
     CALLS_WIDGET_SHARE_SCREEN,
+    CALLS_WIDGET_OPEN_THREAD,
+    CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL,
     DESKTOP_SOURCES_MODAL_REQUEST,
     GET_DESKTOP_SOURCES,
     UPDATE_SHORTCUT_MENU,
@@ -70,6 +72,8 @@ export class CallsWidgetWindow {
         ipcMain.on(CALLS_ERROR, this.forwardToMainApp(CALLS_ERROR));
         ipcMain.on(CALLS_LINK_CLICK, this.handleCallsLinkClick);
         ipcMain.on(CALLS_JOIN_REQUEST, this.forwardToMainApp(CALLS_JOIN_REQUEST));
+        ipcMain.on(CALLS_WIDGET_OPEN_THREAD, this.handleCallsOpenThread);
+        ipcMain.on(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, this.handleCallsOpenStopRecordingModal);
 
         // deprecated in favour of CALLS_LINK_CLICK
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
@@ -502,6 +506,14 @@ export class CallsWidgetWindow {
             MainWindow.get()?.focus();
             this.mainView?.sendToRenderer(channel, ...args);
         };
+    };
+
+    private handleCallsOpenThread = (event: IpcMainEvent, threadID: string) => {
+        this.forwardToMainApp(CALLS_WIDGET_OPEN_THREAD)(event, threadID);
+    };
+
+    private handleCallsOpenStopRecordingModal = (event: IpcMainEvent, channelID: string) => {
+        this.forwardToMainApp(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL)(event, channelID);
     };
 
     private handleCallsLinkClick = (event: IpcMainEvent, url: string) => {
