@@ -45,6 +45,7 @@ import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
 import {flushCookiesStore} from 'main/app/utils';
 import {localizeMessage} from 'main/i18nManager';
+import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import LoadingScreen from './loadingScreen';
@@ -269,8 +270,20 @@ export class ViewManager {
 
     private addView = (view: MattermostBrowserView): void => {
         this.views.set(view.id, view);
-        if (this.closedViews.has(view.id)) {
-            this.closedViews.delete(view.id);
+
+        // Force a permission check for notifications
+        if (view.view.type === TAB_MESSAGING) {
+            const notificationPermission = PermissionsManager.getForServer(view.view.server)?.notifications;
+            if (!notificationPermission || (!notificationPermission.allowed && notificationPermission.alwaysDeny !== true)) {
+                PermissionsManager.doPermissionRequest(
+                    view.webContentsId,
+                    'notifications',
+                    {
+                        requestingUrl: view.view.server.url.toString(),
+                        isMainFrame: false,
+                    },
+                );
+            }
         }
     };
 
@@ -435,7 +448,7 @@ export class ViewManager {
         // commit views
         this.views = new Map();
         for (const x of views.values()) {
-            this.views.set(x.id, x);
+            this.addView(x);
         }
 
         // commit closed
@@ -617,6 +630,9 @@ export class ViewManager {
         const {srv, view} = this.closedViews.get(id)!;
         view.isOpen = true;
         this.loadView(srv, view, url);
+        if (this.closedViews.has(view.id)) {
+            this.closedViews.delete(view.id);
+        }
         this.showById(id);
         const browserView = this.views.get(id)!;
         browserView.isVisible = true;

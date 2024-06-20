@@ -1,0 +1,68 @@
+@import url("../_css_variables.scss");
+
+.Toggle {
+    display: flex;
+    column-gap: 12px;
+    font-weight: inherit;
+    line-height: 16px;
+    cursor: pointer;
+    margin-bottom: 0;
+    padding: 10px 0;
+
+    &.disabled {
+        cursor: default;
+    }
+
+    .Toggle___input {
+        display: none;
+    }
+
+    .Toggle___switch {
+        position: relative;
+        display: inline-block;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        transition: .4s;
+        margin-left: auto;
+
+        // Outer rectangle
+        min-width: 40px;
+        height: 24px;
+        border-radius: 14px;
+        background: rgba(var(--center-channel-color-rgb), 0.24);
+
+        &.disabled {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+
+        // Inner circle
+        &::before {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 2px;
+            top: calc(50% - 20px/2);
+
+            border-radius: 50%;
+            background: var(--center-channel-bg);
+            box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
+
+            content: "";
+            transition: .4s;
+        }
+
+        &.isChecked {
+            background-color: var(--button-bg);
+
+            &::before {
+                transform: translateX(16px);
+            }
+
+            &.disabled {
+                background-color: var(--button-bg-30);
+            }
+        }
+    }
+ }

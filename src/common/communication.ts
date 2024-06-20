@@ -186,5 +186,10 @@ export const BROWSER_HISTORY_STATUS_UPDATED = 'browser-history-status-updated';
 
 export const NOTIFICATION_CLICKED = 'notification-clicked';
 
+export const OPEN_NOTIFICATION_PREFERENCES = 'open-notification-preferences';
+export const OPEN_WINDOWS_CAMERA_PREFERENCES = 'open-windows-camera-preferences';
+export const OPEN_WINDOWS_MICROPHONE_PREFERENCES = 'open-windows-microphone-preferences';
+export const GET_MEDIA_ACCESS_STATUS = 'get-media-access-status';
+
 // Legacy code remove signal
 export const LEGACY_OFF = 'legacy-off';

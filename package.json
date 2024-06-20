@@ -24,7 +24,7 @@
     "check-build-config": "tsc ./src/common/config/buildConfig.ts --outDir dist --baseUrl src --skipLibCheck && node scripts/check_build_config.js",
     "check-types": "tsc",
     "prune": "ts-prune",
-    "i18n-extract": "mmjstool -- i18n extract-desktop",
+    "i18n-extract": "mmjstool i18n extract-desktop",
     "lint:js": "eslint --ext .js,.jsx,.tsx,.ts --cache .",
     "lint:js-quiet": "npm run lint:js -- --quiet",
     "fix:js": "npm run lint:js-quiet -- --fix",
@@ -159,7 +159,7 @@
     "webpack-merge": "5.8.0"
   },
   "dependencies": {
-    "@mattermost/compass-icons": "0.1.43",
+    "@mattermost/compass-icons": "0.1.45",
     "auto-launch": "5.0.6",
     "bootstrap": "4.6.1",
     "bootstrap-dark": "1.0.3",

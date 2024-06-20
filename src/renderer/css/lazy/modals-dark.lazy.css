@@ -26,3 +26,11 @@ body {
     scrollbar-width: thin;
     scrollbar-color: var(--light) rgba(255, 255, 255, 0);
 }
+
+.Toggle .Toggle___switch {
+    background: rgba(var(--center-channel-bg-rgb), 0.24);
+}
+
+.Toggle .Toggle___switch.disabled {
+    background: rgba(var(--center-channel-bg-rgb), 0.08);
+}

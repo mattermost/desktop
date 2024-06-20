@@ -39,6 +39,7 @@ jest.mock('electron', () => ({
     },
     screen: {
         getDisplayMatching: jest.fn(),
+        getPrimaryDisplay: jest.fn(),
     },
     globalShortcut: {
         register: jest.fn(),
@@ -104,7 +105,9 @@ describe('main/windows/mainWindow', () => {
             BrowserWindow.mockImplementation(() => baseWindow);
             fs.readFileSync.mockImplementation(() => '{"x":400,"y":300,"width":1280,"height":700,"maximized":false,"fullscreen":false}');
             path.join.mockImplementation(() => 'anyfile.txt');
-            screen.getDisplayMatching.mockImplementation(() => ({scaleFactor: 1, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            const primaryDisplay = {id: 1, scaleFactor: 1, bounds: {x: 0, y: 0, width: 1920, height: 1080}};
+            screen.getDisplayMatching.mockReturnValue(primaryDisplay);
+            screen.getPrimaryDisplay.mockReturnValue(primaryDisplay);
             isInsideRectangle.mockReturnValue(true);
             Validator.validateBoundsInfo.mockImplementation((data) => data);
             ContextMenu.mockImplementation(() => ({
@@ -129,13 +132,13 @@ describe('main/windows/mainWindow', () => {
             }));
         });
 
-        it('should set scaled window size on Windows using bounds read from file', () => {
+        it('should set scaled window size on Windows using bounds read from file for non-primary monitor', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
             });
 
-            screen.getDisplayMatching.mockImplementation(() => ({scaleFactor: 2, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            screen.getDisplayMatching.mockImplementation(() => ({id: 2, scaleFactor: 2, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
             const mainWindow = new MainWindow();
             mainWindow.init();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
@@ -152,13 +155,36 @@ describe('main/windows/mainWindow', () => {
             });
         });
 
-        it('should NOT set scaled window size on Mac using bounds read from file', () => {
+        it('should NOT set scaled window size on Windows using bounds read from file for primary monitor', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
+            screen.getDisplayMatching.mockImplementation(() => ({id: 1, scaleFactor: 2, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                x: 400,
+                y: 300,
+                width: 1280,
+                height: 700,
+                maximized: false,
+                fullscreen: false,
+            }));
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should NOT set scaled window size on Mac using bounds read from file for non-primary monitor', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
 
-            screen.getDisplayMatching.mockImplementation(() => ({scaleFactor: 2, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            screen.getDisplayMatching.mockImplementation(() => ({id: 2, scaleFactor: 2, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
             const mainWindow = new MainWindow();
             mainWindow.init();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
@@ -187,7 +213,6 @@ describe('main/windows/mainWindow', () => {
 
         it('should set default window size when bounds are outside the normal screen', () => {
             fs.readFileSync.mockImplementation(() => '{"x":-400,"y":-300,"width":1280,"height":700,"maximized":false,"fullscreen":false}');
-            screen.getDisplayMatching.mockImplementation(() => ({bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
             isInsideRectangle.mockReturnValue(false);
             const mainWindow = new MainWindow();
             mainWindow.init();

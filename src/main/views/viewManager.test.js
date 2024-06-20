@@ -8,6 +8,7 @@ import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SET_ACTIVE_VIEW} from 'common/commun
 import ServerManager from 'common/servers/serverManager';
 import urlUtils from 'common/utils/url';
 import {TAB_MESSAGING} from 'common/views/View';
+import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import LoadingScreen from './loadingScreen';
@@ -62,6 +63,11 @@ jest.mock('main/app/utils', () => ({
 
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
+}));
+
+jest.mock('main/permissionsManager', () => ({
+    getForServer: jest.fn(),
+    doPermissionRequest: jest.fn(),
 }));
 
 jest.mock('main/server/serverInfo', () => ({
@@ -129,6 +135,8 @@ describe('main/views/viewManager', () => {
                 once: onceFn,
                 destroy: destroyFn,
                 id: view.id,
+                view,
+                webContentsId: 1,
             }));
         });
 
@@ -143,18 +151,47 @@ describe('main/views/viewManager', () => {
             expect(viewManager.closedViews.has('view1')).toBe(true);
         });
 
-        it('should remove from remove from closedViews when the view is open', () => {
-            viewManager.closedViews.set('view1', {});
-            expect(viewManager.closedViews.has('view1')).toBe(true);
-            viewManager.loadView({id: 'server1'}, {id: 'view1', isOpen: true});
-            expect(viewManager.closedViews.has('view1')).toBe(false);
-        });
-
         it('should add view to views map and add listeners', () => {
             viewManager.loadView({id: 'server1'}, {id: 'view1', isOpen: true}, 'http://server-1.com/subpath');
             expect(viewManager.views.has('view1')).toBe(true);
             expect(onceFn).toHaveBeenCalledWith(LOAD_SUCCESS, viewManager.activateView);
             expect(loadFn).toHaveBeenCalledWith('http://server-1.com/subpath');
+        });
+
+        it('should force a permission check for new views', () => {
+            viewManager.loadView({id: 'server1'}, {id: 'view1', isOpen: true, type: TAB_MESSAGING, server: {url: new URL('http://server-1.com')}}, 'http://server-1.com/subpath');
+            expect(PermissionsManager.doPermissionRequest).toBeCalledWith(
+                1,
+                'notifications',
+                {
+                    requestingUrl: 'http://server-1.com/',
+                    isMainFrame: false,
+                },
+            );
+        });
+    });
+
+    describe('openClosedView', () => {
+        const viewManager = new ViewManager();
+
+        beforeEach(() => {
+            viewManager.showById = jest.fn();
+            MainWindow.get.mockReturnValue({});
+            MattermostBrowserView.mockImplementation((view) => ({
+                on: jest.fn(),
+                load: jest.fn(),
+                once: jest.fn(),
+                destroy: jest.fn(),
+                id: view.id,
+                view,
+            }));
+        });
+
+        it('should remove from closedViews when the view is open', () => {
+            viewManager.closedViews.set('view1', {srv: {id: 'server1'}, view: {id: 'view1'}});
+            expect(viewManager.closedViews.has('view1')).toBe(true);
+            viewManager.openClosedView('view1');
+            expect(viewManager.closedViews.has('view1')).toBe(false);
         });
     });
 
