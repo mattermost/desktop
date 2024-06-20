@@ -1,6 +1,6 @@
 {
   "name": "@mattermost/desktop-api",
-  "version": "5.8.0-5",
+  "version": "5.9.0-1",
   "description": "Shared types for the Desktop App API provided to the Web App",
   "keywords": [
     "mattermost"
