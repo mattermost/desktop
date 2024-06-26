@@ -11,6 +11,7 @@ const fse = require('fs-extra');
 const {MOCHAWESOME_REPORT_DIR} = require('./constants');
 
 const package = require('../../package.json');
+const e2ePackage = require('../package.json');
 
 const MAX_FAILED_TITLES = 5;
 
@@ -117,7 +118,7 @@ function getOS() {
 
 function getEnvironmentValues() {
     return {
-        playwrightVersion: package.devDependencies.playwright,
+        playwrightVersion: e2ePackage.devDependencies.playwright,
         electronVersion: package.devDependencies.electron,
         osName: getOS(),
         osVersion: os.release(),
@@ -230,8 +231,10 @@ function generateTestReport(summary, isUploadedToS3, reportLink, testCycleKey) {
 function generateTitle() {
     const {
         BRANCH,
+        DESKTOP_VERSION,
         PULL_REQUEST,
         RELEASE_VERSION,
+        SERVER_VERSION,
         TYPE,
     } = process.env;
 
@@ -258,6 +261,8 @@ function generateTitle() {
     case 'MANUAL':
         title = `E2E for Manually triggered for ${BRANCH}`;
         break;
+    case 'CMT':
+        title = `Compatibility Matrix Testing Report for Server v${SERVER_VERSION} and Desktop version v${DESKTOP_VERSION} `
     default:
         title = 'E2E for Build$';
     }
