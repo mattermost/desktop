@@ -77,7 +77,7 @@ jobs:
             echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=PR" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "release" ]; then
+          elif [ "${{ github.event_name }}" && "${{ inputs.cmt }}" ]; then
             echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=RELEASE" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
