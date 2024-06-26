@@ -5,7 +5,7 @@
   "main": "dist/e2e_bundle.js",
   "scripts": {
     "clean": "rm -rf dist/ mochawesome-report/ node_modules/ testUserData/",
-    "run": "npm run build && npm run test",
+    "run:e2e": "npm run build && npm run test",
     "build": "webpack-cli --config webpack.config.js",
     "build:performance": "webpack-cli --config webpack.config.performance.js",
     "test": "electron-mocha --reporter mochawesome dist/e2e_bundle.js",
