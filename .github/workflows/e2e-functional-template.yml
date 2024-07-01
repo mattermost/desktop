@@ -35,6 +35,10 @@ on:
         description: "True if this is Compatibility Matrix Testing"
         required: false
         default: false
+      MM_SERVER_VERSION:
+        type: string
+        required: false
+        default: "9.9.1"
     outputs:
       COMMENT_BODY:
         description: "The output to comment"
@@ -77,9 +81,9 @@ jobs:
             echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=PR" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "release" ]; then
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.cmt }}" ]; then
             echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=RELEASE" >> $GITHUB_ENV
+            echo "TYPE=CMT" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
             echo "ZEPHYR_FOLDER_LINUX_REPORT=12358649" >> $GITHUB_ENV
             echo "ZEPHYR_FOLDER_MACOS_REPORT=12358650" >> $GITHUB_ENV
@@ -189,6 +193,9 @@ jobs:
           npm run e2e || true # making job pass even if the tests fail due to flakyness
           cd e2e
           npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
