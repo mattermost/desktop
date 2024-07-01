@@ -10,6 +10,7 @@ const fse = require('fs-extra');
 
 const {MOCHAWESOME_REPORT_DIR} = require('./constants');
 
+const e2ePackage = require('../package.json');
 const package = require('../../package.json');
 
 const MAX_FAILED_TITLES = 5;
@@ -117,7 +118,7 @@ function getOS() {
 
 function getEnvironmentValues() {
     return {
-        playwrightVersion: package.devDependencies.playwright,
+        playwrightVersion: e2ePackage.dependencies.playwright,
         electronVersion: package.devDependencies.electron,
         osName: getOS(),
         osVersion: os.release(),
