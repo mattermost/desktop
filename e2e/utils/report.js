@@ -10,8 +10,8 @@ const fse = require('fs-extra');
 
 const {MOCHAWESOME_REPORT_DIR} = require('./constants');
 
-const e2ePackage = require('../package.json');
 const package = require('../../package.json');
+const e2ePackage = require('../package.json');
 
 const MAX_FAILED_TITLES = 5;
 
