@@ -190,6 +190,7 @@ jobs:
             export DISPLAY=:99
             Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           fi
+          cd e2e
           echo "*********"
           pwd
           echo "*********"
