@@ -262,7 +262,8 @@ function generateTitle() {
         title = `E2E for Manually triggered for ${BRANCH}`;
         break;
     case 'CMT':
-        title = `Compatibility Matrix Testing Report for Server v${SERVER_VERSION} and Desktop version v${DESKTOP_VERSION} `
+        title = `Compatibility Matrix Testing Report for Server v${SERVER_VERSION} and Desktop version v${DESKTOP_VERSION}`;
+        break;
     default:
         title = 'E2E for Build$';
     }
