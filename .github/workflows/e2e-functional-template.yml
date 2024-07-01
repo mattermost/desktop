@@ -152,8 +152,7 @@ jobs:
           npm ci
           cd e2e
           npm ci
-          # npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
-          # cd ../
+          npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
 
       - name: e2e/install-dependencies-macos
         if: runner.os == 'macOS'
@@ -164,8 +163,7 @@ jobs:
           npm ci
           cd e2e
           npm ci
-          # npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs
-          # cd ../
+          npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs
 
       ## Windows Dependencies
       - name: e2e/install-dependencies-windows
@@ -181,8 +179,7 @@ jobs:
           npm ci --openssl_fips=''
           cd e2e
           npm ci
-          # npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs
-          # cd ../
+          npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs
 
       - name: e2e/run-playright-tests-${{ runner.os }}
         run: |
