@@ -188,8 +188,18 @@ jobs:
             Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           fi
           npm run build-test
+          echo "************"
+          pwd
+          ls -a
+          echo "************"
           cd e2e
-          npm run run || true # making job pass even if the tests fail due to flakyness
+
+          echo "************"
+          pwd
+          ls -a
+          echo "************"
+
+          npm run run:e2e || true # making job pass even if the tests fail due to flakyness
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
