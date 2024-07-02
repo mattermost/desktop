@@ -86,9 +86,7 @@ export class Config extends EventEmitter {
     /**
      * Reload all sources of config data
      *
-     * @param {boolean} synchronize determines whether or not to emit a synchronize event once config has been reloaded
      * @emits {update} emitted once all data has been loaded and merged
-     * @emits {synchronize} emitted when requested by a call to method; used to notify other config instances of changes
      */
     reload = (): void => {
         this.defaultConfigData = copy(defaultPreferences);
