@@ -189,7 +189,6 @@ jobs:
           fi
           npm run build-test
           cd e2e
-          npm ci
           npm run e2e:tests || true # making job pass even if the tests fail due to flakyness
           npm run send-report
         env:
