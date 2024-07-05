@@ -4,7 +4,6 @@
 .WelcomeScreenSlide {
     display: flex;
     flex: 1;
-    max-width: 540px;
     flex-flow: column;
     justify-content: flex-end;
 
@@ -17,9 +16,10 @@
         font-family: 'Metropolis';
         font-size: 80px;
         font-weight: 600;
-        letter-spacing: -0.05em;
+        letter-spacing: -1.6px;
         line-height: 88px;
         text-align: center;
+        margin: 16px 0;
     }
 
     .WelcomeScreenSlide__subtitle {
@@ -29,22 +29,16 @@
         font-weight: 400;
         line-height: 24px;
         text-align: center;
-        margin-top: 16px;
+        max-width: 580px;
+        margin: auto;
     }
 
     &.WelcomeScreenSlide--main {
-        position: relative;
-        height: 100%;
 
+        max-width: 582px;
         .WelcomeScreenSlide__title {
-            font-size: 128px;
-            line-height: 128px;
-        }
-
-        .WelcomeScreenSlide__image {
-            position: absolute;
-            display: block;
-            bottom: 115px;
+            font-size: 80px;
+            line-height: normal;
         }
     }
 
