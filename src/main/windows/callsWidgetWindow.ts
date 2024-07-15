@@ -43,6 +43,8 @@ import type {
     CallsWidgetWindowConfig,
 } from 'types/calls';
 
+import ContextMenu from '../contextMenu';
+
 const log = new Logger('CallsWidgetWindow');
 
 export class CallsWidgetWindow {
@@ -294,8 +296,12 @@ export class CallsWidgetWindow {
             event.preventDefault();
         });
 
+        const contextMenu = new ContextMenu({}, this.popOut);
+        contextMenu.reload();
+
         this.popOut.on('closed', () => {
             delete this.popOut;
+            contextMenu.dispose();
         });
 
         // Set the userAgent so that the widget's popout is considered a desktop window in the webapp code.

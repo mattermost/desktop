@@ -6,10 +6,10 @@ import React, {useState, useEffect, useMemo} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 
 import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
-import bullseye from 'renderer/assets/svg/bullseye.svg';
-import channels from 'renderer/assets/svg/channels.svg';
+import calls from 'renderer/assets/svg/calls.svg';
 import chat2 from 'renderer/assets/svg/chat2.svg';
-import clipboard from 'renderer/assets/svg/clipboard.svg';
+import collaborate from 'renderer/assets/svg/collaborate.svg';
+import integrate from 'renderer/assets/svg/integrate.svg';
 import Carousel from 'renderer/components/Carousel';
 import Header from 'renderer/components/Header';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
@@ -44,7 +44,7 @@ function WelcomeScreen({
             title: formatMessage({id: 'renderer.components.welcomeScreen.slides.welcome.title', defaultMessage: 'Welcome'}),
             subtitle: formatMessage({
                 id: 'renderer.components.welcomeScreen.slides.welcome.subtitle',
-                defaultMessage: 'Mattermost is an open source platform for developer collaboration. Secure, flexible, and integrated with the tools you love.',
+                defaultMessage: 'Mattermost is an open source collaboration platform for mission-critical work. Secure, flexible, and integrated with the tools you love.',
             }),
             image: (
                 <img
@@ -55,12 +55,12 @@ function WelcomeScreen({
             main: true,
         },
         {
-            key: 'channels',
-            title: formatMessage({id: 'renderer.components.welcomeScreen.slides.channels.title', defaultMessage: 'Channels'}),
+            key: 'Collaborate in real-time',
+            title: formatMessage({id: 'renderer.components.welcomeScreen.slides.collaborate.title', defaultMessage: 'Collaborate in real-time'}),
             subtitle: (
                 <FormattedMessage
-                    id='renderer.components.welcomeScreen.slides.channels.subtitle'
-                    defaultMessage='All of your team’s communication in one place.<br></br>Secure collaboration, built for developers.'
+                    id='renderer.components.welcomeScreen.slides.collaborate.subtitle'
+                    defaultMessage='Collaborate effectively with persistent channels, file and code snippet sharing, and workflow automation purpose-built for technical teams.'
                     values={{
                         br: (x: React.ReactNode) => (<><br/>{x}</>),
                     }}
@@ -68,40 +68,40 @@ function WelcomeScreen({
             ),
             image: (
                 <img
-                    src={channels}
+                    src={collaborate}
                     draggable={false}
                 />
             ),
         },
         {
-            key: 'playbooks',
-            title: formatMessage({id: 'renderer.components.welcomeScreen.slides.playbooks.title', defaultMessage: 'Playbooks'}),
+            key: 'calls',
+            title: formatMessage({id: 'renderer.components.welcomeScreen.slides.calls.title', defaultMessage: 'Start secure calls instantly'}),
             subtitle: formatMessage({
-                id: 'renderer.components.welcomeScreen.slides.palybooks.subtitle',
-                defaultMessage: 'Move faster and make fewer mistakes with checklists, automations, and tool integrations that power your team’s workflows.',
+                id: 'renderer.components.welcomeScreen.slides.calls.subtitle',
+                defaultMessage: 'When typing isn’t fast enough, seamlessly move from chat to audio calls and screenshare without switching tools.',
             }),
             image: (
                 <img
-                    src={clipboard}
+                    src={calls}
                     draggable={false}
                 />
             ),
         },
         {
-            key: 'boards',
-            title: formatMessage({id: 'renderer.components.welcomeScreen.slides.boards.title', defaultMessage: 'Boards'}),
+            key: 'integrate',
+            title: formatMessage({id: 'renderer.components.welcomeScreen.slides.integrate.title', defaultMessage: 'Integrate with tools you love'}),
             subtitle: formatMessage({
-                id: 'renderer.components.welcomeScreen.slides.boards.subtitle',
-                defaultMessage: 'Ship on time, every time, with a project and task management solution built for digital operations.',
+                id: 'renderer.components.welcomeScreen.slides.integrate.subtitle',
+                defaultMessage: 'Execute and automate workflows with flexible, custom integrations with popular technical tools like GitHub, GitLab, and ServiceNow.',
             }),
             image: (
                 <img
-                    src={bullseye}
+                    src={integrate}
                     draggable={false}
                 />
             ),
         },
-    ], []);
+    ], [formatMessage]);
 
     const handleOnGetStartedClick = () => {
         setTransition('outToLeft');
