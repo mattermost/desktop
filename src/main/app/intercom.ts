@@ -113,7 +113,7 @@ export function handleWelcomeScreenModal() {
 }
 
 export function handleMentionNotification(event: IpcMainInvokeEvent, title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) {
-    log.debug('handleMentionNotification', {title, body, channelId, teamId, url, silent, soundName});
+    log.debug('handleMentionNotification', {channelId, teamId, url, silent, soundName});
     return NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
