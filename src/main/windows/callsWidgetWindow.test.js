@@ -74,6 +74,17 @@ jest.mock('../utils', () => ({
     composeUserAgent: jest.fn(),
 }));
 
+const mockContextMenuReload = jest.fn();
+const mockContextMenuDispose = jest.fn();
+jest.mock('../contextMenu', () => {
+    return jest.fn().mockImplementation(() => {
+        return {
+            reload: mockContextMenuReload,
+            dispose: mockContextMenuDispose,
+        };
+    });
+});
+
 describe('main/windows/callsWidgetWindow', () => {
     describe('onShow', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
@@ -385,8 +396,11 @@ describe('main/windows/callsWidgetWindow', () => {
                 },
                 id: 'webContentsId',
                 getURL: () => ('http://myurl.com'),
+                removeListener: jest.fn(),
             },
+            off: jest.fn(),
             loadURL: jest.fn(),
+            isDestroyed: jest.fn(() => false),
         };
 
         const callsWidgetWindow = new CallsWidgetWindow();
@@ -395,6 +409,7 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
         expect(frameFinishedLoadListener).toBeDefined();
+        expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
 
         const event = {preventDefault: jest.fn()};
         redirectListener(event);
@@ -405,6 +420,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
+        expect(mockContextMenuDispose).toHaveBeenCalled();
     });
 
     it('getViewURL', () => {
