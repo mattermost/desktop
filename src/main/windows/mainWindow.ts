@@ -254,8 +254,8 @@ export class MainWindow extends EventEmitter {
                 throw new Error('Provided bounds info file does not validate, using defaults instead.');
             }
             const matchingScreen = screen.getDisplayMatching(savedWindowState);
-            log.debug('matching screen for main window', matchingScreen);
-            if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
+            log.debug('closest matching screen for main window', matchingScreen);
+            if (!(isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized)) {
                 throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
             }
 

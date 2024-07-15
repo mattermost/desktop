@@ -162,4 +162,19 @@ describe('main/utils', () => {
             expect(Utils.shouldIncrementFilename('filename.txt')).toBe('filename (1).txt');
         });
     });
+
+    describe('isInsideRectangle', () => {
+        it.each([
+            [{x: 0, y: 0, width: 1920, height: 1080}, {x: 100, y: 100, width: 1280, height: 720}, true],
+            [{x: 0, y: 0, width: 1920, height: 1080}, {x: -100, y: 100, width: 1280, height: 720}, false],
+            [{x: 0, y: 0, width: 1920, height: 1080}, {x: 100, y: -100, width: 1280, height: 720}, false],
+            [{x: 0, y: 0, width: 1920, height: 1080}, {x: 100, y: 100, width: 2560, height: 720}, false],
+            [{x: 0, y: 0, width: 1920, height: 1080}, {x: 100, y: 100, width: 1280, height: 1440}, false],
+            [{x: -1920, y: 0, width: 1920, height: 1080}, {x: 100, y: 100, width: 1280, height: 720}, false],
+            [{x: -1920, y: 0, width: 1920, height: 1080}, {x: -1820, y: 100, width: 1280, height: 720}, true],
+            [{x: 0, y: -1080, width: 1920, height: 1080}, {x: 100, y: -980, width: 1280, height: 720}, true],
+        ])('should match case', (a, b, expected) => {
+            expect(Utils.isInsideRectangle(a, b)).toBe(expected);
+        });
+    });
 });
