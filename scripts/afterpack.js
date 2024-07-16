@@ -43,6 +43,12 @@ exports.default = async function afterPack(context) {
                 version: FuseVersion.V1,
                 [FuseV1Options.RunAsNode]: false, // Disables ELECTRON_RUN_AS_NODE
                 [FuseV1Options.EnableNodeCliInspectArguments]: false, // Disables --inspect
+                [FuseV1Options.EnableCookieEncryption]: true,
+                [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false, // Disables NODE_OPTIONS and NODE_EXTRA_CA_CERTS
+                // Can only verify on macOS right now, electron-builder doesn't support Windows ASAR integrity verification
+                [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: context.electronPlatformName === 'darwin' || context.electronPlatformName === 'mas',
+                [FuseV1Options.OnlyLoadAppFromAsar]: true,
+                [FuseV1Options.GrantFileProtocolExtraPrivileges]: false,
             });
 
         if (context.electronPlatformName === 'linux') {

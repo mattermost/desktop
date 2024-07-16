@@ -98,11 +98,6 @@ describe('main/utils', () => {
             runMode.mockImplementation(() => 'development');
             expect(Utils.getLocalURLString('index.html', queryMap)).toStrictEqual('file:///path/to/app/dist/renderer/index.html?key=value');
         });
-
-        it('should return URL relative to current run directory when using main process', () => {
-            runMode.mockImplementation(() => 'development');
-            expect(Utils.getLocalURLString('index.html', null, true)).toStrictEqual('file:///path/to/app/dist/index.html');
-        });
     });
 
     describe('shouldHaveBackBar', () => {
