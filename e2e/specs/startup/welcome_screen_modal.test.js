@@ -52,7 +52,6 @@ describe('Welcome Screen Modal', function desc() {
         const integrationSlideTitle = await welcomeScreenModal.innerText('div.Carousel__slide.inFromRight .WelcomeScreenSlide__title');
         integrationSlideTitle.should.equal('Integrate with tools you love');
         await welcomeScreenModal.click('#nextCarouselButton');
-
     });
 
     it('MM-T4977 should be able to move through slides clicking the navigation buttons', async () => {
