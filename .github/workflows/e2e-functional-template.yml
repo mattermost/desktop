@@ -35,6 +35,10 @@ on:
         description: "True if this is Compatibility Matrix Testing"
         required: false
         default: false
+      MM_SERVER_VERSION:
+        type: string
+        required: false
+        default: "9.9.1"
     outputs:
       COMMENT_BODY:
         description: "The output to comment"
@@ -77,9 +81,9 @@ jobs:
             echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=PR" >> $GITHUB_ENV
 
-          elif [ "${{ github.event_name }}" == "release" ]; then
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.cmt }}" ]; then
             echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=RELEASE" >> $GITHUB_ENV
+            echo "TYPE=CMT" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
             echo "ZEPHYR_FOLDER_LINUX_REPORT=12358649" >> $GITHUB_ENV
             echo "ZEPHYR_FOLDER_MACOS_REPORT=12358650" >> $GITHUB_ENV
@@ -148,8 +152,7 @@ jobs:
           npm ci
           cd e2e
           npm ci
-          npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs
-          cd ../
+          npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/install-dependencies-macos
         if: runner.os == 'macOS'
@@ -160,8 +163,7 @@ jobs:
           npm ci
           cd e2e
           npm ci
-          npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs
-          cd ../
+          npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs --module-dir ../
 
       ## Windows Dependencies
       - name: e2e/install-dependencies-windows
@@ -177,8 +179,7 @@ jobs:
           npm ci --openssl_fips=''
           cd e2e
           npm ci
-          npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs
-          cd ../
+          npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playright-tests-${{ runner.os }}
         run: |
@@ -186,9 +187,13 @@ jobs:
             export DISPLAY=:99
             Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           fi
-          npm run e2e || true # making job pass even if the tests fail due to flakyness
+          npm run build-test
           cd e2e
+          npm run run:e2e || true # making job pass even if the tests fail due to flakyness
           npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
