@@ -18,7 +18,23 @@ import Utils from 'common/utils/util';
 import type {Args} from 'types/args';
 
 export function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
-    return container.x <= rect.x && container.y <= rect.y && container.width >= rect.width && container.height >= rect.height;
+    if (container.x > rect.x) {
+        return false;
+    }
+
+    if (container.x + container.width < rect.x + rect.width) {
+        return false;
+    }
+
+    if (container.y > rect.y) {
+        return false;
+    }
+
+    if (container.y + container.height < rect.y + rect.height) {
+        return false;
+    }
+
+    return true;
 }
 
 export function shouldBeHiddenOnStartup(parsedArgv: Args) {
