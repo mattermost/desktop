@@ -31,7 +31,6 @@ const run = async (logger: MainLogger): Promise<DiagnosticStepResponse> => {
                     path: heapSnapshotFilepath,
                     success: process.takeHeapSnapshot(heapSnapshotFilepath),
                 },
-                IOCounters: process.getIOCounters(),
                 uptime: process.uptime(),
                 platform: process.platform,
                 sandboxed: process.sandboxed,
