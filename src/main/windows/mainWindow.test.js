@@ -68,7 +68,6 @@ jest.mock('../contextMenu', () => jest.fn());
 jest.mock('../utils', () => ({
     isInsideRectangle: jest.fn(),
     getLocalPreload: jest.fn(),
-    getLocalURLString: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({

@@ -4,3 +4,4 @@
 declare module '*.mp3';
 declare module '*.svg';
 declare module '*.lazy.css';
+declare module '*.jpg';

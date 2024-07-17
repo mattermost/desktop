@@ -69,6 +69,10 @@ jest.mock('electron', () => ({
             on: jest.fn(),
         },
     },
+    protocol: {
+        registerSchemesAsPrivileged: jest.fn(),
+        handle: jest.fn(),
+    },
 }));
 
 jest.mock('main/i18nManager', () => ({

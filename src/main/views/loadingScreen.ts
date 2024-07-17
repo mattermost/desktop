@@ -5,7 +5,7 @@ import {BrowserView, app, ipcMain} from 'electron';
 
 import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, MAIN_WINDOW_RESIZED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 import {Logger} from 'common/log';
-import {getLocalPreload, getLocalURLString, getWindowBoundaries} from 'main/utils';
+import {getLocalPreload, getWindowBoundaries} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
 
 enum LoadingScreenState {
@@ -85,7 +85,7 @@ export class LoadingScreen {
             // @ts-ignore
             transparent: true,
         }});
-        const localURL = getLocalURLString('loadingScreen.html');
+        const localURL = 'mattermost-desktop://renderer/loadingScreen.html';
         this.view.webContents.loadURL(localURL);
     };
 

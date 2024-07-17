@@ -52,7 +52,7 @@ import LoadingScreen from './loadingScreen';
 import {MattermostBrowserView} from './MattermostBrowserView';
 import modalManager from './modalManager';
 
-import {getLocalURLString, getLocalPreload, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {getLocalPreload, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
 
 const log = new Logger('ViewManager');
 const URL_VIEW_DURATION = 10 * SECOND;
@@ -354,8 +354,7 @@ export class ViewManager {
                     // @ts-ignore
                     transparent: true,
                 }});
-            const query = new Map([['url', urlString]]);
-            const localURL = getLocalURLString('urlView.html', query);
+            const localURL = `mattermost-desktop://renderer/urlView.html?url=${encodeURIComponent(urlString)}`;
             urlView.webContents.loadURL(localURL);
             MainWindow.get()?.addBrowserView(urlView);
             const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? MainWindow.getBounds();

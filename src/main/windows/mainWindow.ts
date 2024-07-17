@@ -37,7 +37,7 @@ import {localizeMessage} from 'main/i18nManager';
 import type {SavedWindowState} from 'types/mainWindow';
 
 import ContextMenu from '../contextMenu';
-import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
+import {getLocalPreload, isInsideRectangle} from '../utils';
 
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
@@ -152,7 +152,7 @@ export class MainWindow extends EventEmitter {
         const contextMenu = new ContextMenu({}, this.win);
         contextMenu.reload();
 
-        const localURL = getLocalURLString('index.html');
+        const localURL = 'mattermost-desktop://renderer/index.html';
         this.win.loadURL(localURL).catch(
             (reason) => {
                 log.error('failed to load', reason);

@@ -7,7 +7,7 @@ import {URLValidationStatus} from 'common/utils/constants';
 import {getDefaultViewsForConfigServer} from 'common/views/View';
 import PermissionsManager from 'main/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
-import {getLocalURLString, getLocalPreload} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -50,7 +50,6 @@ jest.mock('main/views/modalManager', () => ({
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
-    getLocalURLString: jest.fn(),
 }));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
@@ -169,7 +168,6 @@ describe('app/serverViewState', () => {
         let serversCopy;
 
         beforeEach(() => {
-            getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
@@ -226,7 +224,6 @@ describe('app/serverViewState', () => {
         let serversCopy;
 
         beforeEach(() => {
-            getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
@@ -311,7 +308,6 @@ describe('app/serverViewState', () => {
         let serversCopy;
 
         beforeEach(() => {
-            getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 

@@ -14,7 +14,7 @@ const defaultMenuOptions = {
         let isInternalSrc;
         try {
             const srcurl = parseURL(p.srcURL);
-            isInternalSrc = srcurl?.protocol === 'file:';
+            isInternalSrc = srcurl?.protocol === 'mattermost-desktop:';
         } catch (err) {
             isInternalSrc = false;
         }

@@ -9,7 +9,7 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import NotificationManager from 'main/notifications';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -88,7 +88,7 @@ export function handleMainWindowIsShown() {
 export function handleWelcomeScreenModal() {
     log.debug('handleWelcomeScreenModal');
 
-    const html = getLocalURLString('welcomeScreen.html');
+    const html = 'mattermost-desktop://renderer/welcomeScreen.html';
 
     const preload = getLocalPreload('internalAPI.js');
 
@@ -169,7 +169,7 @@ export function handleShowSettingsModal() {
 
     ModalManager.addModal(
         'settingsModal',
-        getLocalURLString('settings.html'),
+        'mattermost-desktop://renderer/settings.html',
         getLocalPreload('internalAPI.js'),
         null,
         mainWindow,

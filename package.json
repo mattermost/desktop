@@ -115,7 +115,7 @@
     "@babel/preset-env": "7.24.0",
     "@babel/preset-react": "7.23.3",
     "@babel/preset-typescript": "7.23.3",
-    "@electron/fuses": "1.6.0",
+    "@electron/fuses": "1.8.0",
     "@mattermost/desktop-api": "file:api-types",
     "@mattermost/eslint-plugin": "1.1.0-0",
     "@types/auto-launch": "5.0.5",
