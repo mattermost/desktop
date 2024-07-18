@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import type {IpcMainEvent} from 'electron';
 import {BrowserView, ipcMain} from 'electron';
 
 import {
@@ -13,7 +13,6 @@ import {
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
     UPDATE_DOWNLOADS_DROPDOWN,
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
-    GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
@@ -22,7 +21,7 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import downloadsManager from 'main/downloadsManager';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {DownloadedItem} from 'types/downloads';
@@ -47,7 +46,6 @@ export class DownloadsDropdownView {
         ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloadsDropdown);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
-        ipcMain.handle(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, this.getDownloadImageThumbnailLocation);
     }
 
     init = () => {
@@ -67,7 +65,7 @@ export class DownloadsDropdownView {
             transparent: true,
         }});
 
-        this.view.webContents.loadURL(getLocalURLString('downloadsDropdown.html'));
+        this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdown.html');
         this.view.webContents.session.webRequest.onHeadersReceived(downloadsManager.webRequestOnHeadersReceivedHandler);
         MainWindow.get()?.addBrowserView(this.view);
     };
@@ -182,10 +180,6 @@ export class DownloadsDropdownView {
         if (downloadsManager.getIsOpen()) {
             this.view?.setBounds(this.bounds);
         }
-    };
-
-    private getDownloadImageThumbnailLocation = (event: IpcMainInvokeEvent, location: string) => {
-        return location;
     };
 }
 

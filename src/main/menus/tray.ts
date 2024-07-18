@@ -9,7 +9,7 @@ import {Menu} from 'electron';
 import ServerViewState from 'app/serverViewState';
 import ServerManager from 'common/servers/serverManager';
 import {localizeMessage} from 'main/i18nManager';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -35,7 +35,7 @@ export function createTemplate() {
 
                 ModalManager.addModal(
                     'settingsModal',
-                    getLocalURLString('settings.html'),
+                    'mattermost-desktop://renderer/settings.html',
                     getLocalPreload('internalAPI.js'),
                     null,
                     mainWindow,

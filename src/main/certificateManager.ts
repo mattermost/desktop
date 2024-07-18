@@ -7,13 +7,13 @@ import {Logger} from 'common/log';
 
 import type {CertificateModalData} from 'types/certificate';
 
-import {getLocalURLString, getLocalPreload} from './utils';
+import {getLocalPreload} from './utils';
 import modalManager from './views/modalManager';
 import MainWindow from './windows/mainWindow';
 
 const log = new Logger('CertificateManager');
 const preload = getLocalPreload('internalAPI.js');
-const html = getLocalURLString('certificateModal.html');
+const html = 'mattermost-desktop://renderer/certificateModal.html';
 
 type CertificateModalResult = {
     cert: Certificate;

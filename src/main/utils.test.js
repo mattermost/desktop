@@ -3,7 +3,6 @@
 
 'use strict';
 import {BACK_BAR_HEIGHT, TAB_BAR_HEIGHT} from 'common/utils/constants';
-import {runMode} from 'common/utils/util';
 
 import * as Utils from './utils';
 
@@ -79,29 +78,6 @@ describe('main/utils', () => {
                 width: 500,
                 height: 400 - TAB_BAR_HEIGHT - BACK_BAR_HEIGHT,
             });
-        });
-    });
-
-    describe('getLocalURLString', () => {
-        it('should return URL relative to current run directory', () => {
-            runMode.mockImplementation(() => 'development');
-            expect(Utils.getLocalURLString('index.html')).toStrictEqual('file:///path/to/app/dist/renderer/index.html');
-        });
-
-        it('should return URL relative to current run directory in production', () => {
-            runMode.mockImplementation(() => 'production');
-            expect(Utils.getLocalURLString('index.html')).toStrictEqual('file:///path/to/app/renderer/index.html');
-        });
-
-        it('should include query string when specified', () => {
-            const queryMap = new Map([['key', 'value']]);
-            runMode.mockImplementation(() => 'development');
-            expect(Utils.getLocalURLString('index.html', queryMap)).toStrictEqual('file:///path/to/app/dist/renderer/index.html?key=value');
-        });
-
-        it('should return URL relative to current run directory when using main process', () => {
-            runMode.mockImplementation(() => 'development');
-            expect(Utils.getLocalURLString('index.html', null, true)).toStrictEqual('file:///path/to/app/dist/index.html');
         });
     });
 

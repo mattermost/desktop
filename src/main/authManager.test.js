@@ -51,7 +51,6 @@ jest.mock('main/views/modalManager', () => ({
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
-    getLocalURLString: (file) => file,
 }));
 
 describe('main/authManager', () => {

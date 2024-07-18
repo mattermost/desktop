@@ -27,9 +27,6 @@ declare global {
         timers: {
             setImmediate: typeof setImmediate;
         };
-        mas: {
-            getThumbnailLocation: (location: string) => Promise<string>;
-        };
         desktop: {
             quit: (reason: string, stack: string) => void;
             openAppMenu: () => void;

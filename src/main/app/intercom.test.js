@@ -4,7 +4,7 @@
 import {app} from 'electron';
 
 import ServerManager from 'common/servers/serverManager';
-import {getLocalURLString, getLocalPreload} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -38,7 +38,6 @@ jest.mock('common/servers/serverManager', () => ({
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
-    getLocalURLString: jest.fn(),
 }));
 jest.mock('main/views/viewManager', () => ({}));
 jest.mock('main/views/modalManager', () => ({
@@ -53,7 +52,6 @@ jest.mock('./app', () => ({}));
 describe('main/app/intercom', () => {
     describe('handleWelcomeScreenModal', () => {
         beforeEach(() => {
-            getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
@@ -65,13 +63,12 @@ describe('main/app/intercom', () => {
             ModalManager.addModal.mockReturnValue(promise);
 
             handleWelcomeScreenModal();
-            expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', '/some/index.html', '/some/preload.js', null, {}, true);
+            expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', 'mattermost-desktop://renderer/welcomeScreen.html', '/some/preload.js', null, {}, true);
         });
     });
 
     describe('handleMainWindowIsShown', () => {
         it('MM-48079 should not show onboarding screen or server screen if GPO server is pre-configured', () => {
-            getLocalURLString.mockReturnValue('/some/index.html');
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({
                 isVisible: () => true,

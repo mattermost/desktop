@@ -12,7 +12,6 @@ import {DownloadsDropdownView} from './downloadsDropdownView';
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
-    getLocalURLString: (file) => file,
 }));
 jest.mock('fs', () => ({
     existsSync: jest.fn().mockReturnValue(false),

@@ -11,9 +11,8 @@ const exec = promisify(execOriginal);
 import type {BrowserWindow} from 'electron';
 import {app} from 'electron';
 
-import {BACK_BAR_HEIGHT, customLoginRegexPaths, PRODUCTION, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {BACK_BAR_HEIGHT, customLoginRegexPaths, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {isAdminUrl, isPluginUrl, isTeamUrl, isUrlType, parseURL} from 'common/utils/url';
-import Utils from 'common/utils/util';
 
 import type {Args} from 'types/args';
 
@@ -85,34 +84,8 @@ export function shouldHaveBackBar(serverUrl: URL, inputURL: URL) {
     return !isTeamUrl(serverUrl, inputURL) && !isAdminUrl(serverUrl, inputURL) && !isPluginUrl(serverUrl, inputURL);
 }
 
-export function getLocalURLString(urlPath: string, query?: Map<string, string>, isMain?: boolean) {
-    let pathname;
-    const processPath = isMain ? '' : '/renderer';
-    const mode = Utils.runMode();
-    const protocol = 'file';
-    const hostname = '';
-    const port = '';
-    if (mode === PRODUCTION) {
-        pathname = path.join(app.getAppPath(), `${processPath}/${urlPath}`);
-    } else {
-        pathname = path.resolve(__dirname, `../../dist/${processPath}/${urlPath}`); // TODO: find a better way to work with webpack on this
-    }
-    const localUrl = new URL(`${protocol}://${hostname}${port}`);
-    localUrl.pathname = pathname;
-    if (query) {
-        query.forEach((value: string, key: string) => {
-            localUrl.searchParams.append(encodeURIComponent(key), encodeURIComponent(value));
-        });
-    }
-
-    return localUrl.href;
-}
-
 export function getLocalPreload(file: string) {
-    if (Utils.runMode() === PRODUCTION) {
-        return path.join(app.getAppPath(), `${file}`);
-    }
-    return path.resolve(__dirname, `../../dist/${file}`);
+    return path.join(app.getAppPath(), file);
 }
 
 export function composeUserAgent() {

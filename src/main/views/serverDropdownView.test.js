@@ -12,7 +12,6 @@ jest.mock('app/serverViewState', () => ({}));
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
-    getLocalURLString: (file) => file,
 }));
 
 jest.mock('electron', () => ({

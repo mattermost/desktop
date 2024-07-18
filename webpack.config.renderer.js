@@ -158,7 +158,7 @@ module.exports = merge(base, {
             test: /\.mp3$/,
             type: 'asset/inline',
         }, {
-            test: /\.(svg|gif)$/,
+            test: /\.(svg|gif|jpg)$/,
             type: 'asset/resource',
         }, {
             test: /\.(eot|ttf|woff|woff2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
