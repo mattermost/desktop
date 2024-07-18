@@ -17,6 +17,7 @@ import {
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
+import PermissionsManager from 'main/permissionsManager';
 import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
@@ -55,6 +56,9 @@ jest.mock('common/utils/url', () => ({
     isCallsPopOutURL: jest.fn(),
     getFormattedPathName: jest.fn(),
     parseURL: jest.fn(),
+}));
+jest.mock('main/permissionsManager', () => ({
+    doPermissionRequest: jest.fn(),
 }));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
@@ -599,6 +603,11 @@ describe('main/windows/callsWidgetWindow', () => {
                 arr.push([`${item.name}_${view.name}`, {
                     sendToRenderer: jest.fn(),
                     webContentsId: index,
+                    view: {
+                        server: {
+                            url: new URL('http://server-1.com'),
+                        },
+                    },
                 }]);
             });
             return arr;
@@ -606,6 +615,7 @@ describe('main/windows/callsWidgetWindow', () => {
         const views = new Map(map);
 
         beforeEach(() => {
+            PermissionsManager.doPermissionRequest.mockReturnValue(Promise.resolve(true));
             ViewManager.getViewByWebContentsId.mockImplementation((id) => [...views.values()].find((view) => view.webContentsId === id));
             callsWidgetWindow.mainView = views.get('server-1_view-1');
         });

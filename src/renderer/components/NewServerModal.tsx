@@ -577,6 +577,16 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                     defaultMessage='Location'
                                 />
                             </Toggle>
+                            <Toggle
+                                isChecked={this.state.permissions.screenShare?.allowed}
+                                onChange={this.handleChangePermission('screenShare')}
+                            >
+                                <i className='icon icon-monitor-share'/>
+                                <FormattedMessage
+                                    id='renderer.components.newServerModal.permissions.screenShare'
+                                    defaultMessage='Screen Share'
+                                />
+                            </Toggle>
                         </>
                     }
                 </Modal.Body>
