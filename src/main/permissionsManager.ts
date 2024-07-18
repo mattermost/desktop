@@ -2,8 +2,11 @@
 // See LICENSE.txt for license information.
 
 import type {
+    FilesystemPermissionRequest,
     IpcMainInvokeEvent,
-    PermissionRequestHandlerHandlerDetails,
+    MediaAccessPermissionRequest,
+    OpenExternalPermissionRequest,
+    PermissionRequest,
     WebContents} from 'electron';
 import {
     app,
@@ -55,6 +58,8 @@ const authorizablePermissionTypes = [
 type PermissionsByOrigin = {
     [origin: string]: Permissions;
 };
+
+type PermissionRequestHandlerHandlerDetails = PermissionRequest & FilesystemPermissionRequest & MediaAccessPermissionRequest & OpenExternalPermissionRequest;
 
 export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
     private inflightPermissionChecks: Map<string, Promise<boolean>>;
