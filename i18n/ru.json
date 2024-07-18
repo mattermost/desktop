@@ -170,6 +170,7 @@
   "renderer.components.newServerModal.permissions.microphoneAndCamera.windowsCameraPermissions": "Камера отключена в Настройках Windows. Нажмите <link>здесь</link>, чтобы открыть Настройки камеры.",
   "renderer.components.newServerModal.permissions.microphoneAndCamera.windowsMicrophoneaPermissions": "Микрофон отключен в Настройках Windows. Нажмите <link>здесь</link>, чтобы открыть Настройки микрофона.",
   "renderer.components.newServerModal.permissions.notifications": "Уведомления",
+  "renderer.components.newServerModal.permissions.notifications.mac": "Возможно, вам также потребуется включить уведомления в Mac OS для наиболее важных целей. Нажмите <link> здесь</link>, чтобы открыть системные настройки.",
   "renderer.components.newServerModal.serverDisplayName": "Отображаемое имя сервера",
   "renderer.components.newServerModal.serverDisplayName.description": "Имя сервера, отображаемое на панели вкладок вашего приложения.",
   "renderer.components.newServerModal.serverURL": "URL сервера",
