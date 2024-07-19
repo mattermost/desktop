@@ -45,6 +45,7 @@ const supportedPermissionTypes = [
     'fullscreen',
     'openExternal',
     'clipboard-sanitized-write',
+    'screenShare',
 ];
 
 // permissions that require a dialog
@@ -53,6 +54,7 @@ const authorizablePermissionTypes = [
     'geolocation',
     'notifications',
     'openExternal',
+    'screenShare',
 ];
 
 type PermissionsByOrigin = {
@@ -239,10 +241,12 @@ t('main.permissionsManager.checkPermission.dialog.message.media');
 t('main.permissionsManager.checkPermission.dialog.message.geolocation');
 t('main.permissionsManager.checkPermission.dialog.message.notifications');
 t('main.permissionsManager.checkPermission.dialog.message.openExternal');
+t('main.permissionsManager.checkPermission.dialog.message.screenShare');
 t('main.permissionsManager.checkPermission.dialog.detail.media');
 t('main.permissionsManager.checkPermission.dialog.detail.geolocation');
 t('main.permissionsManager.checkPermission.dialog.detail.notifications');
 t('main.permissionsManager.checkPermission.dialog.detail.openExternal');
+t('main.permissionsManager.checkPermission.dialog.detail.screenShare');
 
 let permissionsManager = new PermissionsManager(permissionsJson);
 
