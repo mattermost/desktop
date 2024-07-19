@@ -138,7 +138,7 @@ export class MainWindow extends EventEmitter {
             // This is mostly a fix for Windows 11 snapping
             this.win.on('moved', this.onResized);
         }
-        if (process.platform === 'linux') {
+        if (process.platform !== 'darwin') {
             this.win.on('resize', this.onResize);
         }
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
@@ -515,8 +515,8 @@ export class MainWindow extends EventEmitter {
     private onResize = () => {
         log.silly('onResize');
 
-        // Workaround for macOS to stop the window from sending too many resize calls to the BrowserViews
-        if (process.platform === 'darwin' && this.isResizing) {
+        // Workaround for Windows to stop the window from sending too many resize calls to the BrowserViews
+        if (process.platform === 'win32' && this.isResizing) {
             return;
         }
         this.emitBounds();
