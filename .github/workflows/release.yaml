@@ -104,6 +104,7 @@ jobs:
           PFX: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_PFX }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_CSC_LINK }}
         run: |
+          npm run package:windows-zip
           npm run package:windows-installers
       - name: release/package
         run: |
