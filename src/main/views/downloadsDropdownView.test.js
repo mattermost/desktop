@@ -37,7 +37,7 @@ jest.mock('electron', () => {
         app: {
             getAppPath: () => '',
         },
-        BrowserView: jest.fn().mockImplementation(() => ({
+        WebContentsView: jest.fn().mockImplementation(() => ({
             webContents: {
                 loadURL: jest.fn(),
                 focus: jest.fn(),
@@ -73,7 +73,7 @@ jest.mock('main/windows/mainWindow', () => ({
 
 describe('main/views/DownloadsDropdownView', () => {
     beforeEach(() => {
-        MainWindow.get.mockReturnValue({addBrowserView: jest.fn(), setTopBrowserView: jest.fn()});
+        MainWindow.get.mockReturnValue({contentView: {addChildView: jest.fn()}});
         getDarwinDoNotDisturb.mockReturnValue(false);
     });
     describe('getBounds', () => {

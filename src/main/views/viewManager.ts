@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {BrowserView, dialog, ipcMain} from 'electron';
+import {WebContentsView, dialog, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 
 import ServerViewState from 'app/serverViewState';
@@ -49,7 +49,7 @@ import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import LoadingScreen from './loadingScreen';
-import {MattermostBrowserView} from './MattermostBrowserView';
+import {MattermostWebContentsView} from './MattermostWebContentsView';
 import modalManager from './modalManager';
 
 import {getLocalPreload, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
@@ -60,7 +60,7 @@ const URL_VIEW_HEIGHT = 20;
 
 export class ViewManager {
     private closedViews: Map<string, {srv: MattermostServer; view: MattermostView}>;
-    private views: Map<string, MattermostBrowserView>;
+    private views: Map<string, MattermostWebContentsView>;
     private currentView?: string;
 
     private urlViewCancel?: () => void;
@@ -195,23 +195,23 @@ export class ViewManager {
                 if (this.closedViews.has(view.id)) {
                     this.openClosedView(view.id, urlWithSchema);
                 } else {
-                    const browserView = this.views.get(view.id);
-                    if (!browserView) {
+                    const webContentsView = this.views.get(view.id);
+                    if (!webContentsView) {
                         log.error(`Couldn't find a view matching the id ${view.id}`);
                         return;
                     }
 
-                    if (browserView.isReady() && ServerManager.getRemoteInfo(browserView.view.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(browserView.view.server.id)?.serverVersion ?? '', '6.0.0')) {
-                        const formattedServerURL = `${browserView.view.server.url.origin}${getFormattedPathName(browserView.view.server.url.pathname)}`;
+                    if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.view.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.view.server.id)?.serverVersion ?? '', '6.0.0')) {
+                        const formattedServerURL = `${webContentsView.view.server.url.origin}${getFormattedPathName(webContentsView.view.server.url.pathname)}`;
                         const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
-                        browserView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
-                        this.deeplinkSuccess(browserView.id);
+                        webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
+                        this.deeplinkSuccess(webContentsView.id);
                     } else {
                         // attempting to change parsedURL protocol results in it not being modified.
-                        browserView.resetLoadingStatus();
-                        browserView.load(urlWithSchema);
-                        browserView.once(LOAD_SUCCESS, this.deeplinkSuccess);
-                        browserView.once(LOAD_FAILED, this.deeplinkFailed);
+                        webContentsView.resetLoadingStatus();
+                        webContentsView.load(urlWithSchema);
+                        webContentsView.once(LOAD_SUCCESS, this.deeplinkSuccess);
+                        webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
                     }
                 }
             } else {
@@ -249,26 +249,26 @@ export class ViewManager {
             this.closedViews.set(view.id, {srv, view});
             return;
         }
-        const browserView = this.makeView(srv, view, url);
-        this.addView(browserView);
+        const webContentsView = this.makeView(srv, view, url);
+        this.addView(webContentsView);
     };
 
-    private makeView = (srv: MattermostServer, view: MattermostView, url?: string): MattermostBrowserView => {
+    private makeView = (srv: MattermostServer, view: MattermostView, url?: string): MattermostWebContentsView => {
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             throw new Error('Cannot create view, no main window present');
         }
 
-        const browserView = new MattermostBrowserView(view, {webPreferences: {spellcheck: Config.useSpellChecker}});
-        browserView.once(LOAD_SUCCESS, this.activateView);
-        browserView.on(LOADSCREEN_END, this.finishLoading);
-        browserView.on(LOAD_FAILED, this.failLoading);
-        browserView.on(UPDATE_TARGET_URL, this.showURLView);
-        browserView.load(url);
-        return browserView;
+        const webContentsView = new MattermostWebContentsView(view, {webPreferences: {spellcheck: Config.useSpellChecker}});
+        webContentsView.once(LOAD_SUCCESS, this.activateView);
+        webContentsView.on(LOADSCREEN_END, this.finishLoading);
+        webContentsView.on(LOAD_FAILED, this.failLoading);
+        webContentsView.on(UPDATE_TARGET_URL, this.showURLView);
+        webContentsView.load(url);
+        return webContentsView;
     };
 
-    private addView = (view: MattermostBrowserView): void => {
+    private addView = (view: MattermostWebContentsView): void => {
         this.views.set(view.id, view);
 
         // Force a permission check for notifications
@@ -345,7 +345,7 @@ export class ViewManager {
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
             const preload = getLocalPreload('internalAPI.js');
-            const urlView = new BrowserView({
+            const urlView = new WebContentsView({
                 webPreferences: {
                     preload,
 
@@ -356,13 +356,13 @@ export class ViewManager {
                 }});
             const localURL = `mattermost-desktop://renderer/urlView.html?url=${encodeURIComponent(urlString)}`;
             urlView.webContents.loadURL(localURL);
-            MainWindow.get()?.addBrowserView(urlView);
+            MainWindow.get()?.contentView.addChildView(urlView);
             const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? MainWindow.getBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
                 try {
-                    mainWindow.removeBrowserView(urlView);
+                    mainWindow.contentView.removeChildView(urlView);
                 } catch (e) {
                     log.error('Failed to remove URL view', e);
                 }
@@ -414,12 +414,12 @@ export class ViewManager {
 
         const currentViewId: string | undefined = this.views.get(this.currentView as string)?.view.id;
 
-        const current: Map<string, MattermostBrowserView> = new Map();
+        const current: Map<string, MattermostWebContentsView> = new Map();
         for (const view of this.views.values()) {
             current.set(view.view.id, view);
         }
 
-        const views: Map<string, MattermostBrowserView> = new Map();
+        const views: Map<string, MattermostWebContentsView> = new Map();
         const closed: Map<string, {srv: MattermostServer; view: MattermostView}> = new Map();
 
         const sortedViews = ServerManager.getAllServers().flatMap((x) => ServerManager.getOrderedTabsForServer(x.id).
@@ -633,10 +633,10 @@ export class ViewManager {
             this.closedViews.delete(view.id);
         }
         this.showById(id);
-        const browserView = this.views.get(id)!;
-        browserView.isVisible = true;
-        browserView.on(LOAD_SUCCESS, () => {
-            browserView.isVisible = false;
+        const webContentsView = this.views.get(id)!;
+        webContentsView.isVisible = true;
+        webContentsView.on(LOAD_SUCCESS, () => {
+            webContentsView.isVisible = false;
             this.showById(id);
         });
         ipcMain.emit(OPEN_VIEW, null, view.id);

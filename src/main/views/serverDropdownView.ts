@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent} from 'electron';
-import {BrowserView, ipcMain} from 'electron';
+import {WebContentsView, ipcMain} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
 import AppState from 'common/appState';
@@ -31,7 +31,7 @@ import MainWindow from '../windows/mainWindow';
 const log = new Logger('ServerDropdownView');
 
 export class ServerDropdownView {
-    private view?: BrowserView;
+    private view?: WebContentsView;
     private servers: UniqueServer[];
     private hasGPOServers: boolean;
     private isOpen: boolean;
@@ -75,7 +75,7 @@ export class ServerDropdownView {
     private init = () => {
         log.info('init');
         const preload = getLocalPreload('internalAPI.js');
-        this.view = new BrowserView({webPreferences: {
+        this.view = new WebContentsView({webPreferences: {
             preload,
 
             // Workaround for this issue: https://github.com/electron/electron/issues/30993
@@ -88,7 +88,7 @@ export class ServerDropdownView {
         this.setOrderedServers();
         this.windowBounds = MainWindow.getBounds();
         this.updateDropdown();
-        MainWindow.get()?.addBrowserView(this.view);
+        MainWindow.get()?.contentView.addChildView(this.view);
     };
 
     private updateDropdown = () => {
@@ -136,7 +136,7 @@ export class ServerDropdownView {
             return;
         }
         this.view.setBounds(this.bounds);
-        MainWindow.get()?.setTopBrowserView(this.view);
+        MainWindow.get()?.contentView.addChildView(this.view);
         this.view.webContents.focus();
         MainWindow.sendToRenderer(OPEN_SERVERS_DROPDOWN);
         this.isOpen = true;

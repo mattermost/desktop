@@ -19,9 +19,10 @@ jest.mock('main/windows/mainWindow', () => ({
 describe('main/views/loadingScreen', () => {
     describe('show', () => {
         const mainWindow = {
-            getBrowserViews: jest.fn(),
-            setTopBrowserView: jest.fn(),
-            addBrowserView: jest.fn(),
+            contentView: {
+                addChildView: jest.fn(),
+                children: [],
+            },
         };
         const loadingScreen = new LoadingScreen();
         loadingScreen.create = jest.fn();
@@ -29,7 +30,7 @@ describe('main/views/loadingScreen', () => {
         const view = {webContents: {send: jest.fn(), isLoading: () => false}};
 
         beforeEach(() => {
-            mainWindow.getBrowserViews.mockImplementation(() => []);
+            mainWindow.contentView.children = [];
             MainWindow.get.mockReturnValue(mainWindow);
         });
 
@@ -44,14 +45,14 @@ describe('main/views/loadingScreen', () => {
             });
             loadingScreen.show();
             expect(loadingScreen.create).toHaveBeenCalled();
-            expect(mainWindow.addBrowserView).toHaveBeenCalled();
+            expect(mainWindow.contentView.addChildView).toHaveBeenCalled();
         });
 
         it('should set the browser view as top if already exists and needs to be shown', () => {
             loadingScreen.view = view;
-            mainWindow.getBrowserViews.mockImplementation(() => [view]);
+            mainWindow.contentView.children = [view];
             loadingScreen.show();
-            expect(mainWindow.setTopBrowserView).toHaveBeenCalled();
+            expect(mainWindow.contentView.addChildView).toHaveBeenCalled();
         });
     });
 });

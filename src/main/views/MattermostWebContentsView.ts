@@ -1,8 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserView, app, ipcMain} from 'electron';
-import type {BrowserViewConstructorOptions, Event, Input} from 'electron/main';
+import {WebContentsView, app, ipcMain} from 'electron';
+import type {WebContentsViewConstructorOptions, Event, Input} from 'electron/main';
 import {EventEmitter} from 'events';
 
 import AppState from 'common/appState';
@@ -42,15 +42,15 @@ enum Status {
 const MENTIONS_GROUP = 2;
 const titleParser = /(\((\d+)\) )?(\* )?/g;
 
-export class MattermostBrowserView extends EventEmitter {
+export class MattermostWebContentsView extends EventEmitter {
     view: MattermostView;
     isVisible: boolean;
 
     private log: Logger;
-    private browserView: BrowserView;
+    private webContentsView: WebContentsView;
     private loggedIn: boolean;
     private atRoot: boolean;
-    private options: BrowserViewConstructorOptions;
+    private options: WebContentsViewConstructorOptions;
     private removeLoading?: NodeJS.Timeout;
     private contextMenu: ContextMenu;
     private status?: Status;
@@ -58,7 +58,7 @@ export class MattermostBrowserView extends EventEmitter {
     private maxRetries: number;
     private altPressStatus: boolean;
 
-    constructor(view: MattermostView, options: BrowserViewConstructorOptions) {
+    constructor(view: MattermostView, options: WebContentsViewConstructorOptions) {
         super();
         this.view = view;
 
@@ -75,18 +75,18 @@ export class MattermostBrowserView extends EventEmitter {
         this.isVisible = false;
         this.loggedIn = false;
         this.atRoot = true;
-        this.browserView = new BrowserView(this.options);
+        this.webContentsView = new WebContentsView(this.options);
         this.resetLoadingStatus();
 
-        this.log = ServerManager.getViewLog(this.id, 'MattermostBrowserView');
+        this.log = ServerManager.getViewLog(this.id, 'MattermostWebContentsView');
         this.log.verbose('View created');
 
-        this.browserView.webContents.on('update-target-url', this.handleUpdateTarget);
-        this.browserView.webContents.on('did-navigate', this.handleDidNavigate);
+        this.webContentsView.webContents.on('update-target-url', this.handleUpdateTarget);
+        this.webContentsView.webContents.on('did-navigate', this.handleDidNavigate);
         if (process.platform !== 'darwin') {
-            this.browserView.webContents.on('before-input-event', this.handleInputEvents);
+            this.webContentsView.webContents.on('before-input-event', this.handleInputEvents);
         }
-        this.browserView.webContents.on('input-event', (_, inputEvent) => {
+        this.webContentsView.webContents.on('input-event', (_, inputEvent) => {
             if (inputEvent.type === 'mouseDown') {
                 ipcMain.emit(CLOSE_SERVERS_DROPDOWN);
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
@@ -94,12 +94,12 @@ export class MattermostBrowserView extends EventEmitter {
         });
 
         // Legacy handlers using the title/favicon
-        this.browserView.webContents.on('page-title-updated', this.handleTitleUpdate);
-        this.browserView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
+        this.webContentsView.webContents.on('page-title-updated', this.handleTitleUpdate);
+        this.webContentsView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
 
-        WebContentsEventManager.addWebContentsEventListeners(this.browserView.webContents);
+        WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
-        this.contextMenu = new ContextMenu({}, this.browserView);
+        this.contextMenu = new ContextMenu({}, this.webContentsView);
         this.maxRetries = MAX_SERVER_RETRIES;
 
         this.altPressStatus = false;
@@ -121,10 +121,10 @@ export class MattermostBrowserView extends EventEmitter {
         return this.loggedIn;
     }
     get currentURL() {
-        return parseURL(this.browserView.webContents.getURL());
+        return parseURL(this.webContentsView.webContents.getURL());
     }
     get webContentsId() {
-        return this.browserView.webContents.id;
+        return this.webContentsView.webContents.id;
     }
 
     onLogin = (loggedIn: boolean) => {
@@ -144,9 +144,9 @@ export class MattermostBrowserView extends EventEmitter {
     };
 
     goToOffset = (offset: number) => {
-        if (this.browserView.webContents.canGoToOffset(offset)) {
+        if (this.webContentsView.webContents.canGoToOffset(offset)) {
             try {
-                this.browserView.webContents.goToOffset(offset);
+                this.webContentsView.webContents.goToOffset(offset);
                 this.updateHistoryButton();
             } catch (error) {
                 this.log.error(error);
@@ -157,25 +157,25 @@ export class MattermostBrowserView extends EventEmitter {
 
     getBrowserHistoryStatus = () => {
         if (this.currentURL?.toString() === this.view.url.toString()) {
-            this.browserView.webContents.clearHistory();
+            this.webContentsView.webContents.clearHistory();
             this.atRoot = true;
         } else {
             this.atRoot = false;
         }
 
         return {
-            canGoBack: this.browserView.webContents.canGoBack(),
-            canGoForward: this.browserView.webContents.canGoForward(),
+            canGoBack: this.webContentsView.webContents.canGoBack(),
+            canGoForward: this.webContentsView.webContents.canGoForward(),
         };
     };
 
     updateHistoryButton = () => {
         const {canGoBack, canGoForward} = this.getBrowserHistoryStatus();
-        this.browserView.webContents.send(BROWSER_HISTORY_STATUS_UPDATED, canGoBack, canGoForward);
+        this.webContentsView.webContents.send(BROWSER_HISTORY_STATUS_UPDATED, canGoBack, canGoForward);
     };
 
     load = (someURL?: URL | string) => {
-        if (!this.browserView) {
+        if (!this.webContentsView) {
             return;
         }
 
@@ -192,7 +192,7 @@ export class MattermostBrowserView extends EventEmitter {
             loadURL = this.view.url.toString();
         }
         this.log.verbose(`Loading ${loadURL}`);
-        const loading = this.browserView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+        const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
                 MainWindow.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
@@ -221,8 +221,8 @@ export class MattermostBrowserView extends EventEmitter {
             return;
         }
         this.isVisible = true;
-        mainWindow.addBrowserView(this.browserView);
-        mainWindow.setTopBrowserView(this.browserView);
+        mainWindow.contentView.addChildView(this.webContentsView);
+        mainWindow.contentView.addChildView(this.webContentsView);
         this.setBounds(getWindowBoundaries(mainWindow, shouldHaveBackBar(this.view.url || '', this.currentURL)));
         if (this.status === Status.READY) {
             this.focus();
@@ -232,7 +232,7 @@ export class MattermostBrowserView extends EventEmitter {
     hide = () => {
         if (this.isVisible) {
             this.isVisible = false;
-            MainWindow.get()?.removeBrowserView(this.browserView);
+            MainWindow.get()?.contentView.removeChildView(this.webContentsView);
         }
     };
 
@@ -243,22 +243,22 @@ export class MattermostBrowserView extends EventEmitter {
     };
 
     getBounds = () => {
-        return this.browserView.getBounds();
+        return this.webContentsView.getBounds();
     };
 
     openFind = () => {
-        this.browserView.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
+        this.webContentsView.webContents.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
     };
 
     setBounds = (boundaries: Electron.Rectangle) => {
-        this.browserView.setBounds(boundaries);
+        this.webContentsView.setBounds(boundaries);
     };
 
     destroy = () => {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         AppState.clear(this.id);
-        MainWindow.get()?.removeBrowserView(this.browserView);
-        this.browserView.webContents.close();
+        MainWindow.get()?.contentView.removeChildView(this.webContentsView);
+        this.webContentsView.webContents.close();
 
         this.isVisible = false;
         if (this.retryLoad) {
@@ -274,8 +274,8 @@ export class MattermostBrowserView extends EventEmitter {
      * Newer web apps will send the mentions/unreads directly
      */
     offLegacyUnreads = () => {
-        this.browserView.webContents.off('page-title-updated', this.handleTitleUpdate);
-        this.browserView.webContents.off('page-favicon-updated', this.handleFaviconUpdate);
+        this.webContentsView.webContents.off('page-title-updated', this.handleTitleUpdate);
+        this.webContentsView.webContents.off('page-favicon-updated', this.handleFaviconUpdate);
     };
 
     /**
@@ -319,17 +319,17 @@ export class MattermostBrowserView extends EventEmitter {
         // So what we do here is check to see if it's opened correctly and if not we reset it
         if (process.platform === 'darwin') {
             const timeout = setTimeout(() => {
-                if (this.browserView.webContents.isDevToolsOpened()) {
-                    this.browserView.webContents.closeDevTools();
-                    this.browserView.webContents.openDevTools({mode: 'detach'});
+                if (this.webContentsView.webContents.isDevToolsOpened()) {
+                    this.webContentsView.webContents.closeDevTools();
+                    this.webContentsView.webContents.openDevTools({mode: 'detach'});
                 }
             }, 500);
-            this.browserView.webContents.on('devtools-opened', () => {
+            this.webContentsView.webContents.on('devtools-opened', () => {
                 clearTimeout(timeout);
             });
         }
 
-        this.browserView.webContents.openDevTools({mode: 'detach'});
+        this.webContentsView.webContents.openDevTools({mode: 'detach'});
     };
 
     /**
@@ -337,16 +337,16 @@ export class MattermostBrowserView extends EventEmitter {
      */
 
     sendToRenderer = (channel: string, ...args: any[]) => {
-        this.browserView.webContents.send(channel, ...args);
+        this.webContentsView.webContents.send(channel, ...args);
     };
 
     isDestroyed = () => {
-        return this.browserView.webContents.isDestroyed();
+        return this.webContentsView.webContents.isDestroyed();
     };
 
     focus = () => {
-        if (this.browserView.webContents) {
-            this.browserView.webContents.focus();
+        if (this.webContentsView.webContents) {
+            this.webContentsView.webContents.focus();
         } else {
             this.log.warn('trying to focus the browserview, but it doesn\'t yet have webcontents.');
         }
@@ -397,7 +397,7 @@ export class MattermostBrowserView extends EventEmitter {
     // if favicon is null, it will affect appState, but won't be memoized
     private findUnreadState = (favicon: string | null) => {
         try {
-            this.browserView.webContents.send(IS_UNREAD, favicon, this.id);
+            this.webContentsView.webContents.send(IS_UNREAD, favicon, this.id);
         } catch (err: any) {
             this.log.error('There was an error trying to request the unread state', err);
         }
@@ -424,10 +424,10 @@ export class MattermostBrowserView extends EventEmitter {
     private retry = (loadURL: string) => {
         return () => {
             // window was closed while retrying
-            if (!this.browserView || !this.browserView.webContents) {
+            if (!this.webContentsView || !this.webContentsView.webContents) {
                 return;
             }
-            const loading = this.browserView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+            const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
             loading.then(this.loadSuccess(loadURL)).catch((err) => {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);
@@ -445,7 +445,7 @@ export class MattermostBrowserView extends EventEmitter {
     private retryInBackground = (loadURL: string) => {
         return () => {
             // window was closed while retrying
-            if (!this.browserView || !this.browserView.webContents) {
+            if (!this.webContentsView || !this.webContentsView.webContents) {
                 return;
             }
             const parsedURL = parseURL(loadURL);
@@ -476,7 +476,7 @@ export class MattermostBrowserView extends EventEmitter {
             MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
             this.maxRetries = MAX_SERVER_RETRIES;
             if (this.status === Status.LOADING) {
-                this.updateMentionsFromTitle(this.browserView.webContents.getTitle());
+                this.updateMentionsFromTitle(this.webContentsView.webContents.getTitle());
                 this.findUnreadState(null);
             }
             this.status = Status.WAITING_MM;

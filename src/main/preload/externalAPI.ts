@@ -137,7 +137,7 @@ if (process.env.NODE_ENV === 'test') {
  */
 
 // Let the main process know when the window has finished resizing
-// This is to reduce the amount of white box that happens when expand the BrowserView
+// This is to reduce the amount of white box that happens when expand the WebContentsView
 window.addEventListener('resize', () => {
     ipcRenderer.send(VIEW_FINISHED_RESIZING);
 });
