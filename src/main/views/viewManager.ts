@@ -33,6 +33,7 @@ import {
     REQUEST_BROWSER_HISTORY_STATUS,
     LEGACY_OFF,
     UNREADS_AND_MENTIONS,
+    TAB_LOGGED_IN,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -80,6 +81,7 @@ export class ViewManager {
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
         ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
         ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
+        ipcMain.on(TAB_LOGGED_IN, this.handleTabLoggedIn);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
         ipcMain.on(UNREAD_RESULT, this.handleUnreadChanged);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
@@ -504,6 +506,25 @@ export class ViewManager {
         flushCookiesStore();
     };
 
+    private handleTabLoggedIn = (event: IpcMainEvent, loggedIn: boolean) => {
+        log.debug('handleTabLoggedIn', event.sender.id);
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+
+        // This method is only called when the specific view is logged in
+        // so we need to call the `onLogin` for all of the views for the same server
+        [...this.views.values()].
+            filter((v) => v.view.server.id === view.view.server.id).
+            forEach((v) => v.onLogin(loggedIn));
+
+        if (!loggedIn) {
+            AppState.clear(view.id);
+        }
+        flushCookiesStore();
+    };
+
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
         log.debug('handleBrowserHistoryPush', e.sender.id, pathName);
 
@@ -522,7 +543,7 @@ export class ViewManager {
             return;
         }
         let redirectedView = this.getView(redirectedviewId) || currentView;
-        if (redirectedView !== currentView && redirectedView?.view.server.id === ServerViewState.getCurrentServer().id && redirectedView?.isLoggedIn) {
+        if (redirectedView !== currentView && redirectedView?.view.server.id === ServerViewState.getCurrentServer().id && (redirectedView?.isLoggedIn || cleanedPathName === '/')) {
             log.info('redirecting to a new view', redirectedView?.id || currentView.id);
             this.showById(redirectedView?.id || currentView.id);
         } else {
