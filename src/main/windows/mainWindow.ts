@@ -5,7 +5,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import type {BrowserWindowConstructorOptions, Event, Input, IpcMainEvent} from 'electron';
+import type {BrowserWindowConstructorOptions, Event, Input} from 'electron';
 import {app, BrowserWindow, dialog, globalShortcut, ipcMain, screen} from 'electron';
 import {EventEmitter} from 'events';
 
@@ -254,7 +254,7 @@ export class MainWindow extends EventEmitter {
             color: Config.darkMode ? '#2e2e2e' : '#efefef',
             height: TAB_BAR_HEIGHT,
         };
-    }
+    };
 
     private getSavedWindowState = (): Partial<SavedWindowState> => {
         try {
@@ -559,11 +559,9 @@ export class MainWindow extends EventEmitter {
         this.win?.webContents.send(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
     };
 
-    private handleUpdateTitleBarOverlay = (event: IpcMainEvent) => {
-        if (this.win) {
-            this.win.setTitleBarOverlay(this.getTitleBarOverlay());
-        }
-    }
+    private handleUpdateTitleBarOverlay = () => {
+        this.win?.setTitleBarOverlay?.(this.getTitleBarOverlay());
+    };
 }
 
 const mainWindow = new MainWindow();
