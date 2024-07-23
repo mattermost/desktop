@@ -18,10 +18,6 @@ import ExtraBar from './ExtraBar';
 import ServerDropdownButton from './ServerDropdownButton';
 import TabBar from './TabBar';
 
-import closeButton from '../../assets/titlebar/chrome-close.svg';
-import maximizeButton from '../../assets/titlebar/chrome-maximize.svg';
-import minimizeButton from '../../assets/titlebar/chrome-minimize.svg';
-import restoreButton from '../../assets/titlebar/chrome-restore.svg';
 import {playSound} from '../notificationSounds';
 
 import '../css/components/UpgradeButton.scss';
@@ -38,7 +34,6 @@ type Props = {
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
-    useNativeWindow: boolean;
     intl: IntlShape;
 };
 
@@ -430,60 +425,6 @@ class MainPage extends React.PureComponent<Props, State> {
             />
         ) : null;
 
-        let maxButton;
-        if (this.state.maximized || this.state.fullScreen) {
-            maxButton = (
-                <div
-                    className='button restore-button'
-                    onClick={this.handleRestore}
-                >
-                    <img
-                        src={restoreButton}
-                        draggable={false}
-                    />
-                </div>
-            );
-        } else {
-            maxButton = (
-                <div
-                    className='button max-button'
-                    onClick={this.handleMaximize}
-                >
-                    <img
-                        src={maximizeButton}
-                        draggable={false}
-                    />
-                </div>
-            );
-        }
-
-        let titleBarButtons;
-        if (window.process.platform === 'win32' && !this.props.useNativeWindow) {
-            titleBarButtons = (
-                <span className='title-bar-btns'>
-                    <div
-                        className='button min-button'
-                        onClick={this.handleMinimize}
-                    >
-                        <img
-                            src={minimizeButton}
-                            draggable={false}
-                        />
-                    </div>
-                    {maxButton}
-                    <div
-                        className='button close-button'
-                        onClick={this.handleClose}
-                    >
-                        <img
-                            src={closeButton}
-                            draggable={false}
-                        />
-                    </div>
-                </span>
-            );
-        }
-
         const totalMentionCount = Object.keys(this.state.mentionCounts).reduce((sum, key) => {
             // Strip out current server from unread and mention counts
             if (this.state.tabs.get(this.state.activeServerId!)?.map((tab) => tab.id).includes(key)) {
@@ -541,7 +482,6 @@ class MainPage extends React.PureComponent<Props, State> {
                     )}
                     {tabsRow}
                     {downloadsDropdownButton}
-                    {titleBarButtons}
                 </div>
             </Row>
         );

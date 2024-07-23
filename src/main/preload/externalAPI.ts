@@ -18,7 +18,6 @@ import {
     APP_LOGGED_OUT,
     GET_VIEW_INFO_FOR_TEST,
     DESKTOP_SOURCES_RESULT,
-    VIEW_FINISHED_RESIZING,
     CALLS_JOIN_CALL,
     CALLS_JOINED_CALL,
     CALLS_LEAVE_CALL,
@@ -135,12 +134,6 @@ if (process.env.NODE_ENV === 'test') {
  * Avoid using these unless absolutely necessary
  ****************************************************************************
  */
-
-// Let the main process know when the window has finished resizing
-// This is to reduce the amount of white box that happens when expand the WebContentsView
-window.addEventListener('resize', () => {
-    ipcRenderer.send(VIEW_FINISHED_RESIZING);
-});
 
 // Enable secure input on macOS clients when the user is on a password input
 let isPasswordBox = false;
