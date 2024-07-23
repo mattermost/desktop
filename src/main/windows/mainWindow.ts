@@ -85,7 +85,7 @@ export class MainWindow extends EventEmitter {
             titleBarStyle: 'hidden' as const,
             titleBarOverlay: process.platform === 'linux' ? this.getTitleBarOverlay() : false,
             trafficLightPosition: {x: 12, y: 12},
-            backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
+            backgroundColor: '#000', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
             webPreferences: {
                 disableBlinkFeatures: 'Auxclick',
                 preload: getLocalPreload('internalAPI.js'),
@@ -129,21 +129,24 @@ export class MainWindow extends EventEmitter {
         this.win.on('focus', this.onFocus);
         this.win.on('blur', this.onBlur);
         this.win.on('unresponsive', this.onUnresponsive);
-        this.win.on('maximize', this.onMaximize);
-        this.win.on('unmaximize', this.onUnmaximize);
+        //this.win.on('maximize', this.onMaximize);
+        //this.win.on('unmaximize', this.onUnmaximize);
         this.win.on('restore', this.onRestore);
         this.win.on('enter-full-screen', this.onEnterFullScreen);
         this.win.on('leave-full-screen', this.onLeaveFullScreen);
-        this.win.on('will-resize', this.onWillResize);
-        this.win.on('resized', this.onResized);
-        if (process.platform === 'win32') {
+        //this.win.on('will-resize', this.onWillResize);
+        //this.win.on('resized', this.onResized);
+        //if (process.platform === 'win32') {
             // We don't want this on macOS, it's an alias of 'move'
             // This is mostly a fix for Windows 11 snapping
-            this.win.on('moved', this.onResized);
-        }
-        if (process.platform !== 'darwin') {
-            this.win.on('resize', this.onResize);
-        }
+            //this.win.on('moved', this.onResized);
+       // }
+        //if (process.platform !== 'darwin') {
+        //    this.win.on('resize', this.onResize);
+        //}
+        this.win.contentView.on('bounds-changed', () => {
+            this.emit(MAIN_WINDOW_RESIZED, this.win?.contentView.getBounds());
+        });
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
 
         // Should not allow the main window to generate a window of its own
@@ -485,12 +488,12 @@ export class MainWindow extends EventEmitter {
 
     private onEnterFullScreen = () => {
         this.win?.webContents.send('enter-full-screen');
-        this.emitBounds();
+        //this.emitBounds();
     };
 
     private onLeaveFullScreen = () => {
         this.win?.webContents.send('leave-full-screen');
-        this.emitBounds();
+        //this.emitBounds();
     };
 
     /**
