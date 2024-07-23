@@ -32,7 +32,7 @@ class NotificationManager {
     }
 
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
-        log.debug('displayMention', {title, channelId, teamId, url, silent, soundName});
+        log.debug('displayMention', {channelId, teamId, url, silent, soundName});
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');

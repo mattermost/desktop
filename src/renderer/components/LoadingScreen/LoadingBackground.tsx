@@ -3,6 +3,8 @@
 
 import React from 'react';
 
+import StippleMask from 'renderer/assets/StippleMask.jpg';
+
 function LoadingBackground() {
     return (
         <div className='LoadingScreen__backgound'>
@@ -36,7 +38,7 @@ function LoadingBackground() {
                         <image
                             width='900'
                             height='535'
-                            href='../assets/loader/StippleMask.jpg'
+                            href={StippleMask}
                         />
                     </mask>
                     <g

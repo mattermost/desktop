@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 
 import {CheckCircleIcon, CloseCircleIcon} from '@mattermost/compass-icons/components';
 
@@ -17,11 +17,7 @@ const iconSize = 14;
 const colorGreen = '#3DB887';
 const colorRed = '#D24B4E';
 
-const isWin = window.process.platform === 'win32';
-
 const Thumbnail = ({item}: OwnProps) => {
-    const [imageUrl, setImageUrl] = useState<string | undefined>();
-
     const showBadge = (state: DownloadedItem['state']) => {
         switch (state) {
         case 'completed':
@@ -45,27 +41,18 @@ const Thumbnail = ({item}: OwnProps) => {
         }
     };
 
-    useEffect(() => {
-        const fetchThumbnail = async () => {
-            const imageUrl = await window.mas.getThumbnailLocation(item.location);
-            setImageUrl(imageUrl);
-        };
-
-        fetchThumbnail();
-    }, [item]);
-
     const showImagePreview = isImageFile(item) && item.state === 'completed';
-    if (showImagePreview && !imageUrl) {
+    if (showImagePreview && !item.thumbnailData) {
         return null;
     }
 
     return (
         <div className='DownloadsDropdown__Thumbnail__Container'>
-            {showImagePreview && imageUrl ?
+            {showImagePreview && item.thumbnailData ?
                 <div
                     className='DownloadsDropdown__Thumbnail preview'
                     style={{
-                        backgroundImage: `url("${isWin ? `file:///${imageUrl.replaceAll('\\', '/')}` : imageUrl}")`,
+                        backgroundImage: `url("${item.thumbnailData}")`,
                         backgroundSize: 'cover',
                     }}
                 /> :

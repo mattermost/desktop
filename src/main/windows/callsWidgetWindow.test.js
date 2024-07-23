@@ -17,6 +17,7 @@ import {
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
+import PermissionsManager from 'main/permissionsManager';
 import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
@@ -56,6 +57,9 @@ jest.mock('common/utils/url', () => ({
     getFormattedPathName: jest.fn(),
     parseURL: jest.fn(),
 }));
+jest.mock('main/permissionsManager', () => ({
+    doPermissionRequest: jest.fn(),
+}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     focus: jest.fn(),
@@ -73,6 +77,17 @@ jest.mock('../utils', () => ({
     getLocalPreload: jest.fn(),
     composeUserAgent: jest.fn(),
 }));
+
+const mockContextMenuReload = jest.fn();
+const mockContextMenuDispose = jest.fn();
+jest.mock('../contextMenu', () => {
+    return jest.fn().mockImplementation(() => {
+        return {
+            reload: mockContextMenuReload,
+            dispose: mockContextMenuDispose,
+        };
+    });
+});
 
 describe('main/windows/callsWidgetWindow', () => {
     describe('onShow', () => {
@@ -385,8 +400,11 @@ describe('main/windows/callsWidgetWindow', () => {
                 },
                 id: 'webContentsId',
                 getURL: () => ('http://myurl.com'),
+                removeListener: jest.fn(),
             },
+            off: jest.fn(),
             loadURL: jest.fn(),
+            isDestroyed: jest.fn(() => false),
         };
 
         const callsWidgetWindow = new CallsWidgetWindow();
@@ -395,6 +413,7 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
         expect(frameFinishedLoadListener).toBeDefined();
+        expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
 
         const event = {preventDefault: jest.fn()};
         redirectListener(event);
@@ -405,6 +424,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
+        expect(mockContextMenuDispose).toHaveBeenCalled();
     });
 
     it('getViewURL', () => {
@@ -583,6 +603,11 @@ describe('main/windows/callsWidgetWindow', () => {
                 arr.push([`${item.name}_${view.name}`, {
                     sendToRenderer: jest.fn(),
                     webContentsId: index,
+                    view: {
+                        server: {
+                            url: new URL('http://server-1.com'),
+                        },
+                    },
                 }]);
             });
             return arr;
@@ -590,6 +615,7 @@ describe('main/windows/callsWidgetWindow', () => {
         const views = new Map(map);
 
         beforeEach(() => {
+            PermissionsManager.doPermissionRequest.mockReturnValue(Promise.resolve(true));
             ViewManager.getViewByWebContentsId.mockImplementation((id) => [...views.values()].find((view) => view.webContentsId === id));
             callsWidgetWindow.mainView = views.get('server-1_view-1');
         });

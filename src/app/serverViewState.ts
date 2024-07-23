@@ -28,7 +28,7 @@ import {URLValidationStatus} from 'common/utils/constants';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -133,7 +133,7 @@ export class ServerViewState {
 
         const modalPromise = ModalManager.addModal<null, Server>(
             'newServer',
-            getLocalURLString('newServer.html'),
+            'mattermost-desktop://renderer/newServer.html',
             getLocalPreload('internalAPI.js'),
             null,
             mainWindow,
@@ -165,7 +165,7 @@ export class ServerViewState {
 
         const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
             'editServer',
-            getLocalURLString('editServer.html'),
+            'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
             {server: server.toUniqueServer(), permissions: PermissionsManager.getForServer(server) ?? {}},
             mainWindow);
@@ -195,7 +195,7 @@ export class ServerViewState {
 
         const modalPromise = ModalManager.addModal<string, boolean>(
             'removeServer',
-            getLocalURLString('removeServer.html'),
+            'mattermost-desktop://renderer/removeServer.html',
             getLocalPreload('internalAPI.js'),
             server.name,
             mainWindow,

@@ -2,8 +2,9 @@
 // See LICENSE.txt for license information.
 
 import path from 'path';
+import {pathToFileURL} from 'url';
 
-import {app, ipcMain, nativeTheme, session} from 'electron';
+import {app, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-extension-installer';
 import isDev from 'electron-is-dev';
 
@@ -36,6 +37,7 @@ import {
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
+import {parseURL} from 'common/utils/url';
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
 import AuthManager from 'main/authManager';
@@ -254,6 +256,10 @@ function initializeBeforeAppReady() {
         nativeTheme.on('updated', handleUpdateTheme);
         handleUpdateTheme();
     }
+
+    protocol.registerSchemesAsPrivileged([
+        {scheme: 'mattermost-desktop', privileges: {standard: true}},
+    ]);
 }
 
 function initializeInterCommunicationEventListeners() {
@@ -291,6 +297,24 @@ function initializeInterCommunicationEventListeners() {
 }
 
 async function initializeAfterAppReady() {
+    protocol.handle('mattermost-desktop', (request: Request) => {
+        const url = parseURL(request.url);
+        if (!url) {
+            return new Response('bad', {status: 400});
+        }
+
+        // Including this snippet from the handler docs to check for path traversal
+        // https://www.electronjs.org/docs/latest/api/protocol#protocolhandlescheme-handler
+        const pathToServe = path.join(app.getAppPath(), 'renderer', url.pathname);
+        const relativePath = path.relative(app.getAppPath(), pathToServe);
+        const isSafe = relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
+        if (!isSafe) {
+            return new Response('bad', {status: 400});
+        }
+
+        return net.fetch(pathToFileURL(pathToServe).toString());
+    });
+
     ServerManager.reloadFromConfig();
     updateServerInfos(ServerManager.getAllServers());
     ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {

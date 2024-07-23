@@ -37,7 +37,7 @@ import {localizeMessage} from 'main/i18nManager';
 import type {SavedWindowState} from 'types/mainWindow';
 
 import ContextMenu from '../contextMenu';
-import {getLocalPreload, getLocalURLString, isInsideRectangle} from '../utils';
+import {getLocalPreload, isInsideRectangle} from '../utils';
 
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
@@ -138,7 +138,7 @@ export class MainWindow extends EventEmitter {
             // This is mostly a fix for Windows 11 snapping
             this.win.on('moved', this.onResized);
         }
-        if (process.platform === 'linux') {
+        if (process.platform !== 'darwin') {
             this.win.on('resize', this.onResize);
         }
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
@@ -152,7 +152,7 @@ export class MainWindow extends EventEmitter {
         const contextMenu = new ContextMenu({}, this.win);
         contextMenu.reload();
 
-        const localURL = getLocalURLString('index.html');
+        const localURL = 'mattermost-desktop://renderer/index.html';
         this.win.loadURL(localURL).catch(
             (reason) => {
                 log.error('failed to load', reason);
@@ -254,8 +254,8 @@ export class MainWindow extends EventEmitter {
                 throw new Error('Provided bounds info file does not validate, using defaults instead.');
             }
             const matchingScreen = screen.getDisplayMatching(savedWindowState);
-            log.debug('matching screen for main window', matchingScreen);
-            if (!(matchingScreen && (isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized))) {
+            log.debug('closest matching screen for main window', matchingScreen);
+            if (!(isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized)) {
                 throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
             }
 
@@ -515,8 +515,8 @@ export class MainWindow extends EventEmitter {
     private onResize = () => {
         log.silly('onResize');
 
-        // Workaround for macOS to stop the window from sending too many resize calls to the BrowserViews
-        if (process.platform === 'darwin' && this.isResizing) {
+        // Workaround for Windows to stop the window from sending too many resize calls to the BrowserViews
+        if (process.platform === 'win32' && this.isResizing) {
             return;
         }
         this.emitBounds();

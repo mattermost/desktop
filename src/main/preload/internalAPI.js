@@ -72,7 +72,6 @@ import {
     START_UPDATE_DOWNLOAD,
     START_UPGRADE,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
-    GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
     MODAL_CANCEL,
     MODAL_RESULT,
@@ -108,10 +107,6 @@ contextBridge.exposeInMainWorld('process', {
 
 contextBridge.exposeInMainWorld('timers', {
     setImmediate,
-});
-
-contextBridge.exposeInMainWorld('mas', {
-    getThumbnailLocation: (location) => ipcRenderer.invoke(GET_DOWNLOADED_IMAGE_THUMBNAIL_LOCATION, location),
 });
 
 contextBridge.exposeInMainWorld('desktop', {

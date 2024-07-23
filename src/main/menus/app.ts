@@ -18,7 +18,7 @@ import type {UpdateManager} from 'main/autoUpdater';
 import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
@@ -57,7 +57,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
 
             ModalManager.addModal(
                 'settingsModal',
-                getLocalURLString('settings.html'),
+                'mattermost-desktop://renderer/settings.html',
                 getLocalPreload('internalAPI.js'),
                 null,
                 mainWindow,

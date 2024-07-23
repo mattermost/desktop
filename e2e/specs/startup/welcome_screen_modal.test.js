@@ -31,21 +31,27 @@ describe('Welcome Screen Modal', function desc() {
     it('MM-T4976 should show the slides in the expected order', async () => {
         const welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');
         welcomeSlideClass.should.contain('Carousel__slide-current');
-
+        const welcomeSlideTitle = await welcomeScreenModal.innerText('#welcome .WelcomeScreenSlide__title');
+        welcomeSlideTitle.should.equal('Welcome');
         await welcomeScreenModal.click('#nextCarouselButton');
 
-        const channelSlideClass = await welcomeScreenModal.getAttribute('#channels', 'class');
+        const channelSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
         channelSlideClass.should.contain('Carousel__slide-current');
-
+        const channelSlideTitle = await welcomeScreenModal.innerText('div.Carousel__slide.inFromRight .WelcomeScreenSlide__title');
+        channelSlideTitle.should.equal('Collaborate in real time');
         await welcomeScreenModal.click('#nextCarouselButton');
 
-        const playbooksSlideClass = await welcomeScreenModal.getAttribute('#playbooks', 'class');
-        playbooksSlideClass.should.contain('Carousel__slide-current');
-
+        const callsSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
+        callsSlideClass.should.contain('Carousel__slide-current');
+        const callsSlideTitle = await welcomeScreenModal.innerText('div.Carousel__slide.inFromRight .WelcomeScreenSlide__title');
+        callsSlideTitle.should.equal('Start secure calls instantly');
         await welcomeScreenModal.click('#nextCarouselButton');
 
-        const boardsSlideClass = await welcomeScreenModal.getAttribute('#boards', 'class');
-        boardsSlideClass.should.contain('Carousel__slide-current');
+        const integrationSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
+        integrationSlideClass.should.contain('Carousel__slide-current');
+        const integrationSlideTitle = await welcomeScreenModal.innerText('div.Carousel__slide.inFromRight .WelcomeScreenSlide__title');
+        integrationSlideTitle.should.equal('Integrate with tools you love');
+        await welcomeScreenModal.click('#nextCarouselButton');
     });
 
     it('MM-T4977 should be able to move through slides clicking the navigation buttons', async () => {
@@ -54,7 +60,7 @@ describe('Welcome Screen Modal', function desc() {
 
         await welcomeScreenModal.click('#nextCarouselButton');
 
-        const channelSlideClass = await welcomeScreenModal.getAttribute('#channels', 'class');
+        const channelSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
         channelSlideClass.should.contain('Carousel__slide-current');
 
         await welcomeScreenModal.click('#prevCarouselButton');
@@ -69,13 +75,13 @@ describe('Welcome Screen Modal', function desc() {
 
         await welcomeScreenModal.click('#PaginationIndicator3');
 
-        const boardsSlideClass = await welcomeScreenModal.getAttribute('#boards', 'class');
-        boardsSlideClass.should.contain('Carousel__slide-current');
+        const integrationSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
+        integrationSlideClass.should.contain('Carousel__slide-current');
 
         await welcomeScreenModal.click('#PaginationIndicator2');
 
-        const playbooksSlideClass = await welcomeScreenModal.getAttribute('#playbooks', 'class');
-        playbooksSlideClass.should.contain('Carousel__slide-current');
+        const callsSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromLeft', 'class');
+        callsSlideClass.should.contain('Carousel__slide-current');
     });
 
     it('MM-T4979 should be able to move forward through slides automatically every 5 seconds', async () => {
@@ -84,8 +90,11 @@ describe('Welcome Screen Modal', function desc() {
 
         await asyncSleep(5500);
 
-        const channelSlideClass = await welcomeScreenModal.getAttribute('#channels', 'class');
+        const channelSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
         channelSlideClass.should.contain('Carousel__slide-current');
+        const channelSlideTitle = await welcomeScreenModal.innerText('div.Carousel__slide.inFromRight .WelcomeScreenSlide__title');
+        channelSlideTitle.should.equal('Collaborate in real time');
+        await welcomeScreenModal.click('#nextCarouselButton');
     });
 
     it('MM-T4980 should show the slides in the expected order', async () => {
@@ -94,25 +103,27 @@ describe('Welcome Screen Modal', function desc() {
 
         await welcomeScreenModal.click('#nextCarouselButton');
 
-        const channelSlideClass = await welcomeScreenModal.getAttribute('#channels', 'class');
+        const channelSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
         channelSlideClass.should.contain('Carousel__slide-current');
 
         await welcomeScreenModal.click('#nextCarouselButton');
 
-        const playbooksSlideClass = await welcomeScreenModal.getAttribute('#playbooks', 'class');
-        playbooksSlideClass.should.contain('Carousel__slide-current');
+        const callsSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
+        callsSlideClass.should.contain('Carousel__slide-current');
 
         await welcomeScreenModal.click('#nextCarouselButton');
 
-        const boardsSlideClass = await welcomeScreenModal.getAttribute('#boards', 'class');
-        boardsSlideClass.should.contain('Carousel__slide-current');
+        const integrationSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
+        integrationSlideClass.should.contain('Carousel__slide-current');
     });
 
     it('MM-T4981 should be able to move from last to first slide', async () => {
         await welcomeScreenModal.click('#PaginationIndicator3');
 
-        const boardsSlideClass = await welcomeScreenModal.getAttribute('#boards', 'class');
-        boardsSlideClass.should.contain('Carousel__slide-current');
+        const integrationSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromRight', 'class');
+        integrationSlideClass.should.contain('Carousel__slide-current');
+        const integrationSlideTitle = await welcomeScreenModal.innerText('div.Carousel__slide.inFromRight .WelcomeScreenSlide__title');
+        integrationSlideTitle.should.equal('Integrate with tools you love');
 
         await welcomeScreenModal.click('#nextCarouselButton');
 
@@ -126,8 +137,10 @@ describe('Welcome Screen Modal', function desc() {
 
         await welcomeScreenModal.click('#prevCarouselButton');
 
-        const boardsSlideClass = await welcomeScreenModal.getAttribute('#boards', 'class');
-        boardsSlideClass.should.contain('Carousel__slide-current');
+        const integrationSlideClass = await welcomeScreenModal.getAttribute('div.Carousel__slide.inFromLeft', 'class');
+        integrationSlideClass.should.contain('Carousel__slide-current');
+        const integrationSlideTitle = await welcomeScreenModal.innerText('div.Carousel__slide.inFromLeft .WelcomeScreenSlide__title');
+        integrationSlideTitle.should.equal('Integrate with tools you love');
     });
 
     it('MM-T4983 should be able to click the get started button and be redirected to new server modal', async () => {

@@ -22,7 +22,7 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 
 import type {UniqueServer} from 'types/config';
 
@@ -83,7 +83,7 @@ export class ServerDropdownView {
             // @ts-ignore
             transparent: true,
         }});
-        this.view.webContents.loadURL(getLocalURLString('dropdown.html'));
+        this.view.webContents.loadURL('mattermost-desktop://renderer/dropdown.html');
 
         this.setOrderedServers();
         this.windowBounds = MainWindow.getBounds();

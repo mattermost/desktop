@@ -27,6 +27,7 @@ import {Logger} from 'common/log';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import PermissionsManager from 'main/permissionsManager';
 import {
     composeUserAgent,
     getLocalPreload,
@@ -42,6 +43,8 @@ import type {
     CallsJoinCallMessage,
     CallsWidgetWindowConfig,
 } from 'types/calls';
+
+import ContextMenu from '../contextMenu';
 
 const log = new Logger('CallsWidgetWindow');
 
@@ -294,8 +297,12 @@ export class CallsWidgetWindow {
             event.preventDefault();
         });
 
+        const contextMenu = new ContextMenu({}, this.popOut);
+        contextMenu.reload();
+
         this.popOut.on('closed', () => {
             delete this.popOut;
+            contextMenu.dispose();
         });
 
         // Set the userAgent so that the widget's popout is considered a desktop window in the webapp code.
@@ -395,6 +402,11 @@ export class CallsWidgetWindow {
             } catch (err) {
                 log.error('failed to reset screen sharing permissions', err);
             }
+        }
+
+        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: view.view.server.url.toString(), isMainFrame: false})) {
+            log.warn('screen share permissions disallowed', view.webContentsId, view.view.server.url.toString());
+            return [];
         }
 
         const screenPermissionsErrArgs = ['screen-permissions', this.callID];

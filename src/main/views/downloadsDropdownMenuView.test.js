@@ -12,7 +12,6 @@ import {DownloadsDropdownMenuView} from './downloadsDropdownMenuView';
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
-    getLocalURLString: (file) => file,
 }));
 jest.mock('electron', () => {
     class NotificationMock {

@@ -27,7 +27,7 @@ import {
     TAB_BAR_HEIGHT,
 } from 'common/utils/constants';
 import downloadsManager from 'main/downloadsManager';
-import {getLocalPreload, getLocalURLString} from 'main/utils';
+import {getLocalPreload} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {CoordinatesToJsonType, DownloadedItem, DownloadsMenuOpenEventPayload} from 'types/downloads';
@@ -75,7 +75,7 @@ export class DownloadsDropdownMenuView {
             // @ts-ignore
             transparent: true,
         }});
-        this.view.webContents.loadURL(getLocalURLString('downloadsDropdownMenu.html'));
+        this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdownMenu.html');
         MainWindow.get()?.addBrowserView(this.view);
     };
 
