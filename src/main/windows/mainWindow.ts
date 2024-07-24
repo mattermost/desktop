@@ -560,7 +560,9 @@ export class MainWindow extends EventEmitter {
     };
 
     private handleUpdateTitleBarOverlay = () => {
-        this.win?.setTitleBarOverlay?.(this.getTitleBarOverlay());
+        if (process.platform === 'linux') {
+            this.win?.setTitleBarOverlay?.(this.getTitleBarOverlay());
+        }
     };
 }
 
