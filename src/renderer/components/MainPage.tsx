@@ -321,23 +321,13 @@ class MainPage extends React.PureComponent<Props, State> {
         this.handleSelectTab(tab[0].id!);
     };
 
-    handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
+    handleExitFullScreen = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
-        window.desktop.closeWindow();
-    };
 
-    handleMinimize = (e: React.MouseEvent<HTMLDivElement>) => {
-        e.stopPropagation();
-        window.desktop.minimizeWindow();
-    };
-
-    handleMaximize = (e: React.MouseEvent<HTMLDivElement>) => {
-        e.stopPropagation();
-        window.desktop.maximizeWindow();
-    };
-
-    handleRestore = () => {
-        window.desktop.restoreWindow();
+        if (!this.state.fullScreen) {
+            return;
+        }
+        window.desktop.exitFullScreen();
     };
 
     openMenu = () => {
@@ -482,6 +472,16 @@ class MainPage extends React.PureComponent<Props, State> {
                     )}
                     {tabsRow}
                     {downloadsDropdownButton}
+                    {window.process.platform !== 'darwin' && this.state.fullScreen &&
+                        <span className='title-bar-btns'>
+                            <div
+                                className='button full-screen-button'
+                                onClick={this.handleExitFullScreen}
+                            >
+                                <i className='icon icon-arrow-collapse'/>
+                            </div>
+                        </span>
+                    }
                 </div>
             </Row>
         );

@@ -195,6 +195,10 @@ body {
   -webkit-filter: invert(100%);
 }
 
+.topBar .title-bar-btns>.full-screen-button {
+  font-size: 18px;
+}
+
 .topBar .title-bar-btns img {
   opacity: 0.7;
 }
@@ -211,7 +215,7 @@ body {
   grid-column: 2;
 }
 
-.topBar .title-bar-btns>.close-button {
+.topBar .title-bar-btns>.close-button, .topBar .title-bar-btns>.full-screen-button {
   grid-column: 3;
 }
 

@@ -23,6 +23,7 @@ import {
     MAIN_WINDOW_FOCUSED,
     TOGGLE_SECURE_INPUT,
     EMIT_CONFIGURATION,
+    EXIT_FULLSCREEN,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -55,6 +56,7 @@ export class MainWindow extends EventEmitter {
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
         ipcMain.on(EMIT_CONFIGURATION, this.handleUpdateTitleBarOverlay);
+        ipcMain.on(EXIT_FULLSCREEN, this.handleExitFullScreen);
 
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
 
@@ -435,6 +437,12 @@ export class MainWindow extends EventEmitter {
 
     private onLeaveFullScreen = () => {
         this.win?.webContents.send('leave-full-screen');
+    };
+
+    private handleExitFullScreen = () => {
+        if (this.win?.isFullScreen()) {
+            this.win.setFullScreen(false);
+        }
     };
 
     private handleBoundsChanged = () => {

@@ -25,10 +25,6 @@ import {
     UPDATE_PATHS,
     SERVERS_URL_MODIFIED,
     GET_DARK_MODE,
-    WINDOW_CLOSE,
-    WINDOW_MAXIMIZE,
-    WINDOW_MINIMIZE,
-    WINDOW_RESTORE,
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
@@ -97,12 +93,8 @@ import {
     flushCookiesStore,
 } from './utils';
 import {
-    handleClose,
     handleDoubleClick,
     handleGetDarkMode,
-    handleMaximize,
-    handleMinimize,
-    handleRestore,
 } from './windows';
 
 import {protocols} from '../../../electron-builder.json';
@@ -283,10 +275,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(UPDATE_CONFIGURATION, updateConfiguration);
 
     ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
-    ipcMain.on(WINDOW_CLOSE, handleClose);
-    ipcMain.on(WINDOW_MAXIMIZE, handleMaximize);
-    ipcMain.on(WINDOW_MINIMIZE, handleMinimize);
-    ipcMain.on(WINDOW_RESTORE, handleRestore);
     ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
