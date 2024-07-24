@@ -63,5 +63,7 @@ export type DesktopAPI = {
     onOpenThreadForCalls: (listener: (threadID: string) => void) => () => void;
     openStopRecordingModal: (channelID: string) => void;
     onOpenStopRecordingModal: (listener: (channelID: string) => void) => () => void;
+    openCallsUserSettings: () => void;
+    onOpenCallsUserSettings: (listener: () => void) => () => void;
     unregister: (channel: string) => void;
 };

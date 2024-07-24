@@ -24,4 +24,5 @@ export interface ExternalAPI {
     createListener(event: 'desktop-sources-modal-request', listener: () => void): () => void;
     createListener(event: 'calls-widget-open-thread', listener: (threadID: string) => void): () => void;
     createListener(event: 'calls-widget-open-stop-recording-modal', listener: (channelID: string) => void): () => void;
+    createListener(event: 'calls-widget-open-user-settings', listener: () => void): () => void;
 }
