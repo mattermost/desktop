@@ -19,6 +19,7 @@ import {
     CALLS_WIDGET_SHARE_SCREEN,
     CALLS_WIDGET_OPEN_THREAD,
     CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL,
+    CALLS_WIDGET_OPEN_USER_SETTINGS,
     DESKTOP_SOURCES_MODAL_REQUEST,
     GET_DESKTOP_SOURCES,
     UPDATE_SHORTCUT_MENU,
@@ -77,6 +78,7 @@ export class CallsWidgetWindow {
         ipcMain.on(CALLS_JOIN_REQUEST, this.forwardToMainApp(CALLS_JOIN_REQUEST));
         ipcMain.on(CALLS_WIDGET_OPEN_THREAD, this.handleCallsOpenThread);
         ipcMain.on(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, this.handleCallsOpenStopRecordingModal);
+        ipcMain.on(CALLS_WIDGET_OPEN_USER_SETTINGS, this.forwardToMainApp(CALLS_WIDGET_OPEN_USER_SETTINGS));
 
         // deprecated in favour of CALLS_LINK_CLICK
         ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
