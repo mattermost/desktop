@@ -24,11 +24,12 @@ import {
     MAIN_WINDOW_FOCUSED,
     VIEW_FINISHED_RESIZING,
     TOGGLE_SECURE_INPUT,
+    EMIT_CONFIGURATION,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND} from 'common/utils/constants';
+import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
 import {boundsInfoPath} from 'main/constants';
@@ -61,6 +62,7 @@ export class MainWindow extends EventEmitter {
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
+        ipcMain.on(EMIT_CONFIGURATION, this.handleUpdateTitleBarOverlay);
 
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
 
@@ -81,6 +83,7 @@ export class MainWindow extends EventEmitter {
             frame: !this.isFramelessWindow(),
             fullscreen: this.shouldStartFullScreen(),
             titleBarStyle: 'hidden' as const,
+            titleBarOverlay: process.platform === 'linux' ? this.getTitleBarOverlay() : false,
             trafficLightPosition: {x: 12, y: 12},
             backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
             webPreferences: {
@@ -244,6 +247,13 @@ export class MainWindow extends EventEmitter {
 
     private isFramelessWindow = () => {
         return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
+    };
+
+    private getTitleBarOverlay = () => {
+        return {
+            color: Config.darkMode ? '#2e2e2e' : '#efefef',
+            height: TAB_BAR_HEIGHT,
+        };
     };
 
     private getSavedWindowState = (): Partial<SavedWindowState> => {
@@ -547,6 +557,12 @@ export class MainWindow extends EventEmitter {
 
     private handleUpdateAppStateForViewId = (viewId: string, isExpired: boolean, newMentions: number, newUnreads: boolean) => {
         this.win?.webContents.send(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
+    };
+
+    private handleUpdateTitleBarOverlay = () => {
+        if (process.platform === 'linux') {
+            this.win?.setTitleBarOverlay?.(this.getTitleBarOverlay());
+        }
     };
 }
 

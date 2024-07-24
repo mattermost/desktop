@@ -135,6 +135,7 @@ export const CALLS_ERROR = 'calls-error';
 export const CALLS_JOIN_REQUEST = 'calls-join-request';
 export const CALLS_WIDGET_OPEN_THREAD = 'calls-widget-open-thread';
 export const CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL = 'calls-widget-open-stop-recording-modal';
+export const CALLS_WIDGET_OPEN_USER_SETTINGS = 'calls-widget-open-user-settings';
 
 export const REQUEST_CLEAR_DOWNLOADS_DROPDOWN = 'request-clear-downloads-dropdown';
 export const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
