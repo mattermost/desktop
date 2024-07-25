@@ -41,6 +41,7 @@ import {
     GET_DESKTOP_SOURCES,
     UNREADS_AND_MENTIONS,
     LEGACY_OFF,
+    TAB_LOGIN_CHANGED,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
@@ -72,8 +73,8 @@ const desktopAPI: DesktopAPI = {
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),
     onUserActivityUpdate: (listener) => createListener(USER_ACTIVITY_UPDATE, listener),
 
-    onLogin: () => ipcRenderer.send(APP_LOGGED_IN),
-    onLogout: () => ipcRenderer.send(APP_LOGGED_OUT),
+    onLogin: () => ipcRenderer.send(TAB_LOGIN_CHANGED, true),
+    onLogout: () => ipcRenderer.send(TAB_LOGIN_CHANGED, false),
 
     // Unreads/mentions/notifications
     sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>
