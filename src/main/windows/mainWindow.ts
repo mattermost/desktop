@@ -18,13 +18,13 @@ import {
     SERVERS_UPDATE,
     UPDATE_APPSTATE_FOR_VIEW_ID,
     UPDATE_MENTIONS,
-    MAXIMIZE_CHANGE,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
     VIEW_FINISHED_RESIZING,
     TOGGLE_SECURE_INPUT,
     EMIT_CONFIGURATION,
+    EXIT_FULLSCREEN,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -50,7 +50,6 @@ export class MainWindow extends EventEmitter {
     private ready: boolean;
     private isResizing: boolean;
     private lastEmittedBounds?: Electron.Rectangle;
-    private isMaximized: boolean;
 
     constructor() {
         super();
@@ -58,11 +57,11 @@ export class MainWindow extends EventEmitter {
         // Create the browser window.
         this.ready = false;
         this.isResizing = false;
-        this.isMaximized = false;
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
         ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
         ipcMain.on(EMIT_CONFIGURATION, this.handleUpdateTitleBarOverlay);
+        ipcMain.on(EXIT_FULLSCREEN, this.handleExitFullScreen);
 
         ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
 
@@ -83,7 +82,7 @@ export class MainWindow extends EventEmitter {
             frame: !this.isFramelessWindow(),
             fullscreen: this.shouldStartFullScreen(),
             titleBarStyle: 'hidden' as const,
-            titleBarOverlay: process.platform === 'linux' ? this.getTitleBarOverlay() : false,
+            titleBarOverlay: this.getTitleBarOverlay(),
             trafficLightPosition: {x: 12, y: 12},
             backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
             webPreferences: {
@@ -129,9 +128,6 @@ export class MainWindow extends EventEmitter {
         this.win.on('focus', this.onFocus);
         this.win.on('blur', this.onBlur);
         this.win.on('unresponsive', this.onUnresponsive);
-        this.win.on('maximize', this.onMaximize);
-        this.win.on('unmaximize', this.onUnmaximize);
-        this.win.on('restore', this.onRestore);
         this.win.on('enter-full-screen', this.onEnterFullScreen);
         this.win.on('leave-full-screen', this.onLeaveFullScreen);
         this.win.on('will-resize', this.onWillResize);
@@ -252,6 +248,7 @@ export class MainWindow extends EventEmitter {
     private getTitleBarOverlay = () => {
         return {
             color: Config.darkMode ? '#2e2e2e' : '#efefef',
+            symbolColor: Config.darkMode ? '#c1c1c1' : '#474747',
             height: TAB_BAR_HEIGHT,
         };
     };
@@ -465,24 +462,6 @@ export class MainWindow extends EventEmitter {
         }, 10);
     };
 
-    private onMaximize = () => {
-        this.isMaximized = true;
-        this.win?.webContents.send(MAXIMIZE_CHANGE, true);
-        this.emitBounds();
-    };
-
-    private onUnmaximize = () => {
-        this.isMaximized = false;
-        this.win?.webContents.send(MAXIMIZE_CHANGE, false);
-        this.emitBounds();
-    };
-
-    private onRestore = () => {
-        if (this.isMaximized && !this.win?.isMaximized()) {
-            this.win?.maximize();
-        }
-    };
-
     private onEnterFullScreen = () => {
         this.win?.webContents.send('enter-full-screen');
         this.emitBounds();
@@ -542,6 +521,12 @@ export class MainWindow extends EventEmitter {
 
     private handleViewFinishedResizing = () => {
         this.isResizing = false;
+    };
+
+    private handleExitFullScreen = () => {
+        if (this.win?.isFullScreen()) {
+            this.win.setFullScreen(false);
+        }
     };
 
     /**

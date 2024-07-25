@@ -119,7 +119,6 @@ export type RegistryConfig = {
 
 export type CombinedConfig = Omit<Config, 'teams'> & Omit<BuildConfig, 'defaultServers'> & {
     appName: string;
-    useNativeWindow: boolean;
 }
 
 export type LocalConfiguration = Config & {

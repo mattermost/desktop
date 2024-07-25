@@ -45,10 +45,7 @@ export const MODAL_RESULT = 'modal-result';
 export const MODAL_OPEN = 'modal-open';
 export const MODAL_CLOSE = 'modal-close';
 export const NOTIFY_MENTION = 'notify_mention';
-export const WINDOW_CLOSE = 'window_close';
-export const WINDOW_MINIMIZE = 'window_minimize';
-export const WINDOW_MAXIMIZE = 'window_maximize';
-export const WINDOW_RESTORE = 'window_restore';
+export const EXIT_FULLSCREEN = 'exit-fullscreen';
 export const GET_FULL_SCREEN_STATUS = 'get-full-screen-status';
 
 export const UPDATE_TARGET_URL = 'update_target_url';

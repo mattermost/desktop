@@ -319,7 +319,6 @@ describe('common/config', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.useNativeWindow = false;
             config.defaultConfigData = {defaultSetting: 'default', otherDefaultSetting: 'default'};
             config.localConfigData = {otherDefaultSetting: 'local', localSetting: 'local', otherLocalSetting: 'local'};
             config.buildConfigData = {otherLocalSetting: 'build', buildSetting: 'build', otherBuildSetting: 'build'};
@@ -329,7 +328,6 @@ describe('common/config', () => {
             config.combinedData.darkMode = false;
             expect(config.combinedData).toStrictEqual({
                 appName: 'app-name',
-                useNativeWindow: false,
                 darkMode: false,
                 otherBuildSetting: 'registry',
                 registrySetting: 'registry',
@@ -350,7 +348,6 @@ describe('common/config', () => {
             config.buildConfigData = {enableServerManagement: true};
             config.registryConfigData = {};
             config.predefinedServers.push(server, server);
-            config.useNativeWindow = false;
             config.localConfigData = {teams: [
                 server,
                 {
@@ -370,7 +367,6 @@ describe('common/config', () => {
             config.combinedData.darkMode = false;
             expect(config.combinedData).toStrictEqual({
                 appName: 'app-name',
-                useNativeWindow: false,
                 darkMode: false,
                 enableServerManagement: true,
             });
