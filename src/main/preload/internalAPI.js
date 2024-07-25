@@ -93,6 +93,7 @@ import {
     OPEN_WINDOWS_CAMERA_PREFERENCES,
     OPEN_WINDOWS_MICROPHONE_PREFERENCES,
     GET_MEDIA_ACCESS_STATUS,
+    VIEW_FINISHED_RESIZING,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -178,6 +179,7 @@ contextBridge.exposeInMainWorld('desktop', {
     openWindowsCameraPreferences: () => ipcRenderer.send(OPEN_WINDOWS_CAMERA_PREFERENCES),
     openWindowsMicrophonePreferences: () => ipcRenderer.send(OPEN_WINDOWS_MICROPHONE_PREFERENCES),
     getMediaAccessStatus: (mediaType) => ipcRenderer.invoke(GET_MEDIA_ACCESS_STATUS, mediaType),
+    viewFinishedResizing: () => ipcRenderer.send(VIEW_FINISHED_RESIZING),
 
     downloadsDropdown: {
         toggleDownloadsDropdownMenu: (payload) => ipcRenderer.send(TOGGLE_DOWNLOADS_DROPDOWN_MENU, payload),
