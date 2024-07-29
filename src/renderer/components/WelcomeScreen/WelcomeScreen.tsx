@@ -36,6 +36,12 @@ function WelcomeScreen({
 
     useEffect(() => {
         setShowContent(true);
+
+        // Let the main process know when the window has finished resizing
+        // This is to reduce the amount of white box that happens when expand the BrowserView
+        window.addEventListener('resize', () => {
+            window.desktop.viewFinishedResizing();
+        });
     }, []);
 
     const slides = useMemo(() => [
