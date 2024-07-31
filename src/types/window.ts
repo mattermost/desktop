@@ -34,10 +34,7 @@ declare global {
             openServersDropdown: () => void;
             switchTab: (viewId: string) => void;
             closeView: (viewId: string) => void;
-            closeWindow: () => void;
-            minimizeWindow: () => void;
-            maximizeWindow: () => void;
-            restoreWindow: () => void;
+            exitFullScreen: () => void;
             doubleClickOnWindow: (windowName?: string) => void;
             focusCurrentView: () => void;
             reloadCurrentView: () => void;
