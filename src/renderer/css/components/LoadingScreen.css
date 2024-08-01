@@ -9,7 +9,7 @@ body {
     --stipple-opacity: 0.08;
     
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
     position: absolute;
     top: 0px;
