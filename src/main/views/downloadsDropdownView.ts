@@ -66,7 +66,6 @@ export class DownloadsDropdownView {
         }});
 
         this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdown.html');
-        this.view.webContents.session.webRequest.onHeadersReceived(downloadsManager.webRequestOnHeadersReceivedHandler);
         MainWindow.get()?.addBrowserView(this.view);
     };
 

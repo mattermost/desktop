@@ -32,6 +32,10 @@ type Props = {
     intl: IntlShape;
 };
 
+type State = {
+    nonce?: string;
+}
+
 function getStyle(style?: DraggingStyle | NotDraggingStyle) {
     if (style?.transform) {
         const axisLockX = `${style.transform.slice(0, style.transform.indexOf(','))}, 0px)`;
@@ -43,7 +47,12 @@ function getStyle(style?: DraggingStyle | NotDraggingStyle) {
     return style;
 }
 
-class TabBar extends React.PureComponent<Props> {
+class TabBar extends React.PureComponent<Props, State> {
+    constructor(props: Props) {
+        super(props);
+        this.state = {};
+    }
+
     onCloseTab = (id: string) => {
         return (event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
@@ -51,7 +60,19 @@ class TabBar extends React.PureComponent<Props> {
         };
     };
 
+    componentDidMount(): void {
+        window.desktop.getNonce().then((nonce) => {
+            this.setState({
+                nonce,
+            });
+        });
+    }
+
     render() {
+        if (!this.state.nonce) {
+            return null;
+        }
+
         const tabs = this.props.tabs.map((tab, index) => {
             const sessionExpired = this.props.sessionsExpired[tab.id!];
             const hasUnreads = this.props.unreadCounts[tab.id!];
@@ -145,7 +166,10 @@ class TabBar extends React.PureComponent<Props> {
         });
 
         return (
-            <DragDropContext onDragEnd={this.props.onDrop}>
+            <DragDropContext
+                nonce={this.state.nonce}
+                onDragEnd={this.props.onDrop}
+            >
                 <Droppable
                     isDropDisabled={this.props.tabsDisabled}
                     droppableId='tabBar'
