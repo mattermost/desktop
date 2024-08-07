@@ -3,6 +3,8 @@
 
 'use strict';
 
+import {app} from 'electron';
+
 import AppState from 'common/appState';
 import {LOAD_FAILED, TOGGLE_BACK_BUTTON, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -39,7 +41,11 @@ jest.mock('electron', () => ({
 
 jest.mock('../windows/mainWindow', () => ({
     focusThreeDotMenu: jest.fn(),
-    get: jest.fn(),
+    get: jest.fn().mockReturnValue({
+        getTitle: jest.fn().mockReturnValue('Initial Title'),
+        setTitle: jest.fn(),
+        on: jest.fn(),
+    }),
     sendToRenderer: jest.fn(),
 }));
 jest.mock('common/appState', () => ({
@@ -477,6 +483,15 @@ describe('main/views/MattermostBrowserView', () => {
         it('should parse unreads from title', () => {
             mattermostView.updateMentionsFromTitle('* Mattermost');
             expect(AppState.updateMentions).toHaveBeenCalledWith(mattermostView.view.id, 0);
+        });
+    });
+
+    describe('updateMainWindowTitle', () => {
+        app.name = 'bar';
+        const mattermostView = new MattermostBrowserView(view, {}, {});
+        it('should propagate the window title prefixed by the initial title', () => {
+            mattermostView.handleTitleUpdate(null, 'foo');
+            expect(MainWindow.get().setTitle).toHaveBeenCalledWith('bar - foo');
         });
     });
 });

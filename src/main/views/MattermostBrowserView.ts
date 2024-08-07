@@ -405,7 +405,7 @@ export class MattermostBrowserView extends EventEmitter {
 
     private handleTitleUpdate = (e: Event, title: string) => {
         this.log.debug('handleTitleUpdate', title);
-
+        MainWindow.get()?.setTitle(app.name + ' - ' + title);
         this.updateMentionsFromTitle(title);
     };
 
