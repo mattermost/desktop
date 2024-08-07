@@ -29,6 +29,7 @@ type State = {
     hasGPOServers?: boolean;
     isAnyDragging: boolean;
     windowBounds?: Electron.Rectangle;
+    nonce?: string;
 }
 
 function getStyle(style?: DraggingStyle | NotDraggingStyle) {
@@ -141,6 +142,9 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
         window.desktop.serverDropdown.requestInfo();
         window.addEventListener('click', this.closeMenu);
         window.addEventListener('keydown', this.handleKeyboardShortcuts);
+        window.desktop.getNonce().then((nonce) => {
+            this.setState({nonce});
+        });
     }
 
     componentDidUpdate() {
@@ -231,6 +235,10 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
     };
 
     render() {
+        if (!this.state.nonce) {
+            return null;
+        }
+
         return (
             <IntlProvider>
                 <div
@@ -256,6 +264,7 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
                     </div>
                     <hr className='ServerDropdown__divider'/>
                     <DragDropContext
+                        nonce={this.state.nonce}
                         onDragStart={this.onDragStart}
                         onDragEnd={this.onDragEnd}
                     >

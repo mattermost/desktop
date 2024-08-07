@@ -152,7 +152,14 @@ module.exports = merge(base, {
             use: [
                 MiniCssExtractPlugin.loader,
                 'css-loader',
-                'sass-loader',
+                {
+                    loader: 'sass-loader',
+                    options: {
+                        sassOptions: {
+                            includePaths: [path.resolve(__dirname, 'node_modules')],
+                        },
+                    },
+                },
             ],
         }, {
             test: /\.mp3$/,

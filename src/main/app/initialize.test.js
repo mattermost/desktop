@@ -64,6 +64,9 @@ jest.mock('electron', () => ({
     },
     session: {
         defaultSession: {
+            webRequest: {
+                onHeadersReceived: jest.fn(),
+            },
             setSpellCheckerDictionaryDownloadURL: jest.fn(),
             setPermissionRequestHandler: jest.fn(),
             on: jest.fn(),

@@ -1,14 +1,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import darkStyles from 'renderer/css/lazy/modals-dark.lazy.css';
+import 'renderer/css/modals-dark.scss';
 
 export default function addDarkModeListener() {
     const setDarkMode = (darkMode: boolean) => {
         if (darkMode) {
-            darkStyles.use();
+            document.body.classList.add('darkMode');
         } else {
-            darkStyles.unuse();
+            document.body.classList.remove('darkMode');
         }
     };
     window.desktop.onDarkModeChange(setDarkMode);

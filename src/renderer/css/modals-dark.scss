@@ -1,0 +1,38 @@
+@use 'sass:meta';
+
+.darkMode {
+    @include meta.load-css('bootstrap-dark/src/bootstrap-dark.css');
+    color: #fff;
+
+    .SettingsPage__spellCheckerLocalesDropdown .SettingsPage__spellCheckerLocalesDropdown__control {
+        background: #242a30;
+    }
+    
+    .SettingsPage__spellCheckerLocalesDropdown .SettingsPage__spellCheckerLocalesDropdown__menu {
+        background: #242a30;
+    }
+    
+    .SettingsPage__spellCheckerLocalesDropdown .SettingsPage__spellCheckerLocalesDropdown__option {
+        background: #242a30;
+    }
+    
+    .SettingsPage__spellCheckerLocalesDropdown .SettingsPage__spellCheckerLocalesDropdown__option:hover {
+        background: rgba(255, 255, 255, 0.16);
+    }
+    
+    #settingsModal .modal-body  {
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: var(--light) rgba(255, 255, 255, 0);
+    }
+    
+    .Toggle___switch {
+        background: rgba(var(--center-channel-bg-rgb), 0.24);
+    }
+    
+    .Toggle___switch.disabled {
+        background: rgba(var(--center-channel-bg-rgb), 0.08);
+    }
+}
+
