@@ -91,6 +91,7 @@ import {
     OPEN_WINDOWS_MICROPHONE_PREFERENCES,
     GET_MEDIA_ACCESS_STATUS,
     VIEW_FINISHED_RESIZING,
+    GET_NONCE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -124,6 +125,7 @@ contextBridge.exposeInMainWorld('desktop', {
     goBack: () => ipcRenderer.send(HISTORY, -1),
     checkForUpdates: () => ipcRenderer.send(CHECK_FOR_UPDATES),
     updateConfiguration: (saveQueueItems) => ipcRenderer.send(UPDATE_CONFIGURATION, saveQueueItems),
+    getNonce: () => ipcRenderer.invoke(GET_NONCE),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
