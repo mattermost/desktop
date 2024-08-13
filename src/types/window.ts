@@ -34,10 +34,7 @@ declare global {
             openServersDropdown: () => void;
             switchTab: (viewId: string) => void;
             closeView: (viewId: string) => void;
-            closeWindow: () => void;
-            minimizeWindow: () => void;
-            maximizeWindow: () => void;
-            restoreWindow: () => void;
+            exitFullScreen: () => void;
             doubleClickOnWindow: (windowName?: string) => void;
             focusCurrentView: () => void;
             reloadCurrentView: () => void;
@@ -47,6 +44,7 @@ declare global {
             goBack: () => void;
             checkForUpdates: () => void;
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
+            getNonce: () => Promise<string | undefined>;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
@@ -97,6 +95,7 @@ declare global {
             openWindowsCameraPreferences: () => void;
             openWindowsMicrophonePreferences: () => void;
             getMediaAccessStatus: (mediaType: 'microphone' | 'camera' | 'screen') => Promise<'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown'>;
+            viewFinishedResizing: () => void;
 
             modals: {
                 cancelModal: <T>(data?: T) => void;

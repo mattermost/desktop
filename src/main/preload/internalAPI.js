@@ -14,10 +14,7 @@ import {
     OPEN_SERVERS_DROPDOWN,
     SWITCH_TAB,
     CLOSE_VIEW,
-    WINDOW_CLOSE,
-    WINDOW_MINIMIZE,
-    WINDOW_MAXIMIZE,
-    WINDOW_RESTORE,
+    EXIT_FULLSCREEN,
     DOUBLE_CLICK_ON_WINDOW,
     FOCUS_BROWSERVIEW,
     RELOAD_CURRENT_VIEW,
@@ -93,6 +90,8 @@ import {
     OPEN_WINDOWS_CAMERA_PREFERENCES,
     OPEN_WINDOWS_MICROPHONE_PREFERENCES,
     GET_MEDIA_ACCESS_STATUS,
+    VIEW_FINISHED_RESIZING,
+    GET_NONCE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -116,10 +115,7 @@ contextBridge.exposeInMainWorld('desktop', {
     openServersDropdown: () => ipcRenderer.send(OPEN_SERVERS_DROPDOWN),
     switchTab: (viewId) => ipcRenderer.send(SWITCH_TAB, viewId),
     closeView: (viewId) => ipcRenderer.send(CLOSE_VIEW, viewId),
-    closeWindow: () => ipcRenderer.send(WINDOW_CLOSE),
-    minimizeWindow: () => ipcRenderer.send(WINDOW_MINIMIZE),
-    maximizeWindow: () => ipcRenderer.send(WINDOW_MAXIMIZE),
-    restoreWindow: () => ipcRenderer.send(WINDOW_RESTORE),
+    exitFullScreen: () => ipcRenderer.send(EXIT_FULLSCREEN),
     doubleClickOnWindow: (windowName) => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, windowName),
     focusCurrentView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
     reloadCurrentView: () => ipcRenderer.send(RELOAD_CURRENT_VIEW),
@@ -129,6 +125,7 @@ contextBridge.exposeInMainWorld('desktop', {
     goBack: () => ipcRenderer.send(HISTORY, -1),
     checkForUpdates: () => ipcRenderer.send(CHECK_FOR_UPDATES),
     updateConfiguration: (saveQueueItems) => ipcRenderer.send(UPDATE_CONFIGURATION, saveQueueItems),
+    getNonce: () => ipcRenderer.invoke(GET_NONCE),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
@@ -178,6 +175,7 @@ contextBridge.exposeInMainWorld('desktop', {
     openWindowsCameraPreferences: () => ipcRenderer.send(OPEN_WINDOWS_CAMERA_PREFERENCES),
     openWindowsMicrophonePreferences: () => ipcRenderer.send(OPEN_WINDOWS_MICROPHONE_PREFERENCES),
     getMediaAccessStatus: (mediaType) => ipcRenderer.invoke(GET_MEDIA_ACCESS_STATUS, mediaType),
+    viewFinishedResizing: () => ipcRenderer.send(VIEW_FINISHED_RESIZING),
 
     downloadsDropdown: {
         toggleDownloadsDropdownMenu: (payload) => ipcRenderer.send(TOGGLE_DOWNLOADS_DROPDOWN_MENU, payload),
