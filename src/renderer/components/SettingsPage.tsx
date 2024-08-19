@@ -472,6 +472,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 padding: '0.4em 0',
             },
             downloadLocationInput: {
+                display: 'inline',
                 marginRight: '3px',
                 marginTop: '8px',
                 width: '320px',
@@ -638,7 +639,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         style={settingsPage.container}
                         key='containerInputSpellcheckerURL'
                     >
-                        <input
+                        <FormControl
                             disabled={!this.state.useSpellChecker}
                             style={settingsPage.downloadLocationInput}
                             key='inputSpellCheckerURL'
@@ -1058,7 +1059,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         defaultMessage='Download Location'
                     />
                 </div>
-                <input
+                <FormControl
                     disabled={true}
                     style={settingsPage.downloadLocationInput}
                     key='inputDownloadLocation'
