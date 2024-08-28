@@ -556,7 +556,6 @@ describe('main/windows/callsWidgetWindow', () => {
 
     describe('handleGetDesktopSources', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
-        callsWidgetWindow.options = {callID: 'callID'};
         callsWidgetWindow.win = {
             webContents: {
                 send: jest.fn(),
@@ -618,11 +617,40 @@ describe('main/windows/callsWidgetWindow', () => {
             PermissionsManager.doPermissionRequest.mockReturnValue(Promise.resolve(true));
             ViewManager.getViewByWebContentsId.mockImplementation((id) => [...views.values()].find((view) => view.webContentsId === id));
             callsWidgetWindow.mainView = views.get('server-1_view-1');
+            callsWidgetWindow.options = {callID: 'callID'};
         });
 
         afterEach(() => {
             jest.resetAllMocks();
             callsWidgetWindow.missingScreensharePermissions = undefined;
+        });
+
+        it('should send sources back - uninitialized', async () => {
+            callsWidgetWindow.mainView = undefined;
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+                {
+                    id: 'window0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+            ]);
+
+            const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
+            expect(sources).toEqual([
+                {
+                    id: 'screen0',
+                },
+                {
+                    id: 'window0',
+                },
+            ]);
         });
 
         it('should send sources back', async () => {
@@ -652,15 +680,28 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
         });
 
-        it('should send error with no sources', async () => {
+        it('should throw and send error with no sources', async () => {
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
-            await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
+
+            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
         });
 
-        it('should send error with no permissions', async () => {
+        it('should throw but not send calls error when uninitialized', async () => {
+            callsWidgetWindow.options = undefined;
+
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
+
+            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+
+            expect(callsWidgetWindow.win.webContents.send).not.toHaveBeenCalled();
+            expect(views.get('server-1_view-1').sendToRenderer).not.toHaveBeenCalled();
+        });
+
+        it('should throw and send error with no permissions', async () => {
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
                 {
                     id: 'screen0',
@@ -671,13 +712,34 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
+            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
 
             expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledTimes(1);
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw but not send error with no permissions when uninitialized', async () => {
+            callsWidgetWindow.options = undefined;
+
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+            ]);
+            jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
+
+            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+
+            expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
+
+            expect(callsWidgetWindow.win.webContents.send).not.toHaveBeenCalled();
+            expect(views.get('server-1_view-1').sendToRenderer).not.toHaveBeenCalled();
         });
 
         it('macos - no permissions', async () => {
@@ -696,7 +758,7 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
+            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
 
             expect(callsWidgetWindow.missingScreensharePermissions).toBe(true);
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(1);
@@ -704,7 +766,7 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
 
-            await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
+            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
 
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(2);
             expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(1);
