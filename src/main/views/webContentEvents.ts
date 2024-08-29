@@ -28,6 +28,7 @@ import {
 } from 'common/utils/url';
 import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
+import PluginsPopUpsManager from 'main/views/pluginsPopUps';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
@@ -167,6 +168,11 @@ export class WebContentsEventManager {
             // Dev tools case
             if (parsedURL.protocol === 'devtools:') {
                 return {action: 'allow'};
+            }
+
+            // Allow plugins to open blank popup windows.
+            if (parsedURL.toString() === 'about:blank') {
+                return PluginsPopUpsManager.handleNewWindow(webContentsId, details);
             }
 
             // Check for custom protocol
@@ -351,6 +357,12 @@ export class WebContentsEventManager {
         const spellcheck = Config.useSpellChecker;
         const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
         contents.setWindowOpenHandler(newWindow);
+
+        // Defer handling of new popup windows to PluginsPopUpsManager. These still need to be
+        // previously allowed from generateNewWindowListener through PluginsPopUpsManager.handleNewWindow.
+        contents.on('did-create-window', (win: BrowserWindow, details: Electron.DidCreateWindowDetails) => {
+            PluginsPopUpsManager.handleCreateWindow(win, details);
+        });
 
         const consoleMessage = this.generateHandleConsoleMessage(contents.id);
         contents.on('console-message', consoleMessage);
