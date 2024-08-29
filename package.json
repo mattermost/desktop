@@ -162,7 +162,7 @@
     "@emotion/react": "11.11.4",
     "@mattermost/compass-icons": "0.1.45",
     "auto-launch": "5.0.6",
-    "bootstrap": "4.6.1",
+    "bootstrap": "5.3.3",
     "bootstrap-dark": "1.0.3",
     "classnames": "2.5.1",
     "electron-context-menu": "3.6.1",
