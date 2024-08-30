@@ -30,9 +30,13 @@ describe('PluginsPopUpsManager', () => {
                 on: jest.fn((ev, handler) => {
                     handlers[ev] = handler;
                 }),
+                once: jest.fn((ev, handler) => {
+                    handlers[ev] = handler;
+                }),
                 setWindowOpenHandler: jest.fn((handler) => {
                     handlers['window-open'] = handler;
                 }),
+                removeAllListeners: jest.fn(),
             },
             once: jest.fn((ev, handler) => {
                 handlers[ev] = handler;
@@ -46,6 +50,7 @@ describe('PluginsPopUpsManager', () => {
         expect(win.webContents.on).toHaveBeenNthCalledWith(1, 'will-redirect', handlers['will-redirect']);
         expect(win.webContents.on).toHaveBeenNthCalledWith(2, 'will-navigate', handlers['will-navigate']);
         expect(win.webContents.on).toHaveBeenNthCalledWith(3, 'did-start-navigation', handlers['did-start-navigation']);
+        expect(win.webContents.once).toHaveBeenCalledWith('render-process-gone', handlers['render-process-gone']);
         expect(win.webContents.setWindowOpenHandler).toHaveBeenCalledWith(handlers['window-open']);
 
         expect(win.once).toHaveBeenCalledWith('closed', handlers.closed);
@@ -85,6 +90,17 @@ describe('PluginsPopUpsManager', () => {
         expect(handlers['window-open']({url: ''})).toEqual({action: 'deny'});
         expect(handlers['window-open']({url: 'http://localhost:8065'})).toEqual({action: 'deny'});
         expect(handlers['window-open']({url: 'about:blank'})).toEqual({action: 'deny'});
+
+        // Simulate render process gone
+        handlers['render-process-gone'](null, {reason: 'oom'});
+        expect(win.webContents.removeAllListeners).toHaveBeenCalledTimes(1);
+
+        // Throw case
+        win.webContents.removeAllListeners = jest.fn(() => {
+            throw new Error('failed');
+        });
+        handlers['render-process-gone'](null, {reason: 'clean-exit'});
+        expect(win.webContents.removeAllListeners).toHaveBeenCalledTimes(1);
 
         // Close
         handlers.closed();

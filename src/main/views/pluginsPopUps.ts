@@ -11,6 +11,7 @@ import type {
 import {Logger} from 'common/log';
 import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
+import {generateHandleConsoleMessage} from 'main/views/webContentEventsCommon';
 
 const log = new Logger('PluginsPopUpsManager');
 
@@ -62,6 +63,8 @@ export class PluginsPopUpsManager {
             return {action: 'deny'};
         });
 
+        win.webContents.on('console-message', generateHandleConsoleMessage(log));
+
         const contextMenu = new ContextMenu({}, win);
         contextMenu.reload();
 
@@ -69,6 +72,17 @@ export class PluginsPopUpsManager {
             log.debug('removing popup window', details.url, webContentsId);
             Reflect.deleteProperty(this.popups, webContentsId);
             contextMenu.dispose();
+        });
+
+        win.webContents.once('render-process-gone', (_, details) => {
+            if (details.reason !== 'clean-exit') {
+                log.error('Renderer process for a webcontent is no longer available:', details.reason);
+            }
+            try {
+                win.webContents.removeAllListeners();
+            } catch (e) {
+                log.error(`Error while trying to detach listeners, this might be ok if the process crashed: ${e}`);
+            }
         });
     };
 

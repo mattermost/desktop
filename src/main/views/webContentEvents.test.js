@@ -10,6 +10,7 @@ import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
 
 import {WebContentsEventManager} from './webContentEvents';
+import {generateHandleConsoleMessage} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../allowProtocolDialog';
 
@@ -249,7 +250,7 @@ describe('main/views/webContentsEvents', () => {
             withPrefix: jest.fn().mockReturnThis(),
         };
         webContentsEventManager.log = jest.fn().mockReturnValue(logObject);
-        const consoleMessage = webContentsEventManager.generateHandleConsoleMessage();
+        const consoleMessage = generateHandleConsoleMessage(logObject);
 
         afterEach(() => {
             getLevel.mockReset();
