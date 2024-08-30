@@ -332,7 +332,7 @@ export class WebContentsEventManager {
 
         // Defer handling of new popup windows to PluginsPopUpsManager. These still need to be
         // previously allowed from generateNewWindowListener through PluginsPopUpsManager.handleNewWindow.
-        contents.on('did-create-window', PluginsPopUpsManager.handleCreateWindow);
+        contents.on('did-create-window', PluginsPopUpsManager.generateHandleCreateWindow(contents.id));
 
         const consoleMessage = generateHandleConsoleMessage(this.log(contents.id));
         contents.on('console-message', consoleMessage);

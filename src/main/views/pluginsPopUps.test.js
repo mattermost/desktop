@@ -5,6 +5,14 @@ import ViewManager from 'main/views/viewManager';
 
 import PluginsPopUpsManager from './pluginsPopUps';
 
+import {shell} from 'electron';
+
+jest.mock('electron', () => ({
+    shell: {
+        openExternal: jest.fn(),
+    },
+}));
+
 jest.mock('main/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
@@ -22,7 +30,7 @@ jest.mock('../contextMenu', () => {
 });
 
 describe('PluginsPopUpsManager', () => {
-    it('handleCreateWindow', () => {
+    it('generateHandleCreateWindow', () => {
         const handlers = {};
         const win = {
             webContents: {
@@ -45,7 +53,7 @@ describe('PluginsPopUpsManager', () => {
         const details = {
             url: 'about:blank',
         };
-        PluginsPopUpsManager.handleCreateWindow(win, details);
+        PluginsPopUpsManager.generateHandleCreateWindow(1)(win, details);
 
         expect(win.webContents.on).toHaveBeenNthCalledWith(1, 'will-redirect', handlers['will-redirect']);
         expect(win.webContents.on).toHaveBeenNthCalledWith(2, 'will-navigate', handlers['will-navigate']);
@@ -58,7 +66,7 @@ describe('PluginsPopUpsManager', () => {
         expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
 
         // Verify the popout has been added to the map
-        expect(PluginsPopUpsManager.popups).toHaveProperty('45', {win});
+        expect(PluginsPopUpsManager.popups).toHaveProperty('45', {parentId: 1, win});
 
         // Verify redirects are disabled
         const redirectEv = {
@@ -88,8 +96,13 @@ describe('PluginsPopUpsManager', () => {
 
         // Verify opening new windows is not allowed
         expect(handlers['window-open']({url: ''})).toEqual({action: 'deny'});
+        expect(shell.openExternal).not.toHaveBeenCalled();
         expect(handlers['window-open']({url: 'http://localhost:8065'})).toEqual({action: 'deny'});
         expect(handlers['window-open']({url: 'about:blank'})).toEqual({action: 'deny'});
+
+        // Verify opening external links is allowed through browser
+        expect(handlers['window-open']({url: 'https://www.example.com'})).toEqual({action: 'deny'});
+        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com');
 
         // Simulate render process gone
         handlers['render-process-gone'](null, {reason: 'oom'});

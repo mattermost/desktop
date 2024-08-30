@@ -7,8 +7,12 @@ import type {
     WebContentsWillRedirectEventParams,
     WebContentsDidStartNavigationEventParams,
 } from 'electron';
+import {shell} from 'electron';
 
 import {Logger} from 'common/log';
+import {
+    parseURL,
+} from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
 import {generateHandleConsoleMessage} from 'main/views/webContentEventsCommon';
@@ -16,6 +20,7 @@ import {generateHandleConsoleMessage} from 'main/views/webContentEventsCommon';
 const log = new Logger('PluginsPopUpsManager');
 
 type PluginPopUp = {
+    parentId: number;
     win: BrowserWindow;
 }
 
@@ -26,11 +31,12 @@ export class PluginsPopUpsManager {
         this.popups = {};
     }
 
-    handleCreateWindow = (win: BrowserWindow, details: Electron.DidCreateWindowDetails) => {
+    generateHandleCreateWindow = (parentId: number) => (win: BrowserWindow, details: Electron.DidCreateWindowDetails) => {
         const webContentsId = win.webContents.id;
 
         log.debug('created popup window', details.url, webContentsId);
         this.popups[webContentsId] = {
+            parentId,
             win,
         };
 
@@ -59,6 +65,14 @@ export class PluginsPopUpsManager {
             ev.preventDefault();
         });
         win.webContents.setWindowOpenHandler(({url}): {action: 'deny' | 'allow'} => {
+            // We allow to open external links through browser.
+            const parsedURL = parseURL(url);
+            if (parsedURL) {
+                shell.openExternal(url);
+            } else {
+                log.warn(`Ignoring non-url ${url}`);
+            }
+
             log.warn(`prevented popup window from opening window to ${url}`);
             return {action: 'deny'};
         });
