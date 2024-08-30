@@ -25,7 +25,7 @@ export class PluginsPopUpsManager {
         this.popups = {};
     }
 
-    public handleCreateWindow(win: BrowserWindow, details: Electron.DidCreateWindowDetails) {
+    handleCreateWindow = (win: BrowserWindow, details: Electron.DidCreateWindowDetails) => {
         const webContentsId = win.webContents.id;
 
         log.debug('created popup window', details.url, webContentsId);
@@ -70,7 +70,7 @@ export class PluginsPopUpsManager {
             Reflect.deleteProperty(this.popups, webContentsId);
             contextMenu.dispose();
         });
-    }
+    };
 
     public handleNewWindow(parentId: number, details: Electron.HandlerDetails): {action: 'deny' | 'allow'} {
         // Making extra explicit what we allow. This should already be enforced on

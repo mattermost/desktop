@@ -360,9 +360,7 @@ export class WebContentsEventManager {
 
         // Defer handling of new popup windows to PluginsPopUpsManager. These still need to be
         // previously allowed from generateNewWindowListener through PluginsPopUpsManager.handleNewWindow.
-        contents.on('did-create-window', (win: BrowserWindow, details: Electron.DidCreateWindowDetails) => {
-            PluginsPopUpsManager.handleCreateWindow(win, details);
-        });
+        contents.on('did-create-window', PluginsPopUpsManager.handleCreateWindow);
 
         const consoleMessage = this.generateHandleConsoleMessage(contents.id);
         contents.on('console-message', consoleMessage);
