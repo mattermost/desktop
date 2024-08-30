@@ -9,6 +9,7 @@ import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
 
+import PluginsPopUpsManager from './pluginsPopUps';
 import {WebContentsEventManager} from './webContentEvents';
 import {generateHandleConsoleMessage} from './webContentEventsCommon';
 
@@ -32,6 +33,11 @@ jest.mock('main/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
     handleDeepLink: jest.fn(),
 }));
+
+jest.mock('main/views/pluginsPopUps', () => ({
+    handleNewWindow: jest.fn(() => ({action: 'allow'})),
+}));
+
 jest.mock('../utils', () => ({
     composeUserAgent: jest.fn(),
 }));
@@ -178,6 +184,11 @@ describe('main/views/webContentsEvents', () => {
 
         it('should allow dev tools to open', () => {
             expect(newWindow({url: 'devtools://aaaaaa.com'})).toStrictEqual({action: 'allow'});
+        });
+
+        it('should defer about:blank to PluginsPopUpsManager', () => {
+            expect(newWindow({url: 'about:blank'})).toStrictEqual({action: 'allow'});
+            expect(PluginsPopUpsManager.handleNewWindow).toHaveBeenCalledWith(1, {url: 'about:blank'});
         });
 
         it('should open invalid URIs in browser', () => {
