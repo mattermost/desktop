@@ -1,11 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {shell} from 'electron';
+
+import ServerViewState from 'app/serverViewState';
+import {parseURL} from 'common/utils/url';
 import ViewManager from 'main/views/viewManager';
 
 import PluginsPopUpsManager from './pluginsPopUps';
-
-import {shell} from 'electron';
 
 jest.mock('electron', () => ({
     shell: {
@@ -16,6 +18,16 @@ jest.mock('electron', () => ({
 jest.mock('main/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
+    handleDeepLink: jest.fn(),
+}));
+
+jest.mock('app/serverViewState', () => ({
+    switchServer: jest.fn(),
+}));
+
+jest.mock('main/windows/mainWindow', () => ({
+    get: jest.fn(),
+    focus: jest.fn(),
 }));
 
 const mockContextMenuReload = jest.fn();
@@ -30,6 +42,10 @@ jest.mock('../contextMenu', () => {
 });
 
 describe('PluginsPopUpsManager', () => {
+    afterEach(() => {
+        jest.resetAllMocks();
+    });
+
     it('generateHandleCreateWindow', () => {
         const handlers = {};
         const win = {
@@ -97,8 +113,13 @@ describe('PluginsPopUpsManager', () => {
         // Verify opening new windows is not allowed
         expect(handlers['window-open']({url: ''})).toEqual({action: 'deny'});
         expect(shell.openExternal).not.toHaveBeenCalled();
-        expect(handlers['window-open']({url: 'http://localhost:8065'})).toEqual({action: 'deny'});
-        expect(handlers['window-open']({url: 'about:blank'})).toEqual({action: 'deny'});
+
+        // Verify internal link is routed in main view
+        ViewManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1, view: {server: {url: parseURL('http://localhost:8065'), id: 4545}}});
+        expect(handlers['window-open']({url: 'http://localhost:8065/team/channel'})).toEqual({action: 'deny'});
+        expect(shell.openExternal).not.toHaveBeenCalled();
+        expect(ServerViewState.switchServer).toHaveBeenCalledWith(4545);
+        expect(ViewManager.handleDeepLink).toHaveBeenCalledWith(parseURL('http://localhost:8065/team/channel'));
 
         // Verify opening external links is allowed through browser
         expect(handlers['window-open']({url: 'https://www.example.com'})).toEqual({action: 'deny'});

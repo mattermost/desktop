@@ -9,13 +9,16 @@ import type {
 } from 'electron';
 import {shell} from 'electron';
 
+import ServerViewState from 'app/serverViewState';
 import {Logger} from 'common/log';
 import {
+    isTeamUrl,
     parseURL,
 } from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
 import {generateHandleConsoleMessage} from 'main/views/webContentEventsCommon';
+import MainWindow from 'main/windows/mainWindow';
 
 const log = new Logger('PluginsPopUpsManager');
 
@@ -65,15 +68,26 @@ export class PluginsPopUpsManager {
             ev.preventDefault();
         });
         win.webContents.setWindowOpenHandler(({url}): {action: 'deny' | 'allow'} => {
-            // We allow to open external links through browser.
             const parsedURL = parseURL(url);
-            if (parsedURL) {
-                shell.openExternal(url);
-            } else {
+            if (!parsedURL) {
                 log.warn(`Ignoring non-url ${url}`);
+                return {action: 'deny'};
+            }
+
+            const serverView = ViewManager.getViewByWebContentsId(parentId)?.view;
+
+            // We allow internal (i.e., same server) links to be routed as expected.
+            if (serverView && parsedURL && isTeamUrl(serverView.server.url, parsedURL, true)) {
+                ServerViewState.switchServer(serverView.server.id);
+                MainWindow.get()?.focus();
+                ViewManager.handleDeepLink(parsedURL);
+            } else {
+                // We allow to open external links through browser.
+                shell.openExternal(url);
             }
 
             log.warn(`prevented popup window from opening window to ${url}`);
+
             return {action: 'deny'};
         });
 
