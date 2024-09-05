@@ -67,7 +67,7 @@ export class PluginsPopUpsManager {
             log.warn(`prevented popup window from navigating to: ${ev.url}`);
             ev.preventDefault();
         });
-        win.webContents.setWindowOpenHandler(({url}): {action: 'deny' | 'allow'} => {
+        win.webContents.setWindowOpenHandler(({url}): {action: 'deny'} => {
             const parsedURL = parseURL(url);
             if (!parsedURL) {
                 log.warn(`Ignoring non-url ${url}`);
