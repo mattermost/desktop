@@ -34,6 +34,7 @@ import {
     LEGACY_OFF,
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
+    DEVELOPER_MODE_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -45,9 +46,12 @@ import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
 import {flushCookiesStore} from 'main/app/utils';
+import DeveloperMode from 'main/developerMode';
 import {localizeMessage} from 'main/i18nManager';
 import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
+
+import type {DeveloperSettings} from 'types/settings';
 
 import LoadingScreen from './loadingScreen';
 import {MattermostBrowserView} from './MattermostBrowserView';
@@ -91,12 +95,26 @@ export class ViewManager {
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 
         ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
+        DeveloperMode.on(DEVELOPER_MODE_UPDATED, this.handleDeveloperModeUpdated);
     }
 
     private init = () => {
         LoadingScreen.show();
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
         this.showInitial();
+    };
+
+    private handleDeveloperModeUpdated = (json: DeveloperSettings) => {
+        log.debug('handleDeveloperModeUpdated', json);
+
+        if (typeof json.browserOnly === 'undefined') {
+            return;
+        }
+
+        this.views.forEach((view) => view.destroy());
+        this.views = new Map();
+        this.closedViews = new Map();
+        this.init();
     };
 
     getView = (viewId: string) => {

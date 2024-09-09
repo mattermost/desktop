@@ -29,6 +29,7 @@ import {
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
     SHOW_SETTINGS_WINDOW,
+    DEVELOPER_MODE_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -43,6 +44,7 @@ import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
+import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
@@ -430,6 +432,7 @@ async function initializeAfterAppReady() {
     }
 
     handleUpdateMenuEvent();
+    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleUpdateMenuEvent);
 
     ipcMain.emit('update-dict');
 
