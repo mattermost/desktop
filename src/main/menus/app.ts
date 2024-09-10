@@ -195,6 +195,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 DeveloperMode.toggle('disableNotificationStorage');
             },
         });
+        devToolsSubMenu.push({
+            label: localizeMessage('main.menus.app.view.developerModeDisableUserActivityMonitor', 'Disable User Activity Monitor'),
+            type: 'checkbox',
+            checked: DeveloperMode.get('disableUserActivityMonitor'),
+            click() {
+                DeveloperMode.toggle('disableUserActivityMonitor');
+            },
+        });
     }
 
     const viewSubMenu = [{

@@ -407,14 +407,8 @@ async function initializeAfterAppReady() {
     // Call this to initiate a permissions check for DND state
     getDoNotDisturb();
 
-    // listen for status updates and pass on to renderer
-    UserActivityMonitor.on('status', (status) => {
-        log.debug('UserActivityMonitor.on(status)', status);
-        ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
-    });
-
-    // start monitoring user activity (needs to be started after the app is ready)
-    UserActivityMonitor.startMonitoring();
+    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleStartUserActivityMonitor);
+    handleStartUserActivityMonitor();
 
     if (shouldShowTrayIcon()) {
         Tray.init(Config.trayIconTheme);
@@ -446,6 +440,28 @@ async function initializeAfterAppReady() {
     AppVersionManager.lastAppVersion = app.getVersion();
 
     handleMainWindowIsShown();
+}
+
+function handleStartUserActivityMonitor() {
+    if (DeveloperMode.get('disableUserActivityMonitor')) {
+        UserActivityMonitor.off('status', onUserActivityStatus);
+        UserActivityMonitor.stopMonitoring();
+    } else {
+        // listen for status updates and pass on to renderer
+        UserActivityMonitor.on('status', onUserActivityStatus);
+
+        // start monitoring user activity (needs to be started after the app is ready)
+        UserActivityMonitor.startMonitoring();
+    }
+}
+
+function onUserActivityStatus(status: {
+    userIsActive: boolean;
+    idleTime: number;
+    isSystemEvent: boolean;
+}) {
+    log.debug('UserActivityMonitor.on(status)', status);
+    ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 
 function handleStartDownload() {

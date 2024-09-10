@@ -12,4 +12,5 @@ export type SaveQueueItem = {
 export type DeveloperSettings = {
     browserOnly?: boolean;
     disableNotificationStorage?: boolean;
+    disableUserActivityMonitor?: boolean;
 };
