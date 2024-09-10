@@ -38,6 +38,26 @@ export class DeveloperMode extends EventEmitter {
 
         return this.json.getValue(setting);
     };
+
+    switchOff = (
+        setting: keyof DeveloperSettings,
+        onStart: () => void,
+        onStop: () => void,
+    ) => {
+        if (!this.get(setting)) {
+            onStart();
+        }
+
+        this.on(DEVELOPER_MODE_UPDATED, (settings: DeveloperSettings) => {
+            if (typeof settings[setting] !== 'undefined') {
+                if (settings[setting]) {
+                    onStop();
+                } else {
+                    onStart();
+                }
+            }
+        });
+    };
 }
 
 let developerMode = new DeveloperMode(developerModeJson);

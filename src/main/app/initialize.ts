@@ -407,8 +407,16 @@ async function initializeAfterAppReady() {
     // Call this to initiate a permissions check for DND state
     getDoNotDisturb();
 
-    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleStartUserActivityMonitor);
-    handleStartUserActivityMonitor();
+    DeveloperMode.switchOff('disableUserActivityMonitor', () => {
+        // listen for status updates and pass on to renderer
+        UserActivityMonitor.on('status', onUserActivityStatus);
+
+        // start monitoring user activity (needs to be started after the app is ready)
+        UserActivityMonitor.startMonitoring();
+    }, () => {
+        UserActivityMonitor.off('status', onUserActivityStatus);
+        UserActivityMonitor.stopMonitoring();
+    });
 
     if (shouldShowTrayIcon()) {
         Tray.init(Config.trayIconTheme);
@@ -440,19 +448,6 @@ async function initializeAfterAppReady() {
     AppVersionManager.lastAppVersion = app.getVersion();
 
     handleMainWindowIsShown();
-}
-
-function handleStartUserActivityMonitor() {
-    if (DeveloperMode.get('disableUserActivityMonitor')) {
-        UserActivityMonitor.off('status', onUserActivityStatus);
-        UserActivityMonitor.stopMonitoring();
-    } else {
-        // listen for status updates and pass on to renderer
-        UserActivityMonitor.on('status', onUserActivityStatus);
-
-        // start monitoring user activity (needs to be started after the app is ready)
-        UserActivityMonitor.startMonitoring();
-    }
 }
 
 function onUserActivityStatus(status: {

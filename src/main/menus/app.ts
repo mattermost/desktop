@@ -203,6 +203,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 DeveloperMode.toggle('disableUserActivityMonitor');
             },
         });
+        devToolsSubMenu.push({
+            label: localizeMessage('main.menus.app.view.developerModeDisableContextMenu', 'Disable Context Menu'),
+            type: 'checkbox',
+            checked: DeveloperMode.get('disableContextMenu'),
+            click() {
+                DeveloperMode.toggle('disableContextMenu');
+            },
+        });
     }
 
     const viewSubMenu = [{

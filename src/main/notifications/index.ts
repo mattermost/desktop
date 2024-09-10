@@ -5,7 +5,7 @@ import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
-import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES, DEVELOPER_MODE_UPDATED} from 'common/communication';
+import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import DeveloperMode from 'main/developerMode';
@@ -30,29 +30,16 @@ class NotificationManager {
 
     constructor() {
         ipcMain.on(OPEN_NOTIFICATION_PREFERENCES, this.openNotificationPreferences);
-        DeveloperMode.on(DEVELOPER_MODE_UPDATED, this.initNotificationMaps);
 
-        this.initNotificationMaps();
-    }
-
-    private initNotificationMaps() {
-        if (DeveloperMode.get('disableNotificationStorage')) {
-            if (this.mentionsPerChannel) {
-                this.mentionsPerChannel.clear();
-                delete this.mentionsPerChannel;
-            }
-            if (this.allActiveNotifications) {
-                this.allActiveNotifications.clear();
-                delete this.allActiveNotifications;
-            }
-        } else {
-            if (!this.mentionsPerChannel) {
-                this.mentionsPerChannel = new Map();
-            }
-            if (!this.allActiveNotifications) {
-                this.allActiveNotifications = new Map();
-            }
-        }
+        DeveloperMode.switchOff('disableNotificationStorage', () => {
+            this.mentionsPerChannel = new Map();
+            this.allActiveNotifications = new Map();
+        }, () => {
+            this.mentionsPerChannel?.clear();
+            delete this.mentionsPerChannel;
+            this.allActiveNotifications?.clear();
+            delete this.allActiveNotifications;
+        });
     }
 
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {

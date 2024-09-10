@@ -53,7 +53,7 @@ export class MattermostBrowserView extends EventEmitter {
     private atRoot: boolean;
     private options: BrowserViewConstructorOptions;
     private removeLoading?: NodeJS.Timeout;
-    private contextMenu: ContextMenu;
+    private contextMenu?: ContextMenu;
     private status?: Status;
     private retryLoad?: NodeJS.Timeout;
     private maxRetries: number;
@@ -100,7 +100,10 @@ export class MattermostBrowserView extends EventEmitter {
 
         WebContentsEventManager.addWebContentsEventListeners(this.browserView.webContents);
 
-        this.contextMenu = new ContextMenu({}, this.browserView);
+        if (!DeveloperMode.get('disableContextMenu')) {
+            this.contextMenu = new ContextMenu({}, this.browserView);
+        }
+
         this.maxRetries = MAX_SERVER_RETRIES;
 
         this.altPressStatus = false;

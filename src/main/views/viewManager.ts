@@ -107,14 +107,12 @@ export class ViewManager {
     private handleDeveloperModeUpdated = (json: DeveloperSettings) => {
         log.debug('handleDeveloperModeUpdated', json);
 
-        if (typeof json.browserOnly === 'undefined') {
-            return;
+        if (typeof json.browserOnly !== 'undefined' || typeof json.disableContextMenu !== 'undefined') {
+            this.views.forEach((view) => view.destroy());
+            this.views = new Map();
+            this.closedViews = new Map();
+            this.init();
         }
-
-        this.views.forEach((view) => view.destroy());
-        this.views = new Map();
-        this.closedViews = new Map();
-        this.init();
     };
 
     getView = (viewId: string) => {
