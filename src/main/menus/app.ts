@@ -187,6 +187,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 DeveloperMode.toggle('browserOnly');
             },
         });
+        devToolsSubMenu.push({
+            label: localizeMessage('main.menus.app.view.developerModeDisableNotificationStorage', 'Disable Notification Storage'),
+            type: 'checkbox',
+            checked: DeveloperMode.get('disableNotificationStorage'),
+            click() {
+                DeveloperMode.toggle('disableNotificationStorage');
+            },
+        });
     }
 
     const viewSubMenu = [{
