@@ -3,6 +3,7 @@
 
 import classNames from 'classnames';
 import React from 'react';
+// eslint-disable-next-line no-restricted-imports
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
