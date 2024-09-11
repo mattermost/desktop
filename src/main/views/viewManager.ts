@@ -107,7 +107,7 @@ export class ViewManager {
     private handleDeveloperModeUpdated = (json: DeveloperSettings) => {
         log.debug('handleDeveloperModeUpdated', json);
 
-        if (['browserOnly', 'disableContextMenu', 'forceLegacyAPI'].some((key) => Object.hasOwn(json, key))) {
+        if (['browserOnly', 'disableContextMenu', 'forceLegacyAPI', 'forceNewAPI'].some((key) => Object.hasOwn(json, key))) {
             this.views.forEach((view) => view.destroy());
             this.views = new Map();
             this.closedViews = new Map();

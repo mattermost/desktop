@@ -15,4 +15,5 @@ export type DeveloperSettings = {
     disableUserActivityMonitor?: boolean;
     disableContextMenu?: boolean;
     forceLegacyAPI?: boolean;
+    forceNewAPI?: boolean;
 };
