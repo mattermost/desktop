@@ -211,6 +211,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 DeveloperMode.toggle('disableContextMenu');
             },
         });
+        devToolsSubMenu.push({
+            label: localizeMessage('main.menus.app.view.developerModeForceLegacyAPI', 'Force Legacy API'),
+            type: 'checkbox',
+            checked: DeveloperMode.get('forceLegacyAPI'),
+            click() {
+                DeveloperMode.toggle('forceLegacyAPI');
+            },
+        });
     }
 
     const viewSubMenu = [{
