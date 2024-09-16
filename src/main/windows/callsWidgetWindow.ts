@@ -407,7 +407,6 @@ export class CallsWidgetWindow {
         }
 
         if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: view.view.server.url.toString(), isMainFrame: false})) {
-            log.warn('screen share permissions disallowed', view.webContentsId, view.view.server.url.toString());
             throw new Error('permissions denied');
         }
 
