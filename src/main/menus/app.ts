@@ -178,55 +178,57 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }
 
     if (DeveloperMode.enabled()) {
-        devToolsSubMenu.push(separatorItem);
-        devToolsSubMenu.push({
-            label: localizeMessage('main.menus.app.view.developerModeBrowserOnly', 'Browser Only Mode'),
-            type: 'checkbox',
-            checked: DeveloperMode.get('browserOnly'),
-            click() {
-                DeveloperMode.toggle('browserOnly');
+        devToolsSubMenu.push(...[
+            separatorItem,
+            {
+                label: localizeMessage('main.menus.app.view.developerModeBrowserOnly', 'Browser Only Mode'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('browserOnly'),
+                click() {
+                    DeveloperMode.toggle('browserOnly');
+                },
             },
-        });
-        devToolsSubMenu.push({
-            label: localizeMessage('main.menus.app.view.developerModeDisableNotificationStorage', 'Disable Notification Storage'),
-            type: 'checkbox',
-            checked: DeveloperMode.get('disableNotificationStorage'),
-            click() {
-                DeveloperMode.toggle('disableNotificationStorage');
+            {
+                label: localizeMessage('main.menus.app.view.developerModeDisableNotificationStorage', 'Disable Notification Storage'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('disableNotificationStorage'),
+                click() {
+                    DeveloperMode.toggle('disableNotificationStorage');
+                },
             },
-        });
-        devToolsSubMenu.push({
-            label: localizeMessage('main.menus.app.view.developerModeDisableUserActivityMonitor', 'Disable User Activity Monitor'),
-            type: 'checkbox',
-            checked: DeveloperMode.get('disableUserActivityMonitor'),
-            click() {
-                DeveloperMode.toggle('disableUserActivityMonitor');
+            {
+                label: localizeMessage('main.menus.app.view.developerModeDisableUserActivityMonitor', 'Disable User Activity Monitor'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('disableUserActivityMonitor'),
+                click() {
+                    DeveloperMode.toggle('disableUserActivityMonitor');
+                },
             },
-        });
-        devToolsSubMenu.push({
-            label: localizeMessage('main.menus.app.view.developerModeDisableContextMenu', 'Disable Context Menu'),
-            type: 'checkbox',
-            checked: DeveloperMode.get('disableContextMenu'),
-            click() {
-                DeveloperMode.toggle('disableContextMenu');
+            {
+                label: localizeMessage('main.menus.app.view.developerModeDisableContextMenu', 'Disable Context Menu'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('disableContextMenu'),
+                click() {
+                    DeveloperMode.toggle('disableContextMenu');
+                },
             },
-        });
-        devToolsSubMenu.push({
-            label: localizeMessage('main.menus.app.view.developerModeForceLegacyAPI', 'Force Legacy API'),
-            type: 'checkbox',
-            checked: DeveloperMode.get('forceLegacyAPI'),
-            click() {
-                DeveloperMode.toggle('forceLegacyAPI');
+            {
+                label: localizeMessage('main.menus.app.view.developerModeForceLegacyAPI', 'Force Legacy API'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('forceLegacyAPI'),
+                click() {
+                    DeveloperMode.toggle('forceLegacyAPI');
+                },
             },
-        });
-        devToolsSubMenu.push({
-            label: localizeMessage('main.menus.app.view.developerModeForceNewAPI', 'Force New API'),
-            type: 'checkbox',
-            checked: DeveloperMode.get('forceNewAPI'),
-            click() {
-                DeveloperMode.toggle('forceNewAPI');
+            {
+                label: localizeMessage('main.menus.app.view.developerModeForceNewAPI', 'Force New API'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('forceNewAPI'),
+                click() {
+                    DeveloperMode.toggle('forceNewAPI');
+                },
             },
-        });
+        ]);
     }
 
     const viewSubMenu = [{
