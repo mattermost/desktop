@@ -88,11 +88,15 @@ export function getLocalPreload(file: string) {
     return path.join(app.getAppPath(), file);
 }
 
-export function composeUserAgent() {
+export function composeUserAgent(browserMode?: boolean) {
     const baseUserAgent = app.userAgentFallback.split(' ');
 
     // filter out the Mattermost tag that gets added earlier on
     const filteredUserAgent = baseUserAgent.filter((ua) => !ua.startsWith('Mattermost'));
+
+    if (browserMode) {
+        return filteredUserAgent.join(' ');
+    }
 
     return `${filteredUserAgent.join(' ')} Mattermost/${app.getVersion()}`;
 }

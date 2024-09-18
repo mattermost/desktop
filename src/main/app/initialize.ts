@@ -29,6 +29,7 @@ import {
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
     SHOW_SETTINGS_WINDOW,
+    DEVELOPER_MODE_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -43,6 +44,7 @@ import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
+import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
@@ -405,14 +407,16 @@ async function initializeAfterAppReady() {
     // Call this to initiate a permissions check for DND state
     getDoNotDisturb();
 
-    // listen for status updates and pass on to renderer
-    UserActivityMonitor.on('status', (status) => {
-        log.debug('UserActivityMonitor.on(status)', status);
-        ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
-    });
+    DeveloperMode.switchOff('disableUserActivityMonitor', () => {
+        // listen for status updates and pass on to renderer
+        UserActivityMonitor.on('status', onUserActivityStatus);
 
-    // start monitoring user activity (needs to be started after the app is ready)
-    UserActivityMonitor.startMonitoring();
+        // start monitoring user activity (needs to be started after the app is ready)
+        UserActivityMonitor.startMonitoring();
+    }, () => {
+        UserActivityMonitor.off('status', onUserActivityStatus);
+        UserActivityMonitor.stopMonitoring();
+    });
 
     if (shouldShowTrayIcon()) {
         Tray.init(Config.trayIconTheme);
@@ -430,6 +434,7 @@ async function initializeAfterAppReady() {
     }
 
     handleUpdateMenuEvent();
+    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleUpdateMenuEvent);
 
     ipcMain.emit('update-dict');
 
@@ -443,6 +448,15 @@ async function initializeAfterAppReady() {
     AppVersionManager.lastAppVersion = app.getVersion();
 
     handleMainWindowIsShown();
+}
+
+function onUserActivityStatus(status: {
+    userIsActive: boolean;
+    idleTime: number;
+    isSystemEvent: boolean;
+}) {
+    log.debug('UserActivityMonitor.on(status)', status);
+    ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 
 function handleStartDownload() {

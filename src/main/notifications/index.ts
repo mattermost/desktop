@@ -8,6 +8,7 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import DeveloperMode from 'main/developerMode';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
@@ -22,13 +23,23 @@ import MainWindow from '../windows/mainWindow';
 const log = new Logger('Notifications');
 
 class NotificationManager {
-    private mentionsPerChannel: Map<string, Mention> = new Map();
-    private allActiveNotifications: Map<string, Notification> = new Map();
+    private mentionsPerChannel?: Map<string, Mention>;
+    private allActiveNotifications?: Map<string, Notification>;
     private upgradeNotification?: NewVersionNotification;
     private restartToUpgradeNotification?: UpgradeNotification;
 
     constructor() {
         ipcMain.on(OPEN_NOTIFICATION_PREFERENCES, this.openNotificationPreferences);
+
+        DeveloperMode.switchOff('disableNotificationStorage', () => {
+            this.mentionsPerChannel = new Map();
+            this.allActiveNotifications = new Map();
+        }, () => {
+            this.mentionsPerChannel?.clear();
+            delete this.mentionsPerChannel;
+            this.allActiveNotifications?.clear();
+            delete this.allActiveNotifications;
+        });
     }
 
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
@@ -68,12 +79,12 @@ class NotificationManager {
         }
 
         const mention = new Mention(options, channelId, teamId);
-        this.allActiveNotifications.set(mention.uId, mention);
+        this.allActiveNotifications?.set(mention.uId, mention);
 
         mention.on('click', () => {
             log.debug('notification click', serverName, mention.uId);
 
-            this.allActiveNotifications.delete(mention.uId);
+            this.allActiveNotifications?.delete(mention.uId);
 
             // Show the window after navigation has finished to avoid the focus handler
             // being called before the current channel has updated
@@ -87,7 +98,7 @@ class NotificationManager {
         });
 
         mention.on('close', () => {
-            this.allActiveNotifications.delete(mention.uId);
+            this.allActiveNotifications?.delete(mention.uId);
         });
 
         return new Promise((resolve) => {
@@ -107,12 +118,12 @@ class NotificationManager {
                         // On Windows, manually dismiss notifications from the same channel and only show the latest one
                         if (process.platform === 'win32') {
                             const mentionKey = `${mention.teamId}:${mention.channelId}`;
-                            if (this.mentionsPerChannel.has(mentionKey)) {
+                            if (this.mentionsPerChannel?.has(mentionKey)) {
                                 log.debug(`close ${mentionKey}`);
-                                this.mentionsPerChannel.get(mentionKey)?.close();
-                                this.mentionsPerChannel.delete(mentionKey);
+                                this.mentionsPerChannel?.get(mentionKey)?.close();
+                                this.mentionsPerChannel?.delete(mentionKey);
                             }
-                            this.mentionsPerChannel.set(mentionKey, mention);
+                            this.mentionsPerChannel?.set(mentionKey, mention);
                         }
                         const notificationSound = mention.getNotificationSound();
                         if (notificationSound) {
@@ -127,7 +138,7 @@ class NotificationManager {
 
             mention.on('failed', (_, error) => {
                 failed = true;
-                this.allActiveNotifications.delete(mention.uId);
+                this.allActiveNotifications?.delete(mention.uId);
                 clearTimeout(timeout);
 
                 // Special case for Windows - means that notifications are disabled at the OS level
@@ -156,7 +167,7 @@ class NotificationManager {
         }
 
         const download = new DownloadNotification(fileName, serverName);
-        this.allActiveNotifications.set(download.uId, download);
+        this.allActiveNotifications?.set(download.uId, download);
 
         download.on('show', () => {
             flashFrame(true);
@@ -164,15 +175,15 @@ class NotificationManager {
 
         download.on('click', () => {
             shell.showItemInFolder(path.normalize());
-            this.allActiveNotifications.delete(download.uId);
+            this.allActiveNotifications?.delete(download.uId);
         });
 
         download.on('close', () => {
-            this.allActiveNotifications.delete(download.uId);
+            this.allActiveNotifications?.delete(download.uId);
         });
 
         download.on('failed', () => {
-            this.allActiveNotifications.delete(download.uId);
+            this.allActiveNotifications?.delete(download.uId);
         });
         download.show();
     }
