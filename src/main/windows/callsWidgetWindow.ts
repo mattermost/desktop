@@ -378,15 +378,15 @@ export class CallsWidgetWindow {
     private handleGetDesktopSources = async (event: IpcMainInvokeEvent, opts: Electron.SourcesOptions) => {
         log.debug('handleGetDesktopSources', opts);
 
-        if (event.sender.id !== this.mainView?.webContentsId) {
-            log.warn('handleGetDesktopSources', 'Blocked on wrong webContentsId');
-            return [];
+        // For Calls we make an extra check to ensure the event is coming from the expected window (main view).
+        // Otherwise we want to allow for other plugins to ask for screen sharing sources.
+        if (this.mainView && event.sender.id !== this.mainView.webContentsId) {
+            throw new Error('handleGetDesktopSources: blocked on wrong webContentsId');
         }
 
         const view = ViewManager.getViewByWebContentsId(event.sender.id);
         if (!view) {
-            log.error('handleGetDesktopSources: view not found');
-            return [];
+            throw new Error('handleGetDesktopSources: view not found');
         }
 
         if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
@@ -407,8 +407,7 @@ export class CallsWidgetWindow {
         }
 
         if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: view.view.server.url.toString(), isMainFrame: false})) {
-            log.warn('screen share permissions disallowed', view.webContentsId, view.view.server.url.toString());
-            return [];
+            throw new Error('permissions denied');
         }
 
         const screenPermissionsErrArgs = ['screen-permissions', this.callID];
@@ -425,10 +424,7 @@ export class CallsWidgetWindow {
             }
 
             if (!hasScreenPermissions || !sources.length) {
-                log.info('missing screen permissions');
-                view.sendToRenderer(CALLS_ERROR, ...screenPermissionsErrArgs);
-                this.win?.webContents.send(CALLS_ERROR, ...screenPermissionsErrArgs);
-                return [];
+                throw new Error('handleGetDesktopSources: permissions denied');
             }
 
             const message = sources.map((source) => {
@@ -441,12 +437,14 @@ export class CallsWidgetWindow {
 
             return message;
         }).catch((err) => {
-            log.error('desktopCapturer.getSources failed', err);
+            // Only send calls error if this window has been initialized (i.e. we are in a call).
+            // The rest of the logic is shared so that other plugins can request screen sources.
+            if (this.callID) {
+                view.sendToRenderer(CALLS_ERROR, ...screenPermissionsErrArgs);
+                this.win?.webContents.send(CALLS_ERROR, ...screenPermissionsErrArgs);
+            }
 
-            view.sendToRenderer(CALLS_ERROR, ...screenPermissionsErrArgs);
-            this.win?.webContents.send(CALLS_ERROR, ...screenPermissionsErrArgs);
-
-            return [];
+            throw new Error(`handleGetDesktopSources: desktopCapturer.getSources failed: ${err}`);
         });
     };
 
