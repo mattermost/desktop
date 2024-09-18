@@ -193,3 +193,7 @@ export const GET_MEDIA_ACCESS_STATUS = 'get-media-access-status';
 export const LEGACY_OFF = 'legacy-off';
 
 export const GET_NONCE = 'get-nonce';
+
+export const DEVELOPER_MODE_UPDATED = 'developer-mode-updated';
+export const IS_DEVELOPER_MODE_ENABLED = 'is-developer-mode-enabled';
+export const GET_DEVELOPER_MODE_SETTING = 'get-developer-mode-setting';

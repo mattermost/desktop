@@ -82,6 +82,7 @@ export class UserActivityMonitor extends EventEmitter {
    */
     stopMonitoring() {
         clearInterval(this.systemIdleTimeIntervalID);
+        this.systemIdleTimeIntervalID = -1;
     }
 
     /**

@@ -92,6 +92,7 @@ import {
     GET_MEDIA_ACCESS_STATUS,
     VIEW_FINISHED_RESIZING,
     GET_NONCE,
+    IS_DEVELOPER_MODE_ENABLED,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -126,6 +127,7 @@ contextBridge.exposeInMainWorld('desktop', {
     checkForUpdates: () => ipcRenderer.send(CHECK_FOR_UPDATES),
     updateConfiguration: (saveQueueItems) => ipcRenderer.send(UPDATE_CONFIGURATION, saveQueueItems),
     getNonce: () => ipcRenderer.invoke(GET_NONCE),
+    isDeveloperModeEnabled: () => ipcRenderer.invoke(IS_DEVELOPER_MODE_ENABLED),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
