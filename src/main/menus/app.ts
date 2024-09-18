@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import type {MenuItemConstructorOptions, MenuItem, WebContents} from 'electron';
+import type {MenuItemConstructorOptions, MenuItem, BrowserWindow} from 'electron';
 import {app, ipcMain, Menu, session, shell, clipboard} from 'electron';
 import log from 'electron-log';
 
@@ -15,6 +15,7 @@ import {t} from 'common/utils/util';
 import {getViewDisplayName} from 'common/views/View';
 import type {ViewType} from 'common/views/View';
 import type {UpdateManager} from 'main/autoUpdater';
+import DeveloperMode from 'main/developerMode';
 import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
@@ -139,7 +140,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         }],
     });
 
-    const devToolsSubMenu = [
+    const devToolsSubMenu: Electron.MenuItemConstructorOptions[] = [
         {
             label: localizeMessage('main.menus.app.view.devToolsAppWrapper', 'Developer Tools for Application Wrapper'),
             accelerator: (() => {
@@ -148,13 +149,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 }
                 return 'Ctrl+Shift+I';
             })(),
-            click(item: Electron.MenuItem, focusedWindow?: WebContents) {
+            click(item: Electron.MenuItem, focusedWindow?: BrowserWindow) {
                 if (focusedWindow) {
                     // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
-                    if (focusedWindow.isDevToolsOpened()) {
-                        focusedWindow.closeDevTools();
+                    if (focusedWindow.webContents.isDevToolsOpened()) {
+                        focusedWindow.webContents.closeDevTools();
                     } else {
-                        focusedWindow.openDevTools({mode: 'detach'});
+                        focusedWindow.webContents.openDevTools({mode: 'detach'});
                     }
                 }
             },
@@ -174,6 +175,60 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 CallsWidgetWindow.openDevTools();
             },
         });
+    }
+
+    if (DeveloperMode.enabled()) {
+        devToolsSubMenu.push(...[
+            separatorItem,
+            {
+                label: localizeMessage('main.menus.app.view.developerModeBrowserOnly', 'Browser Only Mode'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('browserOnly'),
+                click() {
+                    DeveloperMode.toggle('browserOnly');
+                },
+            },
+            {
+                label: localizeMessage('main.menus.app.view.developerModeDisableNotificationStorage', 'Disable Notification Storage'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('disableNotificationStorage'),
+                click() {
+                    DeveloperMode.toggle('disableNotificationStorage');
+                },
+            },
+            {
+                label: localizeMessage('main.menus.app.view.developerModeDisableUserActivityMonitor', 'Disable User Activity Monitor'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('disableUserActivityMonitor'),
+                click() {
+                    DeveloperMode.toggle('disableUserActivityMonitor');
+                },
+            },
+            {
+                label: localizeMessage('main.menus.app.view.developerModeDisableContextMenu', 'Disable Context Menu'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('disableContextMenu'),
+                click() {
+                    DeveloperMode.toggle('disableContextMenu');
+                },
+            },
+            {
+                label: localizeMessage('main.menus.app.view.developerModeForceLegacyAPI', 'Force Legacy API'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('forceLegacyAPI'),
+                click() {
+                    DeveloperMode.toggle('forceLegacyAPI');
+                },
+            },
+            {
+                label: localizeMessage('main.menus.app.view.developerModeForceNewAPI', 'Force New API'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('forceNewAPI'),
+                click() {
+                    DeveloperMode.toggle('forceNewAPI');
+                },
+            },
+        ]);
     }
 
     const viewSubMenu = [{
