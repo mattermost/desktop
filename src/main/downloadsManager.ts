@@ -635,7 +635,13 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
         let thumbnailData;
         if (state === 'completed' && item.getMimeType().toLowerCase().startsWith('image/')) {
-            thumbnailData = (await nativeImage.createThumbnailFromPath(overridePath ?? item.getSavePath(), {height: 32, width: 32})).toDataURL();
+            // Linux doesn't support the thumbnail creation so we have to use the base function
+            if (process.platform === 'linux') {
+                thumbnailData = (await nativeImage.createFromPath(overridePath ?? item.getSavePath())).toDataURL();
+            } else {
+                thumbnailData = (await nativeImage.createThumbnailFromPath(overridePath ?? item.getSavePath(), {height: 32, width: 32})).toDataURL();
+            }
+            
         }
 
         return {
