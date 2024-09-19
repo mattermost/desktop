@@ -641,7 +641,6 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             } else {
                 thumbnailData = (await nativeImage.createThumbnailFromPath(overridePath ?? item.getSavePath(), {height: 32, width: 32})).toDataURL();
             }
-            
         }
 
         return {
