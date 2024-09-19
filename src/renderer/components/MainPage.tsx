@@ -440,7 +440,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
         let titleBarSpacing;
         if (window.process.platform !== 'darwin') {
-            if (this.state.fullScreen) {
+            if (this.state.fullScreen && window.process.platform !== 'linux') {
                 titleBarSpacing = (
                     <div
                         className={`button full-screen-button${this.props.darkMode ? ' darkMode' : ''}`}
