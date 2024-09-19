@@ -483,6 +483,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         developerMode={this.state.developerMode}
                     />
                     {downloadsDropdownButton}
+                    <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
                     {window.process.platform !== 'darwin' && this.state.fullScreen &&
                         <span className='title-bar-btns'>
                             <div
