@@ -159,6 +159,6 @@ declare global {
     interface Navigator {
         windowControlsOverlay?: {
             getTitlebarAreaRect: () => DOMRect;
-        }
+        };
     }
 }
