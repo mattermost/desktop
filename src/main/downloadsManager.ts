@@ -636,9 +636,11 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         let thumbnailData;
         if (state === 'completed' && item.getMimeType().toLowerCase().startsWith('image/')) {
             // Linux doesn't support the thumbnail creation so we have to use the base function
-            // We also will cap this at 1MB so as to not inflate the memory usage of the downloads dropdown
-            if (process.platform === 'linux' && item.getReceivedBytes() < 1000000) {
-                thumbnailData = (await nativeImage.createFromPath(overridePath ?? item.getSavePath())).toDataURL();
+            if (process.platform === 'linux') {
+                // We also will cap this at 1MB so as to not inflate the memory usage of the downloads dropdown
+                if (item.getReceivedBytes() < 1000000) {
+                    thumbnailData = (await nativeImage.createFromPath(overridePath ?? item.getSavePath())).toDataURL();
+                }
             } else {
                 thumbnailData = (await nativeImage.createThumbnailFromPath(overridePath ?? item.getSavePath(), {height: 32, width: 32})).toDataURL();
             }
