@@ -438,6 +438,22 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const activeServer = this.state.servers.find((srv) => srv.id === this.state.activeServerId);
 
+        let titleBarSpacing;
+        if (window.process.platform !== 'darwin') {
+            if (this.state.fullScreen) {
+                titleBarSpacing = (
+                    <div
+                        className={`button full-screen-button${this.props.darkMode ? ' darkMode' : ''}`}
+                        onClick={this.handleExitFullScreen}
+                    >
+                        <i className='icon icon-arrow-collapse'/>
+                    </div>
+                );
+            } else {
+                titleBarSpacing = (<span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>);
+            }
+        }
+
         const topRow = (
             <Row
                 className={topBarClassName}
@@ -483,19 +499,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         developerMode={this.state.developerMode}
                     />
                     {downloadsDropdownButton}
-                    {window.process.platform !== 'darwin' &&
-                        <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
-                    }
-                    {window.process.platform !== 'darwin' && this.state.fullScreen &&
-                        <span className='title-bar-btns'>
-                            <div
-                                className='button full-screen-button'
-                                onClick={this.handleExitFullScreen}
-                            >
-                                <i className='icon icon-arrow-collapse'/>
-                            </div>
-                        </span>
-                    }
+                    {titleBarSpacing}
                 </div>
             </Row>
         );
