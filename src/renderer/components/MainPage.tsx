@@ -483,16 +483,17 @@ class MainPage extends React.PureComponent<Props, State> {
                         developerMode={this.state.developerMode}
                     />
                     {downloadsDropdownButton}
-                    {window.process.platform !== 'darwin' && this.state.fullScreen &&
-                        <span className='title-bar-btns'>
-                            <div
-                                className='button full-screen-button'
-                                onClick={this.handleExitFullScreen}
-                            >
-                                <i className='icon icon-arrow-collapse'/>
-                            </div>
-                        </span>
-                    }
+                    {window.process.platform !== 'darwin' && this.state.fullScreen && (
+                        <div
+                            className={`button full-screen-button${this.props.darkMode ? ' darkMode' : ''}`}
+                            onClick={this.handleExitFullScreen}
+                        >
+                            <i className='icon icon-arrow-collapse'/>
+                        </div>
+                    )}
+                    {window.process.platform !== 'darwin' && !this.state.fullScreen && (
+                        <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
+                    )}
                 </div>
             </Row>
         );
