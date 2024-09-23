@@ -541,6 +541,9 @@ class MainPage extends React.PureComponent<Props, State> {
                     )}
                     {tabsRow}
                     {downloadsDropdownButton}
+                    {window.process.platform === 'linux' && !this.state.fullScreen && (
+                        <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
+                    )}
                     {titleBarButtons}
                 </div>
             </Row>
