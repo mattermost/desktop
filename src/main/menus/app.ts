@@ -231,7 +231,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         ]);
     }
 
-    const viewSubMenu = [{
+    const viewSubMenu: Electron.MenuItemConstructorOptions[] = [{
         label: localizeMessage('main.menus.app.view.find', 'Find..'),
         accelerator: 'CmdOrCtrl+F',
         click() {
@@ -250,11 +250,17 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             session.defaultSession.clearCache();
             ViewManager.reload();
         },
-    }, {
-        role: 'togglefullscreen',
-        label: localizeMessage('main.menus.app.view.fullscreen', 'Toggle Full Screen'),
-        accelerator: isMac ? 'Ctrl+Cmd+F' : 'F11',
-    }, separatorItem, {
+    }];
+
+    if (process.platform !== 'linux') {
+        viewSubMenu.push({
+            role: 'togglefullscreen',
+            label: localizeMessage('main.menus.app.view.fullscreen', 'Toggle Full Screen'),
+            accelerator: isMac ? 'Ctrl+Cmd+F' : 'F11',
+        });
+    }
+
+    viewSubMenu.push(separatorItem, {
         label: localizeMessage('main.menus.app.view.actualSize', 'Actual Size'),
         role: 'resetZoom',
         accelerator: 'CmdOrCtrl+0',
@@ -284,7 +290,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }, separatorItem, {
         label: localizeMessage('main.menus.app.view.devToolsSubMenu', 'Developer Tools'),
         submenu: devToolsSubMenu,
-    }];
+    });
 
     if (process.platform !== 'darwin' && process.platform !== 'win32') {
         viewSubMenu.push(separatorItem);
