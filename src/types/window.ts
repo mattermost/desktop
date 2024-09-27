@@ -45,6 +45,7 @@ declare global {
             checkForUpdates: () => void;
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
             getNonce: () => Promise<string | undefined>;
+            isDeveloperModeEnabled: () => Promise<boolean>;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
@@ -152,6 +153,12 @@ declare global {
                     unreads?: Map<string, boolean>,
                 ) => void) => void;
             };
+        };
+    }
+
+    interface Navigator {
+        windowControlsOverlay?: {
+            getTitlebarAreaRect: () => DOMRect;
         };
     }
 }

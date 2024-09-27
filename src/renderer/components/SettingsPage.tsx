@@ -982,32 +982,34 @@ class SettingsPage extends React.PureComponent<Props, State> {
             </FormCheck>,
         );
 
-        options.push(
-            <FormCheck
-                key='inputStartInFullScreen'
-            >
-                <FormCheck.Input
-                    type='checkbox'
-                    id='inputStartInFullScreen'
-                    ref={this.startInFullscreenRef}
-                    checked={this.state.startInFullscreen}
-                    onChange={this.handleChangeStartInFullscreen}
-                />
-                <FormattedMessage
-                    id='renderer.components.settingsPage.fullscreen'
-                    defaultMessage='Open app in fullscreen'
-                />
-                <FormText>
-                    <FormattedMessage
-                        id='renderer.components.settingsPage.fullscreen.description'
-                        defaultMessage='If enabled, the {appName} application will always open in full screen'
-                        values={{
-                            appName: this.state.appName,
-                        }}
+        if (process.platform !== 'linux') {
+            options.push(
+                <FormCheck
+                    key='inputStartInFullScreen'
+                >
+                    <FormCheck.Input
+                        type='checkbox'
+                        id='inputStartInFullScreen'
+                        ref={this.startInFullscreenRef}
+                        checked={this.state.startInFullscreen}
+                        onChange={this.handleChangeStartInFullscreen}
                     />
-                </FormText>
-            </FormCheck>,
-        );
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.fullscreen'
+                        defaultMessage='Open app in fullscreen'
+                    />
+                    <FormText>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.fullscreen.description'
+                            defaultMessage='If enabled, the {appName} application will always open in full screen'
+                            values={{
+                                appName: this.state.appName,
+                            }}
+                        />
+                    </FormText>
+                </FormCheck>,
+            );
+        }
 
         options.push(
             <div

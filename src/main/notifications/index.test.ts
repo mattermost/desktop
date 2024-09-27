@@ -106,7 +106,9 @@ jest.mock('../windows/mainWindow', () => ({
     show: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
-
+jest.mock('main/developerMode', () => ({
+    switchOff: (_: string, onStart: () => void) => onStart(),
+}));
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));

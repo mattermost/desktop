@@ -58,6 +58,9 @@ jest.mock('../utils', () => ({
     composeUserAgent: () => 'Mattermost/5.0.0',
     shouldHaveBackBar: jest.fn(),
 }));
+jest.mock('main/developerMode', () => ({
+    get: jest.fn(),
+}));
 
 const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
 const view = new MessagingView(server, true);
