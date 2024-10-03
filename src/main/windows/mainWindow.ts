@@ -42,6 +42,14 @@ import {getLocalPreload, isInsideRectangle} from '../utils';
 
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
+const isLinux = process.platform === 'linux';
+const env = process.env;
+
+let isKDE = false;
+
+if (isLinux) {
+    isKDE = env.XDG_CURRENT_DESKTOP === 'KDE' || env.DESKTOP_SESSION === 'plasma' || env.KDE_FULL_SESSION === 'true';
+}
 
 export class MainWindow extends EventEmitter {
     private win?: BrowserWindow;
@@ -93,7 +101,7 @@ export class MainWindow extends EventEmitter {
         });
         log.debug('main window options', windowOptions);
 
-        if (process.platform === 'linux') {
+        if (isLinux) {
             windowOptions.icon = path.join(path.resolve(app.getAppPath(), 'assets'), 'linux', 'app_icon.png');
         }
 
@@ -196,7 +204,7 @@ export class MainWindow extends EventEmitter {
         // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
         // https://github.com/electron/electron/issues/28699
         // https://github.com/electron/electron/issues/28106
-        if (process.platform === 'linux') {
+        if (isLinux) {
             const size = this.win.getSize();
             return {...this.win.getContentBounds(), width: size[0], height: size[1]};
         }
@@ -231,7 +239,7 @@ export class MainWindow extends EventEmitter {
     };
 
     private shouldStartFullScreen = () => {
-        if (process.platform === 'linux') {
+        if (isLinux) {
             return false;
         }
 
@@ -323,7 +331,10 @@ export class MainWindow extends EventEmitter {
 
     private onFocus = () => {
         // Only add shortcuts when window is in focus
-        if (process.platform === 'linux') {
+        if (isLinux) {
+            if ((!this.win || this.win.isMinimized()) && isKDE) {
+                return;
+            }
             globalShortcut.registerAll(ALT_MENU_KEYS, () => {
                 // do nothing because we want to supress the menu popping up
             });
@@ -549,7 +560,7 @@ export class MainWindow extends EventEmitter {
     };
 
     private handleUpdateTitleBarOverlay = () => {
-        if (process.platform === 'linux') {
+        if (isLinux) {
             this.win?.setTitleBarOverlay?.(this.getTitleBarOverlay());
         }
     };
