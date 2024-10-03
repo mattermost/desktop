@@ -42,14 +42,6 @@ import {getLocalPreload, isInsideRectangle} from '../utils';
 
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
-const isLinux = process.platform === 'linux';
-const env = process.env;
-
-let isKDE = false;
-
-if (isLinux) {
-    isKDE = env.XDG_CURRENT_DESKTOP === 'KDE' || env.DESKTOP_SESSION === 'plasma' || env.KDE_FULL_SESSION === 'true';
-}
 
 export class MainWindow extends EventEmitter {
     private win?: BrowserWindow;
@@ -101,7 +93,7 @@ export class MainWindow extends EventEmitter {
         });
         log.debug('main window options', windowOptions);
 
-        if (isLinux) {
+        if (process.platform === 'linux') {
             windowOptions.icon = path.join(path.resolve(app.getAppPath(), 'assets'), 'linux', 'app_icon.png');
         }
 
@@ -204,7 +196,7 @@ export class MainWindow extends EventEmitter {
         // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
         // https://github.com/electron/electron/issues/28699
         // https://github.com/electron/electron/issues/28106
-        if (isLinux) {
+        if (process.platform === 'linux') {
             const size = this.win.getSize();
             return {...this.win.getContentBounds(), width: size[0], height: size[1]};
         }
@@ -239,7 +231,7 @@ export class MainWindow extends EventEmitter {
     };
 
     private shouldStartFullScreen = () => {
-        if (isLinux) {
+        if (process.platform === 'linux') {
             return false;
         }
 
@@ -331,7 +323,8 @@ export class MainWindow extends EventEmitter {
 
     private onFocus = () => {
         // Only add shortcuts when window is in focus
-        if (isLinux) {
+        if (process.platform === 'linux') {
+            const isKDE = process.env.XDG_CURRENT_DESKTOP === 'KDE' || process.env.DESKTOP_SESSION === 'plasma' || process.env.KDE_FULL_SESSION === 'true';
             if ((!this.win || this.win.isMinimized()) && isKDE) {
                 return;
             }
@@ -560,7 +553,7 @@ export class MainWindow extends EventEmitter {
     };
 
     private handleUpdateTitleBarOverlay = () => {
-        if (isLinux) {
+        if (process.platform === 'linux') {
             this.win?.setTitleBarOverlay?.(this.getTitleBarOverlay());
         }
     };

@@ -95,6 +95,7 @@ describe('main/windows/mainWindow', () => {
             isMaximized: jest.fn(),
             isFullScreen: jest.fn(),
             getBounds: jest.fn(),
+            isMinimized: jest.fn().mockReturnValue(false),
         };
 
         beforeEach(() => {
@@ -532,6 +533,39 @@ describe('main/windows/mainWindow', () => {
                 value: originalPlatform,
             });
             expect(globalShortcut.registerAll).toHaveBeenCalledWith(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], expect.any(Function));
+        });
+
+        it('should not register global shortcuts when window is minimized on KDE/KWin', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            process.env.XDG_CURRENT_DESKTOP = 'KDE';
+            process.env.DESKTOP_SESSION = 'plasma';
+            process.env.KDE_FULL_SESSION = 'true';
+
+            const window = {
+                ...baseWindow,
+                isMinimized: jest.fn().mockReturnValue(true),
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'focus') {
+                        cb();
+                    }
+                }),
+            };
+
+            BrowserWindow.mockImplementation(() => window);
+            const mainWindow = new MainWindow();
+            mainWindow.getBounds = jest.fn();
+            mainWindow.init();
+
+            expect(globalShortcut.registerAll).not.toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            delete process.env.XDG_CURRENT_DESKTOP;
+            delete process.env.DESKTOP_SESSION;
+            delete process.env.KDE_FULL_SESSION;
         });
     });
 
