@@ -52,9 +52,11 @@ body {
                 display: flex;
                 font-size: 14px;
                 font-weight: 400;
-                height: 25%;
+                flex-grow: 1;
+                height: fit-content(25%);
                 justify-content: flex-start;
                 padding-left: 20px;
+                padding-right: 20px;
 
                 &:hover {
                     background-color: rgba(63, 67, 80, 0.08);
