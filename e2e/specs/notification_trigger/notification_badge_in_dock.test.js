@@ -58,10 +58,14 @@ describe('Trigger Notification From desktop', function desc() {
 
 async function triggerTestNotification() {
     await firstServer.click('div#CustomizeYourExperienceTour > button');
-    const sendNotificationButton = await firstServer.waitForSelector('.btn-primary');
+    const sendNotificationButton = await firstServer.waitForSelector('.sectionNoticeButton.btn-primary');
     await sendNotificationButton.scrollIntoViewIfNeeded();
+    const textBeforeClick = await sendNotificationButton.textContent();
+    textBeforeClick.should.equal('Send a test notification');
     await sendNotificationButton.click();
-    await asyncSleep(1000);
+    await asyncSleep(2000);
+    const textAfterClick = await sendNotificationButton.textContent();
+    textAfterClick.should.equal('Error sending test notification');
 }
 
 async function verifyNotificationRecievedinDM() {
@@ -76,5 +80,5 @@ async function verifyNotificationRecievedinDM() {
 
     const lastPostBody = await firstServer.locator('div.post__body').last();
     const textContent = await lastPostBody.textContent();
-    textContent.should.equal("app.notifications.test_message");
+    textContent.should.equal("If you received this test notification, it worked!");
 }
