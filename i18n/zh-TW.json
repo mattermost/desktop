@@ -85,6 +85,7 @@
   "main.menus.app.view.devToolsCurrentCallWidget": "通話小工具的開發者工具",
   "main.menus.app.view.devToolsCurrentServer": "目前伺服器的開發者工具",
   "main.menus.app.view.devToolsSubMenu": "開發者工具",
+  "main.menus.app.view.developerModeBrowserOnly": "僅瀏覽器模式",
   "main.menus.app.view.developerModeDisableContextMenu": "停用情境選單",
   "main.menus.app.view.developerModeDisableNotificationStorage": "停用通知儲存空間",
   "main.menus.app.view.developerModeDisableUserActivityMonitor": "停用使用者活動監控",
