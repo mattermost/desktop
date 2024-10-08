@@ -18,6 +18,12 @@ jest.mock('common/views/View', () => ({
     }),
 }));
 
+jest.mock('electron', () => ({
+    app: {
+        getPath: jest.fn(() => '/valid/downloads/path'),
+    },
+}));
+
 describe('common/config/upgradePreferences', () => {
     describe('upgradeV0toV1', () => {
         it('should upgrade from v0', () => {
