@@ -25,6 +25,9 @@ jest.mock('electron', () => ({
     ipcMain: {
         on: jest.fn(),
     },
+    app: {
+        getPath: jest.fn(() => '/valid/downloads/path'),
+    },
 }));
 jest.mock('main/windows/mainWindow', () => ({
     on: jest.fn(),

@@ -5,6 +5,8 @@
 import os from 'os';
 import path from 'path';
 
+import {app} from 'electron';
+
 /**
  * Default user preferences. End-users can change these parameters by editing config.json
  * @param {number} version - Scheme version. (Not application version)
@@ -24,7 +26,7 @@ export const getDefaultDownloadLocation = (): string | undefined => {
         return process.env.XDG_DOWNLOAD_DIR;
     }
 
-    return path.join(os.homedir(), 'Downloads');
+    return app.getPath('downloads') || path.join(os.homedir(), 'Downloads');
 };
 
 const defaultPreferences: ConfigV3 = {

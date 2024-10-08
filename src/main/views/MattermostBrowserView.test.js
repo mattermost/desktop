@@ -17,6 +17,7 @@ import MainWindow from '../windows/mainWindow';
 jest.mock('electron', () => ({
     app: {
         getVersion: () => '5.0.0',
+        getPath: jest.fn(() => '/valid/downloads/path'),
     },
     BrowserView: jest.fn().mockImplementation(() => ({
         webContents: {

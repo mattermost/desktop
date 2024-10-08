@@ -94,6 +94,12 @@ jest.mock('common/config/RegistryConfig', () => {
     return jest.fn();
 });
 
+jest.mock('electron', () => ({
+    app: {
+        getPath: jest.fn(() => '/valid/downloads/path'),
+    },
+}));
+
 describe('common/config', () => {
     it('should load buildConfig', () => {
         const config = new Config();
