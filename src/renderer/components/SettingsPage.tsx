@@ -732,12 +732,12 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 />
                 <FormattedMessage
                     id='renderer.components.settingsPage.enableMetrics'
-                    defaultMessage='Send anonymous usage data to your server administrator'
+                    defaultMessage='Send anonymous usage data to your configured servers'
                 />
                 <FormText>
                     <FormattedMessage
                         id='renderer.components.settingsPage.enableMetrics.description'
-                        defaultMessage='Sends usage data about the application and its performance to your local servers that accept it.'
+                        defaultMessage='Sends usage data about the application and its performance to your configured servers that accept it.'
                     />
                 </FormText>
             </FormCheck>);
