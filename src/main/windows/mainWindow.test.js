@@ -68,6 +68,7 @@ jest.mock('../contextMenu', () => jest.fn());
 jest.mock('../utils', () => ({
     isInsideRectangle: jest.fn(),
     getLocalPreload: jest.fn(),
+    isKDE: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -513,6 +514,9 @@ describe('main/windows/mainWindow', () => {
         });
 
         it('should add override shortcuts for the top menu on Linux to stop it showing up', () => {
+            const {isKDE} = require('../utils');
+            isKDE.mockReturnValue(false);
+
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'linux',
@@ -536,14 +540,13 @@ describe('main/windows/mainWindow', () => {
         });
 
         it('should not register global shortcuts when window is minimized on KDE/KWin', () => {
+            const {isKDE} = require('../utils');
+            isKDE.mockReturnValue(true);
+
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'linux',
             });
-            process.env.XDG_CURRENT_DESKTOP = 'KDE';
-            process.env.DESKTOP_SESSION = 'plasma';
-            process.env.KDE_FULL_SESSION = 'true';
-
             const window = {
                 ...baseWindow,
                 isMinimized: jest.fn().mockReturnValue(true),
@@ -553,7 +556,6 @@ describe('main/windows/mainWindow', () => {
                     }
                 }),
             };
-
             BrowserWindow.mockImplementation(() => window);
             const mainWindow = new MainWindow();
             mainWindow.getBounds = jest.fn();
@@ -563,9 +565,6 @@ describe('main/windows/mainWindow', () => {
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-            delete process.env.XDG_CURRENT_DESKTOP;
-            delete process.env.DESKTOP_SESSION;
-            delete process.env.KDE_FULL_SESSION;
         });
     });
 

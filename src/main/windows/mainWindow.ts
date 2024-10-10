@@ -38,7 +38,7 @@ import {localizeMessage} from 'main/i18nManager';
 import type {SavedWindowState} from 'types/mainWindow';
 
 import ContextMenu from '../contextMenu';
-import {getLocalPreload, isInsideRectangle} from '../utils';
+import {getLocalPreload, isInsideRectangle, isKDE} from '../utils';
 
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
@@ -324,10 +324,8 @@ export class MainWindow extends EventEmitter {
     private onFocus = () => {
         // Only add shortcuts when window is in focus
         if (process.platform === 'linux') {
-            const isKDE = (process.env.XDG_CURRENT_DESKTOP ?? '').toUpperCase() === 'KDE' ||
-                (process.env.DESKTOP_SESSION ?? '').toLowerCase() === 'plasma' ||
-                (process.env.KDE_FULL_SESSION ?? '').toLowerCase() === 'true';
-            if ((!this.win || this.win.isMinimized()) && isKDE) {
+            const kde = isKDE();
+            if ((!this.win || this.win.isMinimized()) && kde) {
                 return;
             }
             globalShortcut.registerAll(ALT_MENU_KEYS, () => {
