@@ -67,6 +67,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
     logLevelRef: React.RefObject<HTMLSelectElement>;
     appLanguageRef: React.RefObject<HTMLSelectElement>;
+    enableMetricsRef: React.RefObject<HTMLInputElement>;
 
     saveQueue: SaveQueueItem[];
 
@@ -106,6 +107,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
         this.autoCheckForUpdatesRef = React.createRef();
         this.logLevelRef = React.createRef();
         this.appLanguageRef = React.createRef();
+        this.enableMetricsRef = React.createRef();
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
@@ -216,6 +218,13 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 this.setState({savingState});
             }
         }, 2000);
+    };
+
+    handleEnableMetrics = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableMetrics', data: this.enableMetricsRef.current?.checked});
+        this.setState({
+            enableMetrics: this.enableMetricsRef.current?.checked,
+        });
     };
 
     handleChangeShowTrayIcon = () => {
@@ -708,6 +717,30 @@ class SettingsPage extends React.PureComponent<Props, State> {
                     </FormText>
                 </FormCheck>);
         }
+
+        options.push(
+            <FormCheck
+                key='enableMetrics'
+            >
+                <FormCheck.Input
+                    type='checkbox'
+                    key='inputEnableMetrics'
+                    id='inputEnableMetrics'
+                    ref={this.enableMetricsRef}
+                    checked={this.state.enableMetrics}
+                    onChange={this.handleEnableMetrics}
+                />
+                <FormattedMessage
+                    id='renderer.components.settingsPage.enableMetrics'
+                    defaultMessage='Send anonymous usage data to your server administrator'
+                />
+                <FormText>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.enableMetrics.description'
+                        defaultMessage='Sends usage data about the application and its performance to your local servers that accept it.'
+                    />
+                </FormText>
+            </FormCheck>);
 
         if (window.process.platform === 'win32' || window.process.platform === 'linux') {
             options.push(

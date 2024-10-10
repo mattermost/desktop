@@ -5,6 +5,7 @@ import type {BrowserWindow} from 'electron';
 import {BrowserView} from 'electron';
 
 import {Logger} from 'common/log';
+import performanceMonitor from 'main/performanceMonitor';
 
 import ContextMenu from '../contextMenu';
 import {getWindowBoundaries} from '../utils';
@@ -50,6 +51,7 @@ export class ModalView<T, T2> {
 
         this.status = Status.ACTIVE;
         try {
+            performanceMonitor.registerView(`Modal-${key}`, this.view.webContents);
             this.view.webContents.loadURL(this.html);
         } catch (e) {
             this.log.error('there was an error loading the modal:');
@@ -99,6 +101,7 @@ export class ModalView<T, T2> {
                 this.view.webContents.closeDevTools();
             }
             this.windowAttached.removeBrowserView(this.view);
+            performanceMonitor.unregisterView(this.view.webContents.id);
             this.view.webContents.close();
 
             delete this.windowAttached;

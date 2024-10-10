@@ -64,6 +64,9 @@ jest.mock('main/downloadsManager', () => ({
     onOpen: jest.fn(),
     onClose: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+}));
 jest.mock('main/windows/mainWindow', () => ({
     on: jest.fn(),
     get: jest.fn(),

@@ -49,6 +49,7 @@ const defaultPreferences: ConfigV3 = {
     downloadLocation: getDefaultDownloadLocation(),
     startInFullscreen: false,
     logLevel: 'info',
+    enableMetrics: true,
 };
 
 export default defaultPreferences;

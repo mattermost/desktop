@@ -58,6 +58,9 @@ jest.mock('main/AutoLauncher', () => ({
 jest.mock('main/badge', () => ({
     setUnreadBadgeSetting: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+}));
 jest.mock('main/windows/mainWindow', () => ({
     sendToRenderer: jest.fn(),
     on: jest.fn(),

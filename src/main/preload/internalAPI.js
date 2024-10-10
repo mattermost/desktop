@@ -93,6 +93,8 @@ import {
     VIEW_FINISHED_RESIZING,
     GET_NONCE,
     IS_DEVELOPER_MODE_ENABLED,
+    METRICS_REQUEST,
+    METRICS_RECEIVE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -258,3 +260,10 @@ const createKeyDownListener = () => {
 };
 createKeyDownListener();
 
+ipcRenderer.on(METRICS_REQUEST, async (_, name) => {
+    const memory = await process.getProcessMemoryInfo();
+    ipcRenderer.send(METRICS_RECEIVE, name, {cpu: process.getCPUUsage().percentCPUUsage, memory: memory.residentSet ?? memory.private});
+});
+
+// Call this once to unset it to 0
+process.getCPUUsage();

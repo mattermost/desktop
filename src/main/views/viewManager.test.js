@@ -81,6 +81,9 @@ jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     on: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+}));
 jest.mock('common/servers/serverManager', () => ({
     getOrderedTabsForServer: jest.fn(),
     getAllServers: jest.fn(),
