@@ -59,6 +59,7 @@ export type ConfigV3 = {
     alwaysClose?: boolean;
     logLevel?: string;
     appLanguage?: string;
+    enableMetrics?: boolean;
 }
 
 export type ConfigV2 =
@@ -131,4 +132,5 @@ export type MigrationInfo = {
     updateTrayIconWin32: boolean;
     masConfigs: boolean;
     closeExtraTabs: boolean;
+    enableMetrics: boolean;
 }

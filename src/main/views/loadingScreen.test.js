@@ -10,7 +10,9 @@ jest.mock('electron', () => ({
         on: jest.fn(),
     },
 }));
-
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+}));
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     on: jest.fn(),
