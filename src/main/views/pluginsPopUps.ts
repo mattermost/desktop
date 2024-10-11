@@ -17,8 +17,10 @@ import {
 } from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
 import ViewManager from 'main/views/viewManager';
-import {generateHandleConsoleMessage} from 'main/views/webContentEventsCommon';
+import {generateHandleConsoleMessage, isCustomProtocol} from 'main/views/webContentEventsCommon';
 import MainWindow from 'main/windows/mainWindow';
+
+import allowProtocolDialog from '../allowProtocolDialog';
 
 const log = new Logger('PluginsPopUpsManager');
 
@@ -76,8 +78,14 @@ export class PluginsPopUpsManager {
 
             const serverView = ViewManager.getViewByWebContentsId(parentId)?.view;
 
+            // Check for custom protocol
+            if (isCustomProtocol(parsedURL)) {
+                allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
+                return {action: 'deny'};
+            }
+
             // We allow internal (i.e., same server) links to be routed as expected.
-            if (serverView && parsedURL && isTeamUrl(serverView.server.url, parsedURL, true)) {
+            if (serverView && isTeamUrl(serverView.server.url, parsedURL, true)) {
                 ServerViewState.switchServer(serverView.server.id);
                 MainWindow.get()?.focus();
                 ViewManager.handleDeepLink(parsedURL);

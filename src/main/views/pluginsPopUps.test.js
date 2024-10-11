@@ -9,6 +9,8 @@ import ViewManager from 'main/views/viewManager';
 
 import PluginsPopUpsManager from './pluginsPopUps';
 
+import allowProtocolDialog from '../allowProtocolDialog';
+
 jest.mock('electron', () => ({
     shell: {
         openExternal: jest.fn(),
@@ -40,6 +42,10 @@ jest.mock('../contextMenu', () => {
         };
     });
 });
+
+jest.mock('../allowProtocolDialog', () => ({
+    handleDialogEvent: jest.fn(),
+}));
 
 describe('PluginsPopUpsManager', () => {
     afterEach(() => {
@@ -120,6 +126,11 @@ describe('PluginsPopUpsManager', () => {
         expect(shell.openExternal).not.toHaveBeenCalled();
         expect(ServerViewState.switchServer).toHaveBeenCalledWith(4545);
         expect(ViewManager.handleDeepLink).toHaveBeenCalledWith(parseURL('http://localhost:8065/team/channel'));
+
+        // Verify opening custom protocols is handled through allowProtocolDialog
+        expect(handlers['window-open']({url: 'custom:somelink'})).toEqual({action: 'deny'});
+        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:', 'custom:somelink');
+        expect(shell.openExternal).not.toHaveBeenCalledWith('custom:somelink');
 
         // Verify opening external links is allowed through browser
         expect(handlers['window-open']({url: 'https://www.example.com'})).toEqual({action: 'deny'});

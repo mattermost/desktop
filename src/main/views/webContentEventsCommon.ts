@@ -7,6 +7,10 @@ import type {Event} from 'electron';
 import type {Logger} from 'common/log';
 import {getLevel} from 'common/log';
 
+import {protocols} from '../../../electron-builder.json';
+
+const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
+
 enum ConsoleMessageLevel {
     Verbose,
     Info,
@@ -34,3 +38,7 @@ export const generateHandleConsoleMessage = (log: Logger) => (_: Event, level: n
 
     logFn(...entries);
 };
+
+export function isCustomProtocol(url: URL) {
+    return url.protocol !== 'http:' && url.protocol !== 'https:' && url.protocol !== `${scheme}:`;
+}
