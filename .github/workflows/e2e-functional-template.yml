@@ -167,7 +167,7 @@ jobs:
 
       ## Windows Dependencies
       - name: e2e/install-dependencies-windows
-        if: steps.cache-node-modules.outputs.cache-hit != 'true' && runner.os == 'windows'
+        if: runner.os == 'windows'
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
@@ -180,6 +180,7 @@ jobs:
           cd e2e
           npm ci
           npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs --module-dir ../
+          npm install mochawesome-report-generator
 
       - name: e2e/run-playright-tests-${{ runner.os }}
         run: |
