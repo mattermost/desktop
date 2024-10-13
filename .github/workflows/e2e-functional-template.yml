@@ -167,7 +167,7 @@ jobs:
 
       ## Windows Dependencies
       - name: e2e/install-dependencies-windows
-        if: steps.cache-node-modules.outputs.cache-hit != 'true' && runner.os == 'Windows'
+        if: steps.cache-node-modules.outputs.cache-hit != 'true' && runner.os == 'windows'
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |

@@ -40,16 +40,15 @@ describe('Trigger Notification From desktop', function desc() {
     env.shouldTest(it, process.platform === 'win32')('should receive a notification on Windows', async () => {
         await triggerTestNotification();
         const badgeValue = await this.app.evaluate(async ({app}) => {
-            return app.dock.getBadge();
+            return app.getBadge();
         });
         badgeValue.should.equal('1');
         await verifyNotificationRecievedinDM();
-
     });
     env.shouldTest(it, process.platform === 'linux')('should receive a notification on Ubuntu', async () => {
         await triggerTestNotification();
         const badgeValue = await this.app.evaluate(async ({app}) => {
-            return app.dock.getBadge();
+            return app.getBadgeCount();
         });
         badgeValue.should.equal('1');
         await verifyNotificationRecievedinDM();
@@ -63,9 +62,9 @@ async function triggerTestNotification() {
     const textBeforeClick = await sendNotificationButton.textContent();
     textBeforeClick.should.equal('Send a test notification');
     await sendNotificationButton.click();
-    await asyncSleep(2000);
+    await asyncSleep(3000);
     const textAfterClick = await sendNotificationButton.textContent();
-    textAfterClick.should.equal('Error sending test notification');
+    textAfterClick.should.equal('Test notification sent');
 }
 
 async function verifyNotificationRecievedinDM() {
