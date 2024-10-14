@@ -31,9 +31,8 @@ import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
-import {generateHandleConsoleMessage} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, isCustomProtocol} from './webContentEventsCommon';
 
-import {protocols} from '../../../electron-builder.json';
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
 
@@ -42,7 +41,6 @@ type CustomLogin = {
 }
 
 const log = new Logger('WebContentsEventManager');
-const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
 export class WebContentsEventManager {
     customLogins: Record<number, CustomLogin>;
@@ -169,7 +167,7 @@ export class WebContentsEventManager {
             }
 
             // Check for custom protocol
-            if (parsedURL.protocol !== 'http:' && parsedURL.protocol !== 'https:' && parsedURL.protocol !== `${scheme}:`) {
+            if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
                 return {action: 'deny'};
             }
