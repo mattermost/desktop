@@ -126,7 +126,13 @@ export class PerformanceMonitor {
                 view.webContents.send(METRICS_REQUEST, view.name, view.serverId);
             });
         });
-        await Promise.all(viewPromises);
+
+        // After 5 seconds, if all the promises are not resolved, resolve them so we don't block the send
+        // This can happen if a view doesn't send back metrics information
+        setTimeout(() => {
+            [...viewResolves.values()].forEach((value) => value());
+        }, 5000);
+        await Promise.allSettled(viewPromises);
         ipcMain.off(METRICS_RECEIVE, listener);
         return metricsMap;
     };
@@ -146,7 +152,7 @@ export class PerformanceMonitor {
             }
 
             const serverMetricsMap = new Map([...metricsMap].filter((value) => !value[1].serverId || value[1].serverId === view.serverId));
-            view.webContents?.send(METRICS_SEND, serverMetricsMap);
+            view.webContents.send(METRICS_SEND, serverMetricsMap);
         }
     };
 
