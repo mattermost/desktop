@@ -153,3 +153,9 @@ export function openScreensharePermissionsSettingsMacOS() {
     return exec('open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"',
         {timeout: 1000});
 }
+
+export function isKDE() {
+    return (process.env.XDG_CURRENT_DESKTOP ?? '').toUpperCase() === 'KDE' ||
+    (process.env.DESKTOP_SESSION ?? '').toLowerCase() === 'plasma' ||
+    (process.env.KDE_FULL_SESSION ?? '').toLowerCase() === 'true';
+}
