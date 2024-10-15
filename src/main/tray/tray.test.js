@@ -30,6 +30,7 @@ jest.mock('electron', () => {
             getAppPath: () => '/path/to/app',
             isReady: jest.fn(),
             setPath: jest.fn(),
+            getPath: jest.fn(() => '/valid/downloads/path'),
         },
         ipcMain: {
             emit: jest.fn(),
