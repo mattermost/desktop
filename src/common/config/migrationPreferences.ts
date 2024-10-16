@@ -27,5 +27,11 @@ export default function migrateConfigItems(config: Config) {
         didMigrate = true;
     }
 
+    if (!migrationPrefs.getValue('enableMetrics')) {
+        config.enableMetrics = true;
+        migrationPrefs.setValue('enableMetrics', true);
+        didMigrate = true;
+    }
+
     return didMigrate;
 }

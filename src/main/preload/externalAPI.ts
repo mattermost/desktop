@@ -44,6 +44,9 @@ import {
     LEGACY_OFF,
     TAB_LOGIN_CHANGED,
     GET_DEVELOPER_MODE_SETTING,
+    METRICS_SEND,
+    METRICS_REQUEST,
+    METRICS_RECEIVE,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
@@ -131,11 +134,21 @@ ipcRenderer.invoke(GET_DEVELOPER_MODE_SETTING, 'forceLegacyAPI').then((force) =>
         openCallsUserSettings: () => ipcRenderer.send(CALLS_WIDGET_OPEN_USER_SETTINGS),
         onOpenCallsUserSettings: (listener) => createListener(CALLS_WIDGET_OPEN_USER_SETTINGS, listener),
 
+        onSendMetrics: (listener) => createListener(METRICS_SEND, listener),
+
         // Utility
         unregister: (channel) => ipcRenderer.removeAllListeners(channel),
     };
     contextBridge.exposeInMainWorld('desktopAPI', desktopAPI);
 });
+
+ipcRenderer.on(METRICS_REQUEST, async (_, name, serverId) => {
+    const memory = await process.getProcessMemoryInfo();
+    ipcRenderer.send(METRICS_RECEIVE, name, {serverId, cpu: process.getCPUUsage().percentCPUUsage, memory: memory.residentSet ?? memory.private});
+});
+
+// Call this once to unset it to 0
+process.getCPUUsage();
 
 // Specific info for the testing environment
 if (process.env.NODE_ENV === 'test') {

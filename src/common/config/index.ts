@@ -241,6 +241,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.appLanguage;
     }
 
+    get enableMetrics() {
+        return this.combinedData?.enableMetrics;
+    }
+
     /**
      * Gets the servers from registry into the config object and reload
      *

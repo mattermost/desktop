@@ -73,6 +73,9 @@ jest.mock('../utils', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+}));
 
 describe('main/windows/mainWindow', () => {
     describe('init', () => {

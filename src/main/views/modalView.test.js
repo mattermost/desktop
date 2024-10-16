@@ -27,6 +27,10 @@ jest.mock('../contextMenu', () => jest.fn());
 jest.mock('../utils', () => ({
     getWindowBoundaries: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+    unregisterView: jest.fn(),
+}));
 
 describe('main/views/modalView', () => {
     describe('show', () => {
