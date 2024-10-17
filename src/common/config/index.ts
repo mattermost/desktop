@@ -63,7 +63,7 @@ export class Config extends EventEmitter {
         this.configFilePath = configFilePath;
         this.appName = appName;
         this.appPath = appPath;
-        this.canUpgradeValue = this.checkWriteableApp();
+        this.canUpgradeValue = true;
 
         this.reload();
     };
