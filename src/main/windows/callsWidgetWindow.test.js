@@ -67,6 +67,10 @@ jest.mock('main/windows/mainWindow', () => ({
 jest.mock('app/serverViewState', () => ({
     switchServer: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+    unregisterView: jest.fn(),
+}));
 jest.mock('main/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
@@ -156,6 +160,9 @@ describe('main/windows/callsWidgetWindow', () => {
             on: jest.fn(),
             close: jest.fn(),
             isDestroyed: jest.fn(),
+            webContents: {
+                id: 1,
+            },
         };
 
         beforeEach(() => {

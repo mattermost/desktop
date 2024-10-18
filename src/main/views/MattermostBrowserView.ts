@@ -23,8 +23,9 @@ import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
-import type {MattermostView} from 'common/views/View';
+import {TAB_MESSAGING, type MattermostView} from 'common/views/View';
 import DeveloperMode from 'main/developerMode';
+import performanceMonitor from 'main/performanceMonitor';
 import {getServerAPI} from 'main/server/serverAPI';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -196,6 +197,11 @@ export class MattermostBrowserView extends EventEmitter {
             loadURL = this.view.url.toString();
         }
         this.log.verbose(`Loading ${loadURL}`);
+        if (this.view.type === TAB_MESSAGING) {
+            performanceMonitor.registerServerView(`Server ${this.browserView.webContents.id}`, this.browserView.webContents, this.view.server.id);
+        } else {
+            performanceMonitor.registerView(`Server ${this.browserView.webContents.id}`, this.browserView.webContents, this.view.server.id);
+        }
         const loading = this.browserView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
@@ -262,6 +268,7 @@ export class MattermostBrowserView extends EventEmitter {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         AppState.clear(this.id);
         MainWindow.get()?.removeBrowserView(this.browserView);
+        performanceMonitor.unregisterView(this.browserView.webContents.id);
         this.browserView.webContents.close();
 
         this.isVisible = false;
