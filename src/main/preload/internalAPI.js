@@ -90,6 +90,11 @@ import {
     OPEN_WINDOWS_CAMERA_PREFERENCES,
     OPEN_WINDOWS_MICROPHONE_PREFERENCES,
     GET_MEDIA_ACCESS_STATUS,
+    VIEW_FINISHED_RESIZING,
+    GET_NONCE,
+    IS_DEVELOPER_MODE_ENABLED,
+    METRICS_REQUEST,
+    METRICS_RECEIVE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -123,6 +128,8 @@ contextBridge.exposeInMainWorld('desktop', {
     goBack: () => ipcRenderer.send(HISTORY, -1),
     checkForUpdates: () => ipcRenderer.send(CHECK_FOR_UPDATES),
     updateConfiguration: (saveQueueItems) => ipcRenderer.send(UPDATE_CONFIGURATION, saveQueueItems),
+    getNonce: () => ipcRenderer.invoke(GET_NONCE),
+    isDeveloperModeEnabled: () => ipcRenderer.invoke(IS_DEVELOPER_MODE_ENABLED),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
@@ -172,6 +179,7 @@ contextBridge.exposeInMainWorld('desktop', {
     openWindowsCameraPreferences: () => ipcRenderer.send(OPEN_WINDOWS_CAMERA_PREFERENCES),
     openWindowsMicrophonePreferences: () => ipcRenderer.send(OPEN_WINDOWS_MICROPHONE_PREFERENCES),
     getMediaAccessStatus: (mediaType) => ipcRenderer.invoke(GET_MEDIA_ACCESS_STATUS, mediaType),
+    viewFinishedResizing: () => ipcRenderer.send(VIEW_FINISHED_RESIZING),
 
     downloadsDropdown: {
         toggleDownloadsDropdownMenu: (payload) => ipcRenderer.send(TOGGLE_DOWNLOADS_DROPDOWN_MENU, payload),
@@ -252,3 +260,10 @@ const createKeyDownListener = () => {
 };
 createKeyDownListener();
 
+ipcRenderer.on(METRICS_REQUEST, async (_, name) => {
+    const memory = await process.getProcessMemoryInfo();
+    ipcRenderer.send(METRICS_RECEIVE, name, {cpu: process.getCPUUsage().percentCPUUsage, memory: memory.residentSet ?? memory.private});
+});
+
+// Call this once to unset it to 0
+process.getCPUUsage();

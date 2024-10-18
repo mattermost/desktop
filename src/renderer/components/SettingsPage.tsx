@@ -6,6 +6,9 @@
 
 import 'renderer/css/settings.css';
 
+import createCache from '@emotion/cache';
+import {CacheProvider} from '@emotion/react';
+import type {EmotionCache} from '@emotion/react';
 import React from 'react';
 import {FormCheck, Col, FormGroup, FormText, Container, Row, Button, FormControl, Modal} from 'react-bootstrap';
 import type {IntlShape} from 'react-intl';
@@ -39,6 +42,7 @@ type State = DeepPartial<CombinedConfig> & {
     availableLanguages: Array<{label: string; value: string}>;
     availableSpellcheckerLanguages: Array<{label: string; value: string}>;
     canUpgrade?: boolean;
+    cache?: EmotionCache;
 }
 
 type SavingStateItems = {
@@ -63,6 +67,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
     autoCheckForUpdatesRef: React.RefObject<HTMLInputElement>;
     logLevelRef: React.RefObject<HTMLSelectElement>;
     appLanguageRef: React.RefObject<HTMLSelectElement>;
+    enableMetricsRef: React.RefObject<HTMLInputElement>;
 
     saveQueue: SaveQueueItem[];
 
@@ -102,6 +107,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
         this.autoCheckForUpdatesRef = React.createRef();
         this.logLevelRef = React.createRef();
         this.appLanguageRef = React.createRef();
+        this.enableMetricsRef = React.createRef();
 
         this.saveQueue = [];
         this.selectedSpellCheckerLocales = [];
@@ -126,6 +132,13 @@ class SettingsPage extends React.PureComponent<Props, State> {
             const availableLanguages = languages.filter((language) => localeTranslations[language]).map((language) => ({label: localeTranslations[language], value: language}));
             availableLanguages.sort((a, b) => a.label.localeCompare(b.label));
             this.setState({availableLanguages});
+        });
+
+        window.desktop.getNonce().then((nonce) => {
+            this.setState({cache: createCache({
+                key: 'react-select-cache',
+                nonce,
+            })});
         });
     }
 
@@ -205,6 +218,13 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 this.setState({savingState});
             }
         }, 2000);
+    };
+
+    handleEnableMetrics = () => {
+        window.timers.setImmediate(this.saveSetting, CONFIG_TYPE_APP_OPTIONS, {key: 'enableMetrics', data: this.enableMetricsRef.current?.checked});
+        this.setState({
+            enableMetrics: this.enableMetricsRef.current?.checked,
+        });
     };
 
     handleChangeShowTrayIcon = () => {
@@ -426,6 +446,10 @@ class SettingsPage extends React.PureComponent<Props, State> {
     render() {
         const {intl} = this.props;
 
+        if (!this.state.cache) {
+            return null;
+        }
+
         const settingsPage = {
             close: {
                 textDecoration: 'none',
@@ -457,6 +481,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                 padding: '0.4em 0',
             },
             downloadLocationInput: {
+                display: 'inline',
                 marginRight: '3px',
                 marginTop: '8px',
                 width: '320px',
@@ -581,22 +606,24 @@ class SettingsPage extends React.PureComponent<Props, State> {
                     </FormText>
                 </FormCheck>
                 {this.state.useSpellChecker &&
-                    <ReactSelect
-                        inputId='inputSpellCheckerLocalesDropdown'
-                        className='SettingsPage__spellCheckerLocalesDropdown'
-                        classNamePrefix='SettingsPage__spellCheckerLocalesDropdown'
-                        options={this.state.availableSpellcheckerLanguages}
-                        isMulti={true}
-                        isClearable={false}
-                        onChange={this.handleChangeSpellCheckerLocales}
-                        value={this.selectedSpellCheckerLocales}
-                        placeholder={
-                            <FormattedMessage
-                                id='renderer.components.settingsPage.checkSpelling.preferredLanguages'
-                                defaultMessage='Select preferred language(s)'
-                            />
-                        }
-                    />
+                    <CacheProvider value={this.state.cache}>
+                        <ReactSelect
+                            inputId='inputSpellCheckerLocalesDropdown'
+                            className='SettingsPage__spellCheckerLocalesDropdown'
+                            classNamePrefix='SettingsPage__spellCheckerLocalesDropdown'
+                            options={this.state.availableSpellcheckerLanguages}
+                            isMulti={true}
+                            isClearable={false}
+                            onChange={this.handleChangeSpellCheckerLocales}
+                            value={this.selectedSpellCheckerLocales}
+                            placeholder={
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.checkSpelling.preferredLanguages'
+                                    defaultMessage='Select preferred language(s)'
+                                />
+                            }
+                        />
+                    </CacheProvider>
                 }
             </>,
         );
@@ -621,7 +648,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         style={settingsPage.container}
                         key='containerInputSpellcheckerURL'
                     >
-                        <input
+                        <FormControl
                             disabled={!this.state.useSpellChecker}
                             style={settingsPage.downloadLocationInput}
                             key='inputSpellCheckerURL'
@@ -690,6 +717,30 @@ class SettingsPage extends React.PureComponent<Props, State> {
                     </FormText>
                 </FormCheck>);
         }
+
+        options.push(
+            <FormCheck
+                key='enableMetrics'
+            >
+                <FormCheck.Input
+                    type='checkbox'
+                    key='inputEnableMetrics'
+                    id='inputEnableMetrics'
+                    ref={this.enableMetricsRef}
+                    checked={this.state.enableMetrics}
+                    onChange={this.handleEnableMetrics}
+                />
+                <FormattedMessage
+                    id='renderer.components.settingsPage.enableMetrics'
+                    defaultMessage='Send anonymous usage data to your configured servers'
+                />
+                <FormText>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.enableMetrics.description'
+                        defaultMessage='Sends usage data about the application and its performance to your configured servers that accept it.'
+                    />
+                </FormText>
+            </FormCheck>);
 
         if (window.process.platform === 'win32' || window.process.platform === 'linux') {
             options.push(
@@ -964,32 +1015,34 @@ class SettingsPage extends React.PureComponent<Props, State> {
             </FormCheck>,
         );
 
-        options.push(
-            <FormCheck
-                key='inputStartInFullScreen'
-            >
-                <FormCheck.Input
-                    type='checkbox'
-                    id='inputStartInFullScreen'
-                    ref={this.startInFullscreenRef}
-                    checked={this.state.startInFullscreen}
-                    onChange={this.handleChangeStartInFullscreen}
-                />
-                <FormattedMessage
-                    id='renderer.components.settingsPage.fullscreen'
-                    defaultMessage='Open app in fullscreen'
-                />
-                <FormText>
-                    <FormattedMessage
-                        id='renderer.components.settingsPage.fullscreen.description'
-                        defaultMessage='If enabled, the {appName} application will always open in full screen'
-                        values={{
-                            appName: this.state.appName,
-                        }}
+        if (process.platform !== 'linux') {
+            options.push(
+                <FormCheck
+                    key='inputStartInFullScreen'
+                >
+                    <FormCheck.Input
+                        type='checkbox'
+                        id='inputStartInFullScreen'
+                        ref={this.startInFullscreenRef}
+                        checked={this.state.startInFullscreen}
+                        onChange={this.handleChangeStartInFullscreen}
                     />
-                </FormText>
-            </FormCheck>,
-        );
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.fullscreen'
+                        defaultMessage='Open app in fullscreen'
+                    />
+                    <FormText>
+                        <FormattedMessage
+                            id='renderer.components.settingsPage.fullscreen.description'
+                            defaultMessage='If enabled, the {appName} application will always open in full screen'
+                            values={{
+                                appName: this.state.appName,
+                            }}
+                        />
+                    </FormText>
+                </FormCheck>,
+            );
+        }
 
         options.push(
             <div
@@ -1041,7 +1094,7 @@ class SettingsPage extends React.PureComponent<Props, State> {
                         defaultMessage='Download Location'
                     />
                 </div>
-                <input
+                <FormControl
                     disabled={true}
                     style={settingsPage.downloadLocationInput}
                     key='inputDownloadLocation'

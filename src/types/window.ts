@@ -44,6 +44,8 @@ declare global {
             goBack: () => void;
             checkForUpdates: () => void;
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
+            getNonce: () => Promise<string | undefined>;
+            isDeveloperModeEnabled: () => Promise<boolean>;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
@@ -94,6 +96,7 @@ declare global {
             openWindowsCameraPreferences: () => void;
             openWindowsMicrophonePreferences: () => void;
             getMediaAccessStatus: (mediaType: 'microphone' | 'camera' | 'screen') => Promise<'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown'>;
+            viewFinishedResizing: () => void;
 
             modals: {
                 cancelModal: <T>(data?: T) => void;
@@ -150,6 +153,12 @@ declare global {
                     unreads?: Map<string, boolean>,
                 ) => void) => void;
             };
+        };
+    }
+
+    interface Navigator {
+        windowControlsOverlay?: {
+            getTitlebarAreaRect: () => DOMRect;
         };
     }
 }

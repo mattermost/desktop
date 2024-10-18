@@ -34,6 +34,7 @@ import {
     LEGACY_OFF,
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
+    DEVELOPER_MODE_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -45,9 +46,13 @@ import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
 import {flushCookiesStore} from 'main/app/utils';
+import DeveloperMode from 'main/developerMode';
 import {localizeMessage} from 'main/i18nManager';
+import performanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
+
+import type {DeveloperSettings} from 'types/settings';
 
 import LoadingScreen from './loadingScreen';
 import {MattermostWebContentsView} from './MattermostWebContentsView';
@@ -91,12 +96,24 @@ export class ViewManager {
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 
         ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
+        DeveloperMode.on(DEVELOPER_MODE_UPDATED, this.handleDeveloperModeUpdated);
     }
 
     private init = () => {
         LoadingScreen.show();
         ServerManager.getAllServers().forEach((server) => this.loadServer(server));
         this.showInitial();
+    };
+
+    private handleDeveloperModeUpdated = (json: DeveloperSettings) => {
+        log.debug('handleDeveloperModeUpdated', json);
+
+        if (['browserOnly', 'disableContextMenu', 'forceLegacyAPI', 'forceNewAPI'].some((key) => Object.hasOwn(json, key))) {
+            this.views.forEach((view) => view.destroy());
+            this.views = new Map();
+            this.closedViews = new Map();
+            this.init();
+        }
     };
 
     getView = (viewId: string) => {
@@ -357,6 +374,7 @@ export class ViewManager {
                     transparent: true,
                 }});
             const localURL = `mattermost-desktop://renderer/urlView.html?url=${encodeURIComponent(urlString)}`;
+            performanceMonitor.registerView('URLView', urlView.webContents);
             urlView.webContents.loadURL(localURL);
             MainWindow.get()?.contentView.addChildView(urlView);
             const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? MainWindow.getBounds();
@@ -369,6 +387,7 @@ export class ViewManager {
                     log.error('Failed to remove URL view', e);
                 }
 
+                performanceMonitor.unregisterView(urlView.webContents.id);
                 urlView.webContents.close();
             };
 

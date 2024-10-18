@@ -5,6 +5,7 @@ import {WebContentsView, app, ipcMain} from 'electron';
 
 import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, MAIN_WINDOW_RESIZED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 import {Logger} from 'common/log';
+import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload, getWindowBoundaries} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -86,6 +87,8 @@ export class LoadingScreen {
             transparent: true,
         }});
         const localURL = 'mattermost-desktop://renderer/loadingScreen.html';
+
+        performanceMonitor.registerView('LoadingScreen', this.view.webContents);
         this.view.webContents.loadURL(localURL);
     };
 

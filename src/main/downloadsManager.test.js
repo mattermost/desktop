@@ -28,6 +28,7 @@ jest.mock('electron', () => {
     return {
         app: {
             getAppPath: jest.fn(),
+            getPath: jest.fn(() => '/valid/downloads/path'),
         },
         WebContentsView: jest.fn().mockImplementation(() => ({
             webContents: {

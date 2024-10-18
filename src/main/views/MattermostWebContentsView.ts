@@ -23,7 +23,9 @@ import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
-import type {MattermostView} from 'common/views/View';
+import {TAB_MESSAGING, type MattermostView} from 'common/views/View';
+import DeveloperMode from 'main/developerMode';
+import performanceMonitor from 'main/performanceMonitor';
 import {getServerAPI} from 'main/server/serverAPI';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -52,7 +54,7 @@ export class MattermostWebContentsView extends EventEmitter {
     private atRoot: boolean;
     private options: WebContentsViewConstructorOptions;
     private removeLoading?: NodeJS.Timeout;
-    private contextMenu: ContextMenu;
+    private contextMenu?: ContextMenu;
     private status?: Status;
     private retryLoad?: NodeJS.Timeout;
     private maxRetries: number;
@@ -65,7 +67,7 @@ export class MattermostWebContentsView extends EventEmitter {
         const preload = getLocalPreload('externalAPI.js');
         this.options = Object.assign({}, options);
         this.options.webPreferences = {
-            preload,
+            preload: DeveloperMode.get('browserOnly') ? undefined : preload,
             additionalArguments: [
                 `version=${app.getVersion()}`,
                 `appName=${app.name}`,
@@ -99,7 +101,10 @@ export class MattermostWebContentsView extends EventEmitter {
 
         WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
-        this.contextMenu = new ContextMenu({}, this.webContentsView);
+        if (!DeveloperMode.get('disableContextMenu')) {
+            this.contextMenu = new ContextMenu({}, this.webContentsView);
+        }
+
         this.maxRetries = MAX_SERVER_RETRIES;
 
         this.altPressStatus = false;
@@ -192,7 +197,12 @@ export class MattermostWebContentsView extends EventEmitter {
             loadURL = this.view.url.toString();
         }
         this.log.verbose(`Loading ${loadURL}`);
-        const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+        if (this.view.type === TAB_MESSAGING) {
+            performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
+        } else {
+            performanceMonitor.registerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
+        }
+        const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
                 MainWindow.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
@@ -258,6 +268,7 @@ export class MattermostWebContentsView extends EventEmitter {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         AppState.clear(this.id);
         MainWindow.get()?.contentView.removeChildView(this.webContentsView);
+        performanceMonitor.unregisterView(this.webContentsView.webContents.id);
         this.webContentsView.webContents.close();
 
         this.isVisible = false;
@@ -427,7 +438,7 @@ export class MattermostWebContentsView extends EventEmitter {
             if (!this.webContentsView || !this.webContentsView.webContents) {
                 return;
             }
-            const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent()});
+            const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
             loading.then(this.loadSuccess(loadURL)).catch((err) => {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);

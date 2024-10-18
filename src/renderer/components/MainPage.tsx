@@ -12,6 +12,7 @@ import {injectIntl} from 'react-intl';
 import type {UniqueView, UniqueServer} from 'types/config';
 import type {DownloadedItems} from 'types/downloads';
 
+import DeveloperModeIndicator from './DeveloperModeIndicator';
 import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
 import ErrorView from './ErrorView';
 import ExtraBar from './ExtraBar';
@@ -55,6 +56,7 @@ type State = {
     showDownloadsBadge: boolean;
     hasDownloads: boolean;
     threeDotsIsFocused: boolean;
+    developerMode: boolean;
 };
 
 type TabViewStatus = {
@@ -88,6 +90,7 @@ class MainPage extends React.PureComponent<Props, State> {
             showDownloadsBadge: false,
             hasDownloads: false,
             threeDotsIsFocused: false,
+            developerMode: false,
         };
     }
 
@@ -263,6 +266,10 @@ class MainPage extends React.PureComponent<Props, State> {
         }
 
         window.addEventListener('click', this.handleCloseDropdowns);
+
+        window.desktop.isDeveloperModeEnabled().then((developerMode) => {
+            this.setState({developerMode});
+        });
     }
 
     componentWillUnmount() {
@@ -471,17 +478,22 @@ class MainPage extends React.PureComponent<Props, State> {
                         />
                     )}
                     {tabsRow}
+                    <DeveloperModeIndicator
+                        darkMode={this.props.darkMode}
+                        developerMode={this.state.developerMode}
+                    />
                     {downloadsDropdownButton}
-                    {window.process.platform !== 'darwin' && this.state.fullScreen &&
-                        <span className='title-bar-btns'>
-                            <div
-                                className='button full-screen-button'
-                                onClick={this.handleExitFullScreen}
-                            >
-                                <i className='icon icon-arrow-collapse'/>
-                            </div>
-                        </span>
-                    }
+                    {window.process.platform !== 'darwin' && this.state.fullScreen && (
+                        <div
+                            className={`button full-screen-button${this.props.darkMode ? ' darkMode' : ''}`}
+                            onClick={this.handleExitFullScreen}
+                        >
+                            <i className='icon icon-arrow-collapse'/>
+                        </div>
+                    )}
+                    {window.process.platform !== 'darwin' && !this.state.fullScreen && (
+                        <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
+                    )}
                 </div>
             </Row>
         );

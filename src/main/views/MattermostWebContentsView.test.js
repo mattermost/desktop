@@ -17,6 +17,7 @@ import MainWindow from '../windows/mainWindow';
 jest.mock('electron', () => ({
     app: {
         getVersion: () => '5.0.0',
+        getPath: jest.fn(() => '/valid/downloads/path'),
     },
     WebContentsView: jest.fn().mockImplementation(() => ({
         webContents: {
@@ -57,6 +58,14 @@ jest.mock('../utils', () => ({
     getLocalPreload: (file) => file,
     composeUserAgent: () => 'Mattermost/5.0.0',
     shouldHaveBackBar: jest.fn(),
+}));
+jest.mock('main/developerMode', () => ({
+    get: jest.fn(),
+}));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+    registerServerView: jest.fn(),
+    unregisterView: jest.fn(),
 }));
 
 const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});

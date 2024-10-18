@@ -36,6 +36,7 @@ jest.mock('electron', () => {
     return {
         app: {
             getAppPath: () => '',
+            getPath: jest.fn(() => '/valid/downloads/path'),
         },
         WebContentsView: jest.fn().mockImplementation(() => ({
             webContents: {
@@ -63,6 +64,9 @@ jest.mock('main/downloadsManager', () => ({
     getDownloads: jest.fn(),
     onOpen: jest.fn(),
     onClose: jest.fn(),
+}));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
 }));
 jest.mock('main/windows/mainWindow', () => ({
     on: jest.fn(),

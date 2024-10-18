@@ -2,13 +2,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 
 import {EventEmitter} from 'events';
 
 import {Logger} from 'common/log';
-import Utils, {copy} from 'common/utils/util';
+import {copy} from 'common/utils/util';
 import * as Validator from 'common/Validator';
 import {getDefaultViewsForConfigServer} from 'common/views/View';
 
@@ -36,7 +35,6 @@ export class Config extends EventEmitter {
 
     private registryConfig: RegistryConfig;
     private _predefinedServers: ConfigServer[];
-    private useNativeWindow: boolean;
 
     private combinedData?: CombinedConfig;
     private localConfigData?: ConfigType;
@@ -51,11 +49,6 @@ export class Config extends EventEmitter {
         this._predefinedServers = [];
         if (buildConfig.defaultServers) {
             this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
-        }
-        try {
-            this.useNativeWindow = os.platform() === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2');
-        } catch {
-            this.useNativeWindow = false;
         }
     }
 
@@ -248,6 +241,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.appLanguage;
     }
 
+    get enableMetrics() {
+        return this.combinedData?.enableMetrics;
+    }
+
     /**
      * Gets the servers from registry into the config object and reload
      *
@@ -370,7 +367,6 @@ export class Config extends EventEmitter {
             this.localConfigData,
             this.buildConfigData,
             this.registryConfigData,
-            {useNativeWindow: this.useNativeWindow},
         );
 
         // We don't want to include the servers in the combined config, they should only be accesible via the ServerManager

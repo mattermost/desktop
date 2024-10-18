@@ -64,6 +64,9 @@ jest.mock('electron', () => ({
     },
     session: {
         defaultSession: {
+            webRequest: {
+                onHeadersReceived: jest.fn(),
+            },
             setSpellCheckerDictionaryDownloadURL: jest.fn(),
             setPermissionRequestHandler: jest.fn(),
             on: jest.fn(),
@@ -74,7 +77,9 @@ jest.mock('electron', () => ({
         handle: jest.fn(),
     },
 }));
-
+jest.mock('main/performanceMonitor', () => ({
+    init: jest.fn(),
+}));
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
     setLocale: jest.fn(),

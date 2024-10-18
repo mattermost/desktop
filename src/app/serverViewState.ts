@@ -208,11 +208,11 @@ export class ServerViewState {
                     this.currentServerId = remainingServers[0].id;
                 }
 
+                ServerManager.removeServer(server.id);
+
                 if (!remainingServers.length) {
                     delete this.currentServerId;
                 }
-
-                ServerManager.removeServer(server.id);
             }
         }).catch((e) => {
             // e is undefined for user cancellation

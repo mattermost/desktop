@@ -29,6 +29,7 @@ import {
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
     SHOW_SETTINGS_WINDOW,
+    DEVELOPER_MODE_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -43,10 +44,13 @@ import {setupBadge} from 'main/badge';
 import CertificateManager from 'main/certificateManager';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
+import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
+import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
+import PerformanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
 import Tray from 'main/tray/tray';
 import TrustedOriginsStore from 'main/trustedOrigins';
@@ -313,6 +317,20 @@ async function initializeAfterAppReady() {
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
+    defaultSession.webRequest.onHeadersReceived((details, callback) => {
+        const url = parseURL(details.url);
+        if (url?.protocol === 'mattermost-desktop:' && url?.pathname.endsWith('html')) {
+            callback({
+                responseHeaders: {
+                    ...details.responseHeaders,
+                    'Content-Security-Policy': [`default-src 'self'; style-src 'self' 'nonce-${NonceManager.create(details.url)}'; media-src data:; img-src 'self' data:`],
+                },
+            });
+            return;
+        }
+
+        downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
+    });
 
     if (process.platform !== 'darwin') {
         defaultSession.on('spellcheck-dictionary-download-failure', (event, lang) => {
@@ -390,14 +408,16 @@ async function initializeAfterAppReady() {
     // Call this to initiate a permissions check for DND state
     getDoNotDisturb();
 
-    // listen for status updates and pass on to renderer
-    UserActivityMonitor.on('status', (status) => {
-        log.debug('UserActivityMonitor.on(status)', status);
-        ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
-    });
+    DeveloperMode.switchOff('disableUserActivityMonitor', () => {
+        // listen for status updates and pass on to renderer
+        UserActivityMonitor.on('status', onUserActivityStatus);
 
-    // start monitoring user activity (needs to be started after the app is ready)
-    UserActivityMonitor.startMonitoring();
+        // start monitoring user activity (needs to be started after the app is ready)
+        UserActivityMonitor.startMonitoring();
+    }, () => {
+        UserActivityMonitor.off('status', onUserActivityStatus);
+        UserActivityMonitor.stopMonitoring();
+    });
 
     if (shouldShowTrayIcon()) {
         Tray.init(Config.trayIconTheme);
@@ -415,6 +435,7 @@ async function initializeAfterAppReady() {
     }
 
     handleUpdateMenuEvent();
+    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleUpdateMenuEvent);
 
     ipcMain.emit('update-dict');
 
@@ -428,6 +449,19 @@ async function initializeAfterAppReady() {
     AppVersionManager.lastAppVersion = app.getVersion();
 
     handleMainWindowIsShown();
+
+    // The metrics won't start collecting for another minute
+    // so we can assume if we start now everything should be loaded by the time we're done
+    PerformanceMonitor.init();
+}
+
+function onUserActivityStatus(status: {
+    userIsActive: boolean;
+    idleTime: number;
+    isSystemEvent: boolean;
+}) {
+    log.debug('UserActivityMonitor.on(status)', status);
+    ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 
 function handleStartDownload() {

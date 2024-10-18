@@ -18,6 +18,7 @@ import {ViewManager} from './viewManager';
 jest.mock('electron', () => ({
     app: {
         getAppPath: () => '/path/to/app',
+        getPath: jest.fn(() => '/valid/downloads/path'),
     },
     dialog: {
         showErrorBox: jest.fn(),
@@ -80,6 +81,9 @@ jest.mock('main/views/loadingScreen', () => ({
 jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     on: jest.fn(),
+}));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
 }));
 jest.mock('common/servers/serverManager', () => ({
     getOrderedTabsForServer: jest.fn(),

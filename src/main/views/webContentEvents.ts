@@ -1,13 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import path from 'path';
-
 import type {WebContents, Event} from 'electron';
 import {BrowserWindow, shell} from 'electron';
 
 import Config from 'common/config';
-import {Logger, getLevel} from 'common/log';
+import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {
     isAdminUrl,
@@ -28,11 +26,13 @@ import {
 } from 'common/utils/url';
 import {flushCookiesStore} from 'main/app/utils';
 import ContextMenu from 'main/contextMenu';
+import PluginsPopUpsManager from 'main/views/pluginsPopUps';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
-import {protocols} from '../../../electron-builder.json';
+import {generateHandleConsoleMessage, isCustomProtocol} from './webContentEventsCommon';
+
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
 
@@ -40,15 +40,7 @@ type CustomLogin = {
     inProgress: boolean;
 }
 
-enum ConsoleMessageLevel {
-    Verbose,
-    Info,
-    Warning,
-    Error
-}
-
 const log = new Logger('WebContentsEventManager');
-const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
 
 export class WebContentsEventManager {
     customLogins: Record<number, CustomLogin>;
@@ -169,8 +161,13 @@ export class WebContentsEventManager {
                 return {action: 'allow'};
             }
 
+            // Allow plugins to open blank popup windows.
+            if (parsedURL.toString() === 'about:blank') {
+                return PluginsPopUpsManager.handleNewWindow(webContentsId, details);
+            }
+
             // Check for custom protocol
-            if (parsedURL.protocol !== 'http:' && parsedURL.protocol !== 'https:' && parsedURL.protocol !== `${scheme}:`) {
+            if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
                 return {action: 'deny'};
             }
@@ -296,27 +293,6 @@ export class WebContentsEventManager {
         };
     };
 
-    private generateHandleConsoleMessage = (webContentsId: number) => (_: Event, level: number, message: string, line: number, sourceId: string) => {
-        const wcLog = this.log(webContentsId).withPrefix('renderer');
-        let logFn = wcLog.debug;
-        switch (level) {
-        case ConsoleMessageLevel.Error:
-            logFn = wcLog.error;
-            break;
-        case ConsoleMessageLevel.Warning:
-            logFn = wcLog.warn;
-            break;
-        }
-
-        // Only include line entries if we're debugging
-        const entries = [message];
-        if (['debug', 'silly'].includes(getLevel())) {
-            entries.push(`(${path.basename(sourceId)}:${line})`);
-        }
-
-        logFn(...entries);
-    };
-
     removeWebContentsListeners = (id: number) => {
         if (this.listeners[id]) {
             this.listeners[id]();
@@ -352,7 +328,11 @@ export class WebContentsEventManager {
         const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
         contents.setWindowOpenHandler(newWindow);
 
-        const consoleMessage = this.generateHandleConsoleMessage(contents.id);
+        // Defer handling of new popup windows to PluginsPopUpsManager. These still need to be
+        // previously allowed from generateNewWindowListener through PluginsPopUpsManager.handleNewWindow.
+        contents.on('did-create-window', PluginsPopUpsManager.generateHandleCreateWindow(contents.id));
+
+        const consoleMessage = generateHandleConsoleMessage(this.log(contents.id));
         contents.on('console-message', consoleMessage);
 
         addListeners?.(contents);

@@ -33,6 +33,7 @@ import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
+import performanceMonitor from 'main/performanceMonitor';
 
 import type {SavedWindowState} from 'types/mainWindow';
 
@@ -69,7 +70,7 @@ export class MainWindow extends EventEmitter {
 
         const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, this.savedWindowState, {
             title: app.name,
-            fullscreenable: true,
+            fullscreenable: process.platform !== 'linux',
             show: false, // don't start the window until it is ready and only if it isn't hidden
             paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
             minWidth: MINIMUM_WINDOW_WIDTH,
@@ -138,6 +139,7 @@ export class MainWindow extends EventEmitter {
         contextMenu.reload();
 
         const localURL = 'mattermost-desktop://renderer/index.html';
+        performanceMonitor.registerView('MainWindow', this.win.webContents);
         this.win.loadURL(localURL).catch(
             (reason) => {
                 log.error('failed to load', reason);
@@ -217,6 +219,10 @@ export class MainWindow extends EventEmitter {
     };
 
     private shouldStartFullScreen = () => {
+        if (process.platform === 'linux') {
+            return false;
+        }
+
         if (global?.args?.fullscreen !== undefined) {
             return global.args.fullscreen;
         }
