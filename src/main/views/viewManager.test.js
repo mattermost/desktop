@@ -18,6 +18,7 @@ import {ViewManager} from './viewManager';
 jest.mock('electron', () => ({
     app: {
         getAppPath: () => '/path/to/app',
+        getPath: jest.fn(() => '/valid/downloads/path'),
     },
     dialog: {
         showErrorBox: jest.fn(),

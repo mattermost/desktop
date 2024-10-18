@@ -15,6 +15,9 @@ import MainWindow from 'main/windows/mainWindow';
 import {ServerViewState} from './serverViewState';
 
 jest.mock('electron', () => ({
+    app: {
+        getPath: jest.fn(() => '/valid/downloads/path'),
+    },
     ipcMain: {
         on: jest.fn(),
         handle: jest.fn(),
