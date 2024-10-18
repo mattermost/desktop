@@ -52,6 +52,9 @@ jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
 jest.mock('main/downloadsManager', () => ({}));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+}));
 jest.mock('main/windows/mainWindow', () => ({
     on: jest.fn(),
     get: jest.fn(),

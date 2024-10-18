@@ -29,6 +29,9 @@ jest.mock('electron', () => ({
         getPath: jest.fn(() => '/valid/downloads/path'),
     },
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+}));
 jest.mock('main/windows/mainWindow', () => ({
     on: jest.fn(),
     get: jest.fn(),
