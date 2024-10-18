@@ -75,6 +75,7 @@ export class DownloadsDropdownMenuView {
             // @ts-ignore
             transparent: true,
         }});
+        this.view.setAutoResize({height: true});
         this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdownMenu.html');
         MainWindow.get()?.addBrowserView(this.view);
     };
