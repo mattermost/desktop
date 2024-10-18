@@ -62,6 +62,11 @@ jest.mock('../utils', () => ({
 jest.mock('main/developerMode', () => ({
     get: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+    registerServerView: jest.fn(),
+    unregisterView: jest.fn(),
+}));
 
 const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
 const view = new MessagingView(server, true);

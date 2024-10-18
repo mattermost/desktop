@@ -28,6 +28,7 @@ import {Logger} from 'common/log';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import performanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
 import {
     composeUserAgent,
@@ -173,6 +174,7 @@ export class CallsWidgetWindow {
         if (!widgetURL) {
             return;
         }
+        performanceMonitor.registerView('CallsWidgetWindow', this.win.webContents);
         this.win?.loadURL(widgetURL, {
             userAgent: composeUserAgent(),
         }).catch((reason) => {
@@ -195,6 +197,7 @@ export class CallsWidgetWindow {
                 return;
             }
             this.win?.on('closed', resolve);
+            performanceMonitor.unregisterView(this.win.webContents.id);
             this.win?.close();
         });
     };
