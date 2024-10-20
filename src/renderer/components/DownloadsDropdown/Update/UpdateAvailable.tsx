@@ -49,7 +49,8 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                 </div>
                 <Button
                     id='downloadUpdateButton'
-                    className='primary-button'
+                    className='primary-button DownloadsDropdown__Update__Details__Button'
+                    variant='primary'
                     onClick={onButtonClick}
                     disabled={isProcessing}
                 >
