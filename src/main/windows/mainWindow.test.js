@@ -539,7 +539,7 @@ describe('main/windows/mainWindow', () => {
             expect(globalShortcut.registerAll).toHaveBeenCalledWith(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], expect.any(Function));
         });
 
-        it('should not register global shortcuts when window is minimized on KDE/KWin', () => {
+        it('should register global shortcuts even when window is minimized on KDE/KWin', () => {
             const {isKDE} = require('../utils');
             isKDE.mockReturnValue(true);
 
@@ -561,7 +561,7 @@ describe('main/windows/mainWindow', () => {
             mainWindow.getBounds = jest.fn();
             mainWindow.init();
 
-            expect(globalShortcut.registerAll).not.toHaveBeenCalled();
+            expect(globalShortcut.registerAll).toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
