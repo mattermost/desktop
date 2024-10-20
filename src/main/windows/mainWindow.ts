@@ -324,13 +324,15 @@ export class MainWindow extends EventEmitter {
     private onFocus = () => {
         // Only add shortcuts when window is in focus
         if (process.platform === 'linux') {
-            const kde = isKDE();
-            if ((!this.win || this.win.isMinimized()) && kde) {
-                return;
-            }
             globalShortcut.registerAll(ALT_MENU_KEYS, () => {
                 // do nothing because we want to supress the menu popping up
             });
+
+            // check if KDE + windows is minimized to prevent unwanted focus event
+            // that was causing an error not allowing minimization (MM-60233)
+            if ((!this.win || this.win.isMinimized()) && isKDE()) {
+                return;
+            }
         }
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
