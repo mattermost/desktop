@@ -60,8 +60,6 @@ export const SESSION_EXPIRED = 'session_expired';
 
 export const REACT_APP_INITIALIZED = 'react-app-initialized';
 
-export const TOGGLE_BACK_BUTTON = 'toggle-back-button';
-
 export const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 
 export const LOADING_SCREEN_ANIMATION_FINISHED = 'loading-screen-animation-finished';

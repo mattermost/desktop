@@ -54,7 +54,7 @@ import LoadingScreen from './loadingScreen';
 import {MattermostBrowserView} from './MattermostBrowserView';
 import modalManager from './modalManager';
 
-import {getLocalPreload, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {getLocalPreload, getAdjustedWindowBoundaries} from '../utils';
 
 const log = new Logger('ViewManager');
 const URL_VIEW_DURATION = 10 * SECOND;
@@ -602,7 +602,7 @@ export class ViewManager {
 
         const currentView = this.getCurrentView();
         if (currentView && currentView.currentURL) {
-            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height, shouldHaveBackBar(currentView.view.url, currentView.currentURL));
+            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height);
             currentView.setBounds(adjustedBounds);
         }
     };
