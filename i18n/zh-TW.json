@@ -218,6 +218,8 @@
   "renderer.components.settingsPage.downloadLocation.description": "指定檔案下載的資料夾。",
   "renderer.components.settingsPage.enableHardwareAcceleration": "使用 GPU 硬體加速",
   "renderer.components.settingsPage.enableHardwareAcceleration.description": "如果啟用，可更有效地繪製 {appName} 的使用者介面，但可能會降低某些系統的穩定性。",
+  "renderer.components.settingsPage.enableMetrics": "傳送匿名的使用方式資料以設定伺服器",
+  "renderer.components.settingsPage.enableMetrics.description": "傳送有關應用程式及其效能的使用方式資料到您已設定接受的伺服器。",
   "renderer.components.settingsPage.flashWindow": "在收到新訊息時閃爍工作列圖示",
   "renderer.components.settingsPage.flashWindow.description": "如果啟用，當收到新訊息時，工作列圖示將閃爍數秒。",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "此功能可能無法在所有 Linux 視窗管理器中正常運作。",
