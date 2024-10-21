@@ -383,7 +383,7 @@ body {
                         }
                         &.disabled {
                             background: transparent;
-                            color: rgba(63, 67, 80, 0.52);
+                            color: rgba(221, 223, 228, 0.32);
                         }
                     }
                     .DownloadsDropdown__Downloads {
@@ -458,6 +458,14 @@ body {
 
                         .DownloadsDropdown__Update__Details__Description {
                             color: rgba(221, 223, 228, 0.64);
+                        }
+
+                        .DownloadsDropdown__Update__Details__Button {
+                            &:disabled {
+                                background: rgba(221, 223, 228, 0.08);
+                                color: rgba(221, 223, 228, 0.32) !important;
+                                opacity: 1;
+                            }
                         }
                     }
                 }
