@@ -55,8 +55,6 @@ export const PLAY_SOUND = 'play_sound';
 export const GET_DOWNLOAD_LOCATION = 'get_download_location';
 
 export const UPDATE_MENTIONS = 'update_mentions';
-export const IS_UNREAD = 'is_unread';
-export const UNREAD_RESULT = 'unread_result';
 export const UNREADS_AND_MENTIONS = 'unreads-and-mentions';
 export const SESSION_EXPIRED = 'session_expired';
 
@@ -93,8 +91,6 @@ export const CHECK_FOR_UPDATES = 'check-for-updates';
 export const NO_UPDATE_AVAILABLE = 'no-update-available';
 
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
-export const APP_LOGGED_IN = 'app-logged-in';
-export const APP_LOGGED_OUT = 'app-logged-out';
 export const TAB_LOGIN_CHANGED = 'tab-login-changed';
 
 export const GET_AVAILABLE_SPELL_CHECKER_LANGUAGES = 'get-available-spell-checker-languages';
@@ -118,13 +114,11 @@ export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
 
 // Calls
 export const GET_DESKTOP_SOURCES = 'get-desktop-sources';
-export const DESKTOP_SOURCES_RESULT = 'desktop-sources-result';
 export const DESKTOP_SOURCES_MODAL_REQUEST = 'desktop-sources-modal-request';
 export const CALLS_JOIN_CALL = 'calls-join-call';
 export const CALLS_LEAVE_CALL = 'calls-leave-call';
 export const CALLS_WIDGET_RESIZE = 'calls-widget-resize';
 export const CALLS_WIDGET_SHARE_SCREEN = 'calls-widget-share-screen';
-export const CALLS_WIDGET_CHANNEL_LINK_CLICK = 'calls-widget-channel-link-click';
 export const CALLS_LINK_CLICK = 'calls-link-click';
 export const CALLS_JOINED_CALL = 'calls-joined-call';
 export const CALLS_POPOUT_FOCUS = 'calls-popout-focus';
@@ -189,14 +183,10 @@ export const OPEN_WINDOWS_CAMERA_PREFERENCES = 'open-windows-camera-preferences'
 export const OPEN_WINDOWS_MICROPHONE_PREFERENCES = 'open-windows-microphone-preferences';
 export const GET_MEDIA_ACCESS_STATUS = 'get-media-access-status';
 
-// Legacy code remove signal
-export const LEGACY_OFF = 'legacy-off';
-
 export const GET_NONCE = 'get-nonce';
 
 export const DEVELOPER_MODE_UPDATED = 'developer-mode-updated';
 export const IS_DEVELOPER_MODE_ENABLED = 'is-developer-mode-enabled';
-export const GET_DEVELOPER_MODE_SETTING = 'get-developer-mode-setting';
 
 export const METRICS_SEND = 'metrics-send';
 export const METRICS_RECEIVE = 'metrics-receive';

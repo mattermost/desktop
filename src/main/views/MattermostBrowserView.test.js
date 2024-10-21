@@ -474,18 +474,4 @@ describe('main/views/MattermostBrowserView', () => {
             expect(mattermostView.emit).toHaveBeenCalled();
         });
     });
-
-    describe('updateMentionsFromTitle', () => {
-        const mattermostView = new MattermostBrowserView(view, {}, {});
-
-        it('should parse mentions from title', () => {
-            mattermostView.updateMentionsFromTitle('(7) Mattermost');
-            expect(AppState.updateMentions).toHaveBeenCalledWith(mattermostView.view.id, 7);
-        });
-
-        it('should parse unreads from title', () => {
-            mattermostView.updateMentionsFromTitle('* Mattermost');
-            expect(AppState.updateMentions).toHaveBeenCalledWith(mattermostView.view.id, 0);
-        });
-    });
 });
