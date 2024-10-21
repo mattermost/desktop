@@ -6,6 +6,10 @@ import log from 'electron-log';
 
 import Util from 'common/utils/util';
 
+// Turn off sync logging to prevent blocking the main thread
+// One downside to this is that some logs may not be written to the log file when the app closes
+log.transports.file.sync = false;
+
 export const setLoggingLevel = (level: string) => {
     if (log.transports.file.level === level) {
         return;
