@@ -84,6 +84,7 @@
   "main.menus.app.view.devToolsAppWrapper": "Розробницькі інструменти для Wrapper'у додатку",
   "main.menus.app.view.devToolsCurrentCallWidget": "Інструменти розробника для віджету Call",
   "main.menus.app.view.devToolsCurrentServer": "Розробницькі інструменти для поточного серверу",
+  "main.menus.app.view.devToolsSubMenu": "Інструменти розробника",
   "main.menus.app.view.developerModeBrowserOnly": "Режим лише для браузера",
   "main.menus.app.view.developerModeDisableContextMenu": "Вимкнути контекстне меню",
   "main.menus.app.view.developerModeDisableNotificationStorage": "Вимкнути зберігання сповіщень",
