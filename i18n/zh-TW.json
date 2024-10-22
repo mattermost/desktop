@@ -284,6 +284,7 @@
   "renderer.downloadsDropdown.Downloads": "下載",
   "renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall": "可以安裝 {appName} 桌面應用程式的新版本（版本 {version}）。",
   "renderer.downloadsDropdown.Update.DownloadUpdate": "下載更新",
+  "renderer.downloadsDropdown.Update.Downloading": "下載中",
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} 版本 {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "有新的桌面版可用",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "重新啟動並更新",
