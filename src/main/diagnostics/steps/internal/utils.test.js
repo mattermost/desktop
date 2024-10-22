@@ -91,14 +91,16 @@ describe('main/diagnostics/utils', () => {
             isDestroyed: () => false,
             isVisible: () => true,
             isEnabled: () => true,
-            getBrowserViews: () => [{
-                getBounds: () => ({
-                    x: 0,
-                    y: 0,
-                    width: 800,
-                    height: 500,
-                }),
-            }],
+            contentView: {
+                children: [{
+                    getBounds: () => ({
+                        x: 0,
+                        y: 0,
+                        width: 800,
+                        height: 500,
+                    }),
+                }],
+            },
         };
         it('should return true if window ok', () => {
             expect(browserWindowVisibilityStatus('testWindow', bWindow).every((check) => check.ok)).toBe(true);
@@ -118,17 +120,19 @@ describe('main/diagnostics/utils', () => {
         it('should return false if window is not enabled', () => {
             expect(browserWindowVisibilityStatus('testWindow', {...bWindow, isEnabled: () => false}).every((check) => check.ok)).toBe(false);
         });
-        it('should return false if a child browserView has invalid bounds', () => {
+        it('should return false if a child webContentsView has invalid bounds', () => {
             expect(browserWindowVisibilityStatus('testWindow', {
                 ...bWindow,
-                getBrowserViews: () => [{
-                    getBounds: () => ({
-                        x: -1,
-                        y: -4000,
-                        width: 800,
-                        height: 500,
-                    }),
-                }],
+                contentView: {
+                    children: [{
+                        getBounds: () => ({
+                            x: -1,
+                            y: -4000,
+                            width: 800,
+                            height: 500,
+                        }),
+                    }],
+                },
             }).every((check) => check.ok)).toBe(false);
         });
     });

@@ -95,6 +95,9 @@ describe('main/windows/mainWindow', () => {
                 send: jest.fn(),
                 setWindowOpenHandler: jest.fn(),
             },
+            contentView: {
+                on: jest.fn(),
+            },
             isMaximized: jest.fn(),
             isFullScreen: jest.fn(),
             getBounds: jest.fn(),

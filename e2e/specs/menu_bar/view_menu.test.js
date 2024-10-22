@@ -11,7 +11,7 @@ const {asyncSleep} = require('../../modules/utils');
 
 async function setupPromise(window, id) {
     const promise = new Promise((resolve) => {
-        const browserView = window.getBrowserViews().find((view) => view.webContents.id === id);
+        const browserView = window.contentView.children.find((view) => view.webContents.id === id);
         browserView.webContents.on('did-finish-load', () => {
             resolve();
         });
@@ -22,13 +22,13 @@ async function setupPromise(window, id) {
 
 function getZoomFactorOfServer(browserWindow, serverId) {
     return browserWindow.evaluate(
-        (window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(),
+        (window, id) => window.contentView.children.find((view) => view.webContents.id === id).webContents.getZoomFactor(),
         serverId,
     );
 }
 function setZoomFactorOfServer(browserWindow, serverId, zoomFactor) {
     return browserWindow.evaluate(
-        (window, {id, zoom}) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.setZoomFactor(zoom),
+        (window, {id, zoom}) => window.contentView.children.find((view) => view.webContents.id === id).webContents.setZoomFactor(zoom),
         {id: serverId, zoom: zoomFactor},
     );
 }
@@ -82,12 +82,12 @@ describe('menu/view', function desc() {
 
         robot.keyTap('=', [env.cmdOrCtrl]);
         await asyncSleep(1000);
-        let zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+        let zoomLevel = await browserWindow.evaluate((window, id) => window.contentView.children.find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
         zoomLevel.should.be.greaterThan(1);
 
         robot.keyTap('0', [env.cmdOrCtrl]);
         await asyncSleep(1000);
-        zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+        zoomLevel = await browserWindow.evaluate((window, id) => window.contentView.children.find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
         zoomLevel.should.be.equal(1);
     });
 
@@ -104,7 +104,7 @@ describe('menu/view', function desc() {
 
             robot.keyTap('=', [env.cmdOrCtrl]);
             await asyncSleep(1000);
-            const zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+            const zoomLevel = await browserWindow.evaluate((window, id) => window.contentView.children.find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
             zoomLevel.should.be.greaterThan(1);
         });
 
@@ -144,7 +144,7 @@ describe('menu/view', function desc() {
 
             robot.keyTap('-', [env.cmdOrCtrl]);
             await asyncSleep(1000);
-            const zoomLevel = await browserWindow.evaluate((window, id) => window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+            const zoomLevel = await browserWindow.evaluate((window, id) => window.contentView.children.find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
             zoomLevel.should.be.lessThan(1);
         });
 

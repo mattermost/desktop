@@ -96,7 +96,6 @@ declare global {
             openWindowsCameraPreferences: () => void;
             openWindowsMicrophonePreferences: () => void;
             getMediaAccessStatus: (mediaType: 'microphone' | 'camera' | 'screen') => Promise<'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown'>;
-            viewFinishedResizing: () => void;
 
             modals: {
                 cancelModal: <T>(data?: T) => void;

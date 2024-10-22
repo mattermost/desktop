@@ -6,7 +6,7 @@
 import {ModalView} from './modalView';
 
 jest.mock('electron', () => ({
-    BrowserView: jest.fn().mockImplementation(() => ({
+    WebContentsView: jest.fn().mockImplementation(() => ({
         webContents: {
             loadURL: jest.fn(),
             once: jest.fn(),
@@ -34,7 +34,12 @@ jest.mock('main/performanceMonitor', () => ({
 
 describe('main/views/modalView', () => {
     describe('show', () => {
-        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn()};
+        const window = {
+            contentView: {
+                addChildView: jest.fn(),
+                removeChildView: jest.fn(),
+            },
+        };
         const onResolve = jest.fn();
         const onReject = jest.fn();
         let modalView;
@@ -56,15 +61,15 @@ describe('main/views/modalView', () => {
 
         it('should add to window', () => {
             modalView.show();
-            expect(window.addBrowserView).toBeCalledWith(modalView.view);
+            expect(window.contentView.addChildView).toBeCalledWith(modalView.view);
             expect(modalView.status).toBe(1);
         });
 
         it('should reattach if already attached', () => {
             modalView.windowAttached = window;
             modalView.show();
-            expect(window.removeBrowserView).toBeCalledWith(modalView.view);
-            expect(window.addBrowserView).toBeCalledWith(modalView.view);
+            expect(window.contentView.removeChildView).toBeCalledWith(modalView.view);
+            expect(window.contentView.addChildView).toBeCalledWith(modalView.view);
         });
 
         it('should delay call to focus when the modal is loading', () => {
@@ -87,7 +92,12 @@ describe('main/views/modalView', () => {
     });
 
     describe('hide', () => {
-        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn()};
+        const window = {
+            contentView: {
+                addChildView: jest.fn(),
+                removeChildView: jest.fn(),
+            },
+        };
         const onResolve = jest.fn();
         const onReject = jest.fn();
         let modalView;
@@ -111,7 +121,7 @@ describe('main/views/modalView', () => {
         it('should remove browser view and destroy web contents on hide', () => {
             modalView.hide();
             expect(modalView.view.webContents.close).toBeCalled();
-            expect(window.removeBrowserView).toBeCalledWith(modalView.view);
+            expect(window.contentView.removeChildView).toBeCalledWith(modalView.view);
         });
 
         it('should close dev tools when open', () => {
