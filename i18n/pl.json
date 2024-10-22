@@ -298,6 +298,7 @@
   "renderer.downloadsDropdown.Downloads": "Do pobrania",
   "renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall": "Nowa wersja aplikacji Dekstopowej {appName} (wersja {version}) jest dostępna do zainstalowania.",
   "renderer.downloadsDropdown.Update.DownloadUpdate": "Pobierz Aktualizację",
+  "renderer.downloadsDropdown.Update.Downloading": "Pobieranie",
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} wersja {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "Nowa wersja na komputery stacjonarne dostępna",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "Ponowne uruchomienie i aktualizacja",
