@@ -7,6 +7,7 @@ import {ModalView} from './modalView';
 
 jest.mock('electron', () => ({
     WebContentsView: jest.fn().mockImplementation(() => ({
+        setBackgroundColor: jest.fn(),
         webContents: {
             loadURL: jest.fn(),
             once: jest.fn(),

@@ -31,6 +31,7 @@ jest.mock('electron', () => {
             getPath: jest.fn(() => '/valid/downloads/path'),
         },
         WebContentsView: jest.fn().mockImplementation(() => ({
+            setBackgroundColor: jest.fn(),
             webContents: {
                 loadURL: jest.fn(),
                 focus: jest.fn(),
