@@ -75,15 +75,8 @@ export class ServerDropdownView {
 
     private init = () => {
         log.info('init');
-        const preload = getLocalPreload('internalAPI.js');
-        this.view = new WebContentsView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
+        this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
+        this.view.setBackgroundColor('#00000000');
         performanceMonitor.registerView('ServerDropdownView', this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/dropdown.html');
 

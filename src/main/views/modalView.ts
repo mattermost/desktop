@@ -36,14 +36,8 @@ export class ModalView<T, T2> {
         this.data = data;
         this.log = new Logger('ModalView', key);
         this.log.info(`preloading with ${preload}`);
-        this.view = new WebContentsView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
+        this.view = new WebContentsView({webPreferences: {preload}});
+        this.view.setBackgroundColor('#00000000');
         this.onReject = onReject;
         this.onResolve = onResolve;
         this.window = currentWindow;

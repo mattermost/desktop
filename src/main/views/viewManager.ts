@@ -363,16 +363,8 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
-            const preload = getLocalPreload('internalAPI.js');
-            const urlView = new WebContentsView({
-                webPreferences: {
-                    preload,
-
-                    // Workaround for this issue: https://github.com/electron/electron/issues/30993
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    transparent: true,
-                }});
+            const urlView = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
+            urlView.setBackgroundColor('#00000000');
             const localURL = `mattermost-desktop://renderer/urlView.html?url=${encodeURIComponent(urlString)}`;
             performanceMonitor.registerView('URLView', urlView.webContents);
             urlView.webContents.loadURL(localURL);

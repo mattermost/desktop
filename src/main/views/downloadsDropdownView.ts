@@ -55,17 +55,8 @@ export class DownloadsDropdownView {
             throw new Error('Cannot initialize, no main window');
         }
         this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
-
-        const preload = getLocalPreload('internalAPI.js');
-        this.view = new WebContentsView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
-
+        this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
+        this.view.setBackgroundColor('#00000000');
         performanceMonitor.registerView('DownloadsDropdownView', this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdown.html');
         MainWindow.get()?.contentView.addChildView(this.view);

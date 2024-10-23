@@ -55,14 +55,10 @@ export class LoadingScreen {
         if (this.view?.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
                 this.view!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+                mainWindow.contentView.addChildView(this.view!);
             });
         } else {
             this.view!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-        }
-
-        if (mainWindow.contentView.children.includes(this.view!)) {
-            mainWindow.contentView.addChildView(this.view!);
-        } else {
             mainWindow.contentView.addChildView(this.view!);
         }
 
@@ -77,19 +73,9 @@ export class LoadingScreen {
     };
 
     private create = () => {
-        const preload = getLocalPreload('internalAPI.js');
-        this.view = new WebContentsView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
-        const localURL = 'mattermost-desktop://renderer/loadingScreen.html';
-
+        this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
         performanceMonitor.registerView('LoadingScreen', this.view.webContents);
-        this.view.webContents.loadURL(localURL);
+        this.view.webContents.loadURL('mattermost-desktop://renderer/loadingScreen.html');
     };
 
     private handleAnimationFinished = () => {
@@ -98,6 +84,8 @@ export class LoadingScreen {
         if (this.view && this.state !== LoadingScreenState.HIDDEN) {
             this.state = LoadingScreenState.HIDDEN;
             MainWindow.get()?.contentView.removeChildView(this.view);
+            this.view.webContents.close();
+            delete this.view;
         }
 
         if (process.env.NODE_ENV === 'test') {
