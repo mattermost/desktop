@@ -313,23 +313,31 @@ class NewServerModal extends React.PureComponent<Props, State> {
     };
 
     save = () => {
-        if (!this.state.validationResult) {
-            return;
-        }
+        if (this.props.editMode && this.props.server?.isPredefined) {
+            this.setState({
+                saveStarted: true,
+            }, () => {
+                this.props.onSave?.(this.props.server!, this.state.permissions);
+            });
+        } else {
+            if (!this.state.validationResult) {
+                return;
+            }
 
-        if (this.isServerURLErrored()) {
-            return;
-        }
+            if (this.isServerURLErrored()) {
+                return;
+            }
 
-        this.setState({
-            saveStarted: true,
-        }, () => {
-            this.props.onSave?.({
-                url: this.state.serverUrl,
-                name: this.state.serverName,
-                id: this.state.serverId,
-            }, this.state.permissions);
-        });
+            this.setState({
+                saveStarted: true,
+            }, () => {
+                this.props.onSave?.({
+                    url: this.state.serverUrl,
+                    name: this.state.serverName,
+                    id: this.state.serverId,
+                }, this.state.permissions);
+            });
+        }
     };
 
     getSaveButtonLabel() {
@@ -413,73 +421,77 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 </Modal.Header>
 
                 <Modal.Body>
-                    <form>
-                        <FormGroup>
-                            <FormLabel>
-                                <FormattedMessage
-                                    id='renderer.components.newServerModal.serverURL'
-                                    defaultMessage='Server URL'
-                                />
-                            </FormLabel>
-                            <FormControl
-                                id='serverUrlInput'
-                                type='text'
-                                value={this.state.serverUrl}
-                                placeholder='https://example.com'
-                                onChange={this.handleServerUrlChange}
-                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                    e.stopPropagation();
-                                }}
-                                ref={(ref: HTMLInputElement) => {
-                                    this.serverUrlInputRef = ref;
-                                    if (this.props.setInputRef) {
-                                        this.props.setInputRef(ref);
-                                    }
-                                }}
-                                isInvalid={this.isServerURLErrored()}
-                                autoFocus={true}
-                            />
-                            <FormControl.Feedback/>
-                            <FormText>
-                                <FormattedMessage
-                                    id='renderer.components.newServerModal.serverURL.description'
-                                    defaultMessage='The URL of your Mattermost server. Must start with http:// or https://.'
-                                />
-                            </FormText>
-                        </FormGroup>
-                        <FormGroup className='NewServerModal-noBottomSpace'>
-                            <FormLabel>
-                                <FormattedMessage
-                                    id='renderer.components.newServerModal.serverDisplayName'
-                                    defaultMessage='Server Display Name'
-                                />
-                            </FormLabel>
-                            <FormControl
-                                id='serverNameInput'
-                                type='text'
-                                value={this.state.serverName}
-                                placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.serverDisplayName', defaultMessage: 'Server Display Name'})}
-                                onChange={this.handleServerNameChange}
-                                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                    e.stopPropagation();
-                                }}
-                                isInvalid={!this.state.serverName.length}
-                            />
-                            <FormControl.Feedback/>
-                            <FormText className='NewServerModal-noBottomSpace'>
-                                <FormattedMessage
-                                    id='renderer.components.newServerModal.serverDisplayName.description'
-                                    defaultMessage='The name of the server displayed on your desktop app tab bar.'
-                                />
-                            </FormText>
-                        </FormGroup>
-                    </form>
-                    <div
-                        className='NewServerModal-validation'
-                    >
-                        {this.getServerNameMessage()}
-                        {this.getServerURLMessage()}
-                    </div>
+                    {!(this.props.editMode && this.props.server?.isPredefined) &&
+                        <>
+                            <form>
+                                <FormGroup>
+                                    <FormLabel>
+                                        <FormattedMessage
+                                            id='renderer.components.newServerModal.serverURL'
+                                            defaultMessage='Server URL'
+                                        />
+                                    </FormLabel>
+                                    <FormControl
+                                        id='serverUrlInput'
+                                        type='text'
+                                        value={this.state.serverUrl}
+                                        placeholder='https://example.com'
+                                        onChange={this.handleServerUrlChange}
+                                        onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                                            e.stopPropagation();
+                                        }}
+                                        ref={(ref: HTMLInputElement) => {
+                                            this.serverUrlInputRef = ref;
+                                            if (this.props.setInputRef) {
+                                                this.props.setInputRef(ref);
+                                            }
+                                        }}
+                                        isInvalid={this.isServerURLErrored()}
+                                        autoFocus={true}
+                                    />
+                                    <FormControl.Feedback/>
+                                    <FormText>
+                                        <FormattedMessage
+                                            id='renderer.components.newServerModal.serverURL.description'
+                                            defaultMessage='The URL of your Mattermost server. Must start with http:// or https://.'
+                                        />
+                                    </FormText>
+                                </FormGroup>
+                                <FormGroup className='NewServerModal-noBottomSpace'>
+                                    <FormLabel>
+                                        <FormattedMessage
+                                            id='renderer.components.newServerModal.serverDisplayName'
+                                            defaultMessage='Server Display Name'
+                                        />
+                                    </FormLabel>
+                                    <FormControl
+                                        id='serverNameInput'
+                                        type='text'
+                                        value={this.state.serverName}
+                                        placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.serverDisplayName', defaultMessage: 'Server Display Name'})}
+                                        onChange={this.handleServerNameChange}
+                                        onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                                            e.stopPropagation();
+                                        }}
+                                        isInvalid={!this.state.serverName.length}
+                                    />
+                                    <FormControl.Feedback/>
+                                    <FormText className='NewServerModal-noBottomSpace'>
+                                        <FormattedMessage
+                                            id='renderer.components.newServerModal.serverDisplayName.description'
+                                            defaultMessage='The name of the server displayed on your desktop app tab bar.'
+                                        />
+                                    </FormText>
+                                </FormGroup>
+                            </form>
+                            <div
+                                className='NewServerModal-validation'
+                            >
+                                {this.getServerNameMessage()}
+                                {this.getServerURLMessage()}
+                            </div>
+                        </>
+                    }
                     {this.props.editMode &&
                         <>
                             <hr/>
