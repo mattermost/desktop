@@ -168,7 +168,7 @@
     "electron-context-menu": "3.6.1",
     "electron-extension-installer": "1.2.0",
     "electron-is-dev": "2.0.0",
-    "electron-log": "5.1.1",
+    "electron-log": "5.2.0",
     "electron-updater": "6.3.0",
     "joi": "17.12.2",
     "macos-notification-state": "3.0.0",
