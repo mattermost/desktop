@@ -8,7 +8,7 @@ import {LOAD_FAILED, TOGGLE_BACK_BUTTON, UPDATE_TARGET_URL} from 'common/communi
 import {MattermostServer} from 'common/servers/MattermostServer';
 import MessagingView from 'common/views/MessagingView';
 
-import {MattermostBrowserView} from './MattermostBrowserView';
+import {MattermostWebContentsView} from './MattermostWebContentsView';
 
 import ContextMenu from '../contextMenu';
 import Utils from '../utils';
@@ -19,7 +19,7 @@ jest.mock('electron', () => ({
         getVersion: () => '5.0.0',
         getPath: jest.fn(() => '/valid/downloads/path'),
     },
-    BrowserView: jest.fn().mockImplementation(() => ({
+    WebContentsView: jest.fn().mockImplementation(() => ({
         webContents: {
             loadURL: jest.fn(),
             on: jest.fn(),
@@ -71,10 +71,10 @@ jest.mock('main/performanceMonitor', () => ({
 const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
 const view = new MessagingView(server, true);
 
-describe('main/views/MattermostBrowserView', () => {
+describe('main/views/MattermostWebContentsView', () => {
     describe('load', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -84,38 +84,38 @@ describe('main/views/MattermostBrowserView', () => {
 
         it('should load provided URL when provided', async () => {
             const promise = Promise.resolve();
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load('http://server-2.com');
             await promise;
-            expect(mattermostView.browserView.webContents.loadURL).toBeCalledWith('http://server-2.com/', expect.any(Object));
+            expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-2.com/', expect.any(Object));
             expect(mattermostView.loadSuccess).toBeCalledWith('http://server-2.com/');
         });
 
         it('should load server URL when not provided', async () => {
             const promise = Promise.resolve();
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load();
             await promise;
-            expect(mattermostView.browserView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
             expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
         });
 
         it('should load server URL when bad url provided', async () => {
             const promise = Promise.resolve();
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load('a-bad<url');
             await promise;
-            expect(mattermostView.browserView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
             expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
         });
 
         it('should call retry when failing to load', async () => {
             const error = new Error('test');
             const promise = Promise.reject(error);
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load('a-bad<url');
             await expect(promise).rejects.toThrow(error);
-            expect(mattermostView.browserView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
             expect(mattermostView.loadRetry).toBeCalledWith('http://server-1.com/', error);
         });
 
@@ -123,23 +123,23 @@ describe('main/views/MattermostBrowserView', () => {
             const error = new Error('test');
             error.code = 'ERR_CERT_ERROR';
             const promise = Promise.reject(error);
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.load('a-bad<url');
             await expect(promise).rejects.toThrow(error);
-            expect(mattermostView.browserView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
+            expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
             expect(mattermostView.loadRetry).not.toBeCalled();
         });
     });
 
     describe('retry', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
         const retryInBackgroundFn = jest.fn();
 
         beforeEach(() => {
             jest.useFakeTimers();
             MainWindow.get.mockReturnValue(window);
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => Promise.resolve());
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => Promise.resolve());
             mattermostView.loadSuccess = jest.fn();
             mattermostView.loadRetry = jest.fn();
             mattermostView.emit = jest.fn();
@@ -153,16 +153,16 @@ describe('main/views/MattermostBrowserView', () => {
         });
 
         it('should do nothing when webcontents are destroyed', () => {
-            const webContents = mattermostView.browserView.webContents;
-            mattermostView.browserView.webContents = null;
+            const webContents = mattermostView.webContentsView.webContents;
+            mattermostView.webContentsView.webContents = null;
             mattermostView.retry('http://server-1.com')();
             expect(mattermostView.loadSuccess).not.toBeCalled();
-            mattermostView.browserView.webContents = webContents;
+            mattermostView.webContentsView.webContents = webContents;
         });
 
         it('should call loadSuccess on successful load', async () => {
             const promise = Promise.resolve();
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.retry('http://server-1.com')();
             await promise;
             expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com');
@@ -172,10 +172,10 @@ describe('main/views/MattermostBrowserView', () => {
             mattermostView.maxRetries = 10;
             const error = new Error('test');
             const promise = Promise.reject(error);
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.retry('http://server-1.com')();
             await expect(promise).rejects.toThrow(error);
-            expect(mattermostView.browserView.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
+            expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
             expect(mattermostView.loadRetry).toBeCalledWith('http://server-1.com', error);
         });
 
@@ -183,10 +183,10 @@ describe('main/views/MattermostBrowserView', () => {
             mattermostView.maxRetries = 0;
             const error = new Error('test');
             const promise = Promise.reject(error);
-            mattermostView.browserView.webContents.loadURL.mockImplementation(() => promise);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.retry('http://server-1.com')();
             await expect(promise).rejects.toThrow(error);
-            expect(mattermostView.browserView.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
+            expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
             expect(mattermostView.loadRetry).not.toBeCalled();
             expect(MainWindow.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.view.id, expect.any(String), expect.any(String));
             expect(mattermostView.status).toBe(-1);
@@ -197,7 +197,7 @@ describe('main/views/MattermostBrowserView', () => {
 
     describe('goToOffset', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
         mattermostView.reload = jest.fn();
 
         afterEach(() => {
@@ -206,18 +206,18 @@ describe('main/views/MattermostBrowserView', () => {
         });
 
         it('should only go to offset if it can', () => {
-            mattermostView.browserView.webContents.canGoToOffset.mockReturnValue(false);
+            mattermostView.webContentsView.webContents.canGoToOffset.mockReturnValue(false);
             mattermostView.goToOffset(1);
-            expect(mattermostView.browserView.webContents.goToOffset).not.toBeCalled();
+            expect(mattermostView.webContentsView.webContents.goToOffset).not.toBeCalled();
 
-            mattermostView.browserView.webContents.canGoToOffset.mockReturnValue(true);
+            mattermostView.webContentsView.webContents.canGoToOffset.mockReturnValue(true);
             mattermostView.goToOffset(1);
-            expect(mattermostView.browserView.webContents.goToOffset).toBeCalled();
+            expect(mattermostView.webContentsView.webContents.goToOffset).toBeCalled();
         });
 
         it('should call reload if an error occurs', () => {
-            mattermostView.browserView.webContents.canGoToOffset.mockReturnValue(true);
-            mattermostView.browserView.webContents.goToOffset.mockImplementation(() => {
+            mattermostView.webContentsView.webContents.canGoToOffset.mockReturnValue(true);
+            mattermostView.webContentsView.webContents.goToOffset.mockImplementation(() => {
                 throw new Error('hi');
             });
             mattermostView.goToOffset(1);
@@ -227,8 +227,8 @@ describe('main/views/MattermostBrowserView', () => {
 
     describe('onLogin', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
-        mattermostView.browserView.webContents.getURL = jest.fn();
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        mattermostView.webContentsView.webContents.getURL = jest.fn();
         mattermostView.reload = jest.fn();
 
         afterEach(() => {
@@ -237,19 +237,19 @@ describe('main/views/MattermostBrowserView', () => {
         });
 
         it('should reload view when URL is not on subpath of original server URL', () => {
-            mattermostView.browserView.webContents.getURL.mockReturnValue('http://server-2.com/subpath');
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-2.com/subpath');
             mattermostView.onLogin(true);
             expect(mattermostView.reload).toHaveBeenCalled();
         });
 
         it('should not reload if URLs are matching', () => {
-            mattermostView.browserView.webContents.getURL.mockReturnValue('http://server-1.com');
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com');
             mattermostView.onLogin(true);
             expect(mattermostView.reload).not.toHaveBeenCalled();
         });
 
         it('should not reload if URL is subpath of server URL', () => {
-            mattermostView.browserView.webContents.getURL.mockReturnValue('http://server-1.com/subpath');
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com/subpath');
             mattermostView.onLogin(true);
             expect(mattermostView.reload).not.toHaveBeenCalled();
         });
@@ -257,7 +257,7 @@ describe('main/views/MattermostBrowserView', () => {
 
     describe('loadSuccess', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -284,8 +284,14 @@ describe('main/views/MattermostBrowserView', () => {
     });
 
     describe('show', () => {
-        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn(), on: jest.fn(), setTopBrowserView: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const window = {
+            contentView: {
+                addChildView: jest.fn(),
+                removeChildView: jest.fn(),
+            },
+            on: jest.fn(),
+        };
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -303,7 +309,7 @@ describe('main/views/MattermostBrowserView', () => {
         it('should add browser view to window and set bounds when request is true and view not currently visible', () => {
             mattermostView.isVisible = false;
             mattermostView.show();
-            expect(window.addBrowserView).toBeCalledWith(mattermostView.browserView);
+            expect(window.contentView.addChildView).toBeCalledWith(mattermostView.webContentsView);
             expect(mattermostView.setBounds).toBeCalled();
             expect(mattermostView.isVisible).toBe(true);
         });
@@ -311,7 +317,7 @@ describe('main/views/MattermostBrowserView', () => {
         it('should do nothing when not toggling', () => {
             mattermostView.isVisible = true;
             mattermostView.show();
-            expect(window.addBrowserView).not.toBeCalled();
+            expect(window.contentView.addChildView).not.toBeCalled();
         });
 
         it('should focus view if view is ready', () => {
@@ -323,8 +329,14 @@ describe('main/views/MattermostBrowserView', () => {
     });
 
     describe('hide', () => {
-        const window = {addBrowserView: jest.fn(), removeBrowserView: jest.fn(), on: jest.fn(), setTopBrowserView: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const window = {
+            contentView: {
+                addChildView: jest.fn(),
+                removeChildView: jest.fn(),
+            },
+            on: jest.fn(),
+        };
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -333,20 +345,20 @@ describe('main/views/MattermostBrowserView', () => {
         it('should remove browser view', () => {
             mattermostView.isVisible = true;
             mattermostView.hide();
-            expect(window.removeBrowserView).toBeCalledWith(mattermostView.browserView);
+            expect(window.contentView.removeChildView).toBeCalledWith(mattermostView.webContentsView);
             expect(mattermostView.isVisible).toBe(false);
         });
 
         it('should do nothing when not toggling', () => {
             mattermostView.isVisible = false;
             mattermostView.hide();
-            expect(window.removeBrowserView).not.toBeCalled();
+            expect(window.contentView.removeChildView).not.toBeCalled();
         });
     });
 
     describe('updateHistoryButton', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -355,13 +367,13 @@ describe('main/views/MattermostBrowserView', () => {
         it('should erase history and set isAtRoot when navigating to root URL', () => {
             mattermostView.atRoot = false;
             mattermostView.updateHistoryButton();
-            expect(mattermostView.browserView.webContents.clearHistory).toHaveBeenCalled();
+            expect(mattermostView.webContentsView.webContents.clearHistory).toHaveBeenCalled();
             expect(mattermostView.isAtRoot).toBe(true);
         });
     });
 
     describe('destroy', () => {
-        const window = {removeBrowserView: jest.fn(), on: jest.fn()};
+        const window = {contentView: {removeChildView: jest.fn()}, on: jest.fn()};
         const contextMenu = {
             dispose: jest.fn(),
         };
@@ -372,22 +384,22 @@ describe('main/views/MattermostBrowserView', () => {
         });
 
         it('should remove browser view from window', () => {
-            const mattermostView = new MattermostBrowserView(view, {}, {});
-            mattermostView.browserView.webContents.close = jest.fn();
+            const mattermostView = new MattermostWebContentsView(view, {}, {});
+            mattermostView.webContentsView.webContents.close = jest.fn();
             mattermostView.destroy();
-            expect(window.removeBrowserView).toBeCalledWith(mattermostView.browserView);
+            expect(window.contentView.removeChildView).toBeCalledWith(mattermostView.webContentsView);
         });
 
         it('should clear mentions', () => {
-            const mattermostView = new MattermostBrowserView(view, {}, {});
-            mattermostView.browserView.webContents.close = jest.fn();
+            const mattermostView = new MattermostWebContentsView(view, {}, {});
+            mattermostView.webContentsView.webContents.close = jest.fn();
             mattermostView.destroy();
             expect(AppState.clear).toBeCalledWith(mattermostView.view.id);
         });
 
         it('should clear outstanding timeouts', () => {
-            const mattermostView = new MattermostBrowserView(view, {}, {});
-            mattermostView.browserView.webContents.close = jest.fn();
+            const mattermostView = new MattermostWebContentsView(view, {}, {});
+            mattermostView.webContentsView.webContents.close = jest.fn();
             const spy = jest.spyOn(global, 'clearTimeout');
             mattermostView.retryLoad = 999;
             mattermostView.removeLoading = 1000;
@@ -398,7 +410,7 @@ describe('main/views/MattermostBrowserView', () => {
 
     describe('handleInputEvents', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         it('should open three dot menu on pressing Alt', () => {
             MainWindow.get.mockReturnValue(window);
@@ -423,7 +435,7 @@ describe('main/views/MattermostBrowserView', () => {
 
     describe('handleDidNavigate', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -445,7 +457,7 @@ describe('main/views/MattermostBrowserView', () => {
 
     describe('handleUpdateTarget', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -476,7 +488,7 @@ describe('main/views/MattermostBrowserView', () => {
     });
 
     describe('updateMentionsFromTitle', () => {
-        const mattermostView = new MattermostBrowserView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
 
         it('should parse mentions from title', () => {
             mattermostView.updateMentionsFromTitle('(7) Mattermost');

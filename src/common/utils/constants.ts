@@ -37,7 +37,7 @@ export const DOWNLOADS_DROPDOWN_MENU_HEIGHT = 160;
 export const DOWNLOADS_DROPDOWN_MENU_WIDTH = 154;
 export const DOWNLOADS_DROPDOWN_MENU_PADDING = 12;
 
-// In  order to display the box-shadow & radius on the left + right, use this WIDTH in the browserView for downloadsDropdown
+// In  order to display the box-shadow & radius on the left + right, use this WIDTH in the webContentsView for downloadsDropdown
 export const DOWNLOADS_DROPDOWN_FULL_WIDTH = DOWNLOADS_DROPDOWN_PADDING + DOWNLOADS_DROPDOWN_WIDTH + TAB_BAR_PADDING;
 export const DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH = (DOWNLOADS_DROPDOWN_MENU_PADDING * 2) + DOWNLOADS_DROPDOWN_MENU_WIDTH;
 export const DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT = DOWNLOADS_DROPDOWN_MENU_HEIGHT + TAB_BAR_PADDING; // only bottom padding included for better positioning

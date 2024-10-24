@@ -10,7 +10,7 @@ jest.mock('electron-context-menu', () => {
 
 describe('main/contextMenu', () => {
     describe('shouldShowMenu', () => {
-        const contextMenu = new ContextMenu();
+        const contextMenu = new ContextMenu({}, {webContents: {}});
 
         it('should not show menu on internal link', () => {
             expect(contextMenu.menuOptions.shouldShowMenu(null, {
@@ -73,7 +73,7 @@ describe('main/contextMenu', () => {
 
     describe('reload', () => {
         it('should call dispose on reload', () => {
-            const contextMenu = new ContextMenu();
+            const contextMenu = new ContextMenu({}, {webContents: {}});
             const fn = contextMenu.menuDispose;
             contextMenu.reload();
             expect(fn).toHaveBeenCalled();

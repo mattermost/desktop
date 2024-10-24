@@ -15,7 +15,7 @@ jest.mock('main/utils', () => ({
 }));
 
 jest.mock('electron', () => ({
-    BrowserView: jest.fn().mockImplementation(() => ({
+    WebContentsView: jest.fn().mockImplementation(() => ({
         webContents: {
             loadURL: jest.fn(),
             focus: jest.fn(),

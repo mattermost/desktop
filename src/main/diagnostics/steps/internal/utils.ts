@@ -109,7 +109,7 @@ export function browserWindowVisibilityStatus(name: string, bWindow?: BrowserWin
     const destroyed = bWindow.isDestroyed();
     const visible = bWindow.isVisible();
     const enabled = bWindow.isEnabled();
-    const browserViewsBounds = bWindow.getBrowserViews()?.map((view) => view.getBounds());
+    const webContentsViewsBounds = bWindow.contentView.children.map((view) => view.getBounds());
 
     status.push({
         name: 'windowExists',
@@ -141,9 +141,9 @@ export function browserWindowVisibilityStatus(name: string, bWindow?: BrowserWin
         ok: enabled,
     });
     status.push({
-        name: 'browserViewsBounds',
-        ok: browserViewsBounds.every((bounds) => boundsOk(bounds)),
-        data: browserViewsBounds,
+        name: 'webContentsViewsBounds',
+        ok: webContentsViewsBounds.every((bounds) => boundsOk(bounds)),
+        data: webContentsViewsBounds,
     });
 
     return status;

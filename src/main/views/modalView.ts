@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {BrowserWindow} from 'electron';
-import {BrowserView} from 'electron';
+import {WebContentsView} from 'electron';
 
 import {Logger} from 'common/log';
 import performanceMonitor from 'main/performanceMonitor';
@@ -20,7 +20,7 @@ export class ModalView<T, T2> {
     key: string;
     html: string;
     data: T;
-    view: BrowserView;
+    view: WebContentsView;
     onReject: (value: T2) => void;
     onResolve: (value: T2) => void;
     window: BrowserWindow;
@@ -36,14 +36,8 @@ export class ModalView<T, T2> {
         this.data = data;
         this.log = new Logger('ModalView', key);
         this.log.info(`preloading with ${preload}`);
-        this.view = new BrowserView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
+        this.view = new WebContentsView({webPreferences: {preload}});
+        this.view.setBackgroundColor('#00000000');
         this.onReject = onReject;
         this.onResolve = onResolve;
         this.window = currentWindow;
@@ -64,11 +58,11 @@ export class ModalView<T, T2> {
     show = (win?: BrowserWindow, withDevTools?: boolean) => {
         if (this.windowAttached) {
         // we'll reatach
-            this.windowAttached.removeBrowserView(this.view);
+            this.windowAttached.contentView.removeChildView(this.view);
         }
         this.windowAttached = win || this.window;
 
-        this.windowAttached.addBrowserView(this.view);
+        this.windowAttached.contentView.addChildView(this.view);
 
         // Linux sometimes doesn't have the bound initialized correctly initially, so we wait to set them
         const setBoundsFunction = () => {
@@ -100,8 +94,8 @@ export class ModalView<T, T2> {
             if (this.view.webContents.isDevToolsOpened()) {
                 this.view.webContents.closeDevTools();
             }
-            this.windowAttached.removeBrowserView(this.view);
             performanceMonitor.unregisterView(this.view.webContents.id);
+            this.windowAttached.contentView.removeChildView(this.view);
             this.view.webContents.close();
 
             delete this.windowAttached;
