@@ -3,7 +3,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import type {MenuItemConstructorOptions, MenuItem, BrowserWindow} from 'electron';
+import type {MenuItemConstructorOptions, MenuItem} from 'electron';
 import {app, ipcMain, Menu, session, shell, clipboard} from 'electron';
 import log from 'electron-log';
 
@@ -149,14 +149,16 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 }
                 return 'Ctrl+Shift+I';
             })(),
-            click(item: Electron.MenuItem, focusedWindow?: BrowserWindow) {
-                if (focusedWindow) {
-                    // toggledevtools opens it in the last known position, so sometimes it goes below the browserview
-                    if (focusedWindow.webContents.isDevToolsOpened()) {
-                        focusedWindow.webContents.closeDevTools();
-                    } else {
-                        focusedWindow.webContents.openDevTools({mode: 'detach'});
-                    }
+            click() {
+                const mainWindow = MainWindow.get();
+                if (!mainWindow) {
+                    return;
+                }
+
+                if (mainWindow.webContents.isDevToolsOpened()) {
+                    mainWindow.webContents.closeDevTools();
+                } else {
+                    mainWindow.webContents.openDevTools({mode: 'detach'});
                 }
             },
         },
