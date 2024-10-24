@@ -11,8 +11,7 @@ const exec = promisify(execOriginal);
 import type {BrowserWindow} from 'electron';
 import {app} from 'electron';
 
-import {BACK_BAR_HEIGHT, customLoginRegexPaths, TAB_BAR_HEIGHT} from 'common/utils/constants';
-import {isAdminUrl, isPluginUrl, isTeamUrl, isUrlType, parseURL} from 'common/utils/url';
+import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 
 import type {Args} from 'types/args';
 
@@ -48,40 +47,18 @@ export function shouldBeHiddenOnStartup(parsedArgv: Args) {
     return false;
 }
 
-export function getWindowBoundaries(win: BrowserWindow, hasBackBar = false) {
+export function getWindowBoundaries(win: BrowserWindow) {
     const {width, height} = win.getContentBounds();
-    return getAdjustedWindowBoundaries(width, height, hasBackBar);
+    return getAdjustedWindowBoundaries(width, height);
 }
 
-export function getAdjustedWindowBoundaries(width: number, height: number, hasBackBar = false) {
+export function getAdjustedWindowBoundaries(width: number, height: number) {
     return {
         x: 0,
-        y: TAB_BAR_HEIGHT + (hasBackBar ? BACK_BAR_HEIGHT : 0),
+        y: TAB_BAR_HEIGHT,
         width,
-        height: height - TAB_BAR_HEIGHT - (hasBackBar ? BACK_BAR_HEIGHT : 0),
+        height: height - TAB_BAR_HEIGHT,
     };
-}
-
-export function shouldHaveBackBar(serverUrl: URL, inputURL: URL) {
-    if (isUrlType('login', serverUrl, inputURL)) {
-        const serverURL = parseURL(serverUrl);
-        const subpath = serverURL ? serverURL.pathname : '';
-        const parsedURL = parseURL(inputURL);
-        if (!parsedURL) {
-            return false;
-        }
-        const urlPath = parsedURL.pathname;
-        const replacement = subpath.endsWith('/') ? '/' : '';
-        const replacedPath = urlPath.replace(subpath, replacement);
-        for (const regexPath of customLoginRegexPaths) {
-            if (replacedPath.match(regexPath)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-    return !isTeamUrl(serverUrl, inputURL) && !isAdminUrl(serverUrl, inputURL) && !isPluginUrl(serverUrl, inputURL);
 }
 
 export function getLocalPreload(file: string) {

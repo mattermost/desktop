@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 'use strict';
-import {BACK_BAR_HEIGHT, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 
 import * as Utils from './utils';
 
@@ -67,27 +67,6 @@ describe('main/utils', () => {
                 width: 500,
                 height: 400 - TAB_BAR_HEIGHT,
             });
-        });
-
-        it('should include back bar height when specified', () => {
-            expect(Utils.getWindowBoundaries({
-                getContentBounds: () => ({width: 500, height: 400}),
-            }, true)).toStrictEqual({
-                x: 0,
-                y: TAB_BAR_HEIGHT + BACK_BAR_HEIGHT,
-                width: 500,
-                height: 400 - TAB_BAR_HEIGHT - BACK_BAR_HEIGHT,
-            });
-        });
-    });
-
-    describe('shouldHaveBackBar', () => {
-        it('should have back bar for custom logins', () => {
-            expect(Utils.shouldHaveBackBar(new URL('https://server-1.com'), new URL('https://server-1.com/login/sso/saml'))).toBe(true);
-        });
-
-        it('should not have back bar for regular login', () => {
-            expect(Utils.shouldHaveBackBar(new URL('https://server-1.com'), new URL('https://server-1.com/login'))).toBe(false);
         });
     });
 

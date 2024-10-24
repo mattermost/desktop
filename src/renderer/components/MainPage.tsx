@@ -15,7 +15,6 @@ import type {DownloadedItems} from 'types/downloads';
 import DeveloperModeIndicator from './DeveloperModeIndicator';
 import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
 import ErrorView from './ErrorView';
-import ExtraBar from './ExtraBar';
 import ServerDropdownButton from './ServerDropdownButton';
 import TabBar from './TabBar';
 
@@ -50,7 +49,6 @@ type State = {
     tabViewStatus: Map<string, TabViewStatus>;
     modalOpen?: boolean;
     fullScreen?: boolean;
-    showExtraBar?: boolean;
     isMenuOpen: boolean;
     isDownloadsDropdownOpen: boolean;
     showDownloadsBadge: boolean;
@@ -208,10 +206,6 @@ class MainPage extends React.PureComponent<Props, State> {
 
         window.desktop.onModalClose(() => {
             this.setState({modalOpen: false});
-        });
-
-        window.desktop.onToggleBackButton((showExtraBar) => {
-            this.setState({showExtraBar});
         });
 
         window.desktop.onUpdateMentions((view, mentions, unreads, isExpired) => {
@@ -532,13 +526,6 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const viewsRow = (
             <Fragment>
-                <ExtraBar
-                    darkMode={this.props.darkMode}
-                    show={this.state.showExtraBar}
-                    goBack={() => {
-                        window.desktop.goBack();
-                    }}
-                />
                 <Row>
                     {views()}
                 </Row>

@@ -212,22 +212,6 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                     DeveloperMode.toggle('disableContextMenu');
                 },
             },
-            {
-                label: localizeMessage('main.menus.app.view.developerModeForceLegacyAPI', 'Force Legacy API'),
-                type: 'checkbox' as const,
-                checked: DeveloperMode.get('forceLegacyAPI'),
-                click() {
-                    DeveloperMode.toggle('forceLegacyAPI');
-                },
-            },
-            {
-                label: localizeMessage('main.menus.app.view.developerModeForceNewAPI', 'Force New API'),
-                type: 'checkbox' as const,
-                checked: DeveloperMode.get('forceNewAPI'),
-                click() {
-                    DeveloperMode.toggle('forceNewAPI');
-                },
-            },
         ]);
     }
 

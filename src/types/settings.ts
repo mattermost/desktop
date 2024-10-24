@@ -14,6 +14,4 @@ export type DeveloperSettings = {
     disableNotificationStorage?: boolean;
     disableUserActivityMonitor?: boolean;
     disableContextMenu?: boolean;
-    forceLegacyAPI?: boolean;
-    forceNewAPI?: boolean;
 };

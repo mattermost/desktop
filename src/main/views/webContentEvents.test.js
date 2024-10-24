@@ -95,24 +95,8 @@ describe('main/views/webContentsEvents', () => {
             expect(event.preventDefault).not.toBeCalled();
         });
 
-        it('should allow navigation when isCustomLoginURL', () => {
-            willNavigate(event, 'http://server-1.com/oauth/authorize');
-            expect(event.preventDefault).not.toBeCalled();
-        });
-
-        it('should not allow navigation when isCustomLoginURL is external', () => {
-            willNavigate(event, 'http://loginurl.com/oauth/authorize');
-            expect(event.preventDefault).toBeCalled();
-        });
-
         it('should allow navigation when protocol is mailto', () => {
             willNavigate(event, 'mailto:test@mattermost.com');
-            expect(event.preventDefault).not.toBeCalled();
-        });
-
-        it('should allow navigation when a custom login is in progress', () => {
-            webContentsEventManager.customLogins[1] = {inProgress: true};
-            willNavigate(event, 'http://anyoldurl.com');
             expect(event.preventDefault).not.toBeCalled();
         });
 
@@ -124,32 +108,6 @@ describe('main/views/webContentsEvents', () => {
         it('should not allow navigation under any other circumstances', () => {
             willNavigate(event, 'http://someotherurl.com');
             expect(event.preventDefault).toBeCalled();
-        });
-    });
-
-    describe('didStartNavigation', () => {
-        const webContentsEventManager = new WebContentsEventManager();
-        const didStartNavigation = webContentsEventManager.generateDidStartNavigation(1);
-
-        beforeEach(() => {
-            webContentsEventManager.getServerURLFromWebContentsId = jest.fn().mockImplementation(() => new URL('http://server-1.com'));
-        });
-
-        afterEach(() => {
-            jest.clearAllMocks();
-            webContentsEventManager.customLogins = {};
-        });
-
-        it('should add custom login entry on custom login URL', () => {
-            webContentsEventManager.customLogins[1] = {inProgress: false};
-            didStartNavigation(event, 'http://server-1.com/oauth/authorize');
-            expect(webContentsEventManager.customLogins[1]).toStrictEqual({inProgress: true});
-        });
-
-        it('should remove custom login entry once navigating back to internal URL', () => {
-            webContentsEventManager.customLogins[1] = {inProgress: true};
-            didStartNavigation(event, 'http://server-1.com/subpath');
-            expect(webContentsEventManager.customLogins[1]).toStrictEqual({inProgress: false});
         });
     });
 
