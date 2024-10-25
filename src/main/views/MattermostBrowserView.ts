@@ -11,8 +11,6 @@ import {
     LOAD_SUCCESS,
     LOAD_FAILED,
     UPDATE_TARGET_URL,
-    IS_UNREAD,
-    TOGGLE_BACK_BUTTON,
     LOADSCREEN_END,
     SERVERS_URL_MODIFIED,
     BROWSER_HISTORY_STATUS_UPDATED,
@@ -32,7 +30,7 @@ import MainWindow from 'main/windows/mainWindow';
 import WebContentsEventManager from './webContentEvents';
 
 import ContextMenu from '../contextMenu';
-import {getWindowBoundaries, getLocalPreload, composeUserAgent, shouldHaveBackBar} from '../utils';
+import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../utils';
 
 enum Status {
     LOADING,
@@ -40,9 +38,6 @@ enum Status {
     WAITING_MM,
     ERROR = -1,
 }
-
-const MENTIONS_GROUP = 2;
-const titleParser = /(\((\d+)\) )?(\* )?/g;
 
 export class MattermostBrowserView extends EventEmitter {
     view: MattermostView;
@@ -84,7 +79,6 @@ export class MattermostBrowserView extends EventEmitter {
         this.log.verbose('View created');
 
         this.browserView.webContents.on('update-target-url', this.handleUpdateTarget);
-        this.browserView.webContents.on('did-navigate', this.handleDidNavigate);
         if (process.platform !== 'darwin') {
             this.browserView.webContents.on('before-input-event', this.handleInputEvents);
         }
@@ -94,10 +88,6 @@ export class MattermostBrowserView extends EventEmitter {
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
-
-        // Legacy handlers using the title/favicon
-        this.browserView.webContents.on('page-title-updated', this.handleTitleUpdate);
-        this.browserView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
 
         WebContentsEventManager.addWebContentsEventListeners(this.browserView.webContents);
 
@@ -233,7 +223,7 @@ export class MattermostBrowserView extends EventEmitter {
         this.isVisible = true;
         mainWindow.addBrowserView(this.browserView);
         mainWindow.setTopBrowserView(this.browserView);
-        this.setBounds(getWindowBoundaries(mainWindow, shouldHaveBackBar(this.view.url || '', this.currentURL)));
+        this.setBounds(getWindowBoundaries(mainWindow));
         if (this.status === Status.READY) {
             this.focus();
         }
@@ -278,15 +268,6 @@ export class MattermostBrowserView extends EventEmitter {
         if (this.removeLoading) {
             clearTimeout(this.removeLoading);
         }
-    };
-
-    /**
-     * Code to turn off the old method of getting unreads
-     * Newer web apps will send the mentions/unreads directly
-     */
-    offLegacyUnreads = () => {
-        this.browserView.webContents.off('page-title-updated', this.handleTitleUpdate);
-        this.browserView.webContents.off('page-favicon-updated', this.handleFaviconUpdate);
     };
 
     /**
@@ -394,41 +375,6 @@ export class MattermostBrowserView extends EventEmitter {
     };
 
     /**
-     * Unreads/mentions handlers
-     */
-
-    private updateMentionsFromTitle = (title: string) => {
-        const resultsIterator = title.matchAll(titleParser);
-        const results = resultsIterator.next(); // we are only interested in the first set
-        const mentions = (results && results.value && parseInt(results.value[MENTIONS_GROUP], 10)) || 0;
-
-        AppState.updateMentions(this.id, mentions);
-    };
-
-    // if favicon is null, it will affect appState, but won't be memoized
-    private findUnreadState = (favicon: string | null) => {
-        try {
-            this.browserView.webContents.send(IS_UNREAD, favicon, this.id);
-        } catch (err: any) {
-            this.log.error('There was an error trying to request the unread state', err);
-        }
-    };
-
-    private handleTitleUpdate = (e: Event, title: string) => {
-        this.log.debug('handleTitleUpdate', title);
-
-        this.updateMentionsFromTitle(title);
-    };
-
-    private handleFaviconUpdate = (e: Event, favicons: string[]) => {
-        this.log.silly('handleFaviconUpdate', favicons);
-
-        // if unread state is stored for that favicon, retrieve value.
-        // if not, get related info from preload and store it for future changes
-        this.findUnreadState(favicons[0]);
-    };
-
-    /**
      * Loading/retry logic
      */
 
@@ -486,16 +432,12 @@ export class MattermostBrowserView extends EventEmitter {
             this.log.verbose(`finished loading ${loadURL}`);
             MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
             this.maxRetries = MAX_SERVER_RETRIES;
-            if (this.status === Status.LOADING) {
-                this.updateMentionsFromTitle(this.browserView.webContents.getTitle());
-                this.findUnreadState(null);
-            }
             this.status = Status.WAITING_MM;
             this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
             this.emit(LOAD_SUCCESS, this.id, loadURL);
             const mainWindow = MainWindow.get();
             if (mainWindow && this.currentURL) {
-                this.setBounds(getWindowBoundaries(mainWindow, shouldHaveBackBar(this.view.url || '', this.currentURL)));
+                this.setBounds(getWindowBoundaries(mainWindow));
             }
         };
     };
@@ -503,29 +445,6 @@ export class MattermostBrowserView extends EventEmitter {
     /**
      * WebContents event handlers
      */
-
-    private handleDidNavigate = (event: Event, url: string) => {
-        this.log.debug('handleDidNavigate', url);
-
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            return;
-        }
-        const parsedURL = parseURL(url);
-        if (!parsedURL) {
-            return;
-        }
-
-        if (shouldHaveBackBar(this.view.url || '', parsedURL)) {
-            this.setBounds(getWindowBoundaries(mainWindow, true));
-            MainWindow.sendToRenderer(TOGGLE_BACK_BUTTON, true);
-            this.log.debug('show back button');
-        } else {
-            this.setBounds(getWindowBoundaries(mainWindow));
-            MainWindow.sendToRenderer(TOGGLE_BACK_BUTTON, false);
-            this.log.debug('hide back button');
-        }
-    };
 
     private handleUpdateTarget = (e: Event, url: string) => {
         this.log.silly('handleUpdateTarget', e, url);

@@ -18,10 +18,7 @@ import {
     UPDATE_URL_VIEW_WIDTH,
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
-    APP_LOGGED_OUT,
-    APP_LOGGED_IN,
     RELOAD_CURRENT_VIEW,
-    UNREAD_RESULT,
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
     SESSION_EXPIRED,
@@ -31,7 +28,6 @@ import {
     SWITCH_TAB,
     GET_IS_DEV_MODE,
     REQUEST_BROWSER_HISTORY_STATUS,
-    LEGACY_OFF,
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
     DEVELOPER_MODE_UPDATED,
@@ -58,7 +54,7 @@ import LoadingScreen from './loadingScreen';
 import {MattermostBrowserView} from './MattermostBrowserView';
 import modalManager from './modalManager';
 
-import {getLocalPreload, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {getLocalPreload, getAdjustedWindowBoundaries} from '../utils';
 
 const log = new Logger('ViewManager');
 const URL_VIEW_DURATION = 10 * SECOND;
@@ -84,14 +80,10 @@ export class ViewManager {
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
-        ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
-        ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.on(TAB_LOGIN_CHANGED, this.handleTabLoginChanged);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
-        ipcMain.on(UNREAD_RESULT, this.handleUnreadChanged);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
-        ipcMain.on(LEGACY_OFF, this.handleLegacyOff);
 
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 
@@ -108,7 +100,7 @@ export class ViewManager {
     private handleDeveloperModeUpdated = (json: DeveloperSettings) => {
         log.debug('handleDeveloperModeUpdated', json);
 
-        if (['browserOnly', 'disableContextMenu', 'forceLegacyAPI', 'forceNewAPI'].some((key) => Object.hasOwn(json, key))) {
+        if (['browserOnly', 'disableContextMenu'].some((key) => Object.hasOwn(json, key))) {
             this.views.forEach((view) => view.destroy());
             this.views = new Map();
             this.closedViews = new Map();
@@ -504,27 +496,6 @@ export class ViewManager {
         this.getCurrentView()?.goToOffset(offset);
     };
 
-    private handleAppLoggedIn = (event: IpcMainEvent) => {
-        log.debug('handleAppLoggedIn', event.sender.id);
-        const view = this.getViewByWebContentsId(event.sender.id);
-        if (!view) {
-            return;
-        }
-        view.onLogin(true);
-        flushCookiesStore();
-    };
-
-    private handleAppLoggedOut = (event: IpcMainEvent) => {
-        log.debug('handleAppLoggedOut', event.sender.id);
-        const view = this.getViewByWebContentsId(event.sender.id);
-        if (!view) {
-            return;
-        }
-        view.onLogin(false);
-        AppState.clear(view.id);
-        flushCookiesStore();
-    };
-
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
         log.debug('handleTabLoggedIn', event.sender.id);
         const view = this.getViewByWebContentsId(event.sender.id);
@@ -605,28 +576,6 @@ export class ViewManager {
         this.showById(view?.id);
     };
 
-    private handleLegacyOff = (e: IpcMainEvent) => {
-        log.silly('handleLegacyOff', {webContentsId: e.sender.id});
-
-        const view = this.getViewByWebContentsId(e.sender.id);
-        if (!view) {
-            return;
-        }
-        view.offLegacyUnreads();
-    };
-
-    // if favicon is null, it means it is the initial load,
-    // so don't memoize as we don't have the favicons and there is no rush to find out.
-    private handleUnreadChanged = (e: IpcMainEvent, result: boolean) => {
-        log.silly('handleUnreadChanged', {webContentsId: e.sender.id, result});
-
-        const view = this.getViewByWebContentsId(e.sender.id);
-        if (!view) {
-            return;
-        }
-        AppState.updateUnreads(view.id, result);
-    };
-
     private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {
         log.silly('handleUnreadsAndMentionsChanged', {webContentsId: e.sender.id, isUnread, mentionCount});
 
@@ -653,7 +602,7 @@ export class ViewManager {
 
         const currentView = this.getCurrentView();
         if (currentView && currentView.currentURL) {
-            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height, shouldHaveBackBar(currentView.view.url, currentView.currentURL));
+            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height);
             currentView.setBounds(adjustedBounds);
         }
     };
