@@ -15,7 +15,6 @@ export const MAX_LOADING_SCREEN_SECONDS = 4 * SECOND;
 
 export const TAB_BAR_HEIGHT = 40;
 export const TAB_BAR_PADDING = 4;
-export const BACK_BAR_HEIGHT = 36;
 export const THREE_DOT_MENU_WIDTH = 40;
 export const THREE_DOT_MENU_WIDTH_MAC = 80;
 export const MENU_SHADOW_WIDTH = 24;
@@ -54,20 +53,6 @@ export const URLValidationStatus = {
     URLNotMatched: 'URL_NOT_MATCHED',
     URLUpdated: 'URL_UPDATED',
 };
-
-// supported custom login paths (oath, saml)
-export const customLoginRegexPaths = [
-    /^\/oauth\/authorize$/i,
-    /^\/oauth\/deauthorize$/i,
-    /^\/oauth\/access_token$/i,
-    /^\/oauth\/[A-Za-z0-9]+\/complete$/i,
-    /^\/oauth\/[A-Za-z0-9]+\/login$/i,
-    /^\/oauth\/[A-Za-z0-9]+\/signup$/i,
-    /^\/api\/v3\/oauth\/[A-Za-z0-9]+\/complete$/i,
-    /^\/signup\/[A-Za-z0-9]+\/complete$/i,
-    /^\/login\/[A-Za-z0-9]+\/complete$/i,
-    /^\/login\/sso\/saml$/i,
-];
 
 export const nonTeamUrlPaths = [
     'plugins',

@@ -4,14 +4,13 @@
 'use strict';
 
 import AppState from 'common/appState';
-import {LOAD_FAILED, TOGGLE_BACK_BUTTON, UPDATE_TARGET_URL} from 'common/communication';
+import {LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import MessagingView from 'common/views/MessagingView';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
 import ContextMenu from '../contextMenu';
-import Utils from '../utils';
 import MainWindow from '../windows/mainWindow';
 
 jest.mock('electron', () => ({
@@ -435,28 +434,6 @@ describe('main/views/MattermostWebContentsView', () => {
         });
     });
 
-    describe('handleDidNavigate', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
-
-        beforeEach(() => {
-            MainWindow.get.mockReturnValue(window);
-            mattermostView.setBounds = jest.fn();
-        });
-
-        it('should hide back button on internal url', () => {
-            Utils.shouldHaveBackBar.mockReturnValue(false);
-            mattermostView.handleDidNavigate(null, 'http://server-1.com/path/to/channels');
-            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(TOGGLE_BACK_BUTTON, false);
-        });
-
-        it('should show back button on external url', () => {
-            Utils.shouldHaveBackBar.mockReturnValue(true);
-            mattermostView.handleDidNavigate(null, 'http://server-2.com/some/other/path');
-            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(TOGGLE_BACK_BUTTON, true);
-        });
-    });
-
     describe('handleUpdateTarget', () => {
         const window = {on: jest.fn()};
         const mattermostView = new MattermostWebContentsView(view, {}, {});
@@ -486,20 +463,6 @@ describe('main/views/MattermostWebContentsView', () => {
         it('should still emit even if URL is blank', () => {
             mattermostView.handleUpdateTarget(null, '');
             expect(mattermostView.emit).toHaveBeenCalled();
-        });
-    });
-
-    describe('updateMentionsFromTitle', () => {
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
-
-        it('should parse mentions from title', () => {
-            mattermostView.updateMentionsFromTitle('(7) Mattermost');
-            expect(AppState.updateMentions).toHaveBeenCalledWith(mattermostView.view.id, 7);
-        });
-
-        it('should parse unreads from title', () => {
-            mattermostView.updateMentionsFromTitle('* Mattermost');
-            expect(AppState.updateMentions).toHaveBeenCalledWith(mattermostView.view.id, 0);
         });
     });
 });

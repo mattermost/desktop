@@ -79,7 +79,6 @@ declare global {
             onPlaySound: (listener: (soundName: string) => void) => void;
             onModalOpen: (listener: () => void) => void;
             onModalClose: (listener: () => void) => void;
-            onToggleBackButton: (listener: (showExtraBar: boolean) => void) => void;
             onUpdateMentions: (listener: (view: string, mentions: number, unreads: boolean, isExpired: boolean) => void) => void;
             onCloseServersDropdown: (listener: () => void) => void;
             onOpenServersDropdown: (listener: () => void) => void;
