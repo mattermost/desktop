@@ -63,6 +63,8 @@ export class DeveloperMode extends EventEmitter {
 
 let developerMode = new DeveloperMode(developerModeJson);
 ipcMain.on(UPDATE_PATHS, () => {
+    ipcMain.removeHandler(IS_DEVELOPER_MODE_ENABLED);
+    ipcMain.removeHandler(GET_DEVELOPER_MODE_SETTING);
     developerMode = new DeveloperMode(developerModeJson);
 });
 export default developerMode;
