@@ -25,12 +25,14 @@ jest.mock('electron', () => ({
             on: jest.fn(),
             getTitle: () => 'title',
             getURL: () => 'http://server-1.com',
-            clearHistory: jest.fn(),
             send: jest.fn(),
-            canGoBack: jest.fn(),
-            canGoForward: jest.fn(),
-            goToOffset: jest.fn(),
-            canGoToOffset: jest.fn(),
+            navigationHistory: {
+                clear: jest.fn(),
+                canGoBack: jest.fn(),
+                canGoForward: jest.fn(),
+                goToOffset: jest.fn(),
+                canGoToOffset: jest.fn(),
+            },
         },
     })),
     ipcMain: {
@@ -206,18 +208,18 @@ describe('main/views/MattermostWebContentsView', () => {
         });
 
         it('should only go to offset if it can', () => {
-            mattermostView.webContentsView.webContents.canGoToOffset.mockReturnValue(false);
+            mattermostView.webContentsView.webContents.navigationHistory.canGoToOffset.mockReturnValue(false);
             mattermostView.goToOffset(1);
-            expect(mattermostView.webContentsView.webContents.goToOffset).not.toBeCalled();
+            expect(mattermostView.webContentsView.webContents.navigationHistory.goToOffset).not.toBeCalled();
 
-            mattermostView.webContentsView.webContents.canGoToOffset.mockReturnValue(true);
+            mattermostView.webContentsView.webContents.navigationHistory.canGoToOffset.mockReturnValue(true);
             mattermostView.goToOffset(1);
-            expect(mattermostView.webContentsView.webContents.goToOffset).toBeCalled();
+            expect(mattermostView.webContentsView.webContents.navigationHistory.goToOffset).toBeCalled();
         });
 
         it('should call reload if an error occurs', () => {
-            mattermostView.webContentsView.webContents.canGoToOffset.mockReturnValue(true);
-            mattermostView.webContentsView.webContents.goToOffset.mockImplementation(() => {
+            mattermostView.webContentsView.webContents.navigationHistory.canGoToOffset.mockReturnValue(true);
+            mattermostView.webContentsView.webContents.navigationHistory.goToOffset.mockImplementation(() => {
                 throw new Error('hi');
             });
             mattermostView.goToOffset(1);
@@ -367,7 +369,7 @@ describe('main/views/MattermostWebContentsView', () => {
         it('should erase history and set isAtRoot when navigating to root URL', () => {
             mattermostView.atRoot = false;
             mattermostView.updateHistoryButton();
-            expect(mattermostView.webContentsView.webContents.clearHistory).toHaveBeenCalled();
+            expect(mattermostView.webContentsView.webContents.navigationHistory.clear).toHaveBeenCalled();
             expect(mattermostView.isAtRoot).toBe(true);
         });
     });

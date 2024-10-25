@@ -148,9 +148,9 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     goToOffset = (offset: number) => {
-        if (this.webContentsView.webContents.canGoToOffset(offset)) {
+        if (this.webContentsView.webContents.navigationHistory.canGoToOffset(offset)) {
             try {
-                this.webContentsView.webContents.goToOffset(offset);
+                this.webContentsView.webContents.navigationHistory.goToOffset(offset);
                 this.updateHistoryButton();
             } catch (error) {
                 this.log.error(error);
@@ -161,15 +161,15 @@ export class MattermostWebContentsView extends EventEmitter {
 
     getBrowserHistoryStatus = () => {
         if (this.currentURL?.toString() === this.view.url.toString()) {
-            this.webContentsView.webContents.clearHistory();
+            this.webContentsView.webContents.navigationHistory.clear();
             this.atRoot = true;
         } else {
             this.atRoot = false;
         }
 
         return {
-            canGoBack: this.webContentsView.webContents.canGoBack(),
-            canGoForward: this.webContentsView.webContents.canGoForward(),
+            canGoBack: this.webContentsView.webContents.navigationHistory.canGoBack(),
+            canGoForward: this.webContentsView.webContents.navigationHistory.canGoForward(),
         };
     };
 
