@@ -254,3 +254,54 @@ export async function updateServerInfos(servers: MattermostServer[]) {
     }));
     ServerManager.updateRemoteInfos(map);
 }
+
+export async function clearDataForServer(server: MattermostServer) {
+    const mainWindow = MainWindow.get();
+    if (!mainWindow) {
+        return;
+    }
+
+    const response = await dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        buttons: [
+            localizeMessage('main.app.utils.clearDataForServer.confirm', 'Clear Data'),
+            localizeMessage('main.app.utils.clearDataForServer.cancel', 'Cancel'),
+        ],
+        defaultId: 1,
+        message: localizeMessage('main.app.utils.clearDataForServer.message', 'This action will erase all session, cache, cookie and storage data for the server "{serverName}". Are you sure you want to clear data for this server?', {serverName: server.name}),
+    });
+
+    if (response.response === 0) {
+        await session.defaultSession.clearData({
+            origins: [server.url.origin],
+        });
+        ViewManager.reload();
+    }
+}
+
+export async function clearAllData() {
+    const mainWindow = MainWindow.get();
+    if (!mainWindow) {
+        return;
+    }
+
+    const response = await dialog.showMessageBox(mainWindow, {
+        title: app.name,
+        type: 'warning',
+        buttons: [
+            localizeMessage('main.app.utils.clearAllData.confirm', 'Clear All Data'),
+            localizeMessage('main.app.utils.clearAllData.cancel', 'Cancel'),
+        ],
+        defaultId: 1,
+        message: localizeMessage('main.app.utils.clearAllData.message', 'This action will erase all session, cache, cookie and storage data for all server. Performing this action will restart the application. Are you sure you want to clear all data?'),
+    });
+
+    if (response.response === 0) {
+        await session.defaultSession.clearAuthCache();
+        await session.defaultSession.clearCodeCaches({});
+        await session.defaultSession.clearHostResolverCache();
+        await session.defaultSession.clearData();
+        app.relaunch();
+        app.exit();
+    }
+}

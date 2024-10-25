@@ -73,6 +73,7 @@ jest.mock('app/serverViewState', () => ({
     switchServer: jest.fn(),
     getCurrentServer: jest.fn(),
 }));
+jest.mock('main/app/utils', () => ({}));
 jest.mock('main/diagnostics', () => ({}));
 jest.mock('main/downloadsManager', () => ({
     hasDownloads: jest.fn(),
