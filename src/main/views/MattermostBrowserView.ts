@@ -149,9 +149,9 @@ export class MattermostBrowserView extends EventEmitter {
     };
 
     goToOffset = (offset: number) => {
-        if (this.browserView.webContents.canGoToOffset(offset)) {
+        if (this.browserView.webContents.navigationHistory.canGoToOffset(offset)) {
             try {
-                this.browserView.webContents.goToOffset(offset);
+                this.browserView.webContents.navigationHistory.goToOffset(offset);
                 this.updateHistoryButton();
             } catch (error) {
                 this.log.error(error);
@@ -162,15 +162,15 @@ export class MattermostBrowserView extends EventEmitter {
 
     getBrowserHistoryStatus = () => {
         if (this.currentURL?.toString() === this.view.url.toString()) {
-            this.browserView.webContents.clearHistory();
+            this.browserView.webContents.navigationHistory.clear();
             this.atRoot = true;
         } else {
             this.atRoot = false;
         }
 
         return {
-            canGoBack: this.browserView.webContents.canGoBack(),
-            canGoForward: this.browserView.webContents.canGoForward(),
+            canGoBack: this.browserView.webContents.navigationHistory.canGoBack(),
+            canGoForward: this.browserView.webContents.navigationHistory.canGoForward(),
         };
     };
 
