@@ -180,7 +180,7 @@
     "react-select": "5.8.0",
     "uuid": "9.0.1",
     "valid-url": "1.0.9",
-    "windows-focus-assist": "1.3.0",
+    "windows-focus-assist": "1.4.0",
     "winreg-utf8": "0.1.1",
     "yargs": "17.7.2"
   }
