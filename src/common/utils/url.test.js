@@ -9,7 +9,6 @@ import {
     isValidURI,
     parseURL,
     isInternalURL,
-    isCustomLoginURL,
     isCallsPopOutURL,
     isTrustedURL,
 } from 'common/utils/url';
@@ -201,45 +200,6 @@ describe('common/utils/url', () => {
         it('should not identify other url', () => {
             const adminURL = new URL('http://mattermost.com/some/other/path');
             expect(isUrlType('url-type', serverURL, adminURL)).toBe(false);
-        });
-    });
-
-    describe('isCustomLoginURL', () => {
-        it('should match correct URL', () => {
-            expect(isCustomLoginURL(
-                new URL('http://server.com/oauth/authorize'),
-                new URL('http://server.com'),
-            )).toBe(true);
-        });
-        it('should not match incorrect URL', () => {
-            expect(isCustomLoginURL(
-                new URL('http://server.com/oauth/notauthorize'),
-                new URL('http://server.com'),
-            )).toBe(false);
-        });
-        it('should not match base URL', () => {
-            expect(isCustomLoginURL(
-                new URL('http://server.com/'),
-                new URL('http://server.com'),
-            )).toBe(false);
-        });
-        it('should match with subpath', () => {
-            expect(isCustomLoginURL(
-                new URL('http://server.com/subpath/oauth/authorize'),
-                new URL('http://server.com/subpath'),
-            )).toBe(true);
-        });
-        it('should not match with different subpath', () => {
-            expect(isCustomLoginURL(
-                new URL('http://server.com/subpath/oauth/authorize'),
-                new URL('http://server.com/different/subpath'),
-            )).toBe(false);
-        });
-        it('should not match with oauth subpath', () => {
-            expect(isCustomLoginURL(
-                new URL('http://server.com/oauth/authorize'),
-                new URL('http://server.com/oauth/authorize'),
-            )).toBe(false);
         });
     });
 
