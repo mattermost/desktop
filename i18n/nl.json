@@ -298,6 +298,7 @@
   "renderer.downloadsDropdown.Downloads": "Downloads",
   "renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall": "Een nieuwe versie van de {appName} Desktop App (versie {version}) is beschikbaar om te installeren.",
   "renderer.downloadsDropdown.Update.DownloadUpdate": "Update downloaden",
+  "renderer.downloadsDropdown.Update.Downloading": "Bezig met downloaden...",
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} versie {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "Nieuwe desktopversie beschikbaar",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "Opnieuw opstarten en bijwerken",
