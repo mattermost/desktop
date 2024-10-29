@@ -39,7 +39,7 @@ import performanceMonitor from 'main/performanceMonitor';
 import type {SavedWindowState} from 'types/mainWindow';
 
 import ContextMenu from '../contextMenu';
-import {getLocalPreload, isInsideRectangle} from '../utils';
+import {getLocalPreload, isInsideRectangle, isKDE} from '../utils';
 
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
@@ -329,6 +329,12 @@ export class MainWindow extends EventEmitter {
             globalShortcut.registerAll(ALT_MENU_KEYS, () => {
                 // do nothing because we want to supress the menu popping up
             });
+
+            // check if KDE + windows is minimized to prevent unwanted focus event
+            // that was causing an error not allowing minimization (MM-60233)
+            if ((!this.win || this.win.isMinimized()) && isKDE()) {
+                return;
+            }
         }
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
