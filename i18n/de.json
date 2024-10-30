@@ -172,6 +172,7 @@
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "<link>{url}</link> von einem Browser Fenster erreicht werden kann.",
   "renderer.components.errorView.troubleshooting.computerIsConnected": "Dein Computer ist mit dem Internet verbunden.",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "Die {appName} URL <link>{url}</link> ist korrekt",
+  "renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow": "Du kannst <link>{url}</link> über ein Browserfenster erreichen.",
   "renderer.components.extraBar.back": "Zurück",
   "renderer.components.input.required": "Dieses Feld ist erforderlich",
   "renderer.components.mainPage.contextMenu.ariaLabel": "Kontextmenü",
