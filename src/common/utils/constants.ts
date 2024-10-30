@@ -32,8 +32,8 @@ export const CALLS_PLUGIN_ID = 'com.mattermost.calls';
 export const DOWNLOADS_DROPDOWN_HEIGHT = 360;
 export const DOWNLOADS_DROPDOWN_WIDTH = 280;
 export const DOWNLOADS_DROPDOWN_PADDING = 24;
-export const DOWNLOADS_DROPDOWN_MENU_HEIGHT = 160;
-export const DOWNLOADS_DROPDOWN_MENU_WIDTH = 154;
+export const DOWNLOADS_DROPDOWN_MENU_HEIGHT = 260;
+export const DOWNLOADS_DROPDOWN_MENU_WIDTH = 200;
 export const DOWNLOADS_DROPDOWN_MENU_PADDING = 12;
 
 // In  order to display the box-shadow & radius on the left + right, use this WIDTH in the webContentsView for downloadsDropdown
