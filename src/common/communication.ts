@@ -108,8 +108,6 @@ export const PING_DOMAIN = 'ping-domain';
 export const GET_LANGUAGE_INFORMATION = 'get-language-information';
 export const GET_AVAILABLE_LANGUAGES = 'get-available-languages';
 
-export const VIEW_FINISHED_RESIZING = 'view-finished-resizing';
-
 // Calls
 export const GET_DESKTOP_SOURCES = 'get-desktop-sources';
 export const DESKTOP_SOURCES_MODAL_REQUEST = 'desktop-sources-modal-request';

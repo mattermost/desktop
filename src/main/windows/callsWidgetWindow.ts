@@ -35,7 +35,7 @@ import {
     openScreensharePermissionsSettingsMacOS,
     resetScreensharePermissionsMacOS,
 } from 'main/utils';
-import type {MattermostBrowserView} from 'main/views/MattermostBrowserView';
+import type {MattermostWebContentsView} from 'main/views/MattermostWebContentsView';
 import ViewManager from 'main/views/viewManager';
 import webContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
@@ -51,7 +51,7 @@ const log = new Logger('CallsWidgetWindow');
 
 export class CallsWidgetWindow {
     private win?: BrowserWindow;
-    private mainView?: MattermostBrowserView;
+    private mainView?: MattermostWebContentsView;
     private options?: CallsWidgetWindowConfig;
     private missingScreensharePermissions?: boolean;
 
@@ -135,7 +135,7 @@ export class CallsWidgetWindow {
         return u.toString();
     };
 
-    private init = (view: MattermostBrowserView, options: CallsWidgetWindowConfig) => {
+    private init = (view: MattermostWebContentsView, options: CallsWidgetWindowConfig) => {
         this.win = new BrowserWindow({
             width: MINIMUM_CALLS_WIDGET_WIDTH,
             height: MINIMUM_CALLS_WIDGET_HEIGHT,
