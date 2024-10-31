@@ -171,6 +171,7 @@
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "您可以从浏览器窗口到达<link>{url}</link>。",
   "renderer.components.errorView.troubleshooting.computerIsConnected": "您的电脑已连接到互联网。",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "{appName}的URL<link>{url}</link>是正确的",
+  "renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow": "你可以通过浏览器窗口访问 <link>{url}</link>。",
   "renderer.components.extraBar.back": "返回",
   "renderer.components.input.required": "此栏为必填项",
   "renderer.components.mainPage.contextMenu.ariaLabel": "快捷菜单",
