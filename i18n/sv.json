@@ -172,6 +172,7 @@
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "Du kan nå <link>{url}</link> från ett webbläsarfönster.",
   "renderer.components.errorView.troubleshooting.computerIsConnected": "Din dator är ansluten till internet.",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "URL-adressen <link>{url}</link> för {appName} är korrekt",
+  "renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow": "Du kan nå <link>{url}</link> från en webbläsare.",
   "renderer.components.extraBar.back": "Tillbaka",
   "renderer.components.input.required": "Fältet är obligatoriskt",
   "renderer.components.mainPage.contextMenu.ariaLabel": "Kontextmeny",
