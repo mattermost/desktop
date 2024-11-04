@@ -172,6 +172,7 @@
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "Do <link>{url}</link> można dotrzeć z okna przeglądarki.",
   "renderer.components.errorView.troubleshooting.computerIsConnected": "Twój komputer jest podłączony do internetu.",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "Adres URL {appName} <link>{url}</link> jest poprawny",
+  "renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow": "Możesz uzyskać dostęp do <link>{url}</link> z okna przeglądarki.",
   "renderer.components.extraBar.back": "Wstecz",
   "renderer.components.input.required": "To pole jest wymagane",
   "renderer.components.mainPage.contextMenu.ariaLabel": "Menu kontekstowe",
