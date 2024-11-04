@@ -136,7 +136,7 @@
   "main.windows.mainWindow.closeApp.dialog.detail": "Ви не отримуватимете сповіщень про повідомлення. Якщо бажаєте, щоб додаток {appName} продовжував роботу у фоновму режимі, можете активувати це в налаштуваннях.",
   "main.windows.mainWindow.closeApp.dialog.message": "Ви впевнені, що бажаєте вийти?",
   "main.windows.mainWindow.closeApp.dialog.title": "Закрити додаток",
-  "main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel": "Не показувати знову",
+  "main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel": "Більше не показувати",
   "main.windows.mainWindow.minimizeToTray.dialog.message": "{appName} продовжуватиме роботу у фоновому режимі. Ви можете змінити це в налаштуваннях.",
   "main.windows.mainWindow.minimizeToTray.dialog.title": "Згорнути у фоновий режим",
   "renderer.components.autoSaveIndicator.saved": "Збережено",
