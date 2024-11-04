@@ -232,7 +232,7 @@ export function migrateMacAppStore() {
     }
 
     try {
-        fs.cpSync(result[0], app.getPath('userData'));
+        fs.cpSync(result[0], app.getPath('userData'), {recursive: true});
         updatePaths(true);
         migrationPrefs.setValue('masConfigs', true);
     } catch (e) {
