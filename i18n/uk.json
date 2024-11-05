@@ -68,7 +68,7 @@
   "main.menus.app.file.unhide": "Показати все",
   "main.menus.app.help": "Допомога та підтримка",
   "main.menus.app.help.RunDiagnostics": "Запустіть діагностику",
-  "main.menus.app.help.ShowLogs": "Показати логи",
+  "main.menus.app.help.ShowLogs": "Показати журнали",
   "main.menus.app.help.checkForUpdates": "Перевірте наявність оновлень",
   "main.menus.app.help.commitString": " commit: {hashVersion}",
   "main.menus.app.help.downloadUpdate": "Завантажити оновлення",
