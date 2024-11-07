@@ -282,6 +282,11 @@ export class ServerViewState {
         // If we can't get the remote info, warn the user that this might not be the right URL
         // If the original URL was invalid, don't replace that as they probably have a typo somewhere
         if (!remoteInfo) {
+            // If the URL provided has a path, try to validate the server with parts of the path removed, until we reach the root and then return a failure
+            if (parsedURL.pathname !== '/') {
+                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId);
+            }
+
             return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString()};
         }
 
