@@ -27,6 +27,7 @@ type Props = {
     currentOrder?: number;
     setInputRef?: (inputRef: HTMLInputElement) => void;
     intl: IntlShape;
+    prefillURL?: string;
 };
 
 type State = {
@@ -75,6 +76,13 @@ class NewServerModal extends React.PureComponent<Props, State> {
 
     componentWillUnmount(): void {
         this.mounted = false;
+    }
+
+    componentDidUpdate(prevProps: Readonly<Props>): void {
+        if (this.props.prefillURL && this.props.prefillURL !== prevProps.prefillURL) {
+            this.setState({serverUrl: this.props.prefillURL});
+            this.validateServerURL(this.props.prefillURL);
+        }
     }
 
     initializeOnShow = async () => {

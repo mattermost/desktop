@@ -226,10 +226,7 @@ export class ViewManager {
                     }
                 }
             } else {
-                dialog.showErrorBox(
-                    localizeMessage('main.views.viewManager.handleDeepLink.error.title', 'No matching server'),
-                    localizeMessage('main.views.viewManager.handleDeepLink.error.body', 'There is no configured server in the app that matches the requested url: {url}', {url: parsedURL.toString()}),
-                );
+                ServerViewState.showNewServerModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
             }
         }
     };

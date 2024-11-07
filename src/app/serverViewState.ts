@@ -44,7 +44,7 @@ export class ServerViewState {
 
     constructor() {
         ipcMain.on(SWITCH_SERVER, (event, serverId) => this.switchServer(serverId));
-        ipcMain.on(SHOW_NEW_SERVER_MODAL, this.showNewServerModal);
+        ipcMain.on(SHOW_NEW_SERVER_MODAL, this.handleShowNewServerModal);
         ipcMain.on(SHOW_EDIT_SERVER_MODAL, this.showEditServerModal);
         ipcMain.on(SHOW_REMOVE_SERVER_MODAL, this.showRemoveServerModal);
         ipcMain.handle(VALIDATE_SERVER_URL, this.handleServerURLValidation);
@@ -123,19 +123,19 @@ export class ServerViewState {
      * Server Modals
      */
 
-    showNewServerModal = () => {
-        log.debug('showNewServerModal');
+    showNewServerModal = (prefillURL?: string) => {
+        log.debug('showNewServerModal', {prefillURL});
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<null, Server>(
+        const modalPromise = ModalManager.addModal<{prefillURL?: string}, Server>(
             'newServer',
             'mattermost-desktop://renderer/newServer.html',
             getLocalPreload('internalAPI.js'),
-            null,
+            {prefillURL},
             mainWindow,
             !ServerManager.hasServers(),
         );
@@ -150,6 +150,8 @@ export class ServerViewState {
             }
         });
     };
+
+    private handleShowNewServerModal = () => this.showNewServerModal();
 
     private showEditServerModal = (e: IpcMainEvent, id: string) => {
         log.debug('showEditServerModal', id);
