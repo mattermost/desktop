@@ -65,6 +65,18 @@ export class ModalManager {
         return this.modalPromises.get(key) as Promise<T2>;
     };
 
+    removeModal = (key: string) => {
+        const modalView = this.modalQueue.find((modal) => modal.key === key);
+        if (!modalView) {
+            return;
+        }
+
+        modalView.hide();
+        modalView.resolve(null);
+        this.modalPromises.delete(key);
+        this.filterActive();
+    };
+
     findModalByCaller = (event: IpcMainInvokeEvent) => {
         if (this.modalQueue.length) {
             const requestModal = this.modalQueue.find((modal) => {
