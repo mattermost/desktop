@@ -1,8 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {dialog} from 'electron';
-
 import ServerViewState from 'app/serverViewState';
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SET_ACTIVE_VIEW} from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
@@ -20,9 +18,6 @@ jest.mock('electron', () => ({
         getAppPath: () => '/path/to/app',
         getPath: jest.fn(() => '/valid/downloads/path'),
     },
-    dialog: {
-        showErrorBox: jest.fn(),
-    },
     ipcMain: {
         emit: jest.fn(),
         on: jest.fn(),
@@ -33,6 +28,7 @@ jest.mock('app/serverViewState', () => ({
     getCurrentServer: jest.fn(),
     updateCurrentView: jest.fn(),
     init: jest.fn(),
+    showNewServerModal: jest.fn(),
 }));
 jest.mock('common/views/View', () => ({
     getViewName: jest.fn((a, b) => `${a}-${b}`),
@@ -60,6 +56,10 @@ jest.mock('common/utils/url', () => ({
 
 jest.mock('main/app/utils', () => ({
     flushCookiesStore: jest.fn(),
+}));
+
+jest.mock('main/app/intercom', () => ({
+    handleWelcomeScreenModal: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -116,8 +116,9 @@ jest.mock('./MattermostWebContentsView', () => ({
     MattermostWebContentsView: jest.fn(),
 }));
 
-jest.mock('./modalManager', () => ({
+jest.mock('main/views/modalManager', () => ({
     showModal: jest.fn(),
+    removeModal: jest.fn(),
     isModalDisplayed: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({}));
@@ -321,6 +322,7 @@ describe('main/views/viewManager', () => {
                     isOpen: true,
                     url: new URL('http://server1.com/view'),
                 },
+                undefined,
             );
             makeSpy.mockRestore();
         });
@@ -692,11 +694,12 @@ describe('main/views/viewManager', () => {
             expect(view.load).not.toHaveBeenCalled();
         });
 
-        it('should throw dialog when cannot find the view', () => {
+        it('should open new server modal when using a server that does not exist', () => {
+            ServerManager.hasServers.mockReturnValue(true);
             const view = {...baseView};
-            viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
+            viewManager.handleDeepLink('mattermost://server-2.com/deep/link?thing=yes');
             expect(view.load).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(ServerViewState.showNewServerModal).toHaveBeenCalled();
         });
 
         it('should reopen closed view if called upon', () => {

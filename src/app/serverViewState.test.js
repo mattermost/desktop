@@ -209,7 +209,7 @@ describe('app/serverViewState', () => {
             serverViewState.showNewServerModal();
             await promise;
 
-            expect(ServerManager.addServer).toHaveBeenCalledWith(data);
+            expect(ServerManager.addServer).toHaveBeenCalledWith(data, undefined);
             expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
                 name: 'new-server',
