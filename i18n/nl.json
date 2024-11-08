@@ -172,6 +172,7 @@
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "<link>{url}</link> kan bereiken vanuit een browservenster.",
   "renderer.components.errorView.troubleshooting.computerIsConnected": "Jouw computer verbonden is met het internet.",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "De {appName} URL <link>{url}</link> correct is",
+  "renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow": "Je kan <link>{url}</link> bereiken vanuit een browservenster.",
   "renderer.components.extraBar.back": "Terug",
   "renderer.components.input.required": "Dit veld is verplicht",
   "renderer.components.mainPage.contextMenu.ariaLabel": "Context menu",
