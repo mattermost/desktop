@@ -12,14 +12,16 @@ export class MattermostServer {
     name: string;
     url!: URL;
     isPredefined: boolean;
+    initialLoadURL?: URL;
 
-    constructor(server: Server, isPredefined: boolean) {
+    constructor(server: Server, isPredefined: boolean, initialLoadURL?: URL) {
         this.id = uuid();
 
         this.name = server.name;
         this.updateURL(server.url);
 
         this.isPredefined = isPredefined;
+        this.initialLoadURL = initialLoadURL;
     }
 
     updateURL = (url: string) => {

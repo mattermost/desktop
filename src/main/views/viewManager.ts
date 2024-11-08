@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {WebContentsView, dialog, ipcMain} from 'electron';
+import {WebContentsView, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 
 import ServerViewState from 'app/serverViewState';
@@ -43,7 +43,6 @@ import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
 import {flushCookiesStore} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
-import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -434,7 +433,7 @@ export class ViewManager {
             } else if (recycle) {
                 views.set(view.id, recycle);
             } else {
-                views.set(view.id, this.makeView(srv, view));
+                views.set(view.id, this.makeView(srv, view, srv.initialLoadURL?.toString()));
             }
         }
 

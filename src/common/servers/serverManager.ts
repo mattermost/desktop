@@ -156,8 +156,8 @@ export class ServerManager extends EventEmitter {
         this.persistServers();
     };
 
-    addServer = (server: Server) => {
-        const newServer = new MattermostServer(server, false);
+    addServer = (server: Server, initialLoadURL?: URL) => {
+        const newServer = new MattermostServer(server, false, initialLoadURL);
 
         if (this.servers.has(newServer.id)) {
             throw new Error('ID Collision detected. Cannot add server.');
