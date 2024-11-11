@@ -428,6 +428,27 @@ describe('app/serverViewState', () => {
             expect(result.validatedURL).toBe('https://server.com/');
         });
 
+        it('should not update the URL if the user is typing https://', async () => {
+            let result = await serverViewState.handleServerURLValidation({}, 'h');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'ht');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'htt');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'http');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'https');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'https:');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'https:/');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'https://');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'https://a');
+            expect(result.status).toBe(URLValidationStatus.OK);
+        });
+
         it('should attempt HTTP when HTTPS fails, and generate a warning', async () => {
             ServerInfo.mockImplementation(({url}) => ({
                 fetchConfigData: jest.fn().mockImplementation(() => {
@@ -477,7 +498,7 @@ describe('app/serverViewState', () => {
 
             const result = await serverViewState.handleServerURLValidation({}, 'https://not-server.com');
             expect(result.status).toBe(URLValidationStatus.NotMattermost);
-            expect(result.validatedURL).toBe('https://not-server.com/');
+            expect(result.validatedURL).toBe('https://not-server.com');
         });
 
         it('should update the users URL when the Site URL is different', async () => {
