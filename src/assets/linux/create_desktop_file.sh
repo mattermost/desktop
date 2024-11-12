@@ -4,7 +4,7 @@ WORKING_DIR=`pwd`
 THIS_PATH=`readlink -f $0`
 cd `dirname ${THIS_PATH}`
 FULL_PATH=`pwd`
-cd ${WORKING_DIR}
+cd "${WORKING_DIR}"
 cat <<EOS > Mattermost.desktop
 [Desktop Entry]
 Name=Mattermost
