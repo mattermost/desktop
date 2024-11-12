@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 
 import {triggerTestNotification, verifyNotificationRecievedinDM} from './helpers';
+
 const fs = require('fs');
+
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
-
 
 describe('Trigger Notification From desktop', function desc() {
     this.timeout(400000);

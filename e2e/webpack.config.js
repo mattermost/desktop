@@ -9,7 +9,7 @@ const webpack = require('webpack');
 module.exports = {
     mode: 'development',
     entry: {
-        e2e: glob.sync('./specs/**/notification_tri*.test.js'),
+        e2e: glob.sync('./specs/**/*.test.js'),
     },
     output: {
         path: path.resolve(__dirname, 'dist/'),

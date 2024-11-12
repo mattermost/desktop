@@ -1,3 +1,5 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 const {asyncSleep} = require('../../modules/utils');
 
 export async function triggerTestNotification(firstServer) {
@@ -19,10 +21,10 @@ export async function verifyNotificationRecievedinDM(firstServer) {
     const badgeCount = await badgeElement.textContent();
     badgeCount.should.equal('1');
 
-    sidebarLink.click()
+    sidebarLink.click();
     await asyncSleep(1000);
 
     const lastPostBody = await firstServer.locator('div.post__body').last();
     const textContent = await lastPostBody.textContent();
-    textContent.should.equal("If you received this test notification, it worked!");
+    textContent.should.equal('If you received this test notification, it worked!');
 }
