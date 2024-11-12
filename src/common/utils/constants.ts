@@ -15,7 +15,6 @@ export const MAX_LOADING_SCREEN_SECONDS = 4 * SECOND;
 
 export const TAB_BAR_HEIGHT = 40;
 export const TAB_BAR_PADDING = 4;
-export const BACK_BAR_HEIGHT = 36;
 export const THREE_DOT_MENU_WIDTH = 40;
 export const THREE_DOT_MENU_WIDTH_MAC = 80;
 export const MENU_SHADOW_WIDTH = 24;
@@ -33,11 +32,11 @@ export const CALLS_PLUGIN_ID = 'com.mattermost.calls';
 export const DOWNLOADS_DROPDOWN_HEIGHT = 360;
 export const DOWNLOADS_DROPDOWN_WIDTH = 280;
 export const DOWNLOADS_DROPDOWN_PADDING = 24;
-export const DOWNLOADS_DROPDOWN_MENU_HEIGHT = 160;
-export const DOWNLOADS_DROPDOWN_MENU_WIDTH = 154;
+export const DOWNLOADS_DROPDOWN_MENU_HEIGHT = 260;
+export const DOWNLOADS_DROPDOWN_MENU_WIDTH = 200;
 export const DOWNLOADS_DROPDOWN_MENU_PADDING = 12;
 
-// In  order to display the box-shadow & radius on the left + right, use this WIDTH in the browserView for downloadsDropdown
+// In  order to display the box-shadow & radius on the left + right, use this WIDTH in the webContentsView for downloadsDropdown
 export const DOWNLOADS_DROPDOWN_FULL_WIDTH = DOWNLOADS_DROPDOWN_PADDING + DOWNLOADS_DROPDOWN_WIDTH + TAB_BAR_PADDING;
 export const DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH = (DOWNLOADS_DROPDOWN_MENU_PADDING * 2) + DOWNLOADS_DROPDOWN_MENU_WIDTH;
 export const DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT = DOWNLOADS_DROPDOWN_MENU_HEIGHT + TAB_BAR_PADDING; // only bottom padding included for better positioning
@@ -54,20 +53,6 @@ export const URLValidationStatus = {
     URLNotMatched: 'URL_NOT_MATCHED',
     URLUpdated: 'URL_UPDATED',
 };
-
-// supported custom login paths (oath, saml)
-export const customLoginRegexPaths = [
-    /^\/oauth\/authorize$/i,
-    /^\/oauth\/deauthorize$/i,
-    /^\/oauth\/access_token$/i,
-    /^\/oauth\/[A-Za-z0-9]+\/complete$/i,
-    /^\/oauth\/[A-Za-z0-9]+\/login$/i,
-    /^\/oauth\/[A-Za-z0-9]+\/signup$/i,
-    /^\/api\/v3\/oauth\/[A-Za-z0-9]+\/complete$/i,
-    /^\/signup\/[A-Za-z0-9]+\/complete$/i,
-    /^\/login\/[A-Za-z0-9]+\/complete$/i,
-    /^\/login\/sso\/saml$/i,
-];
 
 export const nonTeamUrlPaths = [
     'plugins',

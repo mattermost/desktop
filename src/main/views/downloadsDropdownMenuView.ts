@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import type {IpcMainEvent} from 'electron';
-import {BrowserView, ipcMain} from 'electron';
+import {WebContentsView, ipcMain} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
@@ -27,6 +27,7 @@ import {
     TAB_BAR_HEIGHT,
 } from 'common/utils/constants';
 import downloadsManager from 'main/downloadsManager';
+import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload} from 'main/utils';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -36,7 +37,7 @@ const log = new Logger('DownloadsDropdownMenuView');
 
 export class DownloadsDropdownMenuView {
     private open: boolean;
-    private view?: BrowserView;
+    private view?: WebContentsView;
     private bounds?: Electron.Rectangle;
     private item?: DownloadedItem;
     private coordinates?: CoordinatesToJsonType;
@@ -65,18 +66,11 @@ export class DownloadsDropdownMenuView {
             throw new Error('Cannot initialize downloadsDropdownMenuView, missing MainWindow');
         }
         this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
-
-        const preload = getLocalPreload('internalAPI.js');
-        this.view = new BrowserView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
+        this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
+        this.view.setBackgroundColor('#00000000');
+        performanceMonitor.registerView('DownloadsDropdownMenuView', this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdownMenu.html');
-        MainWindow.get()?.addBrowserView(this.view);
+        MainWindow.get()?.contentView.addChildView(this.view);
     };
 
     /**
@@ -126,7 +120,7 @@ export class DownloadsDropdownMenuView {
         this.item = item;
         this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT);
         this.view.setBounds(this.bounds);
-        MainWindow.get()?.setTopBrowserView(this.view);
+        MainWindow.get()?.contentView.addChildView(this.view);
         this.view.webContents.focus();
         this.updateDownloadsDropdownMenu();
     };

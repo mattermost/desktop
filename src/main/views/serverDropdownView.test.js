@@ -15,7 +15,7 @@ jest.mock('main/utils', () => ({
 }));
 
 jest.mock('electron', () => ({
-    BrowserView: jest.fn().mockImplementation(() => ({
+    WebContentsView: jest.fn().mockImplementation(() => ({
         webContents: {
             loadURL: jest.fn(),
             focus: jest.fn(),
@@ -25,6 +25,12 @@ jest.mock('electron', () => ({
     ipcMain: {
         on: jest.fn(),
     },
+    app: {
+        getPath: jest.fn(() => '/valid/downloads/path'),
+    },
+}));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
 }));
 jest.mock('main/windows/mainWindow', () => ({
     on: jest.fn(),

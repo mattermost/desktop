@@ -1,0 +1,33 @@
+diff --git a/node_modules/electron/electron.d.ts b/node_modules/electron/electron.d.ts
+index 2de7557..0d0fa34 100644
+--- a/node_modules/electron/electron.d.ts
++++ b/node_modules/electron/electron.d.ts
+@@ -9847,23 +9847,23 @@ declare namespace Electron {
+      *
+      * @platform darwin,win32
+      */
+-    on(event: 'speed-limit-change', listener: () => void): this;
++    on(event: 'speed-limit-change', listener: (limit: number) => void): this;
+     /**
+      * @platform darwin,win32
+      */
+-    off(event: 'speed-limit-change', listener: () => void): this;
++    off(event: 'speed-limit-change', listener: (limit: number) => void): this;
+     /**
+      * @platform darwin,win32
+      */
+-    once(event: 'speed-limit-change', listener: () => void): this;
++    once(event: 'speed-limit-change', listener: (limit: number) => void): this;
+     /**
+      * @platform darwin,win32
+      */
+-    addListener(event: 'speed-limit-change', listener: () => void): this;
++    addListener(event: 'speed-limit-change', listener: (limit: number) => void): this;
+     /**
+      * @platform darwin,win32
+      */
+-    removeListener(event: 'speed-limit-change', listener: () => void): this;
++    removeListener(event: 'speed-limit-change', listener: (limit: number) => void): this;
+     /**
+      * Emitted when the system is suspending.
+      */

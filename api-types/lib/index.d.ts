@@ -65,5 +65,9 @@ export type DesktopAPI = {
     onOpenStopRecordingModal: (listener: (channelID: string) => void) => () => void;
     openCallsUserSettings: () => void;
     onOpenCallsUserSettings: (listener: () => void) => () => void;
+    onSendMetrics: (listener: (metricsMap: Map<string, {
+        cpu?: number;
+        memory?: number;
+    }>) => void) => () => void;
     unregister: (channel: string) => void;
 };

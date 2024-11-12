@@ -21,7 +21,6 @@ import {
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
-    VIEW_FINISHED_RESIZING,
     TOGGLE_SECURE_INPUT,
     EMIT_CONFIGURATION,
     EXIT_FULLSCREEN,
@@ -34,11 +33,12 @@ import Utils from 'common/utils/util';
 import * as Validator from 'common/Validator';
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
+import performanceMonitor from 'main/performanceMonitor';
 
 import type {SavedWindowState} from 'types/mainWindow';
 
 import ContextMenu from '../contextMenu';
-import {getLocalPreload, isInsideRectangle} from '../utils';
+import {getLocalPreload, isInsideRectangle, isKDE} from '../utils';
 
 const log = new Logger('MainWindow');
 const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
@@ -48,18 +48,14 @@ export class MainWindow extends EventEmitter {
 
     private savedWindowState?: Partial<SavedWindowState>;
     private ready: boolean;
-    private isResizing: boolean;
-    private lastEmittedBounds?: Electron.Rectangle;
 
     constructor() {
         super();
 
         // Create the browser window.
         this.ready = false;
-        this.isResizing = false;
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.isFullScreen());
-        ipcMain.on(VIEW_FINISHED_RESIZING, this.handleViewFinishedResizing);
         ipcMain.on(EMIT_CONFIGURATION, this.handleUpdateTitleBarOverlay);
         ipcMain.on(EXIT_FULLSCREEN, this.handleExitFullScreen);
 
@@ -84,7 +80,7 @@ export class MainWindow extends EventEmitter {
             titleBarStyle: 'hidden' as const,
             titleBarOverlay: this.getTitleBarOverlay(),
             trafficLightPosition: {x: 12, y: 12},
-            backgroundColor: '#fff', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
+            backgroundColor: '#000', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
             webPreferences: {
                 disableBlinkFeatures: 'Auxclick',
                 preload: getLocalPreload('internalAPI.js'),
@@ -130,16 +126,7 @@ export class MainWindow extends EventEmitter {
         this.win.on('unresponsive', this.onUnresponsive);
         this.win.on('enter-full-screen', this.onEnterFullScreen);
         this.win.on('leave-full-screen', this.onLeaveFullScreen);
-        this.win.on('will-resize', this.onWillResize);
-        this.win.on('resized', this.onResized);
-        if (process.platform === 'win32') {
-            // We don't want this on macOS, it's an alias of 'move'
-            // This is mostly a fix for Windows 11 snapping
-            this.win.on('moved', this.onResized);
-        }
-        if (process.platform !== 'darwin') {
-            this.win.on('resize', this.onResize);
-        }
+        this.win.contentView.on('bounds-changed', this.handleBoundsChanged);
         this.win.webContents.on('before-input-event', this.onBeforeInputEvent);
 
         // Should not allow the main window to generate a window of its own
@@ -152,6 +139,7 @@ export class MainWindow extends EventEmitter {
         contextMenu.reload();
 
         const localURL = 'mattermost-desktop://renderer/index.html';
+        performanceMonitor.registerView('MainWindow', this.win.webContents);
         this.win.loadURL(localURL).catch(
             (reason) => {
                 log.error('failed to load', reason);
@@ -327,6 +315,12 @@ export class MainWindow extends EventEmitter {
             globalShortcut.registerAll(ALT_MENU_KEYS, () => {
                 // do nothing because we want to supress the menu popping up
             });
+
+            // check if KDE + windows is minimized to prevent unwanted focus event
+            // that was causing an error not allowing minimization (MM-60233)
+            if ((!this.win || this.win.isMinimized()) && isKDE()) {
+                return;
+            }
         }
 
         this.emit(MAIN_WINDOW_RESIZED, this.getBounds());
@@ -449,82 +443,16 @@ export class MainWindow extends EventEmitter {
         });
     };
 
-    private emitBounds = (bounds?: Electron.Rectangle, force?: boolean) => {
-        // Workaround since the window bounds aren't updated immediately when the window is maximized for some reason
-        // We also don't want to force too many resizes so we throttle here
-        setTimeout(() => {
-            const newBounds = bounds ?? this.getBounds();
-            if (!force && newBounds?.height === this.lastEmittedBounds?.height && newBounds?.width === this.lastEmittedBounds?.width) {
-                return;
-            }
-
-            // For some reason on Linux I've seen the menu bar popup again
-            this.win?.setMenuBarVisibility(false);
-
-            this.emit(MAIN_WINDOW_RESIZED, newBounds);
-            this.lastEmittedBounds = newBounds;
-        }, 10);
-    };
-
     private onEnterFullScreen = () => {
         this.win?.webContents.send('enter-full-screen');
-        this.emitBounds();
     };
 
     private onLeaveFullScreen = () => {
         this.win?.webContents.send('leave-full-screen');
-        this.emitBounds();
     };
 
-    /**
-     * Resizing code
-     */
-
-    private onWillResize = (event: Event, newBounds: Electron.Rectangle) => {
-        log.silly('onWillResize', newBounds);
-
-        /**
-         * Fixes an issue on win11 related to Snap where the first "will-resize" event would return the same bounds
-         * causing the "resize" event to not fire
-         */
-        const prevBounds = this.getBounds();
-        if (prevBounds?.height === newBounds.height && prevBounds?.width === newBounds.width) {
-            log.debug('prevented resize');
-            event.preventDefault();
-            return;
-        }
-
-        // Workaround for macOS to stop the window from sending too many resize calls to the BrowserViews
-        if (process.platform === 'darwin' && this.isResizing) {
-            log.debug('prevented resize');
-            event.preventDefault();
-            return;
-        }
-
-        this.isResizing = true;
-        this.emitBounds(newBounds);
-    };
-
-    private onResize = () => {
-        log.silly('onResize');
-
-        // Workaround for Windows to stop the window from sending too many resize calls to the BrowserViews
-        if (process.platform === 'win32' && this.isResizing) {
-            return;
-        }
-        this.emitBounds();
-    };
-
-    private onResized = () => {
-        log.debug('onResized');
-
-        // Because this is the final window state after a resize, we force the size here
-        this.emitBounds(this.getBounds(), true);
-        this.isResizing = false;
-    };
-
-    private handleViewFinishedResizing = () => {
-        this.isResizing = false;
+    private handleBoundsChanged = () => {
+        this.emit(MAIN_WINDOW_RESIZED, this.win?.contentView.getBounds());
     };
 
     private handleExitFullScreen = () => {

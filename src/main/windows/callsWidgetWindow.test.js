@@ -67,6 +67,10 @@ jest.mock('main/windows/mainWindow', () => ({
 jest.mock('app/serverViewState', () => ({
     switchServer: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+    unregisterView: jest.fn(),
+}));
 jest.mock('main/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
@@ -156,6 +160,9 @@ describe('main/windows/callsWidgetWindow', () => {
             on: jest.fn(),
             close: jest.fn(),
             isDestroyed: jest.fn(),
+            webContents: {
+                id: 1,
+            },
         };
 
         beforeEach(() => {
@@ -774,74 +781,6 @@ describe('main/windows/callsWidgetWindow', () => {
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-        });
-    });
-
-    describe('handleCallsWidgetChannelLinkClick', () => {
-        const callsWidgetWindow = new CallsWidgetWindow();
-        callsWidgetWindow.win = {webContents: {id: 1}};
-        callsWidgetWindow.mainView = {
-            view: {
-                server: {
-                    id: 'server-2',
-                },
-            },
-            sendToRenderer: jest.fn(),
-        };
-        callsWidgetWindow.getChannelURL = jest.fn();
-        const servers = [
-            {
-                name: 'server-1',
-                order: 1,
-                views: [
-                    {
-                        name: 'view-1',
-                        order: 0,
-                        isOpen: false,
-                    },
-                    {
-                        name: 'view-2',
-                        order: 2,
-                        isOpen: true,
-                    },
-                ],
-            }, {
-                name: 'server-2',
-                order: 0,
-                views: [
-                    {
-                        name: 'view-1',
-                        order: 0,
-                        isOpen: false,
-                    },
-                    {
-                        name: 'view-2',
-                        order: 2,
-                        isOpen: true,
-                    },
-                ],
-                lastActiveView: 2,
-            },
-        ];
-        const map = servers.reduce((arr, item) => {
-            item.views.forEach((view) => {
-                arr.push([`${item.name}_${view.name}`, {}]);
-            });
-            return arr;
-        }, []);
-        const views = new Map(map);
-
-        beforeEach(() => {
-            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-        });
-
-        it('should switch server', () => {
-            callsWidgetWindow.handleCallsWidgetChannelLinkClick({sender: {id: 1}});
-            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-2');
         });
     });
 

@@ -251,6 +251,9 @@ t('main.permissionsManager.checkPermission.dialog.detail.screenShare');
 let permissionsManager = new PermissionsManager(permissionsJson);
 
 ipcMain.on(UPDATE_PATHS, () => {
+    ipcMain.removeAllListeners(OPEN_WINDOWS_CAMERA_PREFERENCES);
+    ipcMain.removeAllListeners(OPEN_WINDOWS_MICROPHONE_PREFERENCES);
+    ipcMain.removeHandler(GET_MEDIA_ACCESS_STATUS);
     permissionsManager = new PermissionsManager(permissionsJson);
 });
 

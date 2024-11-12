@@ -171,7 +171,9 @@ export class ServerViewState {
             mainWindow);
 
         modalPromise.then((data) => {
-            ServerManager.editServer(id, data.server);
+            if (!server.isPredefined) {
+                ServerManager.editServer(id, data.server);
+            }
             PermissionsManager.setForServer(server, data.permissions);
         }).catch((e) => {
             // e is undefined for user cancellation

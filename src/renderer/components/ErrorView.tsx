@@ -94,7 +94,7 @@ export default function ErrorView(props: Props) {
                                 </li>
                                 <li>
                                     <FormattedMessage
-                                        id='renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow'
+                                        id='renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow'
                                         defaultMessage='You can reach <link>{url}</link> from a browser window.'
                                         values={{
                                             url: props.url,

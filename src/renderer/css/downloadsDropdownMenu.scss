@@ -23,8 +23,8 @@ body {
     background-color: transparent;
     font-family: Open Sans;
     overflow: hidden;
-    height: 172px; // 160 + 12
-    width: 176px; // 154 + 12
+    min-height: fit-content;
+    width: 224px; // 200 + 12 + 12
 
     #app {
         background-color: transparent;
@@ -40,7 +40,6 @@ body {
             display: flex;
             flex-direction: column;
             height: 100%;
-            overflow: hidden;
             padding: 8px 0px;
             width: 100%;
 
@@ -52,9 +51,12 @@ body {
                 display: flex;
                 font-size: 14px;
                 font-weight: 400;
-                height: 25%;
+                flex-grow: 1;
+                height: fit-content(25%);
                 justify-content: flex-start;
-                padding-left: 20px;
+                padding: 8px 20px;
+                min-height: 36px;
+                width: 100%;
 
                 &:hover {
                     background-color: rgba(63, 67, 80, 0.08);

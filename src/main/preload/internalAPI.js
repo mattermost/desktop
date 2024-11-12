@@ -42,7 +42,6 @@ import {
     PLAY_SOUND,
     MODAL_OPEN,
     MODAL_CLOSE,
-    TOGGLE_BACK_BUTTON,
     UPDATE_MENTIONS,
     SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
     HIDE_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
@@ -90,9 +89,10 @@ import {
     OPEN_WINDOWS_CAMERA_PREFERENCES,
     OPEN_WINDOWS_MICROPHONE_PREFERENCES,
     GET_MEDIA_ACCESS_STATUS,
-    VIEW_FINISHED_RESIZING,
     GET_NONCE,
     IS_DEVELOPER_MODE_ENABLED,
+    METRICS_REQUEST,
+    METRICS_RECEIVE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -161,7 +161,6 @@ contextBridge.exposeInMainWorld('desktop', {
     onPlaySound: (listener) => ipcRenderer.on(PLAY_SOUND, (_, soundName) => listener(soundName)),
     onModalOpen: (listener) => ipcRenderer.on(MODAL_OPEN, () => listener()),
     onModalClose: (listener) => ipcRenderer.on(MODAL_CLOSE, () => listener()),
-    onToggleBackButton: (listener) => ipcRenderer.on(TOGGLE_BACK_BUTTON, (_, showExtraBar) => listener(showExtraBar)),
     onUpdateMentions: (listener) => ipcRenderer.on(UPDATE_MENTIONS, (_event, view, mentions, unreads, isExpired) => listener(view, mentions, unreads, isExpired)),
     onCloseServersDropdown: (listener) => ipcRenderer.on(CLOSE_SERVERS_DROPDOWN, () => listener()),
     onOpenServersDropdown: (listener) => ipcRenderer.on(OPEN_SERVERS_DROPDOWN, () => listener()),
@@ -177,7 +176,6 @@ contextBridge.exposeInMainWorld('desktop', {
     openWindowsCameraPreferences: () => ipcRenderer.send(OPEN_WINDOWS_CAMERA_PREFERENCES),
     openWindowsMicrophonePreferences: () => ipcRenderer.send(OPEN_WINDOWS_MICROPHONE_PREFERENCES),
     getMediaAccessStatus: (mediaType) => ipcRenderer.invoke(GET_MEDIA_ACCESS_STATUS, mediaType),
-    viewFinishedResizing: () => ipcRenderer.send(VIEW_FINISHED_RESIZING),
 
     downloadsDropdown: {
         toggleDownloadsDropdownMenu: (payload) => ipcRenderer.send(TOGGLE_DOWNLOADS_DROPDOWN_MENU, payload),
@@ -258,3 +256,10 @@ const createKeyDownListener = () => {
 };
 createKeyDownListener();
 
+ipcRenderer.on(METRICS_REQUEST, async (_, name) => {
+    const memory = await process.getProcessMemoryInfo();
+    ipcRenderer.send(METRICS_RECEIVE, name, {cpu: process.getCPUUsage().percentCPUUsage, memory: memory.residentSet ?? memory.private});
+});
+
+// Call this once to unset it to 0
+process.getCPUUsage();

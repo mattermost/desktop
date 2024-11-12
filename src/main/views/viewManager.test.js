@@ -12,12 +12,13 @@ import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import LoadingScreen from './loadingScreen';
-import {MattermostBrowserView} from './MattermostBrowserView';
+import {MattermostWebContentsView} from './MattermostWebContentsView';
 import {ViewManager} from './viewManager';
 
 jest.mock('electron', () => ({
     app: {
         getAppPath: () => '/path/to/app',
+        getPath: jest.fn(() => '/valid/downloads/path'),
     },
     dialog: {
         showErrorBox: jest.fn(),
@@ -81,6 +82,9 @@ jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     on: jest.fn(),
 }));
+jest.mock('main/performanceMonitor', () => ({
+    registerView: jest.fn(),
+}));
 jest.mock('common/servers/serverManager', () => ({
     getOrderedTabsForServer: jest.fn(),
     getAllServers: jest.fn(),
@@ -108,8 +112,8 @@ jest.mock('common/servers/serverManager', () => ({
     }),
 }));
 
-jest.mock('./MattermostBrowserView', () => ({
-    MattermostBrowserView: jest.fn(),
+jest.mock('./MattermostWebContentsView', () => ({
+    MattermostWebContentsView: jest.fn(),
 }));
 
 jest.mock('./modalManager', () => ({
@@ -129,7 +133,7 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.showById = jest.fn();
             MainWindow.get.mockReturnValue({});
-            MattermostBrowserView.mockImplementation((view) => ({
+            MattermostWebContentsView.mockImplementation((view) => ({
                 on: jest.fn(),
                 load: loadFn,
                 once: onceFn,
@@ -177,7 +181,7 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.showById = jest.fn();
             MainWindow.get.mockReturnValue({});
-            MattermostBrowserView.mockImplementation((view) => ({
+            MattermostWebContentsView.mockImplementation((view) => ({
                 on: jest.fn(),
                 load: jest.fn(),
                 once: jest.fn(),
@@ -231,7 +235,7 @@ describe('main/views/viewManager', () => {
             const onceFn = jest.fn();
             const loadFn = jest.fn();
             const destroyFn = jest.fn();
-            MattermostBrowserView.mockImplementation((view) => ({
+            MattermostWebContentsView.mockImplementation((view) => ({
                 on: jest.fn(),
                 load: loadFn,
                 once: onceFn,
@@ -251,7 +255,7 @@ describe('main/views/viewManager', () => {
 
         it('should recycle existing views', () => {
             const makeSpy = jest.spyOn(viewManager, 'makeView');
-            const view = new MattermostBrowserView({
+            const view = new MattermostWebContentsView({
                 id: 'view1',
                 server: {
                     id: 'server1',

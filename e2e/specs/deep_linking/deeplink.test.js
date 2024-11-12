@@ -43,7 +43,7 @@ describe('application', function desc() {
             const browserWindow = await this.app.browserWindow(mainWindow);
             const webContentsId = this.serverMap[`${config.teams[1].name}___TAB_MESSAGING`].webContentsId;
             const isActive = await browserWindow.evaluate((window, id) => {
-                return window.getBrowserViews().find((view) => view.webContents.id === id).webContents.getURL();
+                return window.contentView.children.find((view) => view.webContents.id === id).webContents.getURL();
             }, webContentsId);
             isActive.should.equal('https://github.com/test/url/');
             const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
