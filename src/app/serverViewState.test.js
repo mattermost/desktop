@@ -449,6 +449,13 @@ describe('app/serverViewState', () => {
             expect(result.status).toBe(URLValidationStatus.OK);
         });
 
+        it('should update the URL if the user is typing something other than http', async () => {
+            let result = await serverViewState.handleServerURLValidation({}, 'abchttp');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            result = await serverViewState.handleServerURLValidation({}, 'abchttps');
+            expect(result.status).toBe(URLValidationStatus.OK);
+        });
+
         it('should attempt HTTP when HTTPS fails, and generate a warning', async () => {
             ServerInfo.mockImplementation(({url}) => ({
                 fetchConfigData: jest.fn().mockImplementation(() => {

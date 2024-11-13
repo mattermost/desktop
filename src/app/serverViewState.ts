@@ -241,7 +241,7 @@ export class ServerViewState {
             // If it already includes the protocol, force it to HTTPS
             if (isValidURI(url) && !url.startsWith('http')) {
                 httpUrl = url.replace(/^((.+):\/\/)?/, 'https://');
-            } else if (!url.match(/^(h|ht|htt|http|https):?\/?\/?$/)) {
+            } else if (!'https://'.startsWith(url) && !'http://'.startsWith(url)) {
                 // Check if they're starting to type `http(s)`, otherwise add HTTPS for them
                 httpUrl = `https://${url}`;
             }
