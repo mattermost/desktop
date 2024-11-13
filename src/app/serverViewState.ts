@@ -238,11 +238,11 @@ export class ServerViewState {
 
         let httpUrl = url;
         if (!isValidURL(url)) {
-            // If it already includes the protocol, tell them it's invalid
-            if (isValidURI(url)) {
+            // If it already includes the protocol, force it to HTTPS
+            if (isValidURI(url) && !url.toLowerCase().startsWith('http')) {
                 httpUrl = url.replace(/^((.+):\/\/)?/, 'https://');
-            } else {
-                // Otherwise add HTTPS for them
+            } else if (!'https://'.startsWith(url.toLowerCase()) && !'http://'.startsWith(url.toLowerCase())) {
+                // Check if they're starting to type `http(s)`, otherwise add HTTPS for them
                 httpUrl = `https://${url}`;
             }
         }
@@ -279,8 +279,9 @@ export class ServerViewState {
 
         // If we can't get the remote info, warn the user that this might not be the right URL
         // If the original URL was invalid, don't replace that as they probably have a typo somewhere
+        // Also strip the trailing slash if it's there so that the user can keep typing
         if (!remoteInfo) {
-            return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString()};
+            return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString().replace(/\/$/, '')};
         }
 
         const remoteServerName = remoteInfo.siteName === 'Mattermost' ? remoteURL.host.split('.')[0] : remoteInfo.siteName;
