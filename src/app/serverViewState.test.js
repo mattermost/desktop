@@ -437,7 +437,11 @@ describe('app/serverViewState', () => {
             expect(result.status).toBe(URLValidationStatus.Invalid);
             result = await serverViewState.handleServerURLValidation({}, 'http');
             expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'HTTP');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
             result = await serverViewState.handleServerURLValidation({}, 'https');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+            result = await serverViewState.handleServerURLValidation({}, 'HTTPS');
             expect(result.status).toBe(URLValidationStatus.Invalid);
             result = await serverViewState.handleServerURLValidation({}, 'https:');
             expect(result.status).toBe(URLValidationStatus.Invalid);
