@@ -91,6 +91,8 @@
   "main.menus.app.view.clearCacheAndReload": "Limpar cache e recarregar",
   "main.menus.app.view.devToolsAppWrapper": "Ferramentas de desenvolvedor para Application Wrapper",
   "main.menus.app.view.devToolsCurrentServer": "Ferramentas do desenvolvedor para o servidor atual",
+  "main.menus.app.view.developerModeBrowserOnly": "Modo Somente Navegador",
+  "main.menus.app.view.developerModeDisableContextMenu": "Desativar Menu de Contexto",
   "main.menus.app.view.downloads": "Downloads",
   "main.menus.app.view.find": "Encontrar..",
   "main.menus.app.view.fullscreen": "Alternar para modo tela cheia",
