@@ -90,6 +90,7 @@
   "main.menus.app.view.actualSize": "Tamanho atual",
   "main.menus.app.view.clearCacheAndReload": "Limpar cache e recarregar",
   "main.menus.app.view.devToolsAppWrapper": "Ferramentas de desenvolvedor para Application Wrapper",
+  "main.menus.app.view.devToolsCurrentCallWidget": "Ferramentas de Desenvolvedor para o Widget de Chamadas",
   "main.menus.app.view.devToolsCurrentServer": "Ferramentas do desenvolvedor para o servidor atual",
   "main.menus.app.view.devToolsSubMenu": "Ferramentas de Desenvolvimento",
   "main.menus.app.view.developerModeBrowserOnly": "Modo Somente Navegador",
