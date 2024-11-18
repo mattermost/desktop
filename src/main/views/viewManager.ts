@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {WebContentsView, dialog, ipcMain} from 'electron';
+import {WebContentsView, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 
 import ServerViewState from 'app/serverViewState';
@@ -41,18 +41,18 @@ import {getFormattedPathName, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
+import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {flushCookiesStore} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
-import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
+import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {DeveloperSettings} from 'types/settings';
 
 import LoadingScreen from './loadingScreen';
 import {MattermostWebContentsView} from './MattermostWebContentsView';
-import modalManager from './modalManager';
 
 import {getLocalPreload, getAdjustedWindowBoundaries} from '../utils';
 
@@ -158,14 +158,14 @@ export class ViewManager {
         } else {
             this.getViewLogger(viewId).warn(`Couldn't find a view with name: ${viewId}`);
         }
-        modalManager.showModal();
+        ModalManager.showModal();
     };
 
     focusCurrentView = () => {
         log.debug('focusCurrentView');
 
-        if (modalManager.isModalDisplayed()) {
-            modalManager.focusCurrentModal();
+        if (ModalManager.isModalDisplayed()) {
+            ModalManager.focusCurrentModal();
             return;
         }
 
@@ -227,11 +227,11 @@ export class ViewManager {
                         webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
                     }
                 }
+            } else if (ServerManager.hasServers()) {
+                ServerViewState.showNewServerModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
             } else {
-                dialog.showErrorBox(
-                    localizeMessage('main.views.viewManager.handleDeepLink.error.title', 'No matching server'),
-                    localizeMessage('main.views.viewManager.handleDeepLink.error.body', 'There is no configured server in the app that matches the requested url: {url}', {url: parsedURL.toString()}),
-                );
+                ModalManager.removeModal('welcomeScreen');
+                handleWelcomeScreenModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
             }
         }
     };
@@ -439,7 +439,7 @@ export class ViewManager {
             } else if (recycle) {
                 views.set(view.id, recycle);
             } else {
-                views.set(view.id, this.makeView(srv, view));
+                views.set(view.id, this.makeView(srv, view, srv.initialLoadURL?.toString()));
             }
         }
 

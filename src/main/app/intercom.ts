@@ -8,6 +8,7 @@ import ServerViewState from 'app/serverViewState';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
+import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
@@ -85,7 +86,7 @@ export function handleMainWindowIsShown() {
     }
 }
 
-export function handleWelcomeScreenModal() {
+export function handleWelcomeScreenModal(prefillURL?: string) {
     log.debug('handleWelcomeScreenModal');
 
     const html = 'mattermost-desktop://renderer/welcomeScreen.html';
@@ -96,10 +97,17 @@ export function handleWelcomeScreenModal() {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<null, UniqueServer>('welcomeScreen', html, preload, null, mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>('welcomeScreen', html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
-            const newServer = ServerManager.addServer(data);
+            let initialLoadURL;
+            if (prefillURL) {
+                const parsedServerURL = parseURL(data.url);
+                if (parsedServerURL) {
+                    initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
+                }
+            }
+            const newServer = ServerManager.addServer(data, initialLoadURL);
             ServerViewState.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation

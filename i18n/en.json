@@ -128,8 +128,6 @@
   "main.tray.tray.expired": "Session Expired: Please sign in to continue receiving notifications.",
   "main.tray.tray.mention": "You have been mentioned",
   "main.tray.tray.unread": "You have unread channels",
-  "main.views.viewManager.handleDeepLink.error.body": "There is no configured server in the app that matches the requested url: {url}",
-  "main.views.viewManager.handleDeepLink.error.title": "No matching server",
   "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "Don't ask again",
   "main.windows.mainWindow.closeApp.dialog.detail": "You will no longer receive notifications for messages. If you want to leave {appName} running in the system tray, you can enable this in Settings.",
   "main.windows.mainWindow.closeApp.dialog.message": "Are you sure you want to quit?",

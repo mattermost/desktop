@@ -44,7 +44,7 @@ export class ServerViewState {
 
     constructor() {
         ipcMain.on(SWITCH_SERVER, (event, serverId) => this.switchServer(serverId));
-        ipcMain.on(SHOW_NEW_SERVER_MODAL, this.showNewServerModal);
+        ipcMain.on(SHOW_NEW_SERVER_MODAL, this.handleShowNewServerModal);
         ipcMain.on(SHOW_EDIT_SERVER_MODAL, this.showEditServerModal);
         ipcMain.on(SHOW_REMOVE_SERVER_MODAL, this.showRemoveServerModal);
         ipcMain.handle(VALIDATE_SERVER_URL, this.handleServerURLValidation);
@@ -123,25 +123,32 @@ export class ServerViewState {
      * Server Modals
      */
 
-    showNewServerModal = () => {
-        log.debug('showNewServerModal');
+    showNewServerModal = (prefillURL?: string) => {
+        log.debug('showNewServerModal', {prefillURL});
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<null, Server>(
+        const modalPromise = ModalManager.addModal<{prefillURL?: string}, Server>(
             'newServer',
             'mattermost-desktop://renderer/newServer.html',
             getLocalPreload('internalAPI.js'),
-            null,
+            {prefillURL},
             mainWindow,
             !ServerManager.hasServers(),
         );
 
         modalPromise.then((data) => {
-            const newServer = ServerManager.addServer(data);
+            let initialLoadURL;
+            if (prefillURL) {
+                const parsedServerURL = parseURL(data.url);
+                if (parsedServerURL) {
+                    initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
+                }
+            }
+            const newServer = ServerManager.addServer(data, initialLoadURL);
             this.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -150,6 +157,8 @@ export class ServerViewState {
             }
         });
     };
+
+    private handleShowNewServerModal = () => this.showNewServerModal();
 
     private showEditServerModal = (e: IpcMainEvent, id: string) => {
         log.debug('showEditServerModal', id);
@@ -281,6 +290,11 @@ export class ServerViewState {
         // If the original URL was invalid, don't replace that as they probably have a typo somewhere
         // Also strip the trailing slash if it's there so that the user can keep typing
         if (!remoteInfo) {
+            // If the URL provided has a path, try to validate the server with parts of the path removed, until we reach the root and then return a failure
+            if (parsedURL.pathname !== '/') {
+                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId);
+            }
+
             return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString().replace(/\/$/, '')};
         }
 

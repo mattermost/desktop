@@ -20,6 +20,7 @@ const onConnect = (data: UniqueServer) => {
 };
 
 const WelcomeScreenModalWrapper = () => {
+    const [data, setData] = useState<{prefillURL?: string}>();
     const [darkMode, setDarkMode] = useState(false);
     const [getStarted, setGetStarted] = useState(false);
     const [mobileView, setMobileView] = useState(false);
@@ -36,6 +37,14 @@ const WelcomeScreenModalWrapper = () => {
         window.desktop.onDarkModeChange((result) => {
             setDarkMode(result);
         });
+
+        window.desktop.modals.getModalInfo<{prefillURL?: string}>().
+            then((data) => {
+                setData(data);
+                if (data.prefillURL) {
+                    setGetStarted(true);
+                }
+            });
 
         handleWindowResize();
         window.addEventListener('resize', handleWindowResize);
@@ -56,6 +65,7 @@ const WelcomeScreenModalWrapper = () => {
                     mobileView={mobileView}
                     darkMode={darkMode}
                     onConnect={onConnect}
+                    prefillURL={data?.prefillURL}
                 />
             ) : (
                 <WelcomeScreen
