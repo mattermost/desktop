@@ -92,9 +92,11 @@ export class ViewManager {
     }
 
     private init = () => {
-        LoadingScreen.show();
-        ServerManager.getAllServers().forEach((server) => this.loadServer(server));
-        this.showInitial();
+        if (ServerManager.hasServers()) {
+            LoadingScreen.show();
+            ServerManager.getAllServers().forEach((server) => this.loadServer(server));
+            this.showInitial();
+        }
     };
 
     private handleDeveloperModeUpdated = (json: DeveloperSettings) => {

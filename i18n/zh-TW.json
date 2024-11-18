@@ -164,6 +164,7 @@
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "您可以透過瀏覽器使用 <link>{url}</link>。",
   "renderer.components.errorView.troubleshooting.computerIsConnected": "您的電腦已連線至網際網路。",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "{appName} 的網址 <link>{url}</link> 正確",
+  "renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow": "你可以透過瀏覽器視窗瀏覽<link>{url}</link>。",
   "renderer.components.extraBar.back": "返回",
   "renderer.components.input.required": "此欄位為必填項目",
   "renderer.components.mainPage.contextMenu.ariaLabel": "情境選單",

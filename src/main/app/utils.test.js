@@ -241,7 +241,7 @@ describe('main/app/utils', () => {
                 dialog.showMessageBoxSync.mockReturnValue(0);
                 dialog.showOpenDialogSync.mockReturnValue(['/old/data/path']);
                 migrateMacAppStore();
-                expect(fs.cpSync).toHaveBeenCalledWith('/old/data/path', '/path/to/data');
+                expect(fs.cpSync).toHaveBeenCalledWith('/old/data/path', '/path/to/data', {recursive: true});
                 expect(updatePaths).toHaveBeenCalled();
                 expect(migrationPrefs.setValue).toHaveBeenCalledWith('masConfigs', true);
             });
