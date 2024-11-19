@@ -32,6 +32,8 @@ export function handleAppSecondInstance(event: Event, argv: string[]) {
     const deeplinkingURL = getDeeplinkingURL(argv);
     if (deeplinkingURL) {
         openDeepLink(deeplinkingURL);
+    } else if (MainWindow.get()) {
+        MainWindow.show();
     }
 }
 
