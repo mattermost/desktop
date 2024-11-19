@@ -1,7 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {DownloadItemTypeEnum} from 'main/downloadsManager';
+export enum DownloadItemTypeEnum {
+    FILE = 'file',
+    UPDATE = 'update',
+}
 
 export type DownloadItemUpdatedEventState = 'interrupted' | 'progressing';
 export type DownloadItemDoneEventState = 'completed' | 'cancelled' | 'interrupted';

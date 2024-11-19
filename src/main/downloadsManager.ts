@@ -36,17 +36,12 @@ import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromConten
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import type {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
+import {type DownloadedItem, type DownloadItemDoneEventState, type DownloadedItems, type DownloadItemState, type DownloadItemUpdatedEventState, DownloadItemTypeEnum} from 'types/downloads';
 
 import appVersionManager from './AppVersionManager';
 import {downloadsJson} from './constants';
 
 const log = new Logger('DownloadsManager');
-
-export enum DownloadItemTypeEnum {
-    FILE = 'file',
-    UPDATE = 'update',
-}
 
 export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     autoCloseTimeout: NodeJS.Timeout | null;
