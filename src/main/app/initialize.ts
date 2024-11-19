@@ -394,8 +394,8 @@ async function initializeAfterAppReady() {
 
     let deeplinkingURL;
 
-    // Protocol handler for win32
-    if (process.platform === 'win32') {
+    // Protocol handler for win32 and linux
+    if (process.platform !== 'darwin') {
         const args = process.argv.slice(1);
         if (Array.isArray(args) && args.length > 0) {
             deeplinkingURL = getDeeplinkingURL(args);
