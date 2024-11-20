@@ -61,7 +61,7 @@ jobs:
         run: |
           mkdir -p ./build/linux
           npm run package:linux
-          bash -x ./scripts/patch_updater_yml.sh
+          rm release/latest*.yml
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: release/upload-build
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
@@ -108,7 +108,7 @@ jobs:
       - name: release/package
         run: |
           mkdir -p ./build/win-release
-          bash -x ./scripts/patch_updater_yml.sh
+          rm release/latest*.yml
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: release/upload-build
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
@@ -151,7 +151,7 @@ jobs:
           echo $MAC_PROFILE | base64 -D > ./mac.provisionprofile
           mkdir -p ./build/macos-release
           npm run package:mac-with-universal
-          bash -x ./scripts/patch_updater_yml.sh
+          rm release/latest*.yml
           bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
       - name: release/rename-arm64-to-m1
         run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
