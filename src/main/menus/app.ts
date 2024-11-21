@@ -446,7 +446,6 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             Diagnostics.run();
         },
     });
-    submenu.push(separatorItem);
 
     let reportProblemLink = currentRemoteInfo?.reportProblemLink;
     if (!reportProblemLink) {
