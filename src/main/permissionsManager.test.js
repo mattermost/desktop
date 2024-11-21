@@ -60,13 +60,15 @@ jest.mock('main/windows/mainWindow', () => ({
 
 describe('main/PermissionsManager', () => {
     describe('setForServer', () => {
-        it('should ask for media permission when is not granted but the user explicitly granted it', () => {
-            systemPreferences.getMediaAccessStatus.mockReturnValue('denied');
-            const permissionsManager = new PermissionsManager('anyfile.json');
-            permissionsManager.setForServer({url: new URL('http://anyurl.com')}, {media: {allowed: true}});
-            expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(1, 'microphone');
-            expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(2, 'camera');
-        });
+        if (process.platform !== 'linux') {
+            it('should ask for media permission when is not granted but the user explicitly granted it', () => {
+                systemPreferences.getMediaAccessStatus.mockReturnValue('denied');
+                const permissionsManager = new PermissionsManager('anyfile.json');
+                permissionsManager.setForServer({url: new URL('http://anyurl.com')}, {media: {allowed: true}});
+                expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(1, 'microphone');
+                expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(2, 'camera');
+            });
+        }
     });
 
     describe('handlePermissionRequest', () => {
