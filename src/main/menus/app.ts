@@ -10,6 +10,7 @@ import log from 'electron-log';
 import ServerViewState from 'app/serverViewState';
 import {OPEN_SERVERS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import type {Config} from 'common/config';
+import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
 import {t} from 'common/utils/util';
 import {getViewDisplayName} from 'common/views/View';
@@ -312,6 +313,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     });
 
     const servers = ServerManager.getOrderedServers();
+    const currentServer = ServerManager.hasServers() ? ServerViewState.getCurrentServer() : undefined;
     const windowMenu = {
         id: 'window',
         label: localizeMessage('main.menus.app.window', '&Window'),
@@ -347,7 +349,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                     ServerViewState.switchServer(server.id);
                 },
             });
-            if (ServerViewState.getCurrentServer().id === server.id) {
+            if (currentServer?.id === server.id) {
                 ServerManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view, i) => {
                     items.push({
                         label: `    ${localizeMessage(`common.views.${view.type}`, getViewDisplayName(view.type as ViewType))}`,
@@ -380,6 +382,8 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         ],
     };
     template.push(windowMenu);
+
+    const currentRemoteInfo = currentServer ? ServerManager.getRemoteInfo(currentServer.id) : undefined;
     const submenu = [];
     if (updateManager && config.canUpgrade) {
         if (updateManager.versionDownloaded) {
@@ -404,16 +408,28 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 },
             });
         }
-    }
-    if (config.helpLink) {
-        submenu.push({
-            label: localizeMessage('main.menus.app.help.learnMore', 'Learn More...'),
-            click() {
-                shell.openExternal(config.helpLink!);
-            },
-        });
         submenu.push(separatorItem);
     }
+
+    const helpLink = currentRemoteInfo?.helpLink ?? config.helpLink;
+    if (helpLink) {
+        submenu.push({
+            label: localizeMessage('main.menus.app.help.userGuide', 'User guide'),
+            click() {
+                shell.openExternal(helpLink);
+            },
+        });
+    }
+    const academyLink = config.academyLink;
+    if (academyLink) {
+        submenu.push({
+            label: localizeMessage('main.menus.app.help.academy', 'Mattermost Academy'),
+            click() {
+                shell.openExternal(academyLink);
+            },
+        });
+    }
+    submenu.push(separatorItem);
 
     submenu.push({
         id: 'Show logs',
@@ -430,6 +446,27 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             Diagnostics.run();
         },
     });
+
+    let reportProblemLink = currentRemoteInfo?.reportProblemLink;
+    if (!reportProblemLink) {
+        switch (currentRemoteInfo?.licenseSku) {
+        case 'enterprise':
+        case 'professional':
+            reportProblemLink = DEFAULT_EE_REPORT_PROBLEM_LINK;
+            break;
+        default:
+            reportProblemLink = DEFAULT_TE_REPORT_PROBLEM_LINK;
+            break;
+        }
+    }
+    if (reportProblemLink) {
+        submenu.push({
+            label: localizeMessage('main.menus.app.help.reportProblem', 'Report a problem'),
+            click() {
+                shell.openExternal(reportProblemLink!);
+            },
+        });
+    }
     submenu.push(separatorItem);
 
     const version = localizeMessage('main.menus.app.help.versionString', 'Version {version}{commit}', {

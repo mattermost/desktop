@@ -106,6 +106,7 @@ export type AnyConfig = ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
 export type BuildConfig = {
     defaultServers?: Server[];
     helpLink: string;
+    academyLink: string;
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
     managedResources: string[];

@@ -4,6 +4,8 @@
 
 import type {BuildConfig} from 'types/config';
 
+import {DEFAULT_ACADEMY_LINK, DEFAULT_HELP_LINK} from '../../common/constants';
+
 // For detailed guides, please refer to https://docs.mattermost.com/deployment/desktop-app-deployment.html
 
 /**
@@ -27,7 +29,8 @@ const buildConfig: BuildConfig = {
       url: 'https://example.com'
     }
   */],
-    helpLink: 'https://docs.mattermost.com/messaging/managing-desktop-app-servers.html',
+    helpLink: DEFAULT_HELP_LINK,
+    academyLink: DEFAULT_ACADEMY_LINK,
     enableServerManagement: true,
     enableAutoUpdater: true,
     managedResources: ['trusted'],
