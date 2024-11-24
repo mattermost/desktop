@@ -43,7 +43,7 @@
   "main.autoUpdater.noUpdate.detail": "Ви використовуєте останню версію {appName} програми (версія {version}). Ви отримаєте сповіщення, коли нова версія буде доступна для встановлення.",
   "main.autoUpdater.noUpdate.message": "Ви використовуєте актуальную версію",
   "main.badge.noUnreads": "У вас немає непрочитаних повідомлень",
-  "main.badge.sessionExpired": "Час використання даної сесії збіг. Будь ласка, увійдіть знову, щоб надалі отримувати сповіщення.",
+  "main.badge.sessionExpired": "Сесія закінчилася: будь ласка, увійдіть, щоб продовжити отримувати сповіщення.",
   "main.badge.unreadChannels": "У вас є непрочитані канали",
   "main.badge.unreadMentions": "У вас є непрочитані згадки ({mentionCount})",
   "main.downloadsManager.resetDownloadsFolder": "Будь ласка, скиньте папку, куди будуть завантажуватись файли",
