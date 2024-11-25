@@ -184,7 +184,7 @@ jobs:
 
       - name: e2e/run-playright-tests-${{ runner.os }}
         run: |
-          if [ ${{ runner.os }} == 'Linux' ]; then
+          if [ ${{ runner.os }} == 'Linux' ] || [ ${{ runner.os }} == 'macOS' ]; then
             export DISPLAY=:99
             Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           fi
