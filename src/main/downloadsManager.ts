@@ -635,10 +635,11 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                 if (item.getReceivedBytes() < 1000000) {
                     thumbnailData = (await nativeImage.createFromPath(overridePath ?? item.getSavePath())).toDataURL();
                 }
-            }
+            };
+
             // Linux doesn't support the thumbnail creation so we have to use the base function
             if (process.platform === 'linux') {
-                await fallback()
+                await fallback();
             } else {
                 // This has been known to fail on Windows, see: https://github.com/mattermost/desktop/issues/3140
                 try {
