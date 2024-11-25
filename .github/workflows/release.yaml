@@ -136,6 +136,7 @@ jobs:
       - name: release/install-dependencies
         run: |
           brew install yq rename
+          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
           npm ci
       - name: release/test
         uses: ./.github/actions/test

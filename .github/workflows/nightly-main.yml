@@ -129,6 +129,7 @@ jobs:
       - name: nightly/install-dependencies
         run: |
           brew install yq
+          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
           npm ci
       - name: nightly/copy-provisioning-profile
         run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
@@ -159,6 +160,7 @@ jobs:
       - name: nightly/install-dependencies
         run: |
           brew install yq rename
+          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
           npm ci
       - name: nightly/test
         uses: ./.github/actions/test
