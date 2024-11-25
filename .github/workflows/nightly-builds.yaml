@@ -49,7 +49,7 @@ jobs:
     strategy:
       matrix:
         runs-on:
-          - macos-13
+          - macos-15
           - ubuntu-22.04
           - windows-2022
     uses: ./.github/workflows/e2e-functional-template.yml
