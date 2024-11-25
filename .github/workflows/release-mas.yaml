@@ -15,7 +15,7 @@ env:
 
 jobs:
   mac-app-store-preflight:
-    runs-on: macos-12
+    runs-on: macos-15
     env:
       MAS_PROFILE: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MAS_PROFILE }}
       MACOS_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}

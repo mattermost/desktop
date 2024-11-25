@@ -73,7 +73,7 @@ jobs:
           retention-days: 5 ## No need to keep them since they are uploaded on S3
 
   build-mac-installer:
-    runs-on: macos-12
+    runs-on: macos-15
     steps:
       - name: nightly/checkout-repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
