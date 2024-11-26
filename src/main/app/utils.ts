@@ -8,7 +8,7 @@ import type {BrowserWindow, Rectangle} from 'electron';
 import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
 import isDev from 'electron-is-dev';
 
-import {APP_MENU_WILL_CLOSE} from 'common/communication';
+import {APP_MENU_WILL_CLOSE, MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
@@ -38,8 +38,12 @@ const log = new Logger('App.Utils');
 
 export function openDeepLink(deeplinkingUrl: string) {
     try {
-        MainWindow.show();
-        ViewManager.handleDeepLink(deeplinkingUrl);
+        if (MainWindow.get()) {
+            MainWindow.show();
+            ViewManager.handleDeepLink(deeplinkingUrl);
+        } else {
+            MainWindow.on(MAIN_WINDOW_CREATED, () => ViewManager.handleDeepLink(deeplinkingUrl));
+        }
     } catch (err) {
         log.error(`There was an error opening the deeplinking url: ${err}`);
     }
@@ -232,7 +236,7 @@ export function migrateMacAppStore() {
     }
 
     try {
-        fs.cpSync(result[0], app.getPath('userData'));
+        fs.cpSync(result[0], app.getPath('userData'), {recursive: true});
         updatePaths(true);
         migrationPrefs.setValue('masConfigs', true);
     } catch (e) {

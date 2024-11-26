@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {BrowserView, dialog, ipcMain} from 'electron';
+import {WebContentsView, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 
 import ServerViewState from 'app/serverViewState';
@@ -18,10 +18,7 @@ import {
     UPDATE_URL_VIEW_WIDTH,
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
-    APP_LOGGED_OUT,
-    APP_LOGGED_IN,
     RELOAD_CURRENT_VIEW,
-    UNREAD_RESULT,
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
     SESSION_EXPIRED,
@@ -31,7 +28,6 @@ import {
     SWITCH_TAB,
     GET_IS_DEV_MODE,
     REQUEST_BROWSER_HISTORY_STATUS,
-    LEGACY_OFF,
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
     DEVELOPER_MODE_UPDATED,
@@ -45,20 +41,20 @@ import {getFormattedPathName, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
+import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {flushCookiesStore} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
-import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
+import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {DeveloperSettings} from 'types/settings';
 
 import LoadingScreen from './loadingScreen';
-import {MattermostBrowserView} from './MattermostBrowserView';
-import modalManager from './modalManager';
+import {MattermostWebContentsView} from './MattermostWebContentsView';
 
-import {getLocalPreload, getAdjustedWindowBoundaries, shouldHaveBackBar} from '../utils';
+import {getLocalPreload, getAdjustedWindowBoundaries} from '../utils';
 
 const log = new Logger('ViewManager');
 const URL_VIEW_DURATION = 10 * SECOND;
@@ -66,7 +62,7 @@ const URL_VIEW_HEIGHT = 20;
 
 export class ViewManager {
     private closedViews: Map<string, {srv: MattermostServer; view: MattermostView}>;
-    private views: Map<string, MattermostBrowserView>;
+    private views: Map<string, MattermostWebContentsView>;
     private currentView?: string;
 
     private urlViewCancel?: () => void;
@@ -84,14 +80,10 @@ export class ViewManager {
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
-        ipcMain.on(APP_LOGGED_IN, this.handleAppLoggedIn);
-        ipcMain.on(APP_LOGGED_OUT, this.handleAppLoggedOut);
         ipcMain.on(TAB_LOGIN_CHANGED, this.handleTabLoginChanged);
         ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
-        ipcMain.on(UNREAD_RESULT, this.handleUnreadChanged);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
-        ipcMain.on(LEGACY_OFF, this.handleLegacyOff);
 
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 
@@ -100,15 +92,17 @@ export class ViewManager {
     }
 
     private init = () => {
-        LoadingScreen.show();
-        ServerManager.getAllServers().forEach((server) => this.loadServer(server));
-        this.showInitial();
+        if (ServerManager.hasServers()) {
+            LoadingScreen.show();
+            ServerManager.getAllServers().forEach((server) => this.loadServer(server));
+            this.showInitial();
+        }
     };
 
     private handleDeveloperModeUpdated = (json: DeveloperSettings) => {
         log.debug('handleDeveloperModeUpdated', json);
 
-        if (['browserOnly', 'disableContextMenu', 'forceLegacyAPI', 'forceNewAPI'].some((key) => Object.hasOwn(json, key))) {
+        if (['browserOnly', 'disableContextMenu'].some((key) => Object.hasOwn(json, key))) {
             this.views.forEach((view) => view.destroy());
             this.views = new Map();
             this.closedViews = new Map();
@@ -164,14 +158,14 @@ export class ViewManager {
         } else {
             this.getViewLogger(viewId).warn(`Couldn't find a view with name: ${viewId}`);
         }
-        modalManager.showModal();
+        ModalManager.showModal();
     };
 
     focusCurrentView = () => {
         log.debug('focusCurrentView');
 
-        if (modalManager.isModalDisplayed()) {
-            modalManager.focusCurrentModal();
+        if (ModalManager.isModalDisplayed()) {
+            ModalManager.focusCurrentModal();
             return;
         }
 
@@ -214,30 +208,30 @@ export class ViewManager {
                 if (this.closedViews.has(view.id)) {
                     this.openClosedView(view.id, urlWithSchema);
                 } else {
-                    const browserView = this.views.get(view.id);
-                    if (!browserView) {
+                    const webContentsView = this.views.get(view.id);
+                    if (!webContentsView) {
                         log.error(`Couldn't find a view matching the id ${view.id}`);
                         return;
                     }
 
-                    if (browserView.isReady() && ServerManager.getRemoteInfo(browserView.view.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(browserView.view.server.id)?.serverVersion ?? '', '6.0.0')) {
-                        const formattedServerURL = `${browserView.view.server.url.origin}${getFormattedPathName(browserView.view.server.url.pathname)}`;
+                    if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.view.server.id)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.view.server.id)?.serverVersion ?? '', '6.0.0')) {
+                        const formattedServerURL = `${webContentsView.view.server.url.origin}${getFormattedPathName(webContentsView.view.server.url.pathname)}`;
                         const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
-                        browserView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
-                        this.deeplinkSuccess(browserView.id);
+                        webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
+                        this.deeplinkSuccess(webContentsView.id);
                     } else {
                         // attempting to change parsedURL protocol results in it not being modified.
-                        browserView.resetLoadingStatus();
-                        browserView.load(urlWithSchema);
-                        browserView.once(LOAD_SUCCESS, this.deeplinkSuccess);
-                        browserView.once(LOAD_FAILED, this.deeplinkFailed);
+                        webContentsView.resetLoadingStatus();
+                        webContentsView.load(urlWithSchema);
+                        webContentsView.once(LOAD_SUCCESS, this.deeplinkSuccess);
+                        webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
                     }
                 }
+            } else if (ServerManager.hasServers()) {
+                ServerViewState.showNewServerModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
             } else {
-                dialog.showErrorBox(
-                    localizeMessage('main.views.viewManager.handleDeepLink.error.title', 'No matching server'),
-                    localizeMessage('main.views.viewManager.handleDeepLink.error.body', 'There is no configured server in the app that matches the requested url: {url}', {url: parsedURL.toString()}),
-                );
+                ModalManager.removeModal('welcomeScreen');
+                handleWelcomeScreenModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
             }
         }
     };
@@ -268,26 +262,26 @@ export class ViewManager {
             this.closedViews.set(view.id, {srv, view});
             return;
         }
-        const browserView = this.makeView(srv, view, url);
-        this.addView(browserView);
+        const webContentsView = this.makeView(srv, view, url);
+        this.addView(webContentsView);
     };
 
-    private makeView = (srv: MattermostServer, view: MattermostView, url?: string): MattermostBrowserView => {
+    private makeView = (srv: MattermostServer, view: MattermostView, url?: string): MattermostWebContentsView => {
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             throw new Error('Cannot create view, no main window present');
         }
 
-        const browserView = new MattermostBrowserView(view, {webPreferences: {spellcheck: Config.useSpellChecker}});
-        browserView.once(LOAD_SUCCESS, this.activateView);
-        browserView.on(LOADSCREEN_END, this.finishLoading);
-        browserView.on(LOAD_FAILED, this.failLoading);
-        browserView.on(UPDATE_TARGET_URL, this.showURLView);
-        browserView.load(url);
-        return browserView;
+        const webContentsView = new MattermostWebContentsView(view, {webPreferences: {spellcheck: Config.useSpellChecker}});
+        webContentsView.once(LOAD_SUCCESS, this.activateView);
+        webContentsView.on(LOADSCREEN_END, this.finishLoading);
+        webContentsView.on(LOAD_FAILED, this.failLoading);
+        webContentsView.on(UPDATE_TARGET_URL, this.showURLView);
+        webContentsView.load(url);
+        return webContentsView;
     };
 
-    private addView = (view: MattermostBrowserView): void => {
+    private addView = (view: MattermostWebContentsView): void => {
         this.views.set(view.id, view);
 
         // Force a permission check for notifications
@@ -363,26 +357,18 @@ export class ViewManager {
         }
         if (url && url !== '') {
             const urlString = typeof url === 'string' ? url : url.toString();
-            const preload = getLocalPreload('internalAPI.js');
-            const urlView = new BrowserView({
-                webPreferences: {
-                    preload,
-
-                    // Workaround for this issue: https://github.com/electron/electron/issues/30993
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    transparent: true,
-                }});
+            const urlView = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
+            urlView.setBackgroundColor('#00000000');
             const localURL = `mattermost-desktop://renderer/urlView.html?url=${encodeURIComponent(urlString)}`;
             performanceMonitor.registerView('URLView', urlView.webContents);
             urlView.webContents.loadURL(localURL);
-            MainWindow.get()?.addBrowserView(urlView);
+            MainWindow.get()?.contentView.addChildView(urlView);
             const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? MainWindow.getBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
                 try {
-                    mainWindow.removeBrowserView(urlView);
+                    mainWindow.contentView.removeChildView(urlView);
                 } catch (e) {
                     log.error('Failed to remove URL view', e);
                 }
@@ -435,12 +421,12 @@ export class ViewManager {
 
         const currentViewId: string | undefined = this.views.get(this.currentView as string)?.view.id;
 
-        const current: Map<string, MattermostBrowserView> = new Map();
+        const current: Map<string, MattermostWebContentsView> = new Map();
         for (const view of this.views.values()) {
             current.set(view.view.id, view);
         }
 
-        const views: Map<string, MattermostBrowserView> = new Map();
+        const views: Map<string, MattermostWebContentsView> = new Map();
         const closed: Map<string, {srv: MattermostServer; view: MattermostView}> = new Map();
 
         const sortedViews = ServerManager.getAllServers().flatMap((x) => ServerManager.getOrderedTabsForServer(x.id).
@@ -453,7 +439,7 @@ export class ViewManager {
             } else if (recycle) {
                 views.set(view.id, recycle);
             } else {
-                views.set(view.id, this.makeView(srv, view));
+                views.set(view.id, this.makeView(srv, view, srv.initialLoadURL?.toString()));
             }
         }
 
@@ -502,27 +488,6 @@ export class ViewManager {
 
     private handleHistory = (event: IpcMainEvent, offset: number) => {
         this.getCurrentView()?.goToOffset(offset);
-    };
-
-    private handleAppLoggedIn = (event: IpcMainEvent) => {
-        log.debug('handleAppLoggedIn', event.sender.id);
-        const view = this.getViewByWebContentsId(event.sender.id);
-        if (!view) {
-            return;
-        }
-        view.onLogin(true);
-        flushCookiesStore();
-    };
-
-    private handleAppLoggedOut = (event: IpcMainEvent) => {
-        log.debug('handleAppLoggedOut', event.sender.id);
-        const view = this.getViewByWebContentsId(event.sender.id);
-        if (!view) {
-            return;
-        }
-        view.onLogin(false);
-        AppState.clear(view.id);
-        flushCookiesStore();
     };
 
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
@@ -605,28 +570,6 @@ export class ViewManager {
         this.showById(view?.id);
     };
 
-    private handleLegacyOff = (e: IpcMainEvent) => {
-        log.silly('handleLegacyOff', {webContentsId: e.sender.id});
-
-        const view = this.getViewByWebContentsId(e.sender.id);
-        if (!view) {
-            return;
-        }
-        view.offLegacyUnreads();
-    };
-
-    // if favicon is null, it means it is the initial load,
-    // so don't memoize as we don't have the favicons and there is no rush to find out.
-    private handleUnreadChanged = (e: IpcMainEvent, result: boolean) => {
-        log.silly('handleUnreadChanged', {webContentsId: e.sender.id, result});
-
-        const view = this.getViewByWebContentsId(e.sender.id);
-        if (!view) {
-            return;
-        }
-        AppState.updateUnreads(view.id, result);
-    };
-
     private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {
         log.silly('handleUnreadsAndMentionsChanged', {webContentsId: e.sender.id, isUnread, mentionCount});
 
@@ -653,7 +596,7 @@ export class ViewManager {
 
         const currentView = this.getCurrentView();
         if (currentView && currentView.currentURL) {
-            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height, shouldHaveBackBar(currentView.view.url, currentView.currentURL));
+            const adjustedBounds = getAdjustedWindowBoundaries(newBounds.width, newBounds.height);
             currentView.setBounds(adjustedBounds);
         }
     };
@@ -673,10 +616,10 @@ export class ViewManager {
             this.closedViews.delete(view.id);
         }
         this.showById(id);
-        const browserView = this.views.get(id)!;
-        browserView.isVisible = true;
-        browserView.on(LOAD_SUCCESS, () => {
-            browserView.isVisible = false;
+        const webContentsView = this.views.get(id)!;
+        webContentsView.isVisible = true;
+        webContentsView.on(LOAD_SUCCESS, () => {
+            webContentsView.isVisible = false;
             this.showById(id);
         });
         ipcMain.emit(OPEN_VIEW, null, view.id);

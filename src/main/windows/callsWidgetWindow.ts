@@ -14,7 +14,6 @@ import {
     CALLS_LEAVE_CALL,
     CALLS_LINK_CLICK,
     CALLS_POPOUT_FOCUS,
-    CALLS_WIDGET_CHANNEL_LINK_CLICK,
     CALLS_WIDGET_RESIZE,
     CALLS_WIDGET_SHARE_SCREEN,
     CALLS_WIDGET_OPEN_THREAD,
@@ -36,7 +35,7 @@ import {
     openScreensharePermissionsSettingsMacOS,
     resetScreensharePermissionsMacOS,
 } from 'main/utils';
-import type {MattermostBrowserView} from 'main/views/MattermostBrowserView';
+import type {MattermostWebContentsView} from 'main/views/MattermostWebContentsView';
 import ViewManager from 'main/views/viewManager';
 import webContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
@@ -52,7 +51,7 @@ const log = new Logger('CallsWidgetWindow');
 
 export class CallsWidgetWindow {
     private win?: BrowserWindow;
-    private mainView?: MattermostBrowserView;
+    private mainView?: MattermostWebContentsView;
     private options?: CallsWidgetWindowConfig;
     private missingScreensharePermissions?: boolean;
 
@@ -80,9 +79,6 @@ export class CallsWidgetWindow {
         ipcMain.on(CALLS_WIDGET_OPEN_THREAD, this.handleCallsOpenThread);
         ipcMain.on(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, this.handleCallsOpenStopRecordingModal);
         ipcMain.on(CALLS_WIDGET_OPEN_USER_SETTINGS, this.forwardToMainApp(CALLS_WIDGET_OPEN_USER_SETTINGS));
-
-        // deprecated in favour of CALLS_LINK_CLICK
-        ipcMain.on(CALLS_WIDGET_CHANNEL_LINK_CLICK, this.handleCallsWidgetChannelLinkClick);
     }
 
     /**
@@ -139,7 +135,7 @@ export class CallsWidgetWindow {
         return u.toString();
     };
 
-    private init = (view: MattermostBrowserView, options: CallsWidgetWindowConfig) => {
+    private init = (view: MattermostWebContentsView, options: CallsWidgetWindowConfig) => {
         this.win = new BrowserWindow({
             width: MINIMUM_CALLS_WIDGET_WIDTH,
             height: MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -554,25 +550,6 @@ export class CallsWidgetWindow {
         ServerViewState.switchServer(this.serverID);
         MainWindow.get()?.focus();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, url);
-    };
-
-    /**
-     * @deprecated
-     */
-    private handleCallsWidgetChannelLinkClick = (event: IpcMainEvent) => {
-        log.debug('handleCallsWidgetChannelLinkClick');
-
-        if (!this.isCallsWidget(event.sender.id)) {
-            return;
-        }
-
-        if (!this.serverID) {
-            return;
-        }
-
-        ServerViewState.switchServer(this.serverID);
-        MainWindow.get()?.focus();
-        this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, this.options?.channelURL);
     };
 }
 

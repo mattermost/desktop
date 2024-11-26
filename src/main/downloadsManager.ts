@@ -36,17 +36,12 @@ import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromConten
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import type {DownloadedItem, DownloadItemDoneEventState, DownloadedItems, DownloadItemState, DownloadItemUpdatedEventState} from 'types/downloads';
+import {type DownloadedItem, type DownloadItemDoneEventState, type DownloadedItems, type DownloadItemState, type DownloadItemUpdatedEventState, DownloadItemTypeEnum} from 'types/downloads';
 
 import appVersionManager from './AppVersionManager';
 import {downloadsJson} from './constants';
 
 const log = new Logger('DownloadsManager');
-
-export enum DownloadItemTypeEnum {
-    FILE = 'file',
-    UPDATE = 'update',
-}
 
 export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     autoCloseTimeout: NodeJS.Timeout | null;
@@ -635,14 +630,23 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
         let thumbnailData;
         if (state === 'completed' && item.getMimeType().toLowerCase().startsWith('image/')) {
-            // Linux doesn't support the thumbnail creation so we have to use the base function
-            if (process.platform === 'linux') {
+            const fallback = async () => {
                 // We also will cap this at 1MB so as to not inflate the memory usage of the downloads dropdown
                 if (item.getReceivedBytes() < 1000000) {
                     thumbnailData = (await nativeImage.createFromPath(overridePath ?? item.getSavePath())).toDataURL();
                 }
+            };
+
+            // Linux doesn't support the thumbnail creation so we have to use the base function
+            if (process.platform === 'linux') {
+                await fallback();
             } else {
-                thumbnailData = (await nativeImage.createThumbnailFromPath(overridePath ?? item.getSavePath(), {height: 32, width: 32})).toDataURL();
+                // This has been known to fail on Windows, see: https://github.com/mattermost/desktop/issues/3140
+                try {
+                    thumbnailData = (await nativeImage.createThumbnailFromPath(overridePath ?? item.getSavePath(), {height: 32, width: 32})).toDataURL();
+                } catch {
+                    await fallback();
+                }
             }
         }
 

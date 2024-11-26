@@ -68,6 +68,7 @@ jest.mock('../contextMenu', () => jest.fn());
 jest.mock('../utils', () => ({
     isInsideRectangle: jest.fn(),
     getLocalPreload: jest.fn(),
+    isKDE: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -95,9 +96,13 @@ describe('main/windows/mainWindow', () => {
                 send: jest.fn(),
                 setWindowOpenHandler: jest.fn(),
             },
+            contentView: {
+                on: jest.fn(),
+            },
             isMaximized: jest.fn(),
             isFullScreen: jest.fn(),
             getBounds: jest.fn(),
+            isMinimized: jest.fn().mockReturnValue(false),
         };
 
         beforeEach(() => {
@@ -515,6 +520,9 @@ describe('main/windows/mainWindow', () => {
         });
 
         it('should add override shortcuts for the top menu on Linux to stop it showing up', () => {
+            const {isKDE} = require('../utils');
+            isKDE.mockReturnValue(false);
+
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'linux',
@@ -535,6 +543,34 @@ describe('main/windows/mainWindow', () => {
                 value: originalPlatform,
             });
             expect(globalShortcut.registerAll).toHaveBeenCalledWith(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], expect.any(Function));
+        });
+
+        it('should register global shortcuts even when window is minimized on KDE/KWin', () => {
+            const {isKDE} = require('../utils');
+            isKDE.mockReturnValue(true);
+
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            const window = {
+                ...baseWindow,
+                isMinimized: jest.fn().mockReturnValue(true),
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'focus') {
+                        cb();
+                    }
+                }),
+            };
+            BrowserWindow.mockImplementation(() => window);
+            const mainWindow = new MainWindow();
+            mainWindow.getBounds = jest.fn();
+            mainWindow.init();
+
+            expect(globalShortcut.registerAll).toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
     });
 

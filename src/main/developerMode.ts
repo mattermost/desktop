@@ -4,7 +4,7 @@
 import {ipcMain} from 'electron';
 import {EventEmitter} from 'events';
 
-import {DEVELOPER_MODE_UPDATED, IS_DEVELOPER_MODE_ENABLED, UPDATE_PATHS, GET_DEVELOPER_MODE_SETTING} from 'common/communication';
+import {DEVELOPER_MODE_UPDATED, IS_DEVELOPER_MODE_ENABLED, UPDATE_PATHS} from 'common/communication';
 import JsonFileManager from 'common/JsonFileManager';
 import {developerModeJson} from 'main/constants';
 
@@ -18,7 +18,6 @@ export class DeveloperMode extends EventEmitter {
         this.json = new JsonFileManager(file);
 
         ipcMain.handle(IS_DEVELOPER_MODE_ENABLED, this.enabled);
-        ipcMain.handle(GET_DEVELOPER_MODE_SETTING, (_, setting) => this.get(setting));
     }
 
     enabled = () => process.env.MM_DESKTOP_DEVELOPER_MODE === 'true';
@@ -63,6 +62,7 @@ export class DeveloperMode extends EventEmitter {
 
 let developerMode = new DeveloperMode(developerModeJson);
 ipcMain.on(UPDATE_PATHS, () => {
+    ipcMain.removeHandler(IS_DEVELOPER_MODE_ENABLED);
     developerMode = new DeveloperMode(developerModeJson);
 });
 export default developerMode;

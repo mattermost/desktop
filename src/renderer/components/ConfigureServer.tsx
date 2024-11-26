@@ -20,6 +20,7 @@ import 'renderer/css/components/LoadingScreen.css';
 
 type ConfigureServerProps = {
     server?: UniqueServer;
+    prefillURL?: string;
     mobileView?: boolean;
     darkMode?: boolean;
     messageTitle?: string;
@@ -33,6 +34,7 @@ type ConfigureServerProps = {
 
 function ConfigureServer({
     server,
+    prefillURL,
     mobileView,
     darkMode,
     messageTitle,
@@ -53,8 +55,8 @@ function ConfigureServer({
 
     const mounted = useRef(false);
     const [transition, setTransition] = useState<'inFromRight' | 'outToLeft'>();
-    const [name, setName] = useState(prevName || '');
-    const [url, setUrl] = useState(prevURL || '');
+    const [name, setName] = useState(prevName ?? '');
+    const [url, setUrl] = useState(prevURL ?? prefillURL ?? '');
     const [nameError, setNameError] = useState('');
     const [urlError, setURLError] = useState<{type: STATUS; value: string}>();
     const [showContent, setShowContent] = useState(false);
@@ -71,6 +73,11 @@ function ConfigureServer({
         setTransition('inFromRight');
         setShowContent(true);
         mounted.current = true;
+
+        if (url) {
+            fetchValidationResult(url);
+        }
+
         return () => {
             mounted.current = false;
         };

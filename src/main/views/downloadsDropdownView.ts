@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent} from 'electron';
-import {BrowserView, ipcMain} from 'electron';
+import {WebContentsView, ipcMain} from 'electron';
 
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -33,7 +33,7 @@ export class DownloadsDropdownView {
     private bounds?: Electron.Rectangle;
     private windowBounds?: Electron.Rectangle;
     private item?: DownloadedItem;
-    private view?: BrowserView;
+    private view?: WebContentsView;
 
     constructor() {
         MainWindow.on(MAIN_WINDOW_CREATED, this.init);
@@ -55,20 +55,11 @@ export class DownloadsDropdownView {
             throw new Error('Cannot initialize, no main window');
         }
         this.bounds = this.getBounds(this.windowBounds.width, DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT);
-
-        const preload = getLocalPreload('internalAPI.js');
-        this.view = new BrowserView({webPreferences: {
-            preload,
-
-            // Workaround for this issue: https://github.com/electron/electron/issues/30993
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            transparent: true,
-        }});
-
+        this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
+        this.view.setBackgroundColor('#00000000');
         performanceMonitor.registerView('DownloadsDropdownView', this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdown.html');
-        MainWindow.get()?.addBrowserView(this.view);
+        MainWindow.get()?.contentView.addChildView(this.view);
     };
 
     /**
@@ -109,7 +100,7 @@ export class DownloadsDropdownView {
         }
 
         this.view.setBounds(this.bounds);
-        MainWindow.get()?.setTopBrowserView(this.view);
+        MainWindow.get()?.contentView.addChildView(this.view);
         this.view.webContents.focus();
         downloadsManager.onOpen();
         MainWindow.sendToRenderer(OPEN_DOWNLOADS_DROPDOWN);

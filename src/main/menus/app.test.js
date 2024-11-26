@@ -68,6 +68,7 @@ jest.mock('common/servers/serverManager', () => ({
     hasServers: jest.fn(),
     getOrderedServers: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
+    getRemoteInfo: jest.fn(),
 }));
 jest.mock('app/serverViewState', () => ({
     switchServer: jest.fn(),
@@ -303,6 +304,7 @@ describe('main/menus/app', () => {
             }
             return id;
         });
+        ServerManager.hasServers.mockReturnValue(true);
         ServerViewState.getCurrentServer.mockImplementation(() => ({id: servers[0].id}));
 
         const modifiedViews = [...Array(15).keys()].map((key) => ({

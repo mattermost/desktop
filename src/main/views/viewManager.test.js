@@ -1,8 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {dialog} from 'electron';
-
 import ServerViewState from 'app/serverViewState';
 import {BROWSER_HISTORY_PUSH, LOAD_SUCCESS, SET_ACTIVE_VIEW} from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
@@ -12,16 +10,13 @@ import PermissionsManager from 'main/permissionsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import LoadingScreen from './loadingScreen';
-import {MattermostBrowserView} from './MattermostBrowserView';
+import {MattermostWebContentsView} from './MattermostWebContentsView';
 import {ViewManager} from './viewManager';
 
 jest.mock('electron', () => ({
     app: {
         getAppPath: () => '/path/to/app',
         getPath: jest.fn(() => '/valid/downloads/path'),
-    },
-    dialog: {
-        showErrorBox: jest.fn(),
     },
     ipcMain: {
         emit: jest.fn(),
@@ -33,6 +28,7 @@ jest.mock('app/serverViewState', () => ({
     getCurrentServer: jest.fn(),
     updateCurrentView: jest.fn(),
     init: jest.fn(),
+    showNewServerModal: jest.fn(),
 }));
 jest.mock('common/views/View', () => ({
     getViewName: jest.fn((a, b) => `${a}-${b}`),
@@ -60,6 +56,10 @@ jest.mock('common/utils/url', () => ({
 
 jest.mock('main/app/utils', () => ({
     flushCookiesStore: jest.fn(),
+}));
+
+jest.mock('main/app/intercom', () => ({
+    handleWelcomeScreenModal: jest.fn(),
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -112,12 +112,13 @@ jest.mock('common/servers/serverManager', () => ({
     }),
 }));
 
-jest.mock('./MattermostBrowserView', () => ({
-    MattermostBrowserView: jest.fn(),
+jest.mock('./MattermostWebContentsView', () => ({
+    MattermostWebContentsView: jest.fn(),
 }));
 
-jest.mock('./modalManager', () => ({
+jest.mock('main/views/modalManager', () => ({
     showModal: jest.fn(),
+    removeModal: jest.fn(),
     isModalDisplayed: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({}));
@@ -133,7 +134,7 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.showById = jest.fn();
             MainWindow.get.mockReturnValue({});
-            MattermostBrowserView.mockImplementation((view) => ({
+            MattermostWebContentsView.mockImplementation((view) => ({
                 on: jest.fn(),
                 load: loadFn,
                 once: onceFn,
@@ -181,7 +182,7 @@ describe('main/views/viewManager', () => {
         beforeEach(() => {
             viewManager.showById = jest.fn();
             MainWindow.get.mockReturnValue({});
-            MattermostBrowserView.mockImplementation((view) => ({
+            MattermostWebContentsView.mockImplementation((view) => ({
                 on: jest.fn(),
                 load: jest.fn(),
                 once: jest.fn(),
@@ -235,7 +236,7 @@ describe('main/views/viewManager', () => {
             const onceFn = jest.fn();
             const loadFn = jest.fn();
             const destroyFn = jest.fn();
-            MattermostBrowserView.mockImplementation((view) => ({
+            MattermostWebContentsView.mockImplementation((view) => ({
                 on: jest.fn(),
                 load: loadFn,
                 once: onceFn,
@@ -255,7 +256,7 @@ describe('main/views/viewManager', () => {
 
         it('should recycle existing views', () => {
             const makeSpy = jest.spyOn(viewManager, 'makeView');
-            const view = new MattermostBrowserView({
+            const view = new MattermostWebContentsView({
                 id: 'view1',
                 server: {
                     id: 'server1',
@@ -321,6 +322,7 @@ describe('main/views/viewManager', () => {
                     isOpen: true,
                     url: new URL('http://server1.com/view'),
                 },
+                undefined,
             );
             makeSpy.mockRestore();
         });
@@ -692,11 +694,12 @@ describe('main/views/viewManager', () => {
             expect(view.load).not.toHaveBeenCalled();
         });
 
-        it('should throw dialog when cannot find the view', () => {
+        it('should open new server modal when using a server that does not exist', () => {
+            ServerManager.hasServers.mockReturnValue(true);
             const view = {...baseView};
-            viewManager.handleDeepLink('mattermost://server-1.com/deep/link?thing=yes');
+            viewManager.handleDeepLink('mattermost://server-2.com/deep/link?thing=yes');
             expect(view.load).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(ServerViewState.showNewServerModal).toHaveBeenCalled();
         });
 
         it('should reopen closed view if called upon', () => {

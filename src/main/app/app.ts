@@ -29,10 +29,11 @@ export function handleAppSecondInstance(event: Event, argv: string[]) {
 
     // Protocol handler for win32
     // argv: An array of the second instance’s (command line / deep linked) arguments
-    MainWindow.show();
     const deeplinkingURL = getDeeplinkingURL(argv);
     if (deeplinkingURL) {
         openDeepLink(deeplinkingURL);
+    } else if (MainWindow.get()) {
+        MainWindow.show();
     }
 }
 

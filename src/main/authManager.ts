@@ -4,7 +4,7 @@ import type {AuthenticationResponseDetails, AuthInfo, WebContents, Event} from '
 
 import {Logger} from 'common/log';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
-import {isCustomLoginURL, isTrustedURL, parseURL} from 'common/utils/url';
+import {isTrustedURL, parseURL} from 'common/utils/url';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalPreload} from 'main/utils';
 import modalManager from 'main/views/modalManager';
@@ -45,7 +45,7 @@ export class AuthManager {
         }
 
         this.loginCallbackMap.set(request.url, callback); // if callback is undefined set it to null instead so we know we have set it up with no value
-        if (isTrustedURL(parsedURL, serverURL) || isCustomLoginURL(parsedURL, serverURL) || TrustedOriginsStore.checkPermission(parsedURL, BASIC_AUTH_PERMISSION)) {
+        if (isTrustedURL(parsedURL, serverURL) || TrustedOriginsStore.checkPermission(parsedURL, BASIC_AUTH_PERMISSION)) {
             this.popLoginModal(request, authInfo);
         } else {
             this.popPermissionModal(request, authInfo, BASIC_AUTH_PERMISSION);
