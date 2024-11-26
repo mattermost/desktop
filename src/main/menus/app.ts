@@ -15,6 +15,7 @@ import ServerManager from 'common/servers/serverManager';
 import {t} from 'common/utils/util';
 import {getViewDisplayName} from 'common/views/View';
 import type {ViewType} from 'common/views/View';
+import {clearAllData, clearDataForServer} from 'main/app/utils';
 import type {UpdateManager} from 'main/autoUpdater';
 import DeveloperMode from 'main/developerMode';
 import Diagnostics from 'main/diagnostics';
@@ -273,6 +274,18 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         enabled: downloadsManager.hasDownloads(),
         click() {
             return downloadsManager.openDownloadsDropdown();
+        },
+    }, separatorItem, {
+        id: 'clear-data-for-server',
+        label: localizeMessage('main.menus.app.view.clearDataForServer', 'Clear Data for Current Server'),
+        async click() {
+            return clearDataForServer(ServerViewState.getCurrentServer());
+        },
+    }, {
+        id: 'clear-data',
+        label: localizeMessage('main.menus.app.view.clearAllData', 'Clear All Data'),
+        async click() {
+            return clearAllData();
         },
     }, separatorItem, {
         label: localizeMessage('main.menus.app.view.devToolsSubMenu', 'Developer Tools'),
