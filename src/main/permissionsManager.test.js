@@ -40,7 +40,7 @@ jest.mock('common/utils/url', () => ({
 
 jest.mock('common/config', () => ({
     registryData: {
-        servers: []
+        servers: [],
     },
 }));
 
@@ -97,7 +97,7 @@ describe('main/PermissionsManager', () => {
             Config.registryData.servers = [
                 {
                     url: 'http://gposerver.com',
-                }
+                },
             ];
         });
 
