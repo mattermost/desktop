@@ -22,6 +22,7 @@ import {
     OPEN_WINDOWS_MICROPHONE_PREFERENCES,
     UPDATE_PATHS,
 } from 'common/communication';
+import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
@@ -141,7 +142,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
             return false;
         }
 
-        let serverURL;
+        let serverURL: URL | undefined;
         if (CallsWidgetWindow.isCallsWidget(webContentsId)) {
             serverURL = CallsWidgetWindow.getViewURL();
         } else {
@@ -150,6 +151,11 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
 
         if (!serverURL) {
             return false;
+        }
+
+        // For GPO servers, we always allow permissions since they are trusted
+        if (Config.registryData?.servers?.some((s) => parseURL(s.url)?.href === serverURL.href)) {
+            return true;
         }
 
         // Exception for embedded videos such as YouTube

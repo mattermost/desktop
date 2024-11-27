@@ -3,6 +3,7 @@
 
 import {dialog, systemPreferences} from 'electron';
 
+import Config from 'common/config';
 import {parseURL, isTrustedURL} from 'common/utils/url';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
@@ -35,6 +36,12 @@ jest.mock('electron', () => ({
 jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
     isTrustedURL: jest.fn(),
+}));
+
+jest.mock('common/config', () => ({
+    registryData: {
+        servers: []
+    },
 }));
 
 jest.mock('main/i18nManager', () => ({
@@ -72,6 +79,9 @@ describe('main/PermissionsManager', () => {
                 if (id === 2) {
                     return {view: {server: {url: new URL('http://anyurl.com')}}};
                 }
+                if (id === 4) {
+                    return {view: {server: {url: new URL('http://gposerver.com')}}};
+                }
 
                 return null;
             });
@@ -84,6 +94,11 @@ describe('main/PermissionsManager', () => {
                 }
             });
             isTrustedURL.mockImplementation((url, baseURL) => url.toString().startsWith(baseURL.toString()));
+            Config.registryData.servers = [
+                {
+                    url: 'http://gposerver.com',
+                }
+            ];
         });
 
         afterEach(() => {
@@ -115,8 +130,15 @@ describe('main/PermissionsManager', () => {
         it('should deny if the server URL can not be found', async () => {
             const permissionsManager = new PermissionsManager('anyfile.json');
             const cb = jest.fn();
-            await permissionsManager.handlePermissionRequest({id: 4}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            await permissionsManager.handlePermissionRequest({id: 5}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
             expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should allow if the URL is a GPO configured server', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 4}, 'media', cb, {securityOrigin: 'http://gposerver.com'});
+            expect(cb).toHaveBeenCalledWith(true);
         });
 
         it('should deny if the URL is not trusted', async () => {
