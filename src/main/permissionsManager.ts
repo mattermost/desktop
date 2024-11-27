@@ -154,7 +154,8 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         }
 
         // For GPO servers, we always allow permissions since they are trusted
-        if (Config.registryData?.servers?.some((s) => parseURL(s.url)?.href === serverURL.href)) {
+        const serverHref = serverURL.href;
+        if (Config.registryData?.servers?.some((s) => parseURL(s.url)?.href === serverHref)) {
             return true;
         }
 
