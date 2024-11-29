@@ -204,11 +204,11 @@ export class ServerViewState {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<string, boolean>(
+        const modalPromise = ModalManager.addModal<null, boolean>(
             'removeServer',
             'mattermost-desktop://renderer/removeServer.html',
             getLocalPreload('internalAPI.js'),
-            server.name,
+            null,
             mainWindow,
         );
 

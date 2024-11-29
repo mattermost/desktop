@@ -2,9 +2,8 @@
 // See LICENSE.txt for license information.
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/modals.css';
 
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 
 import IntlProvider from 'renderer/intl_provider';
@@ -23,19 +22,10 @@ const onSave = (data: boolean) => {
 };
 
 const RemoveServerModalWrapper: React.FC = () => {
-    const [serverName, setServerName] = useState<string>('');
-
-    useEffect(() => {
-        window.desktop.modals.getModalInfo<{name: string}>().then(({name}) => {
-            setServerName(name);
-        });
-    }, []);
-
     return (
         <IntlProvider>
             <RemoveServerModal
                 show={true}
-                serverName={serverName}
                 onHide={() => {
                     onClose();
                 }}
