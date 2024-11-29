@@ -1,0 +1,130 @@
+@use "utils/mixins";
+@use "utils/variables";
+
+b,
+strong {
+    font-weight: 600;
+}
+
+a {
+    color: variables.$primary-color;
+    cursor: pointer;
+    text-decoration: none;
+    word-break: break-word;
+
+    &:focus,
+    &:hover {
+        color: variables.$primary-color--hover;
+    }
+}
+
+.color--link {
+    color: variables.$link-color;
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+        text-decoration: underline;
+    }
+}
+
+body {
+    @include mixins.font-smoothing;
+
+    font-family: 'Open Sans', sans-serif;
+}
+
+h1,
+h2,
+h3 {
+    font-family: Metropolis, sans-serif;
+}
+
+h1 {
+    font-weight: 600;
+}
+
+.is-empty:empty {
+    display: none;
+}
+
+label {
+    &.has-error {
+        color: variables.$red;
+        font-weight: normal;
+    }
+}
+
+.small {
+    font-size: 12px;
+}
+
+.light {
+    opacity: 0.73;
+}
+
+.word-break--all {
+    word-break: break-all;
+}
+
+.whitespace--nowrap {
+    white-space: nowrap;
+}
+
+.whitespace--normal {
+    white-space: normal;
+}
+
+.overflow--ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+ul,
+ol {
+    padding-left: 22px;
+    margin-top: 3px;
+    margin-bottom: 0.11em;
+}
+
+.fa {
+    &.fa-1x {
+        font-size: 1.6rem;
+    }
+}
+
+.font-weight--normal {
+    font-weight: normal;
+}
+
+.font-weight--semibold {
+    font-weight: 600;
+}
+
+.cursor--pointer {
+    cursor: pointer;
+}
+
+.app__body.font--open_sans {
+    font-family: 'Open Sans', sans-serif;
+}
+
+.app__body {
+    h1,
+    h2,
+    h3 {
+        font-family: Metropolis, sans-serif;
+    }
+}
+
+.color--link--adminack {
+    padding-left: 20px;
+    color: variables.$white;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover,
+    &:focus {
+        text-decoration: underline;
+    }
+}

@@ -3,6 +3,8 @@
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
+  "generic_modal.cancel": "Cancel",
+  "generic_modal.confirm": "Confirm",
   "label.accept": "Accept",
   "label.add": "Add",
   "label.allow": "Allow",
