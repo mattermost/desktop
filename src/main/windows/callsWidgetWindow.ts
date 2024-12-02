@@ -501,6 +501,16 @@ export class CallsWidgetWindow {
         this.close();
     };
 
+    private focusChannelView() {
+        if (!this.serverID || !this.mainView) {
+            return;
+        }
+
+        ServerViewState.switchServer(this.serverID);
+        MainWindow.get()?.focus();
+        ViewManager.showById(this.mainView.id);
+    }
+
     private forwardToMainApp = (channel: string) => {
         return (event: IpcMainEvent, ...args: any) => {
             log.debug('forwardToMainApp', channel, ...args);
@@ -513,8 +523,7 @@ export class CallsWidgetWindow {
                 return;
             }
 
-            ServerViewState.switchServer(this.serverID);
-            MainWindow.get()?.focus();
+            this.focusChannelView();
             this.mainView?.sendToRenderer(channel, ...args);
         };
     };
@@ -547,8 +556,7 @@ export class CallsWidgetWindow {
         // If parsing above fails it means it's a relative path (e.g.
         // pointing to a channel).
 
-        ServerViewState.switchServer(this.serverID);
-        MainWindow.get()?.focus();
+        this.focusChannelView();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, url);
     };
 }
