@@ -1,5 +1,5 @@
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..92a0556 100644
+index 2d5cd3c..01695b3 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -1,5 +1,8 @@
@@ -12,7 +12,18 @@ index 2d5cd3c..92a0556 100644
    <!-- https://blogs.msdn.microsoft.com/gremlininthemachine/2006/12/05/msi-wix-and-unicode/ -->
    <Product Id="*" Name="${productName}" UpgradeCode="${upgradeCode}" Version="${version}" Language="1033" Codepage="65001" Manufacturer="${manufacturer}">
      <Package Compressed="yes" InstallerVersion="500"/>
-@@ -26,6 +29,27 @@
+@@ -20,12 +23,38 @@
+     <Property Id="ApplicationFolderName" Value="${installationDirectoryWixName}"/>
+     <Property Id="WixAppFolder" Value="WixPerUserFolder"/>
+     <Property Id="DISABLEADVTSHORTCUTS" Value="1"/>
++    <Property Id="EXEINSTALLEREXISTS">
++      <DirectorySearch Path="[LocalAppDataFolder]\Programs\mattermost-desktop" Depth="0">
++        <FileSearch Id="SearchEXEUninstaller" Name="Uninstall ${productName}.exe" />
++      </DirectorySearch>
++    </Property>
+ 
+     {{ if (iconPath) { }}
+     <Icon Id="${iconId}" SourceFile="${iconPath}"/>
      <Property Id="ARPPRODUCTICON" Value="${iconId}"/>
      {{ } -}}
  
@@ -34,13 +45,13 @@ index 2d5cd3c..92a0556 100644
 +    <InstallExecuteSequence>
 +      <Custom Action="WixCloseApplications" Before="InstallValidate"/>
 +      <Custom Action="WixCloseApplicationsDeferred" After="InstallInitialize"/>
-+      <Custom Action="removeExeInstaller" After="InstallInitialize"/>
++      <Custom Action="removeExeInstaller" After="RemoveExistingProducts">EXEINSTALLEREXISTS</Custom>
 +    </InstallExecuteSequence>
 +
      {{ if (isRunAfterFinish) { }}
        <CustomAction Id="runAfterFinish" FileKey="mainExecutable" ExeCommand="" Execute="immediate" Impersonate="yes" Return="asyncNoWait"/>
        {{ if (!isAssisted) { }}
-@@ -42,6 +66,7 @@
+@@ -42,6 +71,7 @@
        <Property Id="ALLUSERS" Secure="yes" Value="2"/>
      {{ } -}}
      <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1"/>
@@ -48,7 +59,7 @@ index 2d5cd3c..92a0556 100644
  
      {{ if (isAssisted) { }}
        <WixVariable Id="WixUISupportPerUser" Value="1" Overridable="yes"/>
-@@ -80,6 +105,7 @@
+@@ -80,6 +110,7 @@
        </UI>
      {{ } -}}
  
@@ -56,7 +67,7 @@ index 2d5cd3c..92a0556 100644
      <Directory Id="TARGETDIR" Name="SourceDir">
        <Directory Id="${programFilesId}">
          {{ if (menuCategory) { }}
-@@ -110,6 +136,10 @@
+@@ -110,6 +141,10 @@
      {{-dirs}}
  
      <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
