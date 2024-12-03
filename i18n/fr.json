@@ -194,6 +194,7 @@
   "renderer.components.newServerModal.error.urlIncorrectFormatting": "L'URL n'est pas formatée correctement.",
   "renderer.components.newServerModal.error.urlNeedsHttp": "L'URL doit commencer par http:// ou https://.",
   "renderer.components.newServerModal.error.urlRequired": "URL requise.",
+  "renderer.components.newServerModal.permissions.geolocation": "Emplacement",
   "renderer.components.newServerModal.serverDisplayName": "Nom d'affichage du serveur",
   "renderer.components.newServerModal.serverDisplayName.description": "Le nom du serveur affiché dans la barre d'onglets de votre application de bureau.",
   "renderer.components.newServerModal.serverURL": "URL du serveur",
