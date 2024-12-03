@@ -141,7 +141,7 @@
   "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) aimerait accéder à votre emplacement.",
   "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) souhaite accéder au microphone et à la caméra.",
   "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) souhaite vous envoyer des notifications.",
-  "main.permissionsManager.checkPermission.dialog.message.openExternal": "{appName} ({url}) souhaite obtenir l'autorisation d'ouvrir l'URL suivante: {externalURL}",
+  "main.permissionsManager.checkPermission.dialog.message.openExternal": "{appName} ({url}) souhaite obtenir l'autorisation d'ouvrir l'URL suivante : {externalURL}",
   "main.permissionsManager.checkPermission.dialog.title": "Permission demandée",
   "main.tray.tray.expired": "La session a expiré. Veuillez vous connecter pour continuer à recevoir les notifications.",
   "main.tray.tray.mention": "Vous avez été mentionné",
