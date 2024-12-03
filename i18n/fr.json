@@ -92,6 +92,7 @@
   "main.menus.app.view.devToolsAppWrapper": "Outils du développeur pour l'application packagée",
   "main.menus.app.view.devToolsCurrentServer": "Outils de développement pour le serveur actuel",
   "main.menus.app.view.developerModeBrowserOnly": "Mode navigateur uniquement",
+  "main.menus.app.view.developerModeDisableContextMenu": "Désactiver le menu contextuel",
   "main.menus.app.view.downloads": "Téléchargements",
   "main.menus.app.view.find": "Trouvez..",
   "main.menus.app.view.fullscreen": "Basculer en plein écran",
