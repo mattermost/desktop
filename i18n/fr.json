@@ -137,6 +137,7 @@
   "main.permissionsManager.checkPermission.dialog.detail.media": "{appName} utilisera le microphone et la caméra pour les appels et les messages vocaux. Vous pouvez toujours modifier cette option ultérieurement dans les paramètres de votre ordinateur.",
   "main.permissionsManager.checkPermission.dialog.detail.notifications": "{appName} vous enverra des notifications pour les messages et les appels. Vous pouvez configurer vos préférences en matière de notification dans Paramètres.",
   "main.permissionsManager.checkPermission.dialog.detail.openExternal": "{appName} ouvrira le lien demandé dans une application externe. Si vous ne faites pas confiance à ce lien ou ne le reconnaissez pas, cliquez sur Refuser. Vous pourrez toujours modifier cela ultérieurement dans les paramètres de votre ordinateur.",
+  "main.permissionsManager.checkPermission.dialog.detail.screenShare": "{appName} va utiliser cette autorisation pour partager votre écran pendant les appels. Vous pouvez modifier ce choix plus tard dans les paramètres de votre ordinateur.",
   "main.permissionsManager.checkPermission.dialog.message.geolocation": "{appName} ({url}) aimerait accéder à votre emplacement.",
   "main.permissionsManager.checkPermission.dialog.message.media": "{appName} ({url}) souhaite accéder au microphone et à la caméra.",
   "main.permissionsManager.checkPermission.dialog.message.notifications": "{appName} ({url}) souhaite vous envoyer des notifications.",
