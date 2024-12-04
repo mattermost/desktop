@@ -1,5 +1,5 @@
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..01695b3 100644
+index 2d5cd3c..3c2d128 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -1,5 +1,8 @@
@@ -12,7 +12,18 @@ index 2d5cd3c..01695b3 100644
    <!-- https://blogs.msdn.microsoft.com/gremlininthemachine/2006/12/05/msi-wix-and-unicode/ -->
    <Product Id="*" Name="${productName}" UpgradeCode="${upgradeCode}" Version="${version}" Language="1033" Codepage="65001" Manufacturer="${manufacturer}">
      <Package Compressed="yes" InstallerVersion="500"/>
-@@ -20,12 +23,38 @@
+@@ -13,6 +16,10 @@
+ 
+       So, AllowSameVersionUpgrades="yes" allows to build and test MSI with the same version, and previously installed app will be removed.
+     -->
++    <!-- Remove versions of newer MSI using the wrong UpgradeCode -->
++    <Upgrade Id="{0F183CAA-DF79-5400-A71F-684F563AF31C}">
++      <UpgradeVersion Property="PREVMSIINSTALLER" IncludeMaximum="yes" Maximum="${version}" MigrateFeatures="yes" OnlyDetect="no"/>
++    </Upgrade>
+     <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage='A newer version of "[ProductName]" is already installed.'/>
+     <MediaTemplate CompressionLevel="${compressionLevel}" EmbedCab="yes"/>
+ 
+@@ -20,12 +27,38 @@
      <Property Id="ApplicationFolderName" Value="${installationDirectoryWixName}"/>
      <Property Id="WixAppFolder" Value="WixPerUserFolder"/>
      <Property Id="DISABLEADVTSHORTCUTS" Value="1"/>
@@ -51,7 +62,7 @@ index 2d5cd3c..01695b3 100644
      {{ if (isRunAfterFinish) { }}
        <CustomAction Id="runAfterFinish" FileKey="mainExecutable" ExeCommand="" Execute="immediate" Impersonate="yes" Return="asyncNoWait"/>
        {{ if (!isAssisted) { }}
-@@ -42,6 +71,7 @@
+@@ -42,6 +75,7 @@
        <Property Id="ALLUSERS" Secure="yes" Value="2"/>
      {{ } -}}
      <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1"/>
@@ -59,7 +70,7 @@ index 2d5cd3c..01695b3 100644
  
      {{ if (isAssisted) { }}
        <WixVariable Id="WixUISupportPerUser" Value="1" Overridable="yes"/>
-@@ -80,6 +110,7 @@
+@@ -80,6 +114,7 @@
        </UI>
      {{ } -}}
  
@@ -67,7 +78,7 @@ index 2d5cd3c..01695b3 100644
      <Directory Id="TARGETDIR" Name="SourceDir">
        <Directory Id="${programFilesId}">
          {{ if (menuCategory) { }}
-@@ -110,6 +141,10 @@
+@@ -110,6 +145,10 @@
      {{-dirs}}
  
      <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
