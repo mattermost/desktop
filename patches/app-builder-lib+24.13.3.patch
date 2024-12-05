@@ -1,5 +1,5 @@
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..0ce1b74 100644
+index 2d5cd3c..172339e 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -1,5 +1,8 @@
@@ -72,7 +72,7 @@ index 2d5cd3c..0ce1b74 100644
  
      <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
 +      <Component Directory="resourcesDir">
-+        <Condition>(NOT ALLUSERS = 1) AND DISABLEAUTOUPDATE = 0</Condition>
++        <Condition>(NOT ALLUSERS = 1) AND MSIINSTALLPERUSER = 1 AND DISABLEAUTOUPDATE = 0</Condition>
 +        <File Name="app-update.yml" Source="$(var.appDir)\..\msi-app-update.yml" ReadOnly="yes" KeyPath="yes"/>
 +      </Component>
        {{-files}}
