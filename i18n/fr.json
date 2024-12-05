@@ -197,7 +197,7 @@
   "renderer.components.newServerModal.error.urlRequired": "URL requise.",
   "renderer.components.newServerModal.permissions.geolocation": "Emplacement",
   "renderer.components.newServerModal.permissions.microphoneAndCamera": "Micro et caméra",
-  "renderer.components.newServerModal.permissions.microphoneAndCamera.windowsCameraPermissions": "La caméra est désactivée dans la paramètres de Windows. Cliquez  <link>ici</link> pour ouvrir les paramètres de la caméra.",
+  "renderer.components.newServerModal.permissions.microphoneAndCamera.windowsCameraPermissions": "La caméra est désactivée dans la paramètres de Windows. Cliquez <link>ici</link> pour ouvrir les paramètres de la caméra.",
   "renderer.components.newServerModal.permissions.microphoneAndCamera.windowsMicrophoneaPermissions": "Le micro est désactivé dans les paramètres de Windows. Cliquez  <link>ici</link> pour ouvrir les paramètres du micro.",
   "renderer.components.newServerModal.serverDisplayName": "Nom d'affichage du serveur",
   "renderer.components.newServerModal.serverDisplayName.description": "Le nom du serveur affiché dans la barre d'onglets de votre application de bureau.",
