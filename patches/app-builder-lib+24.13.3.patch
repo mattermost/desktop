@@ -83,7 +83,7 @@ index 2d5cd3c..3c2d128 100644
  
      <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
 +      <Component Directory="resourcesDir">
-+        <Condition>(NOT ALLUSERS = 1) AND DISABLEAUTOUPDATE = 0</Condition>
++        <Condition>(NOT ALLUSERS = 1) AND MSIINSTALLPERUSER = 1 AND DISABLEAUTOUPDATE = 0</Condition>
 +        <File Name="app-update.yml" Source="$(var.appDir)\..\msi-app-update.yml" ReadOnly="yes" KeyPath="yes"/>
 +      </Component>
        {{-files}}
