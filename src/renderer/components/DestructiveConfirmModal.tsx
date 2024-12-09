@@ -3,7 +3,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Button, Modal} from 'react-bootstrap';
+
+import {GenericModal} from './GenericModal/generic_modal';
 
 type Props = {
     title: string;
@@ -11,8 +12,8 @@ type Props = {
     acceptLabel: string;
     cancelLabel: string;
     onHide: () => void;
-    onAccept: React.MouseEventHandler<HTMLButtonElement>;
-    onCancel: React.MouseEventHandler<HTMLButtonElement>;
+    onAccept: () => void;
+    onCancel: () => void;
 };
 
 export default function DestructiveConfirmationModal(props: Props) {
@@ -26,24 +27,19 @@ export default function DestructiveConfirmationModal(props: Props) {
         onHide,
         ...rest} = props;
     return (
-        <Modal
-            onHide={onHide}
+        <GenericModal
+            onExited={onHide}
+            isDeleteModal={true}
+            modalHeaderText={title}
+            handleCancel={onCancel}
+            handleConfirm={onAccept}
+            confirmButtonText={acceptLabel}
+            cancelButtonText={cancelLabel}
+            confirmButtonClassName='btn-danger'
+            compassDesign={true}
             {...rest}
         >
-            <Modal.Header closeButton={true}>
-                <Modal.Title>{title}</Modal.Title>
-            </Modal.Header>
             {body}
-            <Modal.Footer>
-                <Button
-                    variant='link'
-                    onClick={onCancel}
-                >{cancelLabel}</Button>
-                <Button
-                    variant='danger'
-                    onClick={onAccept}
-                >{acceptLabel}</Button>
-            </Modal.Footer>
-        </Modal>
+        </GenericModal>
     );
 }
