@@ -152,7 +152,6 @@ jobs:
           echo $MAC_PROFILE | base64 -D > ./mac.provisionprofile
           mkdir -p ./build/macos-release
           npm run package:mac-with-universal
-          rm release/latest*.yml
           bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
       - name: release/rename-arm64-to-m1
         run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
