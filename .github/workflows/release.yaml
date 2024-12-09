@@ -109,7 +109,8 @@ jobs:
       - name: release/package
         run: |
           mkdir -p ./build/win-release
-          rm release/latest*.yml
+          rm release/latest*.yml || true
+          rm release/rc*.yml || true
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: release/upload-build
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
