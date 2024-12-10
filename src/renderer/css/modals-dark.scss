@@ -10,6 +10,10 @@
         .modal-header .modal-title, .modal-header .close {
             color: #fff;
         }
+
+        .modal-content {
+            background-color: #191B1F;
+        }
     }
 
     .SettingsPage__spellCheckerLocalesDropdown .SettingsPage__spellCheckerLocalesDropdown__control {
@@ -61,7 +65,7 @@
     }
 
     .Input_fieldset {
-        background-color: #424242;
+        background-color: #191B1F;
         border: 1px solid rgba(#fff, 0.16);
 
         &:hover {
@@ -80,7 +84,7 @@
     }
 
     .Input_legend {
-        background-color: #424242;
+        background-color: #191B1F;
         color: rgba(var(--button-color-rgb), 0.64);
     }
 

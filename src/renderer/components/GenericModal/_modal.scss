@@ -1,28 +1,8 @@
 @use "utils/functions";
 @use "utils/mixins";
 @use "utils/variables";
-@use 'sys_css_variables';
-@use 'css_variables';
-@use "buttons";
 
 @use 'sass:color';
-
-@import url("../../css/fonts.css");
-@import '~@mattermost/compass-icons/css/compass-icons.css';
-
-body {
-    background-color: transparent;
-}
-
-.modal-header .close {
-    padding: 0;
-    margin: 0;
-    margin-top: -2px;
-}
-
-.modal-body {
-    font-size: 14px;
-}
 
 .browser--ie {
     .modal {
@@ -240,7 +220,7 @@ body {
     }
 
     .modal-dialog {
-        max-width: 500px;
+        max-width: 95%;
         margin-right: auto;
         margin-bottom: 0;
         margin-left: auto;

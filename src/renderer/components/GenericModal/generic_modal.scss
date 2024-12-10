@@ -1,6 +1,45 @@
+@use 'sys_css_variables';
+@use 'css_variables';
+@use "buttons";
+
 @import "./modal";
 @import "./typography";
 
+@import url("../../css/fonts.css");
+@import '~@mattermost/compass-icons/css/compass-icons.css';
+
+body {
+    background-color: transparent;
+}
+
+.modal-header .close {
+    padding: 0;
+    margin: 0;
+    margin-top: -2px;
+}
+
+.modal-body {
+    font-size: 14px;
+}
+
+.modal .modal-dialog {
+    max-width: 500px;
+}
+
+.modal-footer .btn {
+    margin: 0;
+}
+
+.modal .GenericModal.GenericModal__compassDesign .modal-content .modal-body .GenericModal__body.padding {
+    padding: 0 32px !important; // don't usually prefer to use !important but this is a special case where we need to override the padding
+}
+
+.btn.btn-primary.btn-danger:hover {
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)), var(--error-text);
+}
+
+// below this line is the same as the original file
+// except this class has has the .app_body specifier removed
 .modal .GenericModal {
     &.modal-dialog {
         margin-top: calc(50vh - 240px);
