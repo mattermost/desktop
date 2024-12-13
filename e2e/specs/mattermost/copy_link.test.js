@@ -33,8 +33,6 @@ describe('copylink', function desc() {
     });
 
     it('MM-T125 Copy Link can be used from channel LHS', async () => {
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#sidebarItem_town-square');
