@@ -97,6 +97,7 @@
   "main.menus.app.view.developerModeDisableUserActivityMonitor": "Disable User Activity Monitor",
   "main.menus.app.view.devToolsAppWrapper": "Developer Tools for Application Wrapper",
   "main.menus.app.view.devToolsCurrentCallWidget": "Developer Tools for Call Widget",
+  "main.menus.app.view.devToolsCurrentCallWidgetPopout": "Developer Tools for Call Widget Popout",
   "main.menus.app.view.devToolsCurrentServer": "Developer Tools for Current Server",
   "main.menus.app.view.devToolsSubMenu": "Developer Tools",
   "main.menus.app.view.downloads": "Downloads",

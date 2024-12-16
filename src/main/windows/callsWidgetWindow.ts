@@ -97,12 +97,20 @@ export class CallsWidgetWindow {
         return Boolean(this.win && !this.win.isDestroyed());
     }
 
+    public isPopoutOpen() {
+        return Boolean(this.popOut && !this.popOut.isDestroyed());
+    }
+
     /**
      * Helper functions
      */
 
     public openDevTools = () => {
         this.win?.webContents.openDevTools({mode: 'detach'});
+    };
+
+    public openPopoutDevTools = () => {
+        this.popOut?.webContents.openDevTools({mode: 'detach'});
     };
 
     getViewURL = () => {
@@ -277,6 +285,9 @@ export class CallsWidgetWindow {
                 action: 'allow' as const,
                 overrideBrowserWindowOptions: {
                     autoHideMenuBar: true,
+                    webPreferences: {
+                        preload: getLocalPreload('externalAPI.js'),
+                    },
                 },
             };
         }
@@ -301,7 +312,11 @@ export class CallsWidgetWindow {
         const contextMenu = new ContextMenu({}, this.popOut);
         contextMenu.reload();
 
+        // Update menu to show the developer tools option for this window.
+        ipcMain.emit(UPDATE_SHORTCUT_MENU);
+
         this.popOut.on('closed', () => {
+            ipcMain.emit(UPDATE_SHORTCUT_MENU);
             delete this.popOut;
             contextMenu.dispose();
         });
