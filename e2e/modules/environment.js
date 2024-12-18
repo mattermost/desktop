@@ -243,19 +243,21 @@ module.exports = {
 
     async getServerMap(app) {
         const map = {};
-        await Promise.all(app.windows().map(async (win) => {
-            return win.evaluate(async () => {
-                if (!window.testHelper) {
-                    return null;
-                }
-                const info = await window.testHelper.getViewInfoForTest();
-                return {viewName: `${info.serverName}___${info.viewType}`, webContentsId: info.webContentsId};
-            }).then((result) => {
-                if (result) {
-                    map[result.viewName] = {win, webContentsId: result.webContentsId};
-                }
-            });
-        }));
+        await Promise.all(app.windows().
+            filter((win) => !win.url().includes('mattermost-desktop://')).
+            map(async (win) => {
+                return win.evaluate(async () => {
+                    if (!window.testHelper) {
+                        return null;
+                    }
+                    const info = await window.testHelper.getViewInfoForTest();
+                    return {viewName: `${info.serverName}___${info.viewType}`, webContentsId: info.webContentsId};
+                }).then((result) => {
+                    if (result) {
+                        map[result.viewName] = {win, webContentsId: result.webContentsId};
+                    }
+                });
+            }));
         return map;
     },
 
