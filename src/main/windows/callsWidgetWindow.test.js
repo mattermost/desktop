@@ -79,7 +79,7 @@ jest.mock('main/views/viewManager', () => ({
 jest.mock('../utils', () => ({
     openScreensharePermissionsSettingsMacOS: jest.fn(),
     resetScreensharePermissionsMacOS: jest.fn(),
-    getLocalPreload: jest.fn(),
+    getLocalPreload: jest.fn((file) => file),
     composeUserAgent: jest.fn(),
 }));
 
@@ -368,6 +368,12 @@ describe('main/windows/callsWidgetWindow', () => {
         it('should not pop out when the URL does not match the calls popout URL', () => {
             urlUtils.isCallsPopOutURL.mockReturnValue(false);
             expect(callsWidgetWindow.onPopOutOpen({url: 'http://localhost:8065/notpopouturl'})).toHaveProperty('action', 'deny');
+        });
+
+        it('should pop out and make sure preload is set', () => {
+            urlUtils.isCallsPopOutURL.mockReturnValue(true);
+            expect(callsWidgetWindow.onPopOutOpen({url: 'http://localhost:8065/popouturl'})).toHaveProperty('action', 'allow');
+            expect(callsWidgetWindow.onPopOutOpen({url: 'http://localhost:8065/popouturl'})).toHaveProperty('overrideBrowserWindowOptions.webPreferences.preload', 'externalAPI.js');
         });
     });
 
