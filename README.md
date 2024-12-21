@@ -10,6 +10,8 @@ Originally created as "electron-mattermost" by Yuya Ochiai.
 
 ## Features
 
+TEST RCE
+
 ### Desktop integration
 * Server dropdown for access to multiple servers
 * Dedicated tabs for Channels, Boards and Playbooks
