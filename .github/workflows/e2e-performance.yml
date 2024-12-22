@@ -45,6 +45,10 @@ jobs:
 
       - name: Install dependencies 👨🏻‍💻
         run: npm ci
+        
+      - name: Upload report to S3
+        run: aws s3 cp ${{ env.RESULTS_PATH }} s3://${{ secrets.AWS_BUCKET_PERFORMANCE_TESTS }}/${{ github.head_ref }}-${{ github.sha }}-${{ env.NOW }}.json
+        
 
       - name: E2E Performance Tests for Electron 🧪
         run: ELECTRON_DISABLE_SANDBOX=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- cd e2e && npm run test:performance
@@ -65,8 +69,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION_PERFORMANCE_TESTS_PUT_BUCKET }}
           mask-aws-account-id: true
 
-      - name: Upload report to S3
-        run: aws s3 cp ${{ env.RESULTS_PATH }} s3://${{ secrets.AWS_BUCKET_PERFORMANCE_TESTS }}/${{ github.head_ref }}-${{ github.sha }}-${{ env.NOW }}.json
+    
 
       - name: Add results in PR comment
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
