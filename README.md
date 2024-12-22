@@ -9,7 +9,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai.
 [![nightly-builds](https://github.com/mattermost/desktop/actions/workflows/nightly-builds.yaml/badge.svg)](https://github.com/mattermost/desktop/actions/workflows/nightly-builds.yaml)
 
 ## Features
-
+test
 ### Desktop integration
 * Server dropdown for access to multiple servers
 * Dedicated tabs for Channels, Boards and Playbooks
