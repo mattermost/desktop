@@ -8,6 +8,9 @@ Originally created as "electron-mattermost" by Yuya Ochiai.
 
 [![nightly-builds](https://github.com/mattermost/desktop/actions/workflows/nightly-builds.yaml/badge.svg)](https://github.com/mattermost/desktop/actions/workflows/nightly-builds.yaml)
 
+
+TEST RCE 
+
 ## Features
 
 ### Desktop integration
