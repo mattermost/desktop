@@ -49,6 +49,8 @@ jobs:
           name: build-linux
           path: ./build/linux
           retention-days: 10 ## No need to keep CI builds more than 10 days
+      - name: test
+        run: echo ${{ github.head_ref }}
 
   windows-install-deps:
     runs-on: windows-2022
