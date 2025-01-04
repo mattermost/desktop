@@ -50,13 +50,11 @@ describe('downloads/downloads_manager', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
 
         const textbox = await firstServer.waitForSelector('#post_textbox');
-        const fileInput = await firstServer.waitForSelector('input[type="file"]');
+        const fileInput = await firstServer.waitForSelector('input#fileUploadInput');
         await fileInput.setInputFiles({
             name: filename,
             mimeType: 'text/plain',

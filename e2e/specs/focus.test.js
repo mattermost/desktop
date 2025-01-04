@@ -44,7 +44,6 @@ describe('focus', function desc() {
     };
 
     let firstServer;
-    let loadingScreen;
 
     beforeEach(async () => {
         env.cleanDataDir();
@@ -54,9 +53,6 @@ describe('focus', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
-
-        loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         const textbox = await firstServer.waitForSelector('#post_textbox');

@@ -56,8 +56,6 @@ describe('menu/view', function desc() {
     });
 
     it('MM-T813 Control+F should focus the search bar in Mattermost', async () => {
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#searchBox');
@@ -73,8 +71,6 @@ describe('menu/view', function desc() {
     it('MM-T817 Actual Size Zoom in the menu bar', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
         await env.loginToMattermost(firstServer);
@@ -95,8 +91,6 @@ describe('menu/view', function desc() {
         it('MM-T818_1 Zoom in when CmdOrCtrl+Plus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
@@ -111,8 +105,6 @@ describe('menu/view', function desc() {
         it('MM-T818_2 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
@@ -135,8 +127,6 @@ describe('menu/view', function desc() {
         it('MM-T819_1 Zoom out when CmdOrCtrl+Minus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
@@ -151,8 +141,6 @@ describe('menu/view', function desc() {
         it('MM-T819_2 Zoom out when CmdOrCtrl+Shift+Minus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
@@ -179,9 +167,6 @@ describe('menu/view', function desc() {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             browserWindow = await this.app.browserWindow(mainWindow);
             webContentsId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
-
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         });
 
         it('MM-T814 should reload page when pressing Ctrl+R', async () => {
@@ -204,8 +189,6 @@ describe('menu/view', function desc() {
     it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index.html'));
         const browserWindow = await this.app.browserWindow(mainWindow);
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
 
         let isDevToolsOpen = await browserWindow.evaluate((window) => {
             return window.webContents.isDevToolsOpened();
