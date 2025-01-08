@@ -158,7 +158,7 @@ jobs:
         run: |
           brew install yq
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
           npm ci
       - name: ci/test
         uses: ./.github/actions/test
