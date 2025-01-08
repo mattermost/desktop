@@ -233,6 +233,23 @@ export class CallsWidgetWindow {
         ev.preventDefault();
     };
 
+    private setWidgetWindowStacking = ({onTop}: {onTop: boolean}) => {
+        log.debug('setWidgetWindowStacking', onTop);
+
+        if (!this.win) {
+            return;
+        }
+
+        if (onTop) {
+            this.win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true, skipTransformProcessType: true});
+            this.win.setAlwaysOnTop(true, 'screen-saver');
+            this.win.focus();
+        } else {
+            this.win.setAlwaysOnTop(false);
+            this.win.setVisibleOnAllWorkspaces(false);
+        }
+    };
+
     private onShow = () => {
         log.debug('onShow');
         const mainWindow = MainWindow.get();
@@ -240,9 +257,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        this.win.focus();
-        this.win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true, skipTransformProcessType: true});
-        this.win.setAlwaysOnTop(true, 'screen-saver');
+        this.setWidgetWindowStacking({onTop: true});
 
         const bounds = this.win.getBounds();
         const mainBounds = mainWindow.getBounds();
@@ -288,6 +303,8 @@ export class CallsWidgetWindow {
     private onPopOutCreate = (win: BrowserWindow) => {
         this.popOut = win;
 
+        this.setWidgetWindowStacking({onTop: false});
+
         // Let the webContentsEventManager handle links that try to open a new window.
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
 
@@ -304,6 +321,7 @@ export class CallsWidgetWindow {
         this.popOut.on('closed', () => {
             delete this.popOut;
             contextMenu.dispose();
+            this.setWidgetWindowStacking({onTop: true});
         });
 
         // Set the userAgent so that the widget's popout is considered a desktop window in the webapp code.
@@ -501,6 +519,16 @@ export class CallsWidgetWindow {
         this.close();
     };
 
+    private focusChannelView() {
+        if (!this.serverID || !this.mainView) {
+            return;
+        }
+
+        ServerViewState.switchServer(this.serverID);
+        MainWindow.get()?.focus();
+        ViewManager.showById(this.mainView.id);
+    }
+
     private forwardToMainApp = (channel: string) => {
         return (event: IpcMainEvent, ...args: any) => {
             log.debug('forwardToMainApp', channel, ...args);
@@ -513,8 +541,7 @@ export class CallsWidgetWindow {
                 return;
             }
 
-            ServerViewState.switchServer(this.serverID);
-            MainWindow.get()?.focus();
+            this.focusChannelView();
             this.mainView?.sendToRenderer(channel, ...args);
         };
     };
@@ -547,8 +574,7 @@ export class CallsWidgetWindow {
         // If parsing above fails it means it's a relative path (e.g.
         // pointing to a channel).
 
-        ServerViewState.switchServer(this.serverID);
-        MainWindow.get()?.focus();
+        this.focusChannelView();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, url);
     };
 }
