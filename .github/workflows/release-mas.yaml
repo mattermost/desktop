@@ -36,7 +36,7 @@ jobs:
       - name: release/install-dependencies
         run: |
           brew install yq
-          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
           npm ci
       - name: release/copy-provisioning-profile
         run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
