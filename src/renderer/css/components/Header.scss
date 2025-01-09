@@ -17,20 +17,6 @@
 
         .Header__logo {
             width: 170px;
-
-            path {
-                fill: var(--center-channel-text);
-            }
-        }
-    }
-
-    &.Header--darkMode {
-        .Header__main {
-            .Header__logo {
-                path {
-                    fill: var(--button-color);
-                }
-            }
         }
     }
 }

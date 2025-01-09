@@ -40,7 +40,6 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     useLegend?: boolean;
     customMessage?: CustomMessageInputType;
     inputSize?: SIZE;
-    darkMode?: boolean;
 }
 
 const Input = React.forwardRef((
@@ -65,7 +64,6 @@ const Input = React.forwardRef((
         maxLength,
         inputSize = SIZE.MEDIUM,
         disabled,
-        darkMode,
         onFocus,
         onBlur,
         onChange,
@@ -128,7 +126,6 @@ const Input = React.forwardRef((
                 containerClassName,
                 {
                     disabled,
-                    'Input_container-inverted': darkMode,
                 },
             )}
         >

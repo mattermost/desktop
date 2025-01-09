@@ -25,7 +25,7 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: rgba(var(--denim-button-bg-rgb), 0.32);
+            background: rgba(var(--button-bg-rgb), 0.32);
         }
 
         &.active,
@@ -35,10 +35,10 @@
         }
 
         &.active {
-            background: rgba(var(--denim-button-bg-rgb), 0.16);
+            background: rgba(var(--button-bg-rgb), 0.16);
 
             .dot {
-                background: var(--denim-button-bg);
+                background: var(--button-bg);
             }
         }
 
@@ -46,25 +46,6 @@
             box-sizing: border-box;
             border: 2px solid var(--sidebar-text-active-border);
             outline: none;
-        }
-    }
-
-    .indicatorDot-inverted {
-        .dot {
-            background: rgba(var(--button-color-rgb), 0.32);
-        }
-
-        &.active {
-            background: rgba(var(--button-color-rgb), 0.16);
-
-            .dot {
-                background: var(--button-color);
-            }
-        }
-
-        &:focus-visible {
-            border: 2px solid var(--denim-sidebar-active-border);
-            color: var(--denim-button-bg);
         }
     }
 }

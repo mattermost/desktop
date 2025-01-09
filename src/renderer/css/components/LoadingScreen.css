@@ -3,11 +3,6 @@ body {
 }
 
 .LoadingScreen {
-    --background-color: #F4F4F6;
-    --background-color-highlight: #FFFFFF;
-    --stipple-color: #1E325C;
-    --stipple-opacity: 0.08;
-    
     display: flex;
     justify-content: center;
     align-items: center;
@@ -24,14 +19,6 @@ body {
     
     transition: opacity 150ms 0ms ease-out, visibility 150ms 0ms step-start;
 }
-
-.LoadingScreen--darkMode {
-    --background-color-highlight: #28427B;
-    --background-color: #1E325C;
-    --stipple-color: #14213E;
-    --stipple-opacity: 0.8;
-}
-
 
 .LoadingScreen--darkMode .LoadingScreen__background {
     background-image: url('renderer/assets/svg/background-dark.svg');

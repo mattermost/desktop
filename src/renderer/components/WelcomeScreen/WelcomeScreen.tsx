@@ -133,7 +133,6 @@ function WelcomeScreen({
                             className={classNames(
                                 'WelcomeScreen__button',
                                 'primary-button primary-medium-button',
-                                {'primary-button-inverted': darkMode},
                             )}
                             onClick={handleOnGetStartedClick}
                         >

@@ -267,14 +267,13 @@ function ConfigureServer({
         }
 
         return (
-            <div className={classNames('alternate-link', transition, {'alternate-link-inverted': darkMode})}>
+            <div className={classNames('alternate-link', transition)}>
                 <span className='alternate-link__message'>
                     {alternateLinkMessage}
                 </span>
                 <a
                     className={classNames(
                         'link-button link-small-button alternate-link__link',
-                        {'link-button-inverted': darkMode},
                     )}
                     href={alternateLinkURL}
                     target='_blank'
@@ -292,7 +291,6 @@ function ConfigureServer({
                 'LoadingScreen',
                 {'LoadingScreen--darkMode': darkMode},
                 'ConfigureServer',
-                {'ConfigureServer-inverted': darkMode},
             )}
         >
             <LoadingBackground/>
@@ -346,7 +344,6 @@ function ConfigureServer({
                                         })}
                                         placeholder={formatMessage({id: 'renderer.components.configureServer.url.placeholder', defaultMessage: 'Server URL'})}
                                         disabled={waiting}
-                                        darkMode={darkMode}
                                     />
                                     <Input
                                         name='name'
@@ -365,7 +362,6 @@ function ConfigureServer({
                                         })}
                                         placeholder={formatMessage({id: 'renderer.components.configureServer.name.placeholder', defaultMessage: 'Server display name'})}
                                         disabled={waiting}
-                                        darkMode={darkMode}
                                     />
                                     <SaveButton
                                         id='connectConfigureServer'
@@ -378,7 +374,6 @@ function ConfigureServer({
                                         }
                                         savingMessage={formatMessage({id: 'renderer.components.configureServer.connect.saving', defaultMessage: 'Connecting…'})}
                                         disabled={!canSave}
-                                        darkMode={darkMode}
                                     />
                                 </div>
                             </div>
