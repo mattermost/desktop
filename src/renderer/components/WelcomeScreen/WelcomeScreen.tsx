@@ -6,12 +6,12 @@ import React, {useState, useEffect, useMemo} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 
 import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
-import calls from 'renderer/assets/svg/calls.svg';
-import chat2 from 'renderer/assets/svg/chat2.svg';
-import collaborate from 'renderer/assets/svg/collaborate.svg';
-import integrate from 'renderer/assets/svg/integrate.svg';
 import Carousel from 'renderer/components/Carousel';
 import Header from 'renderer/components/Header';
+import CallsImage from 'renderer/components/Images/calls';
+import CollaborateImage from 'renderer/components/Images/collaborate';
+import ThreadsEmptyImage from 'renderer/components/Images/threads-empty';
+import ToolsImage from 'renderer/components/Images/tools';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 
 import WelcomeScreenSlide from './WelcomeScreenSlide';
@@ -47,10 +47,7 @@ function WelcomeScreen({
                 defaultMessage: 'Mattermost is an open source collaboration platform for mission-critical work. Secure, flexible, and integrated with the tools you love.',
             }),
             image: (
-                <img
-                    src={chat2}
-                    draggable={false}
-                />
+                <ThreadsEmptyImage/>
             ),
             main: true,
         },
@@ -67,10 +64,7 @@ function WelcomeScreen({
                 />
             ),
             image: (
-                <img
-                    src={collaborate}
-                    draggable={false}
-                />
+                <CollaborateImage/>
             ),
         },
         {
@@ -81,10 +75,7 @@ function WelcomeScreen({
                 defaultMessage: 'When typing isn’t fast enough, seamlessly move from chat to audio calls and screenshare without switching tools.',
             }),
             image: (
-                <img
-                    src={calls}
-                    draggable={false}
-                />
+                <CallsImage/>
             ),
         },
         {
@@ -95,10 +86,7 @@ function WelcomeScreen({
                 defaultMessage: 'Execute and automate workflows with flexible, custom integrations with popular technical tools like GitHub, GitLab, and ServiceNow.',
             }),
             image: (
-                <img
-                    src={integrate}
-                    draggable={false}
-                />
+                <ToolsImage/>
             ),
         },
     ], [formatMessage]);
