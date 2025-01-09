@@ -1,0 +1,12 @@
+diff --git a/node_modules/@electron/notarize/lib/notarytool.js b/node_modules/@electron/notarize/lib/notarytool.js
+index b058fdc..f0a8a3f 100644
+--- a/node_modules/@electron/notarize/lib/notarytool.js
++++ b/node_modules/@electron/notarize/lib/notarytool.js
+@@ -102,6 +102,7 @@ function notarizeAndWaitForNotaryTool(opts) {
+                 'json',
+             ];
+             const result = yield (0, spawn_1.spawn)('xcrun', notarizeArgs);
++            console.log(result.output.trim())
+             const parsed = JSON.parse(result.output.trim());
+             if (result.code !== 0 || !parsed.status || parsed.status !== 'Accepted') {
+                 try {
