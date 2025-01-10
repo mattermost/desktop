@@ -177,6 +177,7 @@ jobs:
         run: |
           echo $MAC_PROFILE | base64 -D > ./mac.provisionprofile
           zsh -c 'echo -n $APPLE_API_KEY_RAW > ./key.p8'
+          mkdir -p ./build/macos-release
           npm run package:mac-with-universal
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
