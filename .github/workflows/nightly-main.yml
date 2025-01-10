@@ -166,14 +166,17 @@ jobs:
         uses: ./.github/actions/test
       - name: nightly/build
         env:
-          APPLE_ID: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_APPLE_ID_PASS }}
+          APPLE_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}
+          APPLE_API_KEY_RAW: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY }}
+          APPLE_API_KEY: "./key.p8"
+          APPLE_API_ISSUER: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_ISSUER_ID }}
           CSC_FOR_PULL_REQUEST: true
           CSC_KEY_PASSWORD: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_CSC_LINK }}
           MAC_PROFILE: ${{ secrets.MM_DESKTOP_MAC_INSTALLER_DMG_PROFILE }}
         run: |
           echo $MAC_PROFILE | base64 -D > ./mac.provisionprofile
+          zsh -c 'echo -n $APPLE_API_KEY_RAW > ./key.p8'
           mkdir -p ./build/macos-release
           npm run package:mac-with-universal
           bash -x ./scripts/patch_updater_yml.sh
