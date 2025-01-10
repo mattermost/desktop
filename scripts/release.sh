@@ -64,6 +64,7 @@ if ! type jq >/dev/null 2>&1; then
     exit 11
 fi
 
+is_esr="N"
 # get version
 pkg_version="$(jq -r .version package.json)"
 # remove trailing
@@ -72,21 +73,40 @@ current_version="${current_version%-rc.*}"
 # parse version
 IFS='.' read -r major minor micro <<<"${current_version}"
 case "${1}" in
-    "help")
-        echo "todo"
+    "start")
+        if [[ "${branch_name}" =~ "release-" ]]; then
+            if [[ "${pkg_version}" =~ "-rc." ]]; then
+                print_error "Can't generate a new release on a branch with a release candidate"
+                exit 2
+            fi
+            print_info "Generating ${current_version} release candidate 1"
+            read -p "Is this an ESR release? [y/N]: " is_esr
+            if [[ "${is_esr}" =~ ^[Yy]$ ]]; then
+                touch .esr
+                git add .esr
+            fi
+            new_pkg_version="${current_version}-rc.1"
+            write_package_version "${new_pkg_version}"
+            tag "${new_pkg_version}" "Release candidate 1"
+            print_info "Locally created an new release with rc.1. In order to build you'll have to:"
+            print_info "$ git push --follow-tags ${git_origin} ${branch_name}:${branch_name}"
+        else
+            print_error "Can't generate a release on a non release-X.Y branch"
+            exit 2
+        fi
     ;;
     "rc")
         if [[ "${branch_name}" =~ "release-" ]]; then
             if [[ "${pkg_version}" =~ "-rc." ]]; then
                 rc="${pkg_version#*-rc.}"
             else
-                print_warning "No release candidate on the version, assuming 0"
-                rc=0
+                print_error "No release candidate on the version, if this is a new release, start a new release first"
+                exit 2
             fi
             case "${rc}" in
                 ''|*[!0-9]*)
-                    print_warning "Can't guess release candidate from version, assuming 1"
-                    rc=0
+                    print_error "No release candidate on the version, if this is a new release, start a new release first"
+                    exit 2
                 ;;
                 *)
                     rc=$(( rc + 1 ))
@@ -101,7 +121,6 @@ case "${1}" in
         else
             print_error "Can't generate a release candidate on a non release-X.Y branch"
             exit 2
-
         fi
     ;;
     "pre-final")
@@ -166,58 +185,17 @@ case "${1}" in
             exit 2
         fi
     ;;
-    "branch")
-        # Quality releases should run from a release branch
-        if [[ "${branch_name}" =~ "release-" ]]; then
-            new_branch_version="${major}.$(( minor + 1 ))"
-            new_branch_name="release-${new_branch_version}"
-            print_info "Doing a quality branch: ${new_branch_name}"
-
-            if git show-ref --verify --quiet "refs/heads/${new_branch_name}"; then
-                print_error "Branch ${new_branch_name} exists"
-                exit 3
-            fi
-
-            new_pkg_version="${new_branch_version}.0-rc.1"
-            git checkout -b "${new_branch_name}"
-            write_package_version "${new_pkg_version}"
-            tag "${new_pkg_version}" "Quality branch"
-            print_info "Locally created quality branch. In order to build you'll have to:"
-            print_info "$ git push --follow-tags ${git_origin} ${new_branch_name}:${new_branch_name}"
-
-        else
-            if [[ "${branch_name}" != "master" ]]; then
-                print_warning "You are branching on ${branch_name} instead of master or a release-branch"
-                read -p "Do you wish to continue? [y/n]" -n 1 -r
-                if [[ ! "${REPLY}" =~ ^[Yy]$ ]]; then
-                    exit 1
-                fi
-            fi
-            new_branch_version="${major}.${minor}"
-            new_branch_name="release-${new_branch_version}"
-            new_pkg_version="${new_branch_version}.0-rc.1"
-            master_pkg_version="${major}.$(( minor + 1 )).0-develop"
-            print_info "Creating a new features branch: ${new_branch_name}"
-
-            if git show-ref --verify --quiet "refs/heads/${new_branch_name}"; then
-                print_error "Branch ${new_branch_name} exists"
-                exit 3
-            fi
-
-            git branch "${new_branch_name}"
-            print_info "Writing new package version for development: ${master_pkg_version}"
-            write_package_version "${master_pkg_version}"
-            git checkout "${new_branch_name}"
-            write_package_version "${new_pkg_version}"
-            tag "${new_pkg_version}" "New features branch"
-            print_info "Locally created new features branch. In order to build you'll have to:"
-            print_info "$ git push --follow-tags ${git_origin} ${new_branch_name}:${new_branch_name}"
-            print_info "For writing master changes you'll need to:"
-            print_info "$ git push ${git_origin} ${branch_name}:${branch_name}"
-        fi
-    ;;
     *)
-        print_error "Only branch|rc|final parameters are accepted"
+        print_info "Mattermmost Desktop Release Helper"
+        print_info "Usage: $0 <start|rc|pre-final|final|patch>\n"
+        print_info "This script will help you create a new release for the Mattermost Desktop App."
+        print_info "Must be run on a release branch (release-X.Y)\n"
+        print_info "Commands:"
+        print_info "  start: Start a new release using the current version"
+        print_info "  rc: Increment the release candidate version and create a new release candidate"
+        print_info "  pre-final: Cut the final release for MAS approval"
+        print_info "  final: Cut the final release to be released to GitHub"
+        print_info "  patch: Create a patch (dot) release"
         exit 1
     ;;
 esac
