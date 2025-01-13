@@ -1,28 +1,123 @@
 :root {
-    --away-indicator-dark: #c79e3f;
-    --button-bg: #166de0;
-    --button-color: #fff;
-    --center-channel-bg: #fff;
-    --center-channel-color: #3d3c40;
-    --center-channel-text: #3f4350;
-    --error-text: #d24b4e;
-    --link-color: #2389d7;
-    --online-indicator: #06d6a0;
-    --sidebar-text-active-border: #579eff;
-    --denim-button-bg: #1c58d9;
-    --denim-sidebar-active-border: #5d89ea;
-    --denim-sidebar-header-bg: #192A4D;
-    --title-color-indigo-500: #1e325c;
+    /* colors used but not themed */
+    --indigo-400: #28427B;
+    --indigo-300: #32539A;
+    --sand: #CCC4AE;
+    --neutral-0: #FFFFFF;
+    --neutral-1200: #090A0B;
+    --yellow-400: #FFBC1F;
 
+    /* Elevation values used for box shadows.
+       Defined as CSS variables so that both sass and JS can use them.
+    */
+    --elevation-1: 0 2px 3px 0 rgba(0, 0, 0, 0.08);
+    --elevation-2: 0 4px 6px 0 rgba(0, 0, 0, 0.12);
+    --elevation-3: 0 6px 14px 0 rgba(0, 0, 0, 0.12);
+    --elevation-4: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
+    --elevation-5: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
+    --elevation-6: 0 20px 32px 0 rgba(0, 0, 0, 0.12);
+
+    /* Denim - used for light mode */
+    --away-indicator-rgb: 255, 188, 31;
+    --button-bg-rgb: 28, 88, 217;
     --button-color-rgb: 255, 255, 255;
     --center-channel-bg-rgb: 255, 255, 255;
-    --center-channel-color-rgb: 61, 60, 64;
-    --center-channel-text-rgb: 63, 67, 80;
-    --link-color-inverted-rgb: 129, 163, 239;
-    --denim-button-bg-rgb: 28, 88, 217;
-    --denim-sidebar-header-bg-rgb: 25, 42, 77;
-    --secondary-blue-rgb: 34, 64, 109;
-    --onyx-center-channel-text-rgb: 221, 223, 228;
+    --center-channel-color-rgb: 63, 67, 80;
+    --dnd-indicator-rgb: 210, 75, 78;
+    --error-text-color-rgb: 210, 75, 78;
+    --link-color-rgb: #386fe5;
+    --mention-bg-rgb: 255, 255, 255;
+    --mention-color-rgb: 30, 50, 92;
+    --mention-highlight-bg-rgb: 255, 212, 112;
+    --mention-highlight-link-rgb: 27, 29, 34;
+    --mention-highlight-bg-mixed-rgb: 255, 233, 183;
+    --pinned-highlight-bg-mixed-rgb: 255, 244, 220;
+    --own-highlight-bg-rgb: 245, 204, 110;
+    --new-message-separator-rgb: 204, 143, 0;
+    --online-indicator-rgb: 61, 184, 135;
+    --sidebar-bg-rgb: 30, 50, 92;
+    --sidebar-header-bg-rgb: 25, 42, 77;
+    --sidebar-teambar-bg-rgb: 22, 37, 69;
+    --sidebar-header-text-color-rgb: 255, 255, 255;
+    --sidebar-text-rgb: 255, 255, 255;
+    --sidebar-text-active-border-rgb: 93, 137, 234;
+    --sidebar-text-active-color-rgb: 255, 255, 255;
+    --sidebar-text-hover-bg-rgb: 40, 66, 123;
+    --sidebar-unread-text-rgb: 255, 255, 255;
+    --sidebar-bg: #1e325c;
+    --sidebar-text: #ffffff;
+    --sidebar-unread-text: #ffffff;
+    --sidebar-text-hover-bg: #28427b;
+    --sidebar-text-active-border: #5d89ea;
+    --sidebar-text-active-color: #ffffff;
+    --sidebar-header-bg: #192a4d;
+    --sidebar-teambar-bg: #162545;
+    --sidebar-header-text-color: #ffffff;
+    --online-indicator: #3db887;
+    --away-indicator: #ffbc1f;
+    --dnd-indicator: #d24b4e;
+    --mention-bg: #ffffff;
+    --mention-color: #1e325c;
+    --center-channel-bg: #ffffff;
+    --center-channel-color: #3f4350;
+    --new-message-separator: #cc8f00;
+    --link-color: #386fe5;
+    --button-bg: #1c58d9;
+    --button-color: #ffffff;
+    --error-text: #d24b4e;
+    --mention-highlight-bg: #ffd470;
+    --mention-highlight-link: #1b1d22;
+}
 
-    --elevation-5: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
+.LoadingScreen--darkMode {
+    /* Onyx - used for dark mode*/
+    --away-indicator-rgb: 245, 171, 0;
+    --button-bg-rgb: 74, 124, 232;
+    --button-color-rgb: 255, 255, 255;
+    --center-channel-bg-rgb: 25, 27, 31;
+    --center-channel-color-rgb: 227, 228, 232;
+    --dnd-indicator-rgb: 210, 75, 78;
+    --error-text-color-rgb: 218, 108, 110;
+    --link-color-rgb: #5d89ea;
+    --mention-bg-rgb: 75, 124, 231;
+    --mention-color-rgb: 255, 255, 255;
+    --mention-highlight-bg-rgb: 13, 110, 110;
+    --mention-highlight-link-rgb: 164, 244, 244;
+    --mention-highlight-bg-mixed-rgb: 19, 68, 70;
+    --pinned-highlight-bg-mixed-rgb: 22, 46, 49;
+    --own-highlight-bg-rgb: 23, 115, 116;
+    --new-message-separator-rgb: 26, 219, 219;
+    --online-indicator-rgb: 61, 184, 135;
+    --sidebar-bg-rgb: 32, 34, 40;
+    --sidebar-header-bg-rgb: 36, 39, 45;
+    --sidebar-teambar-bg-rgb: 41, 44, 51;
+    --sidebar-header-text-color-rgb: 255, 255, 255;
+    --sidebar-text-rgb: 255, 255, 255;
+    --sidebar-text-active-border-rgb: 74, 124, 232;
+    --sidebar-text-active-color-rgb: 255, 255, 255;
+    --sidebar-text-hover-bg-rgb: 37, 38, 42;
+    --sidebar-unread-text-rgb: 255, 255, 255;
+    --sidebar-bg: #202228;
+    --sidebar-text: #ffffff;
+    --sidebar-unread-text: #ffffff;
+    --sidebar-text-hover-bg: #25262a;
+    --sidebar-text-active-border: #4a7ce8;
+    --sidebar-text-active-color: #ffffff;
+    --sidebar-header-bg: #24272d;
+    --sidebar-teambar-bg: #292c33;
+    --sidebar-header-text-color: #ffffff;
+    --online-indicator: #3db887;
+    --away-indicator: #f5ab00;
+    --dnd-indicator: #d24b4e;
+    --mention-bg: #4b7ce7;
+    --mention-color: #ffffff;
+    --center-channel-bg: #191b1f;
+    --center-channel-color: #e3e4e8;
+    --new-message-separator: #1adbdb;
+    --link-color: #5d89ea;
+    --button-bg: #4a7ce8;
+    --button-color: #ffffff;
+    --error-text: #da6c6e;
+    --mention-highlight-bg: #0d6e6e;
+    --mention-highlight-link: #a4f4f4;
 }

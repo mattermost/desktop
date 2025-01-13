@@ -36,7 +36,7 @@
         outline: 0;
 
         &::placeholder {
-            color: rgba(var(--center-channel-text-rgb), 0.64);
+            color: rgba(var(--center-channel-color-rgb), 0.64);
         }
 
         &.Input__focus {
@@ -175,55 +175,6 @@
         .Input_fieldset {
             border-color: rgba(var(--center-channel-color-rgb), 0.16);
             background-color: rgba(var(--center-channel-color-rgb), 0.04);
-        }
-    }
-}
-
-.Input_container-inverted {
-    .Input {
-        color: var(--button-color);
-        background-color: unset;
-
-        &::placeholder {
-            color: rgba(var(--button-color-rgb), 0.56);
-        }
-    }
-
-    .Input_wrapper {
-        color: rgba(var(--button-color-rgb), 0.56);
-    }
-
-    .Input___info {
-        color: rgba(var(--button-color-rgb), 0.56);
-    }
-
-    .Input_fieldset {
-        background-color: var(--denim-sidebar-header-bg);
-        border: 1px solid rgba(var(--onyx-center-channel-text-rgb), 0.16);
-
-        &:hover {
-            border-color: rgba(var(--onyx-center-channel-text-rgb), 0.48);
-        }
-
-        &:focus-within {
-            border-color: var(--onyx-center-channel-text-rgb);
-            box-shadow: inset 0 0 0 1px var(--onyx-center-channel-text-rgb);
-            color: var(--button-color);
-
-            .Input_legend {
-                color: var(--button-color);
-            }
-        }
-    }
-
-    .Input_legend {
-        background-color: var(--denim-sidebar-header-bg);
-        color: rgba(var(--button-color-rgb), 0.64);
-    }
-
-    &.disabled {
-        .Input_fieldset {
-            background: rgba(var(--button-color-rgb), 0.08);
         }
     }
 }

@@ -39,31 +39,6 @@
     }
 }
 
-.primary-button-inverted {
-    background: var(--button-color);
-    color: var(--denim-button-bg);
-
-    &:hover {
-        background: linear-gradient(0deg, rgba(var(--denim-button-bg-rgb), 0.08), rgba(var(--denim-button-bg-rgb), 0.08)), var(--button-color);
-        color: var(--denim-button-bg);
-    }
-
-    &:active {
-        background: linear-gradient(0deg, rgba(var(--denim-button-bg-rgb), 0.16), rgba(var(--denim-button-bg-rgb), 0.16)), var(--button-color);
-        color: var(--denim-button-bg);
-    }
-
-    &:focus {
-        border: 2px solid var(--denim-sidebar-active-border);
-        color: var(--denim-button-bg);
-    }
-
-    &:disabled {
-        background: rgba(var(--button-color-rgb), 0.08);
-        color: rgba(var(--button-color-rgb), 0.32);
-    }
-}
-
 .primary-large-button {
     height: 48px;
     padding: 0 24px;
@@ -109,21 +84,6 @@
     }
 }
 
-.link-button-inverted {
-    color: rgb(var(--link-color-inverted-rgb));
-
-
-    &:hover,
-    &:active,
-    &:focus  {
-        color: var(--denim-sidebar-active-border);
-    }
-
-    &:disabled {
-        color: rgba(var(--link-color-inverted-rgb), 0.32);
-    }
-}
-
 .link-small-button {
     font-size: 12px;
     font-weight: 600;
@@ -138,22 +98,22 @@
     border: 0;
     background: none;
     border-radius: 4px;
-    color: rgba(var(--center-channel-text-rgb), 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     font-weight: 400;
 
     &:hover {
-        background: rgba(var(--center-channel-text-rgb), 0.08);
-        color: rgba(var(--center-channel-text-rgb), 0.72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
     &:active {
-        background: rgba(var(--denim-button-bg-rgb), 0.08);
-        color: var(--denim-button-bg);
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
     }
 
     &:focus-visible {
         box-sizing: border-box;
-        border-color: linear-gradient(0deg, rgba(var(--button-color-rgb), 0.32), rgba(var(--button-color-rgb), 0.32)), var(--denim-button-bg);
+        border-color: linear-gradient(0deg, rgba(var(--button-color-rgb), 0.32), rgba(var(--button-color-rgb), 0.32)), var(--button-bg);
         outline: none;
     }
 
@@ -167,31 +127,6 @@
         display: flex;
         font-style: normal;
         justify-content: center;
-    }
-}
-
-.icon-button-inverted {
-    background: none;
-    color: rgba(var(--button-color-rgb), 0.64);
-
-    &:hover {
-        background: rgba(var(--button-color-rgb), 0.08);
-        color: var(--button-color);
-    }
-
-    &:active {
-        background: rgba(var(--button-color-rgb), 0.16);
-        color: var(--button-color);
-    }
-
-    &:focus-visible {
-        box-sizing: border-box;
-        border-color: linear-gradient(0deg, rgba(var(--button-color-rgb), 0.32), rgba(var(--button-color-rgb), 0.32)), var(--denim-button-bg);
-    }
-
-    &:disabled {
-        background: none;
-        color: rgba(var(--button-color-rgb), 0.32);
     }
 }
 
