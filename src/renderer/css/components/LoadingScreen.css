@@ -3,11 +3,6 @@ body {
 }
 
 .LoadingScreen {
-    --background-color: #F4F4F6;
-    --background-color-highlight: #FFFFFF;
-    --stipple-color: #1E325C;
-    --stipple-opacity: 0.08;
-    
     display: flex;
     justify-content: center;
     align-items: center;
@@ -25,38 +20,19 @@ body {
     transition: opacity 150ms 0ms ease-out, visibility 150ms 0ms step-start;
 }
 
-.LoadingScreen--darkMode {
-    --background-color-highlight: #28427B;
-    --background-color: #1E325C;
-    --stipple-color: #14213E;
-    --stipple-opacity: 0.8;
+.LoadingScreen--darkMode .LoadingScreen__background {
+    background-image: url('renderer/assets/svg/background-dark.svg');
 }
 
-.LoadingScreen__backgound,
-.LoadingScreen__backgound > svg
+.LoadingScreen__background
 {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-}
-
-.LoadingScreen__backgound {
-    background: var(--background-color);
-}
-
-.LoadingScreen .Pill__stipple {
-    fill: var(--stipple-color);
-    fill-opacity: var(--stipple-opacity);
-}
-
-.LoadingScreen .Pill__gradient {
-    stop-color: var(--background-color);
-}
-
-.LoadingScreen .Pill__gradientHighlight {
-    stop-color: var(--background-color-highlight);
+    background-size: cover;
+    background-image: url('renderer/assets/svg/background-light.svg');
 }
 
 .LoadingScreen--loaded {

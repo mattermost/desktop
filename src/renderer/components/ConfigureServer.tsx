@@ -6,7 +6,6 @@ import React, {useState, useCallback, useEffect, useRef} from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 
 import {MODAL_TRANSITION_TIMEOUT, URLValidationStatus} from 'common/utils/constants';
-import womanLaptop from 'renderer/assets/svg/womanLaptop.svg';
 import Header from 'renderer/components/Header';
 import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
@@ -17,6 +16,8 @@ import type {UniqueServer} from 'types/config';
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/ConfigureServer.scss';
 import 'renderer/css/components/LoadingScreen.css';
+
+import ServerImage from './Images/server';
 
 type ConfigureServerProps = {
     server?: UniqueServer;
@@ -266,14 +267,13 @@ function ConfigureServer({
         }
 
         return (
-            <div className={classNames('alternate-link', transition, {'alternate-link-inverted': darkMode})}>
+            <div className={classNames('alternate-link', transition)}>
                 <span className='alternate-link__message'>
                     {alternateLinkMessage}
                 </span>
                 <a
                     className={classNames(
                         'link-button link-small-button alternate-link__link',
-                        {'link-button-inverted': darkMode},
                     )}
                     href={alternateLinkURL}
                     target='_blank'
@@ -291,7 +291,6 @@ function ConfigureServer({
                 'LoadingScreen',
                 {'LoadingScreen--darkMode': darkMode},
                 'ConfigureServer',
-                {'ConfigureServer-inverted': darkMode},
             )}
         >
             <LoadingBackground/>
@@ -304,6 +303,9 @@ function ConfigureServer({
                     {!mobileView && getAlternateLink()}
                     <div className='ConfigureServer__content'>
                         <div className={classNames('ConfigureServer__message', transition)}>
+                            <div className='ConfigureServer__message-img'>
+                                <ServerImage/>
+                            </div>
                             <h1 className='ConfigureServer__message-title'>
                                 {messageTitle || formatMessage({id: 'renderer.components.configureServer.title', defaultMessage: 'Let’s connect to a server'})}
                             </h1>
@@ -318,12 +320,6 @@ function ConfigureServer({
                                     />)
                                 }
                             </p>
-                            <div className='ConfigureServer__message-img'>
-                                <img
-                                    src={womanLaptop}
-                                    draggable={false}
-                                />
-                            </div>
                         </div>
                         <div className={classNames('ConfigureServer__card', transition, {'with-error': nameError || urlError?.type === STATUS.ERROR})}>
                             <div
@@ -348,7 +344,6 @@ function ConfigureServer({
                                         })}
                                         placeholder={formatMessage({id: 'renderer.components.configureServer.url.placeholder', defaultMessage: 'Server URL'})}
                                         disabled={waiting}
-                                        darkMode={darkMode}
                                     />
                                     <Input
                                         name='name'
@@ -367,7 +362,6 @@ function ConfigureServer({
                                         })}
                                         placeholder={formatMessage({id: 'renderer.components.configureServer.name.placeholder', defaultMessage: 'Server display name'})}
                                         disabled={waiting}
-                                        darkMode={darkMode}
                                     />
                                     <SaveButton
                                         id='connectConfigureServer'
@@ -380,7 +374,6 @@ function ConfigureServer({
                                         }
                                         savingMessage={formatMessage({id: 'renderer.components.configureServer.connect.saving', defaultMessage: 'Connecting…'})}
                                         disabled={!canSave}
-                                        darkMode={darkMode}
                                     />
                                 </div>
                             </div>

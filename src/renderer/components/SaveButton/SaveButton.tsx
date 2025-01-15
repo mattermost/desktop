@@ -17,7 +17,6 @@ type Props = {
     savingMessage?: React.ReactNode;
     defaultMessage?: React.ReactNode;
     extraClasses?: string;
-    darkMode?: boolean;
 }
 
 const SaveButton = ({
@@ -37,7 +36,6 @@ const SaveButton = ({
             defaultMessage='Saving'
         />
     ),
-    darkMode,
     onClick,
 }: Props) => {
     const handleOnClick = (e: React.MouseEvent) => {
@@ -53,9 +51,6 @@ const SaveButton = ({
             id={id}
             className={classNames(
                 'primary-button primary-large-button',
-                {
-                    'primary-button-inverted': darkMode,
-                },
                 extraClasses && extraClasses,
             )}
             disabled={disabled}

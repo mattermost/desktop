@@ -241,6 +241,23 @@ export class CallsWidgetWindow {
         ev.preventDefault();
     };
 
+    private setWidgetWindowStacking = ({onTop}: {onTop: boolean}) => {
+        log.debug('setWidgetWindowStacking', onTop);
+
+        if (!this.win) {
+            return;
+        }
+
+        if (onTop) {
+            this.win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true, skipTransformProcessType: true});
+            this.win.setAlwaysOnTop(true, 'screen-saver');
+            this.win.focus();
+        } else {
+            this.win.setAlwaysOnTop(false);
+            this.win.setVisibleOnAllWorkspaces(false);
+        }
+    };
+
     private onShow = () => {
         log.debug('onShow');
         const mainWindow = MainWindow.get();
@@ -248,9 +265,7 @@ export class CallsWidgetWindow {
             return;
         }
 
-        this.win.focus();
-        this.win.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true, skipTransformProcessType: true});
-        this.win.setAlwaysOnTop(true, 'screen-saver');
+        this.setWidgetWindowStacking({onTop: true});
 
         const bounds = this.win.getBounds();
         const mainBounds = mainWindow.getBounds();
@@ -299,6 +314,8 @@ export class CallsWidgetWindow {
     private onPopOutCreate = (win: BrowserWindow) => {
         this.popOut = win;
 
+        this.setWidgetWindowStacking({onTop: false});
+
         // Let the webContentsEventManager handle links that try to open a new window.
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
 
@@ -319,6 +336,7 @@ export class CallsWidgetWindow {
             ipcMain.emit(UPDATE_SHORTCUT_MENU);
             delete this.popOut;
             contextMenu.dispose();
+            this.setWidgetWindowStacking({onTop: true});
         });
 
         // Set the userAgent so that the widget's popout is considered a desktop window in the webapp code.

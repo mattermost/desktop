@@ -12,9 +12,9 @@
     }
 
     .WelcomeScreenSlide__title {
-        color: var(--title-color-indigo-500);
+        color: var(--center-channel-color);
         font-family: 'Metropolis';
-        font-size: 80px;
+        font-size: 64px;
         font-weight: 600;
         letter-spacing: -1.6px;
         line-height: 88px;
@@ -29,7 +29,7 @@
         font-weight: 400;
         line-height: 24px;
         text-align: center;
-        max-width: 580px;
+        max-width: 628px;
         margin: auto;
     }
 
@@ -37,8 +37,7 @@
 
         max-width: 582px;
         .WelcomeScreenSlide__title {
-            font-size: 80px;
-            line-height: normal;
+            font-size: 93px;
         }
     }
 

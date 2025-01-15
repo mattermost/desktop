@@ -153,6 +153,13 @@ describe('main/windows/callsWidgetWindow', () => {
                 value: originalEnv,
             });
         });
+
+        it('widget window visibility should have been toggled', async () => {
+            callsWidgetWindow.onShow();
+            expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {skipTransformProcessType: true, visibleOnFullScreen: true});
+            expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(true, 'screen-saver');
+            expect(callsWidgetWindow.win.focus).toHaveBeenCalled();
+        });
     });
 
     describe('close', () => {
@@ -422,7 +429,22 @@ describe('main/windows/callsWidgetWindow', () => {
         };
 
         const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.win = {
+            setVisibleOnAllWorkspaces: jest.fn(),
+            setAlwaysOnTop: jest.fn(),
+            focus: jest.fn(),
+        };
+
+        expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).not.toHaveBeenCalled();
+        expect(callsWidgetWindow.win.setAlwaysOnTop).not.toHaveBeenCalled();
+
         callsWidgetWindow.onPopOutCreate(popOut);
+
+        // Verify widget visibility has been toggled
+        expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(false);
+        expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(false);
+        expect(callsWidgetWindow.win.focus).not.toHaveBeenCalled();
+
         expect(callsWidgetWindow.popOut).toBe(popOut);
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
@@ -439,6 +461,11 @@ describe('main/windows/callsWidgetWindow', () => {
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
         expect(mockContextMenuDispose).toHaveBeenCalled();
+
+        // Verify widget visibility has been toggled
+        expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {skipTransformProcessType: true, visibleOnFullScreen: true});
+        expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(true, 'screen-saver');
+        expect(callsWidgetWindow.win.focus).toHaveBeenCalled();
     });
 
     it('getViewURL', () => {
