@@ -109,9 +109,6 @@
       "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing.",
       "NSFocusStatusUsageDescription": "Focus status is used by Mattermost to determine whether to send notifications or not.",
       "LSFileQuarantineEnabled": true
-    },
-    "notarize": {
-      "teamId": "UQ8HT4Q2XM"
     }
   },
   "mas": {

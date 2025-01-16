@@ -45,7 +45,6 @@ function CarouselPaginationIndicator({
                     className={classNames(
                         'indicatorDot',
                         {
-                            'indicatorDot-inverted': darkMode,
                             active: activePage === pageIndex,
                             disabled,
                         },

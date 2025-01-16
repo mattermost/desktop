@@ -113,7 +113,6 @@ function Carousel({
                 <CarouselButton
                     direction={ButtonDirection.PREV}
                     disabled={disableNavigation}
-                    darkMode={darkMode}
                     onClick={handleOnPrevButtonClick}
                 />
                 <CarouselPaginationIndicator
@@ -126,7 +125,6 @@ function Carousel({
                 <CarouselButton
                     direction={ButtonDirection.NEXT}
                     disabled={disableNavigation}
-                    darkMode={darkMode}
                     onClick={handleOnNextButtonClick}
                 />
             </div>
