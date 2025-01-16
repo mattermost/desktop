@@ -36,8 +36,6 @@ describe('menu/view', function desc() {
     if (process.platform !== 'darwin') {
         it('MM-T816 Toggle Full Screen in the Menu Bar', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-            await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             await env.loginToMattermost(firstServer);
             await firstServer.waitForSelector('#post_textbox');

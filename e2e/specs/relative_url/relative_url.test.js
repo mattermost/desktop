@@ -32,8 +32,6 @@ describe('copylink', function desc() {
     });
 
     it('MM-T1308 Check that external links dont open in the app', async () => {
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#post_textbox');
