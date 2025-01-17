@@ -15,14 +15,12 @@ export enum ButtonDirection {
 type CarouselButtonProps = {
     direction: ButtonDirection;
     disabled?: boolean;
-    darkMode?: boolean;
     onClick?: () => void;
 };
 
 function CarouselButton({
     direction = ButtonDirection.NEXT,
     disabled = false,
-    darkMode = false,
     onClick = () => null,
 }: CarouselButtonProps) {
     const handleOnClick = () => {
@@ -36,7 +34,6 @@ function CarouselButton({
                 'CarouselButton',
                 'icon-button icon-button-small',
                 {
-                    'icon-button-inverted': darkMode,
                     disabled,
                 },
             )}

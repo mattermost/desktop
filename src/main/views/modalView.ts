@@ -66,7 +66,9 @@ export class ModalView<T, T2> {
 
         // Linux sometimes doesn't have the bound initialized correctly initially, so we wait to set them
         const setBoundsFunction = () => {
-            this.view.setBounds(getWindowBoundaries(this.windowAttached!));
+            if (this.windowAttached) {
+                this.view.setBounds(getWindowBoundaries(this.windowAttached));
+            }
         };
         if (process.platform === 'linux') {
             setTimeout(setBoundsFunction, 10);

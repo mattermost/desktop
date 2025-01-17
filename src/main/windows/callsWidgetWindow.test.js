@@ -74,6 +74,7 @@ jest.mock('main/performanceMonitor', () => ({
 jest.mock('main/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
+    showById: jest.fn(),
 }));
 jest.mock('../utils', () => ({
     openScreensharePermissionsSettingsMacOS: jest.fn(),
@@ -151,6 +152,13 @@ describe('main/windows/callsWidgetWindow', () => {
             Object.defineProperty(process, 'env', {
                 value: originalEnv,
             });
+        });
+
+        it('widget window visibility should have been toggled', async () => {
+            callsWidgetWindow.onShow();
+            expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {skipTransformProcessType: true, visibleOnFullScreen: true});
+            expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(true, 'screen-saver');
+            expect(callsWidgetWindow.win.focus).toHaveBeenCalled();
         });
     });
 
@@ -415,7 +423,22 @@ describe('main/windows/callsWidgetWindow', () => {
         };
 
         const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.win = {
+            setVisibleOnAllWorkspaces: jest.fn(),
+            setAlwaysOnTop: jest.fn(),
+            focus: jest.fn(),
+        };
+
+        expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).not.toHaveBeenCalled();
+        expect(callsWidgetWindow.win.setAlwaysOnTop).not.toHaveBeenCalled();
+
         callsWidgetWindow.onPopOutCreate(popOut);
+
+        // Verify widget visibility has been toggled
+        expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(false);
+        expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(false);
+        expect(callsWidgetWindow.win.focus).not.toHaveBeenCalled();
+
         expect(callsWidgetWindow.popOut).toBe(popOut);
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
@@ -432,6 +455,11 @@ describe('main/windows/callsWidgetWindow', () => {
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
         expect(mockContextMenuDispose).toHaveBeenCalled();
+
+        // Verify widget visibility has been toggled
+        expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {skipTransformProcessType: true, visibleOnFullScreen: true});
+        expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(true, 'screen-saver');
+        expect(callsWidgetWindow.win.focus).toHaveBeenCalled();
     });
 
     it('getViewURL', () => {
@@ -786,6 +814,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
     describe('forwardToMainApp', () => {
         const view = {
+            id: 'main-view',
             view: {
                 server: {
                     id: 'server-1',
@@ -812,6 +841,7 @@ describe('main/windows/callsWidgetWindow', () => {
             const func = callsWidgetWindow.forwardToMainApp('some-channel');
             func({sender: {id: 1}}, 'thecallchannelid');
             expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith('some-channel', 'thecallchannelid');
         });
@@ -819,6 +849,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
     describe('handleCallsLinkClick', () => {
         const view = {
+            id: 'main-view',
             view: {
                 server: {
                     id: 'server-1',
@@ -845,10 +876,11 @@ describe('main/windows/callsWidgetWindow', () => {
             ViewManager.handleDeepLink = jest.fn();
         });
 
-        it('should switch server, focus and send history push event', () => {
+        it('should switch server, tab and focus and send history push event', () => {
             const url = '/team/channel';
             callsWidgetWindow.handleCallsLinkClick({sender: {id: 1}}, url);
             expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith(BROWSER_HISTORY_PUSH, url);
         });
@@ -884,6 +916,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
     describe('handleCallsOpenThread', () => {
         const view = {
+            id: 'main-view',
             view: {
                 server: {
                     id: 'server-1',
@@ -903,10 +936,11 @@ describe('main/windows/callsWidgetWindow', () => {
             ViewManager.handleDeepLink = jest.fn();
         });
 
-        it('should switch server, focus and send open thread event', () => {
+        it('should switch server, tab and focus and send open thread event', () => {
             const threadID = 'call-thread-id';
             callsWidgetWindow.handleCallsOpenThread({sender: {id: 1}}, threadID);
             expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith(CALLS_WIDGET_OPEN_THREAD, threadID);
         });
@@ -914,6 +948,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
     describe('handleCallsOpenStopRecordingModal', () => {
         const view = {
+            id: 'main-view',
             view: {
                 server: {
                     id: 'server-1',
@@ -932,12 +967,49 @@ describe('main/windows/callsWidgetWindow', () => {
             ViewManager.getView.mockReturnValue(view);
         });
 
-        it('should switch server, focus and send open modal event', () => {
+        it('should switch server, tab and focus and send open modal event', () => {
             const channelID = 'call-channel-id';
             callsWidgetWindow.handleCallsOpenStopRecordingModal({sender: {id: 1}}, channelID);
             expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, channelID);
+        });
+    });
+
+    describe('focusChannelView', () => {
+        const view = {
+            id: 'main-view',
+            view: {
+                server: {
+                    id: 'server-1',
+                },
+            },
+            sendToRenderer: jest.fn(),
+        };
+
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        const focus = jest.fn();
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue({focus});
+            ViewManager.getView.mockReturnValue(view);
+        });
+
+        it('noop if not initialized', () => {
+            callsWidgetWindow.focusChannelView();
+            expect(ServerViewState.switchServer).not.toHaveBeenCalled();
+            expect(ViewManager.showById).not.toHaveBeenCalled();
+            expect(focus).not.toHaveBeenCalled();
+        });
+
+        it('should switch server, tab and focus', () => {
+            callsWidgetWindow.mainView = view;
+            callsWidgetWindow.focusChannelView();
+            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
+            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
+            expect(focus).toHaveBeenCalled();
         });
     });
 });

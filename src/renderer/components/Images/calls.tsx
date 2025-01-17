@@ -1,0 +1,243 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import React from 'react';
+
+const CallsImage = () => (
+    <svg
+        width='293'
+        height='174'
+        viewBox='0 0 195 116'
+        fill='none'
+        xmlns='http://www.w3.org/2000/svg'
+    >
+        <rect
+            x='-0.000488281'
+            y='24'
+            width='195'
+            height='67'
+            rx='3'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.12'
+        />
+        <path
+            d='M187.5 36L187.5 63L161 63'
+            stroke='var(--center-channel-color)'
+            strokeOpacity='0.32'
+            strokeLinecap='round'
+        />
+        <circle
+            cx='2.5'
+            cy='2.5'
+            r='2.5'
+            transform='matrix(-1 -8.74228e-08 -8.74228e-08 1 190 31)'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.48'
+        />
+        <path
+            d='M187.5 102L187.5 75H161'
+            stroke='var(--center-channel-color)'
+            strokeOpacity='0.32'
+            strokeLinecap='round'
+        />
+        <circle
+            cx='187.5'
+            cy='104.5'
+            r='2.5'
+            transform='rotate(180 187.5 104.5)'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.48'
+        />
+        <path
+            d='M6.49951 20L6.49951 47L32.9995 47'
+            stroke='var(--center-channel-color)'
+            strokeOpacity='0.32'
+            strokeLinecap='round'
+        />
+        <circle
+            cx='6.49951'
+            cy='17.5'
+            r='2.5'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.48'
+        />
+        <rect
+            x='51.9995'
+            y='15'
+            width='123'
+            height='80.6667'
+            rx='4'
+            fill='var(--center-channel-bg)'
+            stroke='var(--center-channel-color)'
+            strokeWidth='4'
+        />
+        <path
+            d='M53.9995 18.5C53.9995 17.6716 54.6711 17 55.4995 17H171.5C172.328 17 173 17.6716 173 18.5V26H53.9995V18.5Z'
+            fill='var(--button-bg)'
+            fillOpacity='0.16'
+        />
+        <circle
+            cx='58.4995'
+            cy='21.5'
+            r='1.5'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.48'
+        />
+        <circle
+            cx='66.4995'
+            cy='21.5'
+            r='1.5'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.48'
+        />
+        <circle
+            cx='74.4995'
+            cy='21.5'
+            r='1.5'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.48'
+        />
+        <rect
+            opacity='0.32'
+            x='60.4995'
+            y='31.5'
+            width='107'
+            height='43'
+            rx='1.5'
+            stroke='var(--center-channel-color)'
+        />
+        <circle
+            cx='101'
+            cy='85'
+            r='3'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.4'
+        />
+        <circle
+            cx='113'
+            cy='85'
+            r='6'
+            fill='var(--online-indicator)'
+        />
+        <circle
+            cx='125'
+            cy='85'
+            r='3'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.4'
+        />
+        <path
+            d='M92.9995 39V66H136'
+            stroke='var(--center-channel-color)'
+            strokeLinejoin='round'
+        />
+        <rect
+            x='99.9995'
+            y='44'
+            width='3'
+            height='19'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.4'
+        />
+        <rect
+            x='105'
+            y='45'
+            width='3'
+            height='18'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.4'
+        />
+        <rect
+            x='110'
+            y='53'
+            width='3'
+            height='10'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.4'
+        />
+        <rect
+            x='115'
+            y='52'
+            width='3'
+            height='11'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.4'
+        />
+        <rect
+            x='120'
+            y='48'
+            width='3'
+            height='15'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.4'
+        />
+        <rect
+            x='125'
+            y='46'
+            width='3'
+            height='17'
+            fill='var(--center-channel-color)'
+            fillOpacity='0.4'
+        />
+        <path
+            d='M113 81.5C113.194 81.5 113.371 81.5501 113.53 81.6503C113.696 81.7504 113.827 81.8859 113.924 82.0568C114.021 82.2218 114.07 82.4045 114.07 82.6048V84.8144C114.07 85.0147 114.021 85.2003 113.924 85.3712C113.827 85.5362 113.696 85.6688 113.53 85.7689C113.371 85.8691 113.194 85.9192 113 85.9192C112.805 85.9192 112.626 85.8691 112.46 85.7689C112.3 85.6688 112.172 85.5362 112.075 85.3712C111.978 85.2003 111.929 85.0147 111.929 84.8144V82.6048C111.929 82.4045 111.978 82.2218 112.075 82.0568C112.172 81.8859 112.3 81.7504 112.46 81.6503C112.626 81.5501 112.805 81.5 113 81.5ZM115.5 84.8144C115.5 85.2386 115.405 85.6393 115.217 86.0164C115.029 86.3758 114.772 86.6763 114.446 86.9179C114.121 87.1595 113.759 87.3098 113.359 87.3687V88.5H112.64V87.3687C112.24 87.3098 111.878 87.1595 111.553 86.9179C111.227 86.6763 110.97 86.3758 110.782 86.0164C110.594 85.6393 110.5 85.2386 110.5 84.8144H111.219C111.219 85.0619 111.261 85.2976 111.347 85.5215C111.438 85.7454 111.567 85.9457 111.732 86.1225C111.904 86.2933 112.098 86.4259 112.315 86.5202C112.531 86.6145 112.76 86.6616 113 86.6616C113.239 86.6616 113.468 86.6145 113.684 86.5202C113.901 86.4259 114.093 86.2933 114.258 86.1225C114.429 85.9457 114.558 85.7454 114.643 85.5215C114.735 85.2976 114.78 85.0619 114.78 84.8144H115.5Z'
+            fill='var(--center-channel-bg)'
+        />
+        <rect
+            x='23.8995'
+            y='2.5001'
+            width='60.2'
+            height='110.6'
+            rx='10.5'
+            fill='var(--center-channel-bg)'
+            stroke='var(--center-channel-color)'
+            strokeWidth='4.2'
+        />
+        <path
+            d='M25.9995 10.9001C25.9995 7.4207 28.8201 4.6001 32.2995 4.6001H75.6995C79.1789 4.6001 81.9995 7.4207 81.9995 10.9001V14.4001H25.9995V10.9001Z'
+            fill='var(--button-bg)'
+            fillOpacity='0.16'
+        />
+        <circle
+            cx='53.9995'
+            cy='57.8'
+            r='16.8'
+            fill='var(--online-indicator)'
+        />
+        <rect
+            x='42.7995'
+            y='8.79999'
+            width='22.4'
+            height='1.4'
+            rx='0.7'
+            fill='var(--center-channel-color)'
+        />
+        <path
+            d='M55.8662 58.5C55.8662 58.0346 55.7498 57.6102 55.5171 57.2269C55.2844 56.8299 54.9696 56.5151 54.5726 56.2824C54.1893 56.0497 53.7649 55.9333 53.2995 55.9333V54.2291C54.0798 54.2291 54.7916 54.4207 55.435 54.804C56.092 55.1873 56.6122 55.7075 56.9955 56.3645C57.3788 57.0079 57.5704 57.7197 57.5704 58.5H55.8662ZM59.2952 58.5C59.2952 57.4186 59.0215 56.4124 58.4739 55.4816C57.94 54.5781 57.2214 53.8595 56.3179 53.3256C55.3871 52.778 54.3809 52.5043 53.2995 52.5043V50.8C54.6958 50.8 55.9894 51.1491 57.1803 51.8472C58.3439 52.5316 59.2679 53.4488 59.9523 54.5987C60.6504 55.8033 60.9995 57.1037 60.9995 58.5H59.2952ZM60.1371 61.4979C60.3698 61.4979 60.5683 61.58 60.7326 61.7443C60.9105 61.9085 60.9995 62.107 60.9995 62.3397V65.3376C60.9995 65.5703 60.9105 65.7688 60.7326 65.9331C60.5683 66.111 60.3698 66.2 60.1371 66.2C58.1659 66.2 56.2768 65.8167 54.4699 65.0501C52.7314 64.3246 51.1914 63.2911 49.8499 61.9496C48.5084 60.6081 47.4749 59.0681 46.7494 57.3296C45.9828 55.5227 45.5995 53.6336 45.5995 51.6624C45.5995 51.4297 45.6816 51.2312 45.8459 51.0669C46.0239 50.889 46.2292 50.8 46.4619 50.8H49.4598C49.6925 50.8 49.891 50.889 50.0552 51.0669C50.2195 51.2312 50.3016 51.4297 50.3016 51.6624C50.3016 52.6754 50.4659 53.6883 50.7944 54.7013C50.8492 54.8519 50.856 55.0093 50.815 55.1736C50.7739 55.3242 50.6986 55.4611 50.5891 55.5843L48.7 57.4733C49.316 58.6779 50.1032 59.7662 51.0614 60.7381C52.0333 61.6963 53.1216 62.4835 54.3262 63.0995L56.2152 61.2104C56.3384 61.1009 56.4753 61.0256 56.6259 60.9845C56.7902 60.9435 56.9476 60.9503 57.0982 61.0051C58.1112 61.3336 59.1241 61.4979 60.1371 61.4979Z'
+            fill='var(--center-channel-bg)'
+        />
+        <path
+            d='M99.8745 103L91.9995 103'
+            stroke='var(--center-channel-color)'
+            strokeLinecap='round'
+        />
+        <path
+            d='M89.3745 103L85.8745 103'
+            stroke='var(--center-channel-color)'
+            strokeLinecap='round'
+        />
+        <path
+            d='M83.2495 103L56.9995 103'
+            stroke='var(--center-channel-color)'
+            strokeLinecap='round'
+        />
+        <path
+            d='M102.5 103L113 103L113 90'
+            stroke='var(--center-channel-color)'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
+    </svg>
+);
+
+export default CallsImage;
