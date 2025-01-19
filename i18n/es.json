@@ -130,7 +130,7 @@
   "main.notifications.download.complete.title": "Descarga Completa",
   "main.notifications.mention.title": "Alguien te mencionó",
   "main.notifications.upgrade.newVersion.body": "Una nueva versión está disponible para descargar ahora.",
-  "main.notifications.upgrade.newVersion.title": "Una nueva version de escritorio disponible",
+  "main.notifications.upgrade.newVersion.title": "Una nueva versión de escritorio disponible",
   "main.notifications.upgrade.readyToInstall.body": "Hay una nueva versión de escritorio está disponible para instalar.",
   "main.notifications.upgrade.readyToInstall.title": "Pulsar para reiniciar e instalar la actualización",
   "main.permissionsManager.checkPermission.dialog.detail.geolocation": "{appName} usará la ubicación para establecer tu zona horaria. Siempre puedes cambiarla más tarde en los ajustes de tu computadora.",
