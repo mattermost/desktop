@@ -58,13 +58,13 @@ describe('menu/view', function desc() {
     it('MM-T813 Control+F should focus the search bar in Mattermost', async () => {
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#searchBox');
+        await firstServer.waitForSelector('#searchFormContainer');
         await asyncSleep(1000);
         robot.keyTap('f', [process.platform === 'darwin' ? 'command' : 'control']);
         await asyncSleep(500);
-        const isFocused = await firstServer.$eval('#searchBox', (el) => el === document.activeElement);
+        const isFocused = await firstServer.$eval('input.search-bar.form-control', (el) => el === document.activeElement);
         isFocused.should.be.true;
-        const text = await firstServer.inputValue('#searchBox');
+        const text = await firstServer.inputValue('input.search-bar.form-control');
         text.should.include('in:');
     });
 
@@ -74,7 +74,7 @@ describe('menu/view', function desc() {
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#searchBox');
+        await firstServer.waitForSelector('#searchFormContainer');
 
         robot.keyTap('=', [env.cmdOrCtrl]);
         await asyncSleep(1000);
@@ -94,12 +94,13 @@ describe('menu/view', function desc() {
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchBox');
+            await firstServer.waitForSelector('#searchFormContainer');
 
             robot.keyTap('=', [env.cmdOrCtrl]);
             await asyncSleep(1000);
             const zoomLevel = await browserWindow.evaluate((window, id) => window.contentView.children.find((view) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
             zoomLevel.should.be.greaterThan(1);
+            zoomLevel.should.be.lessThan(1.5);
         });
 
         it('MM-T818_2 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
@@ -108,7 +109,7 @@ describe('menu/view', function desc() {
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchBox');
+            await firstServer.waitForSelector('#searchFormContainer');
 
             // reset zoom
             await setZoomFactorOfServer(browserWindow, firstServerId, 1);
@@ -130,7 +131,7 @@ describe('menu/view', function desc() {
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchBox');
+            await firstServer.waitForSelector('#searchFormContainer');
 
             robot.keyTap('-', [env.cmdOrCtrl]);
             await asyncSleep(1000);
@@ -144,7 +145,7 @@ describe('menu/view', function desc() {
             const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
             const firstServerId = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].webContentsId;
             await env.loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchBox');
+            await firstServer.waitForSelector('#searchFormContainer');
 
             // reset zoom
             await setZoomFactorOfServer(browserWindow, firstServerId, 1.0);
