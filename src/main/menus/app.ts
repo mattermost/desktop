@@ -179,6 +179,15 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 CallsWidgetWindow.openDevTools();
             },
         });
+
+        if (CallsWidgetWindow.isPopoutOpen()) {
+            devToolsSubMenu.push({
+                label: localizeMessage('main.menus.app.view.devToolsCurrentCallWidgetPopout', 'Developer Tools for Call Widget Popout'),
+                click() {
+                    CallsWidgetWindow.openPopoutDevTools();
+                },
+            });
+        }
     }
 
     if (DeveloperMode.enabled()) {
