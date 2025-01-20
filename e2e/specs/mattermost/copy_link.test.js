@@ -53,6 +53,6 @@ describe('copylink', function desc() {
         const clipboardText = clipboard.readText();
         await firstServer.fill('#post_textbox', clipboardText);
         const content = await firstServer.locator('#post_textbox').textContent();
-        content.should.contain('/ad-1/channels/town-square');
+        content.should.contain('/channels/town-square');
     });
 });

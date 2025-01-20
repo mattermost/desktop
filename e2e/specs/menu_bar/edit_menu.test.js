@@ -24,6 +24,7 @@ describe('edit_menu', function desc() {
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
         firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+
         await env.loginToMattermost(firstServer);
     });
 
@@ -41,7 +42,7 @@ describe('edit_menu', function desc() {
         await firstServer.type('#post_textbox', 'Mattermost');
         await firstServer.click('#post_textbox');
         robot.keyTap('z', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         const content = await firstServer.inputValue('#post_textbox');
         content.should.be.equal('Mattermos');
     });
@@ -53,12 +54,12 @@ describe('edit_menu', function desc() {
         await firstServer.type('#post_textbox', 'Mattermost');
         await firstServer.click('#post_textbox');
         robot.keyTap('z', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         const textAfterUndo = await firstServer.inputValue('#post_textbox');
         textAfterUndo.should.be.equal('Mattermos');
         await firstServer.click('#post_textbox');
         robot.keyTap('z', ['shift', env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         const content = await firstServer.inputValue('#post_textbox');
         content.should.be.equal('Mattermost');
     });
@@ -69,9 +70,9 @@ describe('edit_menu', function desc() {
         await firstServer.fill('#post_textbox', '');
         await firstServer.type('#post_textbox', 'Mattermost');
         robot.keyTap('a', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         robot.keyTap('x', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         const content = await firstServer.inputValue('#post_textbox');
         content.should.be.equal('');
     });
@@ -82,12 +83,12 @@ describe('edit_menu', function desc() {
         await firstServer.fill('#post_textbox', '');
         await firstServer.type('#post_textbox', 'Mattermost');
         robot.keyTap('a', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         robot.keyTap('c', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         await firstServer.click('#post_textbox');
         robot.keyTap('v', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         const content = await firstServer.inputValue('#post_textbox');
         content.should.be.equal('MattermostMattermost');
     });
@@ -98,13 +99,13 @@ describe('edit_menu', function desc() {
         await firstServer.fill('#post_textbox', '');
         await firstServer.type('#post_textbox', 'Mattermost');
         robot.keyTap('a', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         robot.keyTap('c', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         robot.keyTap('a', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         robot.keyTap('v', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         const content = await firstServer.inputValue('#post_textbox');
         content.should.be.equal('Mattermost');
     });
@@ -115,7 +116,7 @@ describe('edit_menu', function desc() {
         await firstServer.fill('#post_textbox', '');
         await firstServer.fill('#post_textbox', 'Mattermost');
         robot.keyTap('a', [env.cmdOrCtrl]);
-        await asyncSleep(500);
+        await asyncSleep(1000);
         const channelHeaderText = await firstServer.evaluate('window.getSelection().toString()');
         channelHeaderText.should.equal('Mattermost');
     });
