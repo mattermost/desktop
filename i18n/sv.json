@@ -102,6 +102,7 @@
   "main.menus.app.view.clearDataForServer": "Rensa data för aktuell server",
   "main.menus.app.view.devToolsAppWrapper": "Utvecklingsverktyg för Application Wrapper",
   "main.menus.app.view.devToolsCurrentCallWidget": "Utvecklingsverktyg för Call Widget",
+  "main.menus.app.view.devToolsCurrentCallWidgetPopout": "Utvecklarverktyg för Call Widget Popout",
   "main.menus.app.view.devToolsCurrentServer": "Utvecklingsverktyg för Current Server",
   "main.menus.app.view.devToolsSubMenu": "Utvecklingsverktyg",
   "main.menus.app.view.developerModeBrowserOnly": "Endast webbläsarläge",
