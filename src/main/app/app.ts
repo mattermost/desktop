@@ -130,7 +130,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         try {
             let result = await dialog.showMessageBox(mainWindow, {
                 title: localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.title', 'Certificate Error'),
-                message: localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.message', 'There is a configuration issue with this Mattermost server, or someone is trying to intercept your connection. You also may need to sign into the Wi-Fi you are connected to using your web browser.'),
+                message: localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.message', 'There is a problem with the security certificate for this server or for embedded content in a message. Please contact your Mattermost admin or IT department to resolve this issue.'),
                 type: 'error',
                 detail,
                 buttons: [
