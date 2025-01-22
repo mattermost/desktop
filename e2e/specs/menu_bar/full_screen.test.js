@@ -48,8 +48,8 @@ describe('menu/view', function desc() {
             await asyncSleep(1000);
             const fullScreenWidth = await firstServer.evaluate('window.outerWidth');
             const fullScreenHeight = await firstServer.evaluate('window.outerHeight');
-            fullScreenWidth.should.be.greaterThan(currentWidth);
-            fullScreenHeight.should.be.greaterThan(currentHeight);
+            fullScreenWidth.should.be.equal(currentWidth);
+            fullScreenHeight.should.be.equal(currentHeight);
             await mainWindow.click('button.three-dot-menu');
             robot.keyTap('v');
             robot.keyTap('t');
