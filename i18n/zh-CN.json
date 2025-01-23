@@ -101,6 +101,7 @@
   "main.menus.app.view.clearDataForServer": "清除当前服务器的数据",
   "main.menus.app.view.devToolsAppWrapper": "Application Wrapper 开发工具",
   "main.menus.app.view.devToolsCurrentCallWidget": "通话小组件开发人员工具",
+  "main.menus.app.view.devToolsCurrentCallWidgetPopout": "通话小部件弹出窗口的开发者工具",
   "main.menus.app.view.devToolsCurrentServer": "当前服务器的开发者工具",
   "main.menus.app.view.devToolsSubMenu": "开发人员工具",
   "main.menus.app.view.developerModeBrowserOnly": "仅浏览器模式",
