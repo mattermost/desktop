@@ -52,6 +52,7 @@ describe('downloads/downloads_manager', function desc() {
         this.serverMap = await env.getServerMap(this.app);
         firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
+        await asyncSleep(2000);
 
         const textbox = await firstServer.waitForSelector('#post_textbox');
         const fileInput = await firstServer.waitForSelector('input#fileUploadInput');
@@ -60,9 +61,8 @@ describe('downloads/downloads_manager', function desc() {
             mimeType: 'text/plain',
             buffer: Buffer.from('this is test file'),
         });
-        await asyncSleep(1000);
-        await textbox.focus();
-        robot.keyTap('enter');
+        await asyncSleep(2000);
+        await firstServer.click('[aria-label="Send Now"]');
     });
 
     afterEach(async () => {
