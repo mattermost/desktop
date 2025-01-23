@@ -1,1 +1,22 @@
-{}
+{
+  "label.add": "Lisa",
+  "label.allow": "Luba",
+  "label.cancel": "Tühista",
+  "label.change": "Muuda",
+  "label.close": "Sulge",
+  "label.deny": "Keela",
+  "label.denyPermanently": "Keela jäädavalt",
+  "label.login": "Logi sisse",
+  "label.no": "Ei",
+  "label.ok": "OK",
+  "label.remove": "Eemalda",
+  "label.save": "Salvesta",
+  "label.yes": "Jah",
+  "main.allowProtocolDialog.button.saveProtocolAsAllowed": "Jah (Salvesta {protocol} lubatuna)",
+  "main.allowProtocolDialog.detail": "Soovitud link on {URL}. Kas tahad jätkata?",
+  "main.allowProtocolDialog.message": "{protocol} link vajab välist rakendust.",
+  "main.allowProtocolDialog.title": "Mitte-http(s) protokoll",
+  "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "Tühista Ühendus",
+  "main.app.app.handleAppCertificateError.certError.button.moreDetails": "Rohkem Infot",
+  "main.app.app.handleAppCertificateError.certError.dialog.detail": "{extraDetail}allikas: {origin}\nViga: {error}"
+}

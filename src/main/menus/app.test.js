@@ -360,6 +360,7 @@ describe('main/menus/app', () => {
 
     it('should show menu item if widget window is open', () => {
         CallsWidgetWindow.isOpen = jest.fn(() => true);
+        CallsWidgetWindow.isPopoutOpen = jest.fn(() => false);
         const menu = createTemplate(config);
 
         const appMenu = menu.find((item) => item.label === 'main.menus.app.view');
@@ -369,6 +370,21 @@ describe('main/menus/app', () => {
         expect(devToolsSubMenu).not.toBe(undefined);
 
         const menuItem = devToolsSubMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsCurrentCallWidget');
+        expect(menuItem).not.toBe(undefined);
+    });
+
+    it('should show additional menu item if widget popout is open', () => {
+        CallsWidgetWindow.isOpen = jest.fn(() => true);
+        CallsWidgetWindow.isPopoutOpen = jest.fn(() => true);
+        const menu = createTemplate(config);
+
+        const appMenu = menu.find((item) => item.label === 'main.menus.app.view');
+        expect(appMenu).not.toBe(undefined);
+
+        const devToolsSubMenu = appMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+        expect(devToolsSubMenu).not.toBe(undefined);
+
+        const menuItem = devToolsSubMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsCurrentCallWidgetPopout');
         expect(menuItem).not.toBe(undefined);
     });
 });
