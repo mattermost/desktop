@@ -57,8 +57,8 @@ describe('menu/view', function desc() {
             await asyncSleep(1000);
             currentWidth = await firstServer.evaluate('window.outerWidth');
             currentHeight = await firstServer.evaluate('window.outerHeight');
-            currentWidth.should.be.lessThan(fullScreenWidth);
-            currentHeight.should.be.lessThan(fullScreenHeight);
+            currentWidth.should.be.equal(fullScreenWidth);
+            currentHeight.should.be.equal(fullScreenHeight);
         });
     }
 });

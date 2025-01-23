@@ -36,10 +36,12 @@ describe('copylink', function desc() {
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
         await asyncSleep(2000);
-        await firstServer.waitForSelector('#sidebarItem_town-square');
+        await firstServer.waitForSelector('#sidebarItem_town-square', { timeout: 5000 });
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
         switch (process.platform) {
         case 'linux':
+            robot.keyTap('c');
+            break;
         case 'win32':
             robot.keyTap('down');
             robot.keyTap('down');
