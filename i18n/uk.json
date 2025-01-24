@@ -28,7 +28,7 @@
   "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "Перервати з'єднання",
   "main.app.app.handleAppCertificateError.certError.button.moreDetails": "Більш детальна інформація",
   "main.app.app.handleAppCertificateError.certError.dialog.detail": "{extraDetail}джерело: {origin}\nПомилка: {error}",
-  "main.app.app.handleAppCertificateError.certError.dialog.message": "Виникла помилка конфігурації із цим сервером Mattermost, або хтось намагається перехопити ваше з'єднання. Вам також може знадобитись увійти через Wi-Fi, до якого ви підключаєтесь під час використання веб–браузеру.",
+  "main.app.app.handleAppCertificateError.certError.dialog.message": "Виникла проблема з сертифікатом безпеки для цього сервера або для вбудованого в повідомлення контенту. Будь ласка, зверніться до адміністратора Mattermost або до вашого IT-відділу для вирішення цієї проблеми.",
   "main.app.app.handleAppCertificateError.certError.dialog.title": "Помилка сертифікату",
   "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "Перервати з'єднання",
   "main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate": "Дозволити використання ненадійного сертифікату",
