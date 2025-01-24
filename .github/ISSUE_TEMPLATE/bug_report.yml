@@ -17,7 +17,7 @@ body:
     options:
       - label: This issue doesn't reproduce on web browsers (such as in Chrome). If it does, [issue reports go to the Mattermost Server repository](https://github.com/mattermost/mattermost-server/issues).
         required: true
-      - label: I have checked the [issue tracker](https://github.com/mattermost/desktop/issues) and have not found an issue that matches the one I'm filing.
+      - label: I have checked the [issue tracker](https://github.com/mattermost/desktop/issues) and have not found an issue that matches the one I'm filing. This should include closed issues.
         required: true
       - label: "This issue is not a troubleshooting question. Troubleshooting questions go here: https://forum.mattermost.com/c/trouble-shoot/16."
         required: true
