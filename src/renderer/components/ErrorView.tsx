@@ -8,6 +8,9 @@ import React from 'react';
 import {Container, Row, Col} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
+// TODO: Will remove in https://mattermost.atlassian.net/browse/MM-62724
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 type Props = {
     errorInfo?: string;
     url?: string;

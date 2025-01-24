@@ -5,7 +5,6 @@
 import classNames from 'classnames';
 import React, {Fragment} from 'react';
 import type {DropResult} from 'react-beautiful-dnd';
-import {Container, Row} from 'react-bootstrap';
 import type {IntlShape} from 'react-intl';
 import {injectIntl} from 'react-intl';
 
@@ -433,7 +432,7 @@ class MainPage extends React.PureComponent<Props, State> {
         const activeServer = this.state.servers.find((srv) => srv.id === this.state.activeServerId);
 
         const topRow = (
-            <Row
+            <div
                 className={topBarClassName}
                 onDoubleClick={this.handleDoubleClick}
             >
@@ -489,7 +488,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
                     )}
                 </div>
-            </Row>
+            </div>
         );
 
         const views = () => {
@@ -526,9 +525,9 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const viewsRow = (
             <Fragment>
-                <Row>
+                <div>
                     {views()}
-                </Row>
+                </div>
             </Fragment>);
 
         return (
@@ -536,10 +535,10 @@ class MainPage extends React.PureComponent<Props, State> {
                 className='MainPage'
                 onClick={this.focusOnWebView}
             >
-                <Container fluid={true}>
+                <div>
                     {topRow}
                     {viewsRow}
-                </Container>
+                </div>
             </div>
         );
     }
