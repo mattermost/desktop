@@ -95,14 +95,18 @@ jobs:
     if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
     needs: [e2e-linux, e2e-macos, e2e-windows]
     runs-on: ubuntu-22.04
+    env:
+      COMMENT_BODY_LINUX: "${{ needs.e2e-linux.outputs.COMMENT_BODY }}"
+      COMMENT_BODY_MACOS: "${{ needs.e2e-macos.outputs.COMMENT_BODY }}"
+      COMMENT_BODY_WINDOWS: "${{ needs.e2e-windows.outputs.COMMENT_BODY }}"
     steps:
       - name: e2e/unify-comments-in-single-comment
         run: |
           echo "PR_COMMENT<<EOF" >> "${GITHUB_ENV}"
           echo "Here are the test results below:" >> "${GITHUB_ENV}"
-          echo "${{ needs.e2e-linux.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
-          echo "${{ needs.e2e-macos.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
-          echo "${{ needs.e2e-windows.outputs.COMMENT_BODY }}" >> "${GITHUB_ENV}"
+          echo "$COMMENT_BODY_LINUX" >> "${GITHUB_ENV}"
+          echo "$COMMENT_BODY_MACOS" >> "${GITHUB_ENV}"
+          echo "$COMMENT_BODY_WINDOWS" >> "${GITHUB_ENV}"
           echo "EOF" >> "${GITHUB_ENV}"
 
       - name: e2e/send-comment-results-in-pr
