@@ -4,8 +4,6 @@
 
 const fs = require('fs');
 
-const robot = require('robotjs');
-
 const env = require('../../modules/environment');
 const {asyncSleep, rmDirAsync} = require('../../modules/utils');
 
@@ -54,7 +52,7 @@ describe('downloads/downloads_manager', function desc() {
         await env.loginToMattermost(firstServer);
         await asyncSleep(2000);
 
-        const textbox = await firstServer.waitForSelector('#post_textbox');
+        await firstServer.waitForSelector('#post_textbox');
         const fileInput = await firstServer.waitForSelector('input#fileUploadInput');
         await fileInput.setInputFiles({
             name: filename,
