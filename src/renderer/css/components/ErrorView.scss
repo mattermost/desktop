@@ -1,0 +1,52 @@
+@use 'sass:color';
+
+@import url("../_css_variables.scss");
+@import url("../fonts.css");
+
+.ErrorView {
+  color: var(--center-channel-color);
+  font-family: 'Open Sans';
+  font-size: 14px;
+  line-height: 20px;
+  display: flex;
+  max-width: 672px;
+  flex-direction: column;
+  margin-top: -40px;
+
+  a {
+    color: var(--link-color);
+    text-decoration: none;
+
+    &:hover, &:focus {
+      filter: brightness(90%);
+    }
+  }
+
+  .ErrorView-header {
+    font-family: 'Metropolis';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: -0.02em;
+  }
+
+  > span {
+    margin-top: 16px;
+  }
+
+  .ErrorView-bullets {
+    margin-top: 8px;
+    margin-bottom: 0;
+    padding-inline-start: 18px;
+    
+    > li {
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+  }
+
+  .ErrorView-techInfo {
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+  }
+}
