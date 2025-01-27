@@ -28,7 +28,7 @@
   "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "Cancelar conexión",
   "main.app.app.handleAppCertificateError.certError.button.moreDetails": "Más detalles",
   "main.app.app.handleAppCertificateError.certError.dialog.detail": "{extraDetail}origen: {origin}\nError: {error}",
-  "main.app.app.handleAppCertificateError.certError.dialog.message": "Hay un problema de configuración con este servidor de Mattermost, o alguien está tratando de interceptar su conexión. También es posible que necesite conectarse a la red Wi-Fi utilizando tu navegador.",
+  "main.app.app.handleAppCertificateError.certError.dialog.message": "Hay un problema con el certificado de seguridad de este servidor o del contenido incrustado en un mensaje. Póngase en contacto con el administrador de Mattermost o el departamento de TI para resolver este problema.",
   "main.app.app.handleAppCertificateError.certError.dialog.title": "Error de certificado",
   "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "Cancelar conexión",
   "main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate": "Confiar en Certificado Inseguro",
