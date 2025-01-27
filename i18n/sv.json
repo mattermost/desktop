@@ -28,7 +28,7 @@
   "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "Avbryt anslutning",
   "main.app.app.handleAppCertificateError.certError.button.moreDetails": "Fler detaljer",
   "main.app.app.handleAppCertificateError.certError.dialog.detail": "{extraDetail}-ursprung: {origin}\nFel: {error}",
-  "main.app.app.handleAppCertificateError.certError.dialog.message": "Det finns ett konfigurationsproblem med den här Mattermost-servern, eller så försöker någon avlyssna din anslutning. Du kan också behöva logga in på det Wi-Fi som du är ansluten till med hjälp av din webbläsare.",
+  "main.app.app.handleAppCertificateError.certError.dialog.message": "Det är ett problem med kommunikationscertifikatet på servern eller med bifogad information ett meddelande. Kontakta systemadministratören för Mattermostservern eller din IT-avdelning för att avhjälpa problemet.",
   "main.app.app.handleAppCertificateError.certError.dialog.title": "Certifikats-fel",
   "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "Avbryt anslutningen",
   "main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate": "Lita på osäkra certifikat",
