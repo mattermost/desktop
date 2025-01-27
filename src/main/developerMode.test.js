@@ -15,6 +15,8 @@ jest.mock('electron', () => ({
     },
 }));
 
+jest.mock('electron-is-dev', () => false);
+
 describe('main/developerMode', () => {
     it('should toggle values correctly', () => {
         const developerMode = new DeveloperMode('file.json');
