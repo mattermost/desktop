@@ -3,7 +3,6 @@
 
 import classNames from 'classnames';
 import React from 'react';
-import {Button} from 'react-bootstrap';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import type {DownloadedItem} from 'types/downloads';
@@ -39,7 +38,7 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                     >
                         <FileSizeAndStatus item={item}/>
                     </div>
-                    <Button
+                    <button
                         id='restartAndUpdateButton'
                         className='primary-button'
                         onClick={onButtonClick}
@@ -48,7 +47,7 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                             id='renderer.downloadsDropdown.Update.RestartAndUpdate'
                             defaultMessage={'Restart & update'}
                         />
-                    </Button>
+                    </button>
                 </div>
             </div>
         </div>
