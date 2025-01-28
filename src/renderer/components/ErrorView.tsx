@@ -60,7 +60,6 @@ export default function ErrorView(props: Props) {
                             url: props.url,
                             link: (msg: React.ReactNode) => (
                                 <a
-
                                     onClick={props.handleLink}
                                     href='#'
                                 >
@@ -78,7 +77,6 @@ export default function ErrorView(props: Props) {
                             url: props.url,
                             link: (msg: React.ReactNode) => (
                                 <a
-
                                     onClick={props.handleLink}
                                     href='#'
                                 >

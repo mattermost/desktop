@@ -344,10 +344,6 @@ class MainPage extends React.PureComponent<Props, State> {
         this.handleCloseDropdowns();
     };
 
-    reloadCurrentView = () => {
-        window.desktop.reloadCurrentView();
-    };
-
     showHideDownloadsBadge(value = false) {
         this.setState({showDownloadsBadge: value});
     }
@@ -373,6 +369,10 @@ class MainPage extends React.PureComponent<Props, State> {
         this.setState({
             threeDotsIsFocused: false,
         });
+    };
+
+    openServerExternally = () => {
+        window.desktop.openServerExternally();
     };
 
     render() {
@@ -512,7 +512,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         errorInfo={tabStatus.extra?.error}
                         url={tabStatus.extra ? tabStatus.extra.url : ''}
                         appName={this.props.appName}
-                        handleLink={this.reloadCurrentView}
+                        handleLink={this.openServerExternally}
                     />);
                 break;
             case Status.LOADING:

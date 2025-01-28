@@ -37,7 +37,7 @@ declare global {
             exitFullScreen: () => void;
             doubleClickOnWindow: (windowName?: string) => void;
             focusCurrentView: () => void;
-            reloadCurrentView: () => void;
+            openServerExternally: () => void;
             closeDownloadsDropdown: () => void;
             closeDownloadsDropdownMenu: () => void;
             openDownloadsDropdown: () => void;
