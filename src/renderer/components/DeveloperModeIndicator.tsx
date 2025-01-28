@@ -3,11 +3,11 @@
 
 import classNames from 'classnames';
 import React from 'react';
-// eslint-disable-next-line no-restricted-imports
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
 import 'renderer/css/components/DeveloperModeIndicator.scss';
+
+import WithTooltip from './WithTooltip';
 
 export default function DeveloperModeIndicator({developerMode, darkMode}: {developerMode: boolean; darkMode: boolean}) {
     if (!developerMode) {
@@ -15,22 +15,21 @@ export default function DeveloperModeIndicator({developerMode, darkMode}: {devel
     }
 
     return (
-        <OverlayTrigger
-            placement='left'
-            overlay={
-                <Tooltip id='DeveloperModeIndicator__tooltip'>
-                    <FormattedMessage
-                        id='renderer.components.developerModeIndicator.tooltip'
-                        defaultMessage='Developer mode is enabled. You should only have this enabled if a Mattermost developer has instructed you to.'
-                    />
-                </Tooltip>
+        <WithTooltip
+            title={
+                <FormattedMessage
+                    id='renderer.components.developerModeIndicator.tooltip'
+                    defaultMessage='Developer mode is enabled. You should only have this enabled if a Mattermost developer has instructed you to.'
+                />
             }
+            isVertical={false}
+            className='DeveloperModeIndicator__tooltip'
         >
             <div className={classNames('DeveloperModeIndicator', {darkMode})}>
                 <i className='icon-flask-outline'/>
                 <span className='DeveloperModeIndicator__badge'/>
             </div>
-        </OverlayTrigger>
+        </WithTooltip>
     );
 }
 

@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {ipcMain} from 'electron';
+import isDev from 'electron-is-dev';
 import {EventEmitter} from 'events';
 
 import {DEVELOPER_MODE_UPDATED, IS_DEVELOPER_MODE_ENABLED, UPDATE_PATHS} from 'common/communication';
@@ -20,7 +21,7 @@ export class DeveloperMode extends EventEmitter {
         ipcMain.handle(IS_DEVELOPER_MODE_ENABLED, this.enabled);
     }
 
-    enabled = () => process.env.MM_DESKTOP_DEVELOPER_MODE === 'true';
+    enabled = () => process.env.MM_DESKTOP_DEVELOPER_MODE === 'true' || isDev;
 
     toggle = (setting: keyof DeveloperSettings) => {
         if (!this.enabled()) {

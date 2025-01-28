@@ -160,6 +160,7 @@
   },
   "dependencies": {
     "@emotion/react": "11.11.4",
+    "@floating-ui/react": "0.26.28",
     "@mattermost/compass-icons": "0.1.45",
     "auto-launch": "5.0.6",
     "bootstrap": "4.6.1",
