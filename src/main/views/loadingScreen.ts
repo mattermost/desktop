@@ -99,6 +99,7 @@ export class LoadingScreen {
 
         if (process.env.NODE_ENV === 'test') {
             app.emit('e2e-app-loaded');
+            MainWindow.get()?.focus();
         }
     };
 

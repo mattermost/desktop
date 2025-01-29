@@ -14,12 +14,12 @@ export async function triggerTestNotification(firstServer) {
     textAfterClick.should.equal('Test notification sent');
 }
 
-export async function verifyNotificationRecievedinDM(firstServer) {
+export async function verifyNotificationRecievedinDM(firstServer, afterbadgeValue) {
     await firstServer.click('#accountSettingsHeader > button.close');
     const sidebarLink = await firstServer.locator('a.SidebarLink:has-text("system-bot")');
     const badgeElement = await sidebarLink.locator('span.badge');
     const badgeCount = await badgeElement.textContent();
-    badgeCount.should.equal('1');
+    parseInt(badgeCount, 10).should.equal(afterbadgeValue);
 
     sidebarLink.click();
     await asyncSleep(1000);
