@@ -52,7 +52,7 @@ export default class ContextMenu {
     reload = () => {
         this.dispose();
 
-        const options = {window: this.view.webContents, ...this.menuOptions};
+        const options = {window: this.view, ...this.menuOptions};
         this.menuDispose = electronContextMenu(options);
     };
 }
