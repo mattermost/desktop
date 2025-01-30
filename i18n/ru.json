@@ -94,6 +94,7 @@
   "main.menus.app.view.clearDataForServer": "Очистите данные для текущего сервера",
   "main.menus.app.view.devToolsAppWrapper": "Инструменты разработчика для Application Wrapper",
   "main.menus.app.view.devToolsCurrentCallWidget": "Инструменты разработчика для виджета Звонка",
+  "main.menus.app.view.devToolsCurrentCallWidgetPopout": "Инструменты разработчика для всплывающего виджета Звонков",
   "main.menus.app.view.devToolsCurrentServer": "Инструменты разработчика для текущего сервера",
   "main.menus.app.view.devToolsSubMenu": "Инструменты разработчика",
   "main.menus.app.view.developerModeBrowserOnly": "Режим только для браузера",

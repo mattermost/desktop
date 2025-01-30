@@ -47,8 +47,6 @@
     }
 }
 
-#DeveloperModeIndicator__tooltip {
-    > .tooltip-inner {
-        max-width: none;
-    }
+.DeveloperModeIndicator__tooltip.tooltipContainer {
+    max-width: none;
 }

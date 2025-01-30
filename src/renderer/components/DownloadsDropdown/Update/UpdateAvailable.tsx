@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {Button} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
 import LoadingWrapper from 'renderer/components/SaveButton/LoadingWrapper';
@@ -47,10 +46,9 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                         }}
                     />
                 </div>
-                <Button
+                <button
                     id='downloadUpdateButton'
                     className='primary-button DownloadsDropdown__Update__Details__Button'
-                    variant='primary'
                     onClick={onButtonClick}
                     disabled={isProcessing}
                 >
@@ -68,7 +66,7 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                             defaultMessage='Download Update'
                         />
                     </LoadingWrapper>
-                </Button>
+                </button>
             </div>
         </div>
     );

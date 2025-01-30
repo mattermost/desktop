@@ -73,7 +73,16 @@ export class LoadingScreen {
     };
 
     private create = () => {
-        this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
+        this.view = new WebContentsView({
+            webPreferences: {
+                preload: getLocalPreload('internalAPI.js'),
+
+                // For some reason this is required to make the background transparent
+                // for the loading screen, even though the docs say it's the default.
+                // See: https://www.electronjs.org/docs/latest/api/structures/web-preferences
+                transparent: true,
+            }},
+        );
         performanceMonitor.registerView('LoadingScreen', this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/loadingScreen.html');
     };
