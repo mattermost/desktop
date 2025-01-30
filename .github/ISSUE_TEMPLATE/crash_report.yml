@@ -8,7 +8,7 @@ body:
     label: Before you file a crash report
     description: Please ensure you can confirm the following
     options:
-      - label: I have checked the [issue tracker](https://github.com/mattermost/desktop/issues) and have not found an issue that matches the one I'm filing.
+      - label: I have checked the [issue tracker](https://github.com/mattermost/desktop/issues) and have not found an issue that matches the one I'm filing.  This should include closed issues.
         required: true
       - label: This issue doesn't reproduce on web browsers (such as in Chrome). If it does, [issue reports go to the Mattermost Server repository](https://github.com/mattermost/mattermost-server/issues).
         required: true

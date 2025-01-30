@@ -97,4 +97,28 @@ export const Constants = {
         flv: 'video',
         webm: 'video',
     },
+
+    /**
+     * This is the ID of the root portal container that is used to render modals and other components
+     * that need to be rendered outside of the main app container.
+     */
+    RootHtmlPortalId: 'root-portal',
+    OverlaysTimings: {
+        CURSOR_REST_TIME_BEFORE_OPEN: 400, // in ms
+        CURSOR_MOUSEOVER_TO_OPEN: 400, // in ms
+        CURSOR_MOUSEOUT_TO_CLOSE: 0,
+        CURSOR_MOUSEOUT_TO_CLOSE_WITH_DELAY: 200, // in ms
+        FADE_IN_DURATION: 250, // in ms
+        FADE_OUT_DURATION: 150, // in ms
+    },
+    OverlayTransitionStyles: {
+        START: {
+            opacity: 0,
+        },
+    },
+    OverlayArrow: {
+        WIDTH: 10, // in px
+        HEIGHT: 6, // in px
+        OFFSET: 8, // in px
+    },
 };

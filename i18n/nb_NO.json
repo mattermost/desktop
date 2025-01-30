@@ -94,6 +94,7 @@
   "main.menus.app.view.clearDataForServer": "Slett data for gjeldende server",
   "main.menus.app.view.devToolsAppWrapper": "Utviklerverktøy for Application Wrapper",
   "main.menus.app.view.devToolsCurrentCallWidget": "Utviklerverktøy for Call Widget",
+  "main.menus.app.view.devToolsCurrentCallWidgetPopout": "Utviklerverktøy for Call Widget Popout",
   "main.menus.app.view.devToolsCurrentServer": "Utviklerverktøy for gjeldende server",
   "main.menus.app.view.devToolsSubMenu": "Utviklerverktøy",
   "main.menus.app.view.developerModeBrowserOnly": "Kun nettleser-modus",
