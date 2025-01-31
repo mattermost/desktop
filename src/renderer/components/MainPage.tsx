@@ -21,6 +21,7 @@ import TabBar from './TabBar';
 import {playSound} from '../notificationSounds';
 
 import '../css/components/UpgradeButton.scss';
+import '../css/components/MainPage.css';
 
 enum Status {
     LOADING = 1,
@@ -344,10 +345,6 @@ class MainPage extends React.PureComponent<Props, State> {
         this.handleCloseDropdowns();
     };
 
-    reloadCurrentView = () => {
-        window.desktop.reloadCurrentView();
-    };
-
     showHideDownloadsBadge(value = false) {
         this.setState({showDownloadsBadge: value});
     }
@@ -373,6 +370,10 @@ class MainPage extends React.PureComponent<Props, State> {
         this.setState({
             threeDotsIsFocused: false,
         });
+    };
+
+    openServerExternally = () => {
+        window.desktop.openServerExternally();
     };
 
     render() {
@@ -508,12 +509,11 @@ class MainPage extends React.PureComponent<Props, State> {
             case Status.FAILED:
                 component = (
                     <ErrorView
-                        id={activeServer.name + '-fail'}
+                        darkMode={this.props.darkMode}
                         errorInfo={tabStatus.extra?.error}
                         url={tabStatus.extra ? tabStatus.extra.url : ''}
-                        active={true}
                         appName={this.props.appName}
-                        handleLink={this.reloadCurrentView}
+                        handleLink={this.openServerExternally}
                     />);
                 break;
             case Status.LOADING:
@@ -526,9 +526,9 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const viewsRow = (
             <Fragment>
-                <Row>
+                <div className={classNames('MainPage__body', {darkMode: this.props.darkMode})}>
                     {views()}
-                </Row>
+                </div>
             </Fragment>);
 
         return (
@@ -538,8 +538,8 @@ class MainPage extends React.PureComponent<Props, State> {
             >
                 <Container fluid={true}>
                     {topRow}
-                    {viewsRow}
                 </Container>
+                {viewsRow}
             </div>
         );
     }

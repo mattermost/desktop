@@ -10,6 +10,10 @@ body {
   min-height: 100%;
 }
 
+#app {
+  height: 100vh;
+}
+
 .hovering-enter {
   opacity: 0.01;
 }
@@ -39,6 +43,7 @@ body {
 
 .topBar {
   height: 40px;
+  z-index: 9;
 }
 
 .topBar>.topBar-bg {

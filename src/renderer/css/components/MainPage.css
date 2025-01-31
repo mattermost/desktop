@@ -1,13 +1,18 @@
-/*.mainPage,.mainPage > .container-fluid, .mainPage-viewsRow {
+.MainPage {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-}*/
-
-.MainPage .HoveringURL {
-  max-width: 95%;
-  position: absolute;
-  bottom: 0px;
 }
 
-div[id*="-permissionDialog"] {
-  max-width: 350px;
+.MainPage__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  background-size: cover;
+  background-image: url('renderer/assets/svg/background-light.svg');
+}
+
+.MainPage__body.darkMode {
+  background-image: url('renderer/assets/svg/background-dark.svg');
 }
