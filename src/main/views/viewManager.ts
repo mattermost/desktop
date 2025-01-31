@@ -362,6 +362,14 @@ export class ViewManager {
             const localURL = `mattermost-desktop://renderer/urlView.html?url=${encodeURIComponent(urlString)}`;
             performanceMonitor.registerView('URLView', urlView.webContents);
             urlView.webContents.loadURL(localURL);
+
+            // This is a workaround for an issue where the URL view would steal focus from the main window
+            // See: https://github.com/electron/electron/issues/42339
+            urlView.webContents.on('focus', () => {
+                log.debug('URL view focus prevented');
+                this.getCurrentView()?.focus();
+            });
+
             MainWindow.get()?.contentView.addChildView(urlView);
             const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? MainWindow.getBounds();
 
