@@ -47,7 +47,7 @@ index 468e48b..e182878 100644
  		event: ElectronEvent
  	) => MenuItemConstructorOptions[];
 diff --git a/node_modules/electron-context-menu/index.js b/node_modules/electron-context-menu/index.js
-index b10daea..ea2f891 100644
+index b10daea..d7d26f3 100644
 --- a/node_modules/electron-context-menu/index.js
 +++ b/node_modules/electron-context-menu/index.js
 @@ -1,7 +1,6 @@
@@ -103,3 +103,12 @@ index b10daea..ea2f891 100644
  				},
  			}),
  			copyImage: decorateMenuItem({
+@@ -350,7 +349,7 @@ const create = (win, options) => {
+ 	webContents(win).on('context-menu', handleContextMenu);
+ 
+ 	return () => {
+-		if (win.isDestroyed()) {
++		if (webContents(win).isDestroyed()) {
+ 			return;
+ 		}
+ 
