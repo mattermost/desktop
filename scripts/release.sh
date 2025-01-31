@@ -65,6 +65,7 @@ if ! type jq >/dev/null 2>&1; then
 fi
 
 is_esr="N"
+electron_upgrade="N"
 # get version
 pkg_version="$(jq -r .version package.json)"
 # remove trailing
@@ -85,11 +86,19 @@ case "${1}" in
                 touch .esr
                 git add .esr
             fi
+            read -p "Did you upgrade to the latest stable Electron release? [y/N]: " electron_upgrade
+            if [[ ! "${electron_upgrade}" =~ ^[Yy]$ ]]; then
+                print_info "Please upgrade to the latest stable Electron release before continuing"
+                exit 2
+            fi
             new_pkg_version="${current_version}-rc.1"
             write_package_version "${new_pkg_version}"
             tag "${new_pkg_version}" "Release candidate 1"
             print_info "Locally created an new release with rc.1. In order to build you'll have to:"
             print_info "$ git push --follow-tags ${git_origin} ${branch_name}:${branch_name}"
+            print_info "--------\n"
+            print_info "  == REMINDER == "
+            print_info "Don't forget to go and update the master branch to the next release version!"
         else
             print_error "Can't generate a release on a non release-X.Y branch"
             exit 2
