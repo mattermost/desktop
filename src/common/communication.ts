@@ -101,7 +101,7 @@ export const UPDATE_PATHS = 'update-paths';
 
 export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 
-export const RELOAD_CURRENT_VIEW = 'reload-current-view';
+export const OPEN_SERVER_EXTERNALLY = 'open-server-externally';
 
 export const PING_DOMAIN = 'ping-domain';
 

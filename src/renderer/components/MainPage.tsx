@@ -20,6 +20,7 @@ import TabBar from './TabBar';
 import {playSound} from '../notificationSounds';
 
 import '../css/components/UpgradeButton.scss';
+import '../css/components/MainPage.css';
 
 enum Status {
     LOADING = 1,
@@ -343,10 +344,6 @@ class MainPage extends React.PureComponent<Props, State> {
         this.handleCloseDropdowns();
     };
 
-    reloadCurrentView = () => {
-        window.desktop.reloadCurrentView();
-    };
-
     showHideDownloadsBadge(value = false) {
         this.setState({showDownloadsBadge: value});
     }
@@ -372,6 +369,10 @@ class MainPage extends React.PureComponent<Props, State> {
         this.setState({
             threeDotsIsFocused: false,
         });
+    };
+
+    openServerExternally = () => {
+        window.desktop.openServerExternally();
     };
 
     render() {
@@ -507,12 +508,11 @@ class MainPage extends React.PureComponent<Props, State> {
             case Status.FAILED:
                 component = (
                     <ErrorView
-                        id={activeServer.name + '-fail'}
+                        darkMode={this.props.darkMode}
                         errorInfo={tabStatus.extra?.error}
                         url={tabStatus.extra ? tabStatus.extra.url : ''}
-                        active={true}
                         appName={this.props.appName}
-                        handleLink={this.reloadCurrentView}
+                        handleLink={this.openServerExternally}
                     />);
                 break;
             case Status.LOADING:
@@ -525,7 +525,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const viewsRow = (
             <Fragment>
-                <div>
+                <div className={classNames('MainPage__body', {darkMode: this.props.darkMode})}>
                     {views()}
                 </div>
             </Fragment>);
@@ -535,10 +535,8 @@ class MainPage extends React.PureComponent<Props, State> {
                 className='MainPage'
                 onClick={this.focusOnWebView}
             >
-                <div>
-                    {topRow}
-                    {viewsRow}
-                </div>
+                {topRow}
+                {viewsRow}
             </div>
         );
     }

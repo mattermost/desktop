@@ -69,7 +69,7 @@
     --mention-highlight-link: #1b1d22;
 }
 
-.LoadingScreen--darkMode {
+.LoadingScreen--darkMode, .ErrorView.darkMode {
     /* Onyx - used for dark mode*/
     --away-indicator-rgb: 245, 171, 0;
     --button-bg-rgb: 74, 124, 232;
