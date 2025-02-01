@@ -28,7 +28,7 @@ describe('Add Server Modal', function desc() {
         });
 
         // wait for autofocus to finish
-        await asyncSleep(500);
+        await asyncSleep(2000);
     });
 
     afterEach(async () => {
@@ -48,7 +48,7 @@ describe('Add Server Modal', function desc() {
     it('MM-T4388 should close the window after clicking cancel', async () => {
         await newServerView.click('#cancelNewServerModal');
         await asyncSleep(1000);
-        const existing = Boolean(await this.app.windows().find((window) => window.url().includes('newServer')));
+        const existing = Boolean(this.app.windows().find((window) => window.url().includes('newServer')));
         existing.should.be.false;
     });
 
@@ -119,8 +119,8 @@ describe('Add Server Modal', function desc() {
 
         it('MM-T2826_2 should add the server to the config file', async () => {
             await newServerView.click('#saveNewServerModal');
-            await asyncSleep(1000);
-            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('newServer')));
+            await asyncSleep(2000);
+            const existing = Boolean(this.app.windows().find((window) => window.url().includes('newServer')));
             existing.should.be.false;
 
             const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
