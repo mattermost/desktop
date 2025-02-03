@@ -2,7 +2,7 @@
 set -e
 
 VERSION="$(jq -r '.version' <package.json)"
-STABLE_VERSION="$(./node_modules/.bin/semver $VERSION -c)"
+STABLE_VERSION="$(npx semver $VERSION -c)"
 RELEASE_VERSION="${VERSION/$STABLE_VERSION/}"
 RELEASE_VERSION="${RELEASE_VERSION/-/}"
 RELEASE_VERSION="${RELEASE_VERSION%.*}"
@@ -11,8 +11,10 @@ if [ "$RELEASE_VERSION" == "" ]; then
     RELEASE_VERSION="latest"
 fi
 
-# If we are on a ESR branch, we don't want to generate the auto-updater yml for patch releases
-if [ -e .esr ] && [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[1-9][0-9]* ]]; then
+# If we are on a ESR branch, we don't want to generate the auto-updater yml if there is a newer version
+NEXT_VERSION="$(npx semver $STABLE_VERSION -i minor)"
+NEWER_VERSION_EXISTS="$(git ls-remote --tags origin v${NEXT_VERSION%.*}.0)"
+if [ -e .esr ] && [ ! -z "$NEWER_VERSION_EXISTS" ]; then
     echo "ESR branch, skipping auto-updater yml generation"
     rm ./release/"${RELEASE_VERSION}"*.yml
     exit 0
