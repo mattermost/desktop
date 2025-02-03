@@ -12,8 +12,9 @@ if [ "$RELEASE_VERSION" == "" ]; then
 fi
 
 # If we are on a ESR branch, we don't want to generate the auto-updater yml if there is a newer version
-NEXT_VERSION="$(npx semver $STABLE_VERSION -i minor)"
-NEWER_VERSION_EXISTS="$(git ls-remote --tags origin v${NEXT_VERSION%.*}.0)"
+NEXT_MINOR_VERSION="$(npx semver $STABLE_VERSION -i minor)"
+NEXT_MAJOR_VERSION="$(npx semver $STABLE_VERSION -i major)"
+NEWER_VERSION_EXISTS="$(git ls-remote --tags origin v${NEXT_MINOR_VERSION} v${NEXT_MAJOR_VERSION})"
 if [ -e .esr ] && [ ! -z "$NEWER_VERSION_EXISTS" ]; then
     echo "ESR branch, skipping auto-updater yml generation"
     rm ./release/"${RELEASE_VERSION}"*.yml
