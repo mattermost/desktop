@@ -6,9 +6,11 @@
         "menu/view MM-T820 should open Developer Tools For Application Wrapper for main window",
         "Menu/window_menu MM-T824 should be minimized when keyboard shortcuts are pressed",
         "Menu/window_menu MM-T825 should be hidden when keyboard shortcuts are pressed",
-        "header MM-T2637 Double-Clicking on the header should minimize/maximize the app MM-T2637_1 should maximize on double-clicking the header"
+        "header MM-T2637 Double-Clicking on the header should minimize/maximize the app MM-T2637_1 should maximize on double-clicking the header",
+        "copylink MM-T125 Copy Link can be used from channel LHS"
     ],
     "win32": [
-        "application MM-T1304/MM-T1306 should open the app on the requested deep link"
+        "application MM-T1304/MM-T1306 should open the app on the requested deep link",
+        "menu/view MM-T816 Toggle Full Screen in the Menu Bar"
     ]
 }

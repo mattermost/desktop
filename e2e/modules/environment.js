@@ -243,30 +243,46 @@ module.exports = {
 
     async getServerMap(app) {
         const map = {};
-        await Promise.all(app.windows().map(async (win) => {
-            return win.evaluate(async () => {
-                if (!window.testHelper) {
-                    return null;
-                }
-                const info = await window.testHelper.getViewInfoForTest();
-                return {viewName: `${info.serverName}___${info.viewType}`, webContentsId: info.webContentsId};
-            }).then((result) => {
-                if (result) {
-                    map[result.viewName] = {win, webContentsId: result.webContentsId};
-                }
-            });
-        }));
+        await Promise.all(app.windows().
+            filter((win) => !win.url().includes('mattermost-desktop://')).
+            map(async (win) => {
+                return win.evaluate(async () => {
+                    if (!window.testHelper) {
+                        return null;
+                    }
+                    const info = await window.testHelper.getViewInfoForTest();
+                    return {viewName: `${info.serverName}___${info.viewType}`, webContentsId: info.webContentsId};
+                }).then((result) => {
+                    if (result) {
+                        map[result.viewName] = {win, webContentsId: result.webContentsId};
+                    }
+                });
+            }));
         return map;
     },
 
     async loginToMattermost(window) {
-        // Do this twice because sometimes the app likes to load the login screen, then go to Loading... again
         await asyncSleep(1000);
         await window.waitForSelector('#input_loginId');
         await window.waitForSelector('#input_password-input');
         await window.waitForSelector('#saveSetting');
 
-        await window.type('#input_loginId', process.env.MM_TEST_USER_NAME);
+        let username;
+        switch (process.platform) {
+        case 'darwin':
+            username = 'success+sysadmin+macos@simulator.amazonses.com';
+            break;
+        case 'linux':
+            username = 'success+sysadmin+linux@simulator.amazonses.com';
+            break;
+        case 'win32':
+            username = 'success+sysadmin+windows@simulator.amazonses.com';
+            break;
+        default:
+            throw new Error('Unsupported platform');
+        }
+
+        await window.type('#input_loginId', username);
         await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
         await window.click('#saveSetting');
     },

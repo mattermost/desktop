@@ -4,8 +4,6 @@
 
 const fs = require('fs');
 
-const robot = require('robotjs');
-
 const env = require('../../modules/environment');
 const {asyncSleep, rmDirAsync} = require('../../modules/utils');
 
@@ -50,21 +48,19 @@ describe('downloads/downloads_manager', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
+        await asyncSleep(2000);
 
-        const textbox = await firstServer.waitForSelector('#post_textbox');
-        const fileInput = await firstServer.waitForSelector('input[type="file"]');
+        await firstServer.waitForSelector('#post_textbox');
+        const fileInput = await firstServer.waitForSelector('input#fileUploadInput');
         await fileInput.setInputFiles({
             name: filename,
             mimeType: 'text/plain',
             buffer: Buffer.from('this is test file'),
         });
-        await asyncSleep(1000);
-        await textbox.focus();
-        robot.keyTap('enter');
+        await asyncSleep(2000);
+        await firstServer.click('[aria-label="Send Now"]');
     });
 
     afterEach(async () => {

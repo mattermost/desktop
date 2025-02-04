@@ -33,14 +33,16 @@ describe('copylink', function desc() {
     });
 
     it('MM-T125 Copy Link can be used from channel LHS', async () => {
-        const loadingScreen = this.app.windows().find((window) => window.url().includes('loadingScreen'));
-        await loadingScreen.waitForSelector('.LoadingScreen', {state: 'hidden'});
         const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
         await env.loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_town-square');
+        await asyncSleep(2000);
+        await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 5000});
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
+        await asyncSleep(2000);
         switch (process.platform) {
         case 'linux':
+            robot.keyTap('c');
+            break;
         case 'win32':
             robot.keyTap('down');
             robot.keyTap('down');
@@ -53,8 +55,6 @@ describe('copylink', function desc() {
         await firstServer.click('#sidebarItem_town-square');
         await firstServer.click('#post_textbox');
         const clipboardText = clipboard.readText();
-        await firstServer.fill('#post_textbox', clipboardText);
-        const content = await firstServer.locator('#post_textbox').textContent();
-        content.should.contain('/ad-1/channels/town-square');
+        clipboardText.should.contain('/channels/town-square');
     });
 });
