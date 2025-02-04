@@ -2,7 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {WebContentsView, BrowserWindow, ContextMenuParams, Event} from 'electron';
+import type {BrowserWindow, BrowserView, WebviewTag, WebContents, ContextMenuParams, Event} from 'electron';
 import type {Options} from 'electron-context-menu';
 import electronContextMenu from 'electron-context-menu';
 
@@ -29,11 +29,11 @@ const defaultMenuOptions = {
 };
 
 export default class ContextMenu {
-    view: BrowserWindow | WebContentsView;
+    view: BrowserWindow | BrowserView | WebviewTag | WebContents;
     menuOptions: Options;
     menuDispose?: () => void;
 
-    constructor(options: Options, view: BrowserWindow | WebContentsView) {
+    constructor(options: Options, view: BrowserWindow | WebContents) {
         const providedOptions: Options = options || {};
 
         this.menuOptions = Object.assign({}, defaultMenuOptions, providedOptions);
