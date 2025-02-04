@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {WebContentsView, ipcMain} from 'electron';
+import {WebContentsView, ipcMain, shell} from 'electron';
 import isDev from 'electron-is-dev';
 
 import ServerViewState from 'app/serverViewState';
@@ -18,7 +18,7 @@ import {
     UPDATE_URL_VIEW_WIDTH,
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
-    RELOAD_CURRENT_VIEW,
+    OPEN_SERVER_EXTERNALLY,
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
     SESSION_EXPIRED,
@@ -81,7 +81,7 @@ export class ViewManager {
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
         ipcMain.on(TAB_LOGIN_CHANGED, this.handleTabLoginChanged);
-        ipcMain.on(RELOAD_CURRENT_VIEW, this.handleReloadCurrentView);
+        ipcMain.on(OPEN_SERVER_EXTERNALLY, this.handleOpenServerExternally);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
 
@@ -362,6 +362,14 @@ export class ViewManager {
             const localURL = `mattermost-desktop://renderer/urlView.html?url=${encodeURIComponent(urlString)}`;
             performanceMonitor.registerView('URLView', urlView.webContents);
             urlView.webContents.loadURL(localURL);
+
+            // This is a workaround for an issue where the URL view would steal focus from the main window
+            // See: https://github.com/electron/electron/issues/42339
+            urlView.webContents.on('focus', () => {
+                log.debug('URL view focus prevented');
+                this.getCurrentView()?.focus();
+            });
+
             MainWindow.get()?.contentView.addChildView(urlView);
             const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? MainWindow.getBounds();
 
@@ -559,15 +567,14 @@ export class ViewManager {
         }
     };
 
-    private handleReloadCurrentView = () => {
-        log.debug('handleReloadCurrentView');
+    private handleOpenServerExternally = () => {
+        log.debug('handleOpenServerExternally');
 
         const view = this.getCurrentView();
         if (!view) {
             return;
         }
-        view?.reload();
-        this.showById(view?.id);
+        shell.openExternal(view.view.server.url.toString());
     };
 
     private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {

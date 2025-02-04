@@ -1,0 +1,114 @@
+diff --git a/node_modules/electron-context-menu/index.d.ts b/node_modules/electron-context-menu/index.d.ts
+index 468e48b..e182878 100644
+--- a/node_modules/electron-context-menu/index.d.ts
++++ b/node_modules/electron-context-menu/index.d.ts
+@@ -5,6 +5,7 @@ import {
+ 	type MenuItemConstructorOptions,
+ 	type Event as ElectronEvent,
+ 	type WebContents,
++	type WebContentsView,
+ } from 'electron';
+ 
+ export type Labels = {
+@@ -135,7 +136,7 @@ export type Options = {
+ 	Window or WebView to add the context menu to.
+ 	When not specified, the context menu will be added to all existing and new windows.
+ 	*/
+-	readonly window?: BrowserWindow | BrowserView | Electron.WebviewTag | WebContents;
++	readonly window?: BrowserWindow | BrowserView | Electron.WebviewTag | WebContents | WebContentsView;
+ 
+ 	/**
+ 	Should return an array of [menu items](https://electronjs.org/docs/api/menu-item) to be prepended to the context menu.
+@@ -145,7 +146,7 @@ export type Options = {
+ 	readonly prepend?: (
+ 		defaultActions: Actions,
+ 		parameters: ContextMenuParams,
+-		browserWindow: BrowserWindow | BrowserView | Electron.WebviewTag | WebContents,
++		browserWindow: BrowserWindow | BrowserView | Electron.WebviewTag | WebContents | WebContentsView,
+ 		event: ElectronEvent
+ 	) => MenuItemConstructorOptions[];
+ 
+@@ -157,7 +158,7 @@ export type Options = {
+ 	readonly append?: (
+ 		defaultActions: Actions,
+ 		parameters: ContextMenuParams,
+-		browserWindow: BrowserWindow | BrowserView | Electron.WebviewTag | WebContents,
++		browserWindow: BrowserWindow | BrowserView | Electron.WebviewTag | WebContents | WebContentsView,
+ 		event: ElectronEvent
+ 	) => MenuItemConstructorOptions[];
+ 
+@@ -343,7 +344,7 @@ export type Options = {
+ 	readonly menu?: (
+ 		defaultActions: Actions,
+ 		parameters: ContextMenuParams,
+-		browserWindow: BrowserWindow | BrowserView | Electron.WebviewTag | WebContents,
++		browserWindow: BrowserWindow | BrowserView | Electron.WebviewTag | WebContents | WebContentsView,
+ 		dictionarySuggestions: MenuItemConstructorOptions[],
+ 		event: ElectronEvent
+ 	) => MenuItemConstructorOptions[];
+diff --git a/node_modules/electron-context-menu/index.js b/node_modules/electron-context-menu/index.js
+index b10daea..d7d26f3 100644
+--- a/node_modules/electron-context-menu/index.js
++++ b/node_modules/electron-context-menu/index.js
+@@ -1,7 +1,6 @@
+ import process from 'node:process';
+ import electron from 'electron';
+ import cliTruncate from 'cli-truncate';
+-import {download} from 'electron-dl';
+ import isDev from 'electron-is-dev';
+ 
+ const webContents = win => win.webContents ?? (win.id && win);
+@@ -130,7 +129,7 @@ const create = (win, options) => {
+ 				visible: properties.mediaType === 'image',
+ 				click(menuItem) {
+ 					properties.srcURL = menuItem.transform ? menuItem.transform(properties.srcURL) : properties.srcURL;
+-					download(win, properties.srcURL);
++					win.webContents.downloadURL(properties.srcURL);
+ 				},
+ 			}),
+ 			saveImageAs: decorateMenuItem({
+@@ -139,7 +138,7 @@ const create = (win, options) => {
+ 				visible: properties.mediaType === 'image',
+ 				click(menuItem) {
+ 					properties.srcURL = menuItem.transform ? menuItem.transform(properties.srcURL) : properties.srcURL;
+-					download(win, properties.srcURL, {saveAs: true});
++					win.webContents.downloadURL(properties.srcURL, {saveAs: true});
+ 				},
+ 			}),
+ 			saveVideo: decorateMenuItem({
+@@ -148,7 +147,7 @@ const create = (win, options) => {
+ 				visible: properties.mediaType === 'video',
+ 				click(menuItem) {
+ 					properties.srcURL = menuItem.transform ? menuItem.transform(properties.srcURL) : properties.srcURL;
+-					download(win, properties.srcURL);
++					win.webContents.downloadURL(properties.srcURL);
+ 				},
+ 			}),
+ 			saveVideoAs: decorateMenuItem({
+@@ -157,7 +156,7 @@ const create = (win, options) => {
+ 				visible: properties.mediaType === 'video',
+ 				click(menuItem) {
+ 					properties.srcURL = menuItem.transform ? menuItem.transform(properties.srcURL) : properties.srcURL;
+-					download(win, properties.srcURL, {saveAs: true});
++					win.webContents.downloadURL(properties.srcURL, {saveAs: true});
+ 				},
+ 			}),
+ 			copyLink: decorateMenuItem({
+@@ -179,7 +178,7 @@ const create = (win, options) => {
+ 				visible: properties.linkURL.length > 0 && properties.mediaType === 'none',
+ 				click(menuItem) {
+ 					properties.linkURL = menuItem.transform ? menuItem.transform(properties.linkURL) : properties.linkURL;
+-					download(win, properties.linkURL, {saveAs: true});
++					win.webContents.downloadURL(properties.linkURL, {saveAs: true});
+ 				},
+ 			}),
+ 			copyImage: decorateMenuItem({
+@@ -350,7 +349,7 @@ const create = (win, options) => {
+ 	webContents(win).on('context-menu', handleContextMenu);
+ 
+ 	return () => {
+-		if (win.isDestroyed()) {
++		if (webContents(win).isDestroyed()) {
+ 			return;
+ 		}
+ 

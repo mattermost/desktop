@@ -4,127 +4,98 @@
 
 // ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
 
+import classNames from 'classnames';
 import React from 'react';
-import {Container, Row, Col} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
+import AlertImage from './Images/alert';
+
+import 'renderer/css/components/ErrorView.scss';
+
 type Props = {
+    darkMode: boolean;
     errorInfo?: string;
     url?: string;
-    id?: string;
-    active?: boolean;
     appName?: string;
     handleLink: () => void;
 };
 
 export default function ErrorView(props: Props) {
-    const classNames = ['container', 'ErrorView'];
-    if (!props.active) {
-        classNames.push('ErrorView-hidden');
-    }
-
     return (
-        <Container
-            id={props.id}
-        >
-            <div className='ErrorView-table'>
-                <div className='ErrorView-cell'>
-                    <Row>
-                        <Col
-                            xs={0}
-                            sm={1}
-                            md={1}
-                            lg={2}
-                        />
-                        <Col
-                            xs={12}
-                            sm={10}
-                            md={10}
-                            lg={8}
-                        >
-                            <h2>
-                                <FormattedMessage
-                                    id='renderer.components.errorView.cannotConnectToAppName'
-                                    defaultMessage='Cannot connect to {appName}'
-                                    values={{
-                                        appName: props.appName,
-                                    }}
-                                />
-                            </h2>
-                            <hr/>
-                            <p>
-                                <FormattedMessage
-                                    id='renderer.components.errorView.havingTroubleConnecting'
-                                    defaultMessage={'We\'re having trouble connecting to {appName}. We\'ll continue to try and establish a connection.'}
-                                    values={{
-                                        appName: props.appName,
-                                    }}
-                                />
-                                <br/>
-                                <FormattedMessage
-                                    id='renderer.components.errorView.refreshThenVerify'
-                                    defaultMessage='If refreshing this page (Ctrl+R or Command+R) does not work please verify that:'
-                                />
-                            </p>
-                            <ul className='ErrorView-bullets' >
-                                <li>
-                                    <FormattedMessage
-                                        id='renderer.components.errorView.troubleshooting.computerIsConnected'
-                                        defaultMessage='Your computer is connected to the internet.'
-                                    />
-                                </li>
-                                <li>
-                                    <FormattedMessage
-                                        id='renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect'
-                                        defaultMessage='The {appName} URL <link>{url}</link> is correct'
-                                        values={{
-                                            appName: props.appName,
-                                            url: props.url,
-                                            link: (msg: React.ReactNode) => (
-                                                <a
-
-                                                    onClick={props.handleLink}
-                                                    href='#'
-                                                >
-                                                    {msg}
-                                                </a>
-                                            ),
-                                        }}
-                                    />
-                                </li>
-                                <li>
-                                    <FormattedMessage
-                                        id='renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow'
-                                        defaultMessage='You can reach <link>{url}</link> from a browser window.'
-                                        values={{
-                                            url: props.url,
-                                            link: (msg: React.ReactNode) => (
-                                                <a
-
-                                                    onClick={props.handleLink}
-                                                    href='#'
-                                                >
-                                                    {msg}
-                                                </a>
-                                            ),
-                                        }}
-                                    />
-                                </li>
-                            </ul>
-                            <br/>
-                            <div className='ErrorView-techInfo'>
-                                {props.errorInfo}
-                            </div>
-                        </Col>
-                        <Col
-                            xs={0}
-                            sm={1}
-                            md={1}
-                            lg={2}
-                        />
-                    </Row>
-                </div>
-            </div>
-        </Container>
+        <div className={classNames('ErrorView', {darkMode: props.darkMode})}>
+            <AlertImage/>
+            <span className='ErrorView-header'>
+                <FormattedMessage
+                    id='renderer.components.errorView.cannotConnectToThisServer'
+                    defaultMessage="Couldn't connect to this server"
+                />
+            </span>
+            <span>
+                <FormattedMessage
+                    id='renderer.components.errorView.havingTroubleConnecting'
+                    defaultMessage={'We\'re having trouble connecting to this {appName} server. We\'ll keep trying to establish a connection.'}
+                    values={{
+                        appName: props.appName,
+                    }}
+                />
+                <br/>
+                <FormattedMessage
+                    id='renderer.components.errorView.refreshThenVerify'
+                    defaultMessage="If refreshing this page (Ctrl+R or Command+R) doesn't help, please check the following:"
+                />
+            </span>
+            <ul className='ErrorView-bullets'>
+                <li>
+                    <FormattedMessage
+                        id='renderer.components.errorView.troubleshooting.computerIsConnected'
+                        defaultMessage='Ensure your computer is connected to the internet.'
+                    />
+                </li>
+                <li>
+                    <FormattedMessage
+                        id='renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect'
+                        defaultMessage='Verify that the URL <link>{url}</link> is correct.'
+                        values={{
+                            appName: props.appName,
+                            url: props.url,
+                            link: (msg: React.ReactNode) => (
+                                <a
+                                    onClick={props.handleLink}
+                                    href='#'
+                                >
+                                    {msg}
+                                </a>
+                            ),
+                        }}
+                    />
+                </li>
+                <li>
+                    <FormattedMessage
+                        id='renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow'
+                        defaultMessage='Try opening <link>{url}</link> in a browser window.'
+                        values={{
+                            url: props.url,
+                            link: (msg: React.ReactNode) => (
+                                <a
+                                    onClick={props.handleLink}
+                                    href='#'
+                                >
+                                    {msg}
+                                </a>
+                            ),
+                        }}
+                    />
+                </li>
+            </ul>
+            <span>
+                <FormattedMessage
+                    id='renderer.components.errorView.contactAdmin'
+                    defaultMessage='If the issue persists, please contact your admin'
+                />
+            </span>
+            <span className='ErrorView-techInfo'>
+                {props.errorInfo}
+            </span>
+        </div>
     );
 }

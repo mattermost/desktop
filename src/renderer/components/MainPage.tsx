@@ -5,7 +5,6 @@
 import classNames from 'classnames';
 import React, {Fragment} from 'react';
 import type {DropResult} from 'react-beautiful-dnd';
-import {Container, Row} from 'react-bootstrap';
 import type {IntlShape} from 'react-intl';
 import {injectIntl} from 'react-intl';
 
@@ -21,6 +20,7 @@ import TabBar from './TabBar';
 import {playSound} from '../notificationSounds';
 
 import '../css/components/UpgradeButton.scss';
+import '../css/components/MainPage.css';
 
 enum Status {
     LOADING = 1,
@@ -344,10 +344,6 @@ class MainPage extends React.PureComponent<Props, State> {
         this.handleCloseDropdowns();
     };
 
-    reloadCurrentView = () => {
-        window.desktop.reloadCurrentView();
-    };
-
     showHideDownloadsBadge(value = false) {
         this.setState({showDownloadsBadge: value});
     }
@@ -373,6 +369,10 @@ class MainPage extends React.PureComponent<Props, State> {
         this.setState({
             threeDotsIsFocused: false,
         });
+    };
+
+    openServerExternally = () => {
+        window.desktop.openServerExternally();
     };
 
     render() {
@@ -433,7 +433,7 @@ class MainPage extends React.PureComponent<Props, State> {
         const activeServer = this.state.servers.find((srv) => srv.id === this.state.activeServerId);
 
         const topRow = (
-            <Row
+            <div
                 className={topBarClassName}
                 onDoubleClick={this.handleDoubleClick}
             >
@@ -489,7 +489,7 @@ class MainPage extends React.PureComponent<Props, State> {
                         <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
                     )}
                 </div>
-            </Row>
+            </div>
         );
 
         const views = () => {
@@ -508,12 +508,11 @@ class MainPage extends React.PureComponent<Props, State> {
             case Status.FAILED:
                 component = (
                     <ErrorView
-                        id={activeServer.name + '-fail'}
+                        darkMode={this.props.darkMode}
                         errorInfo={tabStatus.extra?.error}
                         url={tabStatus.extra ? tabStatus.extra.url : ''}
-                        active={true}
                         appName={this.props.appName}
-                        handleLink={this.reloadCurrentView}
+                        handleLink={this.openServerExternally}
                     />);
                 break;
             case Status.LOADING:
@@ -526,9 +525,9 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const viewsRow = (
             <Fragment>
-                <Row>
+                <div className={classNames('MainPage__body', {darkMode: this.props.darkMode})}>
                     {views()}
-                </Row>
+                </div>
             </Fragment>);
 
         return (
@@ -536,10 +535,8 @@ class MainPage extends React.PureComponent<Props, State> {
                 className='MainPage'
                 onClick={this.focusOnWebView}
             >
-                <Container fluid={true}>
-                    {topRow}
-                    {viewsRow}
-                </Container>
+                {topRow}
+                {viewsRow}
             </div>
         );
     }
