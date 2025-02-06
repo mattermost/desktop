@@ -178,6 +178,8 @@
   "renderer.components.configureServer.url.validating": "验证...",
   "renderer.components.developerModeIndicator.tooltip": "已启用开发者模式。只有在 Mattermost 开发人员指示您这样做时，您才应该启用此模式。",
   "renderer.components.errorView.cannotConnectToAppName": "无法连接到{appName}",
+  "renderer.components.errorView.cannotConnectToThisServer": "无法连接到此服务器",
+  "renderer.components.errorView.contactAdmin": "如果问题仍然存在，请联系您的管理员。",
   "renderer.components.errorView.havingTroubleConnecting": "我们在连接{appName}时遇到困难。我们将继续尝试并建立连接。",
   "renderer.components.errorView.refreshThenVerify": "如果刷新此页面(Ctrl+R或Command+R)不起作用，请验证:",
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "您可以从浏览器窗口到达<link>{url}</link>。",
