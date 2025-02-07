@@ -11,8 +11,6 @@ import type {UniqueServer} from 'types/config';
 import ConfigureServer from '../../components/ConfigureServer';
 import WelcomeScreen from '../../components/WelcomeScreen';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-
 const MOBILE_SCREEN_WIDTH = 1200;
 
 const onConnect = (data: UniqueServer) => {
