@@ -9,9 +9,6 @@ import IntlProvider from 'renderer/intl_provider';
 
 import type {LoginModalInfo} from 'types/modals';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/modals.css';
-
 import LoginModal from './loginModal';
 
 import setupDarkMode from '../darkMode';

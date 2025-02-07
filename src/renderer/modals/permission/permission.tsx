@@ -8,9 +8,6 @@ import IntlProvider from 'renderer/intl_provider';
 
 import type {PermissionModalInfo} from 'types/modals';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/modals.css';
-
 import PermissionModal from './permissionModal';
 
 import setupDarkMode from '../darkMode';
