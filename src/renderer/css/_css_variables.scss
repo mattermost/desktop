@@ -17,6 +17,19 @@
     --elevation-5: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
     --elevation-6: 0 20px 32px 0 rgba(0, 0, 0, 0.12);
 
+    /* Corner Radius variables */
+    --radius-xs: 2px;
+    --radius-s: 4px;
+    --radius-m: 8px;
+    --radius-l: 12px;
+    --radius-xl: 16px;
+    --radius-full: 50%;
+
+    /* Border variables */
+    --border-default: solid 1px rgba(var(--center-channel-color-rgb), 0.12);
+    --border-light: solid 1px rgba(var(--center-channel-color-rgb), 0.08);
+    --border-dark: solid 1px rgba(var(--center-channel-color-rgb), 0.16);
+
     /* Denim - used for light mode */
     --away-indicator-rgb: 255, 188, 31;
     --button-bg-rgb: 28, 88, 217;
@@ -69,7 +82,7 @@
     --mention-highlight-link: #1b1d22;
 }
 
-.LoadingScreen--darkMode, .ErrorView.darkMode {
+.darkMode .Modal, .LoadingScreen--darkMode, .ErrorView.darkMode {
     /* Onyx - used for dark mode*/
     --away-indicator-rgb: 245, 171, 0;
     --button-bg-rgb: 74, 124, 232;

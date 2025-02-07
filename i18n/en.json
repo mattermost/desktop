@@ -146,6 +146,8 @@
   "main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel": "Don't show again",
   "main.windows.mainWindow.minimizeToTray.dialog.message": "{appName} will continue to run in the system tray. This can be disabled in Settings.",
   "main.windows.mainWindow.minimizeToTray.dialog.title": "Minimize to Tray",
+  "modal.cancel": "Cancel",
+  "modal.confirm": "Confirm",
   "renderer.components.autoSaveIndicator.saved": "Saved",
   "renderer.components.autoSaveIndicator.saving": "Saving...",
   "renderer.components.configureServer.cardtitle": "Enter your server details",
