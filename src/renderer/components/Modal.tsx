@@ -113,6 +113,7 @@ export const Modal: React.FC<Props> = (props) => {
 
         confirmButton = (
             <button
+                id={`${props.id}_confirm`}
                 autoFocus={props.autoFocusConfirmButton}
                 type='submit'
                 className={classNames('Modal__button btn btn-primary', isConfirmOrDeleteClassName, props.confirmButtonClassName, {
@@ -140,6 +141,7 @@ export const Modal: React.FC<Props> = (props) => {
 
         cancelButton = (
             <button
+                id={`${props.id}_cancel`}
                 type='button'
                 className={classNames('Modal__button btn btn-tertiary', props.cancelButtonClassName)}
                 onClick={handleCancel}

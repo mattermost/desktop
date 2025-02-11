@@ -391,6 +391,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                 })}
                             />
                             <Input
+                                id='serverNameInput'
                                 name='name'
                                 type='text'
                                 inputSize={SIZE.LARGE}
