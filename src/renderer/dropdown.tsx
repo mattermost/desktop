@@ -139,11 +139,12 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
     };
 
     componentDidMount() {
-        window.desktop.serverDropdown.requestInfo();
         window.addEventListener('click', this.closeMenu);
         window.addEventListener('keydown', this.handleKeyboardShortcuts);
         window.desktop.getNonce().then((nonce) => {
-            this.setState({nonce});
+            this.setState({nonce}, () => {
+                window.desktop.serverDropdown.requestInfo();
+            });
         });
     }
 
