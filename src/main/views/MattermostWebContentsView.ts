@@ -91,7 +91,7 @@ export class MattermostWebContentsView extends EventEmitter {
         WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
         if (!DeveloperMode.get('disableContextMenu')) {
-            this.contextMenu = new ContextMenu({}, this.webContentsView);
+            this.contextMenu = new ContextMenu({}, this.webContentsView.webContents);
         }
         this.maxRetries = MAX_SERVER_RETRIES;
 
