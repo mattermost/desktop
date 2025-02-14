@@ -28,7 +28,7 @@
     "@aws-sdk/lib-storage": "3.445.0",
     "@electron/rebuild": "3.7.0",
     "axios": "1.7.4",
-    "chai": "4.3.6",
+    "chai": "4.5.0",
     "electron-mocha": "12.2.0",
     "fast-xml-parser": "^4.4.1",
     "mochawesome": "7.1.3",
