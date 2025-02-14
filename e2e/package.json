@@ -24,9 +24,9 @@
   },
   "homepage": "https://github.com/mattermost/desktop#readme",
   "dependencies": {
-    "@aws-sdk/client-s3": "3.726.1",
-    "@aws-sdk/lib-storage": "3.445.0",
-    "@electron/rebuild": "3.7.1",
+    "@aws-sdk/client-s3": "3.744.0",
+    "@aws-sdk/lib-storage": "3.744.0",
+    "@electron/rebuild": "3.7.0",
     "axios": "1.7.4",
     "chai": "4.5.0",
     "electron-mocha": "12.2.0",
