@@ -19,6 +19,10 @@ import {
     UPDATE_SHORTCUT_MENU,
     UPDATE_TAB_ORDER,
     VALIDATE_SERVER_URL,
+    GET_UNIQUE_SERVERS_WITH_PERMISSIONS,
+    ADD_SERVER,
+    EDIT_SERVER,
+    REMOVE_SERVER,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -33,7 +37,7 @@ import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import type {Server} from 'types/config';
+import type {Server, UniqueServer} from 'types/config';
 import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
 
@@ -56,6 +60,11 @@ export class ServerViewState {
         ipcMain.handle(GET_LAST_ACTIVE, this.handleGetLastActive);
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, this.handleGetOrderedViewsForServer);
         ipcMain.on(UPDATE_TAB_ORDER, this.updateTabOrder);
+
+        ipcMain.handle(GET_UNIQUE_SERVERS_WITH_PERMISSIONS, this.getUniqueServersWithPermissions);
+        ipcMain.on(ADD_SERVER, this.handleAddServer);
+        ipcMain.on(EDIT_SERVER, this.handleEditServer);
+        ipcMain.on(REMOVE_SERVER, this.handleRemoveServer);
     }
 
     init = () => {
@@ -401,6 +410,44 @@ export class ServerViewState {
 
         const newView = filteredViews[nextIndex].view;
         ViewManager.showById(newView.id);
+    };
+
+    private getUniqueServersWithPermissions = () => {
+        return ServerManager.getAllServers().
+            map((server) => ({
+                server: server.toUniqueServer(),
+                permissions: PermissionsManager.getForServer(server) ?? {},
+            }));
+    };
+
+    private handleAddServer = (event: IpcMainEvent, server: Server) => {
+        log.debug('handleAddServer', server);
+
+        ServerManager.addServer(server);
+    };
+
+    private handleEditServer = (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
+        log.debug('handleEditServer', server, permissions);
+
+        if (!server.id) {
+            return;
+        }
+
+        if (!server.isPredefined) {
+            ServerManager.editServer(server.id, server);
+        }
+        if (permissions) {
+            const mattermostServer = ServerManager.getServer(server.id);
+            if (mattermostServer) {
+                PermissionsManager.setForServer(mattermostServer, permissions);
+            }
+        }
+    };
+
+    private handleRemoveServer = (event: IpcMainEvent, serverId: string) => {
+        log.debug('handleRemoveServer', serverId);
+
+        ServerManager.removeServer(serverId);
     };
 }
 
