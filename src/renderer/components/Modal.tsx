@@ -39,6 +39,7 @@ export type Props = {
     footerDivider?: boolean;
     appendedContent?: React.ReactNode;
     headerButton?: React.ReactNode;
+    headerContent?: React.ReactNode;
 };
 
 export const Modal: React.FC<Props> = (props) => {
@@ -206,6 +207,7 @@ export const Modal: React.FC<Props> = (props) => {
                                     </div>
                                 }
                             </div>
+                            {props.headerContent}
                             <button
                                 type='button'
                                 className='close'
