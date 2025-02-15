@@ -1,8 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import 'renderer/css/modals-dark.scss';
-
 export default function addDarkModeListener() {
     const setDarkMode = (darkMode: boolean) => {
         if (darkMode) {

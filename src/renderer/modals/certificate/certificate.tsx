@@ -5,10 +5,6 @@ import type {Certificate} from 'electron/renderer';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/modals.css';
-import 'renderer/css/components/CertificateModal.css';
-
 import type {CertificateModalInfo} from 'types/modals';
 
 import SelectCertificateModal from './certificateModal';

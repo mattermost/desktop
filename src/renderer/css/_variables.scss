@@ -1,2 +1,11 @@
+@use 'sass:color';
+
 // Since they can be used on any modal, menu or popover for now they are highest
 $z-index-tooltip: 1350;
+
+// Color Variables
+$primary-color: #166de0;
+$primary-color--hover: color.adjust($primary-color, $lightness: -10%);
+$white: rgb(255, 255, 255);
+$light-gray: rgba(0, 0, 0, 0.15);
+$red: rgb(214, 73, 70);

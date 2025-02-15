@@ -80,7 +80,7 @@ describe('menu_bar/dropdown', function desc() {
         const newServerModal = await this.app.waitForEvent('window', {
             predicate: (window) => window.url().includes('newServer'),
         });
-        const modalTitle = await newServerModal.innerText('#newServerModal .modal-title');
+        const modalTitle = await newServerModal.innerText('#newServerModal .Modal__header__text_container');
         modalTitle.should.equal('Add Server');
 
         await afterFunc();

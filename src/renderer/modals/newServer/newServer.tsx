@@ -1,9 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/modals.css';
-
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
@@ -42,7 +39,8 @@ const NewServerModalWrapper: React.FC = () => {
     return (
         <IntlProvider>
             <NewServerModal
-                onClose={unremoveable ? undefined : onClose}
+                unremoveable={unremoveable}
+                onClose={onClose}
                 onSave={onSave}
                 editMode={false}
                 prefillURL={data?.prefillURL}

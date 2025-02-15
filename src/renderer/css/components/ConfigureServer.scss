@@ -8,7 +8,7 @@
     font-family: 'Open Sans';
 
     .alternate-link__message {
-        color: var(--center-channel-text);
+        color: var(--center-channel-color);
         font-size: 12px;
         font-weight: 400;
         line-height: 16px;
@@ -117,7 +117,7 @@
             .ConfigureServer__card {
                 width: 540px;
                 box-sizing: border-box;
-                border: 1px solid rgba(var(--center-channel-text-rgb), 0.08);
+                border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
                 margin-left: 60px;
                 background-color: var(--center-channel-bg);
                 border-radius: 8px;
@@ -143,6 +143,7 @@
                         font-weight: 600;
                         line-height: 28px;
                         margin-bottom: 32px;
+                        margin-top: 0;
                     }
 
                     .ConfigureServer__card-form {

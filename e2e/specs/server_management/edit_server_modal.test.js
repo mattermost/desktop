@@ -40,7 +40,7 @@ describe('EditServerModal', function desc() {
     let editServerView;
 
     it('should not edit server when Cancel is pressed', async () => {
-        await editServerView.click('#cancelNewServerModal');
+        await editServerView.click('#newServerModal_cancel');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
         existing.should.be.false;
@@ -70,7 +70,7 @@ describe('EditServerModal', function desc() {
     });
 
     it('MM-T4391_1 should not edit server when Save is pressed but nothing edited', async () => {
-        await editServerView.click('#saveNewServerModal');
+        await editServerView.click('#newServerModal_confirm');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
         existing.should.be.false;
@@ -100,15 +100,15 @@ describe('EditServerModal', function desc() {
     });
 
     it('MM-T2826_3 should not edit server if an invalid server address has been set', async () => {
-        await editServerView.type('#serverUrlInput', 'superInvalid url');
-        await editServerView.waitForSelector('#urlValidation.error');
-        const existing = await editServerView.isVisible('#urlValidation.error');
+        await editServerView.fill('#serverUrlInput', 'superInvalid url');
+        await editServerView.waitForSelector('#customMessage_url.Input___error');
+        const existing = await editServerView.isVisible('#customMessage_url.Input___error');
         existing.should.be.true;
     });
 
     it('MM-T4391_2 should edit server when Save is pressed and name edited', async () => {
         await editServerView.fill('#serverNameInput', 'NewTestServer');
-        await editServerView.click('#saveNewServerModal');
+        await editServerView.click('#newServerModal_confirm');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
         existing.should.be.false;
@@ -160,7 +160,7 @@ describe('EditServerModal', function desc() {
 
     it('MM-T4391_3 should edit server when Save is pressed and URL edited', async () => {
         await editServerView.fill('#serverUrlInput', 'http://google.com');
-        await editServerView.click('#saveNewServerModal');
+        await editServerView.click('#newServerModal_confirm');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
         existing.should.be.false;
@@ -213,7 +213,7 @@ describe('EditServerModal', function desc() {
     it('MM-T4391_4 should edit server when Save is pressed and both edited', async () => {
         await editServerView.fill('#serverNameInput', 'NewTestServer');
         await editServerView.fill('#serverUrlInput', 'http://google.com');
-        await editServerView.click('#saveNewServerModal');
+        await editServerView.click('#newServerModal_confirm');
         await asyncSleep(1000);
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
         existing.should.be.false;

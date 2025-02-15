@@ -45,7 +45,7 @@ describe('LongServerName', function desc() {
     it('MM-T4050 Long server name', async () => {
         await newServerView.type('#serverNameInput', longServerName);
         await newServerView.type('#serverUrlInput', longServerUrl);
-        await newServerView.click('#saveNewServerModal');
+        await newServerView.click('#newServerModal_confirm');
 
         await asyncSleep(1000);
         const existing = Boolean(this.app.windows().find((window) => window.url().includes('newServer')));

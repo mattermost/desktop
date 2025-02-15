@@ -1,38 +1,34 @@
-.NewServerModal-noBottomSpace {
-    padding-bottom: 0px;
-    margin-bottom: 0px;
-}
+@use "../css_variables";
 
-.NewServerModal-validation {
-    margin-top: 8px;
-    margin-right: auto;
+.Modal .NewServerModal {
+    width: 600px;
+    max-width: 600px;
+
+    hr {
+        margin-top: 24px;
+        border: 0;
+        border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    .Modal_body {
+        margin-bottom: 12px;
+    }
+}
+    
+
+.NewServerModal__toggle__description {
+    display: block;
+    margin-top: 0.25rem;
+    font-weight: 400;
     font-size: 12px;
-    display: flex;
-    flex-direction: column;
-
-    > div {
-        margin-top: 4px;
-        > span {
-            margin-left: 4px;
-        }
-    }
-
-    .error {
-        color: #d24b4e;
-    }
-
-    .warning {
-        color: #c79e3f;
-    }
-
-    .success {
-        color: #06d6a0;
-    }
+    line-height: 16px;
+    max-width: 400px;
 }
 
-.NewServerModal-validationSpinner {
-    width: 0.75rem;
-    height: 0.75rem;
-    margin-left: 2px;
-    margin-right: 4px;
+.NewServerModal__permissions__title {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
 }

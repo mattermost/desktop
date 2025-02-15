@@ -99,8 +99,8 @@ describe('focus', function desc() {
             const newServerView = await this.app.waitForEvent('window', {
                 predicate: (window) => window.url().includes('newServer'),
             });
-            await newServerView.waitForSelector('#cancelNewServerModal');
-            await newServerView.click('#cancelNewServerModal');
+            await newServerView.waitForSelector('#newServerModal_cancel');
+            await newServerView.click('#newServerModal_cancel');
 
             const isTextboxFocused = await firstServer.$eval('#post_textbox', (el) => el === document.activeElement);
             isTextboxFocused.should.be.true;

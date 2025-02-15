@@ -4,6 +4,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'renderer/css/index.css';
 import 'renderer/css/settings.css';
+import 'renderer/css/modals-dark.scss';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
