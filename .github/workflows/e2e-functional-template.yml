@@ -228,9 +228,15 @@ jobs:
             core.setOutput('COMMENT_BODY_MACOS', macosResults);
             core.setOutput('COMMENT_BODY_WINDOWS', windowsResults);
 
+            let commentBody = `### E2E Test Results\n\n`;
+            commentBody += `#### Linux:\n${linuxResults}\n\n`;
+            commentBody += `#### macOS:\n${macosResults}\n\n`;
+            commentBody += `#### Windows:\n${windowsResults}\n\n`;
+
             if (newFailedTests.length > 0) {
               core.setFailed('E2E tests failed.');
             }
+
             return { COMMENT_BODY: commentBody };
           result-encoding: string
 
