@@ -35,15 +35,65 @@ on:
         description: "True if this is Compatibility Matrix Testing"
         required: false
         default: false
+      TYPE:
+        type: boolean
+        description: "True if this is Triggered from PR"
+        required: false
+        default: false
       MM_SERVER_VERSION:
         type: string
         required: false
         default: "9.9.1"
     outputs:
-      COMMENT_BODY:
+      COMMENT_BODY_LINUX:
         description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.COMMENT_BODY }}
+        value: ${{ jobs.e2e.outputs.COMMENT_BODY_LINUX }}
+      COMMENT_BODY_MACOS:
+        description: "The output to comment"
+        value: ${{ jobs.e2e.outputs.COMMENT_BODY_MACOS }}
+      COMMENT_BODY_WINDOWS:
+        description: "The output to comment"
+        value: ${{ jobs.e2e.outputs.COMMENT_BODY_WINDOWS }}
 
+  workflow_dispatch:
+    inputs:
+      MM_TEST_SERVER_URL:
+        description: "The test server URL"
+        required: false
+        type: string
+      MM_TEST_USER_NAME:
+        description: "The admin username of the test instance"
+        required: false
+        type: string
+      MM_TEST_PASSWORD:
+        description: "The admin password of the test instance"
+        required: false
+        type: string
+      DESKTOP_VERSION:
+        description: "The desktop version to test"
+        required: false
+        type: string
+      runs-on:
+        description: "The E2E tests underlying OS"
+        required: false
+        type: string
+      nightly:
+        description: "True if this is nightly build"
+        required: false
+        type: boolean
+      cmt:
+        description: "True if this is Compatibility Matrix Testing"
+        required: false
+        type: boolean
+      MM_SERVER_VERSION:
+        description: "The Mattermost server version"
+        required: false
+        type: string
+      TYPE:
+        type: boolean
+        description: "True if this is Triggered from PR"
+        required: false
+        default: false
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -62,139 +112,109 @@ env:
   WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   REPORT_LINK: "none"
+  NODE_VERSION: 18
 
 jobs:
   e2e:
+    name: e2e-on-${{ inputs.runs-on }}
     runs-on: ${{ inputs.runs-on }}
     defaults:
       run:
         shell: bash
     outputs:
-      COMMENT_BODY: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY }}
+      COMMENT_BODY_LINUX: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_LINUX }}
+      COMMENT_BODY_MACOS: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_MACOS }}
+      COMMENT_BODY_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_WINDOWS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
         run: |
           RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=PR" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.cmt }}" ]; then
-            echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=CMT" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_LINUX_REPORT=12358649" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_MACOS_REPORT=12358650" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_WIN_REPORT=12358651" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && ! ${{ inputs.nightly }}; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=MANUAL" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=MASTER" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-
-          elif ${{ inputs.nightly }}; then
+          echo "RUNNER_OS=${RUNNER_OS}" >> $GITHUB_ENV
+          
+          # Define build type and suffix
+          case "${{ github.event_name }}" in
+            "pull_request")
+              echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "TYPE=PR" >> $GITHUB_ENV
+              ;;
+            "workflow_dispatch")
+              if ${{ inputs.cmt }}; then
+                echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=CMT" >> $GITHUB_ENV
+                echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+                echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{ 
+                  runner.os == 'Linux' && '12358649' || 
+                  runner.os == 'macOS' && '12358650' || 
+                  '12358651' 
+                }}" >> $GITHUB_ENV
+              else
+                echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=MANUAL" >> $GITHUB_ENV
+              fi
+              ;;
+            "push")
+              if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+                echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=MASTER" >> $GITHUB_ENV
+                echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+              fi
+              ;;
+          esac
+          
+          if ${{ inputs.nightly }}; then
             echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_LINUX_REPORT=12363689" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_MACOS_REPORT=12363687" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_WIN_REPORT=12363690" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{ 
+              runner.os == 'Linux' && '12363689' || 
+              runner.os == 'macOS' && '12363687' || 
+              '12363690' 
+            }}" >> $GITHUB_ENV
           fi
 
       - name: e2e/set-build-id
         run: echo "BUILD_ID=${{ github.run_id }}-${{ steps.variables.outputs.BUILD_SUFFIX }}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/setup-node
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        uses: actions/setup-node@v4
         with:
           node-version-file: "package.json"
           cache: "npm"
-          cache-dependency-path: package-lock.json
-
-      - name: e2e/cache-node-modules
-        id: cache-node-modules
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
-        with:
-          path: |
-            node_modules
-            C:\Users\runneradmin\.electron-gyp
-          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('./package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-node-modules
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+          cache-dependency-path: |
+            package-lock.json
+            e2e/package-lock.json
 
       - name: e2e/setup-python
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      ## Linux Depdendencies
-      - name: e2e/install-dependencies-linux
-        if: runner.os == 'Linux'
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
-        run: |
-          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
-          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
-          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xsel
-          sudo apt-get install -y xvfb
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x24 &
-          npm ci
-          cd e2e
-          npm ci
-          npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs --module-dir ../
+      - name: e2e/install-os-dependencies
+        uses: ./.github/actions/install-os-dependencies
+        with:
+          os: ${{ runner.os }}
 
-      - name: e2e/install-dependencies-macos
-        if: runner.os == 'macOS'
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - name: e2e/install-node-dependencies
         run: |
-          brew install nss
-          jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
-          cd e2e
-          npm ci
-          npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs --module-dir ../
+          cd e2e && npm ci
+          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
-      ## Windows Dependencies
-      - name: e2e/install-dependencies-windows
-        if: runner.os == 'windows'
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - name: e2e/run-playright-tests
         run: |
-          choco install yq --version 4.15.1 -y
-          npm i -g node-gyp
-          node-gyp install
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
-          npm ci --openssl_fips=''
-          cd e2e
-          npm ci
-          npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs --module-dir ../
-          npm install mochawesome-report-generator
-
-      - name: e2e/run-playright-tests-${{ runner.os }}
-        run: |
-          if [ ${{ runner.os }} == 'Linux' ]; then
+          if [ "${{ runner.os }}" == "Linux" ]; then
             export DISPLAY=:99
             Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           fi
           npm run build-test
           cd e2e
-          npm run run:e2e || true # making job pass even if the tests fail due to flakyness
+          npm run run:e2e || true
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
@@ -207,8 +227,31 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { commentBody, newFailedTests } = analyzeFlakyTests();
-            core.setOutput('COMMENT_BODY', commentBody);
+            const { commentBody, newFailedTests, os } = analyzeFlakyTests();
+
+            switch (os) {
+              case 'linux':
+                core.setOutput('COMMENT_BODY_LINUX', commentBody);
+                break;
+              case 'darwin':
+                core.setOutput('COMMENT_BODY_MACOS', commentBody);
+                break;
+              case 'win32':
+                core.setOutput('COMMENT_BODY_WINDOWS', commentBody);
+                break;
+              default:
+                throw new Error(`Unsupported OS: ${os}`);
+            }
+            console.log(`Comment body for ${os}: ${commentBody}`);
+
             if (newFailedTests.length > 0) {
               core.setFailed('E2E tests failed.');
             }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ runner.os }}
+          path: e2e/mochawesome-report
+          retention-days: 7

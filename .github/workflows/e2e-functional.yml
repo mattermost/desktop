@@ -2,103 +2,66 @@ name: Electron Playwright Tests
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
-    types:
-      - labeled
+    types: [labeled]
   workflow_dispatch:
     inputs:
       version_name:
         type: string
         description: "Desktop Version name eg: 5.6"
         required: true
-      job_name:
+      platform:
         type: choice
-        description: "Job name"
+        description: "Choose platform to run tests"
         required: true
-        default: "All"
-        options:
-          - "e2e-linux"
-          - "e2e-macos"
-          - "e2e-windows"
-          - "All"
+        default: "all"
+        options: [linux, macos, windows, all]
 
 jobs:
-  e2e-linux:
-    if: ${{
-      (
-      (inputs.job_name == 'e2e-linux' || inputs.job_name == 'All')
-      &&
-      github.event_name == 'workflow_dispatch'
-      ) ||
-      (
-      github.event_name == 'push'
-      ) ||
-      (
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.labels &&
-      contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
-      )
-      }}
-    uses: ./.github/workflows/e2e-functional-template.yml
-    secrets: inherit
-    with:
-      runs-on: ubuntu-22.04
-      DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
+  determine-platforms:
+    runs-on: ubuntu-latest
+    outputs:
+      platforms: ${{ steps.set-matrix.outputs.platforms }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ inputs.platform }}" == "all" ]]; then
+              echo "platforms=['ubuntu-22.04', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT
+            else
+              case "${{ inputs.platform }}" in
+                linux)  echo "platforms=['ubuntu-22.04']" ;;
+                macos)  echo "platforms=['macos-13']" ;;
+                windows) echo "platforms=['windows-2022']" ;;
+              esac >> $GITHUB_OUTPUT
+            fi
+          elif [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}" == "true" ]]; then
+            echo "platforms=['ubuntu-22.04', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT
+          else
+            echo "platforms=[]" >> $GITHUB_OUTPUT
+          fi
 
-  e2e-macos:
-    if: ${{
-      (
-      (inputs.job_name == 'e2e-macos' || inputs.job_name == 'All')
-      &&
-      github.event_name == 'workflow_dispatch'
-      ) ||
-      (
-      github.event_name == 'push'
-      ) ||
-      (
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.labels &&
-      contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
-      )
-      }}
+  e2e-tests:
+    needs: determine-platforms
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.determine-platforms.outputs.platforms) }}
+      fail-fast: false
     uses: ./.github/workflows/e2e-functional-template.yml
     secrets: inherit
     with:
-      runs-on: macos-13
-      DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
-
-  e2e-windows:
-    if: ${{
-      (
-      (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
-      &&
-      github.event_name == 'workflow_dispatch'
-      ) ||
-      (
-      github.event_name == 'push'
-      ) ||
-      (
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.labels &&
-      contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
-      )
-      }}
-    uses: ./.github/workflows/e2e-functional-template.yml
-    secrets: inherit
-    with:
-      runs-on: windows-2022
+      runs-on: ${{ matrix.os }}
       DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
   e2e-remove-label:
     if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
-    needs: [e2e-linux, e2e-macos, e2e-windows]
+    needs: e2e-tests
     runs-on: ubuntu-22.04
     env:
-      COMMENT_BODY_LINUX: "${{ needs.e2e-linux.outputs.COMMENT_BODY }}"
-      COMMENT_BODY_MACOS: "${{ needs.e2e-macos.outputs.COMMENT_BODY }}"
-      COMMENT_BODY_WINDOWS: "${{ needs.e2e-windows.outputs.COMMENT_BODY }}"
+      COMMENT_BODY_LINUX: "${{ needs.e2e-tests.outputs.COMMENT_BODY_LINUX }}"
+      COMMENT_BODY_MACOS: "${{ needs.e2e-tests.outputs.COMMENT_BODY_MACOS }}"
+      COMMENT_BODY_WINDOWS: "${{ needs.e2e-tests.outputs.COMMENT_BODY_WINDOWS }}"
     steps:
       - name: e2e/unify-comments-in-single-comment
         run: |
@@ -120,7 +83,7 @@ jobs:
               body: process.env.PR_COMMENT,
             });
 
-      - name: e2e/remove-label-from-pr
+      - name: Remove E2E test label
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         continue-on-error: true # Label might have been removed manually
         with:

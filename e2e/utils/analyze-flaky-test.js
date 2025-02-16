@@ -29,10 +29,7 @@ function analyzeFlakyTests() {
 
         const commentBody = generateCommentBodyFunctionalTest(newFailedTests, fixedTests);
 
-        // Print on CI
-        console.log(commentBody);
-
-        return {commentBody, newFailedTests};
+        return {commentBody, newFailedTests, os};
     } catch (error) {
         console.error('Error analyzing failures:', error);
         return {};
