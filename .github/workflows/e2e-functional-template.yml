@@ -230,13 +230,13 @@ jobs:
             const { commentBody, newFailedTests, os } = analyzeFlakyTests();
 
             switch (os) {
-              case 'Linux':
+              case 'linux':
                 core.setOutput('COMMENT_BODY_LINUX', commentBody);
                 break;
-              case 'macOS':
+              case 'darwin':
                 core.setOutput('COMMENT_BODY_MACOS', commentBody);
                 break;
-              case 'Windows':
+              case 'win32':
                 core.setOutput('COMMENT_BODY_WINDOWS', commentBody);
                 break;
               default:
