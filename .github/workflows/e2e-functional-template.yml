@@ -35,6 +35,11 @@ on:
         description: "True if this is Compatibility Matrix Testing"
         required: false
         default: false
+      TYPE:
+        type: boolean
+        description: "True if this is Triggered from PR"
+        required: false
+        default: false
       MM_SERVER_VERSION:
         type: string
         required: false
@@ -42,8 +47,47 @@ on:
     outputs:
       COMMENT_BODY:
         description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.COMMENT_BODY }}
+        value: ${{ jobs.e2e.outputs.COMMENT_BODY_LINUX }}
 
+  workflow_dispatch:
+    inputs:
+      MM_TEST_SERVER_URL:
+        description: "The test server URL"
+        required: false
+        type: string
+      MM_TEST_USER_NAME:
+        description: "The admin username of the test instance"
+        required: false
+        type: string
+      MM_TEST_PASSWORD:
+        description: "The admin password of the test instance"
+        required: false
+        type: string
+      DESKTOP_VERSION:
+        description: "The desktop version to test"
+        required: false
+        type: string
+      runs-on:
+        description: "The E2E tests underlying OS"
+        required: false
+        type: string
+      nightly:
+        description: "True if this is nightly build"
+        required: false
+        type: boolean
+      cmt:
+        description: "True if this is Compatibility Matrix Testing"
+        required: false
+        type: boolean
+      MM_SERVER_VERSION:
+        description: "The Mattermost server version"
+        required: false
+        type: string
+      TYPE:
+        type: boolean
+        description: "True if this is Triggered from PR"
+        required: false
+        default: false
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -66,6 +110,7 @@ env:
 
 jobs:
   e2e:
+    name: e2e-on-${{ inputs.runs-on }}
     runs-on: ${{ inputs.runs-on }}
     defaults:
       run:

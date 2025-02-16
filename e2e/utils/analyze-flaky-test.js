@@ -19,13 +19,13 @@ function analyzeFlakyTests() {
         const platforms = {
             linux: 'linux',
             macos: 'darwin',
-            windows: 'win32'
+            windows: 'win32',
         };
 
-        let results = {
-            linux: "Linux Results:\n",
-            macos: "macOS Results:\n",
-            windows: "Windows Results:\n"
+        const results = {
+            linux: 'Linux Results:\n',
+            macos: 'macOS Results:\n',
+            windows: 'Windows Results:\n',
         };
 
         let newFailedTests = [];
@@ -37,9 +37,9 @@ function analyzeFlakyTests() {
             const failedTestsForOS = failedFullTitles;
             const newFailures = failedTestsForOS.filter((test) => !knownFlakyTestsForOS.has(test));
 
-            results[key] += failedTestsForOS.length
-                ? failedTestsForOS.join('\n')
-                : "All stable tests passed.";
+            results[key] += failedTestsForOS.length ?
+                failedTestsForOS.join('\n') :
+                'All stable tests passed.';
 
             newFailedTests = [...newFailedTests, ...newFailures];
 
@@ -48,20 +48,20 @@ function analyzeFlakyTests() {
         }
 
         return {
-            COMMENT_BODY_LINUX: results.linux || "No results for Linux.",
-            COMMENT_BODY_MACOS: results.macos || "No results for macOS.",
-            COMMENT_BODY_WINDOWS: results.windows || "No results for Windows.",
-            newFailedTests
+            COMMENT_BODY_LINUX: results.linux || 'No results for Linux.',
+            COMMENT_BODY_MACOS: results.macos || 'No results for macOS.',
+            COMMENT_BODY_WINDOWS: results.windows || 'No results for Windows.',
+            newFailedTests,
         };
     } catch (error) {
-        console.error("Error analyzing flaky tests:", error);
+        console.error('Error analyzing flaky tests:', error);
         return {
-            COMMENT_BODY_LINUX: "Error analyzing Linux tests.",
-            COMMENT_BODY_MACOS: "Error analyzing macOS tests.",
-            COMMENT_BODY_WINDOWS: "Error analyzing Windows tests.",
-            newFailedTests: []
+            COMMENT_BODY_LINUX: 'Error analyzing Linux tests.',
+            COMMENT_BODY_MACOS: 'Error analyzing macOS tests.',
+            COMMENT_BODY_WINDOWS: 'Error analyzing Windows tests.',
+            newFailedTests: [],
         };
     }
 }
 
-module.exports = { analyzeFlakyTests };
+module.exports = {analyzeFlakyTests};
