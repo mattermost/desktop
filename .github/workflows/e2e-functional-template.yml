@@ -45,9 +45,15 @@ on:
         required: false
         default: "9.9.1"
     outputs:
-      COMMENT_BODY:
+      COMMENT_BODY_LINUX:
         description: "The output to comment"
         value: ${{ jobs.e2e.outputs.COMMENT_BODY_LINUX }}
+      COMMENT_BODY_MACOS:
+        description: "The output to comment"
+        value: ${{ jobs.e2e.outputs.COMMENT_BODY_MACOS }}
+      COMMENT_BODY_WINDOWS:
+        description: "The output to comment"
+        value: ${{ jobs.e2e.outputs.COMMENT_BODY_WINDOWS }}
 
   workflow_dispatch:
     inputs:
@@ -119,7 +125,6 @@ jobs:
       COMMENT_BODY_LINUX: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_LINUX }}
       COMMENT_BODY_MACOS: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_MACOS }}
       COMMENT_BODY_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_WINDOWS }}
-
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -217,28 +222,29 @@ jobs:
 
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { linuxResults, macosResults, windowsResults, newFailedTests } = analyzeFlakyTests();
+            const { commentBody, newFailedTests, os } = analyzeFlakyTests();
 
-            core.setOutput('COMMENT_BODY_LINUX', linuxResults);
-            core.setOutput('COMMENT_BODY_MACOS', macosResults);
-            core.setOutput('COMMENT_BODY_WINDOWS', windowsResults);
-
-            let commentBody = `### E2E Test Results\n\n`;
-            commentBody += `#### Linux:\n${linuxResults}\n\n`;
-            commentBody += `#### macOS:\n${macosResults}\n\n`;
-            commentBody += `#### Windows:\n${windowsResults}\n\n`;
-
+            switch (os) {
+              case 'Linux':
+                core.setOutput('COMMENT_BODY_LINUX', commentBody);
+                break;
+              case 'macOS':
+                core.setOutput('COMMENT_BODY_MACOS', commentBody);
+                break;
+              case 'Windows':
+                core.setOutput('COMMENT_BODY_WINDOWS', commentBody);
+                break;
+              default:
+                throw new Error(`Unsupported OS: ${os}`);
+            }
             if (newFailedTests.length > 0) {
               core.setFailed('E2E tests failed.');
             }
-
-            return { COMMENT_BODY: commentBody };
-          result-encoding: string
 
       - name: Upload test results
         if: always()

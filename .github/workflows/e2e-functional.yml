@@ -54,48 +54,43 @@ jobs:
       runs-on: ${{ matrix.os }}
       DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
-  process-results:
-    if: always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+  e2e-remove-label:
+    if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
     needs: e2e-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    env:
+      COMMENT_BODY_LINUX: "${{ needs.e2e-linux.outputs.COMMENT_BODY_LINUX }}"
+      COMMENT_BODY_MACOS: "${{ needs.e2e-macos.outputs.COMMENT_BODY_MACOS }}"
+      COMMENT_BODY_WINDOWS: "${{ needs.e2e-windows.outputs.COMMENT_BODY_WINDOWS }}"
     steps:
-      - name: Combine test results
+      - name: e2e/unify-comments-in-single-comment
         run: |
-          {
-            echo "PR_COMMENT<<EOF"
-            echo "### E2E Test Results"
-            echo
-            echo "#### Linux Results:"
-            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY_LINUX }}"
-            echo
-            echo "#### macOS Results:"
-            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY_MACOS }}"
-            echo
-            echo "#### Windows Results:"
-            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY_WINDOWS }}"
-            echo
-            echo "EOF"
-          } >> $GITHUB_ENV
+          echo "PR_COMMENT<<EOF" >> "${GITHUB_ENV}"
+          echo "Here are the test results below:" >> "${GITHUB_ENV}"
+          echo "$COMMENT_BODY_LINUX" >> "${GITHUB_ENV}"
+          echo "$COMMENT_BODY_MACOS" >> "${GITHUB_ENV}"
+          echo "$COMMENT_BODY_WINDOWS" >> "${GITHUB_ENV}"
+          echo "EOF" >> "${GITHUB_ENV}"
 
-      - name: Post results comment
-        uses: actions/github-script@v7
+      - name: e2e/send-comment-results-in-pr
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
-            await github.rest.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: process.env.PR_COMMENT
+              body: process.env.PR_COMMENT,
             });
 
       - name: Remove E2E test label
-        uses: actions/github-script@v7
-        continue-on-error: true
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        continue-on-error: true # Label might have been removed manually
         with:
           script: |
-            await github.rest.issues.removeLabel({
+            github.rest.issues.removeLabel({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'Run Desktop E2E Tests'
+              name: 'Run Desktop E2E Tests',
             });
