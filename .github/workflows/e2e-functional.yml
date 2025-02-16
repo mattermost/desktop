@@ -59,9 +59,9 @@ jobs:
     needs: e2e-tests
     runs-on: ubuntu-22.04
     env:
-      COMMENT_BODY_LINUX: "${{ needs.e2e-linux.outputs.COMMENT_BODY_LINUX }}"
-      COMMENT_BODY_MACOS: "${{ needs.e2e-macos.outputs.COMMENT_BODY_MACOS }}"
-      COMMENT_BODY_WINDOWS: "${{ needs.e2e-windows.outputs.COMMENT_BODY_WINDOWS }}"
+      COMMENT_BODY_LINUX: "${{ needs.e2e-tests.outputs.COMMENT_BODY_LINUX }}"
+      COMMENT_BODY_MACOS: "${{ needs.e2e-tests.outputs.COMMENT_BODY_MACOS }}"
+      COMMENT_BODY_WINDOWS: "${{ needs.e2e-tests.outputs.COMMENT_BODY_WINDOWS }}"
     steps:
       - name: e2e/unify-comments-in-single-comment
         run: |

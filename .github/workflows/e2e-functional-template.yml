@@ -242,6 +242,8 @@ jobs:
               default:
                 throw new Error(`Unsupported OS: ${os}`);
             }
+            console.log(`Comment body for ${os}: ${commentBody}`);
+
             if (newFailedTests.length > 0) {
               core.setFailed('E2E tests failed.');
             }
