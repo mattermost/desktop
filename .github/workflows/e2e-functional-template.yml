@@ -71,7 +71,9 @@ jobs:
       run:
         shell: bash
     outputs:
-      COMMENT_BODY: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY }}
+      COMMENT_BODY_LINUX: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_LINUX }}
+      COMMENT_BODY_MACOS: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_MACOS }}
+      COMMENT_BODY_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_WINDOWS }}
 
     steps:
       - name: e2e/set-required-variables
@@ -175,8 +177,12 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { commentBody, newFailedTests } = analyzeFlakyTests();
-            core.setOutput('COMMENT_BODY', commentBody);
+            const { linuxResults, macosResults, windowsResults, newFailedTests } = analyzeFlakyTests();
+
+            core.setOutput('COMMENT_BODY_LINUX', linuxResults);
+            core.setOutput('COMMENT_BODY_MACOS', macosResults);
+            core.setOutput('COMMENT_BODY_WINDOWS', windowsResults);
+
             if (newFailedTests.length > 0) {
               core.setFailed('E2E tests failed.');
             }

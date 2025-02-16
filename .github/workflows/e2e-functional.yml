@@ -66,13 +66,13 @@ jobs:
             echo "### E2E Test Results"
             echo
             echo "#### Linux Results:"
-            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY }}"
+            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY_LINUX }}"
             echo
             echo "#### macOS Results:"
-            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY }}"
+            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY_MACOS }}"
             echo
             echo "#### Windows Results:"
-            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY }}"
+            echo "${{ needs.e2e-tests.outputs.COMMENT_BODY_WINDOWS }}"
             echo
             echo "EOF"
           } >> $GITHUB_ENV

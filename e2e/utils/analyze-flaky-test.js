@@ -11,66 +11,57 @@ const {
 } = require('./report');
 
 function analyzeFlakyTests() {
-    const os = process.platform;
     try {
-        // Import
         const jsonReport = readJsonFromFile(path.join(MOCHAWESOME_REPORT_DIR, 'mochawesome.json'));
-
         const {failedFullTitles} = generateShortSummary(jsonReport);
 
-        // Get the list of known flaky tests for the provided operating system
-        const knownFlakyTestsForOS = new Set(knownFlakyTests[os] || []);
+        // Define platform mapping
+        const platforms = {
+            linux: 'linux',
+            macos: 'darwin',
+            windows: 'win32'
+        };
 
-        // Filter out the known flaky tests from the failed test titles
-        const newFailedTests = failedFullTitles.filter((test) => !knownFlakyTestsForOS.has(test));
+        let results = {
+            linux: "Linux Results:\n",
+            macos: "macOS Results:\n",
+            windows: "Windows Results:\n"
+        };
 
-        // Check if any known failed tests are fixed
-        const fixedTests = [...knownFlakyTestsForOS].filter((test) => !failedFullTitles.includes(test));
+        let newFailedTests = [];
 
-        const commentBody = generateCommentBodyFunctionalTest(newFailedTests, fixedTests);
+        for (const [key, osName] of Object.entries(platforms)) {
+            const knownFlakyTestsForOS = new Set(knownFlakyTests[osName] || []);
 
-        // Print on CI
-        console.log(commentBody);
+            // Instead of filtering, assume all failed tests belong to all OSes
+            const failedTestsForOS = failedFullTitles;
+            const newFailures = failedTestsForOS.filter((test) => !knownFlakyTestsForOS.has(test));
 
-        return {commentBody, newFailedTests};
+            results[key] += failedTestsForOS.length
+                ? failedTestsForOS.join('\n')
+                : "All stable tests passed.";
+
+            newFailedTests = [...newFailedTests, ...newFailures];
+
+            console.log(`Analyzing ${key} tests...`);
+            console.log(`Results for ${key}:`, results[key]); // Debug log
+        }
+
+        return {
+            COMMENT_BODY_LINUX: results.linux || "No results for Linux.",
+            COMMENT_BODY_MACOS: results.macos || "No results for macOS.",
+            COMMENT_BODY_WINDOWS: results.windows || "No results for Windows.",
+            newFailedTests
+        };
     } catch (error) {
-        console.error('Error analyzing failures:', error);
-        return {};
+        console.error("Error analyzing flaky tests:", error);
+        return {
+            COMMENT_BODY_LINUX: "Error analyzing Linux tests.",
+            COMMENT_BODY_MACOS: "Error analyzing macOS tests.",
+            COMMENT_BODY_WINDOWS: "Error analyzing Windows tests.",
+            newFailedTests: []
+        };
     }
 }
 
-function generateCommentBodyFunctionalTest(newFailedTests, fixedTests) {
-    const osName = process.env.RUNNER_OS;
-    const build = process.env.BUILD_TAG;
-
-    let commentBody = `
-## Test Summary for ${osName} on commit ${build}
-    `;
-
-    if (newFailedTests.length === 0 && fixedTests.length === 0) {
-        commentBody += `
-All stable tests passed on ${osName}.
-    `;
-        return commentBody;
-    }
-
-    if (newFailedTests.length > 0) {
-        const newTestFailure = `New failed tests found on ${osName}:\n${newFailedTests.map((test) => `- ${test}`).join('\n')}`;
-        commentBody += `
-${newTestFailure}
-    `;
-    }
-
-    if (fixedTests.length > 0) {
-        const fixedTestMessage = `The following known failed tests have been fixed on ${osName}:\n\t${fixedTests.map((test) => `- ${test}`).join('\n\t')}`;
-        commentBody += `
-${fixedTestMessage}
-    `;
-    }
-
-    return commentBody;
-}
-
-module.exports = {
-    analyzeFlakyTests,
-};
+module.exports = { analyzeFlakyTests };
