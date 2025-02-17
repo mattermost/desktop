@@ -67,45 +67,6 @@ on:
         description: "The status of the test"
         value: ${{ jobs.e2e.outputs.STATUS }}
 
-  workflow_dispatch:
-    inputs:
-      MM_TEST_SERVER_URL:
-        description: "The test server URL"
-        required: false
-        type: string
-      MM_TEST_USER_NAME:
-        description: "The admin username of the test instance"
-        required: false
-        type: string
-      MM_TEST_PASSWORD:
-        description: "The admin password of the test instance"
-        required: false
-        type: string
-      DESKTOP_VERSION:
-        description: "The desktop version to test"
-        required: false
-        type: string
-      runs-on:
-        description: "The E2E tests underlying OS"
-        required: false
-        type: string
-      nightly:
-        description: "True if this is nightly build"
-        required: false
-        type: boolean
-      cmt:
-        description: "True if this is Compatibility Matrix Testing"
-        required: false
-        type: boolean
-      MM_SERVER_VERSION:
-        description: "The Mattermost server version"
-        required: false
-        type: string
-      TYPE:
-        type: boolean
-        description: "True if this is Triggered from PR"
-        required: false
-        default: false
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -193,12 +154,12 @@ jobs:
         run: echo "BUILD_ID=${{ github.run_id }}-${{ steps.variables.outputs.BUILD_SUFFIX }}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/setup-node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
           node-version-file: "package.json"
           cache: "npm"
@@ -207,7 +168,7 @@ jobs:
             e2e/package-lock.json
 
       - name: e2e/setup-python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
         with:
           python-version: "3.10"
 

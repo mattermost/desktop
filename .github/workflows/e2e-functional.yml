@@ -144,7 +144,7 @@ jobs:
           context: e2e/windows
           description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }} failures
           status: ${{ needs.e2e-tests.outputs.STATUS }}
-          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_LINUX }}
+          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
 
   e2e-remove-label:
     if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
