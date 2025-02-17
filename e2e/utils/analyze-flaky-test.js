@@ -10,6 +10,8 @@ const {
     readJsonFromFile,
 } = require('./report');
 
+const {getReportLink} = require('./artifacts');
+
 function analyzeFlakyTests() {
     const os = process.platform;
     try {
@@ -29,7 +31,7 @@ function analyzeFlakyTests() {
 
         const commentBody = generateCommentBodyFunctionalTest(newFailedTests, fixedTests);
 
-        return {commentBody, newFailedTests, os};
+        return {commentBody, newFailedTests, os, getReportLink};
     } catch (error) {
         console.error('Error analyzing failures:', error);
         return {};

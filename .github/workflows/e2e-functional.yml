@@ -19,7 +19,51 @@ on:
         options: [linux, macos, windows, all]
 
 jobs:
+  update-initial-status-linux:
+    runs-on: ubuntu-22.04
+    if: contains(github.event.label.name, 'Run Desktop E2E Tests')
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          context: e2e/linux
+          description: E2E tests for Mattermost desktop app on Linux have started...
+          status: pending
+
+  update-initial-status-macos:
+    runs-on: ubuntu-22.04
+    if: contains(github.event.label.name, 'Run Desktop E2E Tests')
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          context: e2e/macOS
+          description: E2E tests for Mattermost desktop app on macOS have started...
+          status: pending
+
+  update-initial-status-windows:
+    runs-on: ubuntu-22.04
+    if: contains(github.event.label.name, 'Run Desktop E2E Tests')
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          context: e2e/windows
+          description: E2E tests for Mattermost desktop app on Windows have started...
+          status: pending
+
   determine-platforms:
+    if: contains(github.event.label.name, 'Run Desktop E2E Tests')
+    needs: [update-initial-status-linux, update-initial-status-macos, update-initial-status-windows]
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.set-matrix.outputs.platforms }}
@@ -54,35 +98,59 @@ jobs:
       runs-on: ${{ matrix.os }}
       DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
+  update-final-status-linux:
+    runs-on: ubuntu-22.04
+    needs:
+      - e2e-tests
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          context: e2e/linux
+          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_LINUX }} failures
+          status: ${{ needs.e2e-tests.outputs.STATUS }}
+          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_LINUX }}
+
+  update-final-status-macos:
+    runs-on: ubuntu-22.04
+    needs:
+      - e2e-tests
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          context: e2e/macOS
+          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_MACOS }} failures
+          status: ${{ needs.e2e-tests.outputs.STATUS }}
+          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_MACOS }}
+
+  update-final-status-windows:
+    runs-on: ubuntu-22.04
+    needs:
+      - e2e-tests
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          context: e2e/windows
+          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }} failures
+          status: ${{ needs.e2e-tests.outputs.STATUS }}
+          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_LINUX }}
+
   e2e-remove-label:
     if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
     needs: e2e-tests
     runs-on: ubuntu-22.04
-    env:
-      COMMENT_BODY_LINUX: "${{ needs.e2e-tests.outputs.COMMENT_BODY_LINUX }}"
-      COMMENT_BODY_MACOS: "${{ needs.e2e-tests.outputs.COMMENT_BODY_MACOS }}"
-      COMMENT_BODY_WINDOWS: "${{ needs.e2e-tests.outputs.COMMENT_BODY_WINDOWS }}"
     steps:
-      - name: e2e/unify-comments-in-single-comment
-        run: |
-          echo "PR_COMMENT<<EOF" >> "${GITHUB_ENV}"
-          echo "Here are the test results below:" >> "${GITHUB_ENV}"
-          echo "$COMMENT_BODY_LINUX" >> "${GITHUB_ENV}"
-          echo "$COMMENT_BODY_MACOS" >> "${GITHUB_ENV}"
-          echo "$COMMENT_BODY_WINDOWS" >> "${GITHUB_ENV}"
-          echo "EOF" >> "${GITHUB_ENV}"
-
-      - name: e2e/send-comment-results-in-pr
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: process.env.PR_COMMENT,
-            });
-
       - name: Remove E2E test label
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         continue-on-error: true # Label might have been removed manually

@@ -45,15 +45,27 @@ on:
         required: false
         default: "9.9.1"
     outputs:
-      COMMENT_BODY_LINUX:
+      NEW_FAILURES_LINUX:
         description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.COMMENT_BODY_LINUX }}
-      COMMENT_BODY_MACOS:
+        value: ${{ jobs.e2e.outputs.NEW_FAILURES_LINUX }}
+      NEW_FAILURES_MACOS:
         description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.COMMENT_BODY_MACOS }}
-      COMMENT_BODY_WINDOWS:
+        value: ${{ jobs.e2e.outputs.NEW_FAILURES_MACOS }}
+      NEW_FAILURES_WINDOWS:
         description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.COMMENT_BODY_WINDOWS }}
+        value: ${{ jobs.e2e.outputs.NEW_FAILURES_WINDOWS }}
+      REPORT_LINK_LINUX:
+        description: "Link to Linux report"
+        value: ${{ jobs.e2e.outputs.REPORT_LINK_LINUX }}
+      REPORT_LINK_MACOS:
+        description: "Link to MacOS report"
+        value: ${{ jobs.e2e.outputs.REPORT_LINK_MACOS }}
+      REPORT_LINK_WINDOWS:
+        description: "Link to Windows report"
+        value: ${{ jobs.e2e.outputs.REPORT_LINK_WINDOWS }}
+      STATUS:
+        description: "The status of the test"
+        value: ${{ jobs.e2e.outputs.STATUS }}
 
   workflow_dispatch:
     inputs:
@@ -122,9 +134,13 @@ jobs:
       run:
         shell: bash
     outputs:
-      COMMENT_BODY_LINUX: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_LINUX }}
-      COMMENT_BODY_MACOS: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_MACOS }}
-      COMMENT_BODY_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY_WINDOWS }}
+      NEW_FAILURES_LINUX: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_LINUX }}
+      NEW_FAILURES_MACOS: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_MACOS }}
+      NEW_FAILURES_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_WINDOWS }}
+      REPORT_LINK_LINUX: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_LINUX }}
+      REPORT_LINK_MACOS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_MACOS }}
+      REPORT_LINK_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_WINDOWS }}
+      STATUS: ${{ steps.analyze-flaky-tests.outputs.STATUS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -227,26 +243,26 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { commentBody, newFailedTests, os } = analyzeFlakyTests();
+            const { newFailedTests, os, getReportLink } = analyzeFlakyTests();
 
             switch (os) {
               case 'linux':
-                core.setOutput('COMMENT_BODY_LINUX', commentBody);
+                core.setOutput('NEW_FAILURES_LINUX', newFailedTests.length);
+                core.setOutput('REPORT_LINK_LINUX', getReportLink());
                 break;
               case 'darwin':
-                core.setOutput('COMMENT_BODY_MACOS', commentBody);
+                core.setOutput('NEW_FAILURES_MACOS', newFailedTests.length);
+                core.setOutput('REPORT_LINK_MACOS', getReportLink());
                 break;
               case 'win32':
-                core.setOutput('COMMENT_BODY_WINDOWS', commentBody);
+                core.setOutput('NEW_FAILURES_WINDOWS', newFailedTests.length);
+                core.setOutput('REPORT_LINK_WINDOWS', getReportLink());
                 break;
               default:
                 throw new Error(`Unsupported OS: ${os}`);
             }
-            console.log(`Comment body for ${os}: ${commentBody}`);
 
-            if (newFailedTests.length > 0) {
-              core.setFailed('E2E tests failed.');
-            }
+            newFailedTests.length > 0 ? core.setOutput('STATUS', 'failure') : core.setOutput('STATUS', 'success');
 
       - name: Upload test results
         if: always()
