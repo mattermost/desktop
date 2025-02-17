@@ -28,6 +28,7 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 
 const generator = require('mochawesome-report-generator');
 
@@ -79,6 +80,8 @@ const saveReport = async () => {
     const result = await saveArtifacts();
     if (result && result.success) {
         console.log('Successfully uploaded artifacts to S3:', result.reportLink);
+        // save the report link to a file For CI to use
+        fs.writeFileSync("report-link.txt", result.reportLink);
     }
 
     // Create or use an existing test cycle
@@ -98,8 +101,6 @@ const saveReport = async () => {
     if (ZEPHYR_ENABLE === 'true') {
         await createTestExecutions(jsonReport, testCycle);
     }
-
-    // chai.expect(Boolean(jsonReport.stats.failures), FAILURE_MESSAGE).to.be.false;
 };
 
 saveReport();

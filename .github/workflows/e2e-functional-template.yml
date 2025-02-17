@@ -236,6 +236,9 @@ jobs:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
+      - name: Capture Report Link
+        run: echo "REPORT_LINK=$(cat e2e/report-link.txt)" >> $GITHUB_ENV
+
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
@@ -243,20 +246,20 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { newFailedTests, os, getReportLink } = analyzeFlakyTests();
+            const { newFailedTests, os } = analyzeFlakyTests();
 
             switch (os) {
               case 'linux':
                 core.setOutput('NEW_FAILURES_LINUX', newFailedTests.length);
-                core.setOutput('REPORT_LINK_LINUX', getReportLink());
+                core.setOutput('REPORT_LINK_LINUX', ${{ env.REPORT_LINK}});
                 break;
               case 'darwin':
                 core.setOutput('NEW_FAILURES_MACOS', newFailedTests.length);
-                core.setOutput('REPORT_LINK_MACOS', getReportLink());
+                core.setOutput('REPORT_LINK_MACOS', ${{ env.REPORT_LINK}});
                 break;
               case 'win32':
                 core.setOutput('NEW_FAILURES_WINDOWS', newFailedTests.length);
-                core.setOutput('REPORT_LINK_WINDOWS', getReportLink());
+                core.setOutput('REPORT_LINK_WINDOWS', ${{ env.REPORT_LINK}});
                 break;
               default:
                 throw new Error(`Unsupported OS: ${os}`);

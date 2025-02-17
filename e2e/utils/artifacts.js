@@ -34,14 +34,6 @@ const s3 = new S3({
 
 let reportLink;
 
-export function setReportLink(link) {
-    reportLink = link;
-}
-
-export function getReportLink() {
-    return reportLink;
-}
-
 function getFiles(dirPath) {
     return fs.existsSync(dirPath) ? readdir(dirPath) : [];
 }
@@ -88,8 +80,7 @@ async function saveArtifacts() {
                     return reject(new Error(err));
                 }
 
-                reportLink = `https://${AWS_S3_BUCKET}.s3.amazonaws.com/${s3Folder}/mochawesome.html`;
-                setReportLink(reportLink);
+                const reportLink = `https://${AWS_S3_BUCKET}.s3.amazonaws.com/${s3Folder}/mochawesome.html`;
                 resolve({success: true, reportLink});
             },
         );

@@ -3,14 +3,13 @@
 /* eslint-disable no-console */
 const path = require('path');
 
+const {getReportLink} = require('./artifacts');
 const {MOCHAWESOME_REPORT_DIR} = require('./constants');
 const knownFlakyTests = require('./known_flaky_tests.json');
 const {
     generateShortSummary,
     readJsonFromFile,
 } = require('./report');
-
-const {getReportLink} = require('./artifacts');
 
 function analyzeFlakyTests() {
     const os = process.platform;
