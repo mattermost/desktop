@@ -27,8 +27,8 @@
  *      - TYPE=[type], e.g. "MASTER", "PR", "RELEASE", "CLOUD"
  */
 
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
 const generator = require('mochawesome-report-generator');
 
@@ -80,8 +80,9 @@ const saveReport = async () => {
     const result = await saveArtifacts();
     if (result && result.success) {
         console.log('Successfully uploaded artifacts to S3:', result.reportLink);
+
         // save the report link to a file For CI to use
-        fs.writeFileSync("report-link.txt", result.reportLink);
+        fs.writeFileSync('report-link.txt', result.reportLink);
     }
 
     // Create or use an existing test cycle

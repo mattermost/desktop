@@ -251,15 +251,15 @@ jobs:
             switch (os) {
               case 'linux':
                 core.setOutput('NEW_FAILURES_LINUX', newFailedTests.length);
-                core.setOutput('REPORT_LINK_LINUX', ${{ env.REPORT_LINK}});
+                core.setOutput('REPORT_LINK_LINUX', "${{ env.REPORT_LINK}}");
                 break;
               case 'darwin':
                 core.setOutput('NEW_FAILURES_MACOS', newFailedTests.length);
-                core.setOutput('REPORT_LINK_MACOS', ${{ env.REPORT_LINK}});
+                core.setOutput('REPORT_LINK_MACOS', "${{ env.REPORT_LINK}}");
                 break;
               case 'win32':
                 core.setOutput('NEW_FAILURES_WINDOWS', newFailedTests.length);
-                core.setOutput('REPORT_LINK_WINDOWS', ${{ env.REPORT_LINK}});
+                core.setOutput('REPORT_LINK_WINDOWS', "${{ env.REPORT_LINK}}");
                 break;
               default:
                 throw new Error(`Unsupported OS: ${os}`);

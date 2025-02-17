@@ -32,8 +32,6 @@ const s3 = new S3({
     },
 });
 
-let reportLink;
-
 function getFiles(dirPath) {
     return fs.existsSync(dirPath) ? readdir(dirPath) : [];
 }
