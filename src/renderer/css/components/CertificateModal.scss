@@ -1,8 +1,8 @@
 @use "../css_variables";
 
 .Modal .CertificateModal {
-    width: 600px;
-    max-width: 600px;
+    width: 832px;
+    max-width: 832px;
 }
 
 .CertificateModal_certInfoButton {
@@ -14,6 +14,7 @@
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
     border-radius: var(--radius-s);
     border-spacing: 0;
+    width: 100%;
 
     th, td {
         padding: 10px 12px;
@@ -43,7 +44,7 @@
         }
 
         &.selected {
-            background-color: rgba(var(--center-channel-color-rgb), 0.25);
+            background-color: rgba(var(--button-bg-rgb), 0.12);
         }
     }
 }

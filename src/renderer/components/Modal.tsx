@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import classNames from 'classnames';
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import 'renderer/css/components/Modal.scss';
@@ -41,42 +41,73 @@ export type Props = {
     headerButton?: React.ReactNode;
 };
 
-export const Modal: React.FC<Props> = (props) => {
-    const [show, setShow] = useState<boolean>();
+export const Modal: React.FC<Props> = ({
+    id = 'modal',
+    children,
+    onExited,
+    className,
+    modalHeaderText,
+    modalSubheaderText,
+    show = true,
+    handleCancel,
+    handleConfirm,
+    handleEnterKeyPress,
+    handleKeydown,
+    confirmButtonText,
+    confirmButtonClassName,
+    cancelButtonText,
+    cancelButtonClassName,
+    isConfirmDisabled,
+    isDeleteModal,
+    autoCloseOnCancelButton = true,
+    autoCloseOnConfirmButton = true,
+    ariaLabel,
+    errorText,
+    tabIndex,
+    autoFocusConfirmButton,
+    headerInput,
+    bodyPadding = true,
+    bodyDivider,
+    footerContent,
+    footerDivider,
+    appendedContent,
+    headerButton,
+}) => {
+    const [showState, setShowState] = useState<boolean>();
     const backdropRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        setShow(props.show ?? true);
-    }, [props.show]);
+        setShowState(show ?? true);
+    }, [show]);
 
     const onHide = () => {
         return new Promise<void>((resolve) => {
             backdropRef.current?.addEventListener('transitionend', () => {
                 resolve();
             }, {once: true});
-            setShow(false);
+            setShowState(false);
         });
     };
 
-    const onClose = async () => {
+    const onClose = useCallback(async () => {
         await onHide();
-        props.onExited();
-    };
+        onExited();
+    }, [onExited]);
 
-    const handleCancel = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const handleCancelClick = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
-        if (props.autoCloseOnCancelButton) {
+        if (autoCloseOnCancelButton) {
             await onHide();
         }
-        props.handleCancel?.();
+        handleCancel?.();
     };
 
-    const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const handleConfirmClick = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
-        if (props.autoCloseOnConfirmButton) {
+        if (autoCloseOnConfirmButton) {
             await onHide();
         }
-        props.handleConfirm?.();
+        handleConfirm?.();
     };
 
     const onEnterKeyDown = async (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -84,78 +115,78 @@ export const Modal: React.FC<Props> = (props) => {
             if (event.nativeEvent.isComposing) {
                 return;
             }
-            if (props.autoCloseOnConfirmButton) {
+            if (autoCloseOnConfirmButton) {
                 await onHide();
             }
-            if (props.handleEnterKeyPress) {
-                props.handleEnterKeyPress();
+            if (handleEnterKeyPress) {
+                handleEnterKeyPress();
             }
         }
-        props.handleKeydown?.(event);
+        handleKeydown?.(event);
     };
 
     let confirmButton;
-    if (props.handleConfirm) {
-        const isConfirmOrDeleteClassName = props.isDeleteModal ? 'delete' : 'confirm';
-        let confirmButtonText: React.ReactNode = (
+    if (handleConfirm) {
+        const isConfirmOrDeleteClassName = isDeleteModal ? 'delete' : 'confirm';
+        let confirmButtonTextNode: React.ReactNode = (
             <FormattedMessage
                 id='modal.confirm'
                 defaultMessage='Confirm'
             />
         );
-        if (props.confirmButtonText) {
-            confirmButtonText = props.confirmButtonText;
+        if (confirmButtonText) {
+            confirmButtonTextNode = confirmButtonText;
         }
 
         confirmButton = (
             <button
-                id={`${props.id}_confirm`}
-                autoFocus={props.autoFocusConfirmButton}
+                id={`${id}_confirm`}
+                autoFocus={autoFocusConfirmButton}
                 type='submit'
-                className={classNames('Modal__button btn btn-primary', isConfirmOrDeleteClassName, props.confirmButtonClassName, {
-                    disabled: props.isConfirmDisabled,
+                className={classNames('Modal__button btn btn-primary', isConfirmOrDeleteClassName, confirmButtonClassName, {
+                    disabled: isConfirmDisabled,
                 })}
-                onClick={handleConfirm}
-                disabled={props.isConfirmDisabled}
+                onClick={handleConfirmClick}
+                disabled={isConfirmDisabled}
             >
-                {confirmButtonText}
+                {confirmButtonTextNode}
             </button>
         );
     }
 
     let cancelButton;
-    if (props.handleCancel) {
-        let cancelButtonText: React.ReactNode = (
+    if (handleCancel) {
+        let cancelButtonTextNode: React.ReactNode = (
             <FormattedMessage
                 id='modal.cancel'
                 defaultMessage='Cancel'
             />
         );
-        if (props.cancelButtonText) {
-            cancelButtonText = props.cancelButtonText;
+        if (cancelButtonText) {
+            cancelButtonTextNode = cancelButtonText;
         }
 
         cancelButton = (
             <button
-                id={`${props.id}_cancel`}
+                id={`${id}_cancel`}
                 type='button'
-                className={classNames('Modal__button btn btn-tertiary', props.cancelButtonClassName)}
-                onClick={handleCancel}
+                className={classNames('Modal__button btn btn-tertiary', cancelButtonClassName)}
+                onClick={handleCancelClick}
             >
-                {cancelButtonText}
+                {cancelButtonTextNode}
             </button>
         );
     }
 
-    const headerText = props.modalHeaderText && (
+    const headerText = modalHeaderText && (
         <div className='Modal__header'>
             <h1
                 id='modalLabel'
                 className='Modal_title'
             >
-                {props.modalHeaderText}
+                {modalHeaderText}
             </h1>
-            {props.headerButton}
+            {headerButton}
         </div>
     );
 
@@ -163,41 +194,41 @@ export const Modal: React.FC<Props> = (props) => {
         <>
             <div
                 ref={backdropRef}
-                className={classNames('Modal_backdrop fade', {show})}
+                className={classNames('Modal_backdrop fade', {show: showState})}
             />
             <div
                 role='dialog'
-                className={classNames('Modal fade', {show})}
+                className={classNames('Modal fade', {show: showState})}
                 onClick={onClose}
             >
                 <div
-                    id={props.id}
+                    id={id}
                     role='dialog'
-                    aria-label={props.ariaLabel}
-                    aria-labelledby={props.ariaLabel ? undefined : 'modalLabel'}
+                    aria-label={ariaLabel}
+                    aria-labelledby={ariaLabel ? undefined : 'modalLabel'}
                     className={classNames(
                         'Modal_dialog Modal__compassDesign',
-                        props.className,
+                        className,
                     )}
-                    onClick={(event) => event.stopPropagation()}
+                    onClick={useCallback((event) => event.stopPropagation(), [])}
                 >
                     <div
                         onKeyDown={onEnterKeyDown}
-                        tabIndex={props.tabIndex || 0}
+                        tabIndex={tabIndex || 0}
                         className='Modal_content'
                     >
                         <div className='Modal_header'>
                             <div className='Modal__header__text_container'>
                                 {headerText}
-                                {props.headerInput}
+                                {headerInput}
                                 {
-                                    props.modalSubheaderText &&
+                                    modalSubheaderText &&
                                     <div className='Modal_subheading-container'>
                                         <p
                                             id='Modal_subHeading'
                                             className='Modal_subheading'
                                         >
-                                            {props.modalSubheaderText}
+                                            {modalSubheaderText}
                                         </p>
                                     </div>
                                 }
@@ -211,41 +242,33 @@ export const Modal: React.FC<Props> = (props) => {
                                 <span className='sr-only'>{'Close'}</span>
                             </button>
                         </div>
-                        <div className={classNames('Modal_body', {divider: props.bodyDivider})}>
-                            {props.errorText && (
+                        <div className={classNames('Modal_body', {divider: bodyDivider})}>
+                            {errorText && (
                                 <div className='Modal_error'>
                                     <i className='icon icon-alert-outline'/>
-                                    <span>{props.errorText}</span>
+                                    <span>{errorText}</span>
                                 </div>
                             )}
-                            <div className={classNames('Modal__body', {padding: props.bodyPadding})}>
-                                {props.children}
+                            <div className={classNames('Modal__body', {padding: bodyPadding})}>
+                                {children}
                             </div>
                         </div>
-                        {(cancelButton || confirmButton || props.footerContent) && (
-                            <div className={classNames('Modal_footer', {divider: props.footerDivider})}>
+                        {(cancelButton || confirmButton || footerContent) && (
+                            <div className={classNames('Modal_footer', {divider: footerDivider})}>
                                 {(cancelButton || confirmButton) ? (
                                     <>
                                         {cancelButton}
                                         {confirmButton}
                                     </>
                                 ) : (
-                                    props.footerContent
+                                    footerContent
                                 )}
                             </div>
                         )}
-                        {Boolean(props.appendedContent) && props.appendedContent}
+                        {Boolean(appendedContent) && appendedContent}
                     </div>
                 </div>
             </div>
         </>
     );
-};
-
-Modal.defaultProps = {
-    show: true,
-    id: 'modal',
-    autoCloseOnCancelButton: true,
-    autoCloseOnConfirmButton: true,
-    bodyPadding: true,
 };
