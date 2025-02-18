@@ -163,6 +163,7 @@ export default function SettingsModal({
                 <div className='SettingsModal__sidebar'>
                     {Object.entries(definition).map(([id, category]) => (
                         <button
+                            id={`settingCategoryButton-${id}`}
                             key={id}
                             className={classNames('SettingsModal__category', {selected: id === selectedCategory})}
                             onClick={() => setSelectedCategory(id)}

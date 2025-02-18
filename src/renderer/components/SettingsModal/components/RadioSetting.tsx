@@ -31,6 +31,7 @@ export default function RadioSetting({
             <div className='RadioSetting__content'>
                 {options.map((option, index) => (
                     <button
+                        id={`RadioSetting_${id}_${option.value}`}
                         className='RadioSetting__radio'
                         key={index}
                         onClick={() => save(option.value)}

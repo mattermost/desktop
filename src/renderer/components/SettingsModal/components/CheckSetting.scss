@@ -17,6 +17,11 @@
             width: 16px;
             height: 16px;
             margin-top: 2px;
+
+            input {
+                appearance: none;
+                position: absolute;
+            }
             
             > i {
                 display: block;

@@ -28,13 +28,23 @@ export default function CheckSetting({
     };
 
     return (
-        <div className='CheckSetting'>
+        <div
+            id={`CheckSetting_${id}`}
+            className='CheckSetting'
+        >
             {heading && <div className='CheckSetting__heading'>{heading}</div>}
             <div className='CheckSetting__content'>
                 <button
                     className={classNames('CheckSetting__checkbox', {checked: value})}
                     onClick={save}
                 >
+                    <input
+                        id={`checkSetting-${id}`}
+                        defaultChecked={value}
+                        type='checkbox'
+                        tabIndex={-1}
+                        disabled={true}
+                    />
                     <i className='icon-check'/>
                 </button>
                 <div className='CheckSetting__label'>
