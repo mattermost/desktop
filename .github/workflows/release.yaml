@@ -19,14 +19,14 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: release/checkout-repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: release/fetch-version
         id: calc
         run: echo "VERSION=$(jq -r .version package.json)" >> ${GITHUB_OUTPUT}
 
       - name: release/notify-channel
-        uses: mattermost/action-mattermost-notify@60f5da6e1796b033cf5a038b57031fa011962e27
+        uses: mattermost/action-mattermost-notify@d317daebed2a792679f68fd0248557a8d21d82b6
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }}
           MATTERMOST_USERNAME: MattermostRelease
@@ -40,9 +40,9 @@ jobs:
       - begin-notification
     steps:
       - name: release/checkout-repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: release/setup-node
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
         with:
           node-version-file: "package.json"
           cache: "npm"
@@ -64,7 +64,7 @@ jobs:
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: release/upload-build
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: build-${{ runner.os }}
           path: ./build
@@ -77,9 +77,9 @@ jobs:
       - begin-notification
     steps:
       - name: release/checkout-repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: release/setup-node
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
         with:
           node-version-file: "package.json"
           cache: "npm"
@@ -111,7 +111,7 @@ jobs:
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: release/upload-build
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: build-${{ runner.os }}
           path: ./build
@@ -124,9 +124,9 @@ jobs:
       - begin-notification
     steps:
       - name: release/checkout-repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: release/setup-node
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
         with:
           node-version-file: "package.json"
           cache: "npm"
@@ -160,7 +160,7 @@ jobs:
       - name: release/rename-arm64-to-m1
         run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
       - name: release/upload-build
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: build-${{ runner.os }}
           path: ./build
@@ -175,14 +175,14 @@ jobs:
       - build-linux
     steps:
       - name: release/setup-aws-credentials
-        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
         with:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.MM_DESKTOP_RELEASE_AWS_SECRET_ACCESS_KEY }}
 
       - name: release/download-builds
-        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           path: build
           pattern: build-*
@@ -201,10 +201,10 @@ jobs:
       - upload-to-s3
     steps:
       - name: release/checkout-repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: release/download-builds
-        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           path: build
           pattern: build-*
@@ -231,7 +231,7 @@ jobs:
       - github-release
     steps:
       - name: release/checkout-repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
@@ -243,7 +243,7 @@ jobs:
           echo "EOF" >> "${GITHUB_OUTPUT}"
 
       - name: release/notify-channel
-        uses: mattermost/action-mattermost-notify@60f5da6e1796b033cf5a038b57031fa011962e27
+        uses: mattermost/action-mattermost-notify@d317daebed2a792679f68fd0248557a8d21d82b6
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }}
           MATTERMOST_USERNAME: MattermostRelease
