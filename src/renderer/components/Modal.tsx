@@ -78,9 +78,7 @@ export const Modal: React.FC<Props> = (props) => {
         if (props.autoCloseOnConfirmButton) {
             await onHide();
         }
-        if (props.handleConfirm) {
-            props.handleConfirm();
-        }
+        props.handleConfirm?.();
     };
 
     const onEnterKeyDown = async (event: React.KeyboardEvent<HTMLDivElement>) => {
