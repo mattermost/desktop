@@ -1,18 +1,21 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import classNames from 'classnames';
 import type {Certificate} from 'electron/renderer';
 import React, {Fragment} from 'react';
-import {Modal, Button, Table, Row, Col} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
+import {Modal} from 'renderer/components/Modal';
 import IntlProvider from 'renderer/intl_provider';
 
 import ShowCertificateModal from '../../components/showCertificateModal';
 
+import 'renderer/css/components/CertificateModal.scss';
+
 type Props = {
     onSelect: (cert: Certificate) => void;
-    onCancel?: () => void;
+    onCancel: () => void;
     getCertInfo: () => Promise<{url: string; list: Certificate[]}>;
 }
 
@@ -117,107 +120,99 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
             );
         }
 
+        const footerContent = (
+            <>
+                <button
+                    type='button'
+                    disabled={this.state.selectedIndex === undefined}
+                    onClick={this.handleCertificateInfo}
+                    className={classNames('Modal__button btn btn-tertiary CertificateModal_certInfoButton', {
+                        disabled: this.state.selectedIndex === undefined,
+                    })}
+                >
+                    <FormattedMessage
+                        id='renderer.modals.certificate.certificateModal.certInfoButton'
+                        defaultMessage='Certificate Information'
+                    />
+                </button>
+                <button
+                    type='button'
+                    className={classNames('Modal__button btn btn-tertiary')}
+                    onClick={this.props.onCancel}
+                >
+                    <FormattedMessage
+                        id='modal.cancel'
+                        defaultMessage='Cancel'
+                    />
+                </button>
+                <button
+                    type='submit'
+                    className={classNames('Modal__button btn btn-primary confirm', {
+                        disabled: this.state.selectedIndex === undefined,
+                    })}
+                    onClick={this.handleOk}
+                    disabled={this.state.selectedIndex === undefined}
+                >
+                    <FormattedMessage
+                        id='modal.confirm'
+                        defaultMessage='Confirm'
+                    />
+                </button>
+            </>
+        );
+
         return (
             <IntlProvider>
                 <Modal
-                    bsClass='modal'
-                    className='certificate-modal'
+                    id='selectCertificateModal'
+                    className='CertificateModal'
                     show={Boolean(this.state.list && this.state.url)}
-                    onHide={() => {}}
+                    onExited={this.props.onCancel}
+                    modalHeaderText={
+                        <FormattedMessage
+                            id='renderer.modals.certificate.certificateModal.title'
+                            defaultMessage='Select a certificate'
+                        />
+                    }
+                    modalSubheaderText={
+                        <FormattedMessage
+                            id='renderer.modals.certificate.certificateModal.subtitle'
+                            defaultMessage='Select a certificate to authenticate yourself to {url}'
+                            values={{url: this.state.url}}
+                        />
+                    }
+                    footerContent={footerContent}
                 >
-                    <Modal.Header>
-                        <Modal.Title>
-                            <FormattedMessage
-                                id='renderer.modals.certificate.certificateModal.title'
-                                defaultMessage='Select a certificate'
-                            />
-                        </Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <p className={'subtitle'}>
-                            <FormattedMessage
-                                id='renderer.modals.certificate.certificateModal.subtitle'
-                                defaultMessage='Select a certificate to authenticate yourself to {url}'
-                                values={{url: this.state.url}}
-                            />
-                        </p>
-                        <Table
-                            striped={true}
-                            hover={true}
-                            responsive={true}
-                            className='certificate-list'
-                            tabIndex={1}
-                        >
-                            <thead>
-                                <tr>
-                                    <th><span className={'divider'}>
-                                        <FormattedMessage
-                                            id='renderer.modals.certificate.certificateModal.subject'
-                                            defaultMessage='Subject'
-                                        />
-                                    </span></th>
-                                    <th><span className={'divider'}>
-                                        <FormattedMessage
-                                            id='renderer.modals.certificate.certificateModal.issuer'
-                                            defaultMessage='Issuer'
-                                        />
-                                    </span></th>
-                                    <th>
-                                        <FormattedMessage
-                                            id='renderer.modals.certificate.certificateModal.serial'
-                                            defaultMessage='Serial'
-                                        />
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {this.renderCerts(this.state.list!)}
-                                <tr/* this is to correct table height without affecting real rows *//>
-                            </tbody>
-                        </Table>
-                    </Modal.Body>
-                    <Modal.Footer className={'no-border'}>
-                        <div className={'container-fluid'}>
-                            <Row>
-                                <Col sm={4}>
-                                    <Button
-                                        variant='info'
-                                        disabled={this.state.selectedIndex === null}
-                                        onClick={this.handleCertificateInfo}
-                                        className={'info'}
-                                    >
-                                        <FormattedMessage
-                                            id='renderer.modals.certificate.certificateModal.certInfoButton'
-                                            defaultMessage='Certificate Information'
-                                        />
-                                    </Button>
-                                </Col>
-                                <Col sm={8}>
-                                    <Button
-                                        variant='link'
-                                        onClick={this.props.onCancel}
-                                        className={'secondary'}
-                                    >
-                                        <FormattedMessage
-                                            id='label.cancel'
-                                            defaultMessage='Cancel'
-                                        />
-                                    </Button>
-                                    <Button
-                                        variant='primary'
-                                        onClick={this.handleOk}
-                                        disabled={this.state.selectedIndex === null}
-                                        className={'primary'}
-                                    >
-                                        <FormattedMessage
-                                            id='label.ok'
-                                            defaultMessage='OK'
-                                        />
-                                    </Button>
-                                </Col>
-                            </Row>
-                        </div>
-                    </Modal.Footer>
+                    <table
+                        className='CertificateModal_list'
+                        tabIndex={1}
+                    >
+                        <thead>
+                            <tr>
+                                <th><span className={'divider'}>
+                                    <FormattedMessage
+                                        id='renderer.modals.certificate.certificateModal.subject'
+                                        defaultMessage='Subject'
+                                    />
+                                </span></th>
+                                <th><span className={'divider'}>
+                                    <FormattedMessage
+                                        id='renderer.modals.certificate.certificateModal.issuer'
+                                        defaultMessage='Issuer'
+                                    />
+                                </span></th>
+                                <th>
+                                    <FormattedMessage
+                                        id='renderer.modals.certificate.certificateModal.serial'
+                                        defaultMessage='Serial'
+                                    />
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {this.renderCerts(this.state.list!)}
+                        </tbody>
+                    </table>
                 </Modal>
             </IntlProvider>
         );
