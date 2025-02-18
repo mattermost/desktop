@@ -68,9 +68,7 @@ export const Modal: React.FC<Props> = (props) => {
         if (props.autoCloseOnCancelButton) {
             await onHide();
         }
-        if (props.handleCancel) {
-            props.handleCancel();
-        }
+        props.handleCancel?.();
     };
 
     const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
