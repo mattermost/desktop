@@ -39,6 +39,7 @@ export type Props = {
     footerDivider?: boolean;
     appendedContent?: React.ReactNode;
     headerButton?: React.ReactNode;
+    headerContent?: React.ReactNode;
 };
 
 export const Modal: React.FC<Props> = ({
@@ -72,6 +73,7 @@ export const Modal: React.FC<Props> = ({
     footerDivider,
     appendedContent,
     headerButton,
+    headerContent,
 }) => {
     const [showState, setShowState] = useState<boolean>();
     const backdropRef = useRef<HTMLDivElement>(null);
@@ -233,6 +235,7 @@ export const Modal: React.FC<Props> = ({
                                     </div>
                                 }
                             </div>
+                            {headerContent}
                             <button
                                 type='button'
                                 className='close'
