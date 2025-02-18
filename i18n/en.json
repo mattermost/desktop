@@ -210,6 +210,7 @@
   "renderer.components.settingsPage.afterRestart": "Setting takes effect after restarting the app.",
   "renderer.components.settingsPage.appLanguage": "App Language",
   "renderer.components.settingsPage.appLanguage.description": "The language that the Desktop App will use for menu items and popups. Still in beta, some languages will be missing translation strings.",
+  "renderer.components.settingsPage.appLanguage.placeholder": "Use system default",
   "renderer.components.settingsPage.bounceIcon.never": "Never",
   "renderer.components.settingsPage.bounceIcon.once": "Once",
   "renderer.components.settingsPage.bounceIcon.untilOpenApp": "Until I open the app",
