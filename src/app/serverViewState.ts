@@ -447,7 +447,16 @@ export class ServerViewState {
     private handleRemoveServer = (event: IpcMainEvent, serverId: string) => {
         log.debug('handleRemoveServer', serverId);
 
+        const remainingServers = ServerManager.getOrderedServers().filter((orderedServer) => serverId !== orderedServer.id);
+        if (this.currentServerId === serverId && remainingServers.length) {
+            this.currentServerId = remainingServers[0].id;
+        }
+
         ServerManager.removeServer(serverId);
+
+        if (!remainingServers.length) {
+            delete this.currentServerId;
+        }
     };
 }
 
