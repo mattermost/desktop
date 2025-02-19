@@ -44,8 +44,8 @@ describe('Settings', function desc() {
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-general');
                 await settingsWindow.click('#settingCategoryButton-general');
-                await settingsWindow.waitForSelector('#CheckSetting_autoStart', {state: expected ? 'attached' : 'detached'});
-                const existing = await settingsWindow.isVisible('#CheckSetting_autoStart');
+                await settingsWindow.waitForSelector('#CheckSetting_autostart', {state: expected ? 'attached' : 'detached'});
+                const existing = await settingsWindow.isVisible('#CheckSetting_autostart');
                 existing.should.equal(expected);
             });
         });
@@ -102,7 +102,7 @@ describe('Settings', function desc() {
                     });
                     await settingsWindow.waitForSelector('#settingCategoryButton-general');
                     await settingsWindow.click('#settingCategoryButton-general');
-                    await settingsWindow.click('#CheckSetting_showTrayIcon');
+                    await settingsWindow.click('#CheckSetting_showTrayIcon button');
                     await settingsWindow.click('#RadioSetting_trayIconTheme_dark');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
@@ -110,6 +110,7 @@ describe('Settings', function desc() {
                     const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config0.trayIconTheme.should.equal('dark');
 
+                    await settingsWindow.waitForSelector('.SettingsModal__saving', {state: 'detached'});
                     await settingsWindow.click('#RadioSetting_trayIconTheme_light');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
@@ -238,14 +239,14 @@ describe('Settings', function desc() {
                     selected.should.equal(true); // default is true
 
                     await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
-                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
-                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
                     const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config0.autoCheckForUpdates.should.equal(false);
 
                     await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
-                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
-                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
                     const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config1.autoCheckForUpdates.should.equal(true);
                 });
