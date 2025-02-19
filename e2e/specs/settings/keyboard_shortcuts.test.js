@@ -29,9 +29,10 @@ describe('settings/keyboard_shortcuts', function desc() {
         settingsWindow = await this.app.waitForEvent('window', {
             predicate: (window) => window.url().includes('settings'),
         });
-        await settingsWindow.waitForSelector('.settingsPage.container');
+        await settingsWindow.waitForSelector('#settingCategoryButton-language');
+        await settingsWindow.click('#settingCategoryButton-language');
 
-        const textbox = await settingsWindow.waitForSelector('#inputSpellCheckerLocalesDropdown');
+        const textbox = await settingsWindow.waitForSelector('#selectSetting_spellCheckerLocales');
         await textbox.scrollIntoViewIfNeeded();
     });
 
@@ -45,22 +46,22 @@ describe('settings/keyboard_shortcuts', function desc() {
     describe('MM-T1288 Manipulating Text', () => {
         it('MM-T1288_1 should be able to select and deselect language in the settings window', async () => {
             let textboxString;
-            await settingsWindow.click('#inputSpellCheckerLocalesDropdown');
-            await settingsWindow.type('#inputSpellCheckerLocalesDropdown', 'Afrikaans');
+            await settingsWindow.click('#selectSetting_spellCheckerLocales');
+            await settingsWindow.type('#selectSetting_spellCheckerLocales', 'Afrikaans');
             robot.keyTap('tab');
 
-            await settingsWindow.isVisible('#appOptionsSaveIndicator');
+            await settingsWindow.isVisible('.SettingsModal__saving');
 
-            textboxString = await settingsWindow.innerText('div.SettingsPage__spellCheckerLocalesDropdown__multi-value__label');
+            textboxString = await settingsWindow.innerText('.SpellCheckerSetting .SelectSetting__select__multi-value__label');
             textboxString.should.equal('Afrikaans');
 
-            await settingsWindow.isVisible('#appOptionsSaveIndicator');
+            await settingsWindow.isVisible('.SettingsModal__saving');
 
             await settingsWindow.click('[aria-label="Remove Afrikaans"]');
 
-            await settingsWindow.isVisible('#appOptionsSaveIndicator');
+            await settingsWindow.isVisible('.SettingsModal__saving');
 
-            textboxString = await settingsWindow.inputValue('#inputSpellCheckerLocalesDropdown');
+            textboxString = await settingsWindow.inputValue('#selectSetting_spellCheckerLocales');
             textboxString.should.equal('');
         });
 
@@ -68,7 +69,7 @@ describe('settings/keyboard_shortcuts', function desc() {
             const textToCopy = 'Afrikaans';
             env.clipboard(textToCopy);
 
-            const textbox = await settingsWindow.waitForSelector('#inputSpellCheckerLocalesDropdown');
+            const textbox = await settingsWindow.waitForSelector('#selectSetting_spellCheckerLocales');
 
             await textbox.selectText({force: true});
             robot.keyTap('x', [env.cmdOrCtrl]);
@@ -85,7 +86,7 @@ describe('settings/keyboard_shortcuts', function desc() {
             const textToCopy = 'Afrikaans';
             env.clipboard(textToCopy);
 
-            const textbox = await settingsWindow.waitForSelector('#inputSpellCheckerLocalesDropdown');
+            const textbox = await settingsWindow.waitForSelector('#selectSetting_spellCheckerLocales');
 
             await textbox.selectText({force: true});
             robot.keyTap('c', [env.cmdOrCtrl]);

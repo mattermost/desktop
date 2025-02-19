@@ -1,15 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/index.css';
-import 'renderer/css/settings.css';
-import 'renderer/css/modals-dark.scss';
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import SettingsPage from '../../components/SettingsPage';
+import SettingsModal from '../../components/SettingsModal';
 import IntlProvider from '../../intl_provider';
 import setupDarkMode from '../darkMode';
 
@@ -23,8 +18,7 @@ const start = async () => {
     ReactDOM.render(
         (
             <IntlProvider>
-                <SettingsPage
-                    show={true}
+                <SettingsModal
                     onClose={onClose}
                 />
             </IntlProvider>
