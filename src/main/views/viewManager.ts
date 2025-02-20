@@ -308,6 +308,7 @@ export class ViewManager {
     private showInitial = () => {
         log.verbose('showInitial');
 
+        ServerViewState.init();
         if (ServerManager.hasServers()) {
             const lastActiveServer = ServerViewState.getCurrentServer();
             const lastActiveView = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
