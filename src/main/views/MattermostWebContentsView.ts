@@ -429,22 +429,21 @@ export class MattermostWebContentsView extends EventEmitter {
     private loadSuccess = (loadURL: string) => {
         return () => {
             const serverInfo = ServerManager.getRemoteInfo(this.view.server.id);
-            if (serverInfo?.serverVersion && semver.lt(serverInfo.serverVersion, '9.4.0')) {
+            if (serverInfo?.serverVersion && semver.gte(serverInfo.serverVersion, '9.4.0')) {
+                this.log.verbose(`finished loading ${loadURL}`);
+                MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
+                this.maxRetries = MAX_SERVER_RETRIES;
+                this.status = Status.WAITING_MM;
+                this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
+                this.emit(LOAD_SUCCESS, this.id, loadURL);
+                const mainWindow = MainWindow.get();
+                if (mainWindow && this.currentURL) {
+                    this.setBounds(getWindowBoundaries(mainWindow));
+                }
+            } else {
                 MainWindow.sendToRenderer(LOAD_INCOMPATIBLE_SERVER, this.id, loadURL.toString());
                 this.emit(LOAD_FAILED, this.id, 'Incompatible server version', loadURL.toString());
                 this.status = Status.ERROR;
-                return;
-            }
-
-            this.log.verbose(`finished loading ${loadURL}`);
-            MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
-            this.maxRetries = MAX_SERVER_RETRIES;
-            this.status = Status.WAITING_MM;
-            this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
-            this.emit(LOAD_SUCCESS, this.id, loadURL);
-            const mainWindow = MainWindow.get();
-            if (mainWindow && this.currentURL) {
-                this.setBounds(getWindowBoundaries(mainWindow));
             }
         };
     };
