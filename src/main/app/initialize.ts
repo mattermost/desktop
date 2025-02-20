@@ -308,7 +308,6 @@ async function initializeAfterAppReady() {
     });
 
     ServerManager.reloadFromConfig();
-    updateServerInfos(ServerManager.getAllServers());
     ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
         if (serverIds && serverIds.length) {
             updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));

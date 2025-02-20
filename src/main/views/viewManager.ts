@@ -31,6 +31,7 @@ import {
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
     DEVELOPER_MODE_UPDATED,
+    OPEN_SERVER_UPGRADE_LINK,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -42,7 +43,7 @@ import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
-import {flushCookiesStore} from 'main/app/utils';
+import {flushCookiesStore, updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
 import performanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
@@ -82,6 +83,7 @@ export class ViewManager {
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
         ipcMain.on(TAB_LOGIN_CHANGED, this.handleTabLoginChanged);
         ipcMain.on(OPEN_SERVER_EXTERNALLY, this.handleOpenServerExternally);
+        ipcMain.on(OPEN_SERVER_UPGRADE_LINK, this.handleOpenServerUpgradeLink);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
 
@@ -91,8 +93,11 @@ export class ViewManager {
         DeveloperMode.on(DEVELOPER_MODE_UPDATED, this.handleDeveloperModeUpdated);
     }
 
-    private init = () => {
+    private init = async () => {
         if (ServerManager.hasServers()) {
+            // TODO: This init should be happening elsewhere, future refactor will fix this
+            ServerViewState.init();
+            await updateServerInfos(ServerManager.getAllServers());
             LoadingScreen.show();
             ServerManager.getAllServers().forEach((server) => this.loadServer(server));
             this.showInitial();
@@ -303,8 +308,6 @@ export class ViewManager {
     private showInitial = () => {
         log.verbose('showInitial');
 
-        // TODO: This init should be happening elsewhere, future refactor will fix this
-        ServerViewState.init();
         if (ServerManager.hasServers()) {
             const lastActiveServer = ServerViewState.getCurrentServer();
             const lastActiveView = ServerManager.getLastActiveTabForServer(lastActiveServer.id);
@@ -575,6 +578,12 @@ export class ViewManager {
             return;
         }
         shell.openExternal(view.view.server.url.toString());
+    };
+
+    private handleOpenServerUpgradeLink = () => {
+        if (Config.upgradeLink) {
+            shell.openExternal(Config.upgradeLink);
+        }
     };
 
     private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {
