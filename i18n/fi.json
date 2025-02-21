@@ -98,6 +98,8 @@
   "main.menus.app.view.devToolsSubMenu": "Kehitystyökalut",
   "main.menus.app.view.developerModeBrowserOnly": "Vain selain -tila",
   "main.menus.app.view.developerModeDisableContextMenu": "Poista kontekstivalikko käytöstä",
+  "main.menus.app.view.developerModeDisableNotificationStorage": "Poista ilmoitusten varastointi käytöstä",
+  "main.menus.app.view.developerModeDisableUserActivityMonitor": "Poista käyttäjän aktiivisuuden valvonta käytöstä",
   "main.menus.app.view.downloads": "Lataukset",
   "main.menus.app.view.find": "Etsi...",
   "main.menus.app.view.fullscreen": "Kytke koko näyttö",
