@@ -219,6 +219,9 @@ export class Config extends EventEmitter {
     get academyLink() {
         return this.combinedData?.academyLink;
     }
+    get upgradeLink() {
+        return this.combinedData?.upgradeLink;
+    }
     get minimizeToTray() {
         return this.combinedData?.minimizeToTray;
     }

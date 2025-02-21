@@ -38,6 +38,7 @@ declare global {
             doubleClickOnWindow: (windowName?: string) => void;
             focusCurrentView: () => void;
             openServerExternally: () => void;
+            openServerUpgradeLink: () => void;
             closeDownloadsDropdown: () => void;
             closeDownloadsDropdownMenu: () => void;
             openDownloadsDropdown: () => void;
@@ -72,6 +73,7 @@ declare global {
             onLoadRetry: (listener: (viewId: string, retry: Date, err: string, loadUrl: string) => void) => void;
             onLoadSuccess: (listener: (viewId: string) => void) => void;
             onLoadFailed: (listener: (viewId: string, err: string, loadUrl: string) => void) => void;
+            onLoadIncompatibleServer: (listener: (viewId: string, loadUrl: string) => void) => void;
             onSetActiveView: (listener: (serverId: string, viewId: string) => void) => void;
             onMaximizeChange: (listener: (maximize: boolean) => void) => void;
             onEnterFullScreen: (listener: () => void) => void;
