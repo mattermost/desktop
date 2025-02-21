@@ -6,6 +6,7 @@
 import AppState from 'common/appState';
 import {LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
+import ServerManager from 'common/servers/serverManager';
 import MessagingView from 'common/views/MessagingView';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
@@ -67,6 +68,16 @@ jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     registerServerView: jest.fn(),
     unregisterView: jest.fn(),
+}));
+jest.mock('common/servers/serverManager', () => ({
+    getRemoteInfo: jest.fn(),
+    getViewLog: jest.fn().mockReturnValue({
+        verbose: jest.fn(),
+        info: jest.fn(),
+        error: jest.fn(),
+        silly: jest.fn(),
+    }),
+    on: jest.fn(),
 }));
 
 const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
@@ -268,6 +279,7 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.setInitialized = jest.fn();
             mattermostView.updateMentionsFromTitle = jest.fn();
             mattermostView.findUnreadState = jest.fn();
+            ServerManager.getRemoteInfo.mockReturnValue({serverVersion: '10.0.0'});
         });
 
         afterAll(() => {
