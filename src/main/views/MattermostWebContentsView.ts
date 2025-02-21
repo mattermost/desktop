@@ -4,6 +4,7 @@
 import {WebContentsView, app, ipcMain} from 'electron';
 import type {WebContentsViewConstructorOptions, Event, Input} from 'electron/main';
 import {EventEmitter} from 'events';
+import semver from 'semver';
 
 import AppState from 'common/appState';
 import {
@@ -16,6 +17,7 @@ import {
     BROWSER_HISTORY_STATUS_UPDATED,
     CLOSE_SERVERS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN,
+    LOAD_INCOMPATIBLE_SERVER,
 } from 'common/communication';
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -426,15 +428,22 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private loadSuccess = (loadURL: string) => {
         return () => {
-            this.log.verbose(`finished loading ${loadURL}`);
-            MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
-            this.maxRetries = MAX_SERVER_RETRIES;
-            this.status = Status.WAITING_MM;
-            this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
-            this.emit(LOAD_SUCCESS, this.id, loadURL);
-            const mainWindow = MainWindow.get();
-            if (mainWindow && this.currentURL) {
-                this.setBounds(getWindowBoundaries(mainWindow));
+            const serverInfo = ServerManager.getRemoteInfo(this.view.server.id);
+            if (serverInfo?.serverVersion && semver.gte(serverInfo.serverVersion, '9.4.0')) {
+                this.log.verbose(`finished loading ${loadURL}`);
+                MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
+                this.maxRetries = MAX_SERVER_RETRIES;
+                this.status = Status.WAITING_MM;
+                this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
+                this.emit(LOAD_SUCCESS, this.id, loadURL);
+                const mainWindow = MainWindow.get();
+                if (mainWindow && this.currentURL) {
+                    this.setBounds(getWindowBoundaries(mainWindow));
+                }
+            } else {
+                MainWindow.sendToRenderer(LOAD_INCOMPATIBLE_SERVER, this.id, loadURL.toString());
+                this.emit(LOAD_FAILED, this.id, 'Incompatible server version', loadURL.toString());
+                this.status = Status.ERROR;
             }
         };
     };
