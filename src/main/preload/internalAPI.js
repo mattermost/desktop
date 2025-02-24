@@ -97,6 +97,8 @@ import {
     EDIT_SERVER,
     REMOVE_SERVER,
     GET_UNIQUE_SERVERS_WITH_PERMISSIONS,
+    LOAD_INCOMPATIBLE_SERVER,
+    OPEN_SERVER_UPGRADE_LINK,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -124,6 +126,7 @@ contextBridge.exposeInMainWorld('desktop', {
     doubleClickOnWindow: (windowName) => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, windowName),
     focusCurrentView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
     openServerExternally: () => ipcRenderer.send(OPEN_SERVER_EXTERNALLY),
+    openServerUpgradeLink: () => ipcRenderer.send(OPEN_SERVER_UPGRADE_LINK),
     closeDownloadsDropdown: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN),
     closeDownloadsDropdownMenu: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU),
     openDownloadsDropdown: () => ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN),
@@ -165,6 +168,7 @@ contextBridge.exposeInMainWorld('desktop', {
     onLoadRetry: (listener) => ipcRenderer.on(LOAD_RETRY, (_, viewId, retry, err, loadUrl) => listener(viewId, retry, err, loadUrl)),
     onLoadSuccess: (listener) => ipcRenderer.on(LOAD_SUCCESS, (_, viewId) => listener(viewId)),
     onLoadFailed: (listener) => ipcRenderer.on(LOAD_FAILED, (_, viewId, err, loadUrl) => listener(viewId, err, loadUrl)),
+    onLoadIncompatibleServer: (listener) => ipcRenderer.on(LOAD_INCOMPATIBLE_SERVER, (_, viewId, loadUrl) => listener(viewId, loadUrl)),
     onSetActiveView: (listener) => ipcRenderer.on(SET_ACTIVE_VIEW, (_, serverId, viewId) => listener(serverId, viewId)),
     onMaximizeChange: (listener) => ipcRenderer.on(MAXIMIZE_CHANGE, (_, maximize) => listener(maximize)),
     onEnterFullScreen: (listener) => ipcRenderer.on('enter-full-screen', () => listener()),

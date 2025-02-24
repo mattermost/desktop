@@ -68,6 +68,11 @@ export class ServerViewState {
     }
 
     init = () => {
+        // Don't need to init twice
+        if (this.currentServerId) {
+            return;
+        }
+
         const orderedServers = ServerManager.getOrderedServers();
         if (orderedServers.length) {
             if (Config.lastActiveServer && orderedServers[Config.lastActiveServer]) {
