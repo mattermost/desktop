@@ -4,15 +4,24 @@
     &.Modal_dialog {
         width: 832px;
         max-width: 832px;
-        min-height: 600px;
     }
 
-    .Modal_content {
-        border: var(--border-dark);
+    > .Modal_content {
+        border: var(--border-light);
+        min-height: 475px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .Modal_body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
     }
 
     .Modal__body {
         display: flex;
+        flex: 1;
 
         .SettingsModal__sidebar {
             flex: 0 0 auto;
@@ -91,6 +100,16 @@
             font-size: 14.4px;
             line-height: 14.4px;
         }
+    }
+}
+
+body.darkMode .SettingsModal {
+    .Modal_content {
+        border: var(--border-dark);
+    }
+
+    .Modal__body .SettingsModal__content {
+        border-right: var(--border-dark);
     }
 }
 

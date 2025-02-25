@@ -154,8 +154,8 @@ export default function ServerSetting() {
                         </div>
                     )))}
                 </div>
+                {openModal}
             </div>
-            {openModal}
         </>
     );
 }

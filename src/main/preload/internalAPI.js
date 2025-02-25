@@ -259,18 +259,6 @@ contextBridge.exposeInMainWorld('desktop', {
     },
 });
 
-// TODO: This is for modals only, should probably move this out for them
-const createKeyDownListener = () => {
-    ipcRenderer.invoke(GET_MODAL_UNCLOSEABLE).then((uncloseable) => {
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !uncloseable) {
-                ipcRenderer.send(MODAL_CANCEL);
-            }
-        });
-    });
-};
-createKeyDownListener();
-
 ipcRenderer.on(METRICS_REQUEST, async (_, name) => {
     const memory = await process.getProcessMemoryInfo();
     ipcRenderer.send(METRICS_RECEIVE, name, {cpu: process.getCPUUsage().percentCPUUsage, memory: memory.residentSet ?? memory.private});

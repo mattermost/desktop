@@ -139,7 +139,7 @@ export default function SettingsModal({
         );
     }
 
-    if (!config || !definition || !selectedCategory || !cache) {
+    if (!cache) {
         return null;
     }
 
@@ -148,7 +148,7 @@ export default function SettingsModal({
             <Modal
                 id='settingsModal'
                 className='SettingsModal'
-                show={true}
+                show={Boolean(config && definition && selectedCategory)}
                 onExited={onClose}
                 modalHeaderText={
                     <FormattedMessage
@@ -161,7 +161,7 @@ export default function SettingsModal({
                 bodyPadding={false}
             >
                 <div className='SettingsModal__sidebar'>
-                    {Object.entries(definition).map(([id, category]) => (
+                    {definition && Object.entries(definition).map(([id, category]) => (
                         <button
                             id={`settingCategoryButton-${id}`}
                             key={id}
@@ -174,7 +174,7 @@ export default function SettingsModal({
                     ))}
                 </div>
                 <div className='SettingsModal__content'>
-                    {definition[selectedCategory].settings.map((setting) => (setting.condition ?? true) && (
+                    {(config && definition && selectedCategory) && definition[selectedCategory].settings.map((setting) => (setting.condition ?? true) && (
                         <setting.component
                             key={setting.id}
                             id={setting.id}
