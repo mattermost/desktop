@@ -12,72 +12,47 @@ import AlertImage from './Images/alert';
 
 import 'renderer/css/components/ErrorView.scss';
 
-type Props = {
+type ErrorViewProps = {
     darkMode: boolean;
+    header: React.ReactNode;
+    subHeader: React.ReactNode;
+    bullets: React.ReactNode;
+    contactAdmin: React.ReactNode;
     errorInfo?: string;
     url?: string;
-    appName?: string;
     handleLink: () => void;
 };
 
-export default function ErrorView(props: Props) {
+export default function ErrorView({
+    darkMode,
+    header,
+    subHeader,
+    bullets,
+    contactAdmin,
+    errorInfo,
+    url,
+    handleLink,
+}: ErrorViewProps) {
     return (
-        <div className={classNames('ErrorView', {darkMode: props.darkMode})}>
+        <div className={classNames('ErrorView', {darkMode})}>
             <AlertImage/>
             <span className='ErrorView-header'>
-                <FormattedMessage
-                    id='renderer.components.errorView.cannotConnectToThisServer'
-                    defaultMessage="Couldn't connect to this server"
-                />
+                {header}
             </span>
             <span>
-                <FormattedMessage
-                    id='renderer.components.errorView.havingTroubleConnecting'
-                    defaultMessage={'We\'re having trouble connecting to this {appName} server. We\'ll keep trying to establish a connection.'}
-                    values={{
-                        appName: props.appName,
-                    }}
-                />
-                <br/>
-                <FormattedMessage
-                    id='renderer.components.errorView.refreshThenVerify'
-                    defaultMessage="If refreshing this page (Ctrl+R or Command+R) doesn't help, please check the following:"
-                />
+                {subHeader}
             </span>
             <ul className='ErrorView-bullets'>
-                <li>
-                    <FormattedMessage
-                        id='renderer.components.errorView.troubleshooting.computerIsConnected'
-                        defaultMessage='Ensure your computer is connected to the internet.'
-                    />
-                </li>
-                <li>
-                    <FormattedMessage
-                        id='renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect'
-                        defaultMessage='Verify that the URL <link>{url}</link> is correct.'
-                        values={{
-                            appName: props.appName,
-                            url: props.url,
-                            link: (msg: React.ReactNode) => (
-                                <a
-                                    onClick={props.handleLink}
-                                    href='#'
-                                >
-                                    {msg}
-                                </a>
-                            ),
-                        }}
-                    />
-                </li>
+                {bullets}
                 <li>
                     <FormattedMessage
                         id='renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow'
                         defaultMessage='Try opening <link>{url}</link> in a browser window.'
                         values={{
-                            url: props.url,
+                            url,
                             link: (msg: React.ReactNode) => (
                                 <a
-                                    onClick={props.handleLink}
+                                    onClick={handleLink}
                                     href='#'
                                 >
                                     {msg}
@@ -88,13 +63,10 @@ export default function ErrorView(props: Props) {
                 </li>
             </ul>
             <span>
-                <FormattedMessage
-                    id='renderer.components.errorView.contactAdmin'
-                    defaultMessage='If the issue persists, please contact your admin'
-                />
+                {contactAdmin}
             </span>
             <span className='ErrorView-techInfo'>
-                {props.errorInfo}
+                {errorInfo}
             </span>
         </div>
     );

@@ -107,6 +107,7 @@ export type BuildConfig = {
     defaultServers?: Server[];
     helpLink: string;
     academyLink: string;
+    upgradeLink: string;
     enableServerManagement: boolean;
     enableAutoUpdater: boolean;
     managedResources: string[];

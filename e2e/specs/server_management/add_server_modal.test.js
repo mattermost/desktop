@@ -46,7 +46,7 @@ describe('Add Server Modal', function desc() {
     });
 
     it('MM-T4388 should close the window after clicking cancel', async () => {
-        await newServerView.click('#cancelNewServerModal');
+        await newServerView.click('#newServerModal_cancel');
         await asyncSleep(1000);
         const existing = Boolean(this.app.windows().find((window) => window.url().includes('newServer')));
         existing.should.be.false;
@@ -54,19 +54,17 @@ describe('Add Server Modal', function desc() {
 
     describe('MM-T4389 Invalid messages', () => {
         it('MM-T4389_1 should not be valid and save should be disabled if no server name or URL has been set', async () => {
-            const existing = await newServerView.isVisible('#nameValidation.error');
-            existing.should.be.true;
-            const disabled = await newServerView.getAttribute('#saveNewServerModal', 'disabled');
+            const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
             (disabled === '').should.be.true;
         });
 
         it('should warn the user if a server with the same URL exists, but still allow them to save', async () => {
             await newServerView.type('#serverNameInput', 'some-new-server');
             await newServerView.type('#serverUrlInput', config.teams[0].url);
-            await newServerView.waitForSelector('#urlValidation.warning');
-            const existing = await newServerView.isVisible('#urlValidation.warning');
+            await newServerView.waitForSelector('#customMessage_url.Input___warning');
+            const existing = await newServerView.isVisible('#customMessage_url.Input___warning');
             existing.should.be.true;
-            const disabled = await newServerView.getAttribute('#saveNewServerModal', 'disabled');
+            const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
             (disabled === '').should.be.false;
         });
 
@@ -76,8 +74,8 @@ describe('Add Server Modal', function desc() {
             });
 
             it('MM-T4389_2 Name should not be marked invalid, but should not be able to save', async () => {
-                await newServerView.waitForSelector('#nameValidation.error', {state: 'detached'});
-                const disabled = await newServerView.getAttribute('#saveNewServerModal', 'disabled');
+                await newServerView.waitForSelector('#customMessage_name.Input___error', {state: 'detached'});
+                const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
                 (disabled === '').should.be.true;
             });
         });
@@ -88,9 +86,10 @@ describe('Add Server Modal', function desc() {
             });
 
             it('MM-T4389_3 URL should not be marked invalid, name should be marked invalid', async () => {
-                const existingUrl = await newServerView.isVisible('#urlValidation.error');
-                const existingName = await newServerView.isVisible('#nameValidation.error');
-                const disabled = await newServerView.getAttribute('#saveNewServerModal', 'disabled');
+                await newServerView.waitForSelector('#customMessage_name.Input___error');
+                const existingUrl = await newServerView.isVisible('#customMessage_url.Input___error');
+                const existingName = await newServerView.isVisible('#customMessage_name.Input___error');
+                const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
                 existingName.should.be.true;
                 existingUrl.should.be.false;
                 (disabled === '').should.be.true;
@@ -100,8 +99,8 @@ describe('Add Server Modal', function desc() {
 
     it('MM-T2826_1 should not be valid if an invalid server address has been set', async () => {
         await newServerView.type('#serverUrlInput', 'superInvalid url');
-        await newServerView.waitForSelector('#urlValidation.error');
-        const existing = await newServerView.isVisible('#urlValidation.error');
+        await newServerView.waitForSelector('#customMessage_url.Input___error');
+        const existing = await newServerView.isVisible('#customMessage_url.Input___error');
         existing.should.be.true;
     });
 
@@ -109,16 +108,16 @@ describe('Add Server Modal', function desc() {
         beforeEach(async () => {
             await newServerView.type('#serverUrlInput', 'http://example.org');
             await newServerView.type('#serverNameInput', 'TestServer');
-            await newServerView.waitForSelector('#urlValidation.warning');
+            await newServerView.waitForSelector('#customMessage_url.Input___warning');
         });
 
         it('should be possible to click add', async () => {
-            const disabled = await newServerView.getAttribute('#saveNewServerModal', 'disabled');
+            const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
             (disabled === null).should.be.true;
         });
 
         it('MM-T2826_2 should add the server to the config file', async () => {
-            await newServerView.click('#saveNewServerModal');
+            await newServerView.click('#newServerModal_confirm');
             await asyncSleep(2000);
             const existing = Boolean(this.app.windows().find((window) => window.url().includes('newServer')));
             existing.should.be.false;

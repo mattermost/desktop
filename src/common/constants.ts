@@ -48,3 +48,4 @@ export const DEFAULT_HELP_LINK = 'https://docs.mattermost.com/guides/collaborate
 export const DEFAULT_ACADEMY_LINK = 'https://academy.mattermost.com/';
 export const DEFAULT_TE_REPORT_PROBLEM_LINK = 'https://mattermost.com/pl/report-a-bug';
 export const DEFAULT_EE_REPORT_PROBLEM_LINK = 'https://support.mattermost.com/hc/en-us/requests/new';
+export const DEFAULT_UPGRADE_LINK = 'https://forum.mattermost.com/t/mattermost-desktop-app-5-11-important-compatibility-notice/22599';

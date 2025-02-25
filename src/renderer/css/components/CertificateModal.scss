@@ -1,0 +1,50 @@
+@use "../css_variables";
+
+.Modal .CertificateModal {
+    width: 832px;
+    max-width: 832px;
+}
+
+.CertificateModal_certInfoButton {
+    margin-right: auto
+}
+
+.CertificateModal_list {
+    text-align: left;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+    border-radius: var(--radius-s);
+    border-spacing: 0;
+    width: 100%;
+
+    th, td {
+        padding: 10px 12px;
+    }
+
+    th {
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
+
+        & + th {
+            border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+        }
+    }
+    
+    td {
+        border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+
+        & + td {
+            border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+        }
+    }
+
+    tbody tr {
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(var(--center-channel-color-rgb), 0.16);
+        }
+
+        &.selected {
+            background-color: rgba(var(--button-bg-rgb), 0.12);
+        }
+    }
+}

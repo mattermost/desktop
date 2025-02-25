@@ -30,6 +30,7 @@ export const APP_MENU_WILL_CLOSE = 'app-menu-will-close';
 export const LOAD_RETRY = 'load_retry';
 export const LOAD_SUCCESS = 'load_success';
 export const LOAD_FAILED = 'load_fail';
+export const LOAD_INCOMPATIBLE_SERVER = 'load_incompatible_server';
 
 export const MAXIMIZE_CHANGE = 'maximized_change';
 
@@ -102,6 +103,7 @@ export const UPDATE_PATHS = 'update-paths';
 export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 
 export const OPEN_SERVER_EXTERNALLY = 'open-server-externally';
+export const OPEN_SERVER_UPGRADE_LINK = 'open-server-upgrade-link';
 
 export const PING_DOMAIN = 'ping-domain';
 
