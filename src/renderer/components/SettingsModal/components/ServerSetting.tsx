@@ -4,6 +4,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {FormattedMessage} from 'react-intl';
 
+import ServerSmallImage from 'renderer/components/Images/server-small';
 import NewServerModal from 'renderer/components/NewServerModal';
 import RemoveServerModal from 'renderer/components/RemoveServerModal';
 
@@ -126,6 +127,23 @@ export default function ServerSetting() {
                         />
                     </button>
                 </div>
+                {servers.length === 0 && (
+                    <div className='ServerSetting__noServers'>
+                        <ServerSmallImage/>
+                        <div className='ServerSetting__noServersTitle'>
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.serverSetting.noServers'
+                                defaultMessage='No servers added'
+                            />
+                        </div>
+                        <div className='ServerSetting__noServersDescription'>
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.serverSetting.noServers.description'
+                                defaultMessage="Add a server to connect to your team's communication hub"
+                            />
+                        </div>
+                    </div>
+                )}
                 <div className='ServerSetting__serverList'>
                     {(servers.map((server, index) => (
                         <div

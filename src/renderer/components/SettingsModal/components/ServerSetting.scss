@@ -1,5 +1,8 @@
 .ServerSetting {
     width: 100%;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
     
     .ServerSetting__heading {
         display: flex;
@@ -47,6 +50,32 @@
 
         .btn.btn-tertiary.btn-danger:not(:hover) {
             background-color: transparent;
+        }
+    }
+
+    .ServerSetting__noServers {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 100%;
+
+        span {
+            color: rgba(var(--center-channel-color-rgb), 0.64)
+        }
+
+        .ServerSetting__noServersTitle {
+            font-size: 14px;
+            line-height: 20px;
+            font-weight: 600;
+            margin-top: 24px;
+        }
+
+        .ServerSetting__noServersDescription {
+            font-size: 12px;
+            line-height: 16px;
+            max-width: 283px;
         }
     }
 }
