@@ -33,7 +33,7 @@ export default function RadioSetting({
                     <button
                         id={`RadioSetting_${id}_${option.value}`}
                         className='RadioSetting__radio'
-                        key={index}
+                        key={`${index}`}
                         onClick={() => save(option.value)}
                     >
                         <input

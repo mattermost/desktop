@@ -129,7 +129,7 @@ export default function ServerSetting() {
                 <div className='ServerSetting__serverList'>
                     {(servers.map((server, index) => (
                         <div
-                            key={index}
+                            key={`${index}`}
                             className='ServerSetting__server'
                         >
                             <i className='icon icon-server-variant'/>
