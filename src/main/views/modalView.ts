@@ -52,7 +52,7 @@ export class ModalView<T, T2> {
             this.log.error(e);
         }
 
-        this.contextMenu = new ContextMenu({}, this.view);
+        this.contextMenu = new ContextMenu({}, this.view.webContents);
     }
 
     show = (win?: BrowserWindow, withDevTools?: boolean) => {

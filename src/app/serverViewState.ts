@@ -59,6 +59,11 @@ export class ServerViewState {
     }
 
     init = () => {
+        // Don't need to init twice
+        if (this.currentServerId) {
+            return;
+        }
+
         const orderedServers = ServerManager.getOrderedServers();
         if (orderedServers.length) {
             if (Config.lastActiveServer && orderedServers[Config.lastActiveServer]) {
@@ -204,11 +209,11 @@ export class ServerViewState {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<string, boolean>(
+        const modalPromise = ModalManager.addModal<null, boolean>(
             'removeServer',
             'mattermost-desktop://renderer/removeServer.html',
             getLocalPreload('internalAPI.js'),
-            server.name,
+            null,
             mainWindow,
         );
 

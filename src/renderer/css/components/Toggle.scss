@@ -4,10 +4,11 @@
     display: flex;
     column-gap: 12px;
     font-weight: inherit;
-    line-height: 16px;
+    line-height: 24px;
     cursor: pointer;
     margin-bottom: 0;
     padding: 10px 0;
+    font-size: 16px;
 
     &.disabled {
         cursor: default;
@@ -63,6 +64,10 @@
             &.disabled {
                 background-color: var(--button-bg-30);
             }
-        }
+        } 
+    }
+
+    i {
+        font-size: 20px;
     }
  }

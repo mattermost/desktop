@@ -11,9 +11,10 @@ import {injectIntl} from 'react-intl';
 import type {UniqueView, UniqueServer} from 'types/config';
 import type {DownloadedItems} from 'types/downloads';
 
+import ConnectionErrorView from './ConnectionErrorView';
 import DeveloperModeIndicator from './DeveloperModeIndicator';
 import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
-import ErrorView from './ErrorView';
+import IncompatibleErrorView from './IncompatibleErrorView';
 import ServerDropdownButton from './ServerDropdownButton';
 import TabBar from './TabBar';
 
@@ -28,6 +29,7 @@ enum Status {
     RETRY = -1,
     FAILED = 0,
     NOSERVERS = -2,
+    INCOMPATIBLE = -3,
 }
 
 type Props = {
@@ -61,7 +63,7 @@ type TabViewStatus = {
     status: Status;
     extra?: {
         url: string;
-        error: string;
+        error?: string;
     };
 }
 
@@ -180,6 +182,17 @@ class MainPage extends React.PureComponent<Props, State> {
                 status: Status.FAILED,
                 extra: {
                     error: err,
+                    url: loadUrl,
+                },
+            };
+            this.updateTabStatus(viewId, statusValue);
+        });
+
+        window.desktop.onLoadIncompatibleServer((viewId, loadUrl) => {
+            console.error(`${viewId}: tried to load incompatible server`);
+            const statusValue = {
+                status: Status.INCOMPATIBLE,
+                extra: {
                     url: loadUrl,
                 },
             };
@@ -507,12 +520,22 @@ class MainPage extends React.PureComponent<Props, State> {
             switch (tabStatus.status) {
             case Status.FAILED:
                 component = (
-                    <ErrorView
+                    <ConnectionErrorView
                         darkMode={this.props.darkMode}
                         errorInfo={tabStatus.extra?.error}
                         url={tabStatus.extra ? tabStatus.extra.url : ''}
                         appName={this.props.appName}
                         handleLink={this.openServerExternally}
+                    />);
+                break;
+            case Status.INCOMPATIBLE:
+                component = (
+                    <IncompatibleErrorView
+                        darkMode={this.props.darkMode}
+                        url={tabStatus.extra ? tabStatus.extra.url : ''}
+                        appName={this.props.appName}
+                        handleLink={this.openServerExternally}
+                        handleUpgradeLink={() => window.desktop.openServerUpgradeLink()}
                     />);
                 break;
             case Status.LOADING:

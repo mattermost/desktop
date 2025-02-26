@@ -29,3 +29,5 @@ fastlane/report.xml
 .eslintcache
 
 *.p8
+
+.aider*

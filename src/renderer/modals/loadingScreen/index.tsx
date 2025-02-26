@@ -6,8 +6,6 @@ import ReactDOM from 'react-dom';
 
 import LoadingScreen from '../../components/LoadingScreen';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'renderer/css/modals.css';
 import 'renderer/css/components/LoadingAnimation.css';
 import 'renderer/css/components/LoadingScreen.css';
 

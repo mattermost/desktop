@@ -4,11 +4,12 @@
 
 import type {AuthenticationResponseDetails, AuthInfo} from 'electron/renderer';
 import React from 'react';
-import {Button, Col, FormLabel, Form, FormGroup, FormControl, Modal} from 'react-bootstrap';
 import type {IntlShape} from 'react-intl';
 import {FormattedMessage, injectIntl} from 'react-intl';
 
 import {parseURL} from 'common/utils/url';
+import Input, {SIZE} from 'renderer/components/Input';
+import {Modal} from 'renderer/components/Modal';
 
 import type {LoginModalInfo} from 'types/modals';
 
@@ -44,8 +45,7 @@ class LoginModal extends React.PureComponent<Props, State> {
         this.setState({request, authInfo});
     };
 
-    handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    handleSubmit = () => {
         this.props.onLogin(this.state.request!, this.state.username, this.state.password);
         this.setState({
             username: '',
@@ -55,8 +55,7 @@ class LoginModal extends React.PureComponent<Props, State> {
         });
     };
 
-    handleCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
+    handleCancel = () => {
         this.props.onCancel(this.state.request!);
         this.setState({
             username: '',
@@ -101,94 +100,44 @@ class LoginModal extends React.PureComponent<Props, State> {
 
         return (
             <Modal
+                id='loginModal'
                 show={Boolean(this.state.request && this.state.authInfo)}
+                onExited={this.handleCancel}
+                modalHeaderText={
+                    <FormattedMessage
+                        id='renderer.modals.login.loginModal.title'
+                        defaultMessage='Authentication Required'
+                    />
+                }
+                handleConfirm={this.handleSubmit}
+                confirmButtonText={
+                    <FormattedMessage
+                        id='label.login'
+                        defaultMessage='Login'
+                    />
+                }
+                handleCancel={this.handleCancel}
+                modalSubheaderText={this.renderLoginModalMessage()}
             >
-                <Modal.Header>
-                    <Modal.Title>
-                        <FormattedMessage
-                            id='renderer.modals.login.loginModal.title'
-                            defaultMessage='Authentication Required'
-                        />
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>
-                        {this.renderLoginModalMessage()}
-                    </p>
-                    <Form
-                        onSubmit={this.handleSubmit}
-                    >
-                        <FormGroup>
-                            <Col
-                                as={FormLabel}
-                                sm={2}
-                            >
-                                <FormattedMessage
-                                    id='renderer.modals.login.loginModal.username'
-                                    defaultMessage='User Name'
-                                />
-                            </Col>
-                            <Col sm={10}>
-                                <FormControl
-                                    type='text'
-                                    placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.username', defaultMessage: 'User Name'})}
-                                    onChange={this.setUsername}
-                                    value={this.state.username}
-                                    onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                        e.stopPropagation();
-                                    }}
-                                />
-                            </Col>
-                        </FormGroup>
-                        <FormGroup>
-                            <Col
-                                as={FormLabel}
-                                sm={2}
-                            >
-                                <FormattedMessage
-                                    id='renderer.modals.login.loginModal.password'
-                                    defaultMessage='Password'
-                                />
-                            </Col>
-                            <Col sm={10}>
-                                <FormControl
-                                    type='password'
-                                    placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.password', defaultMessage: 'Password'})}
-                                    onChange={this.setPassword}
-                                    value={this.state.password}
-                                    onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                                        e.stopPropagation();
-                                    }}
-                                />
-                            </Col>
-                        </FormGroup>
-                        <FormGroup>
-                            <Col sm={12}>
-                                <div className='pull-right'>
-                                    <Button
-                                        type='submit'
-                                        variant='primary'
-                                    >
-                                        <FormattedMessage
-                                            id='label.login'
-                                            defaultMessage='Login'
-                                        />
-                                    </Button>
-                                    { ' ' }
-                                    <Button
-                                        variant='link'
-                                        onClick={this.handleCancel}
-                                    >
-                                        <FormattedMessage
-                                            id='label.cancel'
-                                            defaultMessage='Cancel'
-                                        />
-                                    </Button>
-                                </div>
-                            </Col>
-                        </FormGroup>
-                    </Form>
-                </Modal.Body>
+                <Input
+                    autoFocus={true}
+                    id='loginModalUsername'
+                    name='username'
+                    type='text'
+                    inputSize={SIZE.LARGE}
+                    value={this.state.username}
+                    onChange={this.setUsername}
+                    placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.username', defaultMessage: 'User Name'})}
+                />
+                <Input
+                    id='loginModalPassword'
+                    name='password'
+                    type='password'
+                    inputSize={SIZE.LARGE}
+                    onChange={this.setPassword}
+                    value={this.state.password}
+                    placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.password', defaultMessage: 'Password'})}
+                />
             </Modal>
         );
     }
