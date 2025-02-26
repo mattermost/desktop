@@ -24,6 +24,7 @@ import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
 import {TAB_MESSAGING, type MattermostView} from 'common/views/View';
+import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
 import performanceMonitor from 'main/performanceMonitor';
 import {getServerAPI} from 'main/server/serverAPI';
@@ -411,7 +412,10 @@ export class MattermostWebContentsView extends EventEmitter {
             getServerAPI(
                 parsedURL,
                 false,
-                () => this.reload(loadURL),
+                async () => {
+                    await updateServerInfos([this.view.server]);
+                    this.reload(loadURL);
+                },
                 () => {},
                 (error: Error) => {
                     this.log.debug(`Cannot reach server: ${error}`);

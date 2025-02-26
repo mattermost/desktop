@@ -64,6 +64,9 @@ jest.mock('../utils', () => ({
 jest.mock('main/developerMode', () => ({
     get: jest.fn(),
 }));
+jest.mock('main/app/utils', () => ({
+    updateServerInfos: jest.fn(),
+}));
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     registerServerView: jest.fn(),
