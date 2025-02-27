@@ -38,16 +38,17 @@ function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerMo
     log.debug('handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
 
     if (showWelcomeScreen) {
-        if (ModalManager.isModalDisplayed()) {
+        const welcomeScreen = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
+        if (welcomeScreen) {
             return;
         }
 
         handleWelcomeScreenModal();
 
         if (process.env.NODE_ENV === 'test') {
-            const welcomeScreen = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
-            if (welcomeScreen?.view.webContents.isLoading()) {
-                welcomeScreen?.view.webContents.once('did-finish-load', () => {
+            const welcomeScreenTest = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
+            if (welcomeScreenTest?.view.webContents.isLoading()) {
+                welcomeScreenTest?.view.webContents.once('did-finish-load', () => {
                     app.emit('e2e-app-loaded');
                 });
             } else {

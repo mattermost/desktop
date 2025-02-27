@@ -133,4 +133,9 @@
     --error-text: #da6c6e;
     --mention-highlight-bg: #0d6e6e;
     --mention-highlight-link: #a4f4f4;
+
+    /* Border variables */
+    --border-default: solid 1px rgba(var(--center-channel-color-rgb), 0.12);
+    --border-light: solid 1px rgba(var(--center-channel-color-rgb), 0.08);
+    --border-dark: solid 1px rgba(var(--center-channel-color-rgb), 0.16);
 }

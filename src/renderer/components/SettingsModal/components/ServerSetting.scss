@@ -1,0 +1,81 @@
+.ServerSetting {
+    width: 100%;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    
+    .ServerSetting__heading {
+        display: flex;
+        padding-bottom: 20px;
+        align-items: center;
+        border-bottom: 1px solid var(--center-channel-color-8, rgba(63, 67, 80, 0.08));
+        
+        h3 {
+            margin-right: auto;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 24px;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+    }
+
+    .ServerSetting__server {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-bottom: 1px solid var(--center-channel-color-8, rgba(63, 67, 80, 0.08));
+
+        i.icon-server-variant {
+            font-size: 18px;
+
+            &::before {
+                margin: 0;
+            }
+        }
+
+        .ServerSetting__serverName {
+            margin-left: 12px;
+            font-size: 14px;
+            line-height: 20px;
+        }
+
+        .ServerSetting__serverUrl {
+            margin-left: 6px;
+            font-size: 12px;
+            line-height: 18px;
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+            margin-right: auto;
+        }
+
+        .btn.btn-tertiary.btn-danger:not(:hover) {
+            background-color: transparent;
+        }
+    }
+
+    .ServerSetting__noServers {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 100%;
+
+        span {
+            color: rgba(var(--center-channel-color-rgb), 0.64)
+        }
+
+        .ServerSetting__noServersTitle {
+            font-size: 14px;
+            line-height: 20px;
+            font-weight: 600;
+            margin-top: 24px;
+        }
+
+        .ServerSetting__noServersDescription {
+            font-size: 12px;
+            line-height: 16px;
+            max-width: 283px;
+        }
+    }
+}

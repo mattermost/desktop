@@ -189,3 +189,8 @@ export const IS_DEVELOPER_MODE_ENABLED = 'is-developer-mode-enabled';
 export const METRICS_SEND = 'metrics-send';
 export const METRICS_RECEIVE = 'metrics-receive';
 export const METRICS_REQUEST = 'metrics-request';
+
+export const GET_UNIQUE_SERVERS_WITH_PERMISSIONS = 'get-unique-servers-with-permissions';
+export const ADD_SERVER = 'add-server';
+export const EDIT_SERVER = 'edit-server';
+export const REMOVE_SERVER = 'remove-server';

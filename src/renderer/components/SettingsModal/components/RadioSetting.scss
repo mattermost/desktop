@@ -1,0 +1,81 @@
+.RadioSetting {
+    .RadioSetting__heading {
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .RadioSetting__content {
+        display: flex;
+        flex-direction: column;
+
+        /* Create a custom radio button */
+        .RadioSetting__radio {
+            display: inline-block;
+            position: relative;
+            padding-left: 28px;
+            cursor: pointer;
+            font-size: 16px;
+            user-select: none;
+            border: none;
+            background: none;
+            color: var(--center-channel-color);
+            text-align: left;
+
+            + .RadioSetting__radio {
+                margin-top: 12px;
+            }
+
+            input[type="radio"] {
+                display: none;
+                cursor: pointer;
+
+                + .RadioSetting__label::before {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 16px;
+                    height: 16px;
+                    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+                    border-radius: 50%;
+                    transition: border-color ease-in 0.175s;
+                }
+
+                + .RadioSetting__label::after {
+                    content: "";
+                    position: absolute;
+                    left: 9px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-radius: 50%;
+                    background-color: var(--button-bg);
+                    transition: width ease-in-out 0.175s, height ease-in-out 0.175s, left ease-in-out 0.175s;
+                }
+
+                &:checked {
+                    + .RadioSetting__label::before {
+                        border-color: var(--button-bg);
+                    }
+
+                    + .RadioSetting__label::after {
+                        width: 8px;
+                        height: 8px;
+                        left: 5px;
+                    }
+                }
+            }
+
+            .RadioSetting__label {
+                display: block;
+                font-size: 14px;
+                line-height: 20px;
+                cursor: inherit;
+            }
+        }
+    }
+}

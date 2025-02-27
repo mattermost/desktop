@@ -79,6 +79,24 @@ export const Modal: React.FC<Props> = ({
     const backdropRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        const escListener = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        async function createEscListener() {
+            const uncloseable = await window.desktop.modals.isModalUncloseable();
+            if (!uncloseable) {
+                window.addEventListener('keydown', escListener);
+            }
+        }
+        createEscListener();
+        return () => {
+            window.removeEventListener('keydown', escListener);
+        };
+    }, []);
+
+    useEffect(() => {
         setShowState(show ?? true);
     }, [show]);
 
