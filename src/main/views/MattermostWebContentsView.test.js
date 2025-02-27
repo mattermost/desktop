@@ -8,6 +8,8 @@ import {LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import MessagingView from 'common/views/MessagingView';
+import {updateServerInfos} from 'main/app/utils';
+import {getServerAPI} from 'main/server/serverAPI';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
@@ -64,6 +66,9 @@ jest.mock('../utils', () => ({
 jest.mock('main/developerMode', () => ({
     get: jest.fn(),
 }));
+jest.mock('main/app/utils', () => ({
+    updateServerInfos: jest.fn(),
+}));
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     registerServerView: jest.fn(),
@@ -78,6 +83,9 @@ jest.mock('common/servers/serverManager', () => ({
         silly: jest.fn(),
     }),
     on: jest.fn(),
+}));
+jest.mock('main/server/serverAPI', () => ({
+    getServerAPI: jest.fn(),
 }));
 
 const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
@@ -204,6 +212,24 @@ describe('main/views/MattermostWebContentsView', () => {
             expect(mattermostView.status).toBe(-1);
             jest.runAllTimers();
             expect(retryInBackgroundFn).toBeCalled();
+        });
+    });
+
+    describe('retryInBackground', () => {
+        const window = {on: jest.fn()};
+        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        mattermostView.reload = jest.fn();
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => Promise.resolve());
+            getServerAPI.mockImplementation((url, isAuth, onSuccess) => onSuccess());
+        });
+
+        it('should call updateServerInfos and reload on successful retry', async () => {
+            await mattermostView.retryInBackground('http://server-1.com')();
+            expect(updateServerInfos).toBeCalled();
+            expect(mattermostView.reload).toBeCalled();
         });
     });
 
