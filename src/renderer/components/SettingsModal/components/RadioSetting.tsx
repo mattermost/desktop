@@ -28,13 +28,18 @@ export default function RadioSetting<T extends string>({
     return (
         <div className='RadioSetting'>
             <div className='RadioSetting__heading'>{label}</div>
-            <div className='RadioSetting__content'>
+            <div
+                className='RadioSetting__content'
+                role='radiogroup'
+            >
                 {options.map((option, index) => (
                     <button
                         id={`RadioSetting_${id}_${option.value}`}
                         className='RadioSetting__radio'
                         key={`${index}`}
                         onClick={() => save(option.value)}
+                        role='radio'
+                        aria-checked={value === option.value}
                     >
                         <input
                             type='radio'
