@@ -42,9 +42,10 @@ describe('Settings', function desc() {
                 const settingsWindow = await this.app.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
-                await settingsWindow.waitForSelector('.settingsPage.container');
-                await settingsWindow.waitForSelector('#inputAutoStart', {state: expected ? 'attached' : 'detached'});
-                const existing = await settingsWindow.isVisible('#inputAutoStart');
+                await settingsWindow.waitForSelector('#settingCategoryButton-general');
+                await settingsWindow.click('#settingCategoryButton-general');
+                await settingsWindow.waitForSelector('#CheckSetting_autostart', {state: expected ? 'attached' : 'detached'});
+                const existing = await settingsWindow.isVisible('#CheckSetting_autostart');
                 existing.should.equal(expected);
             });
         });
@@ -58,9 +59,10 @@ describe('Settings', function desc() {
                 const settingsWindow = await this.app.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
-                await settingsWindow.waitForSelector('.settingsPage.container');
-                await settingsWindow.waitForSelector('#inputShowTrayIcon', {state: expected ? 'attached' : 'detached'});
-                const existing = await settingsWindow.isVisible('#inputShowTrayIcon');
+                await settingsWindow.waitForSelector('#settingCategoryButton-general');
+                await settingsWindow.click('#settingCategoryButton-general');
+                await settingsWindow.waitForSelector('#CheckSetting_showTrayIcon', {state: expected ? 'attached' : 'detached'});
+                const existing = await settingsWindow.isVisible('#CheckSetting_showTrayIcon');
                 existing.should.equal(expected);
             });
 
@@ -72,17 +74,18 @@ describe('Settings', function desc() {
                     const settingsWindow = await this.app.waitForEvent('window', {
                         predicate: (window) => window.url().includes('settings'),
                     });
-                    await settingsWindow.waitForSelector('.settingsPage.container');
-                    await settingsWindow.click('#inputShowTrayIcon');
-                    await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saving...")');
-                    await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saved")');
+                    await settingsWindow.waitForSelector('#settingCategoryButton-general');
+                    await settingsWindow.click('#settingCategoryButton-general');
+                    await settingsWindow.click('#CheckSetting_showTrayIcon button');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
                     let config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config0.showTrayIcon.should.true;
 
-                    await settingsWindow.click('#inputShowTrayIcon');
-                    await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saving...")');
-                    await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saved")');
+                    await settingsWindow.click('#CheckSetting_showTrayIcon button');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
                     config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config0.showTrayIcon.should.false;
@@ -97,18 +100,20 @@ describe('Settings', function desc() {
                     const settingsWindow = await this.app.waitForEvent('window', {
                         predicate: (window) => window.url().includes('settings'),
                     });
-                    await settingsWindow.waitForSelector('.settingsPage.container');
-                    await settingsWindow.click('#inputShowTrayIcon');
-                    await settingsWindow.click('input[value="dark"]');
-                    await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saving...")');
-                    await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saved")');
+                    await settingsWindow.waitForSelector('#settingCategoryButton-general');
+                    await settingsWindow.click('#settingCategoryButton-general');
+                    await settingsWindow.click('#CheckSetting_showTrayIcon button');
+                    await settingsWindow.click('#RadioSetting_trayIconTheme_dark');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
                     const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config0.trayIconTheme.should.equal('dark');
 
-                    await settingsWindow.click('input[value="light"]');
-                    await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saving...")');
-                    await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saved")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving', {state: 'detached'});
+                    await settingsWindow.click('#RadioSetting_trayIconTheme_light');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
                     const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config1.trayIconTheme.should.equal('light');
@@ -125,8 +130,9 @@ describe('Settings', function desc() {
                 const settingsWindow = await this.app.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
-                await settingsWindow.waitForSelector('.settingsPage.container');
-                const existing = await settingsWindow.isVisible('#inputMinimizeToTray');
+                await settingsWindow.waitForSelector('#settingCategoryButton-general');
+                await settingsWindow.click('#settingCategoryButton-general');
+                const existing = await settingsWindow.isVisible('#CheckSetting_minimizeToTray');
                 existing.should.equal(expected);
             });
         });
@@ -140,8 +146,9 @@ describe('Settings', function desc() {
                 const settingsWindow = await this.app.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
-                await settingsWindow.waitForSelector('.settingsPage.container');
-                const existing = await settingsWindow.isVisible('#inputflashWindow');
+                await settingsWindow.waitForSelector('#settingCategoryButton-notifications');
+                await settingsWindow.click('#settingCategoryButton-notifications');
+                const existing = await settingsWindow.isVisible('#CheckSetting_flashWindow');
                 existing.should.equal(expected);
             });
         });
@@ -155,8 +162,9 @@ describe('Settings', function desc() {
                 const settingsWindow = await this.app.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
-                await settingsWindow.waitForSelector('.settingsPage.container');
-                const existing = await settingsWindow.isVisible('#inputShowUnreadBadge');
+                await settingsWindow.waitForSelector('#settingCategoryButton-notifications');
+                await settingsWindow.click('#settingCategoryButton-notifications');
+                const existing = await settingsWindow.isVisible('#CheckSetting_showUnreadBadge');
                 existing.should.equal(expected);
             });
         });
@@ -169,16 +177,17 @@ describe('Settings', function desc() {
                 const settingsWindow = await this.app.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
-                await settingsWindow.waitForSelector('.settingsPage.container');
-                const existing = await settingsWindow.isVisible('#inputSpellChecker');
+                await settingsWindow.waitForSelector('#settingCategoryButton-language');
+                await settingsWindow.click('#settingCategoryButton-language');
+                const existing = await settingsWindow.isVisible('#CheckSetting_useSpellChecker');
                 existing.should.equal(true);
 
-                const selected = await settingsWindow.isChecked('#inputSpellChecker');
+                const selected = await settingsWindow.isChecked('#checkSetting-useSpellChecker');
                 selected.should.equal(true);
 
-                await settingsWindow.click('#inputSpellChecker');
-                await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saving...")');
-                await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saved")');
+                await settingsWindow.click('#CheckSetting_useSpellChecker button');
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
                 const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                 config1.useSpellChecker.should.equal(false);
@@ -187,26 +196,28 @@ describe('Settings', function desc() {
 
         describe('Enable GPU hardware acceleration', () => {
             it('MM-T4398 should save selected option', async () => {
-                const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#inputEnableHardwareAcceleration';
+                const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#CheckSetting_enableHardwareAcceleration button';
                 this.app.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await this.app.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
-                await settingsWindow.waitForSelector('.settingsPage.container');
-                const selected = await settingsWindow.isChecked(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
+                await settingsWindow.waitForSelector('#settingCategoryButton-advanced');
+                await settingsWindow.click('#settingCategoryButton-advanced');
+                console.log('balls');
+                const selected = await settingsWindow.isChecked('#checkSetting-enableHardwareAcceleration');
                 selected.should.equal(true); // default is true
 
                 await settingsWindow.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
-                await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saving...")');
-                await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saved")');
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
                 const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                 config0.enableHardwareAcceleration.should.equal(false);
 
                 await settingsWindow.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
-                await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saving...")');
-                await settingsWindow.waitForSelector('.appOptionsSaveIndicator :text("Saved")');
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
                 const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                 config1.enableHardwareAcceleration.should.equal(true);
             });
@@ -215,26 +226,27 @@ describe('Settings', function desc() {
         if (process.platform !== 'darwin') {
             describe('Enable automatic check for updates', () => {
                 it('MM-T4549 should save selected option', async () => {
-                    const ID_INPUT_ENABLE_AUTO_UPDATES = '#inputAutoCheckForUpdates';
+                    const ID_INPUT_ENABLE_AUTO_UPDATES = '#CheckSetting_autoCheckForUpdates button';
                     this.app.evaluate(({ipcMain}, showWindow) => {
                         ipcMain.emit(showWindow);
                     }, SHOW_SETTINGS_WINDOW);
                     const settingsWindow = await this.app.waitForEvent('window', {
                         predicate: (window) => window.url().includes('settings'),
                     });
-                    await settingsWindow.waitForSelector('.settingsPage.container');
-                    const selected = await settingsWindow.isChecked(ID_INPUT_ENABLE_AUTO_UPDATES);
+                    await settingsWindow.waitForSelector('#settingCategoryButton-general');
+                    await settingsWindow.click('#settingCategoryButton-general');
+                    const selected = await settingsWindow.isChecked('#checkSetting-autoCheckForUpdates');
                     selected.should.equal(true); // default is true
 
                     await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
-                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
-                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
                     const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config0.autoCheckForUpdates.should.equal(false);
 
                     await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
-                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saving...")');
-                    await settingsWindow.waitForSelector('.updatesSaveIndicator :text("Saved")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
                     const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
                     config1.autoCheckForUpdates.should.equal(true);
                 });
