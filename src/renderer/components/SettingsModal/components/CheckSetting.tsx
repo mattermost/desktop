@@ -37,6 +37,9 @@ export default function CheckSetting({
                 <button
                     className={classNames('CheckSetting__checkbox', {checked: value})}
                     onClick={save}
+                    role='checkbox'
+                    aria-checked={value}
+                    aria-labelledby={`checkSetting-${id}`}
                 >
                     <input
                         id={`checkSetting-${id}`}
@@ -47,10 +50,13 @@ export default function CheckSetting({
                     />
                     <i className='icon-check'/>
                 </button>
-                <div className='CheckSetting__label'>
+                <label
+                    htmlFor={`checkSetting-${id}`}
+                    className='CheckSetting__label'
+                >
                     {label}
                     {subLabel && <div className='CheckSetting__sublabel'>{subLabel}</div>}
-                </div>
+                </label>
             </div>
         </div>
     );

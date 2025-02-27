@@ -22,7 +22,7 @@ export default function NotificationSetting({
                 onSave={(k, v) => onSave('notifications', {
                     ...value,
                     bounceIcon: Boolean(v),
-                    bounceIconType: v as 'informational' | 'critical',
+                    bounceIconType: v,
                 })}
                 value={value.bounceIconType}
                 label={(

@@ -455,13 +455,11 @@ export class ServerViewState {
         const remainingServers = ServerManager.getOrderedServers().filter((orderedServer) => serverId !== orderedServer.id);
         if (this.currentServerId === serverId && remainingServers.length) {
             this.currentServerId = remainingServers[0].id;
+        } else if (!remainingServers.length) {
+            delete this.currentServerId;
         }
 
         ServerManager.removeServer(serverId);
-
-        if (!remainingServers.length) {
-            delete this.currentServerId;
-        }
     };
 }
 

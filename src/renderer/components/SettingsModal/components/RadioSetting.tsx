@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 
 import './RadioSetting.scss';
 
-export default function RadioSetting({
+export default function RadioSetting<T extends string>({
     id,
     onSave,
     label,
@@ -13,14 +13,14 @@ export default function RadioSetting({
     ...props
 }: {
     id: string;
-    onSave: (key: string, value: string) => void;
+    onSave: (key: string, value: T) => void;
     label: React.ReactNode;
-    value: string;
-    options: Array<{value: string; label: React.ReactNode}>;
+    value: T;
+    options: Array<{value: T; label: React.ReactNode}>;
 }) {
     const [value, setValue] = useState(props.value);
 
-    const save = (value: string) => {
+    const save = (value: T) => {
         onSave(id, value);
         setValue(value);
     };
@@ -43,7 +43,12 @@ export default function RadioSetting({
                             checked={value === option.value}
                             readOnly={true}
                         />
-                        <label className='RadioSetting__label'>{option.label}</label>
+                        <label
+                            htmlFor={`RadioSetting_${id}_${option.value}`}
+                            className='RadioSetting__label'
+                        >
+                            {option.label}
+                        </label>
                     </button>
                 ))}
             </div>
