@@ -3,7 +3,6 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Modal} from 'react-bootstrap';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import DestructiveConfirmationModal from './DestructiveConfirmModal';
@@ -26,7 +25,7 @@ function RemoveServerModal(props: Props) {
             acceptLabel={intl.formatMessage({id: 'label.remove', defaultMessage: 'Remove'})}
             cancelLabel={intl.formatMessage({id: 'label.cancel', defaultMessage: 'Cancel'})}
             body={(
-                <Modal.Body>
+                <>
                     <FormattedMessage
                         id='renderer.components.removeServerModal.body'
                         defaultMessage='This will remove the server from your Desktop App but will not delete any of its data - you can add the server back at any time.'
@@ -36,7 +35,7 @@ function RemoveServerModal(props: Props) {
                         id='renderer.components.removeServerModal.confirm'
                         defaultMessage='Are you sure you wish to remove the server?'
                     />
-                </Modal.Body>
+                </>
             )}
         />
     );
