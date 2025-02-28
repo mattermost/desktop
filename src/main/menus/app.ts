@@ -10,7 +10,7 @@ import log from 'electron-log';
 import ServerViewState from 'app/serverViewState';
 import {OPEN_SERVERS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import type {Config} from 'common/config';
-import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK} from 'common/constants';
+import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK, ModalConstants} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
 import {t} from 'common/utils/util';
 import {getViewDisplayName} from 'common/views/View';
@@ -59,7 +59,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             }
 
             ModalManager.addModal(
-                'settingsModal',
+                ModalConstants.SETTINGS_MODAL,
                 'mattermost-desktop://renderer/settings.html',
                 getLocalPreload('internalAPI.js'),
                 null,

@@ -3,6 +3,7 @@
 
 import type {Certificate, WebContents, Event} from 'electron';
 
+import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 
 import type {CertificateModalData} from 'types/certificate';
@@ -45,7 +46,7 @@ export class CertificateManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = modalManager.addModal<CertificateModalData, CertificateModalResult>(`certificate-${url}`, html, preload, {url, list}, mainWindow);
+        const modalPromise = modalManager.addModal<CertificateModalData, CertificateModalResult>(`${ModalConstants.CERTIFICATE_MODAL}-${url}`, html, preload, {url, list}, mainWindow);
         if (modalPromise) {
             modalPromise.then((data) => {
                 const {cert} = data;

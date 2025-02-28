@@ -111,7 +111,7 @@ describe('main/authManager', () => {
                     host: 'anormalurl',
                 });
             expect(ModalManager.addModal).toBeCalledWith(
-                'proxy-anormalurl',
+                'proxyLoginModal-anormalurl',
                 expect.any(String),
                 expect.any(String),
                 expect.any(Object),
@@ -124,7 +124,7 @@ describe('main/authManager', () => {
                     host: 'anormalurl',
                 });
             expect(ModalManager.addModal).toBeCalledWith(
-                'login-http://anormalurl.com',
+                'loginModal-http://anormalurl.com',
                 expect.any(String),
                 expect.any(String),
                 expect.any(Object),

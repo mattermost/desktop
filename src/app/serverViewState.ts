@@ -25,6 +25,7 @@ import {
     REMOVE_SERVER,
 } from 'common/communication';
 import Config from 'common/config';
+import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -146,7 +147,7 @@ export class ServerViewState {
         }
 
         const modalPromise = ModalManager.addModal<{prefillURL?: string}, Server>(
-            'newServer',
+            ModalConstants.NEW_SERVER_MODAL,
             'mattermost-desktop://renderer/newServer.html',
             getLocalPreload('internalAPI.js'),
             {prefillURL},
@@ -187,7 +188,7 @@ export class ServerViewState {
         }
 
         const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
-            'editServer',
+            ModalConstants.EDIT_SERVER_MODAL,
             'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
             {server: server.toUniqueServer(), permissions: PermissionsManager.getForServer(server) ?? {}},
@@ -219,7 +220,7 @@ export class ServerViewState {
         }
 
         const modalPromise = ModalManager.addModal<null, boolean>(
-            'removeServer',
+            ModalConstants.REMOVE_SERVER_MODAL,
             'mattermost-desktop://renderer/removeServer.html',
             getLocalPreload('internalAPI.js'),
             null,
