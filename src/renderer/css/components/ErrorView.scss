@@ -1,7 +1,7 @@
 @use 'sass:color';
 
-@import url("../_css_variables.scss");
-@import url("../fonts.css");
+@use "../css_variables";
+@use "../typography";
 
 .ErrorView {
   color: var(--center-channel-color);

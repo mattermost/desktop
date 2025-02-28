@@ -1,6 +1,6 @@
-@import url("../_css_variables.scss");
-@import url("../fonts.css");
-@import '../_mixins.scss';
+@use "../css_variables";
+@use '../mixins';
+@use "../typography";
 
 .alternate-link {
     margin-left: auto;
@@ -19,13 +19,13 @@
     }
 
     &.inFromRight {
-        @include inFromRight(40);
+        @include mixins.inFromRight(40);
 
         animation: inFromRight40 0.5s ease-in-out;
     }
 
     &.outToLeft {
-        @include outToLeft(40);
+        @include mixins.outToLeft(40);
 
         animation: outToLeft40 0.4s ease-in-out;
         opacity: 0;
@@ -84,13 +84,13 @@
                 &.inFromRight {
                     .ConfigureServer__message-title,
                     .ConfigureServer__message-subtitle {
-                        @include inFromRight(30);
+                        @include mixins.inFromRight(30);
 
                         animation: inFromRight30 0.5s ease-in-out;
                     }
 
                     .ConfigureServer__message-img img {
-                        @include inFromRight(70);
+                        @include mixins.inFromRight(70);
 
                         animation: inFromRight70 0.5s ease-in-out;
                     }
@@ -99,14 +99,14 @@
                 &.outToLeft {
                     .ConfigureServer__message-title,
                     .ConfigureServer__message-subtitle {
-                        @include outToLeft(30);
+                        @include mixins.outToLeft(30);
 
                         animation: outToLeft30 0.4s ease-in-out;
                         opacity: 0;
                     }
 
                     .ConfigureServer__message-img img {
-                        @include outToLeft(70);
+                        @include mixins.outToLeft(70);
 
                         animation: outToLeft70 0.4s ease-in-out;
                         opacity: 0;
@@ -159,20 +159,20 @@
                 }
 
                 &.inFromRight {
-                    @include inFromRight(40);
+                    @include mixins.inFromRight(40);
 
                     animation: inFromRight40 0.5s ease-in-out;
                 }
 
                 &.outToLeft {
-                    @include outToLeft(40);
+                    @include mixins.outToLeft(40);
 
                     animation: outToLeft40 0.4s ease-in-out;
                     opacity: 0;
                 }
 
                 &.with-error {
-                    @include shake-horizontally;
+                    @include mixins.shake-horizontally;
                 }
             }
         }

@@ -91,3 +91,10 @@
         -moz-osx-font-smoothing: auto;
     }
 }
+
+@mixin file-icon($path) {
+    background-image: url($path);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 24px 24px;
+}

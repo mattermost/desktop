@@ -13,10 +13,10 @@ import type {UniqueServer} from 'types/config';
 import type {Permissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
 
-import Input, {SIZE, STATUS} from './Input';
-import {Modal} from './Modal';
+import Input, {SIZE, STATUS} from '../Input';
+import {Modal} from '../Modal';
 
-import 'renderer/css/components/NewServerModal.scss';
+import './NewServerModal.scss';
 
 type Props = {
     onClose: () => void;

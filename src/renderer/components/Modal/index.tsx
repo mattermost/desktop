@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import 'renderer/css/components/Modal.scss';
+import './Modal.scss';
 
 export type Props = {
     id: string;

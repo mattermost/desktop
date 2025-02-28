@@ -1,12 +1,7 @@
+@use "mixins";
+
 @import url("fonts.css");
 @import '~@mattermost/compass-icons/css/compass-icons.css';
-
-@mixin file-icon($path) {
-    background-image: url($path);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 24px 24px;
-}
 
 /* with this, padding doesn't change an element's width & height */
 * {
@@ -83,45 +78,45 @@ body {
                     height: 100%;
 
                     &.mattermost {
-                        @include file-icon('./thumbnails/mattermost.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/mattermost.svg');
                         background-size: 32px 32px;
                     }
                     &.text {
-                        @include file-icon('./thumbnails/text.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/text.svg');
                     }
                     &.audio {
-                        @include file-icon('./thumbnails/audio.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/audio.svg');
                     }
                     &.video {
-                        @include file-icon('./thumbnails/video.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/video.svg');
                     }
                     &.ppt {
-                        @include file-icon('./thumbnails/ppt.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/ppt.svg');
                     }
                     &.generic,
                     &.other {
-                        @include file-icon('./thumbnails/generic.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/generic.svg');
                     }
                     &.code {
-                        @include file-icon('./thumbnails/code.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/code.svg');
                     }
                     &.excel {
-                        @include file-icon('./thumbnails/excel.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/excel.svg');
                     }
                     &.word {
-                        @include file-icon('./thumbnails/word.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/word.svg');
                     }
                     &.pdf {
-                        @include file-icon('./thumbnails/pdf.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/pdf.svg');
                     }
                     &.patch {
-                        @include file-icon('./thumbnails/patch.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/patch.svg');
                     }
                     &.image {
-                        @include file-icon('./thumbnails/image.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/image.svg');
                     }
                     &.zip {
-                        @include file-icon('./thumbnails/zip.svg');
+                        @include mixins.file-icon('../assets/svg/thumbnails/zip.svg');
                     }
                 }
             }

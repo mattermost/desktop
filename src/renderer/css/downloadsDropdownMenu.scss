@@ -1,13 +1,6 @@
 @import url("fonts.css");
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
-@mixin file-icon($path) {
-    background-image: url($path);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 24px 24px;
-}
-
 /* with this, padding doesn't change an element's width & height */
 * {
     box-sizing: border-box;
