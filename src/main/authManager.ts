@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 import type {AuthenticationResponseDetails, AuthInfo, WebContents, Event} from 'electron';
 
+import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
 import {isTrustedURL, parseURL} from 'common/utils/url';
@@ -57,7 +58,8 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = modalManager.addModal<LoginModalData, LoginModalResult>(authInfo.isProxy ? `proxy-${authInfo.host}` : `login-${request.url}`, loginModalHtml, preload, {request, authInfo}, mainWindow);
+        const modalKey = authInfo.isProxy ? `${ModalConstants.PROXY_LOGIN_MODAL}-${authInfo.host}` : `${ModalConstants.LOGIN_MODAL}-${request.url}`;
+        const modalPromise = modalManager.addModal<LoginModalData, LoginModalResult>(modalKey, loginModalHtml, preload, {request, authInfo}, mainWindow);
         if (modalPromise) {
             modalPromise.then((data) => {
                 const {username, password} = data;
@@ -76,7 +78,7 @@ export class AuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalPromise = modalManager.addModal(`permission-${request.url}`, permissionModalHtml, preload, {url: request.url, permission}, mainWindow);
+        const modalPromise = modalManager.addModal(`${ModalConstants.PERMISSION_MODAL}-${request.url}`, permissionModalHtml, preload, {url: request.url, permission}, mainWindow);
         if (modalPromise) {
             modalPromise.then(() => {
                 this.handlePermissionGranted(request.url, permission);
