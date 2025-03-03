@@ -136,7 +136,7 @@ jobs:
           aws-access-key-id: ${{ secrets.MM_DESKTOP_DAILY_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.MM_DESKTOP_DAILY_AWS_SECRET_ACCESS_KEY }}
       - name: nightly/download-builds
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
           path: build
           pattern: build-rainforest-*
