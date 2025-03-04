@@ -49,3 +49,15 @@ export const DEFAULT_ACADEMY_LINK = 'https://academy.mattermost.com/';
 export const DEFAULT_TE_REPORT_PROBLEM_LINK = 'https://mattermost.com/pl/report-a-bug';
 export const DEFAULT_EE_REPORT_PROBLEM_LINK = 'https://support.mattermost.com/hc/en-us/requests/new';
 export const DEFAULT_UPGRADE_LINK = 'https://forum.mattermost.com/t/mattermost-desktop-app-5-11-important-compatibility-notice/22599';
+
+export const ModalConstants = {
+    SETTINGS_MODAL: 'settingsModal',
+    NEW_SERVER_MODAL: 'newServer',
+    EDIT_SERVER_MODAL: 'editServer',
+    REMOVE_SERVER_MODAL: 'removeServer',
+    WELCOME_SCREEN_MODAL: 'welcomeScreen',
+    CERTIFICATE_MODAL: 'certificateModal',
+    LOGIN_MODAL: 'loginModal',
+    PROXY_LOGIN_MODAL: 'proxyLoginModal',
+    PERMISSION_MODAL: 'permissionModal',
+};
