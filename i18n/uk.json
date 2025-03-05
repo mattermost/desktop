@@ -280,6 +280,7 @@
   "renderer.components.settingsPage.servers": "Сервери",
   "renderer.components.settingsPage.showUnreadBadge": "Показувати червоний значок на піктограмі {taskbar} для позначення непрочитаних повідомлень",
   "renderer.components.settingsPage.showUnreadBadge.description": "Незалежно від цього налаштування, згадки завжди позначаються червоним значком і кількістю елементів на піктограмі {taskbar}.",
+  "renderer.components.settingsPage.spellChecker": "Перевірка правопису",
   "renderer.components.settingsPage.spellCheckerSetting.language": "Мови перевірки орфографії",
   "renderer.components.settingsPage.startAppOnLogin": "Запускати програму при вході в систему",
   "renderer.components.settingsPage.startAppOnLogin.description": "Якщо увімкнено, програма запускається автоматично, коли ви входите в систему.",
