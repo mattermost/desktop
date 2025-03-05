@@ -433,7 +433,7 @@ export class MattermostWebContentsView extends EventEmitter {
     private loadSuccess = (loadURL: string) => {
         return () => {
             const serverInfo = ServerManager.getRemoteInfo(this.view.server.id);
-            if (serverInfo?.serverVersion && semver.gte(serverInfo.serverVersion, '9.4.0')) {
+            if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
                 this.log.verbose(`finished loading ${loadURL}`);
                 MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
                 this.maxRetries = MAX_SERVER_RETRIES;
