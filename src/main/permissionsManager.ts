@@ -95,7 +95,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
     };
 
     setForServer = (server: MattermostServer, permissions: Permissions) => {
-        if (permissions.media?.allowed) {
+        if (permissions.media?.allowed && (process.platform === 'win32' || process.platform === 'darwin')) {
             this.checkMediaAccess('microphone');
             this.checkMediaAccess('camera');
         }
@@ -137,11 +137,6 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
             url = details.securityOrigin;
         }
 
-        const parsedURL = parseURL(url);
-        if (!parsedURL) {
-            return false;
-        }
-
         let serverURL: URL | undefined;
         if (CallsWidgetWindow.isCallsWidget(webContentsId)) {
             serverURL = CallsWidgetWindow.getViewURL();
@@ -157,6 +152,28 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         const serverHref = serverURL.href;
         if (Config.registryData?.servers?.some((s) => parseURL(s.url)?.href === serverHref)) {
             return true;
+        }
+
+        const preparsedURL = parseURL(url);
+
+        if (!preparsedURL) {
+            return false;
+        }
+
+        const preparsedHostChunks = preparsedURL.host.split('.').reverse();
+        const serverHostChunks = serverURL.host.split('.').reverse();
+
+        if (
+            preparsedHostChunks.length >= 3 && serverHostChunks.length >= 3 &&
+            preparsedHostChunks[0] === serverHostChunks[0] &&
+            preparsedHostChunks[1] === serverHostChunks[1]
+        ) {
+            url = serverURL.href;
+        }
+
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
+            return false;
         }
 
         // Exception for embedded videos such as YouTube
