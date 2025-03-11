@@ -233,20 +233,6 @@ jobs:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
-      # - name: e2e/run-playright-tests-${{ runner.os }}
-      #   run: |
-      #     if [ ${{ runner.os }} == 'Linux' ]; then
-      #       export DISPLAY=:99
-      #       Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
-      #     fi
-      #     npm run build-test
-      #     cd e2e
-      #     npm run run:e2e || true # making job pass even if the tests fail due to flakyness
-      #     npm run send-report
-      #   env:
-      #     SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
-      #     DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
