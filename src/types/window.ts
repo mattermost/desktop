@@ -40,6 +40,7 @@ declare global {
             focusCurrentView: () => void;
             openServerExternally: () => void;
             openServerUpgradeLink: () => void;
+            openChangelogLink: () => void;
             closeDownloadsDropdown: () => void;
             closeDownloadsDropdownMenu: () => void;
             openDownloadsDropdown: () => void;

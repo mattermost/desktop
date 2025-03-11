@@ -104,6 +104,7 @@ export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 
 export const OPEN_SERVER_EXTERNALLY = 'open-server-externally';
 export const OPEN_SERVER_UPGRADE_LINK = 'open-server-upgrade-link';
+export const OPEN_CHANGELOG_LINK = 'open-changelog-link';
 
 export const PING_DOMAIN = 'ping-domain';
 
