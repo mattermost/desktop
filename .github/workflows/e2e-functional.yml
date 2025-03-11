@@ -69,36 +69,37 @@ jobs:
       runs-on: macos-13
       DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
-  e2e-windows:
-    if: ${{
-      (
-      (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
-      &&
-      github.event_name == 'workflow_dispatch'
-      ) ||
-      (
-      github.event_name == 'push'
-      ) ||
-      (
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.labels &&
-      contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
-      )
-      }}
-    uses: ./.github/workflows/e2e-functional-template.yml
-    secrets: inherit
-    with:
-      runs-on: windows-2022
-      DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
+  # TODO: Uncomment when https://mattermost.atlassian.net/browse/MM-63397 is resolved
+  # e2e-windows:
+  #   if: ${{
+  #     (
+  #     (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
+  #     &&
+  #     github.event_name == 'workflow_dispatch'
+  #     ) ||
+  #     (
+  #     github.event_name == 'push'
+  #     ) ||
+  #     (
+  #     github.event_name == 'pull_request' &&
+  #     github.event.pull_request.labels &&
+  #     contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+  #     )
+  #     }}
+  #   uses: ./.github/workflows/e2e-functional-template.yml
+  #   secrets: inherit
+  #   with:
+  #     runs-on: windows-2022
+  #     DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
   e2e-remove-label:
     if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
-    needs: [e2e-linux, e2e-macos, e2e-windows]
+    needs: [e2e-linux, e2e-macos] #, e2e-windows] TODO: Uncomment when https://mattermost.atlassian.net/browse/MM-63397 is resolved
     runs-on: ubuntu-22.04
     env:
       COMMENT_BODY_LINUX: "${{ needs.e2e-linux.outputs.COMMENT_BODY }}"
       COMMENT_BODY_MACOS: "${{ needs.e2e-macos.outputs.COMMENT_BODY }}"
-      COMMENT_BODY_WINDOWS: "${{ needs.e2e-windows.outputs.COMMENT_BODY }}"
+      # COMMENT_BODY_WINDOWS: "${{ needs.e2e-windows.outputs.COMMENT_BODY }}"
     steps:
       - name: e2e/unify-comments-in-single-comment
         run: |

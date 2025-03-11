@@ -162,15 +162,6 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
-          # Check if Xcode command-line tools are installed
-          if ! xcode-select -p &>/dev/null; then
-            echo "Xcode command-line tools not found. Installing..."
-            xcode-select --install
-          else
-            echo "Xcode command-line tools are already installed. Checking for updates..."
-            sudo softwareupdate --all --install --force
-          fi
-
           brew install nss
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
@@ -222,17 +213,16 @@ jobs:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
-          # TODO: Uncomment when https://mattermost.atlassian.net/browse/MM-63397 is resolved
-            # - name: e2e/run-playright-tests-windows
-            #   if: runner.os == 'Windows'
-            #   run: |
-            #     npm run build-test
-            #     cd e2e
-            #     npm run run:e2e || true
-            #     npm run send-report
-            #   env:
-            #     SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
-            #     DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+      - name: e2e/run-playright-tests-windows
+        if: runner.os == 'Windows'
+        run: |
+          npm run build-test
+          cd e2e
+          npm run run:e2e || true
+          npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
