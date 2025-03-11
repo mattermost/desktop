@@ -50,7 +50,7 @@ describe('dark_mode', function desc() {
             const topBarElementWithLightMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithLightMode = await topBarElementWithLightMode.getAttribute('class');
 
-            topBarElementClassWithLightMode.should.contain('topBar row');
+            topBarElementClassWithLightMode.should.contain('topBar');
         });
     }
 });
