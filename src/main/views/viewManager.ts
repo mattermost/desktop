@@ -35,7 +35,7 @@ import {
     DEVELOPER_MODE_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
-import {DEFAULT_CHANGELOG_URL} from 'common/constants';
+import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -591,7 +591,7 @@ export class ViewManager {
     };
 
     private handleOpenChangelogLink = () => {
-        shell.openExternal(DEFAULT_CHANGELOG_URL);
+        shell.openExternal(DEFAULT_CHANGELOG_LINK);
     };
 
     private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {
