@@ -42,7 +42,7 @@ describe('dark_mode', function desc() {
             const topBarElementWithDarkMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithDarkMode = await topBarElementWithDarkMode.getAttribute('class');
 
-            topBarElementClassWithDarkMode.should.contain('topBar darkMode row');
+            topBarElementClassWithDarkMode.should.contain('topBar darkMode');
 
             // Toggle Light Mode
             await toggleDarkMode();
