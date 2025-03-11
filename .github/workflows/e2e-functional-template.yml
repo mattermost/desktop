@@ -162,9 +162,17 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
+          # Check if Xcode command-line tools are installed
+          if ! xcode-select -p &>/dev/null; then
+            echo "Xcode command-line tools not found. Installing..."
+            xcode-select --install
+          else
+            echo "Xcode command-line tools are already installed. Checking for updates..."
+            sudo softwareupdate --all --install --force
+          fi
+
           brew install nss
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
-          xcode-select --install
           npm ci
           cd e2e
           npm ci
@@ -188,19 +196,56 @@ jobs:
           npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs --module-dir ../
           npm install mochawesome-report-generator
 
-      - name: e2e/run-playright-tests-${{ runner.os }}
+      - name: e2e/run-playright-tests-linux
+        if: runner.os == 'Linux'
         run: |
-          if [ ${{ runner.os }} == 'Linux' ]; then
-            export DISPLAY=:99
-            Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
-          fi
+          export DISPLAY=:99
+          Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           npm run build-test
           cd e2e
-          npm run run:e2e || true # making job pass even if the tests fail due to flakyness
+          xvfb-run -a npm run run:e2e || true
           npm run send-report
         env:
-          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/run-playright-tests-macos
+        if: runner.os == 'macOS'
+        run: |
+          sudo spctl --master-disable
+          xattr -dr com.apple.quarantine ./node_modules/electron
+          npm run build-test
+          cd e2e
+          npm run run:e2e || true
+          npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/run-playright-tests-windows
+        if: runner.os == 'Windows'
+        run: |
+          npm run build-test
+          cd e2e
+          npm run run:e2e || true
+          npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+      # - name: e2e/run-playright-tests-${{ runner.os }}
+      #   run: |
+      #     if [ ${{ runner.os }} == 'Linux' ]; then
+      #       export DISPLAY=:99
+      #       Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
+      #     fi
+      #     npm run build-test
+      #     cd e2e
+      #     npm run run:e2e || true # making job pass even if the tests fail due to flakyness
+      #     npm run send-report
+      #   env:
+      #     SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
+      #     DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
