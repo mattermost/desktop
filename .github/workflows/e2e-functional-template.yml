@@ -27,7 +27,7 @@ on:
         default: "ubuntu-22.04"
       nightly:
         type: boolean
-        description: "True if this is nigtly build"
+        description: "True if this is nightly build"
         required: false
         default: false
       cmt:
@@ -140,7 +140,7 @@ jobs:
         with:
           python-version: "3.10"
 
-      ## Linux Depdendencies
+      ## Linux Dependencies
       - name: e2e/install-dependencies-linux
         if: runner.os == 'Linux'
         env:
@@ -148,7 +148,7 @@ jobs:
         run: |
           wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
           wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
-          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xsel
+          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xsel libgtk-3-0 libnss3 libxss1 libasound2
           sudo apt-get install -y xvfb
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 &
@@ -176,6 +176,7 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
           choco install yq --version 4.15.1 -y
+          choco install vcredist-all -y
           npm i -g node-gyp
           node-gyp install
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
@@ -186,18 +187,41 @@ jobs:
           npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs --module-dir ../
           npm install mochawesome-report-generator
 
-      - name: e2e/run-playright-tests-${{ runner.os }}
+      - name: e2e/run-playright-tests-linux
+        if: runner.os == 'Linux'
         run: |
-          if [ ${{ runner.os }} == 'Linux' ]; then
-            export DISPLAY=:99
-            Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
-          fi
+          export DISPLAY=:99
+          Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           npm run build-test
           cd e2e
-          npm run run:e2e || true # making job pass even if the tests fail due to flakyness
+          xvfb-run -a npm run run:e2e || true
           npm run send-report
         env:
-          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION}}
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/run-playright-tests-macos
+        if: runner.os == 'macOS'
+        run: |
+          sudo spctl --master-disable
+          xattr -dr com.apple.quarantine ./node_modules/electron
+          npm run build-test
+          cd e2e
+          npm run run:e2e || true
+          npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/run-playright-tests-windows
+        if: runner.os == 'Windows'
+        run: |
+          npm run build-test
+          cd e2e
+          npm run run:e2e || true
+          npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/analyze-flaky-tests
