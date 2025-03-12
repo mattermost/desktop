@@ -301,6 +301,7 @@
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} version {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "New Desktop version available",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "Restart & update",
+  "renderer.downloadsDropdown.Update.ViewChangelog": "View Changelog",
   "renderer.downloadsDropdownMenu.CancelDownload": "Cancel Download",
   "renderer.downloadsDropdownMenu.Clear": "Clear",
   "renderer.downloadsDropdownMenu.Open": "Open",

@@ -350,13 +350,26 @@ body {
                         }
 
                         .DownloadsDropdown__Update__Details__Description {
-                            color: rgba(63, 67, 80, 0.64);
+                            color: rgba(var(--center-channel-color-rgb), 0.64);
                             font-size: 10px;
                             font-style: normal;
                             font-weight: 400;
                             letter-spacing: 0.02em;
                             line-height: 16px;
                             max-width: 200px;
+                        }
+
+                        .DownloadsDropdown__Update__Details__Changelog {
+                            color: var(--link-color);
+                            text-decoration: none;
+                            font-size: 12px;
+                            font-weight: 600;
+                            margin-top: 6px;
+                            display: inline-block;
+
+                            &:hover, &:focus {
+                                filter: brightness(90%);
+                            }
                         }
 
                         button#downloadUpdateButton {
