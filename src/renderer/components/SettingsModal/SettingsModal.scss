@@ -1,0 +1,106 @@
+@use '../../css/css_variables';
+
+.SettingsModal {
+    &.Modal_dialog {
+        width: 832px;
+        max-width: 832px;
+    }
+
+    > .Modal_content {
+        border: var(--border-light);
+        display: flex;
+        flex-direction: column;
+
+        > .Modal_body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+    
+            > .Modal__body {
+                display: flex;
+                flex: 1;
+                min-height: 475px;
+        
+                .SettingsModal__sidebar {
+                    flex: 0 0 auto;
+                    width: 232px;
+                    padding: 24px;
+                    box-sizing: border-box;
+                    background-color: rgba(var(--center-channel-color-rgb), 0.04);
+        
+                    .SettingsModal__category {
+                        border: none;
+                        width: 100%;
+                        padding: 8px 12px;
+                        border-radius: var(--radius-s);
+                        background: none;
+                        color: rgba(var(--center-channel-color-rgb), 0.56);
+                        display: flex;
+                        align-items: center;
+        
+                        & + .SettingsModal__category {
+                            margin-top: 8px;
+                        }
+        
+                        &.selected {
+                            background-color: rgba(var(--button-bg-rgb), 0.08);
+                            color: var(--button-bg);
+                        }
+        
+                        &:hover:not(.selected) {
+                            background-color: rgba(var(--center-channel-color-rgb), 0.04);
+                            color: rgba(var(--center-channel-color-rgb), 0.8);
+                        }
+        
+                        > span {
+                            font-weight: 600;
+                            line-height: 14px;
+                            font-size: 14px;
+                            margin-left: 8px;
+                        }
+                        
+                        > i {
+                            font-size: 18px;
+                            line-height: 18px;
+        
+                            &::before {
+                                margin: 0;
+                            }
+                        }
+                    }
+                }
+        
+                .SettingsModal__content {
+                    padding: 28px 32px;
+                    border-left: var(--border-light);
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+        
+                    > div + div {
+                        margin-top: 24px;
+                    }
+                }
+            }
+        }
+    }
+
+    .SettingsModal__saving {
+        padding: 8px 16px;
+        margin-right: 14px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        display: flex;
+
+        > span {
+            font-size: 12px;
+            line-height: 16px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        > i {
+            font-size: 14.4px;
+            line-height: 14.4px;
+        }
+    }
+}

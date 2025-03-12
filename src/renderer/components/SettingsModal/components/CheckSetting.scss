@@ -1,0 +1,72 @@
+.CheckSetting {
+    .CheckSetting__heading {
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .CheckSetting__content {
+        display: flex;
+
+        .CheckSetting__checkbox {
+            margin-right: 10px;
+            background: none;
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+            border-radius: var(--radius-xs);
+            width: 16px;
+            height: 16px;
+            margin-top: 2px;
+
+            input {
+                appearance: none;
+                position: absolute;
+            }
+            
+            > i {
+                display: block;
+                font-size: 0;
+                line-height: 16px;
+                position: relative;
+                right: -1px;
+                top: 2px;
+                width: 0;
+                height: 0;
+                border-radius: var(--radius-xs);
+                transition: all ease-in-out 0.175s;
+                background: none;
+                color: none;
+
+                &::before {
+                    margin: 0;
+                }
+            }
+
+            &.checked {
+                border: 1px solid var(--button-bg);
+
+                > i {
+                    right: 7px;
+                    top: -2px;
+                    width: 16px;
+                    height: 16px;
+                    font-size: 14.4px;
+                    background: var(--button-bg);
+                    color: var(--button-color);
+                }
+            }
+        }
+
+        .CheckSetting__label {
+            font-size: 14px;
+            line-height: 20px;
+
+            .CheckSetting__sublabel {
+                margin-top: 4px;
+                font-size: 12px;
+                line-height: 16px;
+                color: rgba(var(--center-channel-color-rgb), 0.76)
+            }
+        }
+    }
+}

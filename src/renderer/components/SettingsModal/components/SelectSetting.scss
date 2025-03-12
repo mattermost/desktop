@@ -1,0 +1,93 @@
+.SelectSetting {
+    &.SelectSetting-bottomBorder {
+        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+        padding-bottom: 24px;
+    }
+
+    .SelectSetting__select {
+        margin-top: 16px;
+        width: 50%;
+
+        .SelectSetting__select__single-value {
+            color: rgba(var(--center-channel-color-rgb), 0.64);
+        }
+
+        .SelectSetting__select__control {
+            background: var(--center-channel-bg);
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+            border-radius: var(--radius-s);
+            box-sizing: border-box;
+
+            &:hover {
+                border-color: rgba(var(--center-channel-color-rgb), 0.48);
+            }
+
+            &:focus-within {
+                border-color: var(--button-bg);
+                border-width: 1px;
+            }
+        }
+        
+        .SelectSetting__select__menu {
+            background: var(--center-channel-bg);
+        }
+
+        .SelectSetting__select__menu-portal {
+            z-index: 10;
+        }
+        
+        .SelectSetting__select__option {
+            background: var(--center-channel-bg);
+            color: var(--center-channel-color);
+
+            &:hover {
+                background-color: rgba(var(--center-channel-color-rgb), 0.16);
+            }
+        }
+
+        .SelectSetting__select__indicator {
+            color: rgba(var(--center-channel-color-rgb), 0.64);
+        }
+
+        .SelectSetting__select__indicator-separator {
+            display: none;
+        }
+
+        .SelectSetting__select__multi-value {
+            border-radius: var(--radius-l);
+            border: none;
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+
+            .SelectSetting__select__multi-value__label {
+                font-size: 12px;
+                font-weight: 600;
+                line-height: 15px;
+                color: var(--center-channel-color);
+                padding: 4.5px;
+                padding-left: 10px;
+            }
+
+            .SelectSetting__select__multi-value__remove {
+                padding: 0;
+                margin: 4.5px 10px 4.5px 1.5px;
+                border-radius: 50%;
+                background: rgba(var(--center-channel-color-rgb), 0.32);
+
+                &:hover {
+                    color: inherit;
+                };
+            }
+        }
+    }
+
+    .SelectSetting__heading {
+        margin: 0;
+    }
+
+    .SelectSetting__label {
+        margin-top: 8px;
+        font-size: 12px;
+        line-height: 16px;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+    }
+}

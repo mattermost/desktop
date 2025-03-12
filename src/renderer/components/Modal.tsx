@@ -78,6 +78,29 @@ export const Modal: React.FC<Props> = ({
     const [showState, setShowState] = useState<boolean>();
     const backdropRef = useRef<HTMLDivElement>(null);
 
+    const onClose = useCallback(async () => {
+        await onHide();
+        onExited();
+    }, [onExited]);
+
+    useEffect(() => {
+        const escListener = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        async function createEscListener() {
+            const uncloseable = await window.desktop.modals.isModalUncloseable();
+            if (!uncloseable) {
+                window.addEventListener('keydown', escListener);
+            }
+        }
+        createEscListener();
+        return () => {
+            window.removeEventListener('keydown', escListener);
+        };
+    }, [onClose]);
+
     useEffect(() => {
         setShowState(show ?? true);
     }, [show]);
@@ -90,11 +113,6 @@ export const Modal: React.FC<Props> = ({
             setShowState(false);
         });
     };
-
-    const onClose = useCallback(async () => {
-        await onHide();
-        onExited();
-    }, [onExited]);
 
     const handleCancelClick = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();

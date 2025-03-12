@@ -5,6 +5,7 @@ import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {app, Menu} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
+import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
@@ -38,16 +39,17 @@ function handleShowOnboardingScreens(showWelcomeScreen: boolean, showNewServerMo
     log.debug('handleShowOnboardingScreens', {showWelcomeScreen, showNewServerModal, mainWindowIsVisible});
 
     if (showWelcomeScreen) {
-        if (ModalManager.isModalDisplayed()) {
+        const welcomeScreen = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
+        if (welcomeScreen) {
             return;
         }
 
         handleWelcomeScreenModal();
 
         if (process.env.NODE_ENV === 'test') {
-            const welcomeScreen = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
-            if (welcomeScreen?.view.webContents.isLoading()) {
-                welcomeScreen?.view.webContents.once('did-finish-load', () => {
+            const welcomeScreenTest = ModalManager.modalQueue.find((modal) => modal.key === 'welcomeScreen');
+            if (welcomeScreenTest?.view.webContents.isLoading()) {
+                welcomeScreenTest?.view.webContents.once('did-finish-load', () => {
                     app.emit('e2e-app-loaded');
                 });
             } else {
@@ -97,7 +99,7 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>('welcomeScreen', html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then((data) => {
             let initialLoadURL;
@@ -176,7 +178,7 @@ export function handleShowSettingsModal() {
     }
 
     ModalManager.addModal(
-        'settingsModal',
+        ModalConstants.SETTINGS_MODAL,
         'mattermost-desktop://renderer/settings.html',
         getLocalPreload('internalAPI.js'),
         null,

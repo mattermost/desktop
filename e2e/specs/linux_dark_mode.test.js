@@ -42,7 +42,7 @@ describe('dark_mode', function desc() {
             const topBarElementWithDarkMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithDarkMode = await topBarElementWithDarkMode.getAttribute('class');
 
-            topBarElementClassWithDarkMode.should.contain('topBar darkMode row');
+            topBarElementClassWithDarkMode.should.contain('topBar darkMode');
 
             // Toggle Light Mode
             await toggleDarkMode();
@@ -50,7 +50,7 @@ describe('dark_mode', function desc() {
             const topBarElementWithLightMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithLightMode = await topBarElementWithLightMode.getAttribute('class');
 
-            topBarElementClassWithLightMode.should.contain('topBar row');
+            topBarElementClassWithLightMode.should.contain('topBar');
         });
     }
 });
