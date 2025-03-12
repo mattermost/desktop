@@ -63,9 +63,15 @@ on:
       REPORT_LINK_WINDOWS:
         description: "Link to Windows report"
         value: ${{ jobs.e2e.outputs.REPORT_LINK_WINDOWS }}
-      STATUS:
-        description: "The status of the test"
-        value: ${{ jobs.e2e.outputs.STATUS }}
+      STATUS_LINUX:
+        description: "The status of the linux test"
+        value: ${{ jobs.e2e.outputs.STATUS_LINUX }}
+      STATUS_MACOS:
+        description: "The status of the macOS test"
+        value: ${{ jobs.e2e.outputs.STATUS_MACOS }}
+      STATUS_WINDOWS:
+        description: "The status of the windows test"
+        value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
 
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
@@ -101,7 +107,9 @@ jobs:
       REPORT_LINK_LINUX: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_LINUX }}
       REPORT_LINK_MACOS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_MACOS }}
       REPORT_LINK_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_WINDOWS }}
-      STATUS: ${{ steps.analyze-flaky-tests.outputs.STATUS }}
+      STATUS_LINUX: ${{ steps.analyze-flaky-tests.outputs.STATUS_LINUX }}
+      STATUS_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.STATUS_WINDOWS }}
+      STATUS_MACOS: ${{ steps.analyze-flaky-tests.outputs.STATUS_MACOS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -247,20 +255,21 @@ jobs:
               case 'linux':
                 core.setOutput('NEW_FAILURES_LINUX', newFailedTests.length);
                 core.setOutput('REPORT_LINK_LINUX', "${{ env.REPORT_LINK}}");
+                newFailedTests.length > 0 ? core.setOutput('STATUS_LINUX', 'failure') : core.setOutput('STATUS_LINUX', 'success');
                 break;
               case 'darwin':
                 core.setOutput('NEW_FAILURES_MACOS', newFailedTests.length);
                 core.setOutput('REPORT_LINK_MACOS', "${{ env.REPORT_LINK}}");
+                newFailedTests.length > 0 ? core.setOutput('STATUS_MACOS', 'failure') : core.setOutput('STATUS_MACOS', 'success');
                 break;
               case 'win32':
                 core.setOutput('NEW_FAILURES_WINDOWS', newFailedTests.length);
                 core.setOutput('REPORT_LINK_WINDOWS', "${{ env.REPORT_LINK}}");
+                newFailedTests.length > 0 ? core.setOutput('STATUS_WINDOWS', 'failure') : core.setOutput('STATUS_WINDOWS', 'success');
                 break;
               default:
                 throw new Error(`Unsupported OS: ${os}`);
             }
-
-            newFailedTests.length > 0 ? core.setOutput('STATUS', 'failure') : core.setOutput('STATUS', 'success');
 
       - name: Upload test results
         if: always()
