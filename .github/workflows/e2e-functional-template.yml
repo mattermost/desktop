@@ -219,6 +219,10 @@ jobs:
           npm run build-test
           cd e2e
           ls -la dist
+          echo "*******************************"
+          npm run build
+          echo "*******************************"
+          ls -la dist
           # npm run run:e2e || true
           # npm run send-report
         env:
