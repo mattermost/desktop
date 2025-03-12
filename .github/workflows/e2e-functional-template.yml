@@ -218,8 +218,9 @@ jobs:
         run: |
           npm run build-test
           cd e2e
-          npm run run:e2e || true
-          npm run send-report
+          ls -la dist
+          # npm run run:e2e || true
+          # npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}

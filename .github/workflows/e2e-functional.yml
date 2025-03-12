@@ -69,28 +69,27 @@ jobs:
       runs-on: macos-13
       DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
-  # TODO: Uncomment when https://mattermost.atlassian.net/browse/MM-63397 is resolved
-  # e2e-windows:
-  #   if: ${{
-  #     (
-  #     (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
-  #     &&
-  #     github.event_name == 'workflow_dispatch'
-  #     ) ||
-  #     (
-  #     github.event_name == 'push'
-  #     ) ||
-  #     (
-  #     github.event_name == 'pull_request' &&
-  #     github.event.pull_request.labels &&
-  #     contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
-  #     )
-  #     }}
-  #   uses: ./.github/workflows/e2e-functional-template.yml
-  #   secrets: inherit
-  #   with:
-  #     runs-on: windows-2022
-  #     DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
+  e2e-windows:
+    if: ${{
+      (
+      (inputs.job_name == 'e2e-windows' || inputs.job_name == 'All')
+      &&
+      github.event_name == 'workflow_dispatch'
+      ) ||
+      (
+      github.event_name == 'push'
+      ) ||
+      (
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.labels &&
+      contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests')
+      )
+      }}
+    uses: ./.github/workflows/e2e-functional-template.yml
+    secrets: inherit
+    with:
+      runs-on: windows-2022
+      DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
   e2e-remove-label:
     if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
