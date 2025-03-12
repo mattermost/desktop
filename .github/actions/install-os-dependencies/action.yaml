@@ -27,7 +27,11 @@ runs:
           graphicsmagick \
           tzdata \
           xsel \
-          xvfb
+          xvfb \
+          libgtk-3-0 \
+          libnss3 \
+          libxss1 \
+          libasound2
 
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'
@@ -43,6 +47,7 @@ runs:
       shell: bash
       run: |
         choco install yq --version 4.15.1 -y
+        choco install vcredist-all -y
         npm i -g node-gyp
         ELECTRON_VERSION=$(jq -r .devDependencies.electron package.json)
         node-gyp install
