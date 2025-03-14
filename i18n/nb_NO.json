@@ -327,6 +327,7 @@
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} versjon {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "Ny desktopversjon tilgjengelig",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "Start på nytt og oppdater",
+  "renderer.downloadsDropdown.Update.ViewChangelog": "Vis endringslogg",
   "renderer.downloadsDropdown.remaining": "gjenstående",
   "renderer.downloadsDropdownMenu.CancelDownload": "Avbryt nedlasting",
   "renderer.downloadsDropdownMenu.Clear": "Tøm",
