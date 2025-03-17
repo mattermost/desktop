@@ -341,6 +341,7 @@
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} versie {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "Nieuwe desktopversie beschikbaar",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "Opnieuw opstarten en bijwerken",
+  "renderer.downloadsDropdown.Update.ViewChangelog": "Overzicht wijzigingen bekijken",
   "renderer.downloadsDropdown.remaining": "resterende",
   "renderer.downloadsDropdownMenu.CancelDownload": "Download annuleren",
   "renderer.downloadsDropdownMenu.Clear": "Wissen",
