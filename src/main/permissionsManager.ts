@@ -30,7 +30,7 @@ import {isTrustedURL, parseURL} from 'common/utils/url';
 import {t} from 'common/utils/util';
 import {permissionsJson} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 

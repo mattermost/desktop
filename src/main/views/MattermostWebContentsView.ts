@@ -23,7 +23,8 @@ import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
-import {TAB_MESSAGING, type MattermostView} from 'common/views/View';
+import ViewManager from 'common/views/viewManager';
+import type {MattermostView} from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
 import performanceMonitor from 'main/performanceMonitor';
@@ -77,7 +78,7 @@ export class MattermostWebContentsView extends EventEmitter {
         this.webContentsView = new WebContentsView(this.options);
         this.resetLoadingStatus();
 
-        this.log = ServerManager.getViewLog(this.id, 'MattermostWebContentsView');
+        this.log = ViewManager.getViewLog(this.id, 'MattermostWebContentsView');
         this.log.verbose('View created');
 
         this.webContentsView.webContents.on('update-target-url', this.handleUpdateTarget);
@@ -188,11 +189,7 @@ export class MattermostWebContentsView extends EventEmitter {
             loadURL = this.view.url.toString();
         }
         this.log.verbose(`Loading ${loadURL}`);
-        if (this.view.type === TAB_MESSAGING) {
-            performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
-        } else {
-            performanceMonitor.registerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
-        }
+        performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {

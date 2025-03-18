@@ -100,6 +100,8 @@ import {
     LOAD_INCOMPATIBLE_SERVER,
     OPEN_SERVER_UPGRADE_LINK,
     OPEN_CHANGELOG_LINK,
+    GET_CURRENT_SERVER,
+    GET_VIEW_BY_SERVER_ID,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -140,6 +142,8 @@ contextBridge.exposeInMainWorld('desktop', {
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
+    getCurrentServer: () => ipcRenderer.invoke(GET_CURRENT_SERVER),
+    getViewByServerId: (serverId) => ipcRenderer.invoke(GET_VIEW_BY_SERVER_ID, serverId),
     getLastActive: () => ipcRenderer.invoke(GET_LAST_ACTIVE),
     getOrderedServers: () => ipcRenderer.invoke(GET_ORDERED_SERVERS),
     getOrderedTabsForServer: (serverId) => ipcRenderer.invoke(GET_ORDERED_TABS_FOR_SERVER, serverId),

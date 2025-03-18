@@ -22,7 +22,7 @@ import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
 } from 'main/utils';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import WebContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
 

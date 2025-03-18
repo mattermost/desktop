@@ -13,7 +13,7 @@ import {PLAY_SOUND} from 'common/communication';
 import notMockedConfig from 'common/config';
 import {localizeMessage as notMockedLocalizeMessage} from 'main/i18nManager';
 import notMockedPermissionsManager from 'main/permissionsManager';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import notMockedMainWindow from 'main/windows/mainWindow';
 
 import getLinuxDoNotDisturb from './dnd-linux';

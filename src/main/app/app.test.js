@@ -6,7 +6,7 @@ import {app, dialog} from 'electron';
 import {handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
 import {getDeeplinkingURL, openDeepLink} from 'main/app/utils';
 import CertificateStore from 'main/certificateStore';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 jest.mock('electron', () => ({

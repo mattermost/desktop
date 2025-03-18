@@ -5,7 +5,7 @@ import {shell} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
 import {parseURL} from 'common/utils/url';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 
 import PluginsPopUpsManager from './pluginsPopUps';
 

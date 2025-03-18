@@ -17,7 +17,7 @@ import {Mention} from './Mention';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
 import PermissionsManager from '../permissionsManager';
-import ViewManager from '../views/viewManager';
+import ViewManager from '../views/webContentsManager';
 import MainWindow from '../windows/mainWindow';
 
 const log = new Logger('Notifications');

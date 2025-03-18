@@ -3,7 +3,7 @@
 
 import type {ipcRenderer, Rectangle} from 'electron/renderer';
 
-import type {CombinedConfig, LocalConfiguration, UniqueView, UniqueServer, Server} from './config';
+import type {CombinedConfig, LocalConfiguration, UniqueServer, Server, UniqueView} from './config';
 import type {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import type {UniqueServerWithPermissions, Permissions} from './permissions';
 import type {URLValidationResult} from './server';
@@ -52,7 +52,8 @@ declare global {
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
-            getLastActive: () => Promise<{server: string; view: string}>;
+            getCurrentServer: () => Promise<UniqueServer>;
+            getViewByServerId: (serverId: string) => Promise<UniqueView | null>;
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             onUpdateServers: (listener: () => void) => void;

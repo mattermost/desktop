@@ -157,6 +157,8 @@ export const UPDATE_TAB_ORDER = 'update-tab-order';
 export const GET_LAST_ACTIVE = 'get-last-active';
 export const GET_ORDERED_SERVERS = 'get-ordered-servers';
 export const GET_ORDERED_TABS_FOR_SERVER = 'get-ordered-tabs-for-server';
+export const GET_CURRENT_SERVER = 'get-current-server';
+export const GET_VIEW_BY_SERVER_ID = 'get-view-by-server-id';
 
 export const UPDATE_APPSTATE = 'update-appstate';
 export const UPDATE_APPSTATE_TOTALS = 'update-appstate-totals';

@@ -22,7 +22,7 @@ import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
 import Tray from 'main/tray/tray';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {MigrationInfo} from 'types/config';

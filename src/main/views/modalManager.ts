@@ -19,7 +19,7 @@ import {
 } from 'common/communication';
 import {Logger} from 'common/log';
 import {getAdjustedWindowBoundaries} from 'main/utils';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import WebContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
 

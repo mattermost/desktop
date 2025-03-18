@@ -16,7 +16,7 @@ import {
     parseURL,
 } from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import {generateHandleConsoleMessage, isCustomProtocol} from 'main/views/webContentEventsCommon';
 import MainWindow from 'main/windows/mainWindow';
 

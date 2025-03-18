@@ -10,9 +10,11 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
+import ViewManager from 'common/views/viewManager';
 import NotificationManager from 'main/notifications';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
+import webContentsManager from 'main/views/webContentsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {UniqueServer} from 'types/config';
@@ -110,11 +112,18 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                 }
             }
             const newServer = ServerManager.addServer(data, initialLoadURL);
+
+            // Create the view for the new server
+            ViewManager.addServerViews(newServer);
+
+            // Load the server in WebContentsManager
+            webContentsManager.loadServer(newServer);
             ServerViewState.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
                 log.error(`there was an error in the welcome screen modal: ${e}`);
+                log.error(e);
             }
         });
     } else {

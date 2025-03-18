@@ -126,6 +126,7 @@ class MainPage extends React.PureComponent<Props, State> {
             servers.map((srv) => window.desktop.getOrderedTabsForServer(srv.id!).
                 then((tabs) => ({id: srv.id, tabs}))),
         ).then((serverTabs) => {
+            console.log('serverTabs', serverTabs);
             serverTabs.forEach((serverTab) => {
                 tabs.set(serverTab.id, serverTab.tabs);
                 serverTab.tabs.forEach((tab) => {
@@ -140,8 +141,14 @@ class MainPage extends React.PureComponent<Props, State> {
     };
 
     setInitialActiveTab = async () => {
-        const lastActive = await window.desktop.getLastActive();
-        this.setActiveView(lastActive.server, lastActive.view);
+        const currentServer = await window.desktop.getCurrentServer();
+        if (!currentServer?.id) {
+            return;
+        }
+        const view = await window.desktop.getViewByServerId(currentServer.id);
+        if (view) {
+            this.setActiveView(currentServer.id, view.id);
+        }
     };
 
     updateServers = async () => {
