@@ -269,7 +269,6 @@ module.exports = {
 
         await window.type('#input_loginId', process.env.MM_TEST_USERNAME);
         await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
-        console.log('Logging in', process.env.MM_TEST_PASSWORD);
         await window.click('#saveSetting');
     },
 
