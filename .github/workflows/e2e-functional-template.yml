@@ -73,6 +73,50 @@ on:
         description: "The status of the windows test"
         value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
 
+  workflow_dispatch:
+    inputs:
+      MM_TEST_SERVER_URL:
+        description: "The test server URL"
+        required: false
+        type: string
+      MM_TEST_USER_NAME:
+        description: "The admin username of the test instance"
+        required: false
+        type: string
+      MM_TEST_PASSWORD:
+        description: "The admin password of the test instance"
+        required: false
+        type: string
+      DESKTOP_VERSION:
+        description: "The desktop version to test"
+        required: false
+        default: "master"
+        type: string
+      runs-on:
+        type: string
+        description: "The E2E tests underlying OS"
+        required: true
+        default: "ubuntu-22.04"
+      nightly:
+        type: boolean
+        description: "True if this is nightly build"
+        required: false
+        default: false
+      cmt:
+        type: boolean
+        description: "True if this is Compatibility Matrix Testing"
+        required: false
+        default: false
+      TYPE:
+        type: boolean
+        description: "True if this is Triggered from PR"
+        required: false
+        default: false
+      MM_SERVER_VERSION:
+        type: string
+        required: false
+        default: "9.9.1"
+
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -92,6 +136,8 @@ env:
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   REPORT_LINK: "none"
   NODE_VERSION: 18
+  SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '9.9.1' }}
+  DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
 jobs:
   e2e:
