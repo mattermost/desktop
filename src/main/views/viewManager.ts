@@ -19,6 +19,8 @@ import {
     SERVERS_UPDATE,
     REACT_APP_INITIALIZED,
     OPEN_SERVER_EXTERNALLY,
+    OPEN_SERVER_UPGRADE_LINK,
+    OPEN_CHANGELOG_LINK,
     HISTORY,
     GET_VIEW_INFO_FOR_TEST,
     SESSION_EXPIRED,
@@ -31,9 +33,9 @@ import {
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
     DEVELOPER_MODE_UPDATED,
-    OPEN_SERVER_UPGRADE_LINK,
 } from 'common/communication';
 import Config from 'common/config';
+import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -84,6 +86,7 @@ export class ViewManager {
         ipcMain.on(TAB_LOGIN_CHANGED, this.handleTabLoginChanged);
         ipcMain.on(OPEN_SERVER_EXTERNALLY, this.handleOpenServerExternally);
         ipcMain.on(OPEN_SERVER_UPGRADE_LINK, this.handleOpenServerUpgradeLink);
+        ipcMain.on(OPEN_CHANGELOG_LINK, this.handleOpenChangelogLink);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
 
@@ -585,6 +588,10 @@ export class ViewManager {
         if (Config.upgradeLink) {
             shell.openExternal(Config.upgradeLink);
         }
+    };
+
+    private handleOpenChangelogLink = () => {
+        shell.openExternal(DEFAULT_CHANGELOG_LINK);
     };
 
     private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {

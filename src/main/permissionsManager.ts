@@ -95,7 +95,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
     };
 
     setForServer = (server: MattermostServer, permissions: Permissions) => {
-        if (permissions.media?.allowed) {
+        if (permissions.media?.allowed && (process.platform === 'win32' || process.platform === 'darwin')) {
             this.checkMediaAccess('microphone');
             this.checkMediaAccess('camera');
         }

@@ -341,6 +341,7 @@
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} wersja {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "Nowa wersja na komputery stacjonarne dostępna",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "Ponowne uruchomienie i aktualizacja",
+  "renderer.downloadsDropdown.Update.ViewChangelog": "Wyświetl dziennik zmian",
   "renderer.downloadsDropdown.remaining": "pozostałe",
   "renderer.downloadsDropdownMenu.CancelDownload": "Anuluj Pobieranie",
   "renderer.downloadsDropdownMenu.Clear": "Wyczyść",

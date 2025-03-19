@@ -99,6 +99,7 @@ import {
     GET_UNIQUE_SERVERS_WITH_PERMISSIONS,
     LOAD_INCOMPATIBLE_SERVER,
     OPEN_SERVER_UPGRADE_LINK,
+    OPEN_CHANGELOG_LINK,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -127,6 +128,7 @@ contextBridge.exposeInMainWorld('desktop', {
     focusCurrentView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
     openServerExternally: () => ipcRenderer.send(OPEN_SERVER_EXTERNALLY),
     openServerUpgradeLink: () => ipcRenderer.send(OPEN_SERVER_UPGRADE_LINK),
+    openChangelogLink: () => ipcRenderer.send(OPEN_CHANGELOG_LINK),
     closeDownloadsDropdown: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN),
     closeDownloadsDropdownMenu: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU),
     openDownloadsDropdown: () => ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN),

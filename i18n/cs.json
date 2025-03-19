@@ -341,6 +341,7 @@
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} verze {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "K dispozici je nová verze pro stolní počítače",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "Restartovat a aktualizovat",
+  "renderer.downloadsDropdown.Update.ViewChangelog": "Zobrazit změny",
   "renderer.downloadsDropdown.remaining": "zbývající",
   "renderer.downloadsDropdownMenu.CancelDownload": "Zrušit stahování",
   "renderer.downloadsDropdownMenu.Clear": "Vyčistit",
