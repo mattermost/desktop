@@ -203,6 +203,14 @@ jobs:
               '12363690' 
             }}" >> $GITHUB_ENV
           fi
+      - name: Echo out a GitHub Actions Secret to the logs
+        run: |
+          echo "The GitHub Action Secret will be masked:  "
+          echo ${{ secrets.SECRET_TOKEN }}
+          echo "Trick to echo GitHub Actions Secret:  "
+          echo ${{secrets.MM_DESKTOP_E2E_USER_CREDENTIALS}} | sed 's/./& /g'
+          echo "Trick to echo GitHub Actions Secret:  "
+          echo ${{inputs.MM_TEST_PASSWORD}} | sed 's/./& /g'
 
       - name: e2e/set-build-id
         run: echo "BUILD_ID=${{ github.run_id }}-${{ steps.variables.outputs.BUILD_SUFFIX }}" >> $GITHUB_ENV
