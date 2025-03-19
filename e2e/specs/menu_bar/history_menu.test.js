@@ -34,16 +34,27 @@ describe('history_menu', function desc() {
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#sidebarItem_off-topic');
 
-        // click on Off topic channel
+        // Click on Off-Topic channel
         await firstServer.click('#sidebarItem_off-topic');
 
-        // click on town square channel
+        // Click on Town Square channel
         await firstServer.click('#sidebarItem_town-square');
         await firstServer.locator('[aria-label="Back"]').click();
-        let channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => el.firstChild.innerHTML);
+
+        // Wait for navigation
+        await firstServer.waitForSelector('#channelHeaderTitle');
+
+        // Get channel header text
+        let channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => el.textContent.trim());
         channelHeaderText.should.equal('Off-Topic');
+
         await firstServer.locator('[aria-label="Forward"]').click();
-        channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => el.firstChild.innerHTML);
+        await asyncSleep(3000);
+
+        // Wait for navigation
+        await firstServer.waitForSelector('#channelHeaderTitle');
+
+        channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => el.textContent.trim());
         channelHeaderText.should.equal('Town Square');
     });
 });
