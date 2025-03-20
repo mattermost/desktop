@@ -146,7 +146,6 @@ export class ServerManager extends EventEmitter {
             const orderedServers = this.getOrderedServers();
             const serverIndex = orderedServers.findIndex((s) => s.id === serverId);
             if (serverIndex !== -1) {
-                log.info('switchServer', serverId, serverIndex);
                 this.persistServers(serverIndex);
             }
         }
@@ -234,7 +233,6 @@ export class ServerManager extends EventEmitter {
                 url: server.url.toString(),
             };
         });
-        log.info('persistServers', servers);
         Config.setServers(servers, lastActiveServer);
         this.emit(SERVERS_UPDATE, servers);
     };

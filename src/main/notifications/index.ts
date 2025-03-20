@@ -8,6 +8,7 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
 
 import getLinuxDoNotDisturb from './dnd-linux';
@@ -61,7 +62,7 @@ class NotificationManager {
             return {status: 'error', reason: 'missing_view'};
         }
         const serverName = view.view.server.name;
-        if (!view.view.shouldNotify) {
+        if (!viewManager.isPrimaryView(view.view.id)) {
             log.debug('should not notify for this view', webcontents.id);
             return {status: 'not_sent', reason: 'view_should_not_notify'};
         }

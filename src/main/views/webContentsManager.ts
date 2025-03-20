@@ -34,6 +34,9 @@ import {
     TAB_LOGIN_CHANGED,
     DEVELOPER_MODE_UPDATED,
     GET_ORDERED_TABS_FOR_SERVER,
+    CREATE_NEW_TAB,
+    UPDATE_TAB_TITLE,
+    CLOSE_VIEW,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
@@ -87,6 +90,9 @@ export class WebContentsManager {
         ipcMain.handle(GET_IS_DEV_MODE, () => isDev);
         ipcMain.handle(REQUEST_BROWSER_HISTORY_STATUS, this.handleRequestBrowserHistoryStatus);
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, this.handleGetOrderedViewsForServer);
+        ipcMain.handle(CREATE_NEW_TAB, this.handleCreateNewTab);
+        ipcMain.handle(CLOSE_VIEW, this.handleCloseView);
+        ipcMain.on(UPDATE_TAB_TITLE, this.handleUpdateTabTitle);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
@@ -97,7 +103,6 @@ export class WebContentsManager {
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
-        ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
         DeveloperMode.on(DEVELOPER_MODE_UPDATED, this.handleDeveloperModeUpdated);
     }
 
@@ -108,6 +113,8 @@ export class WebContentsManager {
             LoadingScreen.show();
             ServerManager.getAllServers().forEach((server) => this.loadServer(server));
             this.showInitial();
+
+            ServerManager.on(SERVERS_UPDATE, this.handleReloadConfiguration);
         }
     };
 
@@ -161,13 +168,24 @@ export class WebContentsManager {
                 // Ensure the view is activated when switching servers
                 if (newView.isReady()) {
                     this.activateView(viewId);
+
+                    // Update badges for the new primary view
+                    if (viewManager.isPrimaryView(viewId)) {
+                        AppState.emitStatus();
+                    }
                 } else {
-                    newView.once(LOAD_SUCCESS, () => this.activateView(viewId));
+                    newView.once(LOAD_SUCCESS, () => {
+                        this.activateView(viewId);
+
+                        // Update badges for the new primary view
+                        if (viewManager.isPrimaryView(viewId)) {
+                            AppState.emitStatus();
+                        }
+                    });
                 }
             }
 
             MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, newView.view.server.id, newView.view.id);
-            ServerViewState.updateCurrentView(newView.view.server.id);
         } else {
             this.getViewLogger(viewId).warn(`Couldn't find a view with name: ${viewId}`);
         }
@@ -263,7 +281,7 @@ export class WebContentsManager {
     };
 
     loadServer = (server: MattermostServer) => {
-        log.info('loadServer', server.id);
+        log.debug('loadServer', server.id);
         const views = viewManager.getOrderedTabsForServer(server.id);
         views.forEach((view) => this.loadView(server, view));
     };
@@ -307,13 +325,15 @@ export class WebContentsManager {
     };
 
     private showInitial = () => {
-        log.verbose('showInitial');
+        log.debug('showInitial');
 
         if (ServerManager.hasServers()) {
-            const currentServer = ServerViewState.getCurrentServer();
-            const view = viewManager.getViewByServerId(currentServer.id);
-            if (view) {
-                this.showById(view.id);
+            const currentServerId = ServerManager.getCurrentServerId();
+            if (currentServerId) {
+                const view = viewManager.getCurrentViewForServer(currentServerId);
+                if (view) {
+                    this.showById(view.id);
+                }
             }
         } else {
             MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW);
@@ -422,7 +442,7 @@ export class WebContentsManager {
         log.debug('handleReloadConfiguration');
 
         const currentViewId = this.getCurrentView()?.view.id;
-        const currentServer = ServerViewState.getCurrentServer();
+        const currentServerId = ServerManager.getCurrentServerId();
 
         const current: Map<string, MattermostWebContentsView> = new Map();
         for (const view of this.webContentsViews.values()) {
@@ -431,8 +451,19 @@ export class WebContentsManager {
 
         const views: Map<string, MattermostWebContentsView> = new Map();
 
-        const sortedViews = ServerManager.getAllServers().flatMap((x) => viewManager.getOrderedTabsForServer(x.id).
-            map((t: MattermostView): [MattermostServer, MattermostView] => [x, t]));
+        // Only get views that aren't closed
+        const sortedViews = ServerManager.getAllServers().flatMap((x) => {
+            const serverViews = viewManager.getOrderedTabsForServer(x.id);
+
+            // Only create a new view if the server has no views
+            if (serverViews.length === 0) {
+                viewManager.addServerViews(x);
+                const newViews = viewManager.getOrderedTabsForServer(x.id);
+                return newViews.map((t: MattermostView): [MattermostServer, MattermostView] => [x, t]);
+            }
+            return serverViews.filter((view) => !viewManager.isViewClosed(view.id)).
+                map((t: MattermostView): [MattermostServer, MattermostView] => [x, t]);
+        });
 
         for (const [srv, view] of sortedViews) {
             const recycle = current.get(view.id);
@@ -443,6 +474,7 @@ export class WebContentsManager {
             }
         }
 
+        // Destroy any views that are no longer needed
         for (const [k, v] of current) {
             if (!views.has(k)) {
                 v.destroy();
@@ -455,26 +487,39 @@ export class WebContentsManager {
             this.addView(x);
         }
 
-        // Get the view for the current server
-        const currentServerView = viewManager.getViewByServerId(currentServer.id);
-        if (currentServerView && views.has(currentServerView.id)) {
-            const view = views.get(currentServerView.id);
-            if (view && view.id !== this.getCurrentView()?.id) {
-                this.showById(view.id);
-                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.view.server.id, view.view.id);
+        // Get the current view for the server
+        if (currentServerId) {
+            const currentView = viewManager.getCurrentViewForServer(currentServerId);
+            if (currentView && views.has(currentView.id)) {
+                const view = views.get(currentView.id);
+                if (view && view.id !== this.getCurrentView()?.id) {
+                    this.showById(view.id);
+                    MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.view.server.id, view.view.id);
+                } else {
+                    this.focusCurrentView();
+                }
+            } else if (currentViewId && views.has(currentViewId)) {
+                const view = views.get(currentViewId);
+                if (view && view.id !== this.getCurrentView()?.id) {
+                    this.showById(view.id);
+                    MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.view.server.id, view.view.id);
+                } else {
+                    this.focusCurrentView();
+                }
             } else {
-                this.focusCurrentView();
+                // If we can't find a valid view for the current server, switch to the first available server
+                const firstServer = ServerManager.getAllServers()[0];
+                if (firstServer) {
+                    const firstServerView = viewManager.getCurrentViewForServer(firstServer.id);
+                    if (firstServerView && views.has(firstServerView.id)) {
+                        const view = views.get(firstServerView.id);
+                        if (view) {
+                            this.showById(view.id);
+                            MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.view.server.id, view.view.id);
+                        }
+                    }
+                }
             }
-        } else if (currentViewId && views.has(currentViewId)) {
-            const view = views.get(currentViewId);
-            if (view && view.id !== this.getCurrentView()?.id) {
-                this.showById(view.id);
-                MainWindow.get()?.webContents.send(SET_ACTIVE_VIEW, view.view.server.id, view.view.id);
-            } else {
-                this.focusCurrentView();
-            }
-        } else {
-            this.showInitial();
         }
     };
 
@@ -575,6 +620,11 @@ export class WebContentsManager {
         if (!view) {
             return;
         }
+
+        if (!viewManager.isPrimaryView(view.id)) {
+            return;
+        }
+
         AppState.updateUnreads(view.id, isUnread);
         AppState.updateMentions(view.id, mentionCount);
     };
@@ -650,6 +700,60 @@ export class WebContentsManager {
     private handleGetOrderedViewsForServer = (event: IpcMainInvokeEvent, serverId: string) => {
         this.getViewLogger(serverId).debug('handleGetOrderedViewsForServer');
         return viewManager.getOrderedTabsForServer(serverId).map((view) => view.toUniqueView());
+    };
+
+    private handleCreateNewTab = async (event: IpcMainInvokeEvent, serverId: string) => {
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            throw new Error(`Server ${serverId} not found`);
+        }
+
+        const newView = viewManager.createNewTab(server);
+        this.loadView(server, newView);
+        return newView.id;
+    };
+
+    private handleUpdateTabTitle = (event: IpcMainEvent, viewId: string, title: string) => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (view && view.id === viewId) {
+            view.title = title;
+            MainWindow.get()?.webContents.send(UPDATE_TAB_TITLE, viewId, title);
+        }
+    };
+
+    private handleCloseView = async (event: IpcMainInvokeEvent, viewId: string) => {
+        const view = this.webContentsViews.get(viewId);
+        if (!view) {
+            return false;
+        }
+
+        // Get all views for this server
+        const serverId = view.view.server.id;
+        const serverViews = Array.from(this.webContentsViews.values()).filter((v) => v.view.server.id === serverId);
+
+        // Prevent closing the last tab
+        if (serverViews.length <= 1) {
+            return false;
+        }
+
+        // Check if it's the last tab before destroying
+        if (serverViews.length > 1) {
+            // If we're closing the active tab, switch to another tab first
+            if (viewId === viewManager.getActiveView()?.id) {
+                const currentIndex = serverViews.findIndex((v) => v.id === viewId);
+                const nextView = serverViews[currentIndex - 1] || serverViews[currentIndex + 1];
+                if (nextView) {
+                    await this.showById(nextView.id);
+                }
+            }
+
+            // Destroy the view and remove it from both managers
+            view.destroy();
+            this.webContentsViews.delete(viewId);
+            this.webContentsIdToView.delete(view.webContentsId);
+            viewManager.closeView(viewId);
+        }
+        return true;
     };
 
     destroy(): void {

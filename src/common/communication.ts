@@ -197,3 +197,6 @@ export const GET_UNIQUE_SERVERS_WITH_PERMISSIONS = 'get-unique-servers-with-perm
 export const ADD_SERVER = 'add-server';
 export const EDIT_SERVER = 'edit-server';
 export const REMOVE_SERVER = 'remove-server';
+
+export const CREATE_NEW_TAB = 'create-new-tab';
+export const UPDATE_TAB_TITLE = 'update-tab-title';

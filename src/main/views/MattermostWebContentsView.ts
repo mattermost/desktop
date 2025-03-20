@@ -18,6 +18,7 @@ import {
     CLOSE_SERVERS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN,
     LOAD_INCOMPATIBLE_SERVER,
+    UPDATE_TAB_TITLE,
 } from 'common/communication';
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -44,6 +45,7 @@ enum Status {
 }
 export class MattermostWebContentsView extends EventEmitter {
     view: MattermostView;
+    title: string;
     isVisible: boolean;
 
     private log: Logger;
@@ -61,6 +63,7 @@ export class MattermostWebContentsView extends EventEmitter {
     constructor(view: MattermostView, options: WebContentsViewConstructorOptions) {
         super();
         this.view = view;
+        this.title = view.server.name;
 
         const preload = getLocalPreload('externalAPI.js');
         this.options = Object.assign({}, options);
@@ -79,7 +82,7 @@ export class MattermostWebContentsView extends EventEmitter {
         this.resetLoadingStatus();
 
         this.log = ViewManager.getViewLog(this.id, 'MattermostWebContentsView');
-        this.log.verbose('View created');
+        this.log.verbose('View created', this.id, this.view.server.name);
 
         this.webContentsView.webContents.on('update-target-url', this.handleUpdateTarget);
         if (process.platform !== 'darwin') {
@@ -91,6 +94,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
+        this.webContentsView.webContents.on('page-title-updated', this.handlePageTitleUpdated);
 
         WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
@@ -467,5 +471,28 @@ export class MattermostWebContentsView extends EventEmitter {
         if (serverIds.includes(this.view.server.id)) {
             this.reload();
         }
+    };
+
+    private handlePageTitleUpdated = (event: Event, newTitle: string) => {
+        // Extract just the channel name (everything before the first " - ")
+        // Remove any mention count in parentheses at the start
+        const parts = newTitle.split(' - ');
+        let channelName = parts[0];
+
+        // Remove mention count if present
+        if (channelName.startsWith('(')) {
+            const endParenIndex = channelName.indexOf(')');
+            if (endParenIndex !== -1) {
+                channelName = channelName.substring(endParenIndex + 1).trim();
+            }
+        }
+
+        this.title = channelName;
+        ViewManager.setViewTitle(this.id, channelName);
+        MainWindow.get()?.webContents.send(UPDATE_TAB_TITLE, this.id, channelName);
+    };
+
+    getTitle = () => {
+        return ViewManager.getViewTitle(this.id) || this.title;
     };
 }

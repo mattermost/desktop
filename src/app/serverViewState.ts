@@ -99,18 +99,18 @@ export class ServerViewState {
         ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
         ServerManager.switchServer(serverId);
 
-        // Get the view for the server
-        let view = ViewManager.getViewByServerId(serverId);
+        // Get the current view for the server
+        let view = ViewManager.getCurrentViewForServer(serverId);
         if (!view) {
             // If no view exists for the server, create one
             ViewManager.addServerViews(server);
-            view = ViewManager.getViewByServerId(serverId);
+            view = ViewManager.getCurrentViewForServer(serverId);
         }
 
         if (view) {
             if (waitForViewToExist) {
                 const timeout = setInterval(() => {
-                    if (ViewManager.getView(view.id)) {
+                    if (view && ViewManager.getView(view.id)) {
                         this.showView(view);
                         clearInterval(timeout);
                     }

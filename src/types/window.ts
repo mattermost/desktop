@@ -56,6 +56,8 @@ declare global {
             getViewByServerId: (serverId: string) => Promise<UniqueView | null>;
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
+            createNewTab: (serverId: string) => Promise<string>;
+            onUpdateTabTitle: (listener: (viewId: string, title: string) => void) => void;
             onUpdateServers: (listener: () => void) => void;
             validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
@@ -168,4 +170,13 @@ declare global {
             getTitlebarAreaRect: () => DOMRect;
         };
     }
+}
+
+export interface DesktopAPI {
+
+    // ... existing methods ...
+    switchTab: (viewId: string) => void;
+    closeView: (viewId: string) => void;
+
+    // ... existing methods ...
 }

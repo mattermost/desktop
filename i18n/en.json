@@ -112,8 +112,6 @@
   "main.menus.app.window.close": "Close",
   "main.menus.app.window.closeWindow": "Close Window",
   "main.menus.app.window.minimize": "Minimize",
-  "main.menus.app.window.selectNextTab": "Select Next Tab",
-  "main.menus.app.window.selectPreviousTab": "Select Previous Tab",
   "main.menus.app.window.showServers": "Show Servers",
   "main.menus.app.window.zoom": "Zoom",
   "main.menus.tray.preferences": "Preferences...",

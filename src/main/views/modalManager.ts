@@ -19,8 +19,8 @@ import {
 } from 'common/communication';
 import {Logger} from 'common/log';
 import {getAdjustedWindowBoundaries} from 'main/utils';
-import ViewManager from 'main/views/webContentsManager';
 import WebContentsEventManager from 'main/views/webContentEvents';
+import ViewManager from 'main/views/webContentsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {CombinedConfig} from 'types/config';

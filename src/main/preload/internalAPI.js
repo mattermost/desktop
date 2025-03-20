@@ -102,6 +102,8 @@ import {
     OPEN_CHANGELOG_LINK,
     GET_CURRENT_SERVER,
     GET_VIEW_BY_SERVER_ID,
+    CREATE_NEW_TAB,
+    UPDATE_TAB_TITLE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -124,7 +126,7 @@ contextBridge.exposeInMainWorld('desktop', {
     closeServersDropdown: () => ipcRenderer.send(CLOSE_SERVERS_DROPDOWN),
     openServersDropdown: () => ipcRenderer.send(OPEN_SERVERS_DROPDOWN),
     switchTab: (viewId) => ipcRenderer.send(SWITCH_TAB, viewId),
-    closeView: (viewId) => ipcRenderer.send(CLOSE_VIEW, viewId),
+    closeView: (viewId) => ipcRenderer.invoke(CLOSE_VIEW, viewId),
     exitFullScreen: () => ipcRenderer.send(EXIT_FULLSCREEN),
     doubleClickOnWindow: (windowName) => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, windowName),
     focusCurrentView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
@@ -147,6 +149,8 @@ contextBridge.exposeInMainWorld('desktop', {
     getLastActive: () => ipcRenderer.invoke(GET_LAST_ACTIVE),
     getOrderedServers: () => ipcRenderer.invoke(GET_ORDERED_SERVERS),
     getOrderedTabsForServer: (serverId) => ipcRenderer.invoke(GET_ORDERED_TABS_FOR_SERVER, serverId),
+    createNewTab: (serverId) => ipcRenderer.invoke(CREATE_NEW_TAB, serverId),
+    onUpdateTabTitle: (listener) => ipcRenderer.on(UPDATE_TAB_TITLE, (_, viewId, title) => listener(viewId, title)),
     onUpdateServers: (listener) => ipcRenderer.on(SERVERS_UPDATE, () => listener()),
     validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
     getUniqueServersWithPermissions: () => ipcRenderer.invoke(GET_UNIQUE_SERVERS_WITH_PERMISSIONS),

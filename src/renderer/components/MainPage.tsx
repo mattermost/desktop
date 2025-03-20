@@ -57,6 +57,8 @@ type State = {
     hasDownloads: boolean;
     threeDotsIsFocused: boolean;
     developerMode: boolean;
+    primaryTabId?: string;
+    currentServer?: UniqueServer;
 };
 
 type TabViewStatus = {
@@ -147,7 +149,11 @@ class MainPage extends React.PureComponent<Props, State> {
         }
         const view = await window.desktop.getViewByServerId(currentServer.id);
         if (view) {
-            this.setActiveView(currentServer.id, view.id);
+            this.setState({
+                currentServer,
+                activeServerId: currentServer.id,
+                activeTabId: view.id,
+            });
         }
     };
 
@@ -164,6 +170,22 @@ class MainPage extends React.PureComponent<Props, State> {
         await this.updateServers();
 
         window.desktop.onUpdateServers(this.updateServers);
+
+        // Add tab title update handler
+        window.desktop.onUpdateTabTitle((viewId, title) => {
+            const tabs = new Map(this.state.tabs);
+            for (const [serverId, serverTabs] of tabs.entries()) {
+                const tab = serverTabs.find((t) => t.id === viewId);
+                if (tab) {
+                    const updatedTabs = serverTabs.map((t) =>
+                        (t.id === viewId ? {...t, pageTitle: title} : t),
+                    );
+                    tabs.set(serverId, updatedTabs);
+                    this.setState({tabs});
+                    break;
+                }
+            }
+        });
 
         // set page on retry
         window.desktop.onLoadRetry((viewId, retry, err, loadUrl) => {
@@ -294,7 +316,25 @@ class MainPage extends React.PureComponent<Props, State> {
         if (serverId === this.state.activeServerId && tabId === this.state.activeTabId) {
             return;
         }
-        this.setState({activeServerId: serverId, activeTabId: tabId});
+
+        // Find the current server
+        const currentServer = this.state.servers.find((srv) => srv.id === serverId);
+        if (!currentServer) {
+            return;
+        }
+
+        // Find the tab in the current server's tabs
+        const serverTabs = this.state.tabs.get(serverId) || [];
+        const tab = serverTabs.find((t) => t.id === tabId);
+        if (!tab) {
+            return;
+        }
+
+        this.setState({
+            activeServerId: serverId,
+            activeTabId: tabId,
+            currentServer,
+        });
     };
 
     handleCloseDropdowns = () => {
@@ -314,8 +354,38 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.switchTab(tabId);
     };
 
-    handleCloseTab = (tabId: string) => {
-        window.desktop.closeView(tabId);
+    handleCloseTab = async (viewId: string) => {
+        const {activeServerId, activeTabId} = this.state;
+
+        // If we're closing the active tab, switch to another tab first
+        if (viewId === activeTabId && activeServerId) {
+            const currentTabs = this.state.tabs.get(activeServerId) || [];
+            const currentIndex = currentTabs.findIndex((tab) => tab.id === viewId);
+
+            // Find the next tab to switch to (prefer the one to the left)
+            const nextTab = currentTabs[currentIndex - 1] || currentTabs[currentIndex + 1];
+            if (nextTab) {
+                await window.desktop.switchTab(nextTab.id!);
+            }
+        }
+
+        // Close the view - this will trigger the onUpdateServers handler
+        await window.desktop.closeView(viewId);
+
+        // Update local state immediately
+        const tabs = new Map(this.state.tabs);
+        if (activeServerId) {
+            const serverTabs = tabs.get(activeServerId) || [];
+            const updatedTabs = serverTabs.filter((tab) => tab.id !== viewId);
+            tabs.set(activeServerId, updatedTabs);
+
+            // If we closed the active tab and there are other tabs, switch to the first one
+            if (viewId === activeTabId && updatedTabs.length > 0) {
+                await window.desktop.switchTab(updatedTabs[0].id!);
+            }
+        }
+
+        this.setState({tabs});
     };
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -395,6 +465,43 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.openServerExternally();
     };
 
+    handleNewTab = async () => {
+        const {currentServer} = this.state;
+        if (!currentServer?.id) {
+            return;
+        }
+
+        try {
+            const viewId = await window.desktop.createNewTab(currentServer.id);
+            if (viewId) {
+                const tabs = new Map(this.state.tabs);
+                const serverTabs = tabs.get(currentServer.id) || [];
+                const newTab: UniqueView = {
+                    id: viewId,
+                    pageTitle: 'New Tab',
+                    server: currentServer,
+                    url: new URL(currentServer.url),
+                };
+                serverTabs.push(newTab);
+                tabs.set(currentServer.id, serverTabs);
+
+                // Update state and wait for it to complete
+                await new Promise<void>((resolve) => {
+                    this.setState({
+                        tabs,
+                        activeTabId: viewId,
+                        activeServerId: currentServer.id,
+                    }, resolve);
+                });
+
+                // Switch to the new tab after state is updated
+                window.desktop.switchTab(viewId);
+            }
+        } catch (error) {
+            console.error('Failed to create new tab:', error);
+        }
+    };
+
     render() {
         const {intl} = this.props;
         let currentTabs: UniqueView[] = [];
@@ -414,6 +521,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 activeTabId={this.state.activeTabId}
                 onSelect={this.handleSelectTab}
                 onCloseTab={this.handleCloseTab}
+                onNewTab={this.handleNewTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
                 isMenuOpen={this.state.isMenuOpen || this.state.isDownloadsDropdownOpen}

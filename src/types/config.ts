@@ -15,7 +15,7 @@ export type UniqueView = {
     id: string;
     server: UniqueServer;
     url: URL;
-    shouldNotify: boolean;
+    pageTitle?: string;
 }
 
 export type Config = ConfigV4;

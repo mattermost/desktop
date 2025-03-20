@@ -18,6 +18,7 @@ type Props = {
     isDarkMode: boolean;
     onSelect: (id: string) => void;
     onCloseTab: (id: string) => void;
+    onNewTab?: () => void;
     tabs: UniqueView[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
@@ -102,6 +103,7 @@ class TabBar extends React.PureComponent<Props, State> {
                     key={tab.id}
                     draggableId={`serverTabItem-${tab.id}`}
                     index={index}
+                    isDragDisabled={this.props.tabsDisabled || this.props.isMenuOpen}
                 >
                     {(provided, snapshot) => {
                         return (
@@ -109,7 +111,7 @@ class TabBar extends React.PureComponent<Props, State> {
                                 ref={provided.innerRef}
                                 id={`serverTabItem${index}`}
                                 draggable={false}
-                                title={tab.server.name}
+                                title={tab.pageTitle || tab.server.name}
                                 className={classNames('serverTabItem', {
                                     active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
@@ -130,16 +132,16 @@ class TabBar extends React.PureComponent<Props, State> {
                                     })}
                                 >
                                     <div className='TabBar-tabSeperator'>
-                                        {tab.server.name}
-                                        { badgeDiv }
-                                        {/*canCloseView(tab.server.name as ViewType) &&
+                                        <span>{tab.pageTitle || tab.server.name}</span>
+                                        {badgeDiv}
+                                        {this.props.tabs.length > 1 && (
                                             <button
                                                 className='serverTabItem__close'
                                                 onClick={this.onCloseTab(tab.id!)}
                                             >
                                                 <i className='icon-close'/>
                                             </button>
-                                        */}
+                                        )}
                                     </div>
                                 </a>
                             </li>
@@ -164,11 +166,21 @@ class TabBar extends React.PureComponent<Props, State> {
                             ref={provided.innerRef}
                             className={classNames('TabBar', {
                                 darkMode: this.props.isDarkMode,
+                                disabled: this.props.tabsDisabled,
                             })}
                             id={this.props.id}
                             {...provided.droppableProps}
                         >
                             {tabs}
+                            <button
+                                className={classNames('TabBar-addTab', {
+                                    darkMode: this.props.isDarkMode,
+                                })}
+                                onClick={this.props.onNewTab}
+                                disabled={this.props.tabsDisabled}
+                            >
+                                <i className='icon-plus'/>
+                            </button>
                             {this.props.isMenuOpen ? <span className='TabBar-nonDrag'/> : null}
                             {provided.placeholder}
                         </div>
