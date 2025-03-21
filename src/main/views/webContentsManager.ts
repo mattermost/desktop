@@ -39,6 +39,7 @@ import {
     CLOSE_VIEW,
     POPOUT_WINDOW,
     GET_VIEW_TITLE,
+    IS_VIEW_IN_POPOUT_WINDOW,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
@@ -109,6 +110,7 @@ export class WebContentsManager {
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
         DeveloperMode.on(DEVELOPER_MODE_UPDATED, this.handleDeveloperModeUpdated);
+        ipcMain.handle(IS_VIEW_IN_POPOUT_WINDOW, this.isViewInPopoutWindow);
     }
 
     private init = async () => {
@@ -754,18 +756,13 @@ export class WebContentsManager {
                     await this.showById(nextView.id);
                 }
             }
-
-            // Destroy the view and remove it from both managers
-            view.destroy();
-            this.webContentsViews.delete(viewId);
-            this.webContentsIdToView.delete(view.webContentsId);
-            viewManager.closeView(viewId);
+            this.removeView(viewId);
         }
         return true;
     };
 
     private handlePopoutWindow = async (event: IpcMainInvokeEvent) => {
-        log.info('handlePopoutWindow', event.sender.id);
+        log.debug('handlePopoutWindow', event.sender.id);
         let view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             view = this.getCurrentView();
@@ -820,6 +817,27 @@ export class WebContentsManager {
         this.webContentsViews.clear();
         this.webContentsIdToView.clear();
     }
+
+    isViewInPopoutWindow = (event: IpcMainInvokeEvent): boolean => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return false;
+        }
+        return view.isViewInPopoutWindow();
+    };
+
+    removeView = (viewId: string) => {
+        const view = this.webContentsViews.get(viewId);
+        if (!view) {
+            return;
+        }
+
+        // Destroy the view and remove it from both managers
+        view.destroy();
+        this.webContentsViews.delete(viewId);
+        this.webContentsIdToView.delete(view.webContentsId);
+        viewManager.closeView(viewId);
+    };
 }
 
 const webContentsManager = new WebContentsManager();

@@ -203,3 +203,5 @@ export const UPDATE_TAB_TITLE = 'update-tab-title';
 export const POPOUT_WINDOW = 'popout-window';
 
 export const GET_VIEW_TITLE = 'get-view-title';
+
+export const IS_VIEW_IN_POPOUT_WINDOW = 'is-view-in-popout-window';

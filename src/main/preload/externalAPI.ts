@@ -38,6 +38,7 @@ import {
     METRICS_SEND,
     METRICS_REQUEST,
     METRICS_RECEIVE,
+    IS_VIEW_IN_POPOUT_WINDOW,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
@@ -56,7 +57,24 @@ const desktopAPI: DesktopAPI = {
     // Initialization
     isDev: () => ipcRenderer.invoke(GET_IS_DEV_MODE),
     getAppInfo: () => ipcRenderer.invoke(GET_APP_INFO),
-    reactAppInitialized: () => ipcRenderer.send(REACT_APP_INITIALIZED),
+    reactAppInitialized: async () => {
+        ipcRenderer.send(REACT_APP_INITIALIZED);
+
+        // Hide header, sidebar and app bar elements
+        const isInPopoutWindow: boolean = await ipcRenderer.invoke(IS_VIEW_IN_POPOUT_WINDOW);
+        console.log('isInPopoutWindow', isInPopoutWindow);
+        if (isInPopoutWindow) {
+            setTimeout(() => {
+                const elements = ['#global-header', '#SidebarContainer', '.app-bar', '.team-sidebar'];
+                elements.forEach((selector) => {
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        (element as HTMLElement).style.display = 'none';
+                    }
+                });
+            }, 250);
+        }
+    },
 
     // Session
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),

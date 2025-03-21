@@ -512,4 +512,8 @@ export class MattermostWebContentsView extends EventEmitter {
     setParentWindow = (window: BrowserWindow) => {
         this.parentWindow = window;
     };
+
+    isViewInPopoutWindow = () => {
+        return this.parentWindow?.webContents.getURL().includes('popoutWindow.html') || false;
+    };
 }

@@ -10,6 +10,7 @@ import {Logger} from 'common/log';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {isInsideRectangle, getLocalPreload} from 'main/utils';
 import type {MattermostWebContentsView} from 'main/views/MattermostWebContentsView';
+import webContentsManager from 'main/views/webContentsManager';
 
 import MainWindow from './mainWindow';
 
@@ -27,7 +28,7 @@ export class PopoutWindow extends EventEmitter {
     }
 
     init = () => {
-        log.info('init popout window');
+        log.verbose('init popout window');
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             throw new Error('Cannot create popout window, no main window present');
@@ -139,7 +140,7 @@ export class PopoutWindow extends EventEmitter {
 
     private onClose = () => {
         // Clean up the view when the window is closed
-        this.webContentsView.destroy();
+        webContentsManager.removeView(this.webContentsView.id);
     };
 
     private onClosed = () => {
