@@ -15,9 +15,16 @@ import type {UniqueView} from 'types/config';
 
 const log = new Logger('ViewManager');
 
+export enum ViewType {
+    TAB = 'tab',
+    WINDOW = 'window',
+}
+
 export interface MattermostView {
     id: string;
+    type: ViewType;
     server: MattermostServer;
+    isOpen: boolean;
     url: URL;
     title: string;
     toUniqueView: () => UniqueView;
@@ -129,22 +136,24 @@ export class ViewManager extends EventEmitter {
         return this.viewTitles.get(viewId);
     };
 
-    private getNewView = (srv: MattermostServer): MattermostView => {
-        const viewId = `${srv.id}_view_${uuidv4()}`;
+    getNewView = (server: MattermostServer, type: ViewType = ViewType.TAB): MattermostView => {
+        const viewId = `${server.id}_view_${uuidv4()}`;
         return {
             id: viewId,
-            server: srv,
-            url: srv.url,
-            title: this.viewTitles.get(viewId) || srv.name,
+            type,
+            server,
+            isOpen: true,
+            url: server.url,
+            title: this.viewTitles.get(viewId) || server.name,
             toUniqueView: () => ({
                 id: viewId,
                 server: {
-                    id: srv.id,
-                    name: srv.name,
-                    url: srv.url.toString(),
+                    id: server.id,
+                    name: server.name,
+                    url: server.url.toString(),
                 },
-                url: srv.url,
-                pageTitle: this.viewTitles.get(viewId) || srv.name,
+                url: server.url,
+                pageTitle: this.viewTitles.get(viewId) || server.name,
             }),
         };
     };

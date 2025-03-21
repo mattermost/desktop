@@ -19,6 +19,7 @@ type Props = {
     onSelect: (id: string) => void;
     onCloseTab: (id: string) => void;
     onNewTab?: () => void;
+    onPopoutWindow?: () => void;
     tabs: UniqueView[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
@@ -180,6 +181,16 @@ class TabBar extends React.PureComponent<Props, State> {
                                 disabled={this.props.tabsDisabled}
                             >
                                 <i className='icon-plus'/>
+                            </button>
+                            <button
+                                className={classNames('TabBar-addTab', {
+                                    darkMode: this.props.isDarkMode,
+                                })}
+                                onClick={this.props.onPopoutWindow}
+                                disabled={this.props.tabsDisabled}
+                                title={this.props.intl.formatMessage({id: 'renderer.components.tabBar.popoutWindow', defaultMessage: 'Pop out window'})}
+                            >
+                                <i className='icon-open-in-new'/>
                             </button>
                             {this.props.isMenuOpen ? <span className='TabBar-nonDrag'/> : null}
                             {provided.placeholder}

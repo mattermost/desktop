@@ -49,6 +49,8 @@ declare global {
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
             getNonce: () => Promise<string | undefined>;
             isDeveloperModeEnabled: () => Promise<boolean>;
+            popoutWindow: () => Promise<void>;
+            getViewTitle: (viewId: string) => Promise<string | null>;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;

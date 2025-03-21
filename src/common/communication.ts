@@ -200,3 +200,6 @@ export const REMOVE_SERVER = 'remove-server';
 
 export const CREATE_NEW_TAB = 'create-new-tab';
 export const UPDATE_TAB_TITLE = 'update-tab-title';
+export const POPOUT_WINDOW = 'popout-window';
+
+export const GET_VIEW_TITLE = 'get-view-title';

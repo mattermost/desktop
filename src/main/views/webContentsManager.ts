@@ -37,6 +37,8 @@ import {
     CREATE_NEW_TAB,
     UPDATE_TAB_TITLE,
     CLOSE_VIEW,
+    POPOUT_WINDOW,
+    GET_VIEW_TITLE,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
@@ -47,7 +49,7 @@ import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {getFormattedPathName, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/viewManager';
-import viewManager from 'common/views/viewManager';
+import viewManager, {ViewType} from 'common/views/viewManager';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {flushCookiesStore, updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
@@ -62,6 +64,7 @@ import LoadingScreen from './loadingScreen';
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
 import {getLocalPreload, getAdjustedWindowBoundaries} from '../utils';
+import {PopoutWindow} from '../windows/popoutWindow';
 
 const log = new Logger('WebContentsManager');
 const URL_VIEW_DURATION = 10 * SECOND;
@@ -92,6 +95,8 @@ export class WebContentsManager {
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, this.handleGetOrderedViewsForServer);
         ipcMain.handle(CREATE_NEW_TAB, this.handleCreateNewTab);
         ipcMain.handle(CLOSE_VIEW, this.handleCloseView);
+        ipcMain.handle(POPOUT_WINDOW, this.handlePopoutWindow);
+        ipcMain.handle(GET_VIEW_TITLE, this.handleGetViewTitle);
         ipcMain.on(UPDATE_TAB_TITLE, this.handleUpdateTabTitle);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
@@ -302,6 +307,9 @@ export class WebContentsManager {
         webContentsView.on(LOADSCREEN_END, this.finishLoading);
         webContentsView.on(LOAD_FAILED, this.failLoading);
         webContentsView.on(UPDATE_TARGET_URL, this.showURLView);
+
+        // Add the view to the maps after webContents is initialized
+        this.addView(webContentsView);
         webContentsView.load(url);
         return webContentsView;
     };
@@ -754,6 +762,47 @@ export class WebContentsManager {
             viewManager.closeView(viewId);
         }
         return true;
+    };
+
+    private handlePopoutWindow = async (event: IpcMainInvokeEvent) => {
+        log.info('handlePopoutWindow', event.sender.id);
+        let view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            view = this.getCurrentView();
+        }
+        if (!view) {
+            return false;
+        }
+
+        // Create a new view for the popout window
+        const newView = viewManager.getNewView(view.view.server, ViewType.WINDOW);
+        this.loadView(view.view.server, newView, view.currentURL?.toString());
+
+        // Get the web contents view for the new window
+        const webContentsView = this.getView(newView.id);
+        if (!webContentsView) {
+            log.error('Failed to get web contents view for popout window');
+            return false;
+        }
+
+        // Create and initialize the popout window
+        const popoutWindow = new PopoutWindow(webContentsView);
+        popoutWindow.init();
+
+        // Add event listener to clean up the view when the window is closed
+        popoutWindow.on('closed', () => {
+            this.handleViewClosed(newView.id);
+        });
+
+        return true;
+    };
+
+    private handleGetViewTitle = (event: IpcMainInvokeEvent) => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return null;
+        }
+        return view.title;
     };
 
     destroy(): void {

@@ -502,6 +502,14 @@ class MainPage extends React.PureComponent<Props, State> {
         }
     };
 
+    handlePopoutWindow = async () => {
+        try {
+            await window.desktop.popoutWindow();
+        } catch (error) {
+            console.error('Failed to create popout window:', error);
+        }
+    };
+
     render() {
         const {intl} = this.props;
         let currentTabs: UniqueView[] = [];
@@ -522,6 +530,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 onSelect={this.handleSelectTab}
                 onCloseTab={this.handleCloseTab}
                 onNewTab={this.handleNewTab}
+                onPopoutWindow={this.handlePopoutWindow}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen}
                 isMenuOpen={this.state.isMenuOpen || this.state.isDownloadsDropdownOpen}

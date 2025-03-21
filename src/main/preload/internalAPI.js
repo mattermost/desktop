@@ -104,6 +104,8 @@ import {
     GET_VIEW_BY_SERVER_ID,
     CREATE_NEW_TAB,
     UPDATE_TAB_TITLE,
+    POPOUT_WINDOW,
+    GET_VIEW_TITLE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -141,6 +143,8 @@ contextBridge.exposeInMainWorld('desktop', {
     updateConfiguration: (saveQueueItems) => ipcRenderer.send(UPDATE_CONFIGURATION, saveQueueItems),
     getNonce: () => ipcRenderer.invoke(GET_NONCE),
     isDeveloperModeEnabled: () => ipcRenderer.invoke(IS_DEVELOPER_MODE_ENABLED),
+    popoutWindow: () => ipcRenderer.invoke(POPOUT_WINDOW),
+    getViewTitle: (viewId) => ipcRenderer.invoke(GET_VIEW_TITLE, viewId),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
