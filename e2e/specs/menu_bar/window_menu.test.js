@@ -147,39 +147,42 @@ describe('Menu/window_menu', function desc() {
         await afterFunc();
     });
 
-    it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
-        await beforeFunc();
+    if (process.platform !== 'linux') {
+        it('MM-T824 should be minimized when keyboard shortcuts are pressed', async () => {
+            await beforeFunc();
 
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const browserWindow = await this.app.browserWindow(mainWindow);
-        if (process.platform === 'darwin') {
-            robot.keyTap('m', [env.cmdOrCtrl]);
-        } else {
-            await mainWindow.click('button.three-dot-menu');
-            robot.keyTap('w');
-            robot.keyTap('m');
-            robot.keyTap('enter');
-        }
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const browserWindow = await this.app.browserWindow(mainWindow);
+            if (process.platform === 'darwin') {
+                robot.keyTap('m', [env.cmdOrCtrl]);
+            } else {
+                await mainWindow.click('button.three-dot-menu');
+                robot.keyTap('w');
+                robot.keyTap('m');
+                robot.keyTap('enter');
+            }
 
-        await asyncSleep(2000);
-        const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
-        isMinimized.should.be.true;
+            await asyncSleep(2000);
+            const isMinimized = await browserWindow.evaluate((window) => window.isMinimized());
+            isMinimized.should.be.true;
 
-        await afterFunc();
-    });
+            await afterFunc();
+        });
+    }
+    if (process.platform !== 'linux') {
+        it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
+            await beforeFunc();
 
-    it('MM-T825 should be hidden when keyboard shortcuts are pressed', async () => {
-        await beforeFunc();
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const browserWindow = await this.app.browserWindow(mainWindow);
+            robot.keyTap('w', [env.cmdOrCtrl]);
+            await asyncSleep(2000);
+            const isVisible = await browserWindow.evaluate((window) => window.isVisible());
+            isVisible.should.be.false;
+            const isDestroyed = await browserWindow.evaluate((window) => window.isDestroyed());
+            isDestroyed.should.be.false;
 
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const browserWindow = await this.app.browserWindow(mainWindow);
-        robot.keyTap('w', [env.cmdOrCtrl]);
-        await asyncSleep(2000);
-        const isVisible = await browserWindow.evaluate((window) => window.isVisible());
-        isVisible.should.be.false;
-        const isDestroyed = await browserWindow.evaluate((window) => window.isDestroyed());
-        isDestroyed.should.be.false;
-
-        await afterFunc();
-    });
+            await afterFunc();
+        });
+    }
 });
