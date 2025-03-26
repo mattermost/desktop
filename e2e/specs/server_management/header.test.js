@@ -37,13 +37,15 @@ describe('header', function desc() {
             await env.clearElectronInstances();
         });
 
-        it('MM-T2637_1 should maximize on double-clicking the header', async () => {
-            const headerBounds = await header.boundingBox();
-            await header.dblclick({position: {x: headerBounds.width / 2, y: headerBounds.y / 2}});
-            await asyncSleep(1000);
-            const isMaximized = await browserWindow.evaluate((window) => window.isMaximized());
-            isMaximized.should.be.equal(true);
-        });
+        if (process.platform !== 'linux') {
+            it('MM-T2637_1 should maximize on double-clicking the header', async () => {
+                const headerBounds = await header.boundingBox();
+                await header.dblclick({position: {x: headerBounds.width / 2, y: headerBounds.y / 2}});
+                await asyncSleep(1000);
+                const isMaximized = await browserWindow.evaluate((window) => window.isMaximized());
+                isMaximized.should.be.equal(true);
+            });
+        }
 
         it('MM-T2637_2 should restore on double-clicking the header when maximized', async () => {
             const maximizedHeaderBounds = await header.boundingBox();

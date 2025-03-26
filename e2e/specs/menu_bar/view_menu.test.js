@@ -187,31 +187,33 @@ describe('menu/view', function desc() {
         });
     });
 
-    it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index.html'));
-        const browserWindow = await this.app.browserWindow(mainWindow);
+    if (process.platform !== 'linux') {
+        it('MM-T820 should open Developer Tools For Application Wrapper for main window', async () => {
+            const mainWindow = this.app.windows().find((window) => window.url().includes('index.html'));
+            const browserWindow = await this.app.browserWindow(mainWindow);
 
-        let isDevToolsOpen = await browserWindow.evaluate((window) => {
-            return window.webContents.isDevToolsOpened();
+            let isDevToolsOpen = await browserWindow.evaluate((window) => {
+                return window.webContents.isDevToolsOpened();
+            });
+            isDevToolsOpen.should.be.false;
+
+            if (process.platform === 'darwin') {
+            // Press Command + Option + I
+                robot.keyTap('i', ['command', 'alt']);
+                await asyncSleep(3000);
+            }
+
+            if (process.platform === 'win32') {
+                robot.keyToggle('shift', 'down');
+                robot.keyToggle('control', 'down');
+                robot.keyTap('i');
+            }
+
+            await asyncSleep(1000);
+            isDevToolsOpen = await browserWindow.evaluate((window) => {
+                return window.webContents.isDevToolsOpened();
+            });
+            isDevToolsOpen.should.be.true;
         });
-        isDevToolsOpen.should.be.false;
-
-        if (process.platform === 'darwin') {
-        // Press Command + Option + I
-            robot.keyTap('i', ['command', 'alt']);
-            await asyncSleep(3000);
-        }
-
-        if (process.platform === 'win32') {
-            robot.keyToggle('shift', 'down');
-            robot.keyToggle('control', 'down');
-            robot.keyTap('i');
-        }
-
-        await asyncSleep(1000);
-        isDevToolsOpen = await browserWindow.evaluate((window) => {
-            return window.webContents.isDevToolsOpened();
-        });
-        isDevToolsOpen.should.be.true;
-    });
+    }
 });

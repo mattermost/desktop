@@ -35,14 +35,87 @@ on:
         description: "True if this is Compatibility Matrix Testing"
         required: false
         default: false
+      TYPE:
+        type: boolean
+        description: "True if this is Triggered from PR"
+        required: false
+        default: false
       MM_SERVER_VERSION:
         type: string
         required: false
         default: "9.9.1"
     outputs:
-      COMMENT_BODY:
+      NEW_FAILURES_LINUX:
         description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.COMMENT_BODY }}
+        value: ${{ jobs.e2e.outputs.NEW_FAILURES_LINUX }}
+      NEW_FAILURES_MACOS:
+        description: "The output to comment"
+        value: ${{ jobs.e2e.outputs.NEW_FAILURES_MACOS }}
+      NEW_FAILURES_WINDOWS:
+        description: "The output to comment"
+        value: ${{ jobs.e2e.outputs.NEW_FAILURES_WINDOWS }}
+      REPORT_LINK_LINUX:
+        description: "Link to Linux report"
+        value: ${{ jobs.e2e.outputs.REPORT_LINK_LINUX }}
+      REPORT_LINK_MACOS:
+        description: "Link to MacOS report"
+        value: ${{ jobs.e2e.outputs.REPORT_LINK_MACOS }}
+      REPORT_LINK_WINDOWS:
+        description: "Link to Windows report"
+        value: ${{ jobs.e2e.outputs.REPORT_LINK_WINDOWS }}
+      STATUS_LINUX:
+        description: "The status of the linux test"
+        value: ${{ jobs.e2e.outputs.STATUS_LINUX }}
+      STATUS_MACOS:
+        description: "The status of the macOS test"
+        value: ${{ jobs.e2e.outputs.STATUS_MACOS }}
+      STATUS_WINDOWS:
+        description: "The status of the windows test"
+        value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
+
+  workflow_dispatch:
+    inputs:
+      MM_TEST_SERVER_URL:
+        description: "The test server URL"
+        required: false
+        type: string
+      MM_TEST_USER_NAME:
+        description: "The admin username of the test instance"
+        required: false
+        type: string
+      MM_TEST_PASSWORD:
+        description: "The admin password of the test instance"
+        required: false
+        type: string
+      DESKTOP_VERSION:
+        description: "The desktop version to test"
+        required: false
+        default: "master"
+        type: string
+      runs-on:
+        type: string
+        description: "The E2E tests underlying OS"
+        required: true
+        default: "ubuntu-22.04"
+      nightly:
+        type: boolean
+        description: "True if this is nightly build"
+        required: false
+        default: false
+      cmt:
+        type: boolean
+        description: "True if this is Compatibility Matrix Testing"
+        required: false
+        default: false
+      TYPE:
+        type: boolean
+        description: "True if this is Triggered from PR"
+        required: false
+        default: false
+      MM_SERVER_VERSION:
+        type: string
+        required: false
+        default: "9.9.1"
 
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
@@ -62,49 +135,73 @@ env:
   WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   REPORT_LINK: "none"
+  NODE_VERSION: 18
+  SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '9.9.1' }}
+  DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
 jobs:
   e2e:
+    name: e2e-on-${{ inputs.runs-on }}
     runs-on: ${{ inputs.runs-on }}
     defaults:
       run:
         shell: bash
     outputs:
-      COMMENT_BODY: ${{ steps.analyze-flaky-tests.outputs.COMMENT_BODY }}
+      NEW_FAILURES_LINUX: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_LINUX }}
+      NEW_FAILURES_MACOS: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_MACOS }}
+      NEW_FAILURES_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_WINDOWS }}
+      REPORT_LINK_LINUX: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_LINUX }}
+      REPORT_LINK_MACOS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_MACOS }}
+      REPORT_LINK_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_WINDOWS }}
+      STATUS_LINUX: ${{ steps.analyze-flaky-tests.outputs.STATUS_LINUX }}
+      STATUS_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.STATUS_WINDOWS }}
+      STATUS_MACOS: ${{ steps.analyze-flaky-tests.outputs.STATUS_MACOS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
         run: |
           RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=PR" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.cmt }}" ]; then
-            echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=CMT" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_LINUX_REPORT=12358649" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_MACOS_REPORT=12358650" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_WIN_REPORT=12358651" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && ! ${{ inputs.nightly }}; then
-            echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=MANUAL" >> $GITHUB_ENV
-
-          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=MASTER" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-
-          elif ${{ inputs.nightly }}; then
+          echo "RUNNER_OS=${RUNNER_OS}" >> $GITHUB_ENV
+          
+          # Define build type and suffix
+          case "${{ github.event_name }}" in
+            "pull_request")
+              echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "TYPE=PR" >> $GITHUB_ENV
+              ;;
+            "workflow_dispatch")
+              if ${{ inputs.cmt }}; then
+                echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=CMT" >> $GITHUB_ENV
+                echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+                echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{ 
+                  runner.os == 'Linux' && '12358649' || 
+                  runner.os == 'macOS' && '12358650' || 
+                  '12358651' 
+                }}" >> $GITHUB_ENV
+              else
+                echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=MANUAL" >> $GITHUB_ENV
+              fi
+              ;;
+            "push")
+              if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+                echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=MASTER" >> $GITHUB_ENV
+                echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
+              fi
+              ;;
+          esac
+          
+          if ${{ inputs.nightly }}; then
             echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
             echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_LINUX_REPORT=12363689" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_MACOS_REPORT=12363687" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_WIN_REPORT=12363690" >> $GITHUB_ENV
+            echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{ 
+              runner.os == 'Linux' && '12363689' || 
+              runner.os == 'macOS' && '12363687' || 
+              '12363690' 
+            }}" >> $GITHUB_ENV
           fi
 
       - name: e2e/set-build-id
@@ -140,52 +237,16 @@ jobs:
         with:
           python-version: "3.10"
 
-      ## Linux Dependencies
-      - name: e2e/install-dependencies-linux
-        if: runner.os == 'Linux'
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
-        run: |
-          wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
-          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
-          sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata xsel libgtk-3-0 libnss3 libxss1 libasound2
-          sudo apt-get install -y xvfb
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x24 &
-          npm ci
-          cd e2e
-          npm ci
-          npx electron-rebuild --platform=linux -f -t prod,optional,dev -w robotjs --module-dir ../
+      - name: e2e/install-os-dependencies
+        uses: ./.github/actions/install-os-dependencies
+        with:
+          os: ${{ runner.os }}
 
-      - name: e2e/install-dependencies-macos
-        if: runner.os == 'macOS'
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - name: e2e/install-node-dependencies
         run: |
-          brew install nss
-          jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm ci
-          cd e2e
-          npm ci
-          npx electron-rebuild --platform=darwin -f -t prod,optional,dev -w robotjs --module-dir ../
-
-      ## Windows Dependencies
-      - name: e2e/install-dependencies-windows
-        if: runner.os == 'windows'
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-        run: |
-          choco install yq --version 4.15.1 -y
-          choco install vcredist-all -y
-          npm i -g node-gyp
-          node-gyp install
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
-          node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers" --arch arm64
-          npm ci --openssl_fips=''
-          cd e2e
-          npm ci
-          npx electron-rebuild --platform=win32 -f -t prod,optional,dev -w robotjs --module-dir ../
-          npm install mochawesome-report-generator
+          cd e2e && npm ci
+          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
@@ -224,6 +285,9 @@ jobs:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
+      - name: Capture Report Link
+        run: echo "REPORT_LINK=$(cat e2e/report-link.txt)" >> $GITHUB_ENV
+
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
@@ -231,8 +295,32 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { commentBody, newFailedTests } = analyzeFlakyTests();
-            core.setOutput('COMMENT_BODY', commentBody);
-            if (newFailedTests.length > 0) {
-              core.setFailed('E2E tests failed.');
+            const { newFailedTests, os } = analyzeFlakyTests();
+
+            switch (os) {
+              case 'linux':
+                core.setOutput('NEW_FAILURES_LINUX', newFailedTests.length);
+                core.setOutput('REPORT_LINK_LINUX', "${{ env.REPORT_LINK}}");
+                newFailedTests.length > 0 ? core.setOutput('STATUS_LINUX', 'failure') : core.setOutput('STATUS_LINUX', 'success');
+                break;
+              case 'darwin':
+                core.setOutput('NEW_FAILURES_MACOS', newFailedTests.length);
+                core.setOutput('REPORT_LINK_MACOS', "${{ env.REPORT_LINK}}");
+                newFailedTests.length > 0 ? core.setOutput('STATUS_MACOS', 'failure') : core.setOutput('STATUS_MACOS', 'success');
+                break;
+              case 'win32':
+                core.setOutput('NEW_FAILURES_WINDOWS', newFailedTests.length);
+                core.setOutput('REPORT_LINK_WINDOWS', "${{ env.REPORT_LINK}}");
+                newFailedTests.length > 0 ? core.setOutput('STATUS_WINDOWS', 'failure') : core.setOutput('STATUS_WINDOWS', 'success');
+                break;
+              default:
+                throw new Error(`Unsupported OS: ${os}`);
             }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ runner.os }}
+          path: e2e/mochawesome-report
+          retention-days: 7
