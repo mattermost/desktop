@@ -35,6 +35,7 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
+import ViewManager from 'common/views/viewManager';
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
 import AuthManager from 'main/authManager';
@@ -55,7 +56,7 @@ import PermissionsManager from 'main/permissionsManager';
 import Tray from 'main/tray/tray';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import UserActivityMonitor from 'main/UserActivityMonitor';
-import ViewManager from 'main/views/viewManager';
+import WebContentsManager from 'main/views/webContentsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {
@@ -262,7 +263,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
-    ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);
+    ipcMain.on(FOCUS_BROWSERVIEW, WebContentsManager.focusCurrentView);
 
     if (process.platform !== 'darwin') {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
@@ -308,6 +309,7 @@ async function initializeAfterAppReady() {
     });
 
     ServerManager.reloadFromConfig();
+    ViewManager.reloadFromConfig();
     ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
         if (serverIds && serverIds.length) {
             updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
@@ -399,7 +401,7 @@ async function initializeAfterAppReady() {
         if (Array.isArray(args) && args.length > 0) {
             deeplinkingURL = getDeeplinkingURL(args);
             if (deeplinkingURL) {
-                ViewManager.handleDeepLink(deeplinkingURL);
+                WebContentsManager.handleDeepLink(deeplinkingURL);
             }
         }
     }
@@ -460,7 +462,7 @@ function onUserActivityStatus(status: {
     isSystemEvent: boolean;
 }) {
     log.debug('UserActivityMonitor.on(status)', status);
-    ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
+    WebContentsManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 
 function handleStartDownload() {
