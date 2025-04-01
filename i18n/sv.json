@@ -341,6 +341,7 @@
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName}-version {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "Ny desktopversion finns tillgänglig",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "Starta om och uppdatera",
+  "renderer.downloadsDropdown.Update.ViewChangelog": "Visa ändringslogg",
   "renderer.downloadsDropdown.remaining": "resterande",
   "renderer.downloadsDropdownMenu.CancelDownload": "Avbryt nedladdning",
   "renderer.downloadsDropdownMenu.Clear": "Rensa",
