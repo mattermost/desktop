@@ -157,6 +157,8 @@ export const UPDATE_TAB_ORDER = 'update-tab-order';
 export const GET_LAST_ACTIVE = 'get-last-active';
 export const GET_ORDERED_SERVERS = 'get-ordered-servers';
 export const GET_ORDERED_TABS_FOR_SERVER = 'get-ordered-tabs-for-server';
+export const GET_CURRENT_SERVER = 'get-current-server';
+export const GET_VIEW_BY_SERVER_ID = 'get-view-by-server-id';
 
 export const UPDATE_APPSTATE = 'update-appstate';
 export const UPDATE_APPSTATE_TOTALS = 'update-appstate-totals';
@@ -195,3 +197,11 @@ export const GET_UNIQUE_SERVERS_WITH_PERMISSIONS = 'get-unique-servers-with-perm
 export const ADD_SERVER = 'add-server';
 export const EDIT_SERVER = 'edit-server';
 export const REMOVE_SERVER = 'remove-server';
+
+export const CREATE_NEW_TAB = 'create-new-tab';
+export const UPDATE_TAB_TITLE = 'update-tab-title';
+export const POPOUT_WINDOW = 'popout-window';
+
+export const GET_VIEW_TITLE = 'get-view-title';
+
+export const IS_VIEW_IN_POPOUT_WINDOW = 'is-view-in-popout-window';

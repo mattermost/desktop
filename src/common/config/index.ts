@@ -9,13 +9,12 @@ import {EventEmitter} from 'events';
 import {Logger} from 'common/log';
 import {copy} from 'common/utils/util';
 import * as Validator from 'common/Validator';
-import {getDefaultViewsForConfigServer} from 'common/views/View';
 
 import type {
     AnyConfig,
     BuildConfig,
     CombinedConfig,
-    ConfigServer,
+    Server,
     Config as ConfigType,
     RegistryConfig as RegistryConfigType,
 } from 'types/config';
@@ -34,7 +33,7 @@ export class Config extends EventEmitter {
     private appPath?: string;
 
     private registryConfig: RegistryConfig;
-    private _predefinedServers: ConfigServer[];
+    private _predefinedServers: Server[];
 
     private combinedData?: CombinedConfig;
     private localConfigData?: ConfigType;
@@ -48,7 +47,7 @@ export class Config extends EventEmitter {
         this.registryConfig = new RegistryConfig();
         this._predefinedServers = [];
         if (buildConfig.defaultServers) {
-            this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
+            this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => ({...server, order: index})));
         }
     }
 
@@ -128,7 +127,7 @@ export class Config extends EventEmitter {
         this.saveLocalConfigData();
     };
 
-    setServers = (servers: ConfigServer[], lastActiveServer?: number) => {
+    setServers = (servers: Server[], lastActiveServer?: number) => {
         log.debug('setServers', servers, lastActiveServer);
 
         this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveServer ?? this.localConfigData?.lastActiveTeam});
@@ -262,7 +261,7 @@ export class Config extends EventEmitter {
 
         this.registryConfigData = registryData;
         if (this.registryConfigData.servers) {
-            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
+            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => ({...server, order: index})));
         }
         this.reload();
     };

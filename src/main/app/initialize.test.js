@@ -7,7 +7,7 @@ import {app, session} from 'electron';
 
 import Config from 'common/config';
 import parseArgs from 'main/ParseArgs';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 
 import {initialize} from './initialize';
 import {clearAppCache, getDeeplinkingURL, wasUpdated} from './utils';

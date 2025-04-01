@@ -22,9 +22,10 @@ import {
     isValidURI,
     parseURL,
 } from 'common/utils/url';
+import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import PluginsPopUpsManager from 'main/views/pluginsPopUps';
-import ViewManager from 'main/views/viewManager';
+import WebContentsManager from 'main/views/webContentsManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -48,12 +49,12 @@ export class WebContentsEventManager {
             return log;
         }
 
-        const view = ViewManager.getViewByWebContentsId(webContentsId);
+        const view = WebContentsManager.getViewByWebContentsId(webContentsId);
         if (!view) {
             return log;
         }
 
-        return ServerManager.getViewLog(view.id, 'WebContentsEventManager');
+        return ViewManager.getViewLog(view.id, 'WebContentsEventManager');
     };
 
     private isTrustedPopupWindow = (webContentsId: number) => {
@@ -72,7 +73,7 @@ export class WebContentsEventManager {
             return CallsWidgetWindow.getViewURL();
         }
 
-        return ViewManager.getViewByWebContentsId(webContentsId)?.view.server.url;
+        return WebContentsManager.getViewByWebContentsId(webContentsId)?.view.server.url;
     };
 
     private generateWillNavigate = (webContentsId: number) => {
@@ -171,7 +172,7 @@ export class WebContentsEventManager {
             }
 
             if (isTeamUrl(serverURL, parsedURL, true)) {
-                ViewManager.handleDeepLink(parsedURL);
+                WebContentsManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};
             }
             if (isAdminUrl(serverURL, parsedURL)) {
@@ -243,8 +244,8 @@ export class WebContentsEventManager {
             }
 
             const otherServerURL = ServerManager.lookupViewByURL(parsedURL);
-            if (otherServerURL && isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
-                ViewManager.handleDeepLink(parsedURL);
+            if (otherServerURL && isTeamUrl(otherServerURL.url, parsedURL, true)) {
+                WebContentsManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};
             }
 

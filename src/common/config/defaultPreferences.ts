@@ -12,7 +12,7 @@ import {app} from 'electron';
  * @param {number} version - Scheme version. (Not application version)
  */
 
-import type {ConfigV3} from 'types/config';
+import type {ConfigV4} from 'types/config';
 
 export const getDefaultDownloadLocation = (): string | undefined => {
     // eslint-disable-next-line no-undef
@@ -29,8 +29,8 @@ export const getDefaultDownloadLocation = (): string | undefined => {
     return app.getPath('downloads') || path.join(os.homedir(), 'Downloads');
 };
 
-const defaultPreferences: ConfigV3 = {
-    version: 3,
+const defaultPreferences: ConfigV4 = {
+    version: 4,
     teams: [],
     showTrayIcon: true,
     trayIconTheme: 'use_system',

@@ -33,7 +33,7 @@ import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
 import NotificationManager from 'main/notifications';
 import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {type DownloadedItem, type DownloadItemDoneEventState, type DownloadedItems, type DownloadItemState, type DownloadItemUpdatedEventState, DownloadItemTypeEnum} from 'types/downloads';

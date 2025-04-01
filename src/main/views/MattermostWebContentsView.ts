@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {BrowserWindow} from 'electron';
 import {WebContentsView, app, ipcMain} from 'electron';
 import type {WebContentsViewConstructorOptions, Event, Input} from 'electron/main';
 import {EventEmitter} from 'events';
@@ -18,12 +19,14 @@ import {
     CLOSE_SERVERS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN,
     LOAD_INCOMPATIBLE_SERVER,
+    UPDATE_TAB_TITLE,
 } from 'common/communication';
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
-import {TAB_MESSAGING, type MattermostView} from 'common/views/View';
+import ViewManager from 'common/views/viewManager';
+import type {MattermostView} from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
 import performanceMonitor from 'main/performanceMonitor';
@@ -43,7 +46,9 @@ enum Status {
 }
 export class MattermostWebContentsView extends EventEmitter {
     view: MattermostView;
+    title: string;
     isVisible: boolean;
+    private parentWindow?: BrowserWindow;
 
     private log: Logger;
     private webContentsView: WebContentsView;
@@ -60,6 +65,8 @@ export class MattermostWebContentsView extends EventEmitter {
     constructor(view: MattermostView, options: WebContentsViewConstructorOptions) {
         super();
         this.view = view;
+        this.title = view.server.name;
+        this.parentWindow = MainWindow.get();
 
         const preload = getLocalPreload('externalAPI.js');
         this.options = Object.assign({}, options);
@@ -77,8 +84,8 @@ export class MattermostWebContentsView extends EventEmitter {
         this.webContentsView = new WebContentsView(this.options);
         this.resetLoadingStatus();
 
-        this.log = ServerManager.getViewLog(this.id, 'MattermostWebContentsView');
-        this.log.verbose('View created');
+        this.log = ViewManager.getViewLog(this.id, 'MattermostWebContentsView');
+        this.log.verbose('View created', this.id, this.view.server.name);
 
         this.webContentsView.webContents.on('update-target-url', this.handleUpdateTarget);
         if (process.platform !== 'darwin') {
@@ -90,6 +97,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
+        this.webContentsView.webContents.on('page-title-updated', this.handlePageTitleUpdated);
 
         WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
@@ -100,7 +108,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
         this.altPressStatus = false;
 
-        MainWindow.get()?.on('blur', () => {
+        this.parentWindow?.on('blur', () => {
             this.altPressStatus = false;
         });
 
@@ -122,6 +130,10 @@ export class MattermostWebContentsView extends EventEmitter {
     get webContentsId() {
         return this.webContentsView.webContents.id;
     }
+
+    getWebContentsView = () => {
+        return this.webContentsView;
+    };
 
     onLogin = (loggedIn: boolean) => {
         if (this.isLoggedIn === loggedIn) {
@@ -188,11 +200,7 @@ export class MattermostWebContentsView extends EventEmitter {
             loadURL = this.view.url.toString();
         }
         this.log.verbose(`Loading ${loadURL}`);
-        if (this.view.type === TAB_MESSAGING) {
-            performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
-        } else {
-            performanceMonitor.registerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
-        }
+        performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
@@ -211,8 +219,7 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     show = () => {
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
+        if (!this.parentWindow) {
             return;
         }
         if (!this.currentURL) {
@@ -222,17 +229,17 @@ export class MattermostWebContentsView extends EventEmitter {
             return;
         }
         this.isVisible = true;
-        mainWindow.contentView.addChildView(this.webContentsView);
-        this.setBounds(getWindowBoundaries(mainWindow));
+        this.parentWindow.contentView.addChildView(this.webContentsView);
+        this.setBounds(getWindowBoundaries(this.parentWindow));
         if (this.status === Status.READY) {
             this.focus();
         }
     };
 
     hide = () => {
-        if (this.isVisible) {
+        if (this.isVisible && this.parentWindow) {
             this.isVisible = false;
-            MainWindow.get()?.contentView.removeChildView(this.webContentsView);
+            this.parentWindow.contentView.removeChildView(this.webContentsView);
         }
     };
 
@@ -258,7 +265,9 @@ export class MattermostWebContentsView extends EventEmitter {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         AppState.clear(this.id);
         performanceMonitor.unregisterView(this.webContentsView.webContents.id);
-        MainWindow.get()?.contentView.removeChildView(this.webContentsView);
+        if (this.parentWindow) {
+            this.parentWindow.contentView.removeChildView(this.webContentsView);
+        }
         this.webContentsView.webContents.close();
 
         this.isVisible = false;
@@ -440,7 +449,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 this.status = Status.WAITING_MM;
                 this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
                 this.emit(LOAD_SUCCESS, this.id, loadURL);
-                const mainWindow = MainWindow.get();
+                const mainWindow = this.parentWindow;
                 if (mainWindow && this.currentURL) {
                     this.setBounds(getWindowBoundaries(mainWindow));
                 }
@@ -470,5 +479,41 @@ export class MattermostWebContentsView extends EventEmitter {
         if (serverIds.includes(this.view.server.id)) {
             this.reload();
         }
+    };
+
+    private handlePageTitleUpdated = (event: Event, newTitle: string) => {
+        // Extract just the channel name (everything before the first " - ")
+        // Remove any mention count in parentheses at the start
+        const parts = newTitle.split(' - ');
+        let channelName = parts[0];
+
+        // Remove mention count if present
+        if (channelName.startsWith('(')) {
+            const endParenIndex = channelName.indexOf(')');
+            if (endParenIndex !== -1) {
+                channelName = channelName.substring(endParenIndex + 1).trim();
+            }
+        }
+
+        this.title = channelName;
+        ViewManager.setViewTitle(this.id, channelName);
+
+        // Send title update to the parent window
+        if (this.parentWindow) {
+            this.parentWindow.webContents.send(UPDATE_TAB_TITLE, this.id, channelName);
+            this.parentWindow.setTitle(channelName);
+        }
+    };
+
+    getTitle = () => {
+        return ViewManager.getViewTitle(this.id) || this.title;
+    };
+
+    setParentWindow = (window: BrowserWindow) => {
+        this.parentWindow = window;
+    };
+
+    isViewInPopoutWindow = () => {
+        return this.parentWindow?.webContents.getURL().includes('popoutWindow.html') || false;
     };
 }
