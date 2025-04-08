@@ -4,7 +4,7 @@
 
 import {AuthManager} from 'main/authManager';
 import ModalManager from 'main/views/modalManager';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 jest.mock('common/utils/url', () => {

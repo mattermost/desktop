@@ -1,0 +1,46 @@
+@use '../css_variables';
+@use '../typography';
+
+body {
+    margin: 0;
+}
+
+.PopoutWindow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    background-color: #2e2e2e;
+    color: var(--center-channel-color);
+
+    &__header {
+        display: flex;
+        flex-direction: row;
+        height: 40px;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        -webkit-app-region: drag;
+    }
+
+    &__header-title {
+        text-align: center;
+
+        /* Body 100 - Semibold */
+        font-family: Open Sans;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 20px; /* 142.857% */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        user-select: none;
+    }
+
+    &__content {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+    }
+} 

@@ -22,6 +22,7 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
+import ViewManager from 'common/views/viewManager';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload} from 'main/utils';
 
@@ -170,7 +171,7 @@ export class ServerDropdownView {
     private reduceNotifications = <T>(inputMap: Map<string, T>, items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
         inputMap.clear();
         return [...items.keys()].reduce((map, key) => {
-            const view = ServerManager.getView(key);
+            const view = ViewManager.getView(key);
             if (!view) {
                 return map;
             }

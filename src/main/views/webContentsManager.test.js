@@ -11,7 +11,7 @@ import MainWindow from 'main/windows/mainWindow';
 
 import LoadingScreen from './loadingScreen';
 import {MattermostWebContentsView} from './MattermostWebContentsView';
-import {ViewManager} from './viewManager';
+import {ViewManager} from './webContentsManager';
 
 jest.mock('electron', () => ({
     app: {
