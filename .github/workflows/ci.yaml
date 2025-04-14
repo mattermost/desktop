@@ -143,6 +143,8 @@ jobs:
 
   build-mac-no-dmg:
     runs-on: macos-15
+    env:
+      MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -155,7 +157,6 @@ jobs:
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-          MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
         run: |
           brew install yq
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
