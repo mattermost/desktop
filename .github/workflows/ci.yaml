@@ -155,6 +155,7 @@ jobs:
       - name: ci/install-dependencies
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
         run: |
           brew install yq
           jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
