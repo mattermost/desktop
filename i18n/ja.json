@@ -341,6 +341,7 @@
   "renderer.downloadsDropdown.Update.MattermostVersionX": "{appName} version {version}",
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "デスクトップアプリの新しいバージョンが利用可能です",
   "renderer.downloadsDropdown.Update.RestartAndUpdate": "再起動して更新する",
+  "renderer.downloadsDropdown.Update.ViewChangelog": "変更履歴を見る",
   "renderer.downloadsDropdown.remaining": "残り",
   "renderer.downloadsDropdownMenu.CancelDownload": "ダウンロードをキャンセルする",
   "renderer.downloadsDropdownMenu.Clear": "クリア",
