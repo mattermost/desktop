@@ -1,5 +1,6 @@
 name: Snyk - Software Bill of Materials (SBOM)
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
