@@ -13,8 +13,8 @@ import type {Config} from 'common/config';
 import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK, ModalConstants} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
 import {t} from 'common/utils/util';
-import {getViewDisplayName} from 'common/views/View';
-import type {ViewType} from 'common/views/View';
+import type {MattermostView} from 'common/views/viewManager';
+import ViewManager from 'common/views/viewManager';
 import {clearAllData, clearDataForServer} from 'main/app/utils';
 import type {UpdateManager} from 'main/autoUpdater';
 import DeveloperMode from 'main/developerMode';
@@ -23,7 +23,7 @@ import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
-import ViewManager from 'main/views/viewManager';
+import WebContentsManager from 'main/views/webContentsManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -167,7 +167,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         {
             label: localizeMessage('main.menus.app.view.devToolsCurrentServer', 'Developer Tools for Current Server'),
             click() {
-                ViewManager.getCurrentView()?.openDevTools();
+                WebContentsManager.getCurrentView()?.openDevTools();
             },
         },
     ];
@@ -232,20 +232,20 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: localizeMessage('main.menus.app.view.find', 'Find..'),
         accelerator: 'CmdOrCtrl+F',
         click() {
-            ViewManager.sendToFind();
+            WebContentsManager.sendToFind();
         },
     }, {
         label: localizeMessage('main.menus.app.view.reload', 'Reload'),
         accelerator: 'CmdOrCtrl+R',
         click() {
-            ViewManager.reload();
+            WebContentsManager.reload();
         },
     }, {
         label: localizeMessage('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
             session.defaultSession.clearCache();
-            ViewManager.reload();
+            WebContentsManager.reload();
         },
     }];
 
@@ -323,13 +323,13 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.history.back', 'Back'),
             accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
             click: () => {
-                ViewManager.getCurrentView()?.goToOffset(-1);
+                WebContentsManager.getCurrentView()?.goToOffset(-1);
             },
         }, {
             label: localizeMessage('main.menus.app.history.forward', 'Forward'),
             accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
             click: () => {
-                ViewManager.getCurrentView()?.goToOffset(1);
+                WebContentsManager.getCurrentView()?.goToOffset(1);
             },
         }],
     });
@@ -372,18 +372,20 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 },
             });
             if (currentServer?.id === server.id) {
-                ServerManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view, i) => {
+                ViewManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view: MattermostView, i: number) => {
                     items.push({
-                        label: `    ${localizeMessage(`common.views.${view.type}`, getViewDisplayName(view.type as ViewType))}`,
+                        label: `    ${view.server.name}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
-                            ViewManager.showById(view.id);
+                            WebContentsManager.showById(view.id);
                         },
                     });
                 });
             }
             return items;
-        }).flat(), separatorItem, {
+        }).flat(), separatorItem,
+
+        /*{
             label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
             accelerator: 'Ctrl+Tab',
             click() {
@@ -397,7 +399,8 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 ServerViewState.selectPreviousView();
             },
             enabled: (servers.length > 1),
-        }, ...(isMac ? [separatorItem, {
+        }, */
+        ...(isMac ? [separatorItem, {
             role: 'front',
             label: localizeMessage('main.menus.app.window.bringAllToFront', 'Bring All to Front'),
         }] : []),

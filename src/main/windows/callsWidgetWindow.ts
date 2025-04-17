@@ -36,7 +36,7 @@ import {
     resetScreensharePermissionsMacOS,
 } from 'main/utils';
 import type {MattermostWebContentsView} from 'main/views/MattermostWebContentsView';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import webContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
 
