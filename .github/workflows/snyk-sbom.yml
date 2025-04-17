@@ -1,6 +1,11 @@
 name: Snyk - Software Bill of Materials (SBOM)
 on:
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name'
+        required: true
+        type: string
   release:
     types: [published]
 
@@ -12,3 +17,4 @@ jobs:
     secrets: inherit
     with:
       is_monorepo: false
+      tag_name: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
