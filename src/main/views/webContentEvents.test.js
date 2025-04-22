@@ -226,26 +226,26 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should respect logging levels', () => {
-            consoleMessage({}, 0, 'test0', 0, '');
+            consoleMessage({level: 'info', message: 'test0', lineNumber: 0, sourceId: ''});
             expect(logObject.debug).toHaveBeenCalledWith('test0');
 
-            consoleMessage({}, 1, 'test1', 0, '');
+            consoleMessage({level: 'info', message: 'test1', lineNumber: 0, sourceId: ''});
             expect(logObject.debug).toHaveBeenCalledWith('test1');
 
-            consoleMessage({}, 2, 'test2', 0, '');
+            consoleMessage({level: 'warning', message: 'test2', lineNumber: 0, sourceId: ''});
             expect(logObject.warn).toHaveBeenCalledWith('test2');
 
-            consoleMessage({}, 3, 'test3', 0, '');
+            consoleMessage({level: 'error', message: 'test3', lineNumber: 0, sourceId: ''});
             expect(logObject.error).toHaveBeenCalledWith('test3');
         });
 
         it('should only add line numbers for debug and silly', () => {
             getLevel.mockReturnValue('debug');
-            consoleMessage({}, 0, 'test1', 42, 'meaning_of_life.js');
+            consoleMessage({level: 'info', message: 'test1', lineNumber: 42, sourceId: 'meaning_of_life.js'});
             expect(logObject.debug).toHaveBeenCalledWith('test1', '(meaning_of_life.js:42)');
 
             getLevel.mockReturnValue('warn');
-            consoleMessage({}, 0, 'test2', 42, 'meaning_of_life.js');
+            consoleMessage({level: 'info', message: 'test2', lineNumber: 42, sourceId: 'meaning_of_life.js'});
             expect(logObject.warn).not.toHaveBeenCalledWith('test2', '(meaning_of_life.js:42)');
         });
     });

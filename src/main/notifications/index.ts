@@ -267,7 +267,7 @@ function flashFrame(flash: boolean) {
         }
     }
     if (process.platform === 'darwin' && Config.notifications.bounceIcon && Config.notifications.bounceIconType) {
-        app.dock.bounce(Config.notifications.bounceIconType);
+        app.dock?.bounce(Config.notifications.bounceIconType);
     }
 }
 
