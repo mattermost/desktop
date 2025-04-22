@@ -100,7 +100,7 @@ export function showBadgeOSX(sessionExpired: boolean, mentionCount: number, show
     } else if (sessionExpired) {
         badge = '!';
     }
-    app.dock.setBadge(badge);
+    app.dock?.setBadge(badge);
 }
 
 function showBadgeLinux(sessionExpired: boolean, mentionCount: number) {

@@ -402,7 +402,7 @@ describe('main/notifications', () => {
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-            expect(app.dock.bounce).not.toBeCalled();
+            expect(app.dock!.bounce).not.toBeCalled();
         });
 
         it('mac - should bounce icon when config item is set', async () => {
@@ -428,7 +428,7 @@ describe('main/notifications', () => {
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-            expect(app.dock.bounce).toHaveBeenCalledWith('critical');
+            expect(app.dock!.bounce).toHaveBeenCalledWith('critical');
         });
     });
 

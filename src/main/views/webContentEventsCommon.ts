@@ -2,36 +2,29 @@
 // See LICENSE.txt for license information.
 import path from 'path';
 
-import type {Event} from 'electron';
+import type {Event, WebContentsConsoleMessageEventParams} from 'electron';
 
 import type {Logger} from 'common/log';
 import {getLevel} from 'common/log';
 
 import {protocols} from '../../../electron-builder.json';
 
-enum ConsoleMessageLevel {
-    Verbose,
-    Info,
-    Warning,
-    Error
-}
-
-export const generateHandleConsoleMessage = (log: Logger) => (_: Event, level: number, message: string, line: number, sourceId: string) => {
+export const generateHandleConsoleMessage = (log: Logger) => (event: Event<WebContentsConsoleMessageEventParams>) => {
     const wcLog = log.withPrefix('renderer');
     let logFn = wcLog.debug;
-    switch (level) {
-    case ConsoleMessageLevel.Error:
+    switch (event.level) {
+    case 'error':
         logFn = wcLog.error;
         break;
-    case ConsoleMessageLevel.Warning:
+    case 'warning':
         logFn = wcLog.warn;
         break;
     }
 
     // Only include line entries if we're debugging
-    const entries = [message];
+    const entries = [event.message];
     if (['debug', 'silly'].includes(getLevel())) {
-        entries.push(`(${path.basename(sourceId)}:${line})`);
+        entries.push(`(${path.basename(event.sourceId)}:${event.lineNumber})`);
     }
 
     logFn(...entries);

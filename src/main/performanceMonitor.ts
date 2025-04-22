@@ -164,8 +164,8 @@ export class PerformanceMonitor {
         }
     };
 
-    private handleSpeedLimitChange = (limit: number) => {
-        if (limit < 100) {
+    private handleSpeedLimitChange = (details: {limit: number}) => {
+        if (details.limit < 100) {
             this.stop();
         } else {
             this.start();
