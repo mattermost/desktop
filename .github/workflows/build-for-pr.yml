@@ -140,6 +140,8 @@ jobs:
 
   build-mac-for-pr:
     runs-on: macos-15
+    env:
+      MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
     if: ${{ github.event.label.name == 'Build Apps for PR' }}
     steps:
       - name: ci/checkout-repo
