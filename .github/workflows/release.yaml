@@ -120,6 +120,8 @@ jobs:
 
   build-mac-installer:
     runs-on: macos-15
+    env:
+      MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
     needs:
       - begin-notification
     steps:
