@@ -1,5 +1,11 @@
 name: Snyk - Software Bill of Materials (SBOM)
 on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name'
+        required: true
+        type: string
   release:
     types: [published]
 
@@ -7,7 +13,8 @@ jobs:
   sbom:
     permissions:
       contents: write
-    uses: mattermost/actions-workflows/.github/workflows/snyk-sbom.yml@97a61c0e3ee52b92b16054e5c60faaa870693476
+    uses: mattermost/actions-workflows/.github/workflows/snyk-sbom.yml@b5dc0b6b422e5ab1bd54f881d6f2e92b30302cf2
     secrets: inherit
     with:
       is_monorepo: false
+      tag_name: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
