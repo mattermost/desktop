@@ -237,6 +237,12 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Install Missing Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk1.0-0 libxss1 libasound2 libgtk-3-0 libgbm-dev
+
       - name: e2e/install-os-dependencies
         uses: ./.github/actions/install-os-dependencies
         with:
@@ -260,6 +266,8 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+          PLAYWRIGHT_CHROMIUM_ARGS: "--disable-gpu --disable-software-rasterizer"
+
 
       - name: e2e/run-playright-tests-macos
         if: runner.os == 'macOS'

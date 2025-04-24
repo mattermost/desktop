@@ -77,12 +77,11 @@ jobs:
               case "${{ inputs.platform }}" in
                 linux)  echo "platforms=['ubuntu-22.04']" ;;
                 macos)  echo "platforms=['macos-13']" ;;
-                # windows) echo "platforms=['windows-2022']" ;; TODO: uncomment when https://mattermost.atlassian.net/browse/MM-63397 is fixed
+                windows) echo "platforms=['windows-2022']"
               esac >> $GITHUB_OUTPUT
             fi
           elif [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}" == "true" ]]; then
-            echo "platforms=['ubuntu-22.04', 'macos-13']" >> $GITHUB_OUTPUT
-            # echo "platforms=['ubuntu-22.04', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT
+            echo "platforms=['ubuntu-22.04', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT
           else
             echo "platforms=[]" >> $GITHUB_OUTPUT
           fi
