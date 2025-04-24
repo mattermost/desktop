@@ -47,24 +47,23 @@ jobs:
           description: E2E tests for Mattermost desktop app on macOS have started...
           status: pending
 
-  # TODO: uncomment when https://mattermost.atlassian.net/browse/MM-63397 is fixed
-  # update-initial-status-windows:
-  #   runs-on: ubuntu-22.04
-  #   if: contains(github.event.label.name, 'Run Desktop E2E Tests')
-  #   steps:
-  #     - uses: mattermost/actions/delivery/update-commit-status@main
-  #       env:
-  #         GITHUB_TOKEN: ${{ github.token }}
-  #       with:
-  #         repository_full_name: ${{ github.repository }}
-  #         commit_sha: ${{ github.event.pull_request.head.sha }}
-  #         context: e2e/windows
-  #         description: E2E tests for Mattermost desktop app on Windows have started...
-  #         status: pending
+  update-initial-status-windows:
+    runs-on: ubuntu-22.04
+    if: contains(github.event.label.name, 'Run Desktop E2E Tests')
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          context: e2e/windows
+          description: E2E tests for Mattermost desktop app on Windows have started...
+          status: pending
 
   determine-platforms:
     if: contains(github.event.label.name, 'Run Desktop E2E Tests')
-    needs: [update-initial-status-linux, update-initial-status-macos] #, update-initial-status-windows]
+    needs: [update-initial-status-linux, update-initial-status-macos, update-initial-status-windows]
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.set-matrix.outputs.platforms }}
@@ -132,22 +131,21 @@ jobs:
           status: ${{ needs.e2e-tests.outputs.STATUS_MACOS }}
           target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_MACOS }}
 
-  # TODO: uncomment when https://mattermost.atlassian.net/browse/MM-63397 is fixed
-  # update-final-status-windows:
-  #   runs-on: ubuntu-22.04
-  #   needs:
-  #     - e2e-tests
-  #   steps:
-  #     - uses: mattermost/actions/delivery/update-commit-status@main
-  #       env:
-  #         GITHUB_TOKEN: ${{ github.token }}
-  #       with:
-  #         repository_full_name: ${{ github.repository }}
-  #         commit_sha: ${{ github.event.pull_request.head.sha }}
-  #         context: e2e/windows
-  #         description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }} failures
-  #         status: ${{ needs.e2e-tests.outputs.STATUS_WINDOWS }}
-  #         target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
+  update-final-status-windows:
+    runs-on: ubuntu-22.04
+    needs:
+      - e2e-tests
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha }}
+          context: e2e/windows
+          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }} failures
+          status: ${{ needs.e2e-tests.outputs.STATUS_WINDOWS }}
+          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
 
   e2e-remove-label:
     if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'Run Desktop E2E Tests') }}
