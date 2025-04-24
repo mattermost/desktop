@@ -31,7 +31,10 @@ runs:
           libgtk-3-0 \
           libnss3 \
           libxss1 \
-          libasound2
+          libasound2 \
+          libgbm-dev \
+          libdrm-dev \
+          mesa-utils
 
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'

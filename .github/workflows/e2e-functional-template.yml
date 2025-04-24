@@ -255,11 +255,12 @@ jobs:
           Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           npm run build-test
           cd e2e
-          xvfb-run -a npm run run:e2e || true
+          xvfb-run -a --server-args="-screen 0 1280x960x24 -ac -nolisten tcp -dpi 96 +extension RANDR" npm run run:e2e -- --use-gl=swiftshader --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage || true
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+          ELECTRON_DISABLE_GPU: 1
 
       - name: e2e/run-playright-tests-macos
         if: runner.os == 'macOS'
