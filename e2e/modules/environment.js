@@ -14,7 +14,6 @@ const ps = require('ps-node');
 const {SHOW_SETTINGS_WINDOW} = require('src/common/communication');
 
 const {asyncSleep, mkDirAsync, rmDirAsync, unlinkAsync} = require('./utils');
-
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -211,7 +210,6 @@ module.exports = {
     },
 
     async getApp(args = []) {
-
         const options = {
             downloadsPath: downloadsLocation,
             env: {
@@ -219,7 +217,7 @@ module.exports = {
                 RESOURCES_PATH: userDataDir,
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', ...args],
+            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', '--disable-gpu', '--disable-software-rasterizer', ...args],
         };
 
         // if (process.env.MM_DEBUG_SETTINGS) {
@@ -230,9 +228,7 @@ module.exports = {
         //     // this changes the default debugging port so chromedriver can run without issues.
         //     options.chromeDriverArgs.push('remote-debugging-port=9222');
         //}
-
         return electron.launch(options).then(async (eapp) => {
-
             await eapp.evaluate(async ({app}) => {
                 const promise = new Promise((resolve) => {
                     app.on('e2e-app-loaded', () => {

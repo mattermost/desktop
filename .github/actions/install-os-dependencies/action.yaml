@@ -19,10 +19,11 @@ runs:
         # Add Mesa PPA for better GPU support
         sudo add-apt-repository ppa:kisak/kisak-mesa -y
         sudo apt-get update
-        
+
         # Install additional packages for better GPU handling
-        sudo apt-get install -y mesa-utils-extra libxcb-dri3-0 libxcb-dri3-dev libxcb-present0 libxcb-sync1 libxshmfence1 libvulkan1
-        
+        sudo apt-get install -y mesa-utils-extra libxcb-dri3-0 libxcb-dri3-dev libxcb-present0 libxcb-sync1 libxshmfence1 libvulkan1 dbus-x11 libx11-xcb1 libxtst6 libnss3 libatk-bridge2.0-0 libxss1 \
+          x11-utils xdg-utils
+
         sudo apt-get install -y \
           ca-certificates \
           libxtst-dev \
@@ -36,8 +37,6 @@ runs:
           xsel \
           xvfb \
           libgtk-3-0 \
-          libnss3 \
-          libxss1 \
           libasound2 \
           libgbm-dev \
           libdrm-dev \
