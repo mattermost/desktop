@@ -16,6 +16,13 @@ runs:
         wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
         wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
         sudo apt-get update || true
+        # Add Mesa PPA for better GPU support
+        sudo add-apt-repository ppa:kisak/kisak-mesa -y
+        sudo apt-get update
+        
+        # Install additional packages for better GPU handling
+        sudo apt-get install -y mesa-utils-extra libxcb-dri3-0 libxcb-dri3-dev
+        
         sudo apt-get install -y \
           ca-certificates \
           libxtst-dev \
@@ -34,7 +41,16 @@ runs:
           libasound2 \
           libgbm-dev \
           libdrm-dev \
-          mesa-utils
+          mesa-utils \
+          libgl1-mesa-dri \
+          libgl1-mesa-glx \
+          libgles2-mesa \
+          libegl1-mesa \
+          libglapi-mesa \
+          libglx-mesa0 \
+          mesa-va-drivers \
+          mesa-vdpau-drivers \
+          mesa-vulkan-drivers
 
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'

@@ -14,6 +14,7 @@ const ps = require('ps-node');
 const {SHOW_SETTINGS_WINDOW} = require('src/common/communication');
 
 const {asyncSleep, mkDirAsync, rmDirAsync, unlinkAsync} = require('./utils');
+const {disableGPUFeatures, setGPUEnvironmentVariables} = require('../utils/gpu-helper');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -210,6 +211,9 @@ module.exports = {
     },
 
     async getApp(args = []) {
+        // Set GPU environment variables first
+        setGPUEnvironmentVariables();
+        
         const options = {
             downloadsPath: downloadsLocation,
             env: {
@@ -217,7 +221,25 @@ module.exports = {
                 RESOURCES_PATH: userDataDir,
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', ...args],
+            args: [
+                `${path.join(sourceRootDir, 'e2e/dist')}`, 
+                `--user-data-dir=${userDataDir}`, 
+                '--disable-dev-mode', 
+                '--no-sandbox',
+                '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gl-drawing-for-tests',
+                '--use-gl=swiftshader',
+                '--disable-gpu-compositing',
+                '--disable-gpu-memory-buffer-video-frames',
+                '--disable-gpu-rasterization',
+                '--ignore-gpu-blocklist',
+                '--disable-viz-display-compositor',
+                '--disable-d3d11',
+                ...args
+            ],
         };
 
         // if (process.env.MM_DEBUG_SETTINGS) {
@@ -228,7 +250,13 @@ module.exports = {
         //     // this changes the default debugging port so chromedriver can run without issues.
         //     options.chromeDriverArgs.push('remote-debugging-port=9222');
         //}
+        // Set GPU environment variables
+        setGPUEnvironmentVariables();
+        
         return electron.launch(options).then(async (eapp) => {
+            // Disable GPU features that might cause crashes
+            await disableGPUFeatures(eapp);
+            
             await eapp.evaluate(async ({app}) => {
                 const promise = new Promise((resolve) => {
                     app.on('e2e-app-loaded', () => {
