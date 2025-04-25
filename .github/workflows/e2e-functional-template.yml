@@ -252,11 +252,7 @@ jobs:
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
         run: |
-          # Set up proper DBUS service
-          mkdir -p /tmp/.X11-unix
-          chmod 1777 /tmp/.X11-unix
-
-          # Start D-Bus session bus
+          # Start D-Bus session bus without trying to modify system directories
           eval $(dbus-launch --sh-syntax)
 
           # Export the D-Bus session address to make it accessible to child processes
@@ -267,26 +263,24 @@ jobs:
           Xvfb $DISPLAY -screen 0 1280x960x24 -ac +extension GLX +render -noreset > /dev/null 2>&1 &
 
           # Give some time for X server to start
-          sleep 5
-
-          # Set X11 permissions
-          xauth generate $DISPLAY . trusted
+          sleep 3
 
           npm run build-test
           cd e2e
 
-          # Run with explicit GPU settings to avoid hardware acceleration issues
-          xvfb-run -a --server-args="-screen 0 1280x960x24 -ac +extension GLX +render -noreset" \
-            npm run run:e2e -- --disable-gpu-sandbox --disable-gpu --no-sandbox || true
+          # Use ENV variables to disable GPU features that are causing problems
+          export ELECTRON_DISABLE_GPU=1
+          export ELECTRON_DISABLE_SANDBOX=1
+          export ELECTRON_NO_ATTACH_CONSOLE=1
+
+          # Run tests with hardware acceleration disabled
+          ELECTRON_ENABLE_LOGGING=1 xvfb-run -a --server-args="-screen 0 1280x960x24 -ac +extension GLX +render -noreset" \
+            npm run run:e2e || true
 
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          # Environment variables to help with GPU issues
-          ELECTRON_DISABLE_SANDBOX: 1
-          ELECTRON_ENABLE_LOGGING: 1
-          ELECTRON_NO_ATTACH_CONSOLE: 1
 
       - name: e2e/run-playright-tests-macos
         if: runner.os == 'macOS'
