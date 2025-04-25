@@ -215,38 +215,46 @@ module.exports = {
             env: {
                 ...process.env,
                 RESOURCES_PATH: userDataDir,
-                ELECTRON_DISABLE_SANDBOX: 1,
-                ELECTRON_ENABLE_LOGGING: 1,
-                ELECTRON_NO_ATTACH_CONSOLE: 1,
+                ELECTRON_DISABLE_SANDBOX: '1',
+                ELECTRON_ENABLE_LOGGING: '1',
+                ELECTRON_NO_ATTACH_CONSOLE: '1',
+                ELECTRON_FORCE_SW_RENDERING: '1',
+                LIBGL_ALWAYS_SOFTWARE: '1',
+                SWIFTSHADER_DISABLE_PERFETTO: '1',
             },
             executablePath: electronBinaryPath,
             args: [
-                `${path.join(sourceRootDir, 'e2e/dist')}`, 
-                `--user-data-dir=${userDataDir}`, 
-                '--disable-dev-mode', 
-                '--no-sandbox', 
+                `${path.join(sourceRootDir, 'e2e/dist')}`,
+                `--user-data-dir=${userDataDir}`,
+                '--disable-dev-mode',
+                '--no-sandbox',
                 '--disable-gpu',
-                '--disable-software-rasterizer',
-                '--disable-gpu-sandbox',
+                '--in-process-gpu',
                 '--disable-gpu-compositing',
-                '--disable-features=VizDisplayCompositor',
+                '--disable-gpu-sandbox',
+                '--disable-accelerated-2d-canvas',
+                '--disable-accelerated-video-decode',
                 '--use-gl=swiftshader',
-                ...args
+                '--disable-software-rasterizer',
+                '--ignore-gpu-blocklist',
+                '--enable-logging=stderr',
+                '--v=1',
+                ...args,
             ],
         };
 
-        // if (process.env.MM_DEBUG_SETTINGS) {
-        //     options.chromeDriverLogPath = './chromedriverlog.txt';
-        // }
-        // if (process.platform === 'darwin' || process.platform === 'linux') {
-        //     // on a mac, debugging port might conflict with other apps
-        //     // this changes the default debugging port so chromedriver can run without issues.
-        //     options.chromeDriverArgs.push('remote-debugging-port=9222');
-        //}
+        // Add more GPU debugging when needed
+        if (process.env.GPU_DEBUG) {
+            options.args.push('--enable-logging=stderr', '--v=1');
+        }
+
         return electron.launch(options).then(async (eapp) => {
+            // Set a longer timeout for app initialization
             await eapp.evaluate(async ({app}) => {
                 const promise = new Promise((resolve) => {
+                    const timeout = setTimeout(() => resolve(), 30000); // 30s timeout
                     app.on('e2e-app-loaded', () => {
+                        clearTimeout(timeout);
                         resolve();
                     });
                 });

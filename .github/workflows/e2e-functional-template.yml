@@ -252,31 +252,54 @@ jobs:
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
         run: |
-          # Start D-Bus session bus without trying to modify system directories
-          eval $(dbus-launch --sh-syntax)
+          # Create launcher script
+          cat > ./e2e/launcher.sh << 'EOL'
+          #!/bin/bash
 
-          # Export the D-Bus session address to make it accessible to child processes
-          echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> $GITHUB_ENV
-
-          # Start Xvfb with more options for better GPU support
+          # Export necessary environment variables
           export DISPLAY=:99
-          Xvfb $DISPLAY -screen 0 1280x960x24 -ac +extension GLX +render -noreset > /dev/null 2>&1 &
+          export DBUS_SESSION_BUS_ADDRESS=unix:path=/tmp/dbus-session-bus
+          export ELECTRON_DISABLE_SANDBOX=1
+          export ELECTRON_ENABLE_LOGGING=1
+          export ELECTRON_NO_ATTACH_CONSOLE=1
+          export ELECTRON_FORCE_SW_RENDERING=1
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export SWIFTSHADER_DISABLE_PERFETTO=1
+          export XDG_RUNTIME_DIR=/tmp/runtime-runner
 
-          # Give some time for X server to start
+          # Create required directories
+          mkdir -p $XDG_RUNTIME_DIR
+          chmod 700 $XDG_RUNTIME_DIR
+
+          # Start D-Bus session daemon
+          dbus-daemon --session --address=$DBUS_SESSION_BUS_ADDRESS --nofork --nopidfile &
+          DBUS_PID=$!
+
+          # Start X virtual framebuffer with minimal features
+          Xvfb $DISPLAY -screen 0 1280x960x24 -ac -nolisten tcp +extension GLX +render -noreset &
+          XVFB_PID=$!
+
+          # Wait for X server to start
           sleep 3
 
+          # Run the tests with hardware acceleration completely disabled
+          npm run run:e2e || true
+
+          # Clean up processes
+          kill $XVFB_PID $DBUS_PID || true
+          EOL
+
+          # Make launcher executable
+          chmod +x ./e2e/launcher.sh
+
+          # Build the app
           npm run build-test
           cd e2e
 
-          # Use ENV variables to disable GPU features that are causing problems
-          export ELECTRON_DISABLE_GPU=1
-          export ELECTRON_DISABLE_SANDBOX=1
-          export ELECTRON_NO_ATTACH_CONSOLE=1
+          # Run the tests using our launcher
+          bash ./launcher.sh
 
-          # Run tests with hardware acceleration disabled
-          ELECTRON_ENABLE_LOGGING=1 xvfb-run -a --server-args="-screen 0 1280x960x24 -ac +extension GLX +render -noreset" \
-            npm run run:e2e || true
-
+          # Send report regardless of test result
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
