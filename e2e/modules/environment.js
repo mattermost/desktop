@@ -15,7 +15,6 @@ const {SHOW_SETTINGS_WINDOW} = require('src/common/communication');
 
 const {asyncSleep, mkDirAsync, rmDirAsync, unlinkAsync} = require('./utils');
 
-const {disableGPUFeatures, setGPUEnvironmentVariables} = require('../utils/gpu-helper');
 chai.should();
 
 const sourceRootDir = path.join(__dirname, '../..');
@@ -212,50 +211,15 @@ module.exports = {
     },
 
     async getApp(args = []) {
-        // Set GPU environment variables first
-        setGPUEnvironmentVariables();
 
         const options = {
             downloadsPath: downloadsLocation,
             env: {
                 ...process.env,
                 RESOURCES_PATH: userDataDir,
-                ELECTRON_DISABLE_GPU: '1',
-                ELECTRON_DISABLE_HARDWARE_ACCELERATION: '1',
-                ELECTRON_NO_SANDBOX: '1',
-                DISABLE_GPU_PROCESS_CRASH_LIMIT: '1',
-                ELECTRON_DISABLE_SANDBOX: '1',
-                ELECTRON_DISABLE_GPU_COMPOSITING: '1',
-                ELECTRON_DISABLE_D3D11: '1',
-                ELECTRON_DISABLE_RENDERER_BACKGROUNDING: '1',
-                LIBGL_ALWAYS_SOFTWARE: '1',
-                GALLIUM_DRIVER: 'llvmpipe',
-                MESA_LOADER_DRIVER_OVERRIDE: 'swrast',
             },
             executablePath: electronBinaryPath,
-            args: [
-                `${path.join(sourceRootDir, 'e2e/dist')}`,
-                `--user-data-dir=${userDataDir}`,
-                '--disable-dev-mode',
-                '--no-sandbox',
-                '--disable-gpu',
-                '--disable-software-rasterizer',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--disable-gl-drawing-for-tests',
-                '--use-gl=swiftshader',
-                '--disable-gpu-compositing',
-                '--disable-gpu-memory-buffer-video-frames',
-                '--disable-gpu-rasterization',
-                '--ignore-gpu-blocklist',
-                '--disable-viz-display-compositor',
-                '--disable-d3d11',
-                '--disable-gpu-process-crash-limit',
-                '--disable-gpu-sandbox',
-                '--disable-features=UseOzonePlatform,WaylandWindowDecorations',
-                '--in-process-gpu',
-                ...args,
-            ],
+            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', ...args],
         };
 
         // if (process.env.MM_DEBUG_SETTINGS) {
@@ -266,12 +230,8 @@ module.exports = {
         //     // this changes the default debugging port so chromedriver can run without issues.
         //     options.chromeDriverArgs.push('remote-debugging-port=9222');
         //}
-        // Set GPU environment variables
-        setGPUEnvironmentVariables();
 
         return electron.launch(options).then(async (eapp) => {
-            // Disable GPU features that might cause crashes
-            await disableGPUFeatures(eapp);
 
             await eapp.evaluate(async ({app}) => {
                 const promise = new Promise((resolve) => {

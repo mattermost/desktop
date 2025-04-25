@@ -254,67 +254,15 @@ jobs:
         run: |
           export DISPLAY=:99
           Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
-          
-          # Make sure we have the latest Mesa drivers
-          sudo add-apt-repository ppa:kisak/kisak-mesa -y
-          sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dri libgl1-mesa-glx libegl1-mesa libgles2-mesa libvulkan1
-          
-          # Create a custom Xvfb startup script with software rendering
-          cat > /tmp/xvfb-run-sw.sh << 'EOF'
-          #!/bin/bash
-          # Force software rendering
-          export LIBGL_ALWAYS_SOFTWARE=1
-          export GALLIUM_DRIVER=llvmpipe
-          export MESA_LOADER_DRIVER_OVERRIDE=swrast
-          
-          # Additional GPU crash prevention
-          export ELECTRON_DISABLE_GPU=1
-          export ELECTRON_NO_ATTACH_CONSOLE=1
-          export ELECTRON_DISABLE_HARDWARE_ACCELERATION=1
-          export ELECTRON_ENABLE_LOGGING=1
-          export ELECTRON_NO_SANDBOX=1
-          export DISABLE_GPU_PROCESS_CRASH_LIMIT=1
-          export ELECTRON_DISABLE_SANDBOX=1
-          export ELECTRON_DISABLE_GPU_COMPOSITING=1
-          export ELECTRON_DISABLE_D3D11=1
-          export ELECTRON_DISABLE_RENDERER_BACKGROUNDING=1
-          
-          exec xvfb-run -a --server-args="-screen 0 1280x960x24 -ac -nolisten tcp -dpi 96 +extension RANDR" "$@"
-          EOF
-          chmod +x /tmp/xvfb-run-sw.sh
-          
+
           # Build and run tests with GPU disabled
           npm run build-test
           cd e2e
-          
-          # Run with more restrictive GPU settings and software rendering
-          /tmp/xvfb-run-sw.sh npm run run:e2e -- \
-            --disable-gpu \
-            --disable-software-rasterizer \
-            --disable-dev-shm-usage \
-            --no-sandbox \
-            --disable-setuid-sandbox \
-            --disable-accelerated-2d-canvas \
-            --disable-gl-drawing-for-tests \
-            --use-gl=swiftshader \
-            --disable-gpu-compositing \
-            --disable-gpu-memory-buffer-video-frames \
-            --disable-gpu-rasterization \
-            --ignore-gpu-blocklist \
-            --disable-viz-display-compositor \
-            --disable-d3d11 \
-            --disable-gpu-process-crash-limit \
-            --disable-gpu-sandbox \
-            --disable-features=UseOzonePlatform,WaylandWindowDecorations \
-            --in-process-gpu || true
-          
+          xvfb-run -a npm run run:e2e || true
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          ELECTRON_DISABLE_GPU: 1
-          ELECTRON_NO_ATTACH_CONSOLE: 1
 
       - name: e2e/run-playright-tests-macos
         if: runner.os == 'macOS'
