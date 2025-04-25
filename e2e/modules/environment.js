@@ -14,6 +14,7 @@ const ps = require('ps-node');
 const {SHOW_SETTINGS_WINDOW} = require('src/common/communication');
 
 const {asyncSleep, mkDirAsync, rmDirAsync, unlinkAsync} = require('./utils');
+
 const {disableGPUFeatures, setGPUEnvironmentVariables} = require('../utils/gpu-helper');
 chai.should();
 
@@ -213,7 +214,7 @@ module.exports = {
     async getApp(args = []) {
         // Set GPU environment variables first
         setGPUEnvironmentVariables();
-        
+
         const options = {
             downloadsPath: downloadsLocation,
             env: {
@@ -222,9 +223,9 @@ module.exports = {
             },
             executablePath: electronBinaryPath,
             args: [
-                `${path.join(sourceRootDir, 'e2e/dist')}`, 
-                `--user-data-dir=${userDataDir}`, 
-                '--disable-dev-mode', 
+                `${path.join(sourceRootDir, 'e2e/dist')}`,
+                `--user-data-dir=${userDataDir}`,
+                '--disable-dev-mode',
                 '--no-sandbox',
                 '--disable-gpu',
                 '--disable-software-rasterizer',
@@ -238,7 +239,7 @@ module.exports = {
                 '--ignore-gpu-blocklist',
                 '--disable-viz-display-compositor',
                 '--disable-d3d11',
-                ...args
+                ...args,
             ],
         };
 
@@ -252,11 +253,11 @@ module.exports = {
         //}
         // Set GPU environment variables
         setGPUEnvironmentVariables();
-        
+
         return electron.launch(options).then(async (eapp) => {
             // Disable GPU features that might cause crashes
             await disableGPUFeatures(eapp);
-            
+
             await eapp.evaluate(async ({app}) => {
                 const promise = new Promise((resolve) => {
                     app.on('e2e-app-loaded', () => {

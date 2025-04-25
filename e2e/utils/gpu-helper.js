@@ -23,18 +23,19 @@ async function disableGPUFeatures(app) {
                 if (gpuInfo && gpuInfo.disableHardwareAcceleration) {
                     gpuInfo.disableHardwareAcceleration();
                 }
-                
+
                 // Force software rendering
                 if (process.electronBinding('features')) {
                     process.electronBinding('features').setEnabled('disable-accelerated-2d-canvas', true);
                     process.electronBinding('features').setEnabled('disable-gpu-compositing', true);
                 }
-                
+
                 // Disable viz process if available
                 if (process.electronBinding('viz_process_transport')) {
                     process.electronBinding('viz_process_transport').shutdown();
                 }
             } catch (e) {
+                // eslint-disable-next-line no-console
                 console.error('Failed to disable hardware acceleration:', e);
             }
         }
@@ -50,7 +51,7 @@ function setGPUEnvironmentVariables() {
     process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1';
     process.env.ELECTRON_DISABLE_HARDWARE_ACCELERATION = '1';
     process.env.ELECTRON_ENABLE_LOGGING = '1';
-    
+
     // Disable sandbox for Linux
     if (process.platform === 'linux') {
         process.env.ELECTRON_NO_SANDBOX = '1';
