@@ -21,7 +21,7 @@ runs:
         sudo apt-get update
         
         # Install additional packages for better GPU handling
-        sudo apt-get install -y mesa-utils-extra libxcb-dri3-0 libxcb-dri3-dev
+        sudo apt-get install -y mesa-utils-extra libxcb-dri3-0 libxcb-dri3-dev libxcb-present0 libxcb-sync1 libxshmfence1 libvulkan1
         
         sudo apt-get install -y \
           ca-certificates \

@@ -220,6 +220,17 @@ module.exports = {
             env: {
                 ...process.env,
                 RESOURCES_PATH: userDataDir,
+                ELECTRON_DISABLE_GPU: '1',
+                ELECTRON_DISABLE_HARDWARE_ACCELERATION: '1',
+                ELECTRON_NO_SANDBOX: '1',
+                DISABLE_GPU_PROCESS_CRASH_LIMIT: '1',
+                ELECTRON_DISABLE_SANDBOX: '1',
+                ELECTRON_DISABLE_GPU_COMPOSITING: '1',
+                ELECTRON_DISABLE_D3D11: '1',
+                ELECTRON_DISABLE_RENDERER_BACKGROUNDING: '1',
+                LIBGL_ALWAYS_SOFTWARE: '1',
+                GALLIUM_DRIVER: 'llvmpipe',
+                MESA_LOADER_DRIVER_OVERRIDE: 'swrast',
             },
             executablePath: electronBinaryPath,
             args: [
@@ -239,6 +250,10 @@ module.exports = {
                 '--ignore-gpu-blocklist',
                 '--disable-viz-display-compositor',
                 '--disable-d3d11',
+                '--disable-gpu-process-crash-limit',
+                '--disable-gpu-sandbox',
+                '--disable-features=UseOzonePlatform,WaylandWindowDecorations',
+                '--in-process-gpu',
                 ...args,
             ],
         };
