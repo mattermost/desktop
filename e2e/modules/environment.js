@@ -32,6 +32,7 @@ const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
 const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const exampleURL = 'http://example.com/';
 const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
+const nodeENV = process.env.NODE_ENV || '';
 
 if (process.platform === 'win32') {
     const robot = require('robotjs');
@@ -215,46 +216,16 @@ module.exports = {
             env: {
                 ...process.env,
                 RESOURCES_PATH: userDataDir,
-                ELECTRON_DISABLE_SANDBOX: '1',
-                ELECTRON_ENABLE_LOGGING: '1',
-                ELECTRON_NO_ATTACH_CONSOLE: '1',
-                ELECTRON_FORCE_SW_RENDERING: '1',
-                LIBGL_ALWAYS_SOFTWARE: '1',
-                SWIFTSHADER_DISABLE_PERFETTO: '1',
+                NODE_ENV: nodeENV,
             },
             executablePath: electronBinaryPath,
-            args: [
-                `${path.join(sourceRootDir, 'e2e/dist')}`,
-                `--user-data-dir=${userDataDir}`,
-                '--disable-dev-mode',
-                '--no-sandbox',
-                '--disable-gpu',
-                '--in-process-gpu',
-                '--disable-gpu-compositing',
-                '--disable-gpu-sandbox',
-                '--disable-accelerated-2d-canvas',
-                '--disable-accelerated-video-decode',
-                '--use-gl=swiftshader',
-                '--disable-software-rasterizer',
-                '--ignore-gpu-blocklist',
-                '--enable-logging=stderr',
-                '--v=1',
-                ...args,
-            ],
+            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', ...args],
         };
 
-        // Add more GPU debugging when needed
-        if (process.env.GPU_DEBUG) {
-            options.args.push('--enable-logging=stderr', '--v=1');
-        }
-
         return electron.launch(options).then(async (eapp) => {
-            // Set a longer timeout for app initialization
             await eapp.evaluate(async ({app}) => {
                 const promise = new Promise((resolve) => {
-                    const timeout = setTimeout(() => resolve(), 30000); // 30s timeout
                     app.on('e2e-app-loaded', () => {
-                        clearTimeout(timeout);
                         resolve();
                     });
                 });
