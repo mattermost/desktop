@@ -24,6 +24,7 @@ runs:
         sudo apt-get install -y mesa-utils-extra libxcb-dri3-0 libxcb-dri3-dev libxcb-present0 libxcb-sync1 libxshmfence1 libvulkan1 dbus-x11 libx11-xcb1 libxtst6 libnss3 libatk-bridge2.0-0 libxss1 \
           x11-utils xdg-utils
 
+        # Install D-Bus and X11 dependencies for headless testing
         sudo apt-get install -y \
           ca-certificates \
           libxtst-dev \
@@ -49,7 +50,11 @@ runs:
           libglx-mesa0 \
           mesa-va-drivers \
           mesa-vdpau-drivers \
-          mesa-vulkan-drivers
+          mesa-vulkan-drivers \
+          dbus \
+          at-spi2-core \
+          x11-xserver-utils \
+          xauth
 
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'

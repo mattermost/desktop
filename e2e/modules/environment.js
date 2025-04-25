@@ -215,9 +215,24 @@ module.exports = {
             env: {
                 ...process.env,
                 RESOURCES_PATH: userDataDir,
+                ELECTRON_DISABLE_SANDBOX: 1,
+                ELECTRON_ENABLE_LOGGING: 1,
+                ELECTRON_NO_ATTACH_CONSOLE: 1,
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', '--disable-gpu', '--disable-software-rasterizer', ...args],
+            args: [
+                `${path.join(sourceRootDir, 'e2e/dist')}`, 
+                `--user-data-dir=${userDataDir}`, 
+                '--disable-dev-mode', 
+                '--no-sandbox', 
+                '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--disable-gpu-sandbox',
+                '--disable-gpu-compositing',
+                '--disable-features=VizDisplayCompositor',
+                '--use-gl=swiftshader',
+                ...args
+            ],
         };
 
         // if (process.env.MM_DEBUG_SETTINGS) {
