@@ -253,11 +253,19 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           export DISPLAY=:99
-          Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
+          export DBUS_SESSION_BUS_ADDRESS=/dev/null
+          # Add these environment variables to fix GPU issues
+          export ELECTRON_DISABLE_GPU=1
+          export ELECTRON_NO_SANDBOX=1
+          export ELECTRON_DISABLE_SANDBOX=1
+
+          # Ensure Xvfb is properly started with sufficient color depth
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 3
 
           npm run build-test
           cd e2e
-          xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run run:e2e || true
+          npm run run:e2e || true
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
