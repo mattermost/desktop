@@ -13,7 +13,7 @@ runs:
       if: inputs.os == 'Linux'
       shell: bash
       run: |
-        wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
+        wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/wine.gpg > /dev/null
         wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
         sudo apt-get update || true
 
@@ -35,16 +35,14 @@ runs:
           xsel \
           xvfb \
           libgtk-3-0 \
-          libasound2 \
+          libasound2-dev \
           libgbm-dev \
           libdrm-dev \
           mesa-utils \
-          libgl1-mesa-dri \
-          libgl1-mesa-glx \
-          libgles2-mesa \
-          libegl1-mesa \
-          libglapi-mesa \
-          libglx-mesa0 \
+          libgl1-mesa-dev \
+          libegl1 \
+          libglvnd-dev \
+          libglx0 \
           mesa-va-drivers \
           mesa-vdpau-drivers \
           mesa-vulkan-drivers \

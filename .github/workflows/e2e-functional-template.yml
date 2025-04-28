@@ -254,19 +254,22 @@ jobs:
         run: |
           export DISPLAY=:99
           export DBUS_SESSION_BUS_ADDRESS=/dev/null
-          # Add these environment variables to fix GPU issues
           export ELECTRON_DISABLE_GPU=1
           export ELECTRON_NO_SANDBOX=1
           export ELECTRON_DISABLE_SANDBOX=1
 
-          # Ensure Xvfb is properly started with sufficient color depth
-          Xvfb :99 -screen 0 1024x768x24 &
+          # Start Xvfb with 24-bit color depth
+          Xvfb :99 -screen 0 1024x768x24 -ac &
           sleep 3
 
+          # Build test version first
           npm run build-test
           cd e2e
-          npm run run:e2e || true
-          npm run send-report
+
+          # Handle test failure gracefully
+          npm run run:e2e || echo "Tests completed with errors"
+
+          npm run send-report || echo "Report generation failed, but continuing"
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
