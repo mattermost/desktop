@@ -72,7 +72,7 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             if [[ "${{ inputs.platform }}" == "all" ]]; then
-              echo "platforms=['ubuntu-latest', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT
+              echo "platforms=['ubuntu-24.04', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT
             else
               case "${{ inputs.platform }}" in
                 linux)  echo "platforms=['ubuntu-22.04']" ;;
