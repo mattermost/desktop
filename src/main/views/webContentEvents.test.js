@@ -7,7 +7,7 @@ import {shell, BrowserWindow} from 'electron';
 
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 
 import PluginsPopUpsManager from './pluginsPopUps';
 import {WebContentsEventManager} from './webContentEvents';

@@ -3,7 +3,7 @@
 
 'use strict';
 
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 
 import {ModalManager} from './modalManager';
 

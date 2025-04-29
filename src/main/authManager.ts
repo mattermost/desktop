@@ -9,7 +9,7 @@ import {isTrustedURL, parseURL} from 'common/utils/url';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import {getLocalPreload} from 'main/utils';
 import modalManager from 'main/views/modalManager';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {LoginModalData} from 'types/auth';

@@ -5,7 +5,7 @@ import {dialog, systemPreferences} from 'electron';
 
 import Config from 'common/config';
 import {parseURL, isTrustedURL} from 'common/utils/url';
-import ViewManager from 'main/views/viewManager';
+import ViewManager from 'main/views/webContentsManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
