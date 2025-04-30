@@ -13,7 +13,7 @@ jobs:
   sbom:
     permissions:
       contents: write
-    uses: mattermost/actions-workflows/.github/workflows/snyk-sbom.yml@a7b0a0fbb4c962f12f34f70563997636e49ac4ac
+    uses: mattermost/actions-workflows/.github/workflows/snyk-sbom.yml@2174576d3c65eb4db691bf09fd72246b59f331c8
     secrets: inherit
     with:
       is_monorepo: false
