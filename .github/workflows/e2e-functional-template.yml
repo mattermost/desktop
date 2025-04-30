@@ -252,24 +252,16 @@ jobs:
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
         run: |
-          export DISPLAY=:99
-          export DBUS_SESSION_BUS_ADDRESS=/dev/null
-          export ELECTRON_DISABLE_GPU=1
-          export ELECTRON_NO_SANDBOX=1
-          export ELECTRON_DISABLE_SANDBOX=1
-
-          # Start Xvfb with 24-bit color depth
-          Xvfb :99 -screen 0 1024x768x24 -ac &
-          sleep 3
-
-          # Build test version first
-          npm run build-test
-          cd e2e
-
-          # Handle test failure gracefully
-          npm run run:e2e || echo "Tests completed with errors"
-
-          npm run send-report || echo "Report generation failed, but continuing"
+          # Make run-tests.sh executable
+          chmod +x e2e/run-tests.sh
+          
+          # Set environment variables
+          export SERVER_VERSION=${{ inputs.MM_SERVER_VERSION }}
+          export DESKTOP_VERSION=${{ inputs.DESKTOP_VERSION }}
+          export NODE_ENV=development
+          
+          # Run tests with the script
+          ./e2e/run-tests.sh
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
