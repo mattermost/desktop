@@ -32,7 +32,6 @@ const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
 const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const exampleURL = 'http://example.com/';
 const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
-const nodeENV = process.env.NODE_ENV || '';
 
 if (process.platform === 'win32') {
     const robot = require('robotjs');
@@ -216,7 +215,6 @@ module.exports = {
             env: {
                 ...process.env,
                 RESOURCES_PATH: userDataDir,
-                NODE_ENV: nodeENV,
             },
             executablePath: electronBinaryPath,
             args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', ...args],
