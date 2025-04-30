@@ -33,6 +33,10 @@ runs:
           libxss1 \
           libasound2t64
 
+        # Fix Chrome sandbox permissions
+        sudo chown root:root node_modules/electron/dist/chrome-sandbox || true
+        sudo chmod 4755 node_modules/electron/dist/chrome-sandbox || true
+
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'
       shell: bash
