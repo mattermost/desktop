@@ -22,6 +22,7 @@ export ELECTRON_EXTRA_LAUNCH_ARGS="--disable-gpu --no-sandbox"
 
 # Run the tests with proper error handling
 cd e2e
+npm run build
 NODE_ENV=development ./node_modules/.bin/electron-mocha --require-main ./preload.js --no-sandbox --renderer --reporter mochawesome dist/e2e_bundle.js || true
 
 npm run send-report || echo "Failed to send report"
