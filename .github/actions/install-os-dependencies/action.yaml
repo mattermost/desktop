@@ -62,7 +62,13 @@ runs:
           libxss1 \
           x11-utils \
           xdg-utils \
-          at-spi2-core
+          at-spi2-core \
+          xkb-data \
+          libxkbcommon-x11-0 \
+          libxkbcommon0 \
+          xinit \
+          xterm \
+          x11-xkb-utils
 
         # Create a script to fix the DBus session
         cat > /tmp/fix-dbus.sh << 'EOF'
@@ -74,6 +80,18 @@ runs:
 
         sudo chmod +x /tmp/fix-dbus.sh
         /tmp/fix-dbus.sh
+
+        # Fix for keyboard warnings - create simplified xkb config
+        sudo mkdir -p /etc/X11/xorg.conf.d
+        sudo tee /etc/X11/xorg.conf.d/00-keyboard.conf > /dev/null << EOF
+        Section "InputClass"
+            Identifier "keyboard"
+            MatchIsKeyboard "on"
+            Option "XkbLayout" "us"
+            Option "XkbModel" "pc105"
+            Option "XkbOptions" ""
+        EndSection
+        EOF
 
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'
