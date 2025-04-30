@@ -19,12 +19,12 @@ runs:
         sudo apt-get install -y \
           ca-certificates \
           libxtst-dev \
-        libpng++-dev \
-        gcc-aarch64-linux-gnu \
-        g++-aarch64-linux-gnu \
-        jq \
-        icnsutils \
-        graphicsmagick \
+          libpng++-dev \
+          gcc-aarch64-linux-gnu \
+          g++-aarch64-linux-gnu \
+          jq \
+          icnsutils \
+          graphicsmagick \
           tzdata \
           xsel \
           xvfb \
