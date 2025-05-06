@@ -13,7 +13,7 @@ runs:
       if: inputs.os == 'Linux'
       shell: bash
       run: |
-        # Add Wine repository key (ensure apt-key is still supported on the target system)
+        # Add Wine repository key
         wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
 
         # Install yq binary
@@ -55,7 +55,7 @@ runs:
           x11-utils \
           libgtk-3-0 \
           libnss3 \
-          libasound2 \
+          libasound2t64 \
           dbus \
           dbus-x11 \
           libxtst6
