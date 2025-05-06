@@ -35,7 +35,6 @@ runs:
           libasound2t64 \
           dbus \
           dbus-x11 \
-          libasound2 \
           libxtst6
 
     - name: Install macOS Dependencies
