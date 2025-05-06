@@ -28,15 +28,12 @@ runs:
           tzdata \
           xsel \
           xvfb \
+          x11-utils \
           libgtk-3-0 \
           libnss3 \
           libxss1 \
           libasound2t64 \
           dbus
-
-        # start dbus
-        sudo systemctl start dbus
-        systemctl status dbus
 
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'
