@@ -257,6 +257,7 @@ jobs:
 
           npm run build-test
           cd e2e
+          export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
           xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm run run:e2e || true
           npm run send-report
         env:
