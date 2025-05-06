@@ -31,11 +31,12 @@ runs:
           libgtk-3-0 \
           libnss3 \
           libxss1 \
-          libasound2t64
+          libasound2t64 \
+          dbus
 
-        # Fix Chrome sandbox permissions
-        sudo chown root:root node_modules/electron/dist/chrome-sandbox || true
-        sudo chmod 4755 node_modules/electron/dist/chrome-sandbox || true
+        # start dbus
+        sudo systemctl start dbus
+        systemctl status dbus
 
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'

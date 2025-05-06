@@ -252,6 +252,7 @@ jobs:
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
         run: |
+          export DBUS_SYSTEM_BUS_ADDRESS=unix:/run/dbus/system_bus_socket
           export DISPLAY=:99
           Xvfb $DISPLAY -screen 0 1280x960x24 > /dev/null 2>&1 &
           npm run build-test
