@@ -44,8 +44,8 @@ runs:
           openjdk-8-jre \
           ca-certificates \
           libpng++-dev \
-          gcc-aarch64-linux-gnu \
-          g++-aarch64-linux-gnu \
+          gcc-12-aarch64-linux-gnu \
+          g++-12-aarch64-linux-gnu \
           jq \
           icnsutils \
           graphicsmagick \
