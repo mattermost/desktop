@@ -252,15 +252,12 @@ jobs:
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
         run: |
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x24 -ac +extension GLX +render -noreset &
-          sleep 10
           eval "$(dbus-launch --sh-syntax)"
           export NO_AT_BRIDGE=1
 
           npm run build-test
           cd e2e
-          xvfb-run npm run run:e2e || true
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm run run:e2e || true
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
