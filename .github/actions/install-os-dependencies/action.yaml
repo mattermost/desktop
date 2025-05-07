@@ -79,3 +79,4 @@ runs:
         node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$ELECTRON_VERSION --dist-url="https://electronjs.org/headers"
         node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$ELECTRON_VERSION --dist-url="https://electronjs.org/headers" --arch arm64
         npm install mochawesome-report-generator
+        npm install electron
