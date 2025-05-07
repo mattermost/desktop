@@ -217,7 +217,7 @@ module.exports = {
                 RESOURCES_PATH: userDataDir,
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--disable-gpu', '--no-sandbox', ...args],
+            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-shm-usage', '--disable-dev-mode', '--disable-gpu', '--no-sandbox', ...args],
         };
 
         return electron.launch(options).then(async (eapp) => {
