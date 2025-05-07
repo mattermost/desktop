@@ -212,18 +212,30 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                             />
                         ),
                         label: (
-                            <FormattedMessage
-                                id='renderer.components.settingsPage.showUnreadBadge'
-                                defaultMessage='Show red badge on {taskbar} icon to indicate unread messages'
-                                values={{taskbar: window.process.platform === 'win32' ? 'taskbar' : 'Dock'}}
-                            />
+                            window.process.platform === 'win32' ? (
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.showUnreadBadge.taskbar'
+                                    defaultMessage='Show red badge on taskbar icon to indicate unread messages'
+                                />
+                            ) : (
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.showUnreadBadge.dock'
+                                    defaultMessage='Show red badge on Dock icon to indicate unread messages'
+                                />
+                            )
                         ),
                         subLabel: (
-                            <FormattedMessage
-                                id='renderer.components.settingsPage.showUnreadBadge.description'
-                                defaultMessage='Regardless of this setting, mentions are always indicated with a red badge and item count on the {taskbar} icon.'
-                                values={{taskbar: window.process.platform === 'win32' ? 'taskbar' : 'Dock'}}
-                            />
+                            window.process.platform === 'win32' ? (
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.showUnreadBadge.description.taskbar'
+                                    defaultMessage='Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.'
+                                />
+                            ) : (
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.showUnreadBadge.description.dock'
+                                    defaultMessage='Regardless of this setting, mentions are always indicated with a red badge and item count on the Dock icon.'
+                                />
+                            )
                         ),
                     },
                 },
