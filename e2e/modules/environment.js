@@ -24,7 +24,7 @@ const electronBinaryPath = (() => {
     const exeExtension = (process.platform === 'win32') ? '.exe' : '';
     return path.join(sourceRootDir, 'node_modules/electron/dist/electron' + exeExtension);
 })();
-const userDataDir = path.join(sourceRootDir, 'e2e/testUserData/');
+const userDataDir = path.join(sourceRootDir, 'e2e/testUserData');
 const configFilePath = path.join(userDataDir, 'config.json');
 const downloadsFilePath = path.join(userDataDir, 'downloads.json');
 const downloadsLocation = path.join(userDataDir, 'Downloads');
@@ -217,17 +217,9 @@ module.exports = {
                 RESOURCES_PATH: userDataDir,
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-mode', '--no-sandbox', ...args],
+            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-shm-usage', '--disable-dev-mode', '--disable-gpu', '--no-sandbox', ...args],
         };
 
-        // if (process.env.MM_DEBUG_SETTINGS) {
-        //     options.chromeDriverLogPath = './chromedriverlog.txt';
-        // }
-        // if (process.platform === 'darwin' || process.platform === 'linux') {
-        //     // on a mac, debugging port might conflict with other apps
-        //     // this changes the default debugging port so chromedriver can run without issues.
-        //     options.chromeDriverArgs.push('remote-debugging-port=9222');
-        //}
         return electron.launch(options).then(async (eapp) => {
             await eapp.evaluate(async ({app}) => {
                 const promise = new Promise((resolve) => {
