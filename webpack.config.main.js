@@ -12,8 +12,9 @@ module.exports = merge(base, {
         index: './src/main/app/index.ts',
     },
     externals: {
-        'macos-notification-state': 'require("macos-notification-state")',
-        'windows-focus-assist': 'require("windows-focus-assist")',
+
+        // 'macos-notification-state': 'require("macos-notification-state")',
+        // 'windows-focus-assist': 'require("windows-focus-assist")',
     },
     externalsPresets: {
         electronMain: true,

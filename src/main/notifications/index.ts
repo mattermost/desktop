@@ -2,8 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {app, shell, Notification, ipcMain} from 'electron';
-import isDev from 'electron-is-dev';
-import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
@@ -11,7 +9,6 @@ import {Logger} from 'common/log';
 import DeveloperMode from 'main/developerMode';
 
 import getLinuxDoNotDisturb from './dnd-linux';
-import getWindowsDoNotDisturb from './dnd-windows';
 import {DownloadNotification} from './Download';
 import {Mention} from './Mention';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
@@ -238,21 +235,6 @@ class NotificationManager {
 }
 
 export async function getDoNotDisturb() {
-    if (process.platform === 'win32') {
-        return getWindowsDoNotDisturb();
-    }
-
-    // We have to turn this off for dev mode because the Electron binary doesn't have the focus center API entitlement
-    if (process.platform === 'darwin' && !isDev) {
-        try {
-            const dnd = await getDarwinDoNotDisturb();
-            return dnd;
-        } catch (e) {
-            log.warn('macOS DND check threw an error', e);
-            return false;
-        }
-    }
-
     if (process.platform === 'linux') {
         return getLinuxDoNotDisturb();
     }
