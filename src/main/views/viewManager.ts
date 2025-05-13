@@ -611,8 +611,8 @@ export class ViewManager {
         if (!view) {
             return;
         }
-        AppState.updateUnreads(view.id, isUnread);
         AppState.updateMentions(view.id, mentionCount);
+        AppState.updateUnreads(view.id, isUnread);
     };
 
     private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean) => {

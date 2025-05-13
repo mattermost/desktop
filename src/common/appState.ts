@@ -36,10 +36,18 @@ export class AppState extends EventEmitter {
         this.emitStatusForView(viewId);
     };
 
-    updateUnreads = (viewId: string, unreads: boolean) => {
+    updateUnreads = async (viewId: string, unreads: boolean) => {
         ServerManager.getViewLog(viewId, 'AppState').silly('updateUnreads', unreads);
 
         this.unreads.set(viewId, unreads);
+
+        // eslint-disable-next-line global-require
+        const ViewManager = require('main/views/viewManager').default;
+        const hasUnreadThreads = await ViewManager.getView(viewId).hasUnreadThreads();
+        if (hasUnreadThreads) {
+            this.mentions.set(viewId, (this.mentions.get(viewId) || 0) + 1);
+        }
+
         this.emitStatusForView(viewId);
     };
 
