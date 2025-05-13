@@ -91,12 +91,8 @@ export class MattermostWebContentsView extends EventEmitter {
             }
         });
 
-        // Legacy handlers using the title/favicon
-        this.browserView.webContents.on('page-title-updated', this.handleTitleUpdate);
-        this.browserView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
-
-        this.browserView.webContents.on('did-finish-load', () => {
-            this.browserView?.webContents.insertCSS(`
+        this.webContentsView.webContents.on('did-finish-load', () => {
+            this.webContentsView?.webContents.insertCSS(`
                 .nav-pills__unread-indicator, .post-collapse {
                     display: none !important;
                 }
@@ -128,7 +124,7 @@ export class MattermostWebContentsView extends EventEmitter {
     }
 
     async hasUnreadThreads() {
-        return this.browserView?.webContents.executeJavaScript(`
+        return this.webContentsView?.webContents.executeJavaScript(`
             new Promise(resolve => {
                 setTimeout(() => {
                     const threadsBtn = document.getElementById('sidebarItem_threads');
