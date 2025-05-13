@@ -91,6 +91,23 @@ export class MattermostWebContentsView extends EventEmitter {
             }
         });
 
+        // Legacy handlers using the title/favicon
+        this.browserView.webContents.on('page-title-updated', this.handleTitleUpdate);
+        this.browserView.webContents.on('page-favicon-updated', this.handleFaviconUpdate);
+
+        this.browserView.webContents.on('did-finish-load', () => {
+            this.browserView?.webContents.insertCSS(`
+                .nav-pills__unread-indicator, .post-collapse {
+                    display: none !important;
+                }
+                .post-message__text-container {
+                    max-height: unset !important;
+                    mask-image: unset !important;
+                    -webkit-mask-image: unset !important;
+                }
+            `);
+        });
+
         WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
         if (!DeveloperMode.get('disableContextMenu')) {
@@ -105,6 +122,15 @@ export class MattermostWebContentsView extends EventEmitter {
         });
 
         ServerManager.on(SERVERS_URL_MODIFIED, this.handleServerWasModified);
+    }
+
+    async hasUnreadThreads() {
+        return this.browserView?.webContents.executeJavaScript(`
+            new Promise(resolve => {
+                const threadsBtn = document.getElementById('sidebarItem_threads');
+                resolve(threadsBtn?.classList.contains('unread-title'));
+            });
+        `);
     }
 
     get id() {
