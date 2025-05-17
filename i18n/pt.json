@@ -39,6 +39,7 @@
   "main.app.utils.clearAllData.cancel": "Cancelar",
   "main.app.utils.clearAllData.confirm": "Limpar Todos os Dados",
   "main.app.utils.clearDataForServer.cancel": "Cancelar",
+  "main.app.utils.clearDataForServer.confirm": "Limpar Dados",
   "main.app.utils.migrateMacAppStore.button.dontImport": "Não Importar",
   "main.app.utils.migrateMacAppStore.button.selectAndImport": "Selecionar Pasta e Importar",
   "main.app.utils.migrateMacAppStore.dialog.detail": "Parece que já existe uma configuração em {appName}, gostaria de a importar? Ser-lhe-á pedido para escolher a pasta de configuração correta.",
