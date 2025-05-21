@@ -11,7 +11,7 @@
     "test": "electron-mocha --no-sandbox --disable-gpu-sandbox --reporter mochawesome dist/e2e_bundle.js",
     "test:performance": "electron-mocha --reporter json --reporter-option output=./performance/perf-test-report.json dist/e2e_bundle.js",
     "send-report": "node ./save_report.js",
-    "postinstall": "patch-package && cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs --version 35.2.0"
+    "postinstall": "patch-package && cross-env CL='/std:c++17' npx electron-rebuild -f -w robotjs -v 35.2.0"
   },
   "repository": {
     "type": "git",
@@ -40,6 +40,7 @@
     "robotjs": "0.6.0"
   },
   "devDependencies": {
+    "electron": "35.2.0",
     "mochawesome-report-generator": "^6.2.0"
   }
 }
