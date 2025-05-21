@@ -168,7 +168,7 @@ export default function ServerSetting() {
                             >
                                 <i className='icon icon-pencil-outline'/>
                             </button>
-                            {enableServerManagement && <button
+                            {enableServerManagement && !server.server.isPredefined && <button
                                 onClick={showRemoveServerModal(server)}
                                 className='ServerSetting__removeServer btn btn-icon btn-sm btn-tertiary btn-transparent btn-danger'
                             >
