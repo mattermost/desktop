@@ -382,8 +382,7 @@ export class ViewManager {
 
             // This is a workaround for an issue where the URL view would steal focus from the main window
             // See: https://github.com/electron/electron/issues/42339
-            // Using an undocumented event that fires last when the URL view pops up
-            // @ts-ignore
+            // @ts-expect-error Using an undocumented event that fires last when the URL view pops up
             urlView.webContents.once('ready-to-show', () => {
                 log.debug('URL view focus prevented');
                 this.getCurrentView()?.focus();
