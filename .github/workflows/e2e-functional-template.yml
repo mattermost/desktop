@@ -244,9 +244,17 @@ jobs:
           os: ${{ runner.os }}
 
       - name: e2e/install-node-dependencies
+        if: runner.os != 'Windows'
         run: |
           npm ci
           cd e2e && npm ci
+          npx electron-rebuild --version=$(node -p "require('electron/package.json').version") --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
+
+      - name: e2e/install-node-dependencies
+        if: runner.os == 'Windows'
+        run: |
+          npm ci
+          cd e2e && npm ci --ignore-scripts
           npx electron-rebuild --version=$(node -p "require('electron/package.json').version") --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playright-tests-linux
