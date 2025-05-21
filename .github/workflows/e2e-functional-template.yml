@@ -243,17 +243,11 @@ jobs:
         with:
           os: ${{ runner.os }}
 
-      - name: Rebuild robotjs (Windows)
-        if: runner.os == 'windows-2022'
-        shell: bash
+      - name: e2e/install-node-dependencies
         run: |
-          cd e2e
-          npx electron-rebuild -f -w robotjs -v 35.2.0
-
-      - name: Rebuild robotjs (macOS/Linux)
-        if: runner.os != 'windows-2022'
-        run: npx electron-rebuild --platform=${{ runner.os }} -f -t prod,optional,dev -w robotjs --module-dir ../
-        working-directory: e2e
+          npm ci
+          cd e2e && npm ci
+          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
