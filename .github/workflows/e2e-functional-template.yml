@@ -246,16 +246,8 @@ jobs:
       - name: e2e/install-node-dependencies
         run: |
           npm ci
-          npm install --no-save electron@35.2.0
-          cd e2e
-          npm ci
-          cd ..
-          npx electron-rebuild -f -w robotjs --version 35.2.0
-
-          # npm ci
-          # cd e2e && npm ci
-          # # npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
-          # npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs
+          cd e2e && npm ci
+          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
