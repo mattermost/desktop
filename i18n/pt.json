@@ -53,6 +53,7 @@
   "main.badge.unreadChannels": "Tem canais não lidos",
   "main.badge.unreadMentions": "Tem menções não lidas: ({mentionCount})",
   "main.downloadsManager.resetDownloadsFolder": "Por favor, redefina a pasta onde os ficheiros serão transferidos",
+  "main.downloadsManager.specifyDownloadsFolder": "Especifique a pasta onde os arquivos serão baixados.",
   "main.menus.app.edit": "&Editar",
   "main.menus.app.edit.copy": "Copiar",
   "main.menus.app.edit.cut": "Cortar",
