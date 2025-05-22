@@ -17,6 +17,7 @@ jobs:
   mac-app-store-preflight:
     runs-on: macos-15
     env:
+      MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
       MAS_PROFILE: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MAS_PROFILE }}
       MACOS_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}
       MACOS_API_KEY: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY }}
