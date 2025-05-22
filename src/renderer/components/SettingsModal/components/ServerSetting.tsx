@@ -23,6 +23,7 @@ export default function ServerSetting() {
     const [servers, setServers] = useState<UniqueServerWithPermissions[]>([]);
     const [currentServer, setCurrentServer] = useState<UniqueServerWithPermissions>();
     const [modal, setModal] = useState<Modal>();
+    const [enableServerManagement, setEnableServerManagement] = useState<boolean>(false);
 
     const reloadServers = useCallback(() => {
         window.desktop.getUniqueServersWithPermissions().then(setServers);
@@ -31,6 +32,10 @@ export default function ServerSetting() {
     useEffect(() => {
         const off = window.desktop.onReloadConfiguration(reloadServers);
         reloadServers();
+
+        window.desktop.getLocalConfiguration().then((config) => {
+            setEnableServerManagement(config.enableServerManagement);
+        });
 
         return () => off();
     }, []);
@@ -116,16 +121,18 @@ export default function ServerSetting() {
                             defaultMessage='Servers'
                         />
                     </h3>
-                    <button
-                        onClick={showAddServerModal}
-                        className='ServerSetting__addServer btn btn-sm btn-tertiary'
-                    >
-                        <i className='icon icon-plus'/>
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.serverSetting.addAServer'
-                            defaultMessage='Add a server'
-                        />
-                    </button>
+                    {enableServerManagement &&
+                        <button
+                            onClick={showAddServerModal}
+                            className='ServerSetting__addServer btn btn-sm btn-tertiary'
+                        >
+                            <i className='icon icon-plus'/>
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.serverSetting.addAServer'
+                                defaultMessage='Add a server'
+                            />
+                        </button>
+                    }
                 </div>
                 {servers.length === 0 && (
                     <div className='ServerSetting__noServers'>
@@ -136,12 +143,12 @@ export default function ServerSetting() {
                                 defaultMessage='No servers added'
                             />
                         </div>
-                        <div className='ServerSetting__noServersDescription'>
+                        {enableServerManagement && <div className='ServerSetting__noServersDescription'>
                             <FormattedMessage
                                 id='renderer.components.settingsPage.serverSetting.noServers.description'
                                 defaultMessage="Add a server to connect to your team's communication hub"
                             />
-                        </div>
+                        </div>}
                     </div>
                 )}
                 <div className='ServerSetting__serverList'>
@@ -163,12 +170,14 @@ export default function ServerSetting() {
                             >
                                 <i className='icon icon-pencil-outline'/>
                             </button>
-                            <button
-                                onClick={showRemoveServerModal(server)}
-                                className='ServerSetting__removeServer btn btn-icon btn-sm btn-tertiary btn-transparent btn-danger'
-                            >
-                                <i className='icon icon-trash-can-outline'/>
-                            </button>
+                            {enableServerManagement && !server.server.isPredefined &&
+                                <button
+                                    onClick={showRemoveServerModal(server)}
+                                    className='ServerSetting__removeServer btn btn-icon btn-sm btn-tertiary btn-transparent btn-danger'
+                                >
+                                    <i className='icon icon-trash-can-outline'/>
+                                </button>
+                            }
                         </div>
                     )))}
                 </div>
