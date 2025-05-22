@@ -38,7 +38,7 @@
   "main.app.initialize.downloadBox.allFiles": "Todos os ficheiros",
   "main.app.utils.clearAllData.cancel": "Cancelar",
   "main.app.utils.clearAllData.confirm": "Limpar Todos os Dados",
-  "main.app.utils.clearAllData.message": "Esta ação apagará todos os dados de sessão, cache, cookies e armazenamento de todos os servidores. Executar esta ação reiniciará o aplicativo. Tem certeza de que deseja limpar todos os dados?",
+  "main.app.utils.clearAllData.message": "Esta ação irá limpar todos os dados de sessão, cache, cookies e armazenamento de todos os servidores. Executar esta ação reiniciará a aplicação. Tem certeza que deseja limpar todos os dados?",
   "main.app.utils.clearDataForServer.cancel": "Cancelar",
   "main.app.utils.clearDataForServer.confirm": "Limpar Dados",
   "main.app.utils.migrateMacAppStore.button.dontImport": "Não Importar",
