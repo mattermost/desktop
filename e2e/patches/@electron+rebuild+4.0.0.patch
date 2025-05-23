@@ -1,0 +1,13 @@
+diff --git a/node_modules/@electron/rebuild/lib/electron-locator.js b/node_modules/@electron/rebuild/lib/electron-locator.js
+index 9044eea..ee49c05 100644
+--- a/node_modules/@electron/rebuild/lib/electron-locator.js
++++ b/node_modules/@electron/rebuild/lib/electron-locator.js
+@@ -6,7 +6,7 @@ const electronModuleNames = ['electron', 'electron-prebuilt-compile'];
+ async function locateModuleByImport() {
+     for (const moduleName of electronModuleNames) {
+         try {
+-            const modulePath = path.resolve(fileURLToPath(import.meta.resolve(path.join(moduleName, 'package.json'))), '..');
++            const modulePath = path.resolve(fileURLToPath(import.meta.resolve(moduleName)), '..');
+             if (fs.existsSync(path.join(modulePath, 'package.json'))) {
+                 return modulePath;
+             }
