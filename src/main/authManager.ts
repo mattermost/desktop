@@ -40,18 +40,15 @@ export class AuthManager {
         if (!parsedURL) {
             return;
         }
-        
-        // electron/chromium requests spell checking dictionary on startup.
-        // As there is no webContents and no server url (e.g. fresh install)
-        // at this time, we just skip checking for trusted URL and get
-        // straight to the login modal.
-        if (!webContents)
-        {
+
+        // some basic auth challanges are caused by utility
+        // processes so there is no webContent
+        if (!webContents) {
             this.loginCallbackMap.set(request.url, callback);
             this.popLoginModal(request, authInfo);
             return;
         }
-        
+
         const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.view.server.url;
         if (!serverURL) {
             return;
