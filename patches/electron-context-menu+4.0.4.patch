@@ -47,7 +47,7 @@ index 468e48b..e182878 100644
  		event: ElectronEvent
  	) => MenuItemConstructorOptions[];
 diff --git a/node_modules/electron-context-menu/index.js b/node_modules/electron-context-menu/index.js
-index b10daea..d7d26f3 100644
+index b10daea..4514ef1 100644
 --- a/node_modules/electron-context-menu/index.js
 +++ b/node_modules/electron-context-menu/index.js
 @@ -1,7 +1,6 @@
@@ -63,7 +63,7 @@ index b10daea..d7d26f3 100644
  				click(menuItem) {
  					properties.srcURL = menuItem.transform ? menuItem.transform(properties.srcURL) : properties.srcURL;
 -					download(win, properties.srcURL);
-+					win.webContents.downloadURL(properties.srcURL);
++					webContents(win).downloadURL(properties.srcURL);
  				},
  			}),
  			saveImageAs: decorateMenuItem({
@@ -72,7 +72,7 @@ index b10daea..d7d26f3 100644
  				click(menuItem) {
  					properties.srcURL = menuItem.transform ? menuItem.transform(properties.srcURL) : properties.srcURL;
 -					download(win, properties.srcURL, {saveAs: true});
-+					win.webContents.downloadURL(properties.srcURL, {saveAs: true});
++					webContents(win).downloadURL(properties.srcURL, {saveAs: true});
  				},
  			}),
  			saveVideo: decorateMenuItem({
@@ -81,7 +81,7 @@ index b10daea..d7d26f3 100644
  				click(menuItem) {
  					properties.srcURL = menuItem.transform ? menuItem.transform(properties.srcURL) : properties.srcURL;
 -					download(win, properties.srcURL);
-+					win.webContents.downloadURL(properties.srcURL);
++					webContents(win).downloadURL(properties.srcURL);
  				},
  			}),
  			saveVideoAs: decorateMenuItem({
@@ -90,7 +90,7 @@ index b10daea..d7d26f3 100644
  				click(menuItem) {
  					properties.srcURL = menuItem.transform ? menuItem.transform(properties.srcURL) : properties.srcURL;
 -					download(win, properties.srcURL, {saveAs: true});
-+					win.webContents.downloadURL(properties.srcURL, {saveAs: true});
++					webContents(win).downloadURL(properties.srcURL, {saveAs: true});
  				},
  			}),
  			copyLink: decorateMenuItem({
@@ -99,7 +99,7 @@ index b10daea..d7d26f3 100644
  				click(menuItem) {
  					properties.linkURL = menuItem.transform ? menuItem.transform(properties.linkURL) : properties.linkURL;
 -					download(win, properties.linkURL, {saveAs: true});
-+					win.webContents.downloadURL(properties.linkURL, {saveAs: true});
++					webContents(win).downloadURL(properties.linkURL, {saveAs: true});
  				},
  			}),
  			copyImage: decorateMenuItem({
