@@ -92,7 +92,7 @@
   "main.menus.app.view.clearAllData": "Limpar Todos os Dados",
   "main.menus.app.view.clearCacheAndReload": "Limpar Cache e Recarregar",
   "main.menus.app.view.clearDataForServer": "Limpar Dados para o Servidor Atual",
-  "main.menus.app.view.devToolsAppWrapper": "Ferramentas de Programador para Wrapper de Aplicação",
+  "main.menus.app.view.devToolsAppWrapper": "Ferramentas de Programador para Aplicação Wrapper",
   "main.menus.app.view.devToolsCurrentCallWidget": "Ferramentas de Desenvolvimento para Widget de Chamada",
   "main.menus.app.view.devToolsCurrentServer": "Ferramentas de Desenvolvedor para o Servidor",
   "main.menus.app.view.devToolsSubMenu": "Ferramentas de Programador",
