@@ -15,7 +15,7 @@ export async function triggerTestNotification(firstServer) {
 }
 
 export async function verifyNotificationRecievedinDM(firstServer, afterbadgeValue) {
-    await firstServer.click('#accountSettingsHeader > button.close');
+    await firstServer.click('div.modal-header button[aria-label="Close"]');
     const sidebarLink = await firstServer.locator('a.SidebarLink:has-text("system-bot")');
     const badgeElement = await sidebarLink.locator('span.badge');
     const badgeCount = await badgeElement.textContent();
