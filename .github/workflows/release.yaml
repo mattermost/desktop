@@ -212,10 +212,18 @@ jobs:
           pattern: build-*
           merge-multiple: true
 
+      - name: release/download-sbom-files
+        run: |
+          VERSION=$(jq -r .version package.json)
+          mkdir -p ./sbom-files
+          aws s3 cp s3://releases.mattermost.com/desktop/${VERSION}/sbom-mattermost-desktop-${VERSION}.json ./sbom-files/
+          aws s3 cp s3://releases.mattermost.com/desktop/${VERSION}/sbom-mattermost-desktop-${VERSION}.json.sig ./sbom-files/
+
       - name: release/setup-files-for-github-release
         run: |
           mkdir -p ./ghr-dist
           find ./build/{macos-release,win-release,linux} -type f -exec cp --backup=numbered -t ./ghr-dist {} +
+          find ./sbom-files -type f -exec cp --backup=numbered -t ./ghr-dist {} +
 
       - name: release/publish-release
         env:
