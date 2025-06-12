@@ -214,7 +214,7 @@ jobs:
 
       - name: release/download-sbom-files
         run: |
-          VERSION=$(jq -r .version package.json)
+          VERSION=${GITHUB_REF_NAME}  # Use full tag (e.g., v5.0.0)
           mkdir -p ./sbom-files
           aws s3 cp s3://releases.mattermost.com/desktop/${VERSION}/sbom-mattermost-desktop-${VERSION}.json ./sbom-files/
           aws s3 cp s3://releases.mattermost.com/desktop/${VERSION}/sbom-mattermost-desktop-${VERSION}.json.sig ./sbom-files/
