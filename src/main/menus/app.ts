@@ -270,6 +270,10 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         visible: false,
         accelerator: 'CmdOrCtrl+Shift+=',
     }, {
+        role: 'zoomIn',
+        visible: false,
+        accelerator: 'CmdOrCtrl+Plus',
+    }, {
         role: 'zoomOut',
         label: localizeMessage('main.menus.app.view.zoomOut', 'Zoom Out'),
         accelerator: 'CmdOrCtrl+-',
