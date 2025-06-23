@@ -268,7 +268,7 @@
   "renderer.components.settingsPage.loggingLevel.description": "Os registros de logs são úteis para desenvolvedores e oferece suporte para isolar problemas que você pode encontrar com o aplicativo de computador.",
   "renderer.components.settingsPage.loggingLevel.description.subtitle": "Aumentar o nível de registros de log aumenta o uso do espaço em disco e pode afetar o desempenho. Recomendamos apenas aumentar o nível de registros de log se você estiver tendo problemas.",
   "renderer.components.settingsPage.loggingLevel.level.debug": "Depurar",
-  "renderer.components.settingsPage.loggingLevel.level.error": "Erros {error}",
+  "renderer.components.settingsPage.loggingLevel.level.error": "Errors (error)",
   "renderer.components.settingsPage.loggingLevel.level.info": "Informações (INFO)",
   "renderer.components.settingsPage.loggingLevel.level.silly": "Detalhado (SILLY)",
   "renderer.components.settingsPage.loggingLevel.level.verbose": "Verbose (VERBOSE)",
