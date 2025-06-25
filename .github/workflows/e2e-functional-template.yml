@@ -24,7 +24,7 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-        default: "ubuntu-22.04"
+        default: "ubuntu-24.04"
       nightly:
         type: boolean
         description: "True if this is nightly build"
@@ -96,7 +96,7 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-        default: "ubuntu-22.04"
+        default: "ubuntu-24.04"
       nightly:
         type: boolean
         description: "True if this is nightly build"
@@ -139,7 +139,7 @@ env:
   SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '9.9.1' }}
   DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-  DOCKER_MM_IMAGE: "mattermost/mattermost-enterprise-edition:${{ inputs.MM_SERVER_VERSION || '10.9.0' }}"
+  DOCKER_MM_IMAGE: ${{ inputs.MM_SERVER_VERSION && format('mattermost/mattermost-enterprise-edition:{0}', inputs.MM_SERVER_VERSION) || 'mattermost/mattermost-enterprise-edition:latest' }}
   MM_CONTAINER_NAME: "mattermost-test-server"
 
 jobs:
@@ -245,23 +245,63 @@ jobs:
         with:
           os: ${{ runner.os }}
 
-      - name: e2e/install-node-dependencies
+      - name: e2e/setup-docker-ubuntu
+        if: runner.os == 'Linux'
+        uses: docker/setup-docker-action@v4
+
+      - name: e2e/setup-docker-windows
+        if: runner.os == 'Windows'
+        shell: powershell
         run: |
-          npm ci
-          cd e2e && npm ci
-          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
+          # Enable Linux containers on Windows
+          Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+          Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart
+          # Install Docker (simplified, may need more configuration)
+          choco install docker-desktop --acceptlicense -y
+          Start-Service -Name "Docker"
+        env:
+          ChocolateyInstall: C:\ProgramData\chocolatey
+
+      - name: e2e/skip-docker-macos
+        if: runner.os == 'macOS'
+        run: |
+          echo "Docker is not supported on macOS runners. Falling back to external MM_TEST_SERVER_URL or skipping Mattermost server setup."
+          echo "MM_TEST_SERVER_URL=${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}" >> $GITHUB_ENV
 
       - name: e2e/setup-mattermost-server
+        if: runner.os == 'Linux' || runner.os == 'Windows'
         run: |
           # Pull Mattermost Docker image
           docker pull ${{ env.DOCKER_MM_IMAGE }}
           
+          # Run PostgreSQL container for Mattermost
+          docker run -d --name postgres-mm \
+            -p 5432:5432 \
+            -e POSTGRES_USER=mmuser \
+            -e POSTGRES_PASSWORD=mostest \
+            -e POSTGRES_DB=mattermost_test \
+            postgres:13
+          
+          # Wait for PostgreSQL to be ready
+          timeout=30
+          while ! docker exec postgres-mm pg_isready -U mmuser; do
+            if [ $timeout -eq 0 ]; then
+              echo "PostgreSQL failed to start within 30 seconds"
+              docker logs postgres-mm
+              exit 1
+            fi
+            echo "Waiting for PostgreSQL to start..."
+            sleep 2
+            timeout=$((timeout-2))
+          done
+          
           # Run Mattermost container
           docker run -d --name ${{ env.MM_CONTAINER_NAME }} \
             -p 8065:8065 \
+            --link postgres-mm \
             -e MM_USERNAME=${{ env.MM_TEST_USER_NAME }} \
             -e MM_PASSWORD=${{ env.MM_TEST_PASSWORD }} \
-            -e MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10" \
+            -e MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mostest@postgres-mm:5432/mattermost_test?sslmode=disable&connect_timeout=10" \
             -e MM_SQLSETTINGS_DRIVERNAME=postgres \
             ${{ env.DOCKER_MM_IMAGE }}
           
@@ -280,12 +320,17 @@ jobs:
           
           echo "Mattermost server is up and running at http://localhost:8065"
 
-      - name: e2e/run-playright-tests-linux
+      - name: e2e/install-node-dependencies
+        run: |
+          npm ci
+          cd e2e && npm ci
+          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
+
+      - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
         run: |
           eval "$(dbus-launch --sh-syntax)"
           export NO_AT_BRIDGE=1
-
           npm run build-test
           cd e2e
           export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
@@ -296,7 +341,7 @@ jobs:
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
           MM_TEST_SERVER_URL: http://localhost:8065
 
-      - name: e2e/run-playright-tests-macos
+      - name: e2e/run-playwright-tests-macos
         if: runner.os == 'macOS'
         run: |
           sudo spctl --master-disable
@@ -308,9 +353,9 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          MM_TEST_SERVER_URL: http://localhost:8065
+          MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}
 
-      - name: e2e/run-playright-tests-windows
+      - name: e2e/run-playwright-tests-windows
         if: runner.os == 'Windows'
         run: |
           npm run build-test
@@ -333,7 +378,6 @@ jobs:
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
             const { newFailedTests, os } = analyzeFlakyTests();
-
             switch (os) {
               case 'linux':
                 core.setOutput('NEW_FAILURES_LINUX', newFailedTests.length);
@@ -355,11 +399,13 @@ jobs:
             }
 
       - name: e2e/cleanup-mattermost-server
-        if: always()
+        if: always() && (runner.os == 'Linux' || runner.os == 'Windows')
         run: |
-          # Stop and remove Mattermost container
+          # Stop and remove Mattermost and PostgreSQL containers
           docker stop ${{ env.MM_CONTAINER_NAME }} || true
           docker rm ${{ env.MM_CONTAINER_NAME }} || true
+          docker stop postgres-mm || true
+          docker rm postgres-mm || true
 
       - name: Upload test results
         if: always()
