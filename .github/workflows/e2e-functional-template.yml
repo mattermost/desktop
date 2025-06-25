@@ -122,9 +122,9 @@ env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
   BUILD_TAG: ${{ github.event.pull_request.head.sha || github.sha }}
   JIRA_PROJECT_KEY: "MM"
-  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}
-  MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
-  MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
+  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || 'http://localhost:8065' }}
+  MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME || 'admin' }}
+  MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS || 'SampleUs@r1' }}
   PULL_REQUEST: "https://github.com/mattermost/desktop/pull/${{ github.event.number }}"
   ZEPHYR_ENVIRONMENT_NAME: "Desktop app"
   ZEPHYR_FOLDER_ID: "12413253"
@@ -139,6 +139,8 @@ env:
   SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '9.9.1' }}
   DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  DOCKER_MM_IMAGE: "mattermost/mattermost-enterprise-edition:${{ inputs.MM_SERVER_VERSION || '10.9.0' }}"
+  MM_CONTAINER_NAME: "mattermost-test-server"
 
 jobs:
   e2e:
@@ -249,6 +251,35 @@ jobs:
           cd e2e && npm ci
           npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
+      - name: e2e/setup-mattermost-server
+        run: |
+          # Pull Mattermost Docker image
+          docker pull ${{ env.DOCKER_MM_IMAGE }}
+          
+          # Run Mattermost container
+          docker run -d --name ${{ env.MM_CONTAINER_NAME }} \
+            -p 8065:8065 \
+            -e MM_USERNAME=${{ env.MM_TEST_USER_NAME }} \
+            -e MM_PASSWORD=${{ env.MM_TEST_PASSWORD }} \
+            -e MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10" \
+            -e MM_SQLSETTINGS_DRIVERNAME=postgres \
+            ${{ env.DOCKER_MM_IMAGE }}
+          
+          # Wait for Mattermost server to be ready
+          timeout=60
+          while ! curl -s http://localhost:8065/api/v4/system/ping | grep -q '"status":"OK"'; do
+            if [ $timeout -eq 0 ]; then
+              echo "Mattermost server failed to start within 60 seconds"
+              docker logs ${{ env.MM_CONTAINER_NAME }}
+              exit 1
+            fi
+            echo "Waiting for Mattermost server to start..."
+            sleep 5
+            timeout=$((timeout-5))
+          done
+          
+          echo "Mattermost server is up and running at http://localhost:8065"
+
       - name: e2e/run-playright-tests-linux
         if: runner.os == 'Linux'
         run: |
@@ -263,6 +294,7 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: e2e/run-playright-tests-macos
         if: runner.os == 'macOS'
@@ -276,6 +308,7 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: e2e/run-playright-tests-windows
         if: runner.os == 'Windows'
@@ -287,6 +320,7 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: Capture Report Link
         run: echo "REPORT_LINK=$(cat e2e/report-link.txt)" >> $GITHUB_ENV
@@ -319,6 +353,13 @@ jobs:
               default:
                 throw new Error(`Unsupported OS: ${os}`);
             }
+
+      - name: e2e/cleanup-mattermost-server
+        if: always()
+        run: |
+          # Stop and remove Mattermost container
+          docker stop ${{ env.MM_CONTAINER_NAME }} || true
+          docker rm ${{ env.MM_CONTAINER_NAME }} || true
 
       - name: Upload test results
         if: always()
