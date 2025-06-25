@@ -20,11 +20,6 @@ on:
         required: false
         default: ${{ github.ref }}
         type: string
-      runs-on:
-        type: string
-        description: "The E2E tests underlying OS"
-        required: true
-        default: "ubuntu-24.04"
       nightly:
         type: boolean
         description: "True if this is nightly build"
@@ -43,7 +38,7 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: false
-        default: "9.9.1"
+        default: "10.8.0"
     outputs:
       NEW_FAILURES_LINUX:
         description: "The output to comment"
@@ -73,6 +68,7 @@ on:
         description: "The status of the windows test"
         value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
 
+
   workflow_dispatch:
     inputs:
       MM_TEST_SERVER_URL:
@@ -92,11 +88,6 @@ on:
         required: false
         default: "master"
         type: string
-      runs-on:
-        type: string
-        description: "The E2E tests underlying OS"
-        required: true
-        default: "ubuntu-24.04"
       nightly:
         type: boolean
         description: "True if this is nightly build"
@@ -122,7 +113,6 @@ env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
   BUILD_TAG: ${{ github.event.pull_request.head.sha || github.sha }}
   JIRA_PROJECT_KEY: "MM"
-  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || 'http://localhost:8065' }}
   MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME || 'admin' }}
   MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS || 'SampleUs@r1' }}
   PULL_REQUEST: "https://github.com/mattermost/desktop/pull/${{ github.event.number }}"
@@ -143,9 +133,85 @@ env:
   MM_CONTAINER_NAME: "mattermost-test-server"
 
 jobs:
+  mattermost-server:
+    name: Setup Mattermost Server
+    runs-on: ubuntu-24.04
+    outputs:
+      mm_server_url: ${{ steps.set-server-url.outputs.mm_server_url }}
+    steps:
+      - name: Setup Docker
+        uses: docker/setup-docker-action@v4
+
+      - name: Setup PostgreSQL and Mattermost
+        run: |
+          # Run PostgreSQL container
+          docker run -d --name postgres-mm \
+            -p 5432:5432 \
+            -e POSTGRES_USER=mmuser \
+            -e POSTGRES_PASSWORD=mostest \
+            -e POSTGRES_DB=mattermost_test \
+            postgres:13
+          
+          # Wait for PostgreSQL to be ready
+          timeout=30
+          while ! docker exec postgres-mm pg_isready -U mmuser; do
+            if [ $timeout -eq 0 ]; then
+              echo "PostgreSQL failed to start within 30 seconds"
+              docker logs postgres-mm
+              exit 1
+            fi
+            echo "Waiting for PostgreSQL to start..."
+            sleep 2
+            timeout=$((timeout-2))
+          done
+          
+          # Pull Mattermost Docker image
+          docker pull ${{ env.DOCKER_MM_IMAGE }}
+          
+          # Run Mattermost container
+          docker run -d --name ${{ env.MM_CONTAINER_NAME }} \
+            -p 8065:8065 \
+            --link postgres-mm \
+            -e MM_USERNAME=${{ env.MM_TEST_USER_NAME }} \
+            -e MM_PASSWORD=${{ env.MM_TEST_PASSWORD }} \
+            -e MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mostest@postgres-mm:5432/mattermost_test?sslmode=disable&connect_timeout=10" \
+            -e MM_SQLSETTINGS_DRIVERNAME=postgres \
+            ${{ env.DOCKER_MM_IMAGE }}
+          
+          # Wait for Mattermost server to be ready
+          timeout=60
+          while ! curl -s http://localhost:8065/api/v4/system/ping | grep -q '"status":"OK"'; do
+            if [ $timeout -eq 0 ]; then
+              echo "Mattermost server failed to start within 60 seconds"
+              docker logs ${{ env.MM_CONTAINER_NAME }}
+              exit 1
+            fi
+            echo "Waiting for Mattermost server to start..."
+            sleep 5
+            timeout=$((timeout-5))
+          done
+          
+          echo "Mattermost server is up and running at http://localhost:8065"
+
+      - name: Set Server URL
+        id: set-server-url
+        run: echo "mm_server_url=http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):8065" >> $GITHUB_OUTPUT
+
+      - name: Cleanup Mattermost Server
+        if: always()
+        run: |
+          docker stop ${{ env.MM_CONTAINER_NAME }} || true
+          docker rm ${{ env.MM_CONTAINER_NAME }} || true
+          docker stop postgres-mm || true
+          docker rm postgres-mm || true
+
   e2e:
-    name: e2e-on-${{ inputs.runs-on }}
-    runs-on: ${{ inputs.runs-on }}
+    name: e2e-on-${{ matrix.runs-on }}
+    runs-on: ${{ matrix.runs-on }}
+    needs: mattermost-server
+    strategy:
+      matrix:
+        runs-on: ['ubuntu-24.04', 'macos-13', 'windows-2022']
     defaults:
       run:
         shell: bash
@@ -159,6 +225,8 @@ jobs:
       STATUS_LINUX: ${{ steps.analyze-flaky-tests.outputs.STATUS_LINUX }}
       STATUS_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.STATUS_WINDOWS }}
       STATUS_MACOS: ${{ steps.analyze-flaky-tests.outputs.STATUS_MACOS }}
+    env:
+      MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || needs.mattermost-server.outputs.mm_server_url }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -166,7 +234,6 @@ jobs:
           RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
           echo "RUNNER_OS=${RUNNER_OS}" >> $GITHUB_ENV
           
-          # Define build type and suffix
           case "${{ github.event_name }}" in
             "pull_request")
               echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
@@ -245,86 +312,11 @@ jobs:
         with:
           os: ${{ runner.os }}
 
-      - name: e2e/setup-docker-ubuntu
-        if: runner.os == 'Linux'
-        uses: docker/setup-docker-action@v4
-
-      - name: e2e/setup-docker-windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          # Enable Linux containers on Windows
-          Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
-          Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart
-          # Install Docker (simplified, may need more configuration)
-          choco install docker-desktop --acceptlicense -y
-          Start-Service -Name "Docker"
-        env:
-          ChocolateyInstall: C:\ProgramData\chocolatey
-
-      - name: e2e/skip-docker-macos
-        if: runner.os == 'macOS'
-        run: |
-          echo "Docker is not supported on macOS runners. Falling back to external MM_TEST_SERVER_URL or skipping Mattermost server setup."
-          echo "MM_TEST_SERVER_URL=${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}" >> $GITHUB_ENV
-
-      - name: e2e/setup-mattermost-server
-        if: runner.os == 'Linux' || runner.os == 'Windows'
-        run: |
-          # Pull Mattermost Docker image
-          docker pull ${{ env.DOCKER_MM_IMAGE }}
-          
-          # Run PostgreSQL container for Mattermost
-          docker run -d --name postgres-mm \
-            -p 5432:5432 \
-            -e POSTGRES_USER=mmuser \
-            -e POSTGRES_PASSWORD=mostest \
-            -e POSTGRES_DB=mattermost_test \
-            postgres:13
-          
-          # Wait for PostgreSQL to be ready
-          timeout=30
-          while ! docker exec postgres-mm pg_isready -U mmuser; do
-            if [ $timeout -eq 0 ]; then
-              echo "PostgreSQL failed to start within 30 seconds"
-              docker logs postgres-mm
-              exit 1
-            fi
-            echo "Waiting for PostgreSQL to start..."
-            sleep 2
-            timeout=$((timeout-2))
-          done
-          
-          # Run Mattermost container
-          docker run -d --name ${{ env.MM_CONTAINER_NAME }} \
-            -p 8065:8065 \
-            --link postgres-mm \
-            -e MM_USERNAME=${{ env.MM_TEST_USER_NAME }} \
-            -e MM_PASSWORD=${{ env.MM_TEST_PASSWORD }} \
-            -e MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mostest@postgres-mm:5432/mattermost_test?sslmode=disable&connect_timeout=10" \
-            -e MM_SQLSETTINGS_DRIVERNAME=postgres \
-            ${{ env.DOCKER_MM_IMAGE }}
-          
-          # Wait for Mattermost server to be ready
-          timeout=60
-          while ! curl -s http://localhost:8065/api/v4/system/ping | grep -q '"status":"OK"'; do
-            if [ $timeout -eq 0 ]; then
-              echo "Mattermost server failed to start within 60 seconds"
-              docker logs ${{ env.MM_CONTAINER_NAME }}
-              exit 1
-            fi
-            echo "Waiting for Mattermost server to start..."
-            sleep 5
-            timeout=$((timeout-5))
-          done
-          
-          echo "Mattermost server is up and running at http://localhost:8065"
-
       - name: e2e/install-node-dependencies
         run: |
           npm ci
           cd e2e && npm ci
-          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
+          npx electron-rebuild --platform=${{ runner.os }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
@@ -339,7 +331,6 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: e2e/run-playwright-tests-macos
         if: runner.os == 'macOS'
@@ -353,7 +344,6 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}
 
       - name: e2e/run-playwright-tests-windows
         if: runner.os == 'Windows'
@@ -365,7 +355,6 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: Capture Report Link
         run: echo "REPORT_LINK=$(cat e2e/report-link.txt)" >> $GITHUB_ENV
@@ -391,26 +380,4 @@ jobs:
                 break;
               case 'win32':
                 core.setOutput('NEW_FAILURES_WINDOWS', newFailedTests.length);
-                core.setOutput('REPORT_LINK_WINDOWS', "${{ env.REPORT_LINK}}");
-                newFailedTests.length > 0 ? core.setOutput('STATUS_WINDOWS', 'failure') : core.setOutput('STATUS_WINDOWS', 'success');
-                break;
-              default:
-                throw new Error(`Unsupported OS: ${os}`);
-            }
-
-      - name: e2e/cleanup-mattermost-server
-        if: always() && (runner.os == 'Linux' || runner.os == 'Windows')
-        run: |
-          # Stop and remove Mattermost and PostgreSQL containers
-          docker stop ${{ env.MM_CONTAINER_NAME }} || true
-          docker rm ${{ env.MM_CONTAINER_NAME }} || true
-          docker stop postgres-mm || true
-          docker rm postgres-mm || true
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ runner.os }}
-          path: e2e/mochawesome-report
-          retention-days: 7
+                core.setOutput
