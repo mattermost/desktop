@@ -249,52 +249,17 @@ jobs:
         if: runner.os == 'Linux'
         uses: docker/setup-docker-action@v4
 
+      - name: e2e/setup-docker-macos
+        if: runner.os == 'macOS'
+        uses: docker-practice/actions-setup-docker@master
+
       - name: e2e/setup-docker-windows
         if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          # Install Chocolatey
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-          
-          # Enable required Windows features
-          Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction Stop
-          Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -ErrorAction Stop
-          Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All -NoRestart -ErrorAction Stop
-          
-          # Install WSL2
-          wsl --install --no-launch
-          wsl --set-default-version 2
-          
-          # Install Docker Desktop via Chocolatey with logging
-          choco install docker-desktop -y --no-progress --verbose --acceptlicense --installargs '--quiet' | Tee-Object -FilePath "C:\docker-install.log"
-          
-          # Wait for Docker Desktop to initialize
-          Start-Sleep -Seconds 30
-          Start-Service -Name "com.docker.service" -ErrorAction SilentlyContinue
-          
-          # Verify Docker installation
-          docker --version
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Docker installation failed. See C:\docker-install.log for details."
-            Get-Content -Path "C:\docker-install.log"
-            exit 1
-          }
-          
-          # Switch to Linux containers
-          & "C:\Program Files\Docker\Docker\DockerCli.exe" -SwitchLinuxEngine
-        env:
-          ChocolateyInstall: C:\ProgramData\chocolatey
-
-      - name: e2e/skip-docker-macos
-        if: runner.os == 'macOS'
-        run: |
-          echo "Docker is not supported on macOS runners. Falling back to external MM_TEST_SERVER_URL or skipping Mattermost server setup."
-          echo "MM_TEST_SERVER_URL=${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}" >> $GITHUB_ENV
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: "latest"
 
       - name: e2e/setup-mattermost-server
-        if: runner.os == 'Linux' || runner.os == 'Windows'
         run: |
           # Pull Mattermost Docker image
           docker pull ${{ env.DOCKER_MM_IMAGE }}
@@ -378,7 +343,7 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}
+          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: e2e/run-playwright-tests-windows
         if: runner.os == 'Windows'
@@ -424,7 +389,7 @@ jobs:
             }
 
       - name: e2e/cleanup-mattermost-server
-        if: always() && (runner.os == 'Linux' || runner.os == 'Windows')
+        if: always()
         run: |
           # Stop and remove Mattermost and PostgreSQL containers
           docker stop ${{ env.MM_CONTAINER_NAME }} || true
