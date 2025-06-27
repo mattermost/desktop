@@ -1,22 +1,32 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
-export default function UrlDescription(props: {url: string}) {
-    const urlRef = React.createRef<HTMLDivElement>();
+export default function UrlDescription() {
+    const urlRef = useRef<HTMLDivElement>(null);
+
+    const [url, setUrl] = useState<string | undefined>();
 
     useEffect(() => {
-        window.desktop.updateURLViewWidth(urlRef.current?.scrollWidth);
+        window.desktop.onUpdateTargetURL((newUrl) => {
+            setUrl(newUrl);
+        });
     }, []);
 
-    if (props.url) {
+    useEffect(() => {
+        if (url) {
+            window.desktop.updateURLViewWidth(urlRef.current?.scrollWidth);
+        }
+    }, [url]);
+
+    if (url) {
         return (
             <div
                 ref={urlRef}
                 className='HoveringURL HoveringURL-left'
             >
-                <p>{props.url}</p>
+                <p>{url}</p>
             </div>
         );
     }
