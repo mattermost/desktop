@@ -259,23 +259,7 @@ module.exports = {
         await window.waitForSelector('#input_password-input');
         await window.waitForSelector('#saveSetting');
 
-        let username = process.env.MM_TEST_USERNAME;
-        switch (process.platform) {
-        case 'darwin':
-            username = 'success+sysadmin+macos@simulator.amazonses.com';
-            break;
-        case 'linux':
-            username = 'success+sysadmin+linux@simulator.amazonses.com';
-            break;
-        case 'win32':
-            username = 'success+sysadmin+windows@simulator.amazonses.com';
-            break;
-        default:
-            throw new Error('Unsupported platform');
-        }
-
-        await window.type('#input_loginId', username);
-
+        await window.type('#input_loginId', process.env.MM_TEST_USER_NAME);
         await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
         await window.click('#saveSetting');
     },
