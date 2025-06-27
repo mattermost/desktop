@@ -122,9 +122,9 @@ env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
   BUILD_TAG: ${{ github.event.pull_request.head.sha || github.sha }}
   JIRA_PROJECT_KEY: "MM"
-  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || 'http://localhost:8065' }}
-  MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME || 'admin' }}
-  MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS || 'SampleUs@r1' }}
+  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
+  MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
+  MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
   PULL_REQUEST: "https://github.com/mattermost/desktop/pull/${{ github.event.number }}"
   ZEPHYR_ENVIRONMENT_NAME: "Desktop app"
   ZEPHYR_FOLDER_ID: "12413253"
@@ -139,8 +139,6 @@ env:
   SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '9.9.1' }}
   DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-  DOCKER_MM_IMAGE: ${{ inputs.MM_SERVER_VERSION && format('mattermost/mattermost-enterprise-edition:{0}', inputs.MM_SERVER_VERSION) || 'mattermost/mattermost-enterprise-edition:latest' }}
-  MM_CONTAINER_NAME: "mattermost-test-server"
 
 jobs:
   e2e:
@@ -245,76 +243,11 @@ jobs:
         with:
           os: ${{ runner.os }}
 
-      - name: e2e/setup-docker-ubuntu
-        if: runner.os == 'Linux'
-        uses: docker/setup-docker-action@v4
-
-      - name: e2e/setup-docker-macos
-        if: runner.os == 'macOS'
-        uses: docker-practice/actions-setup-docker@master
-
-      - name: e2e/setup-docker-windows
-        if: runner.os == 'Windows'
-        uses: docker/setup-buildx-action@v3
-        with:
-          version: "latest"
-
-      - name: e2e/setup-mattermost-server
-        run: |
-          # Pull Mattermost Docker image
-          docker pull ${{ env.DOCKER_MM_IMAGE }}
-          
-          # Run PostgreSQL container for Mattermost
-          docker run -d --name postgres-mm \
-            -p 5432:5432 \
-            -e POSTGRES_USER=mmuser \
-            -e POSTGRES_PASSWORD=mostest \
-            -e POSTGRES_DB=mattermost_test \
-            postgres:13
-          
-          # Wait for PostgreSQL to be ready
-          timeout=30
-          while ! docker exec postgres-mm pg_isready -U mmuser; do
-            if [ $timeout -eq 0 ]; then
-              echo "PostgreSQL failed to start within 30 seconds"
-              docker logs postgres-mm
-              exit 1
-            fi
-            echo "Waiting for PostgreSQL to start..."
-            sleep 2
-            timeout=$((timeout-2))
-          done
-          
-          # Run Mattermost container
-          docker run -d --name ${{ env.MM_CONTAINER_NAME }} \
-            -p 8065:8065 \
-            --link postgres-mm \
-            -e MM_USERNAME=${{ env.MM_TEST_USER_NAME }} \
-            -e MM_PASSWORD=${{ env.MM_TEST_PASSWORD }} \
-            -e MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mostest@postgres-mm:5432/mattermost_test?sslmode=disable&connect_timeout=10" \
-            -e MM_SQLSETTINGS_DRIVERNAME=postgres \
-            ${{ env.DOCKER_MM_IMAGE }}
-          
-          # Wait for Mattermost server to be ready
-          timeout=60
-          while ! curl -s http://localhost:8065/api/v4/system/ping | grep -q '"status":"OK"'; do
-            if [ $timeout -eq 0 ]; then
-              echo "Mattermost server failed to start within 60 seconds"
-              docker logs ${{ env.MM_CONTAINER_NAME }}
-              exit 1
-            fi
-            echo "Waiting for Mattermost server to start..."
-            sleep 5
-            timeout=$((timeout-5))
-          done
-          
-          echo "Mattermost server is up and running at http://localhost:8065"
-
       - name: e2e/install-node-dependencies
         run: |
           npm ci
           cd e2e && npm ci
-          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
+          npx electron-rebuild --platform=${{ runner.os }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
@@ -329,7 +262,6 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: e2e/run-playwright-tests-macos
         if: runner.os == 'macOS'
@@ -343,7 +275,6 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: e2e/run-playwright-tests-windows
         if: runner.os == 'Windows'
@@ -355,7 +286,6 @@ jobs:
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          MM_TEST_SERVER_URL: http://localhost:8065
 
       - name: Capture Report Link
         run: echo "REPORT_LINK=$(cat e2e/report-link.txt)" >> $GITHUB_ENV
@@ -387,15 +317,6 @@ jobs:
               default:
                 throw new Error(`Unsupported OS: ${os}`);
             }
-
-      - name: e2e/cleanup-mattermost-server
-        if: always()
-        run: |
-          # Stop and remove Mattermost and PostgreSQL containers
-          docker stop ${{ env.MM_CONTAINER_NAME }} || true
-          docker rm ${{ env.MM_CONTAINER_NAME }} || true
-          docker stop postgres-mm || true
-          docker rm postgres-mm || true
 
       - name: Upload test results
         if: always()
