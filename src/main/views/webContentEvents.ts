@@ -136,7 +136,7 @@ export class WebContentsEventManager {
                 ViewManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};
             }
-            
+
             // Check for other custom protocols
             if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
