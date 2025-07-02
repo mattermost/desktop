@@ -33,6 +33,7 @@ import {
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
     DEVELOPER_MODE_UPDATED,
+    SET_URL_FOR_URL_VIEW,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
@@ -413,7 +414,7 @@ export class ViewManager {
                 MainWindow.get()?.contentView.addChildView(this.urlView);
             }
 
-            this.urlView?.webContents.send(UPDATE_TARGET_URL, urlString);
+            this.urlView?.webContents.send(SET_URL_FOR_URL_VIEW, urlString);
             this.urlView?.setVisible(true);
 
             const boundaries = this.views.get(this.currentView || '')?.getBounds() ?? MainWindow.getBounds();

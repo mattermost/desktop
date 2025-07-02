@@ -9,7 +9,7 @@ export default function UrlDescription() {
     const [url, setUrl] = useState<string | undefined>();
 
     useEffect(() => {
-        window.desktop.onUpdateTargetURL((newUrl) => {
+        window.desktop.onSetURLForURLView((newUrl) => {
             setUrl(newUrl);
         });
     }, []);

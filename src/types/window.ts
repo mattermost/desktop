@@ -98,7 +98,7 @@ declare global {
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
 
-            onUpdateTargetURL: (listener: (link?: string) => void) => void;
+            onSetURLForURLView: (listener: (link?: string) => void) => void;
             updateURLViewWidth: (width?: number) => void;
             openNotificationPreferences: () => void;
             openWindowsCameraPreferences: () => void;
