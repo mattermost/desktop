@@ -410,7 +410,7 @@ export class ViewManager {
             const urlString = typeof url === 'string' ? url : url.toString();
 
             if (this.urlView && !this.isViewInFront(this.urlView)) {
-                log.debug('moving URL view to front');
+                log.silly('moving URL view to front');
                 MainWindow.get()?.contentView.addChildView(this.urlView);
             }
 
