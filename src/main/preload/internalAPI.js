@@ -100,6 +100,7 @@ import {
     LOAD_INCOMPATIBLE_SERVER,
     OPEN_SERVER_UPGRADE_LINK,
     OPEN_CHANGELOG_LINK,
+    SET_URL_FOR_URL_VIEW,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -188,6 +189,7 @@ contextBridge.exposeInMainWorld('desktop', {
     onUpdateDownloadsDropdown: (listener) => ipcRenderer.on(UPDATE_DOWNLOADS_DROPDOWN, (_, downloads, darkMode, windowBounds, item) => listener(downloads, darkMode, windowBounds, item)),
     onAppMenuWillClose: (listener) => ipcRenderer.on(APP_MENU_WILL_CLOSE, () => listener()),
     onFocusThreeDotMenu: (listener) => ipcRenderer.on(FOCUS_THREE_DOT_MENU, () => listener()),
+    onSetURLForURLView: (listener) => ipcRenderer.on(SET_URL_FOR_URL_VIEW, (_, url) => listener(url)),
     updateURLViewWidth: (width) => ipcRenderer.send(UPDATE_URL_VIEW_WIDTH, width),
     openNotificationPreferences: () => ipcRenderer.send(OPEN_NOTIFICATION_PREFERENCES),
     openWindowsCameraPreferences: () => ipcRenderer.send(OPEN_WINDOWS_CAMERA_PREFERENCES),

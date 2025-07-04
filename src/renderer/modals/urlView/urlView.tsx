@@ -3,9 +3,6 @@
 
 import 'renderer/css/components/HoveringURL.css';
 
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -13,9 +10,7 @@ import UrlDescription from '../../components/urlDescription';
 
 const start = async () => {
     ReactDOM.render(
-        <UrlDescription
-            url={decodeURIComponent(urlParams.get('url')!)}
-        />,
+        <UrlDescription/>,
         document.getElementById('app'),
     );
 };
