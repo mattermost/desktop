@@ -90,7 +90,7 @@ export class CallsWidgetWindow {
     }
 
     private get serverID() {
-        return this.mainView?.view.server.id;
+        return this.mainView?.server.id;
     }
 
     public isOpen() {
@@ -114,7 +114,7 @@ export class CallsWidgetWindow {
     };
 
     getViewURL = () => {
-        return this.mainView?.view.server.url;
+        return this.mainView?.server.url;
     };
 
     isCallsWidget = (webContentsId: number) => {
@@ -125,7 +125,7 @@ export class CallsWidgetWindow {
         if (!this.mainView) {
             return undefined;
         }
-        const u = parseURL(this.mainView.view.server.url.toString()) as URL;
+        const u = parseURL(this.mainView.server.url.toString()) as URL;
 
         u.pathname = getFormattedPathName(u.pathname);
         u.pathname += `plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
@@ -295,7 +295,7 @@ export class CallsWidgetWindow {
         if (!parsedURL) {
             return {action: 'deny' as const};
         }
-        if (isCallsPopOutURL(this.mainView?.view.server.url, parsedURL, this.options?.callID)) {
+        if (isCallsPopOutURL(this.mainView?.server.url, parsedURL, this.options?.callID)) {
             return {
                 action: 'allow' as const,
                 overrideBrowserWindowOptions: {
@@ -438,7 +438,7 @@ export class CallsWidgetWindow {
             }
         }
 
-        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: view.view.server.url.toString(), isMainFrame: false})) {
+        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: view.server.url.toString(), isMainFrame: false})) {
             throw new Error('permissions denied');
         }
 

@@ -53,7 +53,7 @@ export class WebContentsEventManager {
             return log;
         }
 
-        return ServerManager.getViewLog(view.id, 'WebContentsEventManager');
+        return ServerManager.getServerLog(view.id, 'WebContentsEventManager');
     };
 
     private isTrustedPopupWindow = (webContentsId: number) => {
@@ -72,7 +72,7 @@ export class WebContentsEventManager {
             return CallsWidgetWindow.getViewURL();
         }
 
-        return ViewManager.getViewByWebContentsId(webContentsId)?.view.server.url;
+        return ViewManager.getViewByWebContentsId(webContentsId)?.server.url;
     };
 
     private generateWillNavigate = (webContentsId: number) => {
@@ -248,8 +248,8 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            const otherServerURL = ServerManager.lookupViewByURL(parsedURL);
-            if (otherServerURL && isTeamUrl(otherServerURL.server.url, parsedURL, true)) {
+            const otherServerURL = ServerManager.lookupServerByURL(parsedURL);
+            if (otherServerURL && isTeamUrl(otherServerURL.url, parsedURL, true)) {
                 ViewManager.handleDeepLink(parsedURL);
                 return {action: 'deny'};
             }

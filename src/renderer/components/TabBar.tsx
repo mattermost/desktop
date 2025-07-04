@@ -9,9 +9,6 @@ import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import type {IntlShape} from 'react-intl';
 import {FormattedMessage, injectIntl} from 'react-intl';
 
-import type {ViewType} from 'common/views/View';
-import {canCloseView, getViewDisplayName} from 'common/views/View';
-
 import type {UniqueView} from 'types/config';
 
 type Props = {
@@ -107,22 +104,12 @@ class TabBar extends React.PureComponent<Props, State> {
                     index={index}
                 >
                     {(provided, snapshot) => {
-                        if (!tab.isOpen) {
-                            return (
-                                <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                />
-                            );
-                        }
-
                         return (
                             <li
                                 ref={provided.innerRef}
                                 id={`serverTabItem${index}`}
                                 draggable={false}
-                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getViewDisplayName(tab.name as ViewType)})}
+                                title={this.props.intl.formatMessage({id: 'common.tabs.TAB_MESSAGING', defaultMessage: 'Channels'})}
                                 className={classNames('serverTabItem', {
                                     active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
@@ -144,18 +131,10 @@ class TabBar extends React.PureComponent<Props, State> {
                                 >
                                     <div className='TabBar-tabSeperator'>
                                         <FormattedMessage
-                                            id={`common.tabs.${tab.name}`}
-                                            defaultMessage={getViewDisplayName(tab.name as ViewType)}
+                                            id='common.tabs.TAB_MESSAGING'
+                                            defaultMessage='Channels'
                                         />
                                         { badgeDiv }
-                                        {canCloseView(tab.name as ViewType) &&
-                                            <button
-                                                className='serverTabItem__close'
-                                                onClick={this.onCloseTab(tab.id!)}
-                                            >
-                                                <i className='icon-close'/>
-                                            </button>
-                                        }
                                     </div>
                                 </a>
                             </li>

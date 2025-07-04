@@ -20,10 +20,10 @@ import {
     LOAD_INCOMPATIBLE_SERVER,
 } from 'common/communication';
 import type {Logger} from 'common/log';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
-import {TAB_MESSAGING, type MattermostView} from 'common/views/View';
 import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
 import performanceMonitor from 'main/performanceMonitor';
@@ -42,7 +42,7 @@ enum Status {
     ERROR = -1,
 }
 export class MattermostWebContentsView extends EventEmitter {
-    view: MattermostView;
+    server: MattermostServer;
     isVisible: boolean;
 
     private log: Logger;
@@ -57,9 +57,9 @@ export class MattermostWebContentsView extends EventEmitter {
     private maxRetries: number;
     private altPressStatus: boolean;
 
-    constructor(view: MattermostView, options: WebContentsViewConstructorOptions) {
+    constructor(server: MattermostServer, options: WebContentsViewConstructorOptions) {
         super();
-        this.view = view;
+        this.server = server;
 
         const preload = getLocalPreload('externalAPI.js');
         this.options = Object.assign({}, options);
@@ -77,7 +77,7 @@ export class MattermostWebContentsView extends EventEmitter {
         this.webContentsView = new WebContentsView(this.options);
         this.resetLoadingStatus();
 
-        this.log = ServerManager.getViewLog(this.id, 'MattermostWebContentsView');
+        this.log = ServerManager.getServerLog(this.id, 'MattermostWebContentsView');
         this.log.verbose('View created');
 
         this.webContentsView.webContents.on('update-target-url', this.handleUpdateTarget);
@@ -108,7 +108,7 @@ export class MattermostWebContentsView extends EventEmitter {
     }
 
     get id() {
-        return this.view.id;
+        return this.server.id;
     }
     get isAtRoot() {
         return this.atRoot;
@@ -132,8 +132,8 @@ export class MattermostWebContentsView extends EventEmitter {
 
         // If we're logging in from a different view, force a reload
         if (loggedIn &&
-            this.currentURL?.toString() !== this.view.url.toString() &&
-            !this.currentURL?.toString().startsWith(this.view.url.toString())
+            this.currentURL?.toString() !== this.server.url.toString() &&
+            !this.currentURL?.toString().startsWith(this.server.url.toString())
         ) {
             this.reload();
         }
@@ -152,7 +152,7 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     getBrowserHistoryStatus = () => {
-        if (this.currentURL?.toString() === this.view.url.toString()) {
+        if (this.currentURL?.toString() === this.server.url.toString()) {
             this.webContentsView.webContents.navigationHistory.clear();
             this.atRoot = true;
         } else {
@@ -182,17 +182,13 @@ export class MattermostWebContentsView extends EventEmitter {
                 loadURL = parsedURL.toString();
             } else {
                 this.log.error('Cannot parse provided url, using current server url', someURL);
-                loadURL = this.view.url.toString();
+                loadURL = this.server.url.toString();
             }
         } else {
-            loadURL = this.view.url.toString();
+            loadURL = this.server.url.toString();
         }
         this.log.verbose(`Loading ${loadURL}`);
-        if (this.view.type === TAB_MESSAGING) {
-            performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
-        } else {
-            performanceMonitor.registerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
-        }
+        performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.server.id);
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
@@ -413,7 +409,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 parsedURL,
                 false,
                 async () => {
-                    await updateServerInfos([this.view.server]);
+                    await updateServerInfos([this.server]);
                     this.reload(loadURL);
                 },
                 () => {},
@@ -432,7 +428,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private loadSuccess = (loadURL: string) => {
         return () => {
-            const serverInfo = ServerManager.getRemoteInfo(this.view.server.id);
+            const serverInfo = ServerManager.getRemoteInfo(this.server.id);
             if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
                 this.log.verbose(`finished loading ${loadURL}`);
                 MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
@@ -459,7 +455,7 @@ export class MattermostWebContentsView extends EventEmitter {
     private handleUpdateTarget = (e: Event, url: string) => {
         this.log.silly('handleUpdateTarget', e, url);
         const parsedURL = parseURL(url);
-        if (parsedURL && isInternalURL(parsedURL, this.view.server.url)) {
+        if (parsedURL && isInternalURL(parsedURL, this.server.url)) {
             this.emit(UPDATE_TARGET_URL);
         } else {
             this.emit(UPDATE_TARGET_URL, url);
@@ -467,7 +463,7 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     private handleServerWasModified = (serverIds: string) => {
-        if (serverIds.includes(this.view.server.id)) {
+        if (serverIds.includes(this.server.id)) {
             this.reload();
         }
     };

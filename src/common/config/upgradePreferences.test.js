@@ -4,20 +4,6 @@
 import pastDefaultPreferences from 'common/config/pastDefaultPreferences';
 import {upgradeV0toV1, upgradeV1toV2, upgradeV2toV3} from 'common/config/upgradePreferences';
 
-jest.mock('common/views/View', () => ({
-    getDefaultViewsForConfigServer: (value) => ({
-        ...value,
-        tabs: [
-            {
-                name: 'view1',
-            },
-            {
-                name: 'view2',
-            },
-        ],
-    }),
-}));
-
 jest.mock('electron', () => ({
     app: {
         getPath: jest.fn(() => '/valid/downloads/path'),
@@ -122,10 +108,9 @@ describe('common/config/upgradePreferences', () => {
                     order: 0,
                     tabs: [
                         {
-                            name: 'view1',
-                        },
-                        {
-                            name: 'view2',
+                            name: 'channels',
+                            isOpen: true,
+                            order: 0,
                         },
                     ],
                 }, {
@@ -134,10 +119,9 @@ describe('common/config/upgradePreferences', () => {
                     order: 1,
                     tabs: [
                         {
-                            name: 'view1',
-                        },
-                        {
-                            name: 'view2',
+                            name: 'channels',
+                            isOpen: true,
+                            order: 0,
                         },
                     ],
                 }],

@@ -76,7 +76,7 @@ export class PluginsPopUpsManager {
                 return {action: 'deny'};
             }
 
-            const serverView = ViewManager.getViewByWebContentsId(parentId)?.view;
+            const serverView = ViewManager.getViewByWebContentsId(parentId);
 
             // Check for custom protocol
             if (isCustomProtocol(parsedURL)) {

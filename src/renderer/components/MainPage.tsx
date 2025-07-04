@@ -122,18 +122,11 @@ class MainPage extends React.PureComponent<Props, State> {
         const servers = await window.desktop.getOrderedServers();
         const tabs = new Map();
         const tabViewStatus = new Map(this.state.tabViewStatus);
-        await Promise.all(
-            servers.map((srv) => window.desktop.getOrderedTabsForServer(srv.id!).
-                then((tabs) => ({id: srv.id, tabs}))),
-        ).then((serverTabs) => {
-            serverTabs.forEach((serverTab) => {
-                tabs.set(serverTab.id, serverTab.tabs);
-                serverTab.tabs.forEach((tab) => {
-                    if (!tabViewStatus.has(tab.id!)) {
-                        tabViewStatus.set(tab.id!, {status: Status.LOADING});
-                    }
-                });
-            });
+        servers.forEach((server) => {
+            tabs.set(server.id, [{id: server.id}]);
+            if (!tabViewStatus.has(server.id!)) {
+                tabViewStatus.set(server.id!, {status: Status.LOADING});
+            }
         });
         this.setState({servers, tabs, tabViewStatus});
         return Boolean(servers.length);
@@ -141,7 +134,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     setInitialActiveTab = async () => {
         const lastActive = await window.desktop.getLastActive();
-        this.setActiveView(lastActive.server, lastActive.view);
+        this.setActiveView(lastActive.server);
     };
 
     updateServers = async () => {
@@ -283,11 +276,11 @@ class MainPage extends React.PureComponent<Props, State> {
         window.removeEventListener('click', this.handleCloseDropdowns);
     }
 
-    setActiveView = (serverId: string, tabId: string) => {
-        if (serverId === this.state.activeServerId && tabId === this.state.activeTabId) {
+    setActiveView = (serverId: string) => {
+        if (serverId === this.state.activeServerId && serverId === this.state.activeTabId) {
             return;
         }
-        this.setState({activeServerId: serverId, activeTabId: tabId});
+        this.setState({activeServerId: serverId, activeTabId: serverId});
     };
 
     handleCloseDropdowns = () => {

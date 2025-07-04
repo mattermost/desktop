@@ -272,10 +272,8 @@ describe('main/windows/callsWidgetWindow', () => {
                 title: 'call test title #/&',
             };
             callsWidgetWindow.mainView = {
-                view: {
-                    server: {
-                        url: new URL('http://localhost:8065'),
-                    },
+                server: {
+                    url: new URL('http://localhost:8065'),
                 },
             };
         });
@@ -287,10 +285,8 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('getWidgetURL - under subpath', () => {
             callsWidgetWindow.mainView = {
-                view: {
-                    server: {
-                        url: new URL('http://localhost:8065/subpath'),
-                    },
+                server: {
+                    url: new URL('http://localhost:8065/subpath'),
                 },
             };
 
@@ -339,10 +335,8 @@ describe('main/windows/callsWidgetWindow', () => {
         beforeEach(() => {
             callsWidgetWindow.options = {callID: 'id'};
             callsWidgetWindow.mainView = {
-                view: {
-                    server: {
-                        url: new URL('http://localhost:8065'),
-                    },
+                server: {
+                    url: new URL('http://localhost:8065'),
                 },
             };
         });
@@ -471,10 +465,8 @@ describe('main/windows/callsWidgetWindow', () => {
     it('getViewURL', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
         callsWidgetWindow.mainView = {
-            view: {
-                server: {
-                    url: new URL('http://localhost:8065/'),
-                },
+            server: {
+                url: new URL('http://localhost:8065/'),
             },
         };
         expect(callsWidgetWindow.getViewURL().toString()).toBe('http://localhost:8065/');
@@ -643,10 +635,8 @@ describe('main/windows/callsWidgetWindow', () => {
                 arr.push([`${item.name}_${view.name}`, {
                     sendToRenderer: jest.fn(),
                     webContentsId: index,
-                    view: {
-                        server: {
-                            url: new URL('http://server-1.com'),
-                        },
+                    server: {
+                        url: new URL('http://server-1.com'),
                     },
                 }]);
             });
@@ -821,10 +811,8 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('forwardToMainApp', () => {
         const view = {
             id: 'main-view',
-            view: {
-                server: {
-                    id: 'server-1',
-                },
+            server: {
+                id: 'server-1',
             },
             sendToRenderer: jest.fn(),
         };
@@ -856,10 +844,8 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleCallsLinkClick', () => {
         const view = {
             id: 'main-view',
-            view: {
-                server: {
-                    id: 'server-1',
-                },
+            server: {
+                id: 'server-1',
             },
             sendToRenderer: jest.fn(),
         };
@@ -923,10 +909,8 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleCallsOpenThread', () => {
         const view = {
             id: 'main-view',
-            view: {
-                server: {
-                    id: 'server-1',
-                },
+            server: {
+                id: 'server-1',
             },
             sendToRenderer: jest.fn(),
         };
@@ -955,10 +939,8 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleCallsOpenStopRecordingModal', () => {
         const view = {
             id: 'main-view',
-            view: {
-                server: {
-                    id: 'server-1',
-                },
+            server: {
+                id: 'server-1',
             },
             sendToRenderer: jest.fn(),
         };
@@ -986,10 +968,8 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('focusChannelView', () => {
         const view = {
             id: 'main-view',
-            view: {
-                server: {
-                    id: 'server-1',
-                },
+            server: {
+                id: 'server-1',
             },
             sendToRenderer: jest.fn(),
         };

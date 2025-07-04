@@ -162,7 +162,7 @@ describe('common/Validator', () => {
                         tabs: [
                             ...config.teams[0].tabs,
                             {
-                                name: 'TAB_MESSAGING',
+                                name: 'channels',
                                 isOpen: false,
                             },
                         ],
@@ -177,7 +177,7 @@ describe('common/Validator', () => {
                         tabs: [
                             ...config.teams[0].tabs,
                             {
-                                name: 'TAB_MESSAGING',
+                                name: 'channels',
                                 isOpen: true,
                             },
                         ],

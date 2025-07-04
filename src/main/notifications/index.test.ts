@@ -91,12 +91,9 @@ jest.mock('macos-notification-state', () => ({
 jest.mock('../views/viewManager', () => ({
     getViewByWebContentsId: () => ({
         id: 'server_id',
-        view: {
-            server: {
-                name: 'server_name',
-                url: new URL('http://someurl.com'),
-            },
-            shouldNotify: true,
+        server: {
+            name: 'server_name',
+            url: new URL('http://someurl.com'),
         },
     }),
     showById: jest.fn(),

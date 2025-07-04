@@ -102,8 +102,8 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         const errorID = `${parsedURL.origin}:${error}`;
 
         const view = ViewManager.getViewByWebContentsId(webContents.id);
-        if (view?.view.server) {
-            const serverURL = parseURL(view.view.server.url);
+        if (view?.server) {
+            const serverURL = parseURL(view.server.url);
             if (serverURL && serverURL.origin !== parsedURL.origin) {
                 log.warn(`Ignoring certificate for unmatched origin ${parsedURL.origin}, will not trust`);
                 callback(false);

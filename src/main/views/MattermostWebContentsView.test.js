@@ -7,7 +7,6 @@ import AppState from 'common/appState';
 import {LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
-import MessagingView from 'common/views/MessagingView';
 import {updateServerInfos} from 'main/app/utils';
 import {getServerAPI} from 'main/server/serverAPI';
 
@@ -76,7 +75,7 @@ jest.mock('main/performanceMonitor', () => ({
 }));
 jest.mock('common/servers/serverManager', () => ({
     getRemoteInfo: jest.fn(),
-    getViewLog: jest.fn().mockReturnValue({
+    getServerLog: jest.fn().mockReturnValue({
         verbose: jest.fn(),
         info: jest.fn(),
         error: jest.fn(),
@@ -89,12 +88,11 @@ jest.mock('main/server/serverAPI', () => ({
 }));
 
 const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
-const view = new MessagingView(server, true);
 
 describe('main/views/MattermostWebContentsView', () => {
     describe('load', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -153,7 +151,7 @@ describe('main/views/MattermostWebContentsView', () => {
 
     describe('retry', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
         const retryInBackgroundFn = jest.fn();
 
         beforeEach(() => {
@@ -208,7 +206,7 @@ describe('main/views/MattermostWebContentsView', () => {
             await expect(promise).rejects.toThrow(error);
             expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
             expect(mattermostView.loadRetry).not.toBeCalled();
-            expect(MainWindow.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.view.id, expect.any(String), expect.any(String));
+            expect(MainWindow.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.id, expect.any(String), expect.any(String));
             expect(mattermostView.status).toBe(-1);
             jest.runAllTimers();
             expect(retryInBackgroundFn).toBeCalled();
@@ -217,7 +215,7 @@ describe('main/views/MattermostWebContentsView', () => {
 
     describe('retryInBackground', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
         mattermostView.reload = jest.fn();
 
         beforeEach(() => {
@@ -235,7 +233,7 @@ describe('main/views/MattermostWebContentsView', () => {
 
     describe('goToOffset', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
         mattermostView.reload = jest.fn();
 
         afterEach(() => {
@@ -265,7 +263,7 @@ describe('main/views/MattermostWebContentsView', () => {
 
     describe('onLogin', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
         mattermostView.webContentsView.webContents.getURL = jest.fn();
         mattermostView.reload = jest.fn();
 
@@ -295,7 +293,7 @@ describe('main/views/MattermostWebContentsView', () => {
 
     describe('loadSuccess', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -330,7 +328,7 @@ describe('main/views/MattermostWebContentsView', () => {
             },
             on: jest.fn(),
         };
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -375,7 +373,7 @@ describe('main/views/MattermostWebContentsView', () => {
             },
             on: jest.fn(),
         };
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -397,7 +395,7 @@ describe('main/views/MattermostWebContentsView', () => {
 
     describe('updateHistoryButton', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -423,21 +421,21 @@ describe('main/views/MattermostWebContentsView', () => {
         });
 
         it('should remove browser view from window', () => {
-            const mattermostView = new MattermostWebContentsView(view, {}, {});
+            const mattermostView = new MattermostWebContentsView(server, {}, {});
             mattermostView.webContentsView.webContents.close = jest.fn();
             mattermostView.destroy();
             expect(window.contentView.removeChildView).toBeCalledWith(mattermostView.webContentsView);
         });
 
         it('should clear mentions', () => {
-            const mattermostView = new MattermostWebContentsView(view, {}, {});
+            const mattermostView = new MattermostWebContentsView(server, {}, {});
             mattermostView.webContentsView.webContents.close = jest.fn();
             mattermostView.destroy();
-            expect(AppState.clear).toBeCalledWith(mattermostView.view.id);
+            expect(AppState.clear).toBeCalledWith(mattermostView.id);
         });
 
         it('should clear outstanding timeouts', () => {
-            const mattermostView = new MattermostWebContentsView(view, {}, {});
+            const mattermostView = new MattermostWebContentsView(server, {}, {});
             mattermostView.webContentsView.webContents.close = jest.fn();
             const spy = jest.spyOn(global, 'clearTimeout');
             mattermostView.retryLoad = 999;
@@ -449,7 +447,7 @@ describe('main/views/MattermostWebContentsView', () => {
 
     describe('handleInputEvents', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
 
         it('should open three dot menu on pressing Alt', () => {
             MainWindow.get.mockReturnValue(window);
@@ -474,7 +472,7 @@ describe('main/views/MattermostWebContentsView', () => {
 
     describe('handleUpdateTarget', () => {
         const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(view, {}, {});
+        const mattermostView = new MattermostWebContentsView(server, {}, {});
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);

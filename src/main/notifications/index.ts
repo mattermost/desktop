@@ -60,12 +60,7 @@ class NotificationManager {
             log.error('missing view', webcontents.id);
             return {status: 'error', reason: 'missing_view'};
         }
-        const serverName = view.view.server.name;
-        if (!view.view.shouldNotify) {
-            log.debug('should not notify for this view', webcontents.id);
-            return {status: 'not_sent', reason: 'view_should_not_notify'};
-        }
-
+        const serverName = view.server.name;
         const options = {
             title: `${serverName}: ${title}`,
             body,
@@ -73,8 +68,8 @@ class NotificationManager {
             soundName,
         };
 
-        if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: view.view.server.url.toString(), isMainFrame: false})) {
-            log.verbose('permissions disallowed', webcontents.id, serverName, view.view.server.url.toString());
+        if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: view.server.url.toString(), isMainFrame: false})) {
+            log.verbose('permissions disallowed', webcontents.id, serverName, view.server.url.toString());
             return {status: 'not_sent', reason: 'notifications_permission_disallowed'};
         }
 

@@ -4,7 +4,6 @@
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
-import {getDefaultViewsForConfigServer} from 'common/views/View';
 import PermissionsManager from 'main/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
@@ -36,14 +35,11 @@ jest.mock('common/servers/serverManager', () => ({
     getView: jest.fn(),
     getLastActiveTabForServer: jest.fn(),
     getServerLog: jest.fn(),
-    lookupViewByURL: jest.fn(),
+    lookupServerByURL: jest.fn(),
     getOrderedServers: jest.fn(),
 }));
 jest.mock('common/servers/MattermostServer', () => ({
     MattermostServer: jest.fn(),
-}));
-jest.mock('common/views/View', () => ({
-    getDefaultViewsForConfigServer: jest.fn(),
 }));
 jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
@@ -67,61 +63,47 @@ jest.mock('main/permissionsManager', () => ({
     setForServer: jest.fn(),
 }));
 
-const tabs = [
-    {
-        name: 'view-1',
-        order: 0,
-        isOpen: false,
-    },
-    {
-        name: 'view-2',
-        order: 2,
-        isOpen: true,
-    },
-    {
-        name: 'view-3',
-        order: 1,
-        isOpen: true,
-    },
-];
-const servers = [
+const testServers = [
     {
         id: 'server-1',
-        name: 'server-1',
+        name: 'Test Server 1',
         url: 'http://server-1.com',
-        tabs,
+    },
+    {
+        id: 'server-2',
+        name: 'Test Server 2',
+        url: 'http://server-2.com',
+    },
+    {
+        id: 'server-3',
+        name: 'Test Server 3',
+        url: 'http://server-3.com',
     },
 ];
 
 describe('app/serverViewState', () => {
     describe('switchServer', () => {
         const serverViewState = new ServerViewState();
-        const views = new Map([
-            ['view-1', {id: 'view-1'}],
-            ['view-2', {id: 'view-2'}],
-            ['view-3', {id: 'view-3'}],
-        ]);
 
         beforeEach(() => {
             jest.useFakeTimers();
-            const server1 = {
-                id: 'server-1',
-            };
-            const server2 = {
-                id: 'server-2',
-            };
-            ServerManager.getServer.mockImplementation((name) => {
-                switch (name) {
-                case 'server-1':
-                    return server1;
-                case 'server-2':
-                    return server2;
-                default:
-                    return undefined;
-                }
+
+            // Mock ServerManager to return different servers by ID
+            ServerManager.getServer.mockImplementation((serverId) => {
+                return testServers.find((server) => server.id === serverId);
             });
+
             ServerManager.getServerLog.mockReturnValue({debug: jest.fn(), error: jest.fn()});
-            ViewManager.getView.mockImplementation((viewId) => views.get(viewId));
+
+            // Mock views associated with servers - each view uses its server ID directly
+            ViewManager.getView.mockImplementation((serverId) => {
+                const server = testServers.find((s) => s.id === serverId);
+                return server ? {id: serverId, serverId: server.id} : undefined;
+            });
+
+            ServerManager.getLastActiveTabForServer.mockImplementation((serverId) => {
+                return {id: serverId};
+            });
         });
 
         afterEach(() => {
@@ -135,34 +117,39 @@ describe('app/serverViewState', () => {
         });
 
         it('should do nothing if cannot find the server', () => {
-            serverViewState.switchServer('server-3');
+            serverViewState.switchServer('nonexistent-server');
             expect(ViewManager.showById).not.toBeCalled();
         });
 
-        it('should show first open view in order when last active not defined', () => {
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-3'});
+        it('should switch to server-1 and show its view', () => {
             serverViewState.switchServer('server-1');
-            expect(ViewManager.showById).toHaveBeenCalledWith('view-3');
+            expect(ViewManager.showById).toHaveBeenCalledWith('server-1');
         });
 
-        it('should show last active view of chosen server', () => {
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-2'});
+        it('should switch to server-2 and show its view', () => {
             serverViewState.switchServer('server-2');
-            expect(ViewManager.showById).toHaveBeenCalledWith('view-2');
+            expect(ViewManager.showById).toHaveBeenCalledWith('server-2');
+        });
+
+        it('should switch to server-3 and show its view', () => {
+            serverViewState.switchServer('server-3');
+            expect(ViewManager.showById).toHaveBeenCalledWith('server-3');
         });
 
         it('should wait for view to exist if specified', () => {
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-3'});
-            views.delete('view-3');
+            // Mock that the view doesn't exist initially
+            ViewManager.getView.mockReturnValue(undefined);
+
             serverViewState.switchServer('server-1', true);
             expect(ViewManager.showById).not.toBeCalled();
 
             jest.advanceTimersByTime(200);
             expect(ViewManager.showById).not.toBeCalled();
 
-            views.set('view-3', {});
+            // Mock that the view now exists
+            ViewManager.getView.mockReturnValue({id: 'server-1', serverId: 'server-1'});
             jest.advanceTimersByTime(200);
-            expect(ViewManager.showById).toBeCalledWith('view-3');
+            expect(ViewManager.showById).toBeCalledWith('server-1');
         });
     });
 
@@ -174,14 +161,13 @@ describe('app/serverViewState', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            serversCopy = JSON.parse(JSON.stringify(servers));
+            serversCopy = JSON.parse(JSON.stringify(testServers));
             ServerManager.getAllServers.mockReturnValue([]);
-            ServerManager.addServer.mockImplementation(() => {
+            ServerManager.addServer.mockImplementation((serverData) => {
                 const newServer = {
-                    id: 'server-1',
-                    name: 'new-server',
-                    url: 'http://new-server.com',
-                    tabs,
+                    id: 'server-4',
+                    name: serverData.name,
+                    url: serverData.url,
                 };
                 serversCopy = [
                     ...serversCopy,
@@ -191,11 +177,6 @@ describe('app/serverViewState', () => {
             });
             ServerManager.hasServers.mockReturnValue(Boolean(serversCopy.length));
             ServerManager.getServerLog.mockReturnValue({debug: jest.fn(), error: jest.fn()});
-
-            getDefaultViewsForConfigServer.mockImplementation((server) => ({
-                ...server,
-                tabs,
-            }));
         });
 
         it('should add new server to the config', async () => {
@@ -211,14 +192,10 @@ describe('app/serverViewState', () => {
 
             expect(ServerManager.addServer).toHaveBeenCalledWith(data, undefined);
             expect(serversCopy).toContainEqual(expect.objectContaining({
-                id: 'server-1',
+                id: 'server-4',
                 name: 'new-server',
                 url: 'http://new-server.com',
-                tabs,
             }));
-
-            // TODO: For some reason jest won't recognize this as being called
-            //expect(spy).toHaveBeenCalledWith('server-1', true);
         });
     });
 
@@ -230,22 +207,19 @@ describe('app/serverViewState', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            serversCopy = JSON.parse(JSON.stringify(servers));
+            serversCopy = JSON.parse(JSON.stringify(testServers));
             ServerManager.getServer.mockImplementation((id) => {
-                if (id !== serversCopy[0].id) {
-                    return undefined;
-                }
-                return {...serversCopy[0], toUniqueServer: jest.fn()};
+                const server = serversCopy.find((s) => s.id === id);
+                return server ? {...server, toUniqueServer: jest.fn()} : undefined;
             });
-            ServerManager.editServer.mockImplementation((id, server) => {
-                if (id !== serversCopy[0].id) {
-                    return;
+            ServerManager.editServer.mockImplementation((id, serverData) => {
+                const serverIndex = serversCopy.findIndex((s) => s.id === id);
+                if (serverIndex >= 0) {
+                    serversCopy[serverIndex] = {
+                        ...serversCopy[serverIndex],
+                        ...serverData,
+                    };
                 }
-                const newServer = {
-                    ...serversCopy[0],
-                    ...server,
-                };
-                serversCopy = [newServer];
             });
             ServerManager.getAllServers.mockReturnValue(serversCopy.map((server) => ({...server, toUniqueServer: jest.fn()})));
             PermissionsManager.getForServer.mockReturnValue({notifications: {allowed: true}});
@@ -258,30 +232,29 @@ describe('app/serverViewState', () => {
 
         it('should edit the existing server', async () => {
             const promise = Promise.resolve({server: {
-                name: 'new-server',
-                url: 'http://new-server.com',
+                name: 'updated-server',
+                url: 'http://updated-server.com',
             }});
             ModalManager.addModal.mockReturnValue(promise);
 
             serverViewState.showEditServerModal(null, 'server-1');
             await promise;
+
             expect(serversCopy).not.toContainEqual(expect.objectContaining({
                 id: 'server-1',
-                name: 'server-1',
+                name: 'Test Server 1',
                 url: 'http://server-1.com',
-                tabs,
             }));
             expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
-                name: 'new-server',
-                url: 'http://new-server.com',
-                tabs,
+                name: 'updated-server',
+                url: 'http://updated-server.com',
             }));
         });
 
         it('should edit the permissions', async () => {
             const promise = Promise.resolve({server: {
-                name: 'server-1',
+                name: 'Test Server 1',
                 url: 'http://server-1.com',
             },
             permissions: {
@@ -293,11 +266,11 @@ describe('app/serverViewState', () => {
 
             serverViewState.showEditServerModal(null, 'server-1');
             await promise;
+
             expect(PermissionsManager.setForServer).toHaveBeenCalledWith(expect.objectContaining({
                 id: 'server-1',
-                name: 'server-1',
+                name: 'Test Server 1',
                 url: 'http://server-1.com',
-                tabs,
             }), {
                 notifications: {
                     alwaysDeny: true,
@@ -314,12 +287,12 @@ describe('app/serverViewState', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({});
 
-            serversCopy = JSON.parse(JSON.stringify(servers));
-            ServerManager.getServer.mockImplementation(() => {
-                return serversCopy[0];
+            serversCopy = JSON.parse(JSON.stringify(testServers));
+            ServerManager.getServer.mockImplementation((id) => {
+                return serversCopy.find((s) => s.id === id);
             });
-            ServerManager.removeServer.mockImplementation(() => {
-                serversCopy = [];
+            ServerManager.removeServer.mockImplementation((id) => {
+                serversCopy = serversCopy.filter((s) => s.id !== id);
             });
             ServerManager.getOrderedServers.mockReturnValue(serversCopy);
         });
@@ -330,11 +303,11 @@ describe('app/serverViewState', () => {
 
             serverViewState.showRemoveServerModal(null, 'server-1');
             await promise;
+
             expect(serversCopy).not.toContainEqual(expect.objectContaining({
                 id: 'server-1',
-                name: 'server-1',
+                name: 'Test Server 1',
                 url: 'http://server-1.com',
-                tabs,
             }));
         });
 
@@ -344,18 +317,17 @@ describe('app/serverViewState', () => {
 
             expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
-                name: 'server-1',
+                name: 'Test Server 1',
                 url: 'http://server-1.com',
-                tabs,
             }));
 
             serverViewState.showRemoveServerModal(null, 'server-1');
             await promise;
+
             expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
-                name: 'server-1',
+                name: 'Test Server 1',
                 url: 'http://server-1.com',
-                tabs,
             }));
         });
     });
@@ -407,22 +379,22 @@ describe('app/serverViewState', () => {
         });
 
         it('should generate a warning when the server already exists', async () => {
-            ServerManager.lookupViewByURL.mockReturnValue({server: {id: 'server-1', url: new URL('https://server.com')}});
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'server-1', url: new URL('https://server.com')});
             const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
             expect(result.status).toBe(URLValidationStatus.URLExists);
             expect(result.validatedURL).toBe('https://server.com/');
         });
 
         it('should generate a warning if the server exists when editing', async () => {
-            ServerManager.lookupViewByURL.mockReturnValue({server: {name: 'Server 1', id: 'server-1', url: new URL('https://server.com')}});
+            ServerManager.lookupServerByURL.mockReturnValue({name: 'Test Server 1', id: 'server-1', url: new URL('https://server.com')});
             const result = await serverViewState.handleServerURLValidation({}, 'https://server.com', 'server-2');
             expect(result.status).toBe(URLValidationStatus.URLExists);
             expect(result.validatedURL).toBe('https://server.com/');
-            expect(result.existingServerName).toBe('Server 1');
+            expect(result.existingServerName).toBe('Test Server 1');
         });
 
         it('should not generate a warning if editing the same server', async () => {
-            ServerManager.lookupViewByURL.mockReturnValue({server: {name: 'Server 1', id: 'server-1', url: new URL('https://server.com')}});
+            ServerManager.lookupServerByURL.mockReturnValue({name: 'Test Server 1', id: 'server-1', url: new URL('https://server.com')});
             const result = await serverViewState.handleServerURLValidation({}, 'https://server.com', 'server-1');
             expect(result.status).toBe(URLValidationStatus.OK);
             expect(result.validatedURL).toBe('https://server.com/');
@@ -564,7 +536,7 @@ describe('app/serverViewState', () => {
         });
 
         it('should warn the user when the Site URL already exists as another server', async () => {
-            ServerManager.lookupViewByURL.mockReturnValue({server: {name: 'Server 1', id: 'server-1', url: new URL('https://mainserver.com')}});
+            ServerManager.lookupServerByURL.mockReturnValue({name: 'Test Server 1', id: 'server-1', url: new URL('https://mainserver.com')});
             ServerInfo.mockImplementation(() => ({
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     return {
@@ -578,28 +550,7 @@ describe('app/serverViewState', () => {
             const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
             expect(result.status).toBe(URLValidationStatus.URLExists);
             expect(result.validatedURL).toBe('https://mainserver.com/');
-            expect(result.existingServerName).toBe('Server 1');
-        });
-    });
-
-    describe('handleCloseView', () => {
-        const serverViewState = new ServerViewState();
-
-        it('should close the specified view and switch to the next open view', () => {
-            ServerManager.getView.mockReturnValue({server: {id: 'server-1'}});
-            ServerManager.getLastActiveTabForServer.mockReturnValue({id: 'view-2'});
-            serverViewState.handleCloseView(null, 'view-3');
-            expect(ServerManager.setViewIsOpen).toBeCalledWith('view-3', false);
-            expect(ViewManager.showById).toBeCalledWith('view-2');
-        });
-    });
-
-    describe('handleOpenView', () => {
-        const serverViewState = new ServerViewState();
-
-        it('should open the specified view', () => {
-            serverViewState.handleOpenView(null, 'view-1');
-            expect(ViewManager.showById).toBeCalledWith('view-1');
+            expect(result.existingServerName).toBe('Test Server 1');
         });
     });
 });

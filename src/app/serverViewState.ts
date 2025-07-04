@@ -5,11 +5,7 @@ import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {ipcMain} from 'electron';
 
 import {
-    CLOSE_VIEW,
-    GET_LAST_ACTIVE,
     GET_ORDERED_SERVERS,
-    GET_ORDERED_TABS_FOR_SERVER,
-    OPEN_VIEW,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_NEW_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
@@ -17,12 +13,12 @@ import {
     TOGGLE_SECURE_INPUT,
     UPDATE_SERVER_ORDER,
     UPDATE_SHORTCUT_MENU,
-    UPDATE_TAB_ORDER,
     VALIDATE_SERVER_URL,
     GET_UNIQUE_SERVERS_WITH_PERMISSIONS,
     ADD_SERVER,
     EDIT_SERVER,
     REMOVE_SERVER,
+    GET_LAST_ACTIVE,
 } from 'common/communication';
 import Config from 'common/config';
 import {ModalConstants} from 'common/constants';
@@ -55,13 +51,7 @@ export class ServerViewState {
         ipcMain.handle(VALIDATE_SERVER_URL, this.handleServerURLValidation);
         ipcMain.handle(GET_ORDERED_SERVERS, this.handleGetOrderedServers);
         ipcMain.on(UPDATE_SERVER_ORDER, this.updateServerOrder);
-
-        ipcMain.on(CLOSE_VIEW, this.handleCloseView);
-        ipcMain.on(OPEN_VIEW, this.handleOpenView);
         ipcMain.handle(GET_LAST_ACTIVE, this.handleGetLastActive);
-        ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, this.handleGetOrderedViewsForServer);
-        ipcMain.on(UPDATE_TAB_ORDER, this.updateTabOrder);
-
         ipcMain.handle(GET_UNIQUE_SERVERS_WITH_PERMISSIONS, this.getUniqueServersWithPermissions);
         ipcMain.on(ADD_SERVER, this.handleAddServer);
         ipcMain.on(EDIT_SERVER, this.handleEditServer);
@@ -106,32 +96,23 @@ export class ServerViewState {
             return;
         }
         ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
-        this.currentServerId = serverId;
-        const nextView = ServerManager.getLastActiveTabForServer(serverId);
+        this.currentServerId = server.id;
         if (waitForViewToExist) {
             const timeout = setInterval(() => {
-                if (ViewManager.getView(nextView.id)) {
-                    ViewManager.showById(nextView.id);
+                if (ViewManager.getView(server.id)) {
+                    ViewManager.showById(server.id);
                     clearInterval(timeout);
                 }
             }, 100);
         } else {
-            ViewManager.showById(nextView.id);
+            ViewManager.showById(server.id);
         }
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
     };
 
-    selectNextView = () => {
-        this.selectView((order) => order + 1);
-    };
-
-    selectPreviousView = () => {
-        this.selectView((order, length) => (length + (order - 1)));
-    };
-
-    updateCurrentView = (serverId: string, viewId: string) => {
+    updateCurrentView = (serverId: string) => {
         this.currentServerId = serverId;
-        ServerManager.updateLastActive(viewId);
+        ServerManager.updateLastActive(serverId);
     };
 
     /**
@@ -284,9 +265,9 @@ export class ServerViewState {
         }
 
         // Tell the user if they already have a server for this URL
-        const existingServer = ServerManager.lookupViewByURL(secureURL, true);
-        if (existingServer && existingServer.server.id !== currentId) {
-            return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
+        const existingServer = ServerManager.lookupServerByURL(secureURL, true);
+        if (existingServer && existingServer.id !== currentId) {
+            return {status: URLValidationStatus.URLExists, existingServerName: existingServer.name, validatedURL: existingServer.url.toString()};
         }
 
         // Try and get remote info from the most secure URL, otherwise use the insecure one
@@ -325,9 +306,9 @@ export class ServerViewState {
             const parsedSiteURL = parseURL(remoteInfo.siteURL);
             if (parsedSiteURL) {
                 // Check the Site URL as well to see if it's already pre-configured
-                const existingServer = ServerManager.lookupViewByURL(parsedSiteURL, true);
-                if (existingServer && existingServer.server.id !== currentId) {
-                    return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
+                const existingServer = ServerManager.lookupServerByURL(parsedSiteURL, true);
+                if (existingServer && existingServer.id !== currentId) {
+                    return {status: URLValidationStatus.URLExists, existingServerName: existingServer.name, validatedURL: existingServer.url.toString()};
                 }
 
                 // If we can't reach the remote Site URL, there's probably a configuration issue
@@ -344,38 +325,7 @@ export class ServerViewState {
         return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
     };
 
-    private handleCloseView = (event: IpcMainEvent, viewId: string) => {
-        log.debug('handleCloseView', {viewId});
-
-        const view = ServerManager.getView(viewId);
-        if (!view) {
-            return;
-        }
-        ServerManager.setViewIsOpen(viewId, false);
-        const nextView = ServerManager.getLastActiveTabForServer(view.server.id);
-        ViewManager.showById(nextView.id);
-    };
-
-    private handleOpenView = (event: IpcMainEvent, viewId: string) => {
-        log.debug('handleOpenView', {viewId});
-
-        ServerManager.setViewIsOpen(viewId, true);
-        ViewManager.showById(viewId);
-    };
-
-    private handleGetOrderedViewsForServer = (event: IpcMainInvokeEvent, serverId: string) => {
-        return ServerManager.getOrderedTabsForServer(serverId).map((view) => view.toUniqueView());
-    };
-
-    private handleGetLastActive = () => {
-        const server = this.getCurrentServer();
-        const view = ServerManager.getLastActiveTabForServer(server.id);
-        return {server: server.id, view: view.id};
-    };
-
     private updateServerOrder = (event: IpcMainEvent, serverOrder: string[]) => ServerManager.updateServerOrder(serverOrder);
-    private updateTabOrder = (event: IpcMainEvent, serverId: string, viewOrder: string[]) => ServerManager.updateTabOrder(serverId, viewOrder);
-
     private handleGetOrderedServers = () => ServerManager.getOrderedServers().map((srv) => srv.toUniqueServer());
 
     /**
@@ -391,31 +341,6 @@ export class ServerViewState {
         } catch (error) {
             return undefined;
         }
-    };
-
-    private selectView = (fn: (order: number, length: number) => number) => {
-        const currentView = ViewManager.getCurrentView();
-        if (!currentView) {
-            return;
-        }
-
-        const currentServerViews = ServerManager.getOrderedTabsForServer(currentView.view.server.id).map((view, index) => ({view, index}));
-        const filteredViews = currentServerViews?.filter((view) => view.view.isOpen);
-        const currentServerView = currentServerViews?.find((view) => view.view.type === currentView.view.type);
-        if (!currentServerViews || !currentServerView || !filteredViews) {
-            return;
-        }
-
-        let currentOrder = currentServerView.index;
-        let nextIndex = -1;
-        while (nextIndex === -1) {
-            const nextOrder = (fn(currentOrder, currentServerViews.length) % currentServerViews.length);
-            nextIndex = filteredViews.findIndex((view) => view.index === nextOrder);
-            currentOrder = nextOrder;
-        }
-
-        const newView = filteredViews[nextIndex].view;
-        ViewManager.showById(newView.id);
     };
 
     private getUniqueServersWithPermissions = () => {
@@ -461,6 +386,11 @@ export class ServerViewState {
         }
 
         ServerManager.removeServer(serverId);
+    };
+
+    private handleGetLastActive = () => {
+        const server = this.getCurrentServer();
+        return {server: server.id, view: server.id};
     };
 }
 

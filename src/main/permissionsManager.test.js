@@ -79,10 +79,10 @@ describe('main/PermissionsManager', () => {
             MainWindow.get.mockReturnValue({webContents: {id: 1}});
             ViewManager.getViewByWebContentsId.mockImplementation((id) => {
                 if (id === 2) {
-                    return {view: {server: {url: new URL('http://anyurl.com')}}};
+                    return {server: {url: new URL('http://anyurl.com')}};
                 }
                 if (id === 4) {
-                    return {view: {server: {url: new URL('http://gposerver.com')}}};
+                    return {server: {url: new URL('http://gposerver.com')}};
                 }
 
                 return null;
@@ -235,7 +235,7 @@ describe('main/PermissionsManager', () => {
         it('should still pop dialog for media requests from the servers origin', async () => {
             ViewManager.getViewByWebContentsId.mockImplementation((id) => {
                 if (id === 2) {
-                    return {view: {server: {url: new URL('http://anyurl.com/subpath')}}};
+                    return {server: {url: new URL('http://anyurl.com/subpath')}};
                 }
 
                 return null;

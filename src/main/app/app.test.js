@@ -94,11 +94,9 @@ describe('main/app/app', () => {
         const promise = Promise.resolve({});
         const certificate = {};
         const view = {
-            view: {
-                server: {
-                    name: 'test-server',
-                    url: new URL(testURL),
-                },
+            server: {
+                name: 'test-server',
+                url: new URL(testURL),
             },
             load: jest.fn(),
         };

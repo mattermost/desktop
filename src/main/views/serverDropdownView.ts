@@ -170,11 +170,11 @@ export class ServerDropdownView {
     private reduceNotifications = <T>(inputMap: Map<string, T>, items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
         inputMap.clear();
         return [...items.keys()].reduce((map, key) => {
-            const view = ServerManager.getView(key);
-            if (!view) {
+            const server = ServerManager.getServer(key);
+            if (!server) {
                 return map;
             }
-            map.set(view.server.id, modifier(map.get(view.server.id), items.get(key)));
+            map.set(server.id, modifier(map.get(server.id), items.get(key)));
             return map;
         }, inputMap);
     };

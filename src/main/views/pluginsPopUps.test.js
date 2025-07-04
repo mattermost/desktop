@@ -121,7 +121,7 @@ describe('PluginsPopUpsManager', () => {
         expect(shell.openExternal).not.toHaveBeenCalled();
 
         // Verify internal link is routed in main view
-        ViewManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1, view: {server: {url: parseURL('http://localhost:8065'), id: 4545}}});
+        ViewManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1, server: {url: parseURL('http://localhost:8065'), id: 4545}});
         expect(handlers['window-open']({url: 'http://localhost:8065/team/channel'})).toEqual({action: 'deny'});
         expect(shell.openExternal).not.toHaveBeenCalled();
         expect(ServerViewState.switchServer).toHaveBeenCalledWith(4545);

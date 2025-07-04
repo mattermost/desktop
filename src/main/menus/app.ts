@@ -13,8 +13,6 @@ import type {Config} from 'common/config';
 import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK, ModalConstants} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
 import {t} from 'common/utils/util';
-import {getViewDisplayName} from 'common/views/View';
-import type {ViewType} from 'common/views/View';
 import {clearAllData, clearDataForServer} from 'main/app/utils';
 import type {UpdateManager} from 'main/autoUpdater';
 import DeveloperMode from 'main/developerMode';
@@ -375,33 +373,9 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                     ServerViewState.switchServer(server.id);
                 },
             });
-            if (currentServer?.id === server.id) {
-                ServerManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view, i) => {
-                    items.push({
-                        label: `    ${localizeMessage(`common.views.${view.type}`, getViewDisplayName(view.type as ViewType))}`,
-                        accelerator: `CmdOrCtrl+${i + 1}`,
-                        click() {
-                            ViewManager.showById(view.id);
-                        },
-                    });
-                });
-            }
             return items;
-        }).flat(), separatorItem, {
-            label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
-            accelerator: 'Ctrl+Tab',
-            click() {
-                ServerViewState.selectNextView();
-            },
-            enabled: (servers.length > 1),
-        }, {
-            label: localizeMessage('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
-            accelerator: 'Ctrl+Shift+Tab',
-            click() {
-                ServerViewState.selectPreviousView();
-            },
-            enabled: (servers.length > 1),
-        }, ...(isMac ? [separatorItem, {
+        }).flat(), separatorItem,
+        ...(isMac ? [separatorItem, {
             role: 'front',
             label: localizeMessage('main.menus.app.window.bringAllToFront', 'Bring All to Front'),
         }] : []),

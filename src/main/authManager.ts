@@ -40,7 +40,7 @@ export class AuthManager {
         if (!parsedURL) {
             return;
         }
-        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.view.server.url;
+        const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.server.url;
         if (!serverURL) {
             return;
         }

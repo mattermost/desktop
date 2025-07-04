@@ -9,7 +9,6 @@ import {EventEmitter} from 'events';
 import {Logger} from 'common/log';
 import {copy} from 'common/utils/util';
 import * as Validator from 'common/Validator';
-import {getDefaultViewsForConfigServer} from 'common/views/View';
 
 import type {
     AnyConfig,
@@ -48,7 +47,7 @@ export class Config extends EventEmitter {
         this.registryConfig = new RegistryConfig();
         this._predefinedServers = [];
         if (buildConfig.defaultServers) {
-            this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
+            this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => ({...server, order: index})));
         }
     }
 
@@ -262,7 +261,7 @@ export class Config extends EventEmitter {
 
         this.registryConfigData = registryData;
         if (this.registryConfigData.servers) {
-            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => getDefaultViewsForConfigServer({...server, order: index})));
+            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => ({...server, order: index})));
         }
         this.reload();
     };

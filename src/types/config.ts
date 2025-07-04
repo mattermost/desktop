@@ -1,24 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-export type View = {
-    name: string;
-    isOpen?: boolean;
-}
-
 export type Server = {
     name: string;
     url: string;
 }
 
-export type ConfigView = View & {
-    order: number;
-}
-
 export type ConfigServer = Server & {
     order: number;
-    lastActiveTab?: number;
-    tabs: ConfigView[];
 }
 
 export type UniqueServer = Server & {
@@ -26,14 +15,17 @@ export type UniqueServer = Server & {
     isPredefined?: boolean;
 }
 
-export type UniqueView = View & {
-    id?: string;
+export type UniqueView = {
+    id: string;
+    server: UniqueServer;
+    url: URL;
+    pageTitle?: string;
 }
 
-export type Config = ConfigV3;
+export type Config = ConfigV4;
 
-export type ConfigV3 = {
-    version: 3;
+export type ConfigV4 = {
+    version: 4;
     teams: ConfigServer[];
     showTrayIcon: boolean;
     trayIconTheme: string;
@@ -60,6 +52,21 @@ export type ConfigV3 = {
     logLevel?: string;
     appLanguage?: string;
     enableMetrics?: boolean;
+}
+
+export type ConfigV3 = Omit<ConfigV4,
+'version' |
+'teams'> & {
+    version: 3;
+    teams: Array<Server & {
+        order: number;
+        lastActiveTab?: number;
+        tabs: Array<{
+            name: string;
+            isOpen?: boolean;
+            order: number;
+        }>;
+    }>;
 }
 
 export type ConfigV2 =
@@ -101,7 +108,7 @@ export type ConfigV1 =
 
 export type ConfigV0 = {version: 0; url: string};
 
-export type AnyConfig = ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
+export type AnyConfig = ConfigV4 | ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
 
 export type BuildConfig = {
     defaultServers?: Server[];
