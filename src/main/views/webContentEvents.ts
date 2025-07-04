@@ -28,7 +28,7 @@ import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
-import {generateHandleConsoleMessage, isCustomProtocol} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
@@ -131,7 +131,13 @@ export class WebContentsEventManager {
                 return PluginsPopUpsManager.handleNewWindow(webContentsId, details);
             }
 
-            // Check for custom protocol
+            // Check for mattermost protocol - handle internally
+            if (isMattermostProtocol(parsedURL)) {
+                ViewManager.handleDeepLink(parsedURL);
+                return {action: 'deny'};
+            }
+
+            // Check for other custom protocols
             if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
                 return {action: 'deny'};
