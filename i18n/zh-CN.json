@@ -1,8 +1,8 @@
 {
   "common.permissions.canBasicAuth": "Web 认证",
-  "common.tabs.TAB_FOCALBOARD": "白板",
-  "common.tabs.TAB_MESSAGING": "频道",
-  "common.tabs.TAB_PLAYBOOKS": "脚本",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
+  "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "接受",
   "label.add": "添加",
   "label.allow": "允许",
