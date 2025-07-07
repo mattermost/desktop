@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "Web 인증",
-  "common.tabs.TAB_FOCALBOARD": "보드",
-  "common.tabs.TAB_MESSAGING": "채널",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "수락",
   "label.add": "추가",
