@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "Webová autentifikace",
   "common.tabs.TAB_FOCALBOARD": "Nástěnky",
-  "common.tabs.TAB_MESSAGING": "Kanály",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Přijmout",
   "label.add": "Přidat",
