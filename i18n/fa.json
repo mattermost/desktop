@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "احراز هویت تحت وب",
-  "common.tabs.TAB_FOCALBOARD": "تابلوها",
-  "common.tabs.TAB_MESSAGING": "کانال‌ها",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "قبول",
   "label.add": "افزودن",
