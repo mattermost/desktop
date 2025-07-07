@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "Webes hitelesítés",
-  "common.tabs.TAB_FOCALBOARD": "Táblák",
-  "common.tabs.TAB_MESSAGING": "Csatornák",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Elfogadás",
   "label.add": "Hozzáadás",

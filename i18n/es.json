@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "Autenticación Web",
   "common.tabs.TAB_FOCALBOARD": "Tableros",
-  "common.tabs.TAB_MESSAGING": "Canales",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Aceptar",
   "label.add": "Agregar",

@@ -2,7 +2,7 @@
   "common.permissions.canBasicAuth": "Autentificació Web",
   "common.tabs.TAB_FOCALBOARD": "Taulells",
   "common.tabs.TAB_MESSAGING": "Canals",
-  "common.tabs.TAB_PLAYBOOKS": "Automatitzacions",
+  "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Acceptar",
   "label.add": "Afegir",
   "label.allow": "Permetre",

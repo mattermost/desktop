@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "Autentifikavimas internetu",
-  "common.tabs.TAB_FOCALBOARD": "Skyriai",
-  "common.tabs.TAB_MESSAGING": "Kanalai",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Priimti",
   "label.add": "Pridėti",

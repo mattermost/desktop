@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "Xác thực Web",
-  "common.tabs.TAB_FOCALBOARD": "Bảng",
-  "common.tabs.TAB_MESSAGING": "Kênh",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Chấp nhận",
   "label.add": "Thêm",
