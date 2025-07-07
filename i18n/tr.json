@@ -1,8 +1,8 @@
 {
   "common.permissions.canBasicAuth": "İnternet kimlik doğrulaması",
-  "common.tabs.TAB_FOCALBOARD": "Panolar",
-  "common.tabs.TAB_MESSAGING": "Kanallar",
-  "common.tabs.TAB_PLAYBOOKS": "Senaryolar",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
+  "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Kabul et",
   "label.add": "Ekle",
   "label.allow": "İzin ver",
