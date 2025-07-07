@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "Web autentikacija",
-  "common.tabs.TAB_FOCALBOARD": "Table",
-  "common.tabs.TAB_MESSAGING": "Kanali",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Prihvati",
   "label.add": "Dodaj",
