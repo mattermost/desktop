@@ -1,7 +1,8 @@
 {
   "common.permissions.canBasicAuth": "Веб аутентификация",
-  "common.tabs.TAB_FOCALBOARD": "Тақталар",
-  "common.tabs.TAB_MESSAGING": "Арналар",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
+  "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Қабылдау",
   "label.add": "Қосу",
   "label.allow": "Рұқсат беру",

@@ -1,7 +1,7 @@
 {
   "common.permissions.canBasicAuth": "Πιστοποίηση Web",
   "common.tabs.TAB_FOCALBOARD": "Πίνακες",
-  "common.tabs.TAB_MESSAGING": "Κανάλια",
+  "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Αποδοχή",
   "label.add": "Προσθήκη",

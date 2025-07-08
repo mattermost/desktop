@@ -1,1 +1,6 @@
-{}
+{
+  "common.permissions.canBasicAuth": "Web autentifikācija",
+  "common.tabs.TAB_FOCALBOARD": "Boards",
+  "common.tabs.TAB_MESSAGING": "Channels",
+  "common.tabs.TAB_PLAYBOOKS": "Playbooks"
+}

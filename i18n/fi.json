@@ -2,7 +2,7 @@
   "common.permissions.canBasicAuth": "Web-todennus",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Kanavat",
-  "common.tabs.TAB_PLAYBOOKS": "Leikkikirjat",
+  "common.tabs.TAB_PLAYBOOKS": "Playbooks",
   "label.accept": "Hyväksy",
   "label.add": "Lisää",
   "label.allow": "Salli",
