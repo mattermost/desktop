@@ -247,7 +247,7 @@ jobs:
         run: |
           npm ci
           cd e2e && npm ci
-          npx electron-rebuild --platform=${{ runner.os }} -f -t prod,optional,dev -w robotjs --module-dir ../
+          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
