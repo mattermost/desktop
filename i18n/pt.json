@@ -307,7 +307,7 @@
   "renderer.components.settingsPage.trayIcon.theme.systemDefault": "Utilizar a predefinição do sistema",
   "renderer.components.settingsPage.updates": "Atualizações",
   "renderer.components.settingsPage.updates.automatic": "Procurar por atualizações automaticamente",
-  "renderer.components.settingsPage.updates.automatic.description": "Se ativado, as atualizações para a Aplicação para PC serão transferidas automaticamente e será notificado quando estiverem prontas para serem instaladas.",
+  "renderer.components.settingsPage.updates.automatic.description": "Se ativado, as atualizações da Aplicação para PC serão transferidas automaticamente e será notificado quando estiverem prontas para serem instaladas.",
   "renderer.components.settingsPage.updates.checkNow": "Procurar por Atualizações Agora",
   "renderer.components.showCertificateModal.algorithm": "Algoritmo",
   "renderer.components.showCertificateModal.commonName": "Nome Comum",
