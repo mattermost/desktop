@@ -1,0 +1,35 @@
+name: Start Mattermost Server for Testing
+
+on:
+  workflow_dispatch:
+  push:
+    branches: 
+        - master
+        - e2e-jobs-with-server
+
+jobs:
+  start-server-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 1: Trigger Mattermost Delivery Platform
+      - name: Start Server from delivery platform
+        uses: actions/github-script@v6
+        id: start-server
+        with:
+          script: |
+            try {
+              const response = await github.rest.actions.createWorkflowDispatch({
+                owner: 'mattermost',
+                repo: 'delivery-platform',
+                workflow_id: 'e2e-testing-with-desktop-servers.yml',
+                ref: 'server-start-up-desktop',
+              });
+              console.log('Server start triggered successfully');
+              return response.status;
+            } catch (error) {
+              core.setFailed(`Failed to trigger server: ${error.message}`);
+              throw error;
+            }
