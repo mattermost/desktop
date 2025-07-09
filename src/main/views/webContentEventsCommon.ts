@@ -34,3 +34,8 @@ export function isCustomProtocol(url: URL) {
     const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
     return url.protocol !== 'http:' && url.protocol !== 'https:' && url.protocol !== `${scheme}:`;
 }
+
+export function isMattermostProtocol(url: URL) {
+    const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
+    return url.protocol === `${scheme}:`;
+}
