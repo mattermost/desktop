@@ -151,7 +151,8 @@ class NewServerModal extends React.PureComponent<Props, State> {
 
     isServerURLErrored = () => {
         return this.state.validationResult?.status === URLValidationStatus.Invalid ||
-            this.state.validationResult?.status === URLValidationStatus.Missing;
+            this.state.validationResult?.status === URLValidationStatus.Missing ||
+            this.state.validationResult?.status === URLValidationStatus.NotMattermost;
     };
 
     getServerURLMessage = () => {
