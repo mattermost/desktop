@@ -368,7 +368,7 @@
   "renderer.modals.login.loginModal.username": "Nome de Utilizador",
   "renderer.modals.permission.permissionModal.body": "Um site que não está incluído na configuração do seu servidor Mattermost requer acesso para {permission}.",
   "renderer.modals.permission.permissionModal.requestOriginatedFromOrigin": "Este pedido foi solicitado por <link>{origin}</link>",
-  "renderer.modals.permission.permissionModal.title": "{permission} Necessária",
+  "renderer.modals.permission.permissionModal.title": "Necessário {permission}",
   "renderer.modals.permission.permissionModal.unknownOrigin": "origem desconhecida",
   "renderer.time.hours": "horas",
   "renderer.time.mins": "minutos",
