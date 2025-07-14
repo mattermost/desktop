@@ -11,6 +11,17 @@ export const parseURL = (inputURL: string | URL) => {
     if (inputURL instanceof URL) {
         return inputURL;
     }
+
+    // Check for invalid URL characters that shouldn't be in a valid server URL
+    if (typeof inputURL === 'string') {
+        // Reject URLs with invalid characters like ** or other problematic patterns
+        if (inputURL.includes('**') ||
+            (/[<>{}|\\^`[\]"']/).test(inputURL) ||
+            (/\s/).test(inputURL)) {
+            return undefined;
+        }
+    }
+
     try {
         return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1')); // Regex here to remove extra slashes
     } catch (e) {

@@ -388,6 +388,21 @@ describe('app/serverViewState', () => {
             expect(result.status).toBe(URLValidationStatus.Invalid);
         });
 
+        it('should return Invalid when you pass in ** characters', async () => {
+            const result = await serverViewState.handleServerURLValidation({}, '**');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+        });
+
+        it('should return Invalid when you pass in URLs with spaces', async () => {
+            const result = await serverViewState.handleServerURLValidation({}, 'server with spaces.com');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+        });
+
+        it('should return Invalid when you pass in URLs with invalid brackets', async () => {
+            const result = await serverViewState.handleServerURLValidation({}, 'server[test].com');
+            expect(result.status).toBe(URLValidationStatus.Invalid);
+        });
+
         it('should include HTTPS when missing', async () => {
             const result = await serverViewState.handleServerURLValidation({}, 'server.com');
             expect(result.status).toBe(URLValidationStatus.OK);
