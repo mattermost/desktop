@@ -329,7 +329,7 @@
   "renderer.components.welcomeScreen.slides.calls.title": "今すぐ安全な通話を開始する",
   "renderer.components.welcomeScreen.slides.channels.subtitle": "チーム内のコミュニケーションの全てを一箇所で。<br></br>開発者のために構築されたセキュアなコラボレーション。",
   "renderer.components.welcomeScreen.slides.channels.title": "Channels",
-  "renderer.components.welcomeScreen.slides.collaborate.subtitle": "永続的なチャネル、ファイルやコードスニペットの共有、技術チームのためのワークフロー自動化により、効率的なコラボレーションを実現できます。",
+  "renderer.components.welcomeScreen.slides.collaborate.subtitle": "永続的なチャンネル、ファイルやコードスニペットの共有、技術チームのためのワークフロー自動化により、効率的なコラボレーションを実現できます。",
   "renderer.components.welcomeScreen.slides.collaborate.title": "リアルタイムにコラボレーション",
   "renderer.components.welcomeScreen.slides.integrate.subtitle": "GitHub、GitLab、ServiceNowのようなサービスとの柔軟な連携により、ワークフローを自動化し、推進します。",
   "renderer.components.welcomeScreen.slides.integrate.title": "お好みのツールとの連携",
