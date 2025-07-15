@@ -3,54 +3,55 @@
 
 import RegistryConfig from 'common/config/RegistryConfig';
 
-jest.mock('winreg', () => {
-    return jest.fn().mockImplementation(({hive, key}) => {
-        return {
-            values: (fn) => {
-                if (hive === 'correct-hive') {
-                    fn(null, [
-                        {
-                            name: `${key}-name-1`,
-                            value: `${key}-value-1`,
+jest.mock('registry-js', () => {
+    return {
+        HKEY: {
+            HKEY_LOCAL_MACHINE: 'HKEY_LOCAL_MACHINE',
+            HKEY_CURRENT_USER: 'HKEY_CURRENT_USER',
+        },
+        enumerateValues: jest.fn().mockImplementation((hive, key) => {
+            if (hive === 'correct-hive') {
+                return [
+                    {
+                        name: `${key}-name-1`,
+                        data: `${key}-value-1`,
 
-                        },
+                    },
+                    {
+                        name: `${key}-name-2`,
+                        data: `${key}-value-2`,
+                    },
+                ];
+            } else if (hive === 'mattermost-hive') {
+                if (key.endsWith('DefaultServerList')) {
+                    return [
                         {
-                            name: `${key}-name-2`,
-                            value: `${key}-value-2`,
+                            name: 'server-1',
+                            data: 'http://server-1.com',
                         },
-                    ]);
-                } else if (hive === 'mattermost-hive') {
-                    if (key.endsWith('DefaultServerList')) {
-                        fn(null, [
-                            {
-                                name: 'server-1',
-                                value: 'http://server-1.com',
-                            },
-                        ]);
-                    } else {
-                        fn(null, [
-                            {
-                                name: 'EnableServerManagement',
-                                value: '0x1',
-                            },
-                            {
-                                name: 'EnableAutoUpdater',
-                                value: '0x1',
-                            },
-                        ]);
-                    }
-                } else if (hive === 'really-bad-hive') {
-                    throw new Error('This is an error');
-                } else {
-                    fn('Error', []);
+                    ];
                 }
-            },
-        };
-    });
+                return [
+                    {
+                        name: 'EnableServerManagement',
+                        data: '0x1',
+                    },
+                    {
+                        name: 'EnableAutoUpdater',
+                        data: '0x1',
+                    },
+                ];
+            } else if (hive === 'really-bad-hive') {
+                throw new Error('This is an error');
+            }
+
+            return [];
+        }),
+    };
 });
 
 describe('common/config/RegistryConfig', () => {
-    it('should initialize correctly', async () => {
+    it('should initialize correctly', () => {
         const originalPlatform = process.platform;
         Object.defineProperty(process, 'platform', {
             value: 'win32',
@@ -59,7 +60,7 @@ describe('common/config/RegistryConfig', () => {
         const registryConfig = new RegistryConfig();
         const originalFn = registryConfig.getRegistryEntryValues;
         registryConfig.getRegistryEntryValues = (hive, key, name) => originalFn.apply(registryConfig, ['mattermost-hive', key, name, false]);
-        await registryConfig.init();
+        registryConfig.init();
 
         Object.defineProperty(process, 'platform', {
             value: originalPlatform,
@@ -76,32 +77,32 @@ describe('common/config/RegistryConfig', () => {
         const registryConfig = new RegistryConfig();
 
         it('should return correct values', () => {
-            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', null, false)).resolves.toStrictEqual([
+            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', null, false)).toStrictEqual([
                 {
                     name: 'correct-key-name-1',
-                    value: 'correct-key-value-1',
+                    data: 'correct-key-value-1',
                 },
                 {
                     name: 'correct-key-name-2',
-                    value: 'correct-key-value-2',
+                    data: 'correct-key-value-2',
                 },
             ]);
         });
 
         it('should return correct value by name', () => {
-            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', 'correct-key-name-1', false)).resolves.toBe('correct-key-value-1');
+            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', 'correct-key-name-1', false)).toBe('correct-key-value-1');
         });
 
         it('should return undefined with wrong name', () => {
-            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', 'wrong-key-name-1', false)).resolves.toBe(undefined);
+            expect(registryConfig.getRegistryEntryValues('correct-hive', 'correct-key', 'wrong-key-name-1', false)).toBe(undefined);
         });
 
         it('should return undefined with bad hive', () => {
-            expect(registryConfig.getRegistryEntryValues('bad-hive', 'correct-key', null, false)).resolves.toBe(undefined);
+            expect(registryConfig.getRegistryEntryValues('bad-hive', 'correct-key', null, false)).toBe(undefined);
         });
 
-        it('should call reject when an error occurs', () => {
-            expect(registryConfig.getRegistryEntryValues('really-bad-hive', 'correct-key', null, false)).rejects.toThrow(new Error('This is an error'));
+        it('should return undefined when an error occurs', () => {
+            expect(registryConfig.getRegistryEntryValues('really-bad-hive', 'correct-key', null, false)).toBe(undefined);
         });
     });
 });
