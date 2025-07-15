@@ -1,9 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import Joi from 'joi';
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from 'common/config/buildConfig';
+import {REGEX_IPV4} from 'common/constants';
 import {nonTeamUrlPaths, CALLS_PLUGIN_ID} from 'common/utils/constants';
 
 export const getFormattedPathName = (pn: string) => (pn.endsWith('/') ? pn : `${pn}/`);
@@ -12,18 +14,23 @@ export const parseURL = (inputURL: string | URL) => {
         return inputURL;
     }
 
-    // Check for invalid URL characters that shouldn't be in a valid server URL
-    if (typeof inputURL === 'string') {
-        // Reject URLs with invalid characters like ** or other problematic patterns
-        if (inputURL.includes('**') ||
-            (/[<>{}|\\^`[\]"']/).test(inputURL) ||
-            (/\s/).test(inputURL)) {
-            return undefined;
-        }
-    }
-
     try {
-        return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1')); // Regex here to remove extra slashes
+        const url = new URL(inputURL.replace(/([^:]\/)\/+/g, '$1')); // Regex here to remove extra slashes
+        // Validate hostname (skip validation for IP addresses)
+        if (url.hostname) {
+            const isIPv4 = REGEX_IPV4.test(url.hostname);
+            const isIPv6 = !Joi.string().ip({version: ['ipv6']}).validate(url.hostname).error;
+            if (!isIPv4 && !isIPv6) {
+                const hasInvalidEdges = url.hostname.startsWith('.') || url.hostname.endsWith('.') ||
+                                      url.hostname.startsWith('-') || url.hostname.endsWith('-');
+                const hasWhitespace = url.hostname.includes(' ') || url.hostname.includes('\t') || url.hostname.includes('\n');
+                const hasInvalidChars = (/[^a-zA-Z0-9.-]/).test(url.hostname);
+                if (hasInvalidEdges || hasWhitespace || hasInvalidChars) {
+                    return undefined;
+                }
+            }
+        }
+        return url;
     } catch (e) {
         return undefined;
     }
