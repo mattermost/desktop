@@ -5,9 +5,12 @@ import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
+import TabManager from 'app/tabs/tabManager';
 import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
+import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
 
 import getLinuxDoNotDisturb from './dnd-linux';
@@ -60,7 +63,17 @@ class NotificationManager {
             log.error('missing view', webcontents.id);
             return {status: 'error', reason: 'missing_view'};
         }
-        const serverName = view.server.name;
+        const server = ServerManager.getServer(view.view.serverId);
+        if (!server) {
+            log.error('missing server', view.view.serverId);
+            return {status: 'error', reason: 'missing_server'};
+        }
+        const serverName = server.name;
+        if (!viewManager.isPrimaryView(view.view.id)) {
+            log.debug('should not notify for this view', webcontents.id);
+            return {status: 'not_sent', reason: 'view_should_not_notify'};
+        }
+
         const options = {
             title: `${serverName}: ${title}`,
             body,
@@ -68,8 +81,8 @@ class NotificationManager {
             soundName,
         };
 
-        if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: view.server.url.toString(), isMainFrame: false})) {
-            log.verbose('permissions disallowed', webcontents.id, serverName, view.server.url.toString());
+        if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: server.url.toString(), isMainFrame: false})) {
+            log.verbose('permissions disallowed', webcontents.id, serverName, server.url.toString());
             return {status: 'not_sent', reason: 'notifications_permission_disallowed'};
         }
 
@@ -85,7 +98,7 @@ class NotificationManager {
             // being called before the current channel has updated
             const focus = () => {
                 MainWindow.show();
-                ViewManager.showById(view.id);
+                TabManager.switchToTab(view.id);
                 ipcMain.off(BROWSER_HISTORY_PUSH, focus);
             };
             ipcMain.on(BROWSER_HISTORY_PUSH, focus);

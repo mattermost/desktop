@@ -28,6 +28,7 @@ import Config from 'common/config';
 import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
@@ -556,7 +557,15 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         log.debug('doneEventController', {state});
 
         if (state === 'completed' && !this.open) {
-            NotificationManager.displayDownloadCompleted(path.basename(item.savePath), item.savePath, ViewManager.getViewByWebContentsId(webContents.id)?.server.name ?? '');
+            const view = ViewManager.getViewByWebContentsId(webContents.id);
+            if (!view) {
+                return;
+            }
+            const server = ServerManager.getServer(view.view.serverId);
+            if (!server) {
+                return;
+            }
+            NotificationManager.displayDownloadCompleted(path.basename(item.savePath), item.savePath, server.name);
         }
 
         const bookmark = this.bookmarks.get(this.getFileId(item));

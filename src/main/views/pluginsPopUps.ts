@@ -9,8 +9,9 @@ import type {
 } from 'electron';
 import {shell} from 'electron';
 
-import ServerViewState from 'app/serverViewState';
+import NavigationManager from 'app/navigationManager';
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import {
     isTeamUrl,
     parseURL,
@@ -76,19 +77,20 @@ export class PluginsPopUpsManager {
                 return {action: 'deny'};
             }
 
-            const serverView = ViewManager.getViewByWebContentsId(parentId);
-
             // Check for custom protocol
             if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
                 return {action: 'deny'};
             }
 
+            const serverView = ViewManager.getViewByWebContentsId(parentId);
+            const server = serverView && ServerManager.getServer(serverView.view.serverId);
+
             // We allow internal (i.e., same server) links to be routed as expected.
-            if (serverView && isTeamUrl(serverView.server.url, parsedURL, true)) {
-                ServerViewState.switchServer(serverView.server.id);
+            if (server && isTeamUrl(server.url, parsedURL, true)) {
+                ServerManager.updateCurrentServer(server.id);
                 MainWindow.get()?.focus();
-                ViewManager.handleDeepLink(parsedURL);
+                NavigationManager.openLinkInPrimaryTab(parsedURL);
             } else {
                 // We allow to open external links through browser.
                 shell.openExternal(url);

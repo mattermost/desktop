@@ -4,7 +4,7 @@
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {app, Menu} from 'electron';
 
-import ServerViewState from 'app/serverViewState';
+import ServerViewState from 'app/serverHub';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -109,12 +109,12 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-            const newServer = ServerManager.addServer(data, initialLoadURL);
-            ServerViewState.switchServer(newServer.id, true);
+            ServerManager.addServer(data, initialLoadURL);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
                 log.error(`there was an error in the welcome screen modal: ${e}`);
+                log.error(e);
             }
         });
     } else {

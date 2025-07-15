@@ -5,6 +5,7 @@ import type {BrowserWindow, Event, WebContents, Certificate, Details} from 'elec
 import {app, dialog} from 'electron';
 
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 import updateManager from 'main/autoUpdater';
 import CertificateStore from 'main/certificateStore';
@@ -102,8 +103,9 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         const errorID = `${parsedURL.origin}:${error}`;
 
         const view = ViewManager.getViewByWebContentsId(webContents.id);
-        if (view?.server) {
-            const serverURL = parseURL(view.server.url);
+        const server = view && ServerManager.getServer(view.view.serverId);
+        if (server) {
+            const serverURL = parseURL(server.url);
             if (serverURL && serverURL.origin !== parsedURL.origin) {
                 log.warn(`Ignoring certificate for unmatched origin ${parsedURL.origin}, will not trust`);
                 callback(false);

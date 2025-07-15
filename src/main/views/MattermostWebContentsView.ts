@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {BrowserWindow} from 'electron';
 import {WebContentsView, app, ipcMain} from 'electron';
 import type {WebContentsViewConstructorOptions, Event, Input} from 'electron/main';
 import {EventEmitter} from 'events';
@@ -13,17 +14,18 @@ import {
     LOAD_FAILED,
     UPDATE_TARGET_URL,
     LOADSCREEN_END,
-    SERVERS_URL_MODIFIED,
     BROWSER_HISTORY_STATUS_UPDATED,
     CLOSE_SERVERS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN,
     LOAD_INCOMPATIBLE_SERVER,
+    SERVER_URL_CHANGED,
 } from 'common/communication';
 import type {Logger} from 'common/log';
-import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
+import type {MattermostView} from 'common/views/MattermostView';
+import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
 import performanceMonitor from 'main/performanceMonitor';
@@ -42,8 +44,9 @@ enum Status {
     ERROR = -1,
 }
 export class MattermostWebContentsView extends EventEmitter {
-    server: MattermostServer;
+    view: MattermostView;
     isVisible: boolean;
+    private parentWindow?: BrowserWindow;
 
     private log: Logger;
     private webContentsView: WebContentsView;
@@ -57,9 +60,10 @@ export class MattermostWebContentsView extends EventEmitter {
     private maxRetries: number;
     private altPressStatus: boolean;
 
-    constructor(server: MattermostServer, options: WebContentsViewConstructorOptions) {
+    constructor(view: MattermostView, options: WebContentsViewConstructorOptions) {
         super();
-        this.server = server;
+        this.view = view;
+        this.parentWindow = MainWindow.get();
 
         const preload = getLocalPreload('externalAPI.js');
         this.options = Object.assign({}, options);
@@ -77,8 +81,8 @@ export class MattermostWebContentsView extends EventEmitter {
         this.webContentsView = new WebContentsView(this.options);
         this.resetLoadingStatus();
 
-        this.log = ServerManager.getServerLog(this.id, 'MattermostWebContentsView');
-        this.log.verbose('View created');
+        this.log = ViewManager.getViewLog(this.id, 'MattermostWebContentsView');
+        this.log.verbose('View created', this.id, this.view.title);
 
         this.webContentsView.webContents.on('update-target-url', this.handleUpdateTarget);
         if (process.platform !== 'darwin') {
@@ -90,6 +94,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
+        this.webContentsView.webContents.on('page-title-updated', this.handlePageTitleUpdated);
 
         WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
@@ -100,15 +105,15 @@ export class MattermostWebContentsView extends EventEmitter {
 
         this.altPressStatus = false;
 
-        MainWindow.get()?.on('blur', () => {
+        this.parentWindow?.on('blur', () => {
             this.altPressStatus = false;
         });
 
-        ServerManager.on(SERVERS_URL_MODIFIED, this.handleServerWasModified);
+        ServerManager.on(SERVER_URL_CHANGED, this.handleServerWasModified);
     }
 
     get id() {
-        return this.server.id;
+        return this.view.id;
     }
     get isAtRoot() {
         return this.atRoot;
@@ -123,6 +128,10 @@ export class MattermostWebContentsView extends EventEmitter {
         return this.webContentsView.webContents.id;
     }
 
+    getWebContentsView = () => {
+        return this.webContentsView;
+    };
+
     onLogin = (loggedIn: boolean) => {
         if (this.isLoggedIn === loggedIn) {
             return;
@@ -132,8 +141,8 @@ export class MattermostWebContentsView extends EventEmitter {
 
         // If we're logging in from a different view, force a reload
         if (loggedIn &&
-            this.currentURL?.toString() !== this.server.url.toString() &&
-            !this.currentURL?.toString().startsWith(this.server.url.toString())
+            this.currentURL?.toString() !== this.view.getLoadingURL()?.toString() &&
+            !this.currentURL?.toString().startsWith(this.view.getLoadingURL()?.toString() || '')
         ) {
             this.reload();
         }
@@ -152,7 +161,7 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     getBrowserHistoryStatus = () => {
-        if (this.currentURL?.toString() === this.server.url.toString()) {
+        if (this.currentURL?.toString() === this.view.getLoadingURL()?.toString()) {
             this.webContentsView.webContents.navigationHistory.clear();
             this.atRoot = true;
         } else {
@@ -182,13 +191,13 @@ export class MattermostWebContentsView extends EventEmitter {
                 loadURL = parsedURL.toString();
             } else {
                 this.log.error('Cannot parse provided url, using current server url', someURL);
-                loadURL = this.server.url.toString();
+                loadURL = this.view.getLoadingURL()?.toString() || '';
             }
         } else {
-            loadURL = this.server.url.toString();
+            loadURL = this.view.getLoadingURL()?.toString() || '';
         }
         this.log.verbose(`Loading ${loadURL}`);
-        performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.server.id);
+        performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.serverId);
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
@@ -204,32 +213,6 @@ export class MattermostWebContentsView extends EventEmitter {
             }
             this.loadRetry(loadURL, err);
         });
-    };
-
-    show = () => {
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            return;
-        }
-        if (!this.currentURL) {
-            return;
-        }
-        if (this.isVisible) {
-            return;
-        }
-        this.isVisible = true;
-        mainWindow.contentView.addChildView(this.webContentsView);
-        this.setBounds(getWindowBoundaries(mainWindow));
-        if (this.status === Status.READY) {
-            this.focus();
-        }
-    };
-
-    hide = () => {
-        if (this.isVisible) {
-            this.isVisible = false;
-            MainWindow.get()?.contentView.removeChildView(this.webContentsView);
-        }
     };
 
     reload = (loadURL?: URL | string) => {
@@ -254,7 +237,9 @@ export class MattermostWebContentsView extends EventEmitter {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         AppState.clear(this.id);
         performanceMonitor.unregisterView(this.webContentsView.webContents.id);
-        MainWindow.get()?.contentView.removeChildView(this.webContentsView);
+        if (this.parentWindow) {
+            this.parentWindow.contentView.removeChildView(this.webContentsView);
+        }
         this.webContentsView.webContents.close();
 
         this.isVisible = false;
@@ -292,10 +277,10 @@ export class MattermostWebContentsView extends EventEmitter {
 
     setInitialized = (timedout?: boolean) => {
         this.status = Status.READY;
+        this.emit(LOADSCREEN_END, this.id);
 
         if (timedout) {
             this.log.verbose('timeout expired will show the browserview');
-            this.emit(LOADSCREEN_END, this.id);
         }
         clearTimeout(this.removeLoading);
         delete this.removeLoading;
@@ -405,11 +390,15 @@ export class MattermostWebContentsView extends EventEmitter {
             if (!parsedURL) {
                 return;
             }
+            const server = ServerManager.getServer(this.view.serverId);
+            if (!server) {
+                return;
+            }
             getServerAPI(
                 parsedURL,
                 false,
                 async () => {
-                    await updateServerInfos([this.server]);
+                    await updateServerInfos([server]);
                     this.reload(loadURL);
                 },
                 () => {},
@@ -428,7 +417,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private loadSuccess = (loadURL: string) => {
         return () => {
-            const serverInfo = ServerManager.getRemoteInfo(this.server.id);
+            const serverInfo = ServerManager.getRemoteInfo(this.view.serverId);
             if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
                 this.log.verbose(`finished loading ${loadURL}`);
                 MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
@@ -436,7 +425,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 this.status = Status.WAITING_MM;
                 this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
                 this.emit(LOAD_SUCCESS, this.id, loadURL);
-                const mainWindow = MainWindow.get();
+                const mainWindow = this.parentWindow;
                 if (mainWindow && this.currentURL) {
                     this.setBounds(getWindowBoundaries(mainWindow));
                 }
@@ -455,16 +444,41 @@ export class MattermostWebContentsView extends EventEmitter {
     private handleUpdateTarget = (e: Event, url: string) => {
         this.log.silly('handleUpdateTarget', e, url);
         const parsedURL = parseURL(url);
-        if (parsedURL && isInternalURL(parsedURL, this.server.url)) {
+        if (parsedURL && isInternalURL(parsedURL, this.view.getLoadingURL())) {
             this.emit(UPDATE_TARGET_URL);
         } else {
             this.emit(UPDATE_TARGET_URL, url);
         }
     };
 
-    private handleServerWasModified = (serverIds: string) => {
-        if (serverIds.includes(this.server.id)) {
+    private handleServerWasModified = (serverId: string) => {
+        if (serverId === this.view.serverId) {
             this.reload();
         }
+    };
+
+    private handlePageTitleUpdated = (event: Event, newTitle: string) => {
+        // Extract just the channel name (everything before the first " - ")
+        // Remove any mention count in parentheses at the start
+        const parts = newTitle.split(' - ');
+        let channelName = parts[0];
+
+        // Remove mention count if present
+        if (channelName.startsWith('(')) {
+            const endParenIndex = channelName.indexOf(')');
+            if (endParenIndex !== -1) {
+                channelName = channelName.substring(endParenIndex + 1).trim();
+            }
+        }
+
+        ViewManager.updateViewTitle(this.id, channelName);
+    };
+
+    setParentWindow = (window: BrowserWindow) => {
+        this.parentWindow = window;
+    };
+
+    isViewInPopoutWindow = () => {
+        return this.parentWindow?.webContents.getURL().includes('popoutWindow.html') || false;
     };
 }

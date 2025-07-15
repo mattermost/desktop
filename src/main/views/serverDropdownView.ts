@@ -4,7 +4,6 @@
 import type {IpcMainEvent} from 'electron';
 import {WebContentsView, ipcMain} from 'electron';
 
-import ServerViewState from 'app/serverViewState';
 import AppState from 'common/appState';
 import {
     CLOSE_SERVERS_DROPDOWN,
@@ -22,6 +21,7 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
+import ViewManager from 'common/views/viewManager';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload} from 'main/utils';
 
@@ -94,7 +94,7 @@ export class ServerDropdownView {
             this.servers,
             Config.darkMode,
             this.windowBounds,
-            ServerManager.hasServers() ? ServerViewState.getCurrentServer().id : undefined,
+            ServerManager.hasServers() ? ServerManager.getCurrentServerId() : undefined,
             Config.enableServerManagement,
             this.hasGPOServers,
             this.expired,
@@ -170,7 +170,11 @@ export class ServerDropdownView {
     private reduceNotifications = <T>(inputMap: Map<string, T>, items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
         inputMap.clear();
         return [...items.keys()].reduce((map, key) => {
-            const server = ServerManager.getServer(key);
+            const view = ViewManager.getView(key);
+            if (!view) {
+                return map;
+            }
+            const server = ServerManager.getServer(view.serverId);
             if (!server) {
                 return map;
             }

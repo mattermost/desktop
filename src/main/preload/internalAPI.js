@@ -101,6 +101,10 @@ import {
     OPEN_SERVER_UPGRADE_LINK,
     OPEN_CHANGELOG_LINK,
     SET_URL_FOR_URL_VIEW,
+    GET_CURRENT_SERVER,
+    GET_ACTIVE_TAB_FOR_SERVER,
+    UPDATE_TAB_TITLE,
+    CREATE_NEW_TAB,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -123,7 +127,7 @@ contextBridge.exposeInMainWorld('desktop', {
     closeServersDropdown: () => ipcRenderer.send(CLOSE_SERVERS_DROPDOWN),
     openServersDropdown: () => ipcRenderer.send(OPEN_SERVERS_DROPDOWN),
     switchTab: (viewId) => ipcRenderer.send(SWITCH_TAB, viewId),
-    closeView: (viewId) => ipcRenderer.send(CLOSE_VIEW, viewId),
+    closeView: (viewId) => ipcRenderer.invoke(CLOSE_VIEW, viewId),
     exitFullScreen: () => ipcRenderer.send(EXIT_FULLSCREEN),
     doubleClickOnWindow: (windowName) => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, windowName),
     focusCurrentView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
@@ -141,9 +145,16 @@ contextBridge.exposeInMainWorld('desktop', {
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
+
+    getCurrentServer: () => ipcRenderer.invoke(GET_CURRENT_SERVER),
+
+    getActiveTabForServer: (serverId) => ipcRenderer.invoke(GET_ACTIVE_TAB_FOR_SERVER, serverId),
     getLastActive: () => ipcRenderer.invoke(GET_LAST_ACTIVE),
     getOrderedServers: () => ipcRenderer.invoke(GET_ORDERED_SERVERS),
     getOrderedTabsForServer: (serverId) => ipcRenderer.invoke(GET_ORDERED_TABS_FOR_SERVER, serverId),
+
+    createNewTab: (serverId) => ipcRenderer.invoke(CREATE_NEW_TAB, serverId),
+    onUpdateTabTitle: (listener) => ipcRenderer.on(UPDATE_TAB_TITLE, (_, viewId, title) => listener(viewId, title)),
     onUpdateServers: (listener) => ipcRenderer.on(SERVERS_UPDATE, () => listener()),
     validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
     getUniqueServersWithPermissions: () => ipcRenderer.invoke(GET_UNIQUE_SERVERS_WITH_PERMISSIONS),

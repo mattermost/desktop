@@ -5,6 +5,7 @@ import type {BrowserWindow} from 'electron';
 import {ipcMain} from 'electron';
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron/main';
 
+import TabManager from 'app/tabs/tabManager';
 import {
     RETRIEVE_MODAL_INFO,
     MODAL_CANCEL,
@@ -19,7 +20,6 @@ import {
 } from 'common/communication';
 import {Logger} from 'common/log';
 import {getAdjustedWindowBoundaries} from 'main/utils';
-import ViewManager from 'main/views/viewManager';
 import WebContentsEventManager from 'main/views/webContentEvents';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -128,7 +128,7 @@ export class ModalManager {
             this.showModal();
         } else {
             MainWindow.sendToRenderer(MODAL_CLOSE);
-            ViewManager.focusCurrentView();
+            TabManager.focusCurrentTab();
         }
     };
 

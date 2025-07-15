@@ -146,7 +146,11 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         if (CallsWidgetWindow.isCallsWidget(webContentsId)) {
             serverURL = CallsWidgetWindow.getViewURL();
         } else {
-            serverURL = ViewManager.getViewByWebContentsId(webContentsId)?.server.url;
+            const view = ViewManager.getViewByWebContentsId(webContentsId);
+            if (!view) {
+                return false;
+            }
+            serverURL = ViewManager.getServerURLByViewId(view.id);
         }
 
         if (!serverURL) {

@@ -1,0 +1,62 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import {v4 as uuid} from 'uuid';
+
+import type {MattermostServer} from 'common/servers/MattermostServer';
+import ServerManager from 'common/servers/serverManager';
+import {parseURL} from 'common/utils/url';
+
+import type {UniqueView} from 'types/config';
+export enum ViewType {
+    TAB = 'tab',
+    WINDOW = 'window',
+}
+
+export class MattermostView {
+    id: string;
+    serverId: string;
+    type: ViewType;
+    title: string;
+    initialPath?: string;
+
+    constructor(server: MattermostServer, type: ViewType, initialPath?: string) {
+        this.id = uuid();
+        this.serverId = server.id;
+        this.type = type;
+        this.title = server.name;
+        this.initialPath = initialPath;
+    }
+
+    getLoadingURL = (): URL => {
+        const server = ServerManager.getServer(this.serverId);
+        if (!server) {
+            throw new Error(`Server ${this.serverId} not found`);
+        }
+        const serverURL = server.initialLoadURL ?? server.url;
+        if (!this.initialPath) {
+            return serverURL;
+        }
+        if (serverURL.pathname === '/') {
+            const url = parseURL(serverURL.toString());
+            if (!url) {
+                throw new Error(`URL for server ${this.serverId} is not valid`);
+            }
+            url.pathname = this.initialPath;
+            return url;
+        }
+        const url = parseURL(serverURL.toString() + this.initialPath);
+        if (!url) {
+            throw new Error(`URL for server ${this.serverId} is not valid`);
+        }
+        return url;
+    };
+
+    toUniqueView(): UniqueView {
+        return {
+            id: this.id,
+            serverId: this.serverId,
+            title: this.title,
+        };
+    }
+}

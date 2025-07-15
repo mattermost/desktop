@@ -4,6 +4,7 @@
 import type {WebContents, Event} from 'electron';
 import {BrowserWindow, shell} from 'electron';
 
+import NavigationManager from 'app/navigationManager';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -22,9 +23,10 @@ import {
     isValidURI,
     parseURL,
 } from 'common/utils/url';
+import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import PluginsPopUpsManager from 'main/views/pluginsPopUps';
-import ViewManager from 'main/views/viewManager';
+import WebContentsManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
@@ -48,12 +50,12 @@ export class WebContentsEventManager {
             return log;
         }
 
-        const view = ViewManager.getViewByWebContentsId(webContentsId);
+        const view = WebContentsManager.getViewByWebContentsId(webContentsId);
         if (!view) {
             return log;
         }
 
-        return ServerManager.getServerLog(view.id, 'WebContentsEventManager');
+        return ViewManager.getViewLog(view.id, 'WebContentsEventManager');
     };
 
     private isTrustedPopupWindow = (webContentsId: number) => {
@@ -72,7 +74,15 @@ export class WebContentsEventManager {
             return CallsWidgetWindow.getViewURL();
         }
 
-        return ViewManager.getViewByWebContentsId(webContentsId)?.server.url;
+        const view = WebContentsManager.getViewByWebContentsId(webContentsId);
+        if (!view) {
+            return undefined;
+        }
+        const server = ServerManager.getServer(view.view.serverId);
+        if (!server) {
+            return undefined;
+        }
+        return server.url;
     };
 
     private generateWillNavigate = (webContentsId: number) => {
@@ -133,7 +143,7 @@ export class WebContentsEventManager {
 
             // Check for mattermost protocol - handle internally
             if (isMattermostProtocol(parsedURL)) {
-                ViewManager.handleDeepLink(parsedURL);
+                NavigationManager.openLinkInPrimaryTab(parsedURL);
                 return {action: 'deny'};
             }
 
@@ -177,7 +187,7 @@ export class WebContentsEventManager {
             }
 
             if (isTeamUrl(serverURL, parsedURL, true)) {
-                ViewManager.handleDeepLink(parsedURL);
+                NavigationManager.openLinkInPrimaryTab(parsedURL);
                 return {action: 'deny'};
             }
             if (isAdminUrl(serverURL, parsedURL)) {
@@ -250,7 +260,7 @@ export class WebContentsEventManager {
 
             const otherServerURL = ServerManager.lookupServerByURL(parsedURL);
             if (otherServerURL && isTeamUrl(otherServerURL.url, parsedURL, true)) {
-                ViewManager.handleDeepLink(parsedURL);
+                NavigationManager.openLinkInPrimaryTab(parsedURL);
                 return {action: 'deny'};
             }
 

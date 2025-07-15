@@ -3,7 +3,7 @@
 
 import type {ipcRenderer, Rectangle} from 'electron/renderer';
 
-import type {CombinedConfig, LocalConfiguration, UniqueView, UniqueServer, Server} from './config';
+import type {CombinedConfig, LocalConfiguration, UniqueServer, Server, UniqueView} from './config';
 import type {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import type {UniqueServerWithPermissions, Permissions} from './permissions';
 import type {URLValidationResult} from './server';
@@ -49,12 +49,14 @@ declare global {
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
             getNonce: () => Promise<string | undefined>;
             isDeveloperModeEnabled: () => Promise<boolean>;
-
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
-            getLastActive: () => Promise<{server: string; view: string}>;
+            getCurrentServer: () => Promise<UniqueServer>;
+            getActiveTabForServer: (serverId: string) => Promise<UniqueView | null>;
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
+            createNewTab: (serverId: string) => Promise<string>;
+            onUpdateTabTitle: (listener: (viewId: string, title: string) => void) => void;
             onUpdateServers: (listener: () => void) => void;
             validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
@@ -168,4 +170,13 @@ declare global {
             getTitlebarAreaRect: () => DOMRect;
         };
     }
+}
+
+export interface DesktopAPI {
+
+    // ... existing methods ...
+    switchTab: (viewId: string) => void;
+    closeView: (viewId: string) => void;
+
+    // ... existing methods ...
 }

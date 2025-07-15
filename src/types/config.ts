@@ -17,9 +17,8 @@ export type UniqueServer = Server & {
 
 export type UniqueView = {
     id: string;
-    server: UniqueServer;
-    url: URL;
-    pageTitle?: string;
+    serverId: string;
+    title?: string;
 }
 
 export type Config = ConfigV4;

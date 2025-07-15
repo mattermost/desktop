@@ -4,7 +4,8 @@
 import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent} from 'electron';
 import {BrowserWindow, desktopCapturer, ipcMain, systemPreferences} from 'electron';
 
-import ServerViewState from 'app/serverViewState';
+import NavigationManager from 'app/navigationManager';
+import TabManager from 'app/tabs/tabManager';
 import {
     BROWSER_HISTORY_PUSH,
     CALLS_ERROR,
@@ -24,6 +25,7 @@ import {
     UPDATE_SHORTCUT_MENU,
 } from 'common/communication';
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
@@ -90,7 +92,7 @@ export class CallsWidgetWindow {
     }
 
     private get serverID() {
-        return this.mainView?.server.id;
+        return this.mainView?.view.serverId;
     }
 
     public isOpen() {
@@ -114,7 +116,7 @@ export class CallsWidgetWindow {
     };
 
     getViewURL = () => {
-        return this.mainView?.server.url;
+        return this.mainView && ViewManager.getServerURLByViewId(this.mainView.id);
     };
 
     isCallsWidget = (webContentsId: number) => {
@@ -122,10 +124,11 @@ export class CallsWidgetWindow {
     };
 
     private getWidgetURL = () => {
-        if (!this.mainView) {
+        const serverURL = this.getViewURL();
+        if (!serverURL) {
             return undefined;
         }
-        const u = parseURL(this.mainView.server.url.toString()) as URL;
+        const u = parseURL(serverURL) as URL;
 
         u.pathname = getFormattedPathName(u.pathname);
         u.pathname += `plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;
@@ -295,7 +298,11 @@ export class CallsWidgetWindow {
         if (!parsedURL) {
             return {action: 'deny' as const};
         }
-        if (isCallsPopOutURL(this.mainView?.server.url, parsedURL, this.options?.callID)) {
+        const serverURL = this.getViewURL();
+        if (!serverURL) {
+            return {action: 'deny' as const};
+        }
+        if (isCallsPopOutURL(serverURL, parsedURL, this.options?.callID)) {
             return {
                 action: 'allow' as const,
                 overrideBrowserWindowOptions: {
@@ -438,7 +445,11 @@ export class CallsWidgetWindow {
             }
         }
 
-        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: view.server.url.toString(), isMainFrame: false})) {
+        const serverURL = this.getViewURL();
+        if (!serverURL) {
+            throw new Error('handleGetDesktopSources: serverURL not found');
+        }
+        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: serverURL.toString(), isMainFrame: false})) {
             throw new Error('permissions denied');
         }
 
@@ -539,9 +550,9 @@ export class CallsWidgetWindow {
             return;
         }
 
-        ServerViewState.switchServer(this.serverID);
+        TabManager.switchToTab(this.mainView.id);
+        ServerManager.updateCurrentServer(this.serverID);
         MainWindow.get()?.focus();
-        ViewManager.showById(this.mainView.id);
     }
 
     private forwardToMainApp = (channel: string) => {
@@ -582,7 +593,7 @@ export class CallsWidgetWindow {
 
         const parsedURL = parseURL(url);
         if (parsedURL) {
-            ViewManager.handleDeepLink(parsedURL);
+            NavigationManager.openLinkInPrimaryTab(parsedURL);
             return;
         }
 

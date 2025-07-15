@@ -7,7 +7,7 @@ import React from 'react';
 import type {DraggingStyle, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import type {IntlShape} from 'react-intl';
-import {FormattedMessage, injectIntl} from 'react-intl';
+import {injectIntl} from 'react-intl';
 
 import type {UniqueView} from 'types/config';
 
@@ -18,6 +18,7 @@ type Props = {
     isDarkMode: boolean;
     onSelect: (id: string) => void;
     onCloseTab: (id: string) => void;
+    onNewTab?: () => void;
     tabs: UniqueView[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
@@ -102,6 +103,7 @@ class TabBar extends React.PureComponent<Props, State> {
                     key={tab.id}
                     draggableId={`serverTabItem-${tab.id}`}
                     index={index}
+                    isDragDisabled={this.props.tabsDisabled || this.props.isMenuOpen}
                 >
                     {(provided, snapshot) => {
                         return (
@@ -109,7 +111,7 @@ class TabBar extends React.PureComponent<Props, State> {
                                 ref={provided.innerRef}
                                 id={`serverTabItem${index}`}
                                 draggable={false}
-                                title={this.props.intl.formatMessage({id: 'common.tabs.TAB_MESSAGING', defaultMessage: 'Channels'})}
+                                title={tab.title}
                                 className={classNames('serverTabItem', {
                                     active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
@@ -130,11 +132,16 @@ class TabBar extends React.PureComponent<Props, State> {
                                     })}
                                 >
                                     <div className='TabBar-tabSeperator'>
-                                        <FormattedMessage
-                                            id='common.tabs.TAB_MESSAGING'
-                                            defaultMessage='Channels'
-                                        />
-                                        { badgeDiv }
+                                        <span>{tab.title}</span>
+                                        {badgeDiv}
+                                        {this.props.tabs.length > 1 && (
+                                            <button
+                                                className='serverTabItem__close'
+                                                onClick={this.onCloseTab(tab.id!)}
+                                            >
+                                                <i className='icon-close'/>
+                                            </button>
+                                        )}
                                     </div>
                                 </a>
                             </li>
@@ -159,11 +166,21 @@ class TabBar extends React.PureComponent<Props, State> {
                             ref={provided.innerRef}
                             className={classNames('TabBar', {
                                 darkMode: this.props.isDarkMode,
+                                disabled: this.props.tabsDisabled,
                             })}
                             id={this.props.id}
                             {...provided.droppableProps}
                         >
                             {tabs}
+                            <button
+                                className={classNames('TabBar-addTab', {
+                                    darkMode: this.props.isDarkMode,
+                                })}
+                                onClick={this.props.onNewTab}
+                                disabled={this.props.tabsDisabled}
+                            >
+                                <i className='icon-plus'/>
+                            </button>
                             {this.props.isMenuOpen ? <span className='TabBar-nonDrag'/> : null}
                             {provided.placeholder}
                         </div>

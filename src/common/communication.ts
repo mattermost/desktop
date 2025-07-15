@@ -196,3 +196,28 @@ export const GET_UNIQUE_SERVERS_WITH_PERMISSIONS = 'get-unique-servers-with-perm
 export const ADD_SERVER = 'add-server';
 export const EDIT_SERVER = 'edit-server';
 export const REMOVE_SERVER = 'remove-server';
+
+// Server Manager Events
+export const SERVER_ADDED = 'server-added';
+export const SERVER_REMOVED = 'server-removed';
+export const SERVER_URL_CHANGED = 'server-url-changed';
+export const SERVER_NAME_CHANGED = 'server-name-changed';
+export const SERVER_SWITCHED = 'server-switched';
+
+// View Manager Events
+export const VIEW_CREATED = 'view-created';
+export const VIEW_UPDATED = 'view-updated';
+export const VIEW_PRIMARY_UPDATED = 'view-primary-updated';
+export const VIEW_REMOVED = 'view-removed';
+
+// Tab Manager Events
+export const ACTIVE_TAB_CHANGED = 'active-tab-changed';
+export const TAB_ORDER_UPDATED = 'tab-order-updated';
+export const TAB_ADDED = 'tab-added';
+export const TAB_REMOVED = 'tab-removed';
+
+// Front-end tab management
+export const GET_CURRENT_SERVER = 'get-current-server';
+export const GET_ACTIVE_TAB_FOR_SERVER = 'get-active-tab-for-server';
+export const UPDATE_TAB_TITLE = 'update-tab-title';
+export const CREATE_NEW_TAB = 'create-new-tab';

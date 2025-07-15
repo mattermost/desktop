@@ -9,7 +9,6 @@ import {
     SHOW_EDIT_SERVER_MODAL,
     SHOW_NEW_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
-    SWITCH_SERVER,
     TOGGLE_SECURE_INPUT,
     UPDATE_SERVER_ORDER,
     UPDATE_SHORTCUT_MENU,
@@ -19,8 +18,9 @@ import {
     EDIT_SERVER,
     REMOVE_SERVER,
     GET_LAST_ACTIVE,
+    SERVER_SWITCHED,
+    GET_CURRENT_SERVER,
 } from 'common/communication';
-import Config from 'common/config';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -31,23 +31,20 @@ import PermissionsManager from 'main/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
-import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {Server, UniqueServer} from 'types/config';
 import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
 
-const log = new Logger('App', 'ServerViewState');
+const log = new Logger('App', 'ServerHub');
 
-export class ServerViewState {
-    private currentServerId?: string;
-
+export class ServerHub {
     constructor() {
-        ipcMain.on(SWITCH_SERVER, (event, serverId) => this.switchServer(serverId));
         ipcMain.on(SHOW_NEW_SERVER_MODAL, this.handleShowNewServerModal);
         ipcMain.on(SHOW_EDIT_SERVER_MODAL, this.showEditServerModal);
         ipcMain.on(SHOW_REMOVE_SERVER_MODAL, this.showRemoveServerModal);
+
         ipcMain.handle(VALIDATE_SERVER_URL, this.handleServerURLValidation);
         ipcMain.handle(GET_ORDERED_SERVERS, this.handleGetOrderedServers);
         ipcMain.on(UPDATE_SERVER_ORDER, this.updateServerOrder);
@@ -56,63 +53,27 @@ export class ServerViewState {
         ipcMain.on(ADD_SERVER, this.handleAddServer);
         ipcMain.on(EDIT_SERVER, this.handleEditServer);
         ipcMain.on(REMOVE_SERVER, this.handleRemoveServer);
+        ipcMain.handle(GET_CURRENT_SERVER, this.handleGetCurrentServer);
+
+        ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
     }
 
-    init = () => {
-        // Don't need to init twice
-        if (this.currentServerId) {
-            return;
-        }
-
-        const orderedServers = ServerManager.getOrderedServers();
-        if (orderedServers.length) {
-            if (Config.lastActiveServer && orderedServers[Config.lastActiveServer]) {
-                this.currentServerId = orderedServers[Config.lastActiveServer].id;
-            } else {
-                this.currentServerId = orderedServers[0].id;
-            }
-        }
-    };
-
-    getCurrentServer = () => {
-        log.silly('getCurrentServer');
-
-        if (!this.currentServerId) {
-            throw new Error('No server set as current');
-        }
-        const server = ServerManager.getServer(this.currentServerId);
-        if (!server) {
-            throw new Error('Current server does not exist');
-        }
-        return server;
-    };
-
-    switchServer = (serverId: string, waitForViewToExist = false) => {
-        ServerManager.getServerLog(serverId, 'WindowManager').debug('switchServer');
-        MainWindow.show();
-        const server = ServerManager.getServer(serverId);
-        if (!server) {
-            ServerManager.getServerLog(serverId, 'WindowManager').error('Cannot find server in config');
-            return;
-        }
+    // TODO: Move me somewhere else
+    handleServerCurrentChanged = () => {
         ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
-        this.currentServerId = server.id;
-        if (waitForViewToExist) {
-            const timeout = setInterval(() => {
-                if (ViewManager.getView(server.id)) {
-                    ViewManager.showById(server.id);
-                    clearInterval(timeout);
-                }
-            }, 100);
-        } else {
-            ViewManager.showById(server.id);
-        }
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
     };
 
-    updateCurrentView = (serverId: string) => {
-        this.currentServerId = serverId;
-        ServerManager.updateLastActive(serverId);
+    private handleGetCurrentServer = () => {
+        const serverId = ServerManager.getCurrentServerId();
+        if (!serverId) {
+            return {server: undefined, view: undefined};
+        }
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            return {server: undefined, view: undefined};
+        }
+        return server.toUniqueServer();
     };
 
     /**
@@ -144,8 +105,7 @@ export class ServerViewState {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-            const newServer = ServerManager.addServer(data, initialLoadURL);
-            this.switchServer(newServer.id, true);
+            ServerManager.addServer(data, initialLoadURL);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -210,16 +170,7 @@ export class ServerViewState {
 
         modalPromise.then((remove) => {
             if (remove) {
-                const remainingServers = ServerManager.getOrderedServers().filter((orderedServer) => server.id !== orderedServer.id);
-                if (this.currentServerId === server.id && remainingServers.length) {
-                    this.currentServerId = remainingServers[0].id;
-                }
-
                 ServerManager.removeServer(server.id);
-
-                if (!remainingServers.length) {
-                    delete this.currentServerId;
-                }
             }
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -325,7 +276,6 @@ export class ServerViewState {
         return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
     };
 
-    private updateServerOrder = (event: IpcMainEvent, serverOrder: string[]) => ServerManager.updateServerOrder(serverOrder);
     private handleGetOrderedServers = () => ServerManager.getOrderedServers().map((srv) => srv.toUniqueServer());
 
     /**
@@ -378,21 +328,23 @@ export class ServerViewState {
     private handleRemoveServer = (event: IpcMainEvent, serverId: string) => {
         log.debug('handleRemoveServer', serverId);
 
-        const remainingServers = ServerManager.getOrderedServers().filter((orderedServer) => serverId !== orderedServer.id);
-        if (this.currentServerId === serverId && remainingServers.length) {
-            this.currentServerId = remainingServers[0].id;
-        } else if (!remainingServers.length) {
-            delete this.currentServerId;
-        }
-
+        // Remove the server from ServerManager
         ServerManager.removeServer(serverId);
     };
 
     private handleGetLastActive = () => {
-        const server = this.getCurrentServer();
+        const serverId = ServerManager.getCurrentServerId();
+        if (!serverId) {
+            return {server: undefined, view: undefined};
+        }
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            return {server: undefined, view: undefined};
+        }
         return {server: server.id, view: server.id};
     };
+    private updateServerOrder = (event: IpcMainEvent, serverOrder: string[]) => ServerManager.updateServerOrder(serverOrder);
 }
 
-const serverViewState = new ServerViewState();
-export default serverViewState;
+const serverHub = new ServerHub();
+export default serverHub;

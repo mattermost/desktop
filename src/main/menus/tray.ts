@@ -6,7 +6,6 @@
 import type {MenuItem, MenuItemConstructorOptions} from 'electron';
 import {Menu} from 'electron';
 
-import ServerViewState from 'app/serverViewState';
 import {ModalConstants} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
 import {localizeMessage} from 'main/i18nManager';
@@ -21,7 +20,7 @@ export function createTemplate() {
             return {
                 label: server.name.length > 50 ? `${server.name.slice(0, 50)}...` : server.name,
                 click: () => {
-                    ServerViewState.switchServer(server.id);
+                    ServerManager.updateCurrentServer(server.id);
                 },
             };
         }), {

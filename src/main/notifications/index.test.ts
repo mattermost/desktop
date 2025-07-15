@@ -9,11 +9,11 @@ import {Notification as NotMockedNotification, shell, app, ipcMain as NotMockedI
 import {getDoNotDisturb as notMockedGetDarwinDoNotDisturb} from 'macos-notification-state';
 import {getFocusAssist as notMockedGetFocusAssist} from 'windows-focus-assist';
 
+import TabManager from 'app/tabs/tabManager';
 import {PLAY_SOUND} from 'common/communication';
 import notMockedConfig from 'common/config';
 import {localizeMessage as notMockedLocalizeMessage} from 'main/i18nManager';
 import notMockedPermissionsManager from 'main/permissionsManager';
-import ViewManager from 'main/views/viewManager';
 import notMockedMainWindow from 'main/windows/mainWindow';
 
 import getLinuxDoNotDisturb from './dnd-linux';
@@ -325,13 +325,13 @@ describe('main/notifications', () => {
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention?.value.click();
             expect(MainWindow.show).not.toHaveBeenCalled();
-            expect(ViewManager.showById).not.toHaveBeenCalledWith('server_id');
+            expect(TabManager.switchToTab).not.toHaveBeenCalledWith('server_id');
 
             // @ts-expect-error "Set by the click handler"
             listener?.({} as unknown as IpcMainEvent);
 
             expect(MainWindow.show).toHaveBeenCalled();
-            expect(ViewManager.showById).toHaveBeenCalledWith('server_id');
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('server_id');
         });
 
         it('linux/windows - should not flash frame when config item is not set', async () => {

@@ -8,6 +8,8 @@ import type {BrowserWindow, Rectangle} from 'electron';
 import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
 import isDev from 'electron-is-dev';
 
+import NavigationManager from 'app/navigationManager';
+import TabManager from 'app/tabs/tabManager';
 import {APP_MENU_WILL_CLOSE, MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
@@ -22,7 +24,6 @@ import {createMenu as createAppMenu} from 'main/menus/app';
 import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
 import Tray from 'main/tray/tray';
-import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import type {MigrationInfo} from 'types/config';
@@ -40,9 +41,9 @@ export function openDeepLink(deeplinkingUrl: string) {
     try {
         if (MainWindow.get()) {
             MainWindow.show();
-            ViewManager.handleDeepLink(deeplinkingUrl);
+            NavigationManager.openLinkInPrimaryTab(deeplinkingUrl);
         } else {
-            MainWindow.on(MAIN_WINDOW_CREATED, () => ViewManager.handleDeepLink(deeplinkingUrl));
+            MainWindow.on(MAIN_WINDOW_CREATED, () => NavigationManager.openLinkInPrimaryTab(deeplinkingUrl));
         }
     } catch (err) {
         log.error(`There was an error opening the deeplinking url: ${err}`);
@@ -61,7 +62,7 @@ export function handleUpdateMenuEvent() {
     const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
     aMenu.addListener('menu-will-close', () => {
-        ViewManager.focusCurrentView();
+        TabManager.focusCurrentTab();
         MainWindow.sendToRenderer(APP_MENU_WILL_CLOSE);
     });
 
@@ -256,7 +257,9 @@ export async function updateServerInfos(servers: MattermostServer[]) {
                 log.warn('Could not get server info for', srv.name, error);
             });
     }));
-    ServerManager.updateRemoteInfos(map);
+    map.forEach((serverInfo, serverId) => {
+        ServerManager.updateRemoteInfo(serverId, serverInfo);
+    });
 }
 
 export async function clearDataForServer(server: MattermostServer) {
@@ -279,7 +282,8 @@ export async function clearDataForServer(server: MattermostServer) {
         await session.defaultSession.clearData({
             origins: [server.url.origin],
         });
-        ViewManager.reload();
+
+        // TODO: Reload the views for the selected server
     }
 }
 

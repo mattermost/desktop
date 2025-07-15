@@ -8,6 +8,8 @@ import {app, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-extension-installer';
 import isDev from 'electron-is-dev';
 
+import NavigationManager from 'app/navigationManager';
+import TabManager from 'app/tabs/tabManager';
 import {
     FOCUS_BROWSERVIEW,
     QUIT,
@@ -23,13 +25,13 @@ import {
     GET_LOCAL_CONFIGURATION,
     UPDATE_CONFIGURATION,
     UPDATE_PATHS,
-    SERVERS_URL_MODIFIED,
     GET_DARK_MODE,
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
+    SERVER_ADDED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -55,7 +57,7 @@ import PermissionsManager from 'main/permissionsManager';
 import Tray from 'main/tray/tray';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import UserActivityMonitor from 'main/UserActivityMonitor';
-import ViewManager from 'main/views/viewManager';
+import WebContentsManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
 import {
@@ -262,7 +264,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
-    ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);
+    ipcMain.on(FOCUS_BROWSERVIEW, TabManager.focusCurrentTab);
 
     if (process.platform !== 'darwin') {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
@@ -307,10 +309,11 @@ async function initializeAfterAppReady() {
         return net.fetch(pathToFileURL(pathToServe).toString());
     });
 
-    ServerManager.reloadFromConfig();
-    ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
-        if (serverIds && serverIds.length) {
-            updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
+    MainWindow.show();
+    ServerManager.init();
+    ServerManager.on(SERVER_ADDED, (serverId: string) => {
+        if (serverId) {
+            updateServerInfos([ServerManager.getServer(serverId)!]);
         }
     });
 
@@ -389,8 +392,6 @@ async function initializeAfterAppReady() {
             catch((err) => log.error('An error occurred: ', err));
     }
 
-    MainWindow.show();
-
     let deeplinkingURL;
 
     // Protocol handler for win32 and linux
@@ -399,7 +400,7 @@ async function initializeAfterAppReady() {
         if (Array.isArray(args) && args.length > 0) {
             deeplinkingURL = getDeeplinkingURL(args);
             if (deeplinkingURL) {
-                ViewManager.handleDeepLink(deeplinkingURL);
+                NavigationManager.openLinkInPrimaryTab(deeplinkingURL);
             }
         }
     }
@@ -460,7 +461,7 @@ function onUserActivityStatus(status: {
     isSystemEvent: boolean;
 }) {
     log.debug('UserActivityMonitor.on(status)', status);
-    ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
+    WebContentsManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 
 function handleStartDownload() {
