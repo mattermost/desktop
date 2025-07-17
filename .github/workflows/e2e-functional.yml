@@ -9,7 +9,7 @@ on:
     inputs:
       version_name:
         type: string
-        description: "Desktop Version name eg: 5.6"
+        description: "Desktop Version name eg: v5.11.0"
         required: true
       platform:
         type: choice
@@ -20,7 +20,7 @@ on:
 
 jobs:
   update-initial-status-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # if: contains(github.event.label.name, 'E2E/Run')
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
@@ -34,7 +34,7 @@ jobs:
           status: pending
 
   update-initial-status-macos:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # if: contains(github.event.label.name, 'E2E/Run')
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
@@ -48,7 +48,7 @@ jobs:
           status: pending
 
   update-initial-status-windows:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # if: contains(github.event.label.name, 'E2E/Run')
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
@@ -99,7 +99,7 @@ jobs:
       DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
 
   update-final-status-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - e2e-tests
     steps:
@@ -115,7 +115,7 @@ jobs:
           target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_LINUX }}
 
   update-final-status-macos:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - e2e-tests
     steps:
@@ -131,7 +131,7 @@ jobs:
           target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_MACOS }}
 
   update-final-status-windows:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - e2e-tests
     steps:
@@ -149,7 +149,7 @@ jobs:
   e2e-remove-label:
     # if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'E2E/Run') }}
     needs: e2e-tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Remove E2E test label
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1

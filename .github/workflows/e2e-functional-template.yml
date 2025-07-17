@@ -43,7 +43,7 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: false
-        default: "9.9.1"
+        default: "10.5.0"
     outputs:
       NEW_FAILURES_LINUX:
         description: "The output to comment"
@@ -115,7 +115,7 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: false
-        default: "9.9.1"
+        default: "10.10.0"
 
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
@@ -136,7 +136,7 @@ env:
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   REPORT_LINK: "none"
   NODE_VERSION: 18
-  SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '9.9.1' }}
+  SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
   DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
