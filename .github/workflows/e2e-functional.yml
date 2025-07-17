@@ -21,7 +21,7 @@ on:
 jobs:
   update-initial-status-linux:
     runs-on: ubuntu-22.04
-    if: contains(github.event.label.name, 'E2E/Run')
+    # if: contains(github.event.label.name, 'E2E/Run')
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
@@ -35,7 +35,7 @@ jobs:
 
   update-initial-status-macos:
     runs-on: ubuntu-22.04
-    if: contains(github.event.label.name, 'E2E/Run')
+    # if: contains(github.event.label.name, 'E2E/Run')
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
@@ -49,7 +49,7 @@ jobs:
 
   update-initial-status-windows:
     runs-on: ubuntu-22.04
-    if: contains(github.event.label.name, 'E2E/Run')
+    # if: contains(github.event.label.name, 'E2E/Run')
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
@@ -62,7 +62,7 @@ jobs:
           status: pending
 
   determine-platforms:
-    if: contains(github.event.label.name, 'E2E/Run')
+    # if: contains(github.event.label.name, 'E2E/Run')
     needs: [update-initial-status-linux, update-initial-status-macos, update-initial-status-windows]
     runs-on: ubuntu-latest
     outputs:
@@ -147,7 +147,7 @@ jobs:
           target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
 
   e2e-remove-label:
-    if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'E2E/Run') }}
+    # if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'E2E/Run') }}
     needs: e2e-tests
     runs-on: ubuntu-22.04
     steps:
