@@ -80,6 +80,13 @@ jobs:
 
   determine-platforms:
     needs: [update-initial-status-linux, update-initial-status-macos, update-initial-status-windows]
+    if: |
+      always() &&
+      (
+      needs.update-initial-status-linux.result == 'success' ||
+      needs.update-initial-status-macos.result == 'success' ||
+      needs.update-initial-status-windows.result == 'success'
+      )
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.set-matrix.outputs.platforms }}
