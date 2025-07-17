@@ -86,15 +86,18 @@ jobs:
     steps:
       - id: set-matrix
         run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Platform input: ${{ inputs.platform }}"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            if [[ "${{ inputs.platform }}" == "all" ]]; then
+            if [[ -z "${{ inputs.platform }}" || "${{ inputs.platform }}" == "all" ]]; then
               echo "platforms=['ubuntu-24.04', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT
             else
               case "${{ inputs.platform }}" in
-                linux)  echo "platforms=['ubuntu-24.04']" ;;
-                macos)  echo "platforms=['macos-13']" ;;
-                windows) echo "platforms=['windows-2022']" ;;
-              esac >> $GITHUB_OUTPUT
+                linux) echo "platforms=['ubuntu-24.04']" >> $GITHUB_OUTPUT ;;
+                macos) echo "platforms=['macos-13']" >> $GITHUB_OUTPUT ;;
+                windows) echo "platforms=['windows-2022']" >> $GITHUB_OUTPUT ;;
+                *) echo "platforms=['ubuntu-24.04', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT ;; # Fallback to all if invalid
+              esac
             fi
           elif [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ contains(github.event.pull_request.labels.*.name, 'E2E/Run') }}" == "true" ]]; then
             echo "platforms=['ubuntu-24.04', 'macos-13', 'windows-2022']" >> $GITHUB_OUTPUT
