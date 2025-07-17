@@ -17,52 +17,68 @@ on:
         required: true
         default: "all"
         options: [linux, macos, windows, all]
+      MM_TEST_SERVER_URL:
+        description: "The test server URL"
+        required: false
+        type: string
+      MM_TEST_USER_NAME:
+        description: "The admin username of the test instance"
+        required: false
+        type: string
+      MM_TEST_PASSWORD:
+        description: "The admin password of the test instance"
+        required: false
+        type: string
+      MM_SERVER_VERSION:
+        type: string
+        description: "The server version to test against"
+        required: false
+        default: "10.5.0"
 
 jobs:
   update-initial-status-linux:
     runs-on: ubuntu-24.04
-    # if: contains(github.event.label.name, 'E2E/Run')
+    if: github.event_name != 'workflow_dispatch' || contains(inputs.platform, 'linux') || inputs.platform == 'all'
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
           context: e2e/linux
           description: E2E tests for Mattermost desktop app on Linux have started...
           status: pending
 
   update-initial-status-macos:
     runs-on: ubuntu-24.04
-    # if: contains(github.event.label.name, 'E2E/Run')
+    if: github.event_name != 'workflow_dispatch' || contains(inputs.platform, 'macos') || inputs.platform == 'all'
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
           context: e2e/macOS
           description: E2E tests for Mattermost desktop app on macOS have started...
           status: pending
 
   update-initial-status-windows:
     runs-on: ubuntu-24.04
-    # if: contains(github.event.label.name, 'E2E/Run')
+    if: github.event_name != 'workflow_dispatch' || contains(inputs.platform, 'windows') || inputs.platform == 'all'
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
           context: e2e/windows
           description: E2E tests for Mattermost desktop app on Windows have started...
           status: pending
 
   determine-platforms:
-    # if: contains(github.event.label.name, 'E2E/Run')
     needs: [update-initial-status-linux, update-initial-status-macos, update-initial-status-windows]
     runs-on: ubuntu-latest
     outputs:
@@ -77,7 +93,7 @@ jobs:
               case "${{ inputs.platform }}" in
                 linux)  echo "platforms=['ubuntu-24.04']" ;;
                 macos)  echo "platforms=['macos-13']" ;;
-                windows) echo "platforms=['windows-2022']"
+                windows) echo "platforms=['windows-2022']" ;;
               esac >> $GITHUB_OUTPUT
             fi
           elif [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ contains(github.event.pull_request.labels.*.name, 'E2E/Run') }}" == "true" ]]; then
@@ -97,18 +113,23 @@ jobs:
     with:
       runs-on: ${{ matrix.os }}
       DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
+      MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
+      MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
+      MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
+      MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '10.5.0' }}
 
   update-final-status-linux:
     runs-on: ubuntu-24.04
     needs:
       - e2e-tests
+    if: github.event_name != 'workflow_dispatch' || contains(inputs.platform, 'linux') || inputs.platform == 'all'
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
           context: e2e/linux
           description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_LINUX }} failures
           status: ${{ needs.e2e-tests.outputs.STATUS_LINUX }}
@@ -118,13 +139,14 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - e2e-tests
+    if: github.event_name != 'workflow_dispatch' || contains(inputs.platform, 'macos') || inputs.platform == 'all'
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
           context: e2e/macOS
           description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_MACOS }} failures
           status: ${{ needs.e2e-tests.outputs.STATUS_MACOS }}
@@ -134,13 +156,14 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - e2e-tests
+    if: github.event_name != 'workflow_dispatch' || contains(inputs.platform, 'windows') || inputs.platform == 'all'
     steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
           context: e2e/windows
           description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }} failures
           status: ${{ needs.e2e-tests.outputs.STATUS_WINDOWS }}
@@ -153,7 +176,7 @@ jobs:
     steps:
       - name: Remove E2E test label
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        continue-on-error: true # Label might have been removed manually
+        continue-on-error: true
         with:
           script: |
             github.rest.issues.removeLabel({
