@@ -147,7 +147,7 @@ jobs:
           target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
 
   e2e-remove-label:
-    # if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'E2E/Run') }}
+    if: ${{ always() && contains(github.event.pull_request.labels.*.name, 'E2E/Run') }}
     needs: e2e-tests
     runs-on: ubuntu-24.04
     steps:
