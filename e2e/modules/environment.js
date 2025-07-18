@@ -243,6 +243,9 @@ module.exports = {
                         return null;
                     }
                     const info = await window.testHelper.getViewInfoForTest();
+                    if (!info) {
+                        return null;
+                    }
                     return {viewName: `${info.serverName}___${info.viewType}`, webContentsId: info.webContentsId};
                 }).then((result) => {
                     if (result) {
@@ -260,18 +263,20 @@ module.exports = {
         await window.waitForSelector('#saveSetting');
 
         let username = process.env.MM_TEST_USERNAME;
-        switch (process.platform) {
-        case 'darwin':
-            username = 'success+sysadmin+macos@simulator.amazonses.com';
-            break;
-        case 'linux':
-            username = 'success+sysadmin+linux@simulator.amazonses.com';
-            break;
-        case 'win32':
-            username = 'success+sysadmin+windows@simulator.amazonses.com';
-            break;
-        default:
-            throw new Error('Unsupported platform');
+        if (!username) {
+            switch (process.platform) {
+            case 'darwin':
+                username = 'success+sysadmin+macos@simulator.amazonses.com';
+                break;
+            case 'linux':
+                username = 'success+sysadmin+linux@simulator.amazonses.com';
+                break;
+            case 'win32':
+                username = 'success+sysadmin+windows@simulator.amazonses.com';
+                break;
+            default:
+                throw new Error('Unsupported platform');
+            }
         }
 
         await window.type('#input_loginId', username);
