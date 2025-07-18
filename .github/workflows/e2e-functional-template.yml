@@ -24,7 +24,7 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-        default: "ubuntu-22.04"
+        default: "ubuntu-24.04"
       nightly:
         type: boolean
         description: "True if this is nightly build"
@@ -43,7 +43,7 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: false
-        default: "9.9.1"
+        default: "10.5.0"
     outputs:
       NEW_FAILURES_LINUX:
         description: "The output to comment"
@@ -96,7 +96,7 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-        default: "ubuntu-22.04"
+        default: "ubuntu-24.04"
       nightly:
         type: boolean
         description: "True if this is nightly build"
@@ -115,14 +115,14 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: false
-        default: "9.9.1"
+        default: "10.10.0"
 
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
   BUILD_TAG: ${{ github.event.pull_request.head.sha || github.sha }}
   JIRA_PROJECT_KEY: "MM"
-  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || secrets.MM_DESKTOP_E2E_SERVER_URL }}
+  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
   MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
   MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
   PULL_REQUEST: "https://github.com/mattermost/desktop/pull/${{ github.event.number }}"
@@ -136,7 +136,7 @@ env:
   ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
   REPORT_LINK: "none"
   NODE_VERSION: 18
-  SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '9.9.1' }}
+  SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
   DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
@@ -249,12 +249,11 @@ jobs:
           cd e2e && npm ci
           npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
-      - name: e2e/run-playright-tests-linux
+      - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
         run: |
           eval "$(dbus-launch --sh-syntax)"
           export NO_AT_BRIDGE=1
-
           npm run build-test
           cd e2e
           export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
@@ -264,7 +263,7 @@ jobs:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
-      - name: e2e/run-playright-tests-macos
+      - name: e2e/run-playwright-tests-macos
         if: runner.os == 'macOS'
         run: |
           sudo spctl --master-disable
@@ -277,7 +276,7 @@ jobs:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
-      - name: e2e/run-playright-tests-windows
+      - name: e2e/run-playwright-tests-windows
         if: runner.os == 'Windows'
         run: |
           npm run build-test
@@ -299,7 +298,6 @@ jobs:
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
             const { newFailedTests, os } = analyzeFlakyTests();
-
             switch (os) {
               case 'linux':
                 core.setOutput('NEW_FAILURES_LINUX', newFailedTests.length);
