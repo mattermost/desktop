@@ -79,6 +79,7 @@ export default class ShowCertificateModal extends React.PureComponent<Props, Sta
                         />
                     }
                     handleConfirm={this.handleOk}
+                    handleEnterKeyPress={this.handleOk}
                 >
                     <dl>
                         {certificateSection(
