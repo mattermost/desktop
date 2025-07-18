@@ -20,12 +20,16 @@
     "node_modules/file-uri-to-path/**/*",
     "node_modules/macos-notification-state/**/*",
     "node_modules/windows-focus-assist/**/*",
+    "node_modules/registry-js/**/*",
     "!**/node_modules/macos-notification-state/bin/**/*",
     "!**/node_modules/macos-notification-state/build/**/*",
     "!**/node_modules/windows-focus-assist/bin/**/*",
     "!**/node_modules/windows-focus-assist/build/**/*",
+    "!**/node_modules/registry-js/bin/**/*",
+    "!**/node_modules/registry-js/build/**/*",
     "node_modules/macos-notification-state/build/**/*.node",
     "node_modules/windows-focus-assist/build/Release/**/*.node",
+    "node_modules/registry-js/build/Release/**/*.node",
     {
       "from": "dist",
       "to": ".",
@@ -55,7 +59,8 @@
   },
   "asarUnpack": [
     "./node_modules/macos-notification-state/build/Release/**/*.node",
-    "./node_modules/windows-focus-assist/build/Release/**/*.node"
+    "./node_modules/windows-focus-assist/build/Release/**/*.node",
+    "./node_modules/registry-js/build/Release/**/*.node"
   ],
   "linux": {
     "category": "Network;InstantMessaging",

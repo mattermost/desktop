@@ -250,7 +250,6 @@ function initializeBeforeAppReady() {
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
         nativeTheme.on('updated', handleUpdateTheme);
-        handleUpdateTheme();
     }
 
     protocol.registerSchemesAsPrivileged([
@@ -389,6 +388,7 @@ async function initializeAfterAppReady() {
             catch((err) => log.error('An error occurred: ', err));
     }
 
+    handleUpdateTheme();
     MainWindow.show();
 
     let deeplinkingURL;
