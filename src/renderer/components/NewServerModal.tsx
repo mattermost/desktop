@@ -361,6 +361,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 onExited={this.props.unremoveable ? () => {} : this.props.onClose}
                 modalHeaderText={this.getModalTitle()}
                 confirmButtonText={this.getSaveButtonLabel()}
+                handleEnterKeyPress={this.save}
                 handleConfirm={this.save}
                 isConfirmDisabled={!this.state.serverName.length || !this.state.validationResult || this.isServerURLErrored()}
                 handleCancel={this.props.onClose}

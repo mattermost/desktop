@@ -124,7 +124,7 @@ export const Modal: React.FC<Props> = ({
 
     const handleConfirmClick = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
-        if (autoCloseOnConfirmButton) {
+        if (autoCloseOnConfirmButton && !isConfirmDisabled) {
             await onHide();
         }
         handleConfirm?.();
@@ -135,7 +135,7 @@ export const Modal: React.FC<Props> = ({
             if (event.nativeEvent.isComposing) {
                 return;
             }
-            if (autoCloseOnConfirmButton) {
+            if (autoCloseOnConfirmButton && !isConfirmDisabled) {
                 await onHide();
             }
             if (handleEnterKeyPress) {

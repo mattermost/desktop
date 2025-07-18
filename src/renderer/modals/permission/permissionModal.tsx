@@ -104,6 +104,7 @@ class PermissionModal extends React.PureComponent<Props, State> {
                 onExited={() => {}}
                 modalHeaderText={this.getModalTitle()}
                 handleConfirm={this.props.handleGrant}
+                handleEnterKeyPress={this.props.handleGrant}
                 confirmButtonText={
                     <FormattedMessage
                         id='label.accept'

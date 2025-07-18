@@ -156,6 +156,7 @@ export default function SettingsModal({
                         defaultMessage='Desktop App Settings'
                     />
                 }
+                autoCloseOnConfirmButton={false}
                 headerContent={savingText}
                 bodyDivider={true}
                 bodyPadding={false}
