@@ -36,6 +36,7 @@ export default function DestructiveConfirmationModal(props: Props) {
             modalHeaderText={title}
             handleCancel={onCancel}
             handleConfirm={onAccept}
+            handleEnterKeyPress={onAccept}
             confirmButtonText={acceptLabel}
             cancelButtonText={cancelLabel}
             confirmButtonClassName='btn-danger'
