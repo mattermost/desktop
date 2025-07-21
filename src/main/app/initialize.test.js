@@ -85,7 +85,7 @@ jest.mock('main/i18nManager', () => ({
     setLocale: jest.fn(),
 }));
 
-jest.mock('electron-extension-installer', () => {
+jest.mock('electron-devtools-installer', () => {
     return () => ({
         REACT_DEVELOPER_TOOLS: 'react-developer-tools',
     });
