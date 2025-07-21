@@ -1113,19 +1113,6 @@ SOFTWARE.
 
 ---
 
-## electron-connect
-
-This product contains 'electron-connect' by Yosuke Kurami.
-
-Utility tool to develop applications with Electron.
-
-* HOMEPAGE:
-  * https://github.com/Quramy/electron-connect
-
-* LICENSE: MIT
-
----
-
 ## electron-context-menu
 
 This product contains 'electron-context-menu' by Sindre Sorhus.
@@ -1149,14 +1136,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-## electron-extension-installer
+## electron-devtools-installer
 
-This product contains 'electron-extension-installer' by JonLuca De Caro.
+This product contains 'electron-devtools-installer' by Samuel Attard.
 
-This library is a modernized version of electron-devtools-installer. 
+An easy way to install Dev Tools extensions into Electron applications
 
 * HOMEPAGE:
-  * https://github.com/jonluca/electron-extension-installer
+  * https://github.com/MarshallOfSound/electron-devtools-installer#readme
 
 * LICENSE: MIT
 
@@ -1168,6 +1155,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 
 ---
 
@@ -2080,6 +2068,42 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## registry-js
+
+This product contains 'registry-js'.
+
+A simple and opinionated library for working with the Windows registry
+
+* HOMEPAGE:
+  * https://github.com/desktop/registry-js#readme
+
+* LICENSE: MIT
+
+MIT License
+
+Copyright (c) 2017 GitHub Desktop
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 
 ---
 
