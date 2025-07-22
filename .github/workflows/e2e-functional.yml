@@ -58,11 +58,7 @@ jobs:
 
   e2e-tests:
     needs: determine-platforms
-    strategy:
-      matrix:
-        platform: ${{ fromJson(needs.determine-platforms.outputs.matrix) }}
-      fail-fast: false
-    runs-on: ${{ matrix.platform.os }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Update initial commit status
         uses: mattermost/actions/delivery/update-commit-status@main
@@ -71,20 +67,30 @@ jobs:
         with:
           repository_full_name: ${{ github.repository }}
           commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/${{ matrix.platform.platform }}
-          description: E2E tests for Mattermost desktop app on ${{ matrix.platform.platform }} have started...
+          context: e2e/multi-platform
+          description: E2E tests for Mattermost desktop app on all platforms have started...
           status: pending
 
-      - name: Run E2E tests
-        id: run-tests
-        uses: ./.github/workflows/e2e-functional-template.yml
-        with:
-          runs-on: ${{ matrix.platform.os }}
-          DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
-          MM_TEST_SERVER_URL: ${{ matrix.platform.url }}
-          MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
-          MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
-          MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '10.5.0' }}
+      - name: Run E2E tests for all platforms
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          echo "Starting E2E tests for all instances..."
+          INSTANCE_LIST=$(echo '${{ inputs.instance_details }}' | jq -c '.[]')
+          for instance in $INSTANCE_LIST; do
+            platform=$(echo "$instance" | jq -r '.platform')
+            installation_id=$(echo "$instance" | jq -r '.installation_id')
+
+            echo "Triggering E2E tests for platform: $platform, installation_id: $installation_id"
+
+            gh workflow run e2e-functional-template.yml \
+              -f runs-on="ubuntu-24.04" \
+              -f MM_TEST_SERVER_URL="https://provisioner/instances/$installation_id" \
+              -f MM_TEST_USER_NAME="${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}" \
+              -f MM_TEST_PASSWORD="${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}" \
+              -f DESKTOP_VERSION="${{ inputs.version_name || github.head_ref || github.ref }}" \
+              -f MM_SERVER_VERSION="${{ inputs.MM_SERVER_VERSION || '10.5.0' }}"
+          done
 
       - name: Update final commit status
         if: always()
