@@ -27,43 +27,21 @@ on:
         required: true
 
 jobs:
-  update-initial-status-linux:
+  update-initial-status:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        platform: ['linux', 'macOS', 'windows']
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@main
+      - name: Update initial status for ${{ matrix.platform }}
+        uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
-          context: e2e/linux
-          description: E2E tests for Mattermost desktop app on Linux have started...
-          status: pending
-
-  update-initial-status-macos:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
-          context: e2e/macOS
-          description: E2E tests for Mattermost desktop app on macOS have started...
-          status: pending
-
-  update-initial-status-windows:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha }}
-          context: e2e/windows
-          description: E2E tests for Mattermost desktop app on Windows have started...
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          context: e2e/${{ matrix.platform }}
+          description: E2E tests for Mattermost desktop app on ${{ matrix.platform }} have started...
           status: pending
 
   prepare-matrix:
@@ -78,6 +56,7 @@ jobs:
 
   e2e-tests:
     needs: prepare-matrix
+    name: ${{ matrix.platform }}
     strategy:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
