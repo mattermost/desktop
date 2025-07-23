@@ -110,6 +110,7 @@ class LoginModal extends React.PureComponent<Props, State> {
                     />
                 }
                 handleConfirm={this.handleSubmit}
+                handleEnterKeyPress={this.handleSubmit}
                 confirmButtonText={
                     <FormattedMessage
                         id='label.login'
