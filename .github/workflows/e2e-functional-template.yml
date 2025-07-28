@@ -42,6 +42,7 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: true
+        default: "10.10.0"
     outputs:
       NEW_FAILURES_LINUX:
         description: "The output to comment"
@@ -113,7 +114,7 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: true
-
+        default: "10.10.0"
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
