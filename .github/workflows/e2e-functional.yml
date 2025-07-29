@@ -27,11 +27,22 @@ on:
         required: true
 
 jobs:
+  prepare-matrix:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
+    runs-on: ubuntu-latest
+    outputs:
+      platforms: ${{ steps.generate.outputs.platforms }}
+    steps:
+      - id: generate
+        run: |
+          echo "platforms=$(echo '${{ inputs.instance_details }}' | jq -c)" >> $GITHUB_OUTPUT
+  
   update-initial-status:
+    needs: prepare-matrix
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        platform: ['linux', 'macOS', 'windows']
+        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
       - name: Update initial status for ${{ matrix.platform }}
         uses: mattermost/actions/delivery/update-commit-status@main
@@ -43,16 +54,6 @@ jobs:
           context: e2e/${{ matrix.platform }}
           description: E2E tests for Mattermost desktop app on ${{ matrix.platform }} have started...
           status: pending
-
-  prepare-matrix:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
-    runs-on: ubuntu-latest
-    outputs:
-      platforms: ${{ steps.generate.outputs.platforms }}
-    steps:
-      - id: generate
-        run: |
-          echo "platforms=$(echo '${{ inputs.instance_details }}' | jq -c)" >> $GITHUB_OUTPUT
 
   e2e-tests:
     needs: prepare-matrix
