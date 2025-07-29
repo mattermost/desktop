@@ -56,7 +56,9 @@ jobs:
           status: pending
 
   e2e-tests:
-    needs: prepare-matrix
+    needs: 
+      - prepare-matrix
+      - update-initial-status
     name: ${{ matrix.platform }}
     strategy:
       matrix:
