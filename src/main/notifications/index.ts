@@ -4,6 +4,7 @@
 import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+import he from 'he';
 
 import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
@@ -42,8 +43,9 @@ class NotificationManager {
         });
     }
 
-    public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
+    public async displayMention(title: string, bodyEnc: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
         log.debug('displayMention', {channelId, teamId, url, silent, soundName});
+        const body = he.decode(bodyEnc);
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');
