@@ -19,6 +19,7 @@ module.exports = {
         new webpack.DefinePlugin({__IS_MAC_APP_STORE__: false}),
     ],
     externals: {
+        'registry-js': 'commonjs2 registry-js',
         electron: 'require("electron")',
         fs: 'require("fs")',
         ws: 'require("ws")',
