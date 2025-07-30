@@ -22,6 +22,8 @@ import {
     VIEW_UPDATED,
     UPDATE_TAB_TITLE,
     CREATE_NEW_TAB,
+    SWITCH_TAB,
+    CLOSE_TAB,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -56,7 +58,9 @@ export class TabManager extends EventEmitter {
 
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, (event, serverId) => this.getOrderedTabsForServer(serverId));
         ipcMain.handle(GET_ACTIVE_TAB_FOR_SERVER, (event, serverId) => this.getCurrentTabForServer(serverId)?.toUniqueView());
-        ipcMain.on(CREATE_NEW_TAB, (event, serverId) => this.handleCreateNewTab(serverId));
+        ipcMain.handle(CREATE_NEW_TAB, (event, serverId) => this.handleCreateNewTab(serverId));
+        ipcMain.on(SWITCH_TAB, (event, viewId) => this.switchToTab(viewId));
+        ipcMain.on(CLOSE_TAB, (event, viewId) => this.handleCloseTab(viewId));
 
         // Subscribe to ViewManager events
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
@@ -157,8 +161,12 @@ export class TabManager extends EventEmitter {
             webContentsView.on(LOAD_FAILED, this.failLoading);
 
             // Set this tab as active if it's the first tab for the server
-            if (view.serverId === ServerManager.getCurrentServerId() && !this.tabOrder.get(view.serverId)?.length) {
-                this.setActiveTab(view.id);
+            if (!this.tabOrder.get(view.serverId)?.length) {
+                if (view.serverId === ServerManager.getCurrentServerId()) {
+                    this.setActiveTab(view.id);
+                } else {
+                    this.activeTabs.set(view.serverId, view.id);
+                }
             }
 
             this.updateTabOrder(view.serverId, [...this.tabOrder.get(view.serverId) || [], view.id]);
@@ -202,7 +210,7 @@ export class TabManager extends EventEmitter {
 
         const tab = this.getCurrentTabForServer(serverId);
         if (tab) {
-            this.switchToTab(tab.id);
+            this.setActiveTab(tab.id);
         }
     };
 
@@ -229,7 +237,7 @@ export class TabManager extends EventEmitter {
         }
 
         mainWindow.contentView.addChildView(view.getWebContentsView());
-        mainWindow.setBounds(getWindowBoundaries(mainWindow));
+        view.getWebContentsView().setBounds(getWindowBoundaries(mainWindow));
 
         if (view.needsLoadingScreen()) {
             LoadingScreen.show();
@@ -261,11 +269,34 @@ export class TabManager extends EventEmitter {
 
         const server = ServerManager.getServer(serverId);
         if (!server) {
-            return;
+            return undefined;
         }
 
-        const view = ViewManager.createView(server, ViewType.TAB);
-        this.switchToTab(view.id);
+        return ViewManager.createView(server, ViewType.TAB).id;
+    };
+
+    private handleCloseTab = (viewId: string) => {
+        log.debug('handleCloseTab', viewId);
+
+        if (this.isActiveTab(viewId)) {
+            const serverId = ViewManager.getView(viewId)?.serverId;
+            if (!serverId) {
+                log.error('handleCloseTab: No server ID found for tab', viewId);
+                return;
+            }
+
+            const currentTabs = this.tabOrder.get(serverId);
+            if (!currentTabs) {
+                log.error('handleCloseTab: No tabs found for server', serverId);
+                return;
+            }
+
+            const currentIndex = currentTabs.findIndex((tab) => tab === viewId);
+            const nextTab = currentTabs[currentIndex - 1] || currentTabs[currentIndex + 1] || currentTabs[0];
+            this.switchToTab(nextTab);
+        }
+
+        ViewManager.removeView(viewId);
     };
 }
 

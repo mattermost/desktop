@@ -34,7 +34,7 @@ declare global {
             closeServersDropdown: () => void;
             openServersDropdown: () => void;
             switchTab: (viewId: string) => void;
-            closeView: (viewId: string) => void;
+            closeTab: (viewId: string) => void;
             exitFullScreen: () => void;
             doubleClickOnWindow: (windowName?: string) => void;
             focusCurrentView: () => void;
@@ -57,7 +57,11 @@ declare global {
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             createNewTab: (serverId: string) => Promise<string>;
             onUpdateTabTitle: (listener: (viewId: string, title: string) => void) => void;
-            onUpdateServers: (listener: () => void) => void;
+            onServerAdded: (listener: (serverId: string, setAsCurrentServer: boolean) => void) => void;
+            onServerRemoved: (listener: (serverId: string) => void) => void;
+            onServerUrlChanged: (listener: (serverId: string) => void) => void;
+            onServerNameChanged: (listener: (serverId: string) => void) => void;
+            onServerSwitched: (listener: (serverId: string) => void) => void;
             validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
@@ -170,13 +174,4 @@ declare global {
             getTitlebarAreaRect: () => DOMRect;
         };
     }
-}
-
-export interface DesktopAPI {
-
-    // ... existing methods ...
-    switchTab: (viewId: string) => void;
-    closeView: (viewId: string) => void;
-
-    // ... existing methods ...
 }

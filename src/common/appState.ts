@@ -53,6 +53,20 @@ export class AppState extends EventEmitter {
         this.emitStatusForView(viewId);
     };
 
+    switch = (oldViewId: string, newViewId: string) => {
+        ViewManager.getViewLog(newViewId, 'AppState').silly('switch', oldViewId, newViewId);
+
+        this.expired.set(newViewId, this.expired.get(oldViewId) || false);
+        this.mentions.set(newViewId, this.mentions.get(oldViewId) || 0);
+        this.unreads.set(newViewId, this.unreads.get(oldViewId) || false);
+
+        this.expired.delete(oldViewId);
+        this.mentions.delete(oldViewId);
+        this.unreads.delete(oldViewId);
+
+        this.emitStatusForView(newViewId);
+    };
+
     emitStatus = () => {
         log.silly('emitStatus');
 

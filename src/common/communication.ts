@@ -152,7 +152,6 @@ export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-f
 export const DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-menu-show-file-in-folder';
 
 export const SERVERS_URL_MODIFIED = 'servers-modified';
-export const SERVERS_UPDATE = 'servers-update';
 export const UPDATE_SERVER_ORDER = 'update-server-order';
 export const UPDATE_TAB_ORDER = 'update-tab-order';
 export const GET_LAST_ACTIVE = 'get-last-active';
@@ -221,3 +220,4 @@ export const GET_CURRENT_SERVER = 'get-current-server';
 export const GET_ACTIVE_TAB_FOR_SERVER = 'get-active-tab-for-server';
 export const UPDATE_TAB_TITLE = 'update-tab-title';
 export const CREATE_NEW_TAB = 'create-new-tab';
+export const CLOSE_TAB = 'close-tab';

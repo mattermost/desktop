@@ -15,7 +15,11 @@ import {
     SELECT_PREVIOUS_TAB,
     GET_FULL_SCREEN_STATUS,
     FOCUS_THREE_DOT_MENU,
-    SERVERS_UPDATE,
+    SERVER_ADDED,
+    SERVER_REMOVED,
+    SERVER_URL_CHANGED,
+    SERVER_NAME_CHANGED,
+    SERVER_SWITCHED,
     UPDATE_APPSTATE_FOR_VIEW_ID,
     UPDATE_MENTIONS,
     MAIN_WINDOW_CREATED,
@@ -59,7 +63,11 @@ export class MainWindow extends EventEmitter {
         ipcMain.on(EMIT_CONFIGURATION, this.handleUpdateTitleBarOverlay);
         ipcMain.on(EXIT_FULLSCREEN, this.handleExitFullScreen);
 
-        ServerManager.on(SERVERS_UPDATE, this.handleUpdateConfig);
+        ServerManager.on(SERVER_ADDED, this.handleServerAdded);
+        ServerManager.on(SERVER_REMOVED, this.handleServerRemoved);
+        ServerManager.on(SERVER_URL_CHANGED, this.handleServerUrlChanged);
+        ServerManager.on(SERVER_NAME_CHANGED, this.handleServerNameChanged);
+        ServerManager.on(SERVER_SWITCHED, this.handleServerSwitched);
 
         AppState.on(UPDATE_APPSTATE_FOR_VIEW_ID, this.handleUpdateAppStateForViewId);
     }
@@ -462,10 +470,26 @@ export class MainWindow extends EventEmitter {
     };
 
     /**
-     * Server Manager update handler
+     * Server Manager atomic event handlers
      */
-    private handleUpdateConfig = () => {
-        this.win?.webContents.send(SERVERS_UPDATE);
+    private handleServerAdded = (serverId: string, setAsCurrentServer: boolean) => {
+        this.win?.webContents.send(SERVER_ADDED, serverId, setAsCurrentServer);
+    };
+
+    private handleServerRemoved = (serverId: string) => {
+        this.win?.webContents.send(SERVER_REMOVED, serverId);
+    };
+
+    private handleServerUrlChanged = (serverId: string) => {
+        this.win?.webContents.send(SERVER_URL_CHANGED, serverId);
+    };
+
+    private handleServerNameChanged = (serverId: string) => {
+        this.win?.webContents.send(SERVER_NAME_CHANGED, serverId);
+    };
+
+    private handleServerSwitched = (serverId: string) => {
+        this.win?.webContents.send(SERVER_SWITCHED, serverId);
     };
 
     /**

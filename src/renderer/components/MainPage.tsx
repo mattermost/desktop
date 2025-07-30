@@ -163,12 +163,34 @@ class MainPage extends React.PureComponent<Props, State> {
         }
     };
 
+    handleServerAdded = async (serverId: string, setAsCurrentServer: boolean) => {
+        // Refresh servers and tabs when a server is added
+        await this.updateServers();
+        if (setAsCurrentServer) {
+            await this.setInitialActiveTab();
+        }
+    };
+
+    handleServerSwitched = async () => {
+        const currentServer = await window.desktop.getCurrentServer();
+        if (currentServer?.id) {
+            this.setState({
+                currentServer,
+                activeServerId: currentServer.id,
+            });
+        }
+    };
+
     async componentDidMount() {
         // request downloads
         await this.requestDownloadsLength();
         await this.updateServers();
 
-        window.desktop.onUpdateServers(this.updateServers);
+        window.desktop.onServerAdded(this.handleServerAdded);
+        window.desktop.onServerRemoved(this.updateServers);
+        window.desktop.onServerUrlChanged(this.updateServers);
+        window.desktop.onServerNameChanged(this.updateServers);
+        window.desktop.onServerSwitched(this.handleServerSwitched);
 
         // Add tab title update handler
         window.desktop.onUpdateTabTitle((viewId, title) => {
@@ -354,37 +376,8 @@ class MainPage extends React.PureComponent<Props, State> {
     };
 
     handleCloseTab = async (viewId: string) => {
-        const {activeServerId, activeTabId} = this.state;
-
-        // If we're closing the active tab, switch to another tab first
-        if (viewId === activeTabId && activeServerId) {
-            const currentTabs = this.state.tabs.get(activeServerId) || [];
-            const currentIndex = currentTabs.findIndex((tab) => tab.id === viewId);
-
-            // Find the next tab to switch to (prefer the one to the left)
-            const nextTab = currentTabs[currentIndex - 1] || currentTabs[currentIndex + 1];
-            if (nextTab) {
-                await window.desktop.switchTab(nextTab.id!);
-            }
-        }
-
-        // Close the view - this will trigger the onUpdateServers handler
-        await window.desktop.closeView(viewId);
-
-        // Update local state immediately
-        const tabs = new Map(this.state.tabs);
-        if (activeServerId) {
-            const serverTabs = tabs.get(activeServerId) || [];
-            const updatedTabs = serverTabs.filter((tab) => tab.id !== viewId);
-            tabs.set(activeServerId, updatedTabs);
-
-            // If we closed the active tab and there are other tabs, switch to the first one
-            if (viewId === activeTabId && updatedTabs.length > 0) {
-                await window.desktop.switchTab(updatedTabs[0].id!);
-            }
-        }
-
-        this.setState({tabs});
+        await window.desktop.closeTab(viewId);
+        await this.updateServers();
     };
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -470,7 +463,11 @@ class MainPage extends React.PureComponent<Props, State> {
             return;
         }
 
-        window.desktop.createNewTab(currentServer.id);
+        const newTabId = await window.desktop.createNewTab(currentServer.id);
+        await this.updateServers();
+        if (newTabId) {
+            await window.desktop.switchTab(newTabId);
+        }
     };
 
     render() {

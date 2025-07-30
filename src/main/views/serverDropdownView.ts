@@ -13,9 +13,13 @@ import {
     UPDATE_APPSTATE,
     REQUEST_SERVERS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
-    SERVERS_UPDATE,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
+    SERVER_REMOVED,
+    SERVER_ADDED,
+    SERVER_NAME_CHANGED,
+    SERVER_SWITCHED,
+    SWITCH_SERVER,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -60,13 +64,22 @@ export class ServerDropdownView {
         ipcMain.on(OPEN_SERVERS_DROPDOWN, this.handleOpen);
         ipcMain.on(CLOSE_SERVERS_DROPDOWN, this.handleClose);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
+        ipcMain.on(SWITCH_SERVER, this.handleSwitchServer);
 
         ipcMain.on(EMIT_CONFIGURATION, this.updateDropdown);
         ipcMain.on(REQUEST_SERVERS_DROPDOWN_INFO, this.updateDropdown);
 
         AppState.on(UPDATE_APPSTATE, this.updateMentions);
-        ServerManager.on(SERVERS_UPDATE, this.updateServers);
+
+        ServerManager.on(SERVER_ADDED, this.updateServers);
+        ServerManager.on(SERVER_REMOVED, this.updateServers);
+        ServerManager.on(SERVER_NAME_CHANGED, this.updateServers);
+        ServerManager.on(SERVER_SWITCHED, this.updateServers);
     }
+
+    private handleSwitchServer = (event: IpcMainEvent, serverId: string) => {
+        ServerManager.updateCurrentServer(serverId);
+    };
 
     private updateWindowBounds = (newBounds: Electron.Rectangle) => {
         this.windowBounds = newBounds;

@@ -3,6 +3,7 @@
 
 import EventEmitter from 'events';
 
+import AppState from 'common/appState';
 import {
     VIEW_CREATED,
     VIEW_UPDATED,
@@ -116,6 +117,10 @@ export class ViewManager extends EventEmitter {
         if (!view) {
             return;
         }
+        const currentPrimaryViewId = this.serverPrimaryViews.get(view.serverId);
+        if (currentPrimaryViewId) {
+            AppState.switch(currentPrimaryViewId, viewId);
+        }
         this.serverPrimaryViews.set(view.serverId, viewId);
         this.emit(VIEW_PRIMARY_UPDATED, view.serverId, viewId);
     };
@@ -129,9 +134,7 @@ export class ViewManager extends EventEmitter {
         }
 
         if (this.serverPrimaryViews.get(view.serverId) === viewId) {
-            this.serverPrimaryViews.delete(view.serverId);
-
-            const newPrimaryView = Array.from(this.views.values()).find((v) => view.serverId === v.serverId);
+            const newPrimaryView = Array.from(this.views.values()).find((v) => view.serverId === v.serverId && v.id !== viewId);
             if (newPrimaryView) {
                 this.setPrimaryView(newPrimaryView.id);
             }
