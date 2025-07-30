@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {WebContents, Event} from 'electron';
-import {BrowserWindow, shell} from 'electron';
+import {BrowserWindow, dialog, shell} from 'electron';
 
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -23,6 +23,7 @@ import {
     parseURL,
 } from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
+import {localizeMessage} from 'main/i18nManager';
 import PluginsPopUpsManager from 'main/views/pluginsPopUps';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
@@ -125,6 +126,13 @@ export class WebContentsEventManager {
             // Let the browser handle invalid URIs
             if (!isValidURI(details.url)) {
                 this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
+                dialog.showErrorBox(
+                    localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
+                    localizeMessage(
+                        'main.webContentEvents.invalidLinkDescription',
+                        'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.',
+                    ),
+                );
                 return {action: 'deny'};
             }
 

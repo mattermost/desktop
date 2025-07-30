@@ -3,7 +3,7 @@
 
 'use strict';
 
-import {shell, BrowserWindow} from 'electron';
+import {shell, BrowserWindow, dialog} from 'electron';
 
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
@@ -22,6 +22,12 @@ jest.mock('electron', () => ({
     },
     BrowserWindow: jest.fn(),
     session: {},
+    dialog: {
+        showErrorBox: jest.fn(),
+    },
+}));
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
 }));
 jest.mock('main/contextMenu', () => jest.fn());
 jest.mock('main/windows/mainWindow', () => ({
@@ -140,9 +146,10 @@ describe('main/views/webContentsEvents', () => {
             expect(newWindow({url: 'a-bad<url'})).toStrictEqual({action: 'deny'});
         });
 
-        it('should deny on invalid URL', () => {
+        it('should deny and show dialog on invalid URL', () => {
             expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).not.toBeCalled();
+            expect(dialog.showErrorBox).toBeCalled();
         });
 
         it('should allow dev tools to open', () => {
