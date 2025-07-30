@@ -121,6 +121,13 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
+            // Check for valid URL
+            // Let the browser handle invalid URIs
+            if (!isValidURI(details.url)) {
+                this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
+                return {action: 'deny'};
+            }
+
             // Dev tools case
             if (parsedURL.protocol === 'devtools:') {
                 return {action: 'allow'};
@@ -140,13 +147,6 @@ export class WebContentsEventManager {
             // Check for other custom protocols
             if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
-                return {action: 'deny'};
-            }
-
-            // Check for valid URL
-            // Let the browser handle invalid URIs
-            if (!isValidURI(details.url)) {
-                shell.openExternal(details.url);
                 return {action: 'deny'};
             }
 

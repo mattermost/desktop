@@ -140,6 +140,11 @@ describe('main/views/webContentsEvents', () => {
             expect(newWindow({url: 'a-bad<url'})).toStrictEqual({action: 'deny'});
         });
 
+        it('should deny on invalid URL', () => {
+            expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
+            expect(shell.openExternal).not.toBeCalled();
+        });
+
         it('should allow dev tools to open', () => {
             expect(newWindow({url: 'devtools://aaaaaa.com'})).toStrictEqual({action: 'allow'});
         });
@@ -149,19 +154,14 @@ describe('main/views/webContentsEvents', () => {
             expect(PluginsPopUpsManager.handleNewWindow).toHaveBeenCalledWith(1, {url: 'about:blank'});
         });
 
-        it('should open invalid URIs in browser', () => {
-            expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('https://google.com/?^');
-        });
-
         it('should divert to allowProtocolDialog for custom protocols that are not mattermost or http', () => {
             expect(newWindow({url: 'spotify:album:2OZbaW9tgO62ndm375lFZr'})).toStrictEqual({action: 'deny'});
             expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('spotify:', 'spotify:album:2OZbaW9tgO62ndm375lFZr');
         });
 
-        it('should divert to allowProtocolDialog for invalid URIs with custom protocols', () => {
+        it('should ignore invalid URIs with custom protocols', () => {
             expect(newWindow({url: 'customproto:test\\data'})).toStrictEqual({action: 'deny'});
-            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('customproto:', 'customproto:test\\data');
+            expect(shell.openExternal).not.toBeCalled();
         });
 
         it('should open in the browser when there is no server matching', () => {
