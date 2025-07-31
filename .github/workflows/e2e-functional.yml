@@ -25,7 +25,11 @@ on:
         type: string
         description: "The server version to test against"
         required: true
-
+      nightly:
+        type: boolean
+        description: "True if this is nightly build"
+        required: false
+        default: false
 jobs:
   prepare-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
@@ -73,6 +77,8 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
+      TYPE: ${{ startsWith(github.ref_name, 'release-') && 'RELEASE' || (github.ref_name == 'master' && 'MASTER') || 'PR' }}
+      nightly: ${{ inputs.nightly }}
     secrets: inherit
 
   update-final-status-linux:

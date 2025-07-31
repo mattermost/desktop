@@ -36,7 +36,7 @@ on:
         default: false
       TYPE:
         type: string
-        description: "True if this is Triggered from PR"
+        description: "e.g. MASTER, PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
         required: false
         default: "PR"
       MM_SERVER_VERSION:
