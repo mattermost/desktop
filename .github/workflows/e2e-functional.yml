@@ -1,15 +1,13 @@
 name: Electron Playwright Tests
 
 on:
-  push:
-    branches: [master]
   pull_request:
     types: [labeled]
   workflow_dispatch:
     inputs:
       version_name:
         type: string
-        description: "Desktop Version name eg: v5.11.0"
+        description: "Desktop Version. It can be a branch name or a tag or a commit SHA"
         required: true
       instance_details:
         type: string
@@ -26,75 +24,107 @@ on:
       MM_SERVER_VERSION:
         type: string
         description: "The server version to test against"
+        required: true
+      nightly:
+        type: boolean
+        description: "True if this is nightly build"
         required: false
-        default: "10.5.0"
-
+        default: false
 jobs:
-  determine-platforms:
+  prepare-matrix:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      platforms: ${{ steps.generate.outputs.platforms }}
     steps:
-      - id: set-matrix
+      - id: generate
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            if [[ -n "${{ inputs.instance_details }}" ]]; then
-              MATRIX=$(echo '${{ inputs.instance_details }}' | jq -c '[.[] | {os: .runner, platform: .platform, url: .url, installation_id: .installation_id}]')
-              echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
-            else
-              MATRIX='[{"os":"ubuntu-24.04","platform":"linux","url":"${{ secrets.MM_TEST_SERVER_URL }}","installation_id":"unknown"},
-                       {"os":"macos-13","platform":"macos","url":"${{ secrets.MM_TEST_SERVER_URL }}","installation_id":"unknown"},
-                       {"os":"windows-2022","platform":"windows","url":"${{ secrets.MM_TEST_SERVER_URL }}","installation_id":"unknown"}]'
-              echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
-            fi
-          elif [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ contains(github.event.pull_request.labels.*.name, 'E2E/Run') }}" == "true" ]]; then
-            MATRIX='[{"os":"ubuntu-24.04","platform":"linux","url":"${{ secrets.MM_TEST_SERVER_URL }}","installation_id":"unknown"},
-                     {"os":"macos-13","platform":"macos","url":"${{ secrets.MM_TEST_SERVER_URL }}","installation_id":"unknown"},
-                     {"os":"windows-2022","platform":"windows","url":"${{ secrets.MM_TEST_SERVER_URL }}","installation_id":"unknown"}]'
-            echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
-          else
-            echo "matrix=[]" >> $GITHUB_OUTPUT
-          fi
+          echo "platforms=$(echo '${{ inputs.instance_details }}' | jq -c)" >> $GITHUB_OUTPUT
 
-  e2e-tests:
-    needs: determine-platforms
+  update-initial-status:
+    name: Update initial status
+    needs: prepare-matrix
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        platform: ${{ fromJson(needs.determine-platforms.outputs.matrix) }}
-      fail-fast: false
-    runs-on: ${{ matrix.platform.os }}
+        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
-      - name: Update initial commit status
+      - name: Update initial status for ${{ matrix.platform }}
         uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
           commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/${{ matrix.platform.platform }}
-          description: E2E tests for Mattermost desktop app on ${{ matrix.platform.platform }} have started...
+          context: e2e/${{ matrix.platform }}
+          description: E2E tests for Mattermost desktop app on ${{ matrix.platform }} have started...
           status: pending
 
-      - name: Run E2E tests
-        id: run-tests
-        uses: ./.github/workflows/e2e-functional-template.yml
-        with:
-          runs-on: ${{ matrix.platform.os }}
-          DESKTOP_VERSION: ${{ inputs.version_name || github.head_ref || github.ref }}
-          MM_TEST_SERVER_URL: ${{ matrix.platform.url }}
-          MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
-          MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
-          MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION || '10.5.0' }}
+  e2e-tests:
+    needs: 
+      - prepare-matrix
+      - update-initial-status
+    name: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
+      fail-fast: false
+    uses: ./.github/workflows/e2e-functional-template.yml
+    with:
+      runs-on: ${{ matrix.runner }}
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+      MM_TEST_SERVER_URL: ${{ matrix.url }}
+      MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+      MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
+      MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
+      TYPE: ${{ startsWith(github.ref_name, 'release-') && 'RELEASE' || (github.ref_name == 'master' && 'MASTER') || 'PR' }}
+      nightly: ${{ inputs.nightly }}
+    secrets: inherit
 
-      - name: Update final commit status
-        if: always()
-        uses: mattermost/actions/delivery/update-commit-status@main
+  update-final-status-linux:
+    runs-on: ubuntu-22.04
+    needs:
+      - e2e-tests
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
           commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/${{ matrix.platform.platform }}
-          description: Completed with ${{ steps.run-tests.outputs.NEW_FAILURES }} failures
-          status: ${{ steps.run-tests.outputs.STATUS }}
-          target_url: ${{ steps.run-tests.outputs.REPORT_LINK }}
+          context: e2e/linux
+          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_LINUX }} failures
+          status: ${{ needs.e2e-tests.outputs.STATUS_LINUX }}
+          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_LINUX }}
+
+  update-final-status-macos:
+    runs-on: ubuntu-22.04
+    needs:
+      - e2e-tests
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          context: e2e/macOS
+          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_MACOS }} failures
+          status: ${{ needs.e2e-tests.outputs.STATUS_MACOS }}
+          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_MACOS }}
+
+  update-final-status-windows:
+    runs-on: ubuntu-22.04
+    needs:
+      - e2e-tests
+    steps:
+      - uses: mattermost/actions/delivery/update-commit-status@main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          context: e2e/windows
+          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }} failures
+          status: ${{ needs.e2e-tests.outputs.STATUS_WINDOWS }}
+          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
