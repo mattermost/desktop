@@ -4,8 +4,10 @@
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {ipcMain} from 'electron';
 
+import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSER_HISTORY_STATUS} from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -13,8 +15,6 @@ import {getFormattedPathName, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import ViewManager from 'common/views/viewManager';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
-import ModalManager from 'main/views/modalManager';
-import WebContentsManager from 'main/views/viewManager';
 
 const log = new Logger('DeepLinking');
 

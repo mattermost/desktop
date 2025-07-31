@@ -5,9 +5,9 @@ import fs from 'fs';
 
 import {dialog, screen} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import JsonFileManager from 'common/JsonFileManager';
 import {updatePaths} from 'main/constants';
-import MainWindow from 'main/windows/mainWindow';
 
 import {getDeeplinkingURL, resizeScreen, migrateMacAppStore} from './utils';
 

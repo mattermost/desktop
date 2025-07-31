@@ -7,6 +7,8 @@ import type {DownloadItem, Event, WebContents, FileFilter, IpcMainInvokeEvent} f
 import {ipcMain, dialog, shell, Menu, app, nativeImage} from 'electron';
 import type {ProgressInfo, UpdateInfo} from 'electron-updater';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import ViewManager from 'app/views/webContentsManager';
 import {
     CANCEL_UPDATE_DOWNLOAD,
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -34,8 +36,6 @@ import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
 import NotificationManager from 'main/notifications';
 import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
-import ViewManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import {type DownloadedItem, type DownloadItemDoneEventState, type DownloadedItems, type DownloadItemState, type DownloadItemUpdatedEventState, DownloadItemTypeEnum} from 'types/downloads';
 

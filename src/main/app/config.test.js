@@ -6,6 +6,7 @@ import path from 'path';
 
 import {app} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import {RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
 import {getDefaultDownloadLocation} from 'common/config/defaultPreferences';
@@ -13,7 +14,6 @@ import {setLoggingLevel} from 'common/log';
 import {handleConfigUpdate} from 'main/app/config';
 import {handleMainWindowIsShown} from 'main/app/intercom';
 import AutoLauncher from 'main/AutoLauncher';
-import MainWindow from 'main/windows/mainWindow';
 
 jest.mock('electron', () => ({
     app: {

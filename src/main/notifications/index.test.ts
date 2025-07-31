@@ -9,12 +9,12 @@ import {Notification as NotMockedNotification, shell, app, ipcMain as NotMockedI
 import {getDoNotDisturb as notMockedGetDarwinDoNotDisturb} from 'macos-notification-state';
 import {getFocusAssist as notMockedGetFocusAssist} from 'windows-focus-assist';
 
+import notMockedMainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
 import {PLAY_SOUND} from 'common/communication';
 import notMockedConfig from 'common/config';
 import {localizeMessage as notMockedLocalizeMessage} from 'main/i18nManager';
-import notMockedPermissionsManager from 'main/permissionsManager';
-import notMockedMainWindow from 'main/windows/mainWindow';
+import notMockedPermissionsManager from 'main/security/permissionsManager';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 

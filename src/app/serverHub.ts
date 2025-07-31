@@ -4,6 +4,8 @@
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {ipcMain} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
 import {
     GET_ORDERED_SERVERS,
     SHOW_EDIT_SERVER_MODAL,
@@ -27,11 +29,9 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
-import PermissionsManager from 'main/permissionsManager';
+import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
-import ModalManager from 'main/views/modalManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import type {Server, UniqueServer} from 'types/config';
 import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';

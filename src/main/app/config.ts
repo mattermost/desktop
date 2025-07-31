@@ -3,14 +3,14 @@
 
 import {app, ipcMain, nativeTheme} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import {setUnreadBadgeSetting} from 'app/system/badge';
+import Tray from 'app/system/tray/tray';
+import LoadingScreen from 'app/views/loadingScreen';
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
 import {Logger, setLoggingLevel} from 'common/log';
 import AutoLauncher from 'main/AutoLauncher';
-import {setUnreadBadgeSetting} from 'main/badge';
-import Tray from 'main/tray/tray';
-import LoadingScreen from 'main/views/loadingScreen';
-import MainWindow from 'main/windows/mainWindow';
 
 import type {CombinedConfig, Config as ConfigType} from 'types/config';
 

@@ -4,6 +4,10 @@
 import {ipcMain} from 'electron';
 import EventEmitter from 'events';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
+import LoadingScreen from 'app/views/loadingScreen';
+import WebContentsManager from 'app/views/webContentsManager';
 import {
     ACTIVE_TAB_CHANGED,
     TAB_ORDER_UPDATED,
@@ -30,10 +34,6 @@ import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {getAdjustedWindowBoundaries, getWindowBoundaries} from 'main/utils';
-import LoadingScreen from 'main/views/loadingScreen';
-import ModalManager from 'main/views/modalManager';
-import WebContentsManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
 
 const log = new Logger('TabManager');
 

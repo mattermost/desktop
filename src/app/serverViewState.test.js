@@ -1,15 +1,15 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
+import ViewManager from 'app/views/webContentsManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
-import PermissionsManager from 'main/permissionsManager';
+import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
-import ModalManager from 'main/views/modalManager';
-import ViewManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import {ServerViewState} from './serverViewState';
 

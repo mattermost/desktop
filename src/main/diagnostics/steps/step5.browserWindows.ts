@@ -3,7 +3,7 @@
 
 import type {MainLogger} from 'electron-log';
 
-import MainWindow from 'main/windows/mainWindow';
+import MainWindow from 'app/mainWindow/mainWindow';
 
 import type {DiagnosticStepResponse} from 'types/diagnostics';
 

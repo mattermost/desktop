@@ -4,6 +4,8 @@
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {app, Menu} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerViewState from 'app/serverHub';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
@@ -12,8 +14,6 @@ import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
 import {getLocalPreload} from 'main/utils';
-import ModalManager from 'main/views/modalManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import type {UniqueServer} from 'types/config';
 

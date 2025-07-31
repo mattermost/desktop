@@ -8,7 +8,11 @@ import type {BrowserWindow, Rectangle} from 'electron';
 import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
 import isDev from 'electron-is-dev';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
+import {createMenu as createAppMenu} from 'app/system/menus/app';
+import {createMenu as createTrayMenu} from 'app/system/menus/tray';
+import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
 import {APP_MENU_WILL_CLOSE, MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
@@ -20,11 +24,7 @@ import {isValidURI} from 'common/utils/url';
 import updateManager from 'main/autoUpdater';
 import {migrationInfoPath, updatePaths} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
-import {createMenu as createAppMenu} from 'main/menus/app';
-import {createMenu as createTrayMenu} from 'main/menus/tray';
 import {ServerInfo} from 'main/server/serverInfo';
-import Tray from 'main/tray/tray';
-import MainWindow from 'main/windows/mainWindow';
 
 import type {MigrationInfo} from 'types/config';
 import type {RemoteInfo} from 'types/server';

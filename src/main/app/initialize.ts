@@ -8,8 +8,12 @@ import {app, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
+import {setupBadge} from 'app/system/badge';
+import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {
     FOCUS_BROWSERVIEW,
     QUIT,
@@ -37,13 +41,9 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
-import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
-import AuthManager from 'main/authManager';
 import AutoLauncher from 'main/AutoLauncher';
 import updateManager from 'main/autoUpdater';
-import {setupBadge} from 'main/badge';
-import CertificateManager from 'main/certificateManager';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
@@ -53,12 +53,12 @@ import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
-import PermissionsManager from 'main/permissionsManager';
-import Tray from 'main/tray/tray';
-import TrustedOriginsStore from 'main/trustedOrigins';
+import AllowProtocolDialog from 'main/security/allowProtocolDialog';
+import AuthManager from 'main/security/authManager';
+import CertificateManager from 'main/security/certificateManager';
+import PermissionsManager from 'main/security/permissionsManager';
+import TrustedOriginsStore from 'main/security/trustedOrigins';
 import UserActivityMonitor from 'main/UserActivityMonitor';
-import WebContentsManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import {
     handleAppBeforeQuit,

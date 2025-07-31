@@ -6,9 +6,9 @@
 import {initialize} from './initialize';
 
 // TODO: Singletons, we need DI :D
-import('main/views/serverDropdownView');
-import('main/views/downloadsDropdownMenuView');
-import('main/views/downloadsDropdownView');
+import('app/mainWindow/serverDropdownView');
+import('app/mainWindow/downloadsDropdownMenuView');
+import('app/mainWindow/downloadsDropdownView');
 
 // attempt to initialize the application
 try {
