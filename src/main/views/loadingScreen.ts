@@ -7,6 +7,7 @@ import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, MAIN_WINDOW_RESIZED
 import {Logger} from 'common/log';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload, getWindowBoundaries} from 'main/utils';
+import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
 enum LoadingScreenState {
@@ -55,11 +56,19 @@ export class LoadingScreen {
         if (this.view?.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
                 this.view!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-                mainWindow.contentView.addChildView(this.view!);
+                if (ModalManager.isModalDisplayed()) {
+                    mainWindow.contentView.addChildView(this.view!, 1);
+                } else {
+                    mainWindow.contentView.addChildView(this.view!);
+                }
             });
         } else {
             this.view!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-            mainWindow.contentView.addChildView(this.view!);
+            if (ModalManager.isModalDisplayed()) {
+                mainWindow.contentView.addChildView(this.view!, 1);
+            } else {
+                mainWindow.contentView.addChildView(this.view!);
+            }
         }
 
         this.setBounds();
