@@ -47,6 +47,7 @@ export interface TabInfo {
 export class TabManager extends EventEmitter {
     private activeTabs: Map<string, string>;
     private tabOrder: Map<string, string[]>;
+    private currentVisibleTab?: string;
 
     constructor() {
         super();
@@ -232,15 +233,34 @@ export class TabManager extends EventEmitter {
 
         // If the tab is in error state, do not show the view, the error screen will be on the window instead
         if (view.isErrored()) {
+            this.removeCurrentVisibleTab();
+            LoadingScreen.fade();
             log.verbose(`switchToTab: Tab ${viewId} is in error state, will not show`);
             return;
         }
 
         mainWindow.contentView.addChildView(view.getWebContentsView());
         view.getWebContentsView().setBounds(getWindowBoundaries(mainWindow));
+        this.removeCurrentVisibleTab();
+        this.currentVisibleTab = viewId;
 
         if (view.needsLoadingScreen()) {
             LoadingScreen.show();
+        }
+    };
+
+    private removeCurrentVisibleTab = () => {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            log.warn('removeCurrentVisibleTab: No main window found');
+            return;
+        }
+        if (this.currentVisibleTab) {
+            const view = WebContentsManager.getView(this.currentVisibleTab);
+            if (view) {
+                mainWindow.contentView.removeChildView(view.getWebContentsView());
+            }
+            this.currentVisibleTab = undefined;
         }
     };
 
