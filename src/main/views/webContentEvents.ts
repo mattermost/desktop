@@ -122,8 +122,6 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
-            // Check for valid URL
-            // Let the browser handle invalid URIs
             if (!isValidURI(details.url)) {
                 this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
                 dialog.showErrorBox(
