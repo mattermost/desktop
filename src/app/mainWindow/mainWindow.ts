@@ -28,6 +28,7 @@ import {
     TOGGLE_SECURE_INPUT,
     EMIT_CONFIGURATION,
     EXIT_FULLSCREEN,
+    SERVER_LOGGED_IN_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -68,6 +69,7 @@ export class MainWindow extends EventEmitter {
         ServerManager.on(SERVER_URL_CHANGED, this.handleServerUrlChanged);
         ServerManager.on(SERVER_NAME_CHANGED, this.handleServerNameChanged);
         ServerManager.on(SERVER_SWITCHED, this.handleServerSwitched);
+        ServerManager.on(SERVER_LOGGED_IN_CHANGED, this.handleServerLoggedInChanged);
 
         AppState.on(UPDATE_APPSTATE_FOR_VIEW_ID, this.handleUpdateAppStateForViewId);
     }
@@ -490,6 +492,10 @@ export class MainWindow extends EventEmitter {
 
     private handleServerSwitched = (serverId: string) => {
         this.win?.webContents.send(SERVER_SWITCHED, serverId);
+    };
+
+    private handleServerLoggedInChanged = (serverId: string, loggedIn: boolean) => {
+        this.win?.webContents.send(SERVER_LOGGED_IN_CHANGED, serverId, loggedIn);
     };
 
     /**

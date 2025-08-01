@@ -20,6 +20,7 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     LOAD_INCOMPATIBLE_SERVER,
     SERVER_URL_CHANGED,
+    BROWSER_HISTORY_PUSH,
 } from 'common/communication';
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -50,7 +51,6 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private log: Logger;
     private webContentsView: WebContentsView;
-    private loggedIn: boolean;
     private atRoot: boolean;
     private options: WebContentsViewConstructorOptions;
     private removeLoading?: NodeJS.Timeout;
@@ -59,6 +59,7 @@ export class MattermostWebContentsView extends EventEmitter {
     private retryLoad?: NodeJS.Timeout;
     private maxRetries: number;
     private altPressStatus: boolean;
+    private lastPath?: string;
 
     constructor(view: MattermostView, options: WebContentsViewConstructorOptions) {
         super();
@@ -76,7 +77,6 @@ export class MattermostWebContentsView extends EventEmitter {
             ...options.webPreferences,
         };
         this.isVisible = false;
-        this.loggedIn = false;
         this.atRoot = true;
         this.webContentsView = new WebContentsView(this.options);
         this.resetLoadingStatus();
@@ -118,9 +118,6 @@ export class MattermostWebContentsView extends EventEmitter {
     get isAtRoot() {
         return this.atRoot;
     }
-    get isLoggedIn() {
-        return this.loggedIn;
-    }
     get currentURL() {
         return parseURL(this.webContentsView.webContents.getURL());
     }
@@ -130,22 +127,6 @@ export class MattermostWebContentsView extends EventEmitter {
 
     getWebContentsView = () => {
         return this.webContentsView;
-    };
-
-    onLogin = (loggedIn: boolean) => {
-        if (this.isLoggedIn === loggedIn) {
-            return;
-        }
-
-        this.loggedIn = loggedIn;
-
-        // If we're logging in from a different view, force a reload
-        if (loggedIn &&
-            this.currentURL?.toString() !== this.view.getLoadingURL()?.toString() &&
-            !this.currentURL?.toString().startsWith(this.view.getLoadingURL()?.toString() || '')
-        ) {
-            this.reload();
-        }
     };
 
     goToOffset = (offset: number) => {
@@ -284,6 +265,24 @@ export class MattermostWebContentsView extends EventEmitter {
         }
         clearTimeout(this.removeLoading);
         delete this.removeLoading;
+    };
+
+    setLastPath = (path: string) => {
+        this.lastPath = path;
+    };
+
+    useLastPath = () => {
+        if (this.lastPath) {
+            if (ViewManager.isPrimaryView(this.view.id)) {
+                this.webContentsView.webContents.send(BROWSER_HISTORY_PUSH, this.lastPath);
+            } else {
+                this.webContentsView.webContents.once('did-finish-load', () => {
+                    this.webContentsView.webContents.send(BROWSER_HISTORY_PUSH, this.lastPath);
+                });
+                this.webContentsView.webContents.reload();
+            }
+            this.lastPath = undefined;
+        }
     };
 
     openDevTools = () => {

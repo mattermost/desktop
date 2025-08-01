@@ -58,7 +58,7 @@ export class ServerHub {
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
     }
 
-    // TODO: Move me somewhere else
+    // TODO: Move me somewhere else later
     handleServerCurrentChanged = () => {
         ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
         ipcMain.emit(UPDATE_SHORTCUT_MENU);

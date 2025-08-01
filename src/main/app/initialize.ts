@@ -72,6 +72,7 @@ import {
 import {
     handleConfigUpdate,
     handleDarkModeChange,
+    handleDeveloperModeUpdated,
     handleGetConfiguration,
     handleGetLocalConfiguration,
     handleUpdateTheme,
@@ -281,6 +282,7 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
     ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
+    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleDeveloperModeUpdated);
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 

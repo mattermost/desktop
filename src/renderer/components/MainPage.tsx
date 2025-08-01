@@ -137,7 +137,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 });
             });
         });
-        this.setState({servers, tabs, tabViewStatus});
+        this.setState({servers, tabs, tabViewStatus, currentServer: servers.find((srv) => srv.id === this.state.activeServerId)});
         return Boolean(servers.length);
     };
 
@@ -191,6 +191,9 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.onServerUrlChanged(this.updateServers);
         window.desktop.onServerNameChanged(this.updateServers);
         window.desktop.onServerSwitched(this.handleServerSwitched);
+        window.desktop.onServerLoggedInChanged(this.updateServers);
+        window.desktop.onTabAdded(this.updateServers);
+        window.desktop.onTabRemoved(this.updateServers);
 
         // Add tab title update handler
         window.desktop.onUpdateTabTitle((viewId, title) => {
@@ -491,7 +494,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 onCloseTab={this.handleCloseTab}
                 onNewTab={this.handleNewTab}
                 onDrop={this.handleDragAndDrop}
-                tabsDisabled={this.state.modalOpen}
+                tabsDisabled={this.state.modalOpen || !this.state.currentServer?.isLoggedIn}
                 isMenuOpen={this.state.isMenuOpen || this.state.isDownloadsDropdownOpen}
             />
         );

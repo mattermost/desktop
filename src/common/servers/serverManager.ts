@@ -9,6 +9,8 @@ import {
     SERVER_URL_CHANGED,
     SERVER_NAME_CHANGED,
     SERVER_SWITCHED,
+    SERVER_LOGGED_IN_CHANGED,
+    SERVER_ORDER_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger, getLevel} from 'common/log';
@@ -87,6 +89,17 @@ export class ServerManager extends EventEmitter {
 
         const mattermostServer = this.createServer(server, false, initialLoadURL);
         this.addServerToMap(mattermostServer, true);
+        return mattermostServer;
+    };
+
+    setLoggedIn = (serverId: string, loggedIn: boolean) => {
+        const server = this.servers.get(serverId);
+        if (!server) {
+            return;
+        }
+        server.isLoggedIn = loggedIn;
+        this.servers.set(serverId, server);
+        this.emit(SERVER_LOGGED_IN_CHANGED, serverId, loggedIn);
     };
 
     private createServer = (server: Server, isPredefined: boolean, initialLoadURL?: URL) => {
@@ -171,6 +184,7 @@ export class ServerManager extends EventEmitter {
             return server && !server.isPredefined;
         });
         this.persistServers();
+        this.emit(SERVER_ORDER_UPDATED, serverOrder);
     };
 
     // Remove setCurrentServer method since we only need to persist changes when switching or removing servers
@@ -194,16 +208,51 @@ export class ServerManager extends EventEmitter {
         this.remoteInfo.delete(serverId);
         this.servers.delete(serverId);
 
-        // TODO: Change this to pick a server more intelligently
         if (this.currentServerId === serverId) {
-            this.updateCurrentServer(this.serverOrder[0]);
+            const currentIndex = this.serverOrder.findIndex((id) => id === serverId);
+            const nextServer = this.serverOrder[currentIndex - 1] || this.serverOrder[currentIndex + 1] || this.serverOrder[0];
+            this.updateCurrentServer(nextServer);
         }
 
         this.emit(SERVER_REMOVED, serverId);
         this.persistServers();
     };
 
+    reloadServer = (serverId: string) => {
+        log.debug('reloadServer', serverId);
+
+        const index = this.serverOrder.findIndex((id) => id === serverId);
+        if (index === -1) {
+            return;
+        }
+        const server = this.servers.get(serverId);
+        if (!server) {
+            return;
+        }
+        const wasCurrent = this.currentServerId === serverId;
+
+        this.removeServer(serverId);
+        const newServer = this.addServer(server.toUniqueServer());
+        if (wasCurrent) {
+            this.updateCurrentServer(newServer.id);
+        }
+
+        // Move the serverId back to its original position in serverOrder using updateServerOrder
+        const newIdx = this.serverOrder.findIndex((id) => id === serverId);
+        if (newIdx !== -1 && newIdx !== index) {
+            const newOrder = [...this.serverOrder];
+            newOrder.splice(newIdx, 1);
+            newOrder.splice(index, 0, serverId);
+            this.updateServerOrder(newOrder);
+        }
+    };
+
     init = () => {
+        this.servers.clear();
+        this.remoteInfo.clear();
+        this.serverOrder = [];
+        this.currentServerId = undefined;
+
         // Add the servers from the config
         let initialServers = [];
         Config.predefinedServers.forEach((server) => {
@@ -224,11 +273,6 @@ export class ServerManager extends EventEmitter {
         }
 
         initialServers.forEach((server, index) => this.addServerToMap(server, currentServerIndex === index));
-
-        // TODO: This should never happen, remove me after testing
-        if (this.hasServers() && this.currentServerId === undefined) {
-            throw new Error('No current server found');
-        }
     };
 
     private filterOutDuplicateServers = (servers: MattermostServer[]) => {

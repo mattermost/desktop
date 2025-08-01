@@ -283,7 +283,7 @@ export async function clearDataForServer(server: MattermostServer) {
             origins: [server.url.origin],
         });
 
-        // TODO: Reload the views for the selected server
+        ServerManager.reloadServer(server.id);
     }
 }
 

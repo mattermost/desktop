@@ -202,6 +202,8 @@ export const SERVER_REMOVED = 'server-removed';
 export const SERVER_URL_CHANGED = 'server-url-changed';
 export const SERVER_NAME_CHANGED = 'server-name-changed';
 export const SERVER_SWITCHED = 'server-switched';
+export const SERVER_LOGGED_IN_CHANGED = 'server-logged-in-changed';
+export const SERVER_ORDER_UPDATED = 'server-order-updated';
 
 // View Manager Events
 export const VIEW_CREATED = 'view-created';

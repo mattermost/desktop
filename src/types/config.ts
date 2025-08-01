@@ -13,12 +13,14 @@ export type ConfigServer = Server & {
 export type UniqueServer = Server & {
     id?: string;
     isPredefined?: boolean;
+    isLoggedIn?: boolean;
 }
 
 export type UniqueView = {
     id: string;
     serverId: string;
     title?: string;
+    isDisabled?: boolean;
 }
 
 export type Config = ConfigV4;

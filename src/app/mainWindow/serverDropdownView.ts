@@ -20,6 +20,7 @@ import {
     SERVER_NAME_CHANGED,
     SERVER_SWITCHED,
     SWITCH_SERVER,
+    SERVER_ORDER_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -75,6 +76,7 @@ export class ServerDropdownView {
         ServerManager.on(SERVER_REMOVED, this.updateServers);
         ServerManager.on(SERVER_NAME_CHANGED, this.updateServers);
         ServerManager.on(SERVER_SWITCHED, this.updateServers);
+        ServerManager.on(SERVER_ORDER_UPDATED, this.updateServers);
     }
 
     private handleSwitchServer = (event: IpcMainEvent, serverId: string) => {

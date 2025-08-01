@@ -69,6 +69,10 @@ export class NavigationManager {
             return;
         }
 
+        if (!ServerManager.getServer(currentView.view.serverId)?.isLoggedIn && !ViewManager.isPrimaryView(currentView.view.id)) {
+            return;
+        }
+
         const server = ServerManager.getServer(currentView.view.serverId);
         if (!server) {
             return;

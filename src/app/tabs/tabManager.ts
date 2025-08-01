@@ -28,6 +28,7 @@ import {
     CREATE_NEW_TAB,
     SWITCH_TAB,
     CLOSE_TAB,
+    SERVER_LOGGED_IN_CHANGED,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -69,11 +70,21 @@ export class TabManager extends EventEmitter {
         ViewManager.on(VIEW_UPDATED, this.handleViewUpdated);
 
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
+        ServerManager.on(SERVER_LOGGED_IN_CHANGED, this.handleServerLoggedInChanged);
     }
 
     getOrderedTabsForServer = (serverId: string) => {
         const order = this.tabOrder.get(serverId) || [];
-        return order.map((tabId) => ViewManager.getView(tabId)?.toUniqueView()).filter((view) => view !== undefined);
+        return order.map((tabId) => {
+            const view = ViewManager.getView(tabId);
+            if (!view) {
+                return undefined;
+            }
+            return {
+                ...view.toUniqueView(),
+                isDisabled: !ServerManager.getServer(view.serverId)?.isLoggedIn && !ViewManager.isPrimaryView(view.id),
+            };
+        }).filter((tab) => tab !== undefined);
     };
 
     getCurrentTabForServer = (serverId: string) => {
@@ -153,6 +164,14 @@ export class TabManager extends EventEmitter {
         }
     };
 
+    reloadCurrentTab = () => {
+        const view = this.getCurrentActiveTabView();
+        if (view) {
+            LoadingScreen.show();
+            view.reload(view.currentURL);
+        }
+    };
+
     // Event handlers for ViewManager integration
     private handleViewCreated = (viewId: string) => {
         const view = ViewManager.getView(viewId);
@@ -212,6 +231,27 @@ export class TabManager extends EventEmitter {
         const tab = this.getCurrentTabForServer(serverId);
         if (tab) {
             this.setActiveTab(tab.id);
+        }
+    };
+
+    private handleServerLoggedInChanged = (serverId: string, loggedIn: boolean) => {
+        log.debug('handleServerLoggedInChanged', serverId, loggedIn);
+
+        if (!loggedIn) {
+            const view = ViewManager.getPrimaryView(serverId);
+            if (view) {
+                if (ServerManager.getCurrentServerId() === serverId) {
+                    this.switchToTab(view.id);
+                } else {
+                    this.activeTabs.set(serverId, view.id);
+                }
+
+                // TODO: The flow I'd prefer is to save each tabs path and then reload them
+                // But that's not easily feasible yet, so for now we just remove the tabs
+                this.getOrderedTabsForServer(serverId).
+                    filter((tab) => tab.id !== view.id).
+                    forEach((tab) => ViewManager.removeView(tab.id));
+            }
         }
     };
 

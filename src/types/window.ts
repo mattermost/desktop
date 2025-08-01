@@ -62,11 +62,14 @@ declare global {
             onServerUrlChanged: (listener: (serverId: string) => void) => void;
             onServerNameChanged: (listener: (serverId: string) => void) => void;
             onServerSwitched: (listener: (serverId: string) => void) => void;
+            onTabAdded: (listener: (serverId: string, tabId: string) => void) => void;
+            onTabRemoved: (listener: (serverId: string, tabId: string) => void) => void;
             validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
             editServer: (server: UniqueServer, permissions?: Permissions) => void;
             removeServer: (serverId: string) => void;
+            onServerLoggedInChanged: (listener: (serverId: string, loggedIn: boolean) => void) => void;
 
             getConfiguration: () => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
             getVersion: () => Promise<{name: string; version: string}>;

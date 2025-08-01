@@ -109,6 +109,9 @@ import {
     GET_ACTIVE_TAB_FOR_SERVER,
     UPDATE_TAB_TITLE,
     CREATE_NEW_TAB,
+    SERVER_LOGGED_IN_CHANGED,
+    TAB_ADDED,
+    TAB_REMOVED,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -164,11 +167,14 @@ contextBridge.exposeInMainWorld('desktop', {
     onServerUrlChanged: (listener) => ipcRenderer.on(SERVER_URL_CHANGED, (_, serverId) => listener(serverId)),
     onServerNameChanged: (listener) => ipcRenderer.on(SERVER_NAME_CHANGED, (_, serverId) => listener(serverId)),
     onServerSwitched: (listener) => ipcRenderer.on(SERVER_SWITCHED, (_, serverId) => listener(serverId)),
+    onTabAdded: (listener) => ipcRenderer.on(TAB_ADDED, (_, serverId, tabId) => listener(serverId, tabId)),
+    onTabRemoved: (listener) => ipcRenderer.on(TAB_REMOVED, (_, serverId, tabId) => listener(serverId, tabId)),
     validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
     getUniqueServersWithPermissions: () => ipcRenderer.invoke(GET_UNIQUE_SERVERS_WITH_PERMISSIONS),
     addServer: (server) => ipcRenderer.send(ADD_SERVER, server),
     editServer: (server, permissions) => ipcRenderer.send(EDIT_SERVER, server, permissions),
     removeServer: (serverId) => ipcRenderer.send(REMOVE_SERVER, serverId),
+    onServerLoggedInChanged: (listener) => ipcRenderer.on(SERVER_LOGGED_IN_CHANGED, (_, serverId, loggedIn) => listener(serverId, loggedIn)),
 
     getConfiguration: () => ipcRenderer.invoke(GET_CONFIGURATION),
     getVersion: () => ipcRenderer.invoke(GET_APP_INFO),

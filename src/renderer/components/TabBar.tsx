@@ -134,7 +134,7 @@ class TabBar extends React.PureComponent<Props, State> {
                                     <div className='TabBar-tabSeperator'>
                                         <span>{tab.title}</span>
                                         {badgeDiv}
-                                        {this.props.tabs.length > 1 && (
+                                        {this.props.tabs.length > 1 && !this.props.tabsDisabled && (
                                             <button
                                                 className='serverTabItem__close'
                                                 onClick={this.onCloseTab(tab.id!)}
@@ -172,15 +172,17 @@ class TabBar extends React.PureComponent<Props, State> {
                             {...provided.droppableProps}
                         >
                             {tabs}
-                            <button
-                                className={classNames('TabBar-addTab', {
-                                    darkMode: this.props.isDarkMode,
-                                })}
-                                onClick={this.props.onNewTab}
-                                disabled={this.props.tabsDisabled}
-                            >
-                                <i className='icon-plus'/>
-                            </button>
+                            {!this.props.tabsDisabled &&
+                                <button
+                                    className={classNames('TabBar-addTab', {
+                                        darkMode: this.props.isDarkMode,
+                                    })}
+                                    onClick={this.props.onNewTab}
+                                    disabled={this.props.tabsDisabled}
+                                >
+                                    <i className='icon-plus'/>
+                                </button>
+                            }
                             {this.props.isMenuOpen ? <span className='TabBar-nonDrag'/> : null}
                             {provided.placeholder}
                         </div>

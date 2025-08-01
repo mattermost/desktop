@@ -234,14 +234,14 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: localizeMessage('main.menus.app.view.reload', 'Reload'),
         accelerator: 'CmdOrCtrl+R',
         click() {
-            TabManager.getCurrentActiveTabView()?.reload();
+            TabManager.reloadCurrentTab();
         },
     }, {
         label: localizeMessage('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
             session.defaultSession.clearCache();
-            TabManager.getCurrentActiveTabView()?.reload();
+            TabManager.reloadCurrentTab();
         },
     }];
 

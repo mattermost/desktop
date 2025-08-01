@@ -17,9 +17,8 @@ import {
     GET_IS_DEV_MODE,
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
-
-    //DEVELOPER_MODE_UPDATED,
     SERVER_URL_CHANGED,
+    OPEN_SERVER_EXTERNALLY,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
@@ -29,10 +28,6 @@ import type {MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
 import PermissionsManager from 'main/security/permissionsManager';
-
-//import MainWindow from 'main/windows/mainWindow';
-
-//import type {DeveloperSettings} from 'types/settings';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
@@ -51,13 +46,11 @@ export class WebContentsManager {
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
         ipcMain.on(TAB_LOGIN_CHANGED, this.handleTabLoginChanged);
 
-        //ipcMain.on(OPEN_SERVER_EXTERNALLY, this.handleOpenServerExternally);
+        ipcMain.on(OPEN_SERVER_EXTERNALLY, this.handleOpenServerExternally);
         ipcMain.on(OPEN_SERVER_UPGRADE_LINK, this.handleOpenServerUpgradeLink);
         ipcMain.on(OPEN_CHANGELOG_LINK, this.handleOpenChangelogLink);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
-
-        //DeveloperMode.on(DEVELOPER_MODE_UPDATED, this.handleDeveloperModeUpdated);
 
         ServerManager.on(SERVER_URL_CHANGED, this.handleServerURLChanged);
     }
@@ -75,13 +68,6 @@ export class WebContentsManager {
 
     getViewByWebContentsId = (webContentsId: number) => {
         return this.webContentsIdToView.get(webContentsId);
-    };
-
-    reloadView = (viewId: string) => {
-        const view = this.getView(viewId);
-        if (view) {
-            view.reload(view.currentURL);
-        }
     };
 
     sendToAllViews = (channel: string, ...args: unknown[]) => {
@@ -148,37 +134,17 @@ export class WebContentsManager {
         return server.url;
     };
 
-    // // TODO: Init code
-    // private handleDeveloperModeUpdated = (json: DeveloperSettings) => {
-    //     log.debug('handleDeveloperModeUpdated', json);
-
-    //     if (['browserOnly', 'disableContextMenu'].some((key) => Object.hasOwn(json, key))) {
-    //         this.webContentsViews.forEach((view) => view.destroy());
-    //         this.webContentsViews = new Map();
-    //         this.webContentsIdToView = new Map();
-    //         this.init();
-    //     }
-    // };
-
-    // TODO: Only for primary view?
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
         log.debug('handleTabLoggedIn', event.sender.id);
         const view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return;
         }
+        ServerManager.setLoggedIn(view.view.serverId, loggedIn);
 
-        [...this.webContentsViews.values()].
-            filter((v) => v.view.serverId === view.view.serverId).
-            forEach((v) => v.onLogin(loggedIn));
-
-        if (!loggedIn) {
-            AppState.clear(view.id);
-        }
         flushCookiesStore();
     };
 
-    // TODO: Loading screen shouldn't be a singleton, should be per window
     private handleReactAppInitialized = (e: IpcMainEvent) => {
         log.debug('handleReactAppInitialized', e.sender.id);
 
@@ -188,15 +154,19 @@ export class WebContentsManager {
         }
     };
 
-    // private handleOpenServerExternally = () => {
-    //     log.debug('handleOpenServerExternally');
+    private handleOpenServerExternally = () => {
+        log.debug('handleOpenServerExternally');
 
-    //     const view = this.getCurrentView();
-    //     if (!view) {
-    //         return;
-    //     }
-    //     shell.openExternal(view.server.url.toString());
-    // };
+        const server = ServerManager.getCurrentServerId();
+        if (!server) {
+            return;
+        }
+        const serverURL = ServerManager.getServer(server)?.url.toString();
+        if (!serverURL) {
+            return;
+        }
+        shell.openExternal(serverURL);
+    };
 
     private handleOpenServerUpgradeLink = () => {
         if (Config.upgradeLink) {

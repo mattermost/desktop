@@ -10,9 +10,11 @@ import LoadingScreen from 'app/views/loadingScreen';
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
 import {Logger, setLoggingLevel} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import AutoLauncher from 'main/AutoLauncher';
 
 import type {CombinedConfig, Config as ConfigType} from 'types/config';
+import type {DeveloperSettings} from 'types/settings';
 
 import {handleMainWindowIsShown} from './intercom';
 import {handleUpdateMenuEvent, updateSpellCheckerLocales} from './utils';
@@ -115,4 +117,12 @@ export function handleDarkModeChange(darkMode: boolean) {
     LoadingScreen.setDarkMode(darkMode);
 
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
+}
+
+export function handleDeveloperModeUpdated(json: DeveloperSettings) {
+    log.debug('handleDeveloperModeUpdated', json);
+
+    if (['browserOnly', 'disableContextMenu'].some((key) => Object.hasOwn(json, key))) {
+        ServerManager.init();
+    }
 }
