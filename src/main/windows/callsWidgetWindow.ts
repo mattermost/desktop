@@ -487,6 +487,8 @@ export class CallsWidgetWindow {
 
         if (this.mainView && event.sender.id !== this.mainView.webContentsId) {
             ViewManager.getViewByWebContentsId(event.sender.id)?.sendToRenderer(CALLS_ERROR);
+
+            // We only want to show the error message once to avoid spamming the user with dialog boxes
             if (!this.seenErrorMessage) {
                 dialog.showErrorBox(
                     localizeMessage('callsWidgetWindow.cannotStartCall.title', 'Cannot Start Call'),
