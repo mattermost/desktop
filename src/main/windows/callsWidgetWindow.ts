@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent} from 'electron';
-import {BrowserWindow, desktopCapturer, ipcMain, systemPreferences} from 'electron';
+import {BrowserWindow, desktopCapturer, dialog, ipcMain, systemPreferences} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
 import {
@@ -27,6 +27,7 @@ import {Logger} from 'common/log';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
 import {
@@ -54,6 +55,7 @@ export class CallsWidgetWindow {
     private mainView?: MattermostWebContentsView;
     private options?: CallsWidgetWindowConfig;
     private missingScreensharePermissions?: boolean;
+    private seenErrorMessage?: boolean;
 
     private popOut?: BrowserWindow;
     private boundsErr: Rectangle = {
@@ -482,6 +484,18 @@ export class CallsWidgetWindow {
 
     private handleCreateCallsWidgetWindow = async (event: IpcMainInvokeEvent, msg: CallsJoinCallMessage) => {
         log.debug('createCallsWidgetWindow');
+
+        if (this.mainView && event.sender.id !== this.mainView.webContentsId) {
+            ViewManager.getViewByWebContentsId(event.sender.id)?.sendToRenderer(CALLS_ERROR);
+            if (!this.seenErrorMessage) {
+                dialog.showErrorBox(
+                    localizeMessage('callsWidgetWindow.cannotStartCall.title', 'Cannot Start Call'),
+                    localizeMessage('callsWidgetWindow.cannotStartCall.message', 'There is an in-progress call on another server that must be ended before joining a new call.'),
+                );
+                this.seenErrorMessage = true;
+            }
+            return Promise.resolve();
+        }
 
         // trying to join again the call we are already in should not be allowed.
         if (this.options?.callID === msg.callID) {
