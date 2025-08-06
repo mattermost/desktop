@@ -1,5 +1,5 @@
 {
-  "common.permissions.canBasicAuth": "Autenticação via Web",
+  "common.permissions.canBasicAuth": "Autenticação da Web",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
   "common.tabs.TAB_PLAYBOOKS": "Playbooks",
@@ -317,7 +317,7 @@
   "renderer.components.showCertificateModal.notValidBefore": "Não Válido Antes de",
   "renderer.components.showCertificateModal.publicKeyInfo": "Informação Sobre Chave Pública",
   "renderer.components.showCertificateModal.serialNumber": "Número de Série",
-  "renderer.components.showCertificateModal.subjectName": "Nome",
+  "renderer.components.showCertificateModal.subjectName": "Nome do Assunto",
   "renderer.components.showCertificateModal.title": "Informação do certificado",
   "renderer.components.teamDropdownButton.noServersConfigured": "Sem servidores configurados",
   "renderer.components.welcomeScreen.button.getStarted": "Começar",
