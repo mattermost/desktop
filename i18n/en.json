@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "There is an in-progress call on another server that must be ended before joining a new call.",
+  "callsWidgetWindow.cannotStartCall.title": "Cannot Start Call",
   "common.permissions.canBasicAuth": "Web Authentication",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",

@@ -46,6 +46,9 @@ jest.mock('electron', () => ({
         getUserDefault: jest.fn(),
         getMediaAccessStatus: jest.fn(() => 'granted'),
     },
+    dialog: {
+        showErrorBox: jest.fn(),
+    },
 }));
 
 jest.mock('../views/webContentEvents', () => ({
@@ -589,9 +592,30 @@ describe('main/windows/callsWidgetWindow', () => {
 
             const window = {webContents: {id: 3}};
             callsWidgetWindow.win = window;
+            callsWidgetWindow.mainView = {view: {server: {id: 'server-1'}}, webContentsId: 1};
+            callsWidgetWindow.options = {callID: 'test'};
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 1}}, {callID: 'test2'});
+            expect(callsWidgetWindow.win).not.toEqual(window);
+        });
+
+        it('should not create a new window if switching calls between servers and an in-progress call exists', async () => {
+            let func;
+            ipcMain.on.mockImplementation((_, callback) => {
+                func = callback;
+            });
+            browserWindow.loadURL.mockImplementation(() => {
+                func({sender: {id: 1}}, 'test2');
+                return Promise.resolve();
+            });
+            BrowserWindow.mockReturnValue(browserWindow);
+            ViewManager.getViewByWebContentsId.mockReturnValue({sendToRenderer: jest.fn()});
+
+            const window = {webContents: {id: 3}};
+            callsWidgetWindow.win = window;
+            callsWidgetWindow.mainView = {view: {server: {id: 'server-2'}}, webContentsId: 1};
             callsWidgetWindow.options = {callID: 'test'};
             await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test2'});
-            expect(callsWidgetWindow.win).not.toEqual(window);
+            expect(callsWidgetWindow.win).toEqual(window);
         });
     });
 
