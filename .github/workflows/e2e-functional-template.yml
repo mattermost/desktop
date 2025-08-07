@@ -24,7 +24,6 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-        default: "ubuntu-24.04"
       nightly:
         type: boolean
         description: "True if this is nightly build"
@@ -36,14 +35,13 @@ on:
         required: false
         default: false
       TYPE:
-        type: boolean
-        description: "True if this is Triggered from PR"
+        type: string
+        description: "e.g. MASTER, PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
         required: false
-        default: false
+        default: "PR"
       MM_SERVER_VERSION:
         type: string
-        required: false
-        default: "10.5.0"
+        required: true
     outputs:
       NEW_FAILURES_LINUX:
         description: "The output to comment"
@@ -108,14 +106,13 @@ on:
         required: false
         default: false
       TYPE:
-        type: boolean
+        type: string
         description: "True if this is Triggered from PR"
         required: false
-        default: false
+        default: "PR"
       MM_SERVER_VERSION:
         type: string
-        required: false
-        default: "10.10.0"
+        required: true
 
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
@@ -216,7 +213,7 @@ jobs:
       - name: e2e/setup-node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version-file: "package.json"
+          node-version: '22.x'
           cache: "npm"
           cache-dependency-path: package-lock.json
 
