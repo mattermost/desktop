@@ -30,6 +30,7 @@ module.exports = {
         tls: 'require("tls")',
         playwright: 'require("playwright")',
         robotjs: 'require("robotjs")',
+        'registry-js': 'require("registry-js")',
     },
     module: {
         rules: [{
