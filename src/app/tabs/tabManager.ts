@@ -6,7 +6,6 @@ import EventEmitter from 'events';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
-import LoadingScreen from 'app/views/loadingScreen';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     ACTIVE_TAB_CHANGED,
@@ -29,12 +28,16 @@ import {
     SWITCH_TAB,
     CLOSE_TAB,
     SERVER_LOGGED_IN_CHANGED,
+    RELOAD_VIEW,
+    UPDATE_TAB_ORDER,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {getAdjustedWindowBoundaries, getWindowBoundaries} from 'main/utils';
+
+import type {UniqueView} from 'types/config';
 
 const log = new Logger('TabManager');
 
@@ -61,6 +64,7 @@ export class TabManager extends EventEmitter {
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, (event, serverId) => this.getOrderedTabsForServer(serverId));
         ipcMain.handle(GET_ACTIVE_TAB_FOR_SERVER, (event, serverId) => this.getCurrentTabForServer(serverId)?.toUniqueView());
         ipcMain.handle(CREATE_NEW_TAB, (event, serverId) => this.handleCreateNewTab(serverId));
+        ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => this.updateTabOrder(serverId, viewOrder));
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.switchToTab(viewId));
         ipcMain.on(CLOSE_TAB, (event, viewId) => this.handleCloseTab(viewId));
 
@@ -73,13 +77,11 @@ export class TabManager extends EventEmitter {
         ServerManager.on(SERVER_LOGGED_IN_CHANGED, this.handleServerLoggedInChanged);
     }
 
-    getOrderedTabsForServer = (serverId: string) => {
+    getOrderedTabsForServer = (serverId: string): UniqueView[] => {
         const order = this.tabOrder.get(serverId) || [];
         return order.map((tabId) => {
-            const view = ViewManager.getView(tabId);
-            if (!view) {
-                return undefined;
-            }
+            // Forcing this makes the type checker happy
+            const view = ViewManager.getView(tabId)!;
             return {
                 ...view.toUniqueView(),
                 isDisabled: !ServerManager.getServer(view.serverId)?.isLoggedIn && !ViewManager.isPrimaryView(view.id),
@@ -157,17 +159,9 @@ export class TabManager extends EventEmitter {
         this.setActiveTab(viewId);
     };
 
-    sendToFind = () => {
-        const view = this.getCurrentActiveTabView();
-        if (view) {
-            view.openFind();
-        }
-    };
-
     reloadCurrentTab = () => {
         const view = this.getCurrentActiveTabView();
         if (view) {
-            LoadingScreen.show();
             view.reload(view.currentURL);
         }
     };
@@ -176,9 +170,20 @@ export class TabManager extends EventEmitter {
     private handleViewCreated = (viewId: string) => {
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.TAB) {
-            const webContentsView = WebContentsManager.createView(view);
+            const mainWindow = MainWindow.window;
+            if (!mainWindow) {
+                log.error('handleViewCreated: No main window found');
+                return;
+            }
+
+            const webContentsView = WebContentsManager.createView(view, mainWindow);
             webContentsView.on(LOADSCREEN_END, this.finishLoading);
             webContentsView.on(LOAD_FAILED, this.failLoading);
+            webContentsView.on(RELOAD_VIEW, () => mainWindow.showLoadingScreen());
+            if (process.platform !== 'darwin') {
+                // @ts-expect-error: The type is wrong on Electrons side
+                webContentsView.getWebContentsView().webContents.on('before-input-event', mainWindow.handleAltKeyPressed);
+            }
 
             // Set this tab as active if it's the first tab for the server
             if (!this.tabOrder.get(view.serverId)?.length) {
@@ -267,25 +272,26 @@ export class TabManager extends EventEmitter {
             return;
         }
 
-        mainWindow.webContents.send(SET_ACTIVE_VIEW, view.view.serverId, viewId);
-        this.activeTabs.set(view.view.serverId, viewId);
-        this.emit(ACTIVE_TAB_CHANGED, view.view.serverId, viewId);
+        mainWindow.webContents.send(SET_ACTIVE_VIEW, view.serverId, viewId);
+        this.activeTabs.set(view.serverId, viewId);
+        this.emit(ACTIVE_TAB_CHANGED, view.serverId, viewId);
 
         // If the tab is in error state, do not show the view, the error screen will be on the window instead
         if (view.isErrored()) {
             this.removeCurrentVisibleTab();
-            LoadingScreen.fade();
+            MainWindow.window?.fadeLoadingScreen();
             log.verbose(`switchToTab: Tab ${viewId} is in error state, will not show`);
             return;
         }
 
         mainWindow.contentView.addChildView(view.getWebContentsView());
+        view.getWebContentsView().webContents.focus();
         view.getWebContentsView().setBounds(getWindowBoundaries(mainWindow));
         this.removeCurrentVisibleTab();
         this.currentVisibleTab = viewId;
 
         if (view.needsLoadingScreen()) {
-            LoadingScreen.show();
+            MainWindow.window?.showLoadingScreen();
         }
     };
 
@@ -308,7 +314,7 @@ export class TabManager extends EventEmitter {
         ViewManager.getViewLog(viewId, 'TabManager').debug('finishLoading');
 
         if (this.isActiveTab(viewId)) {
-            LoadingScreen.fade();
+            MainWindow.window?.fadeLoadingScreen();
         }
     };
 
@@ -320,7 +326,7 @@ export class TabManager extends EventEmitter {
             if (view) {
                 MainWindow.get()?.contentView.removeChildView(view.getWebContentsView());
             }
-            LoadingScreen.fade();
+            MainWindow.window?.fadeLoadingScreen();
         }
     };
 
@@ -357,6 +363,29 @@ export class TabManager extends EventEmitter {
         }
 
         ViewManager.removeView(viewId);
+    };
+
+    private goToTabOffset = (offset: number) => {
+        const currentTab = this.getCurrentActiveTab();
+        if (currentTab) {
+            const currentIndex = this.getOrderedTabsForServer(currentTab.serverId).findIndex((tab) => tab.id === currentTab.id);
+            let nextIndex = (currentIndex + offset) % this.getOrderedTabsForServer(currentTab.serverId).length;
+            if (nextIndex < 0) {
+                nextIndex = this.getOrderedTabsForServer(currentTab.serverId).length - 1;
+            }
+            const nextTab = this.getOrderedTabsForServer(currentTab.serverId)[nextIndex];
+            if (nextTab) {
+                this.switchToTab(nextTab.id);
+            }
+        }
+    };
+
+    switchToNextTab = () => {
+        this.goToTabOffset(1);
+    };
+
+    switchToPreviousTab = () => {
+        this.goToTabOffset(-1);
     };
 }
 

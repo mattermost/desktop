@@ -1,0 +1,74 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import classNames from 'classnames';
+import React from 'react';
+
+import ConnectionErrorView from './ConnectionErrorView';
+import IncompatibleErrorView from './IncompatibleErrorView';
+import TopBar from './TopBar';
+
+type Props = {
+    children?: React.ReactNode;
+    darkMode: boolean;
+    appName: string;
+    title?: string;
+    errorUrl?: string;
+    errorState?: ErrorState;
+    errorMessage?: string;
+    openMenu: () => void;
+};
+
+export enum ErrorState {
+    FAILED = 'failed',
+    INCOMPATIBLE = 'incompatible',
+}
+
+export default function BasePage({
+    children,
+    darkMode,
+    appName,
+    errorUrl,
+    openMenu,
+    title,
+    errorState,
+    errorMessage,
+}: Props) {
+    let errorComponent;
+    if (errorState === ErrorState.FAILED) {
+        errorComponent = (
+            <ConnectionErrorView
+                darkMode={darkMode}
+                errorInfo={errorMessage}
+                url={errorUrl}
+                appName={appName}
+                handleLink={() => window.desktop.openServerExternally()}
+            />
+        );
+    } else if (errorState === ErrorState.INCOMPATIBLE) {
+        errorComponent = (
+            <IncompatibleErrorView
+                darkMode={darkMode}
+                url={errorUrl}
+                appName={appName}
+                handleLink={() => window.desktop.openServerExternally()}
+                handleUpgradeLink={() => window.desktop.openServerUpgradeLink()}
+            />
+        );
+    }
+
+    return (
+        <div className='BasePage'>
+            <TopBar
+                darkMode={darkMode}
+                title={title}
+                openMenu={openMenu}
+            >
+                {children}
+            </TopBar>
+            <div className={classNames('BasePage__body', {darkMode})}>
+                {errorComponent}
+            </div>
+        </div>
+    );
+}

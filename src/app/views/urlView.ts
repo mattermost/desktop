@@ -1,14 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {IpcMainEvent} from 'electron';
+import type {BrowserWindow, IpcMainEvent} from 'electron';
 import {ipcMain, WebContentsView} from 'electron';
 
-import MainWindow from 'app/mainWindow/mainWindow';
-import TabManager from 'app/tabs/tabManager';
-import {MAIN_WINDOW_CREATED, SET_URL_FOR_URL_VIEW, UPDATE_URL_VIEW_WIDTH} from 'common/communication';
+import {SET_URL_FOR_URL_VIEW, UPDATE_URL_VIEW_WIDTH} from 'common/communication';
 import {Logger} from 'common/log';
-import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {SECOND} from 'common/utils/constants';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload} from 'main/utils';
 
@@ -18,38 +16,23 @@ const URL_VIEW_DURATION = 10 * SECOND;
 const URL_VIEW_HEIGHT = 20;
 
 export class URLView {
-    private urlView?: WebContentsView;
+    private parent: BrowserWindow;
+    private urlView: WebContentsView;
     private urlViewCancel?: () => void;
 
-    constructor() {
-        MainWindow.on(MAIN_WINDOW_CREATED, this.init);
+    constructor(parent: BrowserWindow) {
+        this.parent = parent;
+
+        this.urlView = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
+        this.urlView.setBackgroundColor('#00000000');
+        this.urlView.webContents.loadURL('mattermost-desktop://renderer/urlView.html');
+
+        parent.contentView.addChildView(this.urlView);
+        performanceMonitor.registerView('URLView', this.urlView.webContents);
     }
-
-    init = () => {
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            return;
-        }
-
-        const urlView = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
-        urlView.setBackgroundColor('#00000000');
-
-        urlView.webContents.loadURL('mattermost-desktop://renderer/urlView.html');
-
-        MainWindow.get()?.contentView.addChildView(urlView);
-
-        performanceMonitor.registerView('URLView', urlView.webContents);
-
-        this.urlView = urlView;
-    };
 
     show = (url: URL | string) => {
         log.silly('showURLView', url);
-
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            return;
-        }
 
         if (this.urlViewCancel) {
             this.urlViewCancel();
@@ -59,15 +42,13 @@ export class URLView {
             const urlString = typeof url === 'string' ? url : url.toString();
 
             if (this.urlView && !this.isViewInFront(this.urlView)) {
-                log.silly('moving URL view to front');
-                MainWindow.get()?.contentView.addChildView(this.urlView);
+                this.parent.contentView.addChildView(this.urlView);
             }
 
-            this.urlView?.webContents.send(SET_URL_FOR_URL_VIEW, urlString);
-            this.urlView?.setVisible(true);
+            this.urlView.webContents.send(SET_URL_FOR_URL_VIEW, urlString);
+            this.urlView.setVisible(true);
 
-            // TODO: Will need to account for multiple windows
-            const boundaries = TabManager.getCurrentActiveTabView()?.getBounds() ?? MainWindow.getBounds();
+            const boundaries = this.parent.getBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
@@ -84,13 +65,13 @@ export class URLView {
 
                 const bounds = {
                     x: 0,
-                    y: (boundaries.height + TAB_BAR_HEIGHT) - URL_VIEW_HEIGHT,
+                    y: boundaries.height - URL_VIEW_HEIGHT,
                     width: width + 5, // add some padding to ensure that we don't cut off the border
                     height: URL_VIEW_HEIGHT,
                 };
 
                 log.silly('showURLView.setBounds', boundaries, bounds);
-                this.urlView?.setBounds(bounds);
+                this.urlView.setBounds(bounds);
             };
 
             ipcMain.on(UPDATE_URL_VIEW_WIDTH, adjustWidth);
@@ -107,16 +88,8 @@ export class URLView {
     };
 
     private isViewInFront = (view: WebContentsView) => {
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            return false;
-        }
-
-        const index = mainWindow.contentView.children.indexOf(view);
-        const front = mainWindow.contentView.children.length - 1;
+        const index = this.parent.contentView.children.indexOf(view);
+        const front = this.parent.contentView.children.length - 1;
         return index === front;
     };
 }
-
-const urlView = new URLView();
-export default urlView;

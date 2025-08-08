@@ -16,7 +16,6 @@ import {
     CLOSE_TAB,
     EXIT_FULLSCREEN,
     DOUBLE_CLICK_ON_WINDOW,
-    FOCUS_BROWSERVIEW,
     OPEN_SERVER_EXTERNALLY,
     CLOSE_DOWNLOADS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
@@ -109,6 +108,7 @@ import {
     GET_ACTIVE_TAB_FOR_SERVER,
     UPDATE_TAB_TITLE,
     CREATE_NEW_TAB,
+    CREATE_NEW_WINDOW,
     SERVER_LOGGED_IN_CHANGED,
     TAB_ADDED,
     TAB_REMOVED,
@@ -137,7 +137,6 @@ contextBridge.exposeInMainWorld('desktop', {
     closeTab: (viewId) => ipcRenderer.send(CLOSE_TAB, viewId),
     exitFullScreen: () => ipcRenderer.send(EXIT_FULLSCREEN),
     doubleClickOnWindow: (windowName) => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, windowName),
-    focusCurrentView: () => ipcRenderer.send(FOCUS_BROWSERVIEW),
     openServerExternally: () => ipcRenderer.send(OPEN_SERVER_EXTERNALLY),
     openServerUpgradeLink: () => ipcRenderer.send(OPEN_SERVER_UPGRADE_LINK),
     openChangelogLink: () => ipcRenderer.send(OPEN_CHANGELOG_LINK),
@@ -161,6 +160,7 @@ contextBridge.exposeInMainWorld('desktop', {
     getOrderedTabsForServer: (serverId) => ipcRenderer.invoke(GET_ORDERED_TABS_FOR_SERVER, serverId),
 
     createNewTab: (serverId) => ipcRenderer.invoke(CREATE_NEW_TAB, serverId),
+    createNewWindow: (serverId) => ipcRenderer.invoke(CREATE_NEW_WINDOW, serverId),
     onUpdateTabTitle: (listener) => ipcRenderer.on(UPDATE_TAB_TITLE, (_, viewId, title) => listener(viewId, title)),
     onServerAdded: (listener) => ipcRenderer.on(SERVER_ADDED, (_, serverId, setAsCurrentServer) => listener(serverId, setAsCurrentServer)),
     onServerRemoved: (listener) => ipcRenderer.on(SERVER_REMOVED, (_, serverId) => listener(serverId)),
@@ -187,7 +187,6 @@ contextBridge.exposeInMainWorld('desktop', {
     getDownloadLocation: (downloadLocation) => ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, downloadLocation),
     getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
 
-    onSynchronizeConfig: (listener) => ipcRenderer.on('synchronize-config', () => listener()),
     onReloadConfiguration: (listener) => {
         ipcRenderer.on(RELOAD_CONFIGURATION, () => listener());
         return () => ipcRenderer.off(RELOAD_CONFIGURATION, listener);

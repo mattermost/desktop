@@ -1,0 +1,30 @@
+.TopBar-button {
+    background: none;
+    border: none;
+    color: rgba(61,60,64,0.7);
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    -webkit-app-region: no-drag;
+}
+
+.TopBar-button:hover {
+    background-color: rgba(255,255,255,0.56);
+}
+
+.TopBar-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.darkMode .TopBar-button {
+    color: rgba(221,221,221,0.64);
+}
+
+.darkMode .TopBar-button:hover {
+    background-color: rgba(31, 31, 31, 0.56);
+}

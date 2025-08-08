@@ -8,7 +8,6 @@ export const SWITCH_TAB = 'switch-tab';
 export const CLOSE_VIEW = 'close-view';
 export const OPEN_VIEW = 'open-view';
 export const SET_ACTIVE_VIEW = 'set-active-view';
-export const FOCUS_BROWSERVIEW = 'focus-browserview';
 export const HISTORY = 'history';
 
 export const QUIT = 'quit';
@@ -31,6 +30,7 @@ export const LOAD_RETRY = 'load_retry';
 export const LOAD_SUCCESS = 'load_success';
 export const LOAD_FAILED = 'load_fail';
 export const LOAD_INCOMPATIBLE_SERVER = 'load_incompatible_server';
+export const RELOAD_VIEW = 'reload_view';
 
 export const MAXIMIZE_CHANGE = 'maximized_change';
 
@@ -223,3 +223,6 @@ export const GET_ACTIVE_TAB_FOR_SERVER = 'get-active-tab-for-server';
 export const UPDATE_TAB_TITLE = 'update-tab-title';
 export const CREATE_NEW_TAB = 'create-new-tab';
 export const CLOSE_TAB = 'close-tab';
+
+// Popout Manager Events
+export const CREATE_NEW_WINDOW = 'create-new-window';

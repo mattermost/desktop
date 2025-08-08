@@ -1,13 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {BrowserWindow} from 'electron';
-import {WebContentsView, app, ipcMain} from 'electron';
-import type {WebContentsViewConstructorOptions, Event, Input} from 'electron/main';
+import {type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
+import type {WebContentsViewConstructorOptions, Event} from 'electron/main';
 import {EventEmitter} from 'events';
 import semver from 'semver';
 
-import MainWindow from 'app/mainWindow/mainWindow';
 import AppState from 'common/appState';
 import {
     LOAD_RETRY,
@@ -21,6 +19,7 @@ import {
     LOAD_INCOMPATIBLE_SERVER,
     SERVER_URL_CHANGED,
     BROWSER_HISTORY_PUSH,
+    RELOAD_VIEW,
 } from 'common/communication';
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -45,9 +44,8 @@ enum Status {
     ERROR = -1,
 }
 export class MattermostWebContentsView extends EventEmitter {
-    view: MattermostView;
-    isVisible: boolean;
-    private parentWindow?: BrowserWindow;
+    private view: MattermostView;
+    private parentWindow: BrowserWindow;
 
     private log: Logger;
     private webContentsView: WebContentsView;
@@ -61,10 +59,10 @@ export class MattermostWebContentsView extends EventEmitter {
     private altPressStatus: boolean;
     private lastPath?: string;
 
-    constructor(view: MattermostView, options: WebContentsViewConstructorOptions) {
+    constructor(view: MattermostView, options: WebContentsViewConstructorOptions, parentWindow: BrowserWindow) {
         super();
         this.view = view;
-        this.parentWindow = MainWindow.get();
+        this.parentWindow = parentWindow;
 
         const preload = getLocalPreload('externalAPI.js');
         this.options = Object.assign({}, options);
@@ -76,7 +74,6 @@ export class MattermostWebContentsView extends EventEmitter {
             ],
             ...options.webPreferences,
         };
-        this.isVisible = false;
         this.atRoot = true;
         this.webContentsView = new WebContentsView(this.options);
         this.resetLoadingStatus();
@@ -85,9 +82,6 @@ export class MattermostWebContentsView extends EventEmitter {
         this.log.verbose('View created', this.id, this.view.title);
 
         this.webContentsView.webContents.on('update-target-url', this.handleUpdateTarget);
-        if (process.platform !== 'darwin') {
-            this.webContentsView.webContents.on('before-input-event', this.handleInputEvents);
-        }
         this.webContentsView.webContents.on('input-event', (_, inputEvent) => {
             if (inputEvent.type === 'mouseDown') {
                 ipcMain.emit(CLOSE_SERVERS_DROPDOWN);
@@ -105,7 +99,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
         this.altPressStatus = false;
 
-        this.parentWindow?.on('blur', () => {
+        this.parentWindow.on('blur', () => {
             this.altPressStatus = false;
         });
 
@@ -114,6 +108,9 @@ export class MattermostWebContentsView extends EventEmitter {
 
     get id() {
         return this.view.id;
+    }
+    get serverId() {
+        return this.view.serverId;
     }
     get isAtRoot() {
         return this.atRoot;
@@ -182,7 +179,7 @@ export class MattermostWebContentsView extends EventEmitter {
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
-                MainWindow.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                this.parentWindow.webContents.send(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                 this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                 this.log.info(`Invalid certificate, stop retrying until the user decides what to do: ${err}.`);
                 this.status = Status.ERROR;
@@ -199,6 +196,7 @@ export class MattermostWebContentsView extends EventEmitter {
     reload = (loadURL?: URL | string) => {
         this.resetLoadingStatus();
         AppState.updateExpired(this.id, false);
+        this.emit(RELOAD_VIEW, loadURL);
         this.load(loadURL);
     };
 
@@ -223,7 +221,6 @@ export class MattermostWebContentsView extends EventEmitter {
         }
         this.webContentsView.webContents.close();
 
-        this.isVisible = false;
         if (this.retryLoad) {
             clearTimeout(this.retryLoad);
         }
@@ -328,32 +325,6 @@ export class MattermostWebContentsView extends EventEmitter {
      * ALT key handling for the 3-dot menu (Windows/Linux)
      */
 
-    private registerAltKeyPressed = (input: Input) => {
-        const isAltPressed = input.key === 'Alt' && input.alt === true && input.control === false && input.shift === false && input.meta === false;
-
-        if (input.type === 'keyDown') {
-            this.altPressStatus = isAltPressed;
-        }
-
-        if (input.key !== 'Alt') {
-            this.altPressStatus = false;
-        }
-    };
-
-    private isAltKeyReleased = (input: Input) => {
-        return input.type === 'keyUp' && this.altPressStatus === true;
-    };
-
-    private handleInputEvents = (_: Event, input: Input) => {
-        this.log.silly('handleInputEvents', input);
-
-        this.registerAltKeyPressed(input);
-
-        if (this.isAltKeyReleased(input)) {
-            MainWindow.focusThreeDotMenu();
-        }
-    };
-
     /**
      * Loading/retry logic
      */
@@ -369,7 +340,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);
                 } else {
-                    MainWindow.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                    this.parentWindow.webContents.send(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.log.info(`Couldn't esviewlish a connection with ${loadURL}, will continue to retry in the background`, err);
                     this.status = Status.ERROR;
@@ -410,7 +381,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
-        MainWindow.sendToRenderer(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
+        this.parentWindow.webContents.send(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
         this.log.info(`failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     };
 
@@ -419,17 +390,16 @@ export class MattermostWebContentsView extends EventEmitter {
             const serverInfo = ServerManager.getRemoteInfo(this.view.serverId);
             if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
                 this.log.verbose(`finished loading ${loadURL}`);
-                MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
+                this.parentWindow.webContents.send(LOAD_SUCCESS, this.id);
                 this.maxRetries = MAX_SERVER_RETRIES;
                 this.status = Status.WAITING_MM;
                 this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
                 this.emit(LOAD_SUCCESS, this.id, loadURL);
-                const mainWindow = this.parentWindow;
-                if (mainWindow && this.currentURL) {
-                    this.setBounds(getWindowBoundaries(mainWindow));
+                if (this.parentWindow && this.currentURL) {
+                    this.setBounds(getWindowBoundaries(this.parentWindow));
                 }
             } else {
-                MainWindow.sendToRenderer(LOAD_INCOMPATIBLE_SERVER, this.id, loadURL.toString());
+                this.parentWindow.webContents.send(LOAD_INCOMPATIBLE_SERVER, this.id, loadURL.toString());
                 this.emit(LOAD_FAILED, this.id, 'Incompatible server version', loadURL.toString());
                 this.status = Status.ERROR;
             }
@@ -471,13 +441,5 @@ export class MattermostWebContentsView extends EventEmitter {
         }
 
         ViewManager.updateViewTitle(this.id, channelName);
-    };
-
-    setParentWindow = (window: BrowserWindow) => {
-        this.parentWindow = window;
-    };
-
-    isViewInPopoutWindow = () => {
-        return this.parentWindow?.webContents.getURL().includes('popoutWindow.html') || false;
     };
 }

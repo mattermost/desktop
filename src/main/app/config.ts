@@ -3,11 +3,9 @@
 
 import {app, ipcMain, nativeTheme} from 'electron';
 
-import MainWindow from 'app/mainWindow/mainWindow';
 import {setUnreadBadgeSetting} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
-import LoadingScreen from 'app/views/loadingScreen';
-import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
+import {EMIT_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
 import {Logger, setLoggingLevel} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -73,7 +71,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     }
 
     if (app.isReady()) {
-        MainWindow.sendToRenderer(RELOAD_CONFIGURATION);
         ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
     }
 
@@ -113,9 +110,6 @@ export function handleDarkModeChange(darkMode: boolean) {
     log.debug('handleDarkModeChange', darkMode);
 
     Tray.refreshImages(Config.trayIconTheme);
-    MainWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
-    LoadingScreen.setDarkMode(darkMode);
-
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
 }
 

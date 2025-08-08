@@ -41,7 +41,7 @@ export class NavigationManager {
                     return;
                 }
                 const urlWithSchema = `${server.url.origin}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`;
-                if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.view.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.view.serverId)?.serverVersion ?? '', '6.0.0')) {
+                if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
                     const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
                     const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
                     webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
@@ -69,11 +69,11 @@ export class NavigationManager {
             return;
         }
 
-        if (!ServerManager.getServer(currentView.view.serverId)?.isLoggedIn && !ViewManager.isPrimaryView(currentView.view.id)) {
+        if (!ServerManager.getServer(currentView.serverId)?.isLoggedIn && !ViewManager.isPrimaryView(currentView.id)) {
             return;
         }
 
-        const server = ServerManager.getServer(currentView.view.serverId);
+        const server = ServerManager.getServer(currentView.serverId);
         if (!server) {
             return;
         }

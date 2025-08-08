@@ -26,6 +26,7 @@ module.exports = merge(base, {
         certificateModal: './src/renderer/modals/certificate/certificate.tsx',
         loadingScreen: './src/renderer/modals/loadingScreen/index.tsx',
         welcomeScreen: './src/renderer/modals/welcomeScreen/welcomeScreen.tsx',
+        popout: './src/renderer/popout.tsx',
     },
     output: {
         path: process.env.NODE_ENV === 'test' ? path.resolve(__dirname, 'e2e/dist/renderer') : path.resolve(__dirname, 'dist/renderer'),
@@ -121,6 +122,12 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['welcomeScreen'],
             filename: 'welcomeScreen.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['popout'],
+            filename: 'popout.html',
         }),
         new MiniCssExtractPlugin({
             filename: 'styles.[contenthash].css',

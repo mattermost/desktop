@@ -78,7 +78,7 @@ export class WebContentsEventManager {
         if (!view) {
             return undefined;
         }
-        const server = ServerManager.getServer(view.view.serverId);
+        const server = ServerManager.getServer(view.serverId);
         if (!server) {
             return undefined;
         }

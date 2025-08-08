@@ -92,7 +92,7 @@ export class CallsWidgetWindow {
     }
 
     private get serverID() {
-        return this.mainView?.view.serverId;
+        return this.mainView?.serverId;
     }
 
     public isOpen() {
@@ -263,7 +263,7 @@ export class CallsWidgetWindow {
 
     private onShow = () => {
         log.debug('onShow');
-        const mainWindow = MainWindow.get();
+        const mainWindow = MainWindow.window;
         if (!(this.win && mainWindow)) {
             return;
         }

@@ -3,18 +3,19 @@
 'use strict';
 
 import type {MenuItemConstructorOptions, MenuItem} from 'electron';
-import {app, ipcMain, Menu, session, shell, clipboard} from 'electron';
+import {app, ipcMain, Menu, session, shell, clipboard, BrowserWindow} from 'electron';
 import log from 'electron-log';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import TabManager from 'app/tabs/tabManager';
+import WebContentsManager from 'app/views/webContentsManager';
+import PopoutManager from 'app/windows/popoutManager';
 import {OPEN_SERVERS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication';
 import type {Config} from 'common/config';
 import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK, ModalConstants} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
-import {t} from 'common/utils/util';
 import {clearAllData, clearDataForServer} from 'main/app/utils';
 import type {UpdateManager} from 'main/autoUpdater';
 import DeveloperMode from 'main/developerMode';
@@ -22,6 +23,8 @@ import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
 import {getLocalPreload} from 'main/utils';
+
+import type {UniqueView} from 'types/config';
 
 export function createTemplate(config: Config, updateManager: UpdateManager) {
     const separatorItem: MenuItemConstructorOptions = {
@@ -148,20 +151,21 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 return 'Ctrl+Shift+I';
             })(),
             click() {
-                const mainWindow = MainWindow.get();
-                if (!mainWindow) {
+                // TODO: This is a bit unreliable, find a better way to get the focused window
+                const focusedWindow = BrowserWindow.getFocusedWindow();
+                if (!focusedWindow) {
                     return;
                 }
 
-                if (mainWindow.webContents.isDevToolsOpened()) {
-                    mainWindow.webContents.closeDevTools();
+                if (focusedWindow.webContents.isDevToolsOpened()) {
+                    focusedWindow.webContents.closeDevTools();
                 } else {
-                    mainWindow.webContents.openDevTools({mode: 'detach'});
+                    focusedWindow.webContents.openDevTools({mode: 'detach'});
                 }
             },
         },
         {
-            label: localizeMessage('main.menus.app.view.devToolsCurrentServer', 'Developer Tools for Current Server'),
+            label: localizeMessage('main.menus.app.view.devToolsCurrentView', 'Developer Tools for Current View'),
             click() {
                 TabManager.getCurrentActiveTabView()?.openDevTools();
             },
@@ -228,20 +232,20 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: localizeMessage('main.menus.app.view.find', 'Find..'),
         accelerator: 'CmdOrCtrl+F',
         click() {
-            TabManager.sendToFind();
+            WebContentsManager.getFocusedView()?.openFind();
         },
     }, {
         label: localizeMessage('main.menus.app.view.reload', 'Reload'),
         accelerator: 'CmdOrCtrl+R',
         click() {
-            TabManager.reloadCurrentTab();
+            WebContentsManager.getFocusedView()?.reload();
         },
     }, {
         label: localizeMessage('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
             session.defaultSession.clearCache();
-            TabManager.reloadCurrentTab();
+            WebContentsManager.getFocusedView()?.reload();
         },
     }];
 
@@ -331,25 +335,22 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.history.back', 'Back'),
             accelerator: process.platform === 'darwin' ? 'Cmd+[' : 'Alt+Left',
             click: () => {
-                TabManager.getCurrentActiveTabView()?.goToOffset(-1);
+                WebContentsManager.getFocusedView()?.goToOffset(-1);
             },
         }, {
             label: localizeMessage('main.menus.app.history.forward', 'Forward'),
             accelerator: process.platform === 'darwin' ? 'Cmd+]' : 'Alt+Right',
             click: () => {
-                TabManager.getCurrentActiveTabView()?.goToOffset(1);
+                WebContentsManager.getFocusedView()?.goToOffset(1);
             },
         }],
     });
-
-    // const serverId = ServerManager.getCurrentServerId();
-    // if (!serverId) {
-    //     return;
-    // }
-    // const currentServer = ServerManager.getServer(serverId);
-    // if (!currentServer) {
-    //     return;
-    // }
+    if (!ServerManager.hasServers()) {
+        return template;
+    }
+    const serverId = ServerManager.getCurrentServerId();
+    const currentServer = serverId ? ServerManager.getServer(serverId) : undefined;
+    const currentRemoteInfo = currentServer ? ServerManager.getRemoteInfo(currentServer.id) : undefined;
     const windowMenu = {
         id: 'window',
         label: localizeMessage('main.menus.app.window', '&Window'),
@@ -377,44 +378,55 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             },
         }] : []),
 
-        // ...servers.slice(0, 9).map((server, i) => {
-        //     const items = [];
-        //     items.push({
-        //         label: server.name,
-        //         accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
-        //         click() {
-        //             ServerManager.updateCurrentServer(server.id);
-        //         },
-        //     });
-        //     if (currentServer?.id === server.id) {
-        //         ViewManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view: MattermostView, i: number) => {
-        //             items.push({
-        //                 label: `    ${view.server.name}`,
-        //                 accelerator: `CmdOrCtrl+${i + 1}`,
-        //                 click() {
-        //                     WebContentsManager.showById(view.id);
-        //                 },
-        //             });
-        //         });
-        //     }
-        //     return items;
-        // }).flat(), separatorItem,
+        {
+            label: localizeMessage('main.menus.app.window.createNewWindow', 'Create New Window'),
+            accelerator: 'CmdOrCtrl+N',
+            click() {
+                const serverId = ServerManager.getCurrentServerId();
+                if (!serverId) {
+                    return;
+                }
+                PopoutManager.createNewWindow(serverId);
+            },
+        },
 
-        /*{
+        ...ServerManager.getOrderedServers().slice(0, 9).map((server, i) => {
+            const items = [];
+            items.push({
+                label: server.name,
+                accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
+                click() {
+                    ServerManager.updateCurrentServer(server.id);
+                },
+            });
+            if (currentServer?.id === server.id) {
+                TabManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view: UniqueView, i: number) => {
+                    items.push({
+                        label: `    ${view.title}`,
+                        accelerator: `CmdOrCtrl+${i + 1}`,
+                        click() {
+                            TabManager.switchToTab(view.id);
+                        },
+                    });
+                });
+            }
+            return items;
+        }).flat(), separatorItem,
+        {
             label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
             accelerator: 'Ctrl+Tab',
             click() {
-                ServerViewState.selectNextView();
+                TabManager.switchToNextTab();
             },
-            enabled: (servers.length > 1),
+            enabled: (ServerManager.hasServers()),
         }, {
             label: localizeMessage('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
             accelerator: 'Ctrl+Shift+Tab',
             click() {
-                ServerViewState.selectPreviousView();
+                TabManager.switchToPreviousTab();
             },
-            enabled: (servers.length > 1),
-        }, */
+            enabled: (ServerManager.hasServers()),
+        },
         ...(isMac ? [separatorItem, {
             role: 'front',
             label: localizeMessage('main.menus.app.window.bringAllToFront', 'Bring All to Front'),
@@ -422,10 +434,6 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         ],
     };
     template.push(windowMenu);
-
-    const serverId = ServerManager.getCurrentServerId();
-    const currentServer = serverId ? ServerManager.getServer(serverId) : undefined;
-    const currentRemoteInfo = currentServer ? ServerManager.getRemoteInfo(currentServer.id) : undefined;
     const submenu = [];
     if (updateManager && config.canUpgrade) {
         if (updateManager.versionDownloaded) {
@@ -534,7 +542,3 @@ export function createMenu(config: Config, updateManager: UpdateManager) {
     // TODO: Electron is enforcing certain variables that it doesn't need
     return Menu.buildFromTemplate(createTemplate(config, updateManager) as Array<MenuItemConstructorOptions | MenuItem>);
 }
-
-t('common.tabs.TAB_MESSAGING');
-t('common.tabs.TAB_FOCALBOARD');
-t('common.tabs.TAB_PLAYBOOKS');

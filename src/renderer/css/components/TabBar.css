@@ -237,34 +237,3 @@
 .TabBar .serverTabItem-unread {
   font-weight: bold;
 }
-
-.TabBar-addTab {
-    background: none;
-    border: none;
-    color: rgba(61,60,64,0.7);
-    padding: 5px 12px;
-    cursor: pointer;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    -webkit-app-region: no-drag;
-}
-
-.TabBar-addTab:hover {
-    background-color: rgba(255,255,255,0.56);
-}
-
-.TabBar-addTab:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.darkMode .TabBar-addTab {
-    color: rgba(221,221,221,0.64);
-}
-
-.darkMode .TabBar-addTab:hover {
-    background-color: rgba(31, 31, 31, 0.56);
-}

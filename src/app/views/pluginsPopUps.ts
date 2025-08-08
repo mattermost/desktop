@@ -84,7 +84,7 @@ export class PluginsPopUpsManager {
             }
 
             const serverView = ViewManager.getViewByWebContentsId(parentId);
-            const server = serverView && ServerManager.getServer(serverView.view.serverId);
+            const server = serverView && ServerManager.getServer(serverView.serverId);
 
             // We allow internal (i.e., same server) links to be routed as expected.
             if (server && isTeamUrl(server.url, parsedURL, true)) {

@@ -5,7 +5,7 @@ import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {ipcMain, shell} from 'electron';
 import isDev from 'electron-is-dev';
 
-import URLView from 'app/views/urlView';
+import type BaseWindow from 'app/windows/baseWindow';
 import AppState from 'common/appState';
 import {
     UPDATE_TARGET_URL,
@@ -36,6 +36,7 @@ const log = new Logger('WebContentsManager');
 export class WebContentsManager {
     private webContentsViews: Map<string, MattermostWebContentsView>;
     private webContentsIdToView: Map<number, MattermostWebContentsView>;
+    private focusedWebContentsView?: string;
 
     constructor() {
         this.webContentsViews = new Map();
@@ -70,6 +71,13 @@ export class WebContentsManager {
         return this.webContentsIdToView.get(webContentsId);
     };
 
+    getFocusedView = (): MattermostWebContentsView | undefined => {
+        if (!this.focusedWebContentsView) {
+            return undefined;
+        }
+        return this.webContentsViews.get(this.focusedWebContentsView);
+    };
+
     sendToAllViews = (channel: string, ...args: unknown[]) => {
         this.webContentsViews.forEach((view) => {
             if (!view.isDestroyed()) {
@@ -78,9 +86,15 @@ export class WebContentsManager {
         });
     };
 
-    createView = (view: MattermostView): MattermostWebContentsView => {
-        const webContentsView = new MattermostWebContentsView(view, {webPreferences: {spellcheck: Config.useSpellChecker}});
-        webContentsView.on(UPDATE_TARGET_URL, URLView.show);
+    createView = (view: MattermostView, parentWindow: BaseWindow): MattermostWebContentsView => {
+        const webContentsView = new MattermostWebContentsView(view, {webPreferences: {spellcheck: Config.useSpellChecker}}, parentWindow.browserWindow);
+        webContentsView.on(UPDATE_TARGET_URL, (url) => parentWindow.showURLView(url));
+        webContentsView.getWebContentsView().webContents.on('focus', () => {
+            this.focusedWebContentsView = view.id;
+        });
+        webContentsView.getWebContentsView().webContents.on('blur', () => {
+            this.focusedWebContentsView = undefined;
+        });
         webContentsView.load(view.getLoadingURL());
 
         this.addViewToMap(webContentsView);
@@ -104,7 +118,7 @@ export class WebContentsManager {
         this.webContentsIdToView.set(view.webContentsId, view);
 
         if (ViewManager.isPrimaryView(view.id)) {
-            const server = ServerManager.getServer(view.view.serverId);
+            const server = ServerManager.getServer(view.serverId);
             if (!server) {
                 return;
             }
@@ -140,7 +154,7 @@ export class WebContentsManager {
         if (!view) {
             return;
         }
-        ServerManager.setLoggedIn(view.view.serverId, loggedIn);
+        ServerManager.setLoggedIn(view.serverId, loggedIn);
 
         flushCookiesStore();
     };
@@ -209,7 +223,7 @@ export class WebContentsManager {
         if (!view) {
             return null;
         }
-        const server = ServerManager.getServer(view.view.serverId);
+        const server = ServerManager.getServer(view.serverId);
         if (!server) {
             return null;
         }

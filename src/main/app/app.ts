@@ -103,7 +103,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         const errorID = `${parsedURL.origin}:${error}`;
 
         const view = ViewManager.getViewByWebContentsId(webContents.id);
-        const server = view && ServerManager.getServer(view.view.serverId);
+        const server = view && ServerManager.getServer(view.serverId);
         if (server) {
             const serverURL = parseURL(server.url);
             if (serverURL && serverURL.origin !== parsedURL.origin) {

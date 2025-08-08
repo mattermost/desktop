@@ -1,10 +1,10 @@
-.MainPage {
+.BasePage {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.MainPage__body {
+.BasePage__body {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,6 +13,6 @@
   background-image: url('renderer/assets/svg/background-light.svg');
 }
 
-.MainPage__body.darkMode {
+.BasePage__body.darkMode {
   background-image: url('renderer/assets/svg/background-dark.svg');
 }

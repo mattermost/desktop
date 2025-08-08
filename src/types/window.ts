@@ -37,7 +37,6 @@ declare global {
             closeTab: (viewId: string) => void;
             exitFullScreen: () => void;
             doubleClickOnWindow: (windowName?: string) => void;
-            focusCurrentView: () => void;
             openServerExternally: () => void;
             openServerUpgradeLink: () => void;
             openChangelogLink: () => void;
@@ -56,6 +55,7 @@ declare global {
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             createNewTab: (serverId: string) => Promise<string>;
+            createNewWindow: (serverId: string) => Promise<string>;
             onUpdateTabTitle: (listener: (viewId: string, title: string) => void) => void;
             onServerAdded: (listener: (serverId: string, setAsCurrentServer: boolean) => void) => void;
             onServerRemoved: (listener: (serverId: string) => void) => void;
@@ -82,7 +82,6 @@ declare global {
             getDownloadLocation: (downloadLocation?: string) => Promise<string>;
             getLanguageInformation: () => Promise<Language>;
 
-            onSynchronizeConfig: (listener: () => void) => void;
             onReloadConfiguration: (listener: () => void) => () => void;
             onDarkModeChange: (listener: (darkMode: boolean) => void) => void;
             onLoadRetry: (listener: (viewId: string, retry: Date, err: string, loadUrl: string) => void) => void;

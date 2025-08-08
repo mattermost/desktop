@@ -293,37 +293,36 @@ describe('main/menus/app', () => {
         }
     });
 
-    // TODO: Bring this back when we have views again
-    // it('should show the first 9 views (using order) in the Window menu', () => {
-    //     localizeMessage.mockImplementation((id) => {
-    //         if (id === 'main.menus.app.window') {
-    //             return '&Window';
-    //         }
-    //         if (id.startsWith('common.views')) {
-    //             return id.replace('common.views.', '');
-    //         }
-    //         return id;
-    //     });
-    //     ServerManager.hasServers.mockReturnValue(true);
-    //     ServerViewState.getCurrentServer.mockImplementation(() => ({id: servers[0].id}));
+    it('should show the first 9 views (using order) in the Window menu', () => {
+        localizeMessage.mockImplementation((id) => {
+            if (id === 'main.menus.app.window') {
+                return '&Window';
+            }
+            if (id.startsWith('common.views')) {
+                return id.replace('common.views.', '');
+            }
+            return id;
+        });
+        ServerManager.hasServers.mockReturnValue(true);
+        ServerViewState.getCurrentServer.mockImplementation(() => ({id: servers[0].id}));
 
-    //     const modifiedViews = [...Array(15).keys()].map((key) => ({
-    //         id: `view-${key}`,
-    //         type: `view-${key}`,
-    //         isOpen: true,
-    //     }));
-    //     ServerManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
-    //     const menu = createTemplate(config);
-    //     const windowMenu = menu.find((item) => item.label === '&Window');
-    //     for (let i = 0; i < 9; i++) {
-    //         const menuItem = windowMenu.submenu.find((item) => item.label === `    view-${i}`);
-    //         expect(menuItem).not.toBe(undefined);
-    //     }
-    //     for (let i = 9; i < 15; i++) {
-    //         const menuItem = windowMenu.submenu.find((item) => item.label === `    view-${i}`);
-    //         expect(menuItem).toBe(undefined);
-    //     }
-    // });
+        const modifiedViews = [...Array(15).keys()].map((key) => ({
+            id: `view-${key}`,
+            type: `view-${key}`,
+            isOpen: true,
+        }));
+        ServerManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
+        const menu = createTemplate(config);
+        const windowMenu = menu.find((item) => item.label === '&Window');
+        for (let i = 0; i < 9; i++) {
+            const menuItem = windowMenu.submenu.find((item) => item.label === `    view-${i}`);
+            expect(menuItem).not.toBe(undefined);
+        }
+        for (let i = 9; i < 15; i++) {
+            const menuItem = windowMenu.submenu.find((item) => item.label === `    view-${i}`);
+            expect(menuItem).toBe(undefined);
+        }
+    });
 
     it('should show the "Run diagnostics" item under help', () => {
         const menu = createTemplate(config);

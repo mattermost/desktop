@@ -1,10 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {WebContentsView, app, ipcMain} from 'electron';
+import {type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
 
-import MainWindow from 'app/mainWindow/mainWindow';
-import {DARK_MODE_CHANGE, LOADING_SCREEN_ANIMATION_FINISHED, MAIN_WINDOW_RESIZED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
+import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 import {Logger} from 'common/log';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload, getWindowBoundaries} from 'main/utils';
@@ -18,61 +17,14 @@ enum LoadingScreenState {
 const log = new Logger('LoadingScreen');
 
 export class LoadingScreen {
-    private view?: WebContentsView;
+    private view: WebContentsView;
     private state: LoadingScreenState;
+    private parent: BrowserWindow;
 
-    constructor() {
+    constructor(parent: BrowserWindow) {
         this.state = LoadingScreenState.HIDDEN;
+        this.parent = parent;
 
-        MainWindow.on(MAIN_WINDOW_RESIZED, this.setBounds);
-        ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleAnimationFinished);
-    }
-
-    /**
-     * Loading Screen
-     */
-
-    setDarkMode = (darkMode: boolean) => {
-        this.view?.webContents.send(DARK_MODE_CHANGE, darkMode);
-    };
-
-    isHidden = () => {
-        return this.state === LoadingScreenState.HIDDEN;
-    };
-
-    show = () => {
-        const mainWindow = MainWindow.get();
-        if (!mainWindow) {
-            return;
-        }
-
-        if (!this.view) {
-            this.create();
-        }
-
-        this.state = LoadingScreenState.VISIBLE;
-
-        if (this.view?.webContents.isLoading()) {
-            this.view.webContents.once('did-finish-load', () => {
-                this.view!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-                mainWindow.contentView.addChildView(this.view!);
-            });
-        } else {
-            this.view!.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-            mainWindow.contentView.addChildView(this.view!);
-        }
-
-        this.setBounds();
-    };
-
-    fade = () => {
-        if (this.view && this.state === LoadingScreenState.VISIBLE) {
-            this.state = LoadingScreenState.FADING;
-            this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
-        }
-    };
-
-    private create = () => {
         this.view = new WebContentsView({
             webPreferences: {
                 preload: getLocalPreload('internalAPI.js'),
@@ -85,34 +37,65 @@ export class LoadingScreen {
         );
         performanceMonitor.registerView('LoadingScreen', this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/loadingScreen.html');
+
+        parent.contentView.on('bounds-changed', this.setBounds);
+        ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleAnimationFinished);
+
+        ipcMain.on(EMIT_CONFIGURATION, (event, config) => {
+            this.view.webContents.send(DARK_MODE_CHANGE, config.darkMode);
+        });
+    }
+
+    /**
+     * Loading Screen
+     */
+
+    show = () => {
+        this.state = LoadingScreenState.VISIBLE;
+
+        if (this.view.webContents.isLoading()) {
+            this.view.webContents.once('did-finish-load', () => {
+                this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+                this.parent.contentView.addChildView(this.view);
+            });
+        } else {
+            this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+            this.parent.contentView.addChildView(this.view);
+        }
+
+        this.setBounds();
+    };
+
+    fade = () => {
+        if (this.state === LoadingScreenState.VISIBLE) {
+            this.state = LoadingScreenState.FADING;
+            this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+        }
+    };
+
+    destroy = () => {
+        this.view.webContents.close();
     };
 
     private handleAnimationFinished = () => {
         log.debug('handleLoadingScreenAnimationFinished');
 
-        if (this.view && this.state !== LoadingScreenState.HIDDEN) {
+        if (this.state !== LoadingScreenState.HIDDEN) {
             this.state = LoadingScreenState.HIDDEN;
-            MainWindow.get()?.contentView.removeChildView(this.view);
-            this.view.webContents.close();
-            delete this.view;
+            this.parent.contentView.removeChildView(this.view);
         }
 
         if (process.env.NODE_ENV === 'test') {
             app.emit('e2e-app-loaded');
-            MainWindow.get()?.focus();
+            this.parent.focus();
         }
     };
 
     private setBounds = () => {
-        if (this.view) {
-            const mainWindow = MainWindow.get();
-            if (!mainWindow) {
-                return;
-            }
-            this.view.setBounds(getWindowBoundaries(mainWindow));
-        }
+        this.view.setBounds(getWindowBoundaries(this.parent));
+    };
+
+    private handleDarkModeChange = (darkMode: boolean) => {
+        this.view.webContents.send(DARK_MODE_CHANGE, darkMode);
     };
 }
-
-const loadingScreen = new LoadingScreen();
-export default loadingScreen;

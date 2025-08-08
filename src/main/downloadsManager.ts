@@ -561,7 +561,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             if (!view) {
                 return;
             }
-            const server = ServerManager.getServer(view.view.serverId);
+            const server = ServerManager.getServer(view.serverId);
             if (!server) {
                 return;
             }

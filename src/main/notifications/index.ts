@@ -63,13 +63,13 @@ class NotificationManager {
             log.error('missing view', webcontents.id);
             return {status: 'error', reason: 'missing_view'};
         }
-        const server = ServerManager.getServer(view.view.serverId);
+        const server = ServerManager.getServer(view.serverId);
         if (!server) {
-            log.error('missing server', view.view.serverId);
+            log.error('missing server', view.serverId);
             return {status: 'error', reason: 'missing_server'};
         }
         const serverName = server.name;
-        if (!viewManager.isPrimaryView(view.view.id)) {
+        if (!viewManager.isPrimaryView(view.id)) {
             log.debug('should not notify for this view', webcontents.id);
             return {status: 'not_sent', reason: 'view_should_not_notify'};
         }

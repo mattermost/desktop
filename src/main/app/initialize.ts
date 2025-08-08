@@ -15,7 +15,6 @@ import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
-    FOCUS_BROWSERVIEW,
     QUIT,
     NOTIFY_MENTION,
     UPDATE_SHORTCUT_MENU,
@@ -36,11 +35,16 @@ import {
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
     SERVER_ADDED,
+    VIEW_UPDATED,
+    TAB_ADDED,
+    TAB_REMOVED,
+    TAB_ORDER_UPDATED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
+import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import updateManager from 'main/autoUpdater';
@@ -97,7 +101,6 @@ import {
     wasUpdated,
     migrateMacAppStore,
     updateServerInfos,
-    flushCookiesStore,
 } from './utils';
 import {
     handleDoubleClick,
@@ -204,12 +207,6 @@ function initializeAppEventListeners() {
     app.on('child-process-gone', handleChildProcessGone);
     app.on('login', AuthManager.handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
-
-    // Somehow cookies are not immediately saved to disk.
-    // So manually flush cookie store to disk on closing the app.
-    // https://github.com/electron/electron/issues/8416
-    // TODO: We can remove this once every server supported will flush on login/logout
-    app.on('before-quit', flushCookiesStore);
 }
 
 function initializeBeforeAppReady() {
@@ -264,7 +261,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
-    ipcMain.on(FOCUS_BROWSERVIEW, TabManager.focusCurrentTab);
 
     if (process.platform !== 'darwin') {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
@@ -439,6 +435,10 @@ async function initializeAfterAppReady() {
 
     handleUpdateMenuEvent();
     DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleUpdateMenuEvent);
+    TabManager.on(TAB_ADDED, handleUpdateMenuEvent);
+    TabManager.on(TAB_REMOVED, handleUpdateMenuEvent);
+    TabManager.on(TAB_ORDER_UPDATED, handleUpdateMenuEvent);
+    ViewManager.on(VIEW_UPDATED, handleUpdateMenuEvent);
 
     ipcMain.emit('update-dict');
 
