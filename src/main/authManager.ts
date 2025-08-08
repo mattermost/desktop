@@ -40,6 +40,15 @@ export class AuthManager {
         if (!parsedURL) {
             return;
         }
+
+        // some basic auth challanges are caused by utility
+        // processes so there is no webContent
+        if (!webContents) {
+            this.loginCallbackMap.set(request.url, callback);
+            this.popLoginModal(request, authInfo);
+            return;
+        }
+
         const serverURL = ViewManager.getViewByWebContentsId(webContents.id)?.view.server.url;
         if (!serverURL) {
             return;
