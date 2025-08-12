@@ -17,6 +17,9 @@ jest.mock('main/windows/mainWindow', () => ({
     get: jest.fn(),
     on: jest.fn(),
 }));
+jest.mock('main/views/modalManager', () => ({
+    isModalDisplayed: jest.fn(),
+}));
 
 describe('main/views/loadingScreen', () => {
     describe('show', () => {
