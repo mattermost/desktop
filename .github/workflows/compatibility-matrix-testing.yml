@@ -97,6 +97,7 @@ jobs:
       MM_TEST_SERVER_URL: ${{ matrix.server.url }}
       DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
       MM_SERVER_VERSION: ${{ matrix.server.version }}
+      TYPE: "CMT"
 
   # We need to duplicate here in order to set the proper commit status
   # https://mattermost.atlassian.net/browse/CLD-5815

@@ -66,6 +66,9 @@ jest.mock('app/mainWindow/mainWindow', () => ({
     sendToRenderer: jest.fn(),
     on: jest.fn(),
 }));
+jest.mock('app/mainWindow/modals/modalManager', () => ({
+    isModalDisplayed: jest.fn(),
+}));
 
 describe('main/tray', () => {
     beforeEach(() => {

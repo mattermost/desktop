@@ -180,7 +180,7 @@ export class TabManager extends EventEmitter {
             const webContentsView = WebContentsManager.createView(view, mainWindow);
             webContentsView.on(LOADSCREEN_END, this.finishLoading);
             webContentsView.on(LOAD_FAILED, this.failLoading);
-            webContentsView.on(RELOAD_VIEW, () => mainWindow.showLoadingScreen());
+            webContentsView.on(RELOAD_VIEW, this.onReloadView);
             if (process.platform !== 'darwin') {
                 // @ts-expect-error: The type is wrong on Electrons side
                 webContentsView.getWebContentsView().webContents.on('before-input-event', mainWindow.handleAltKeyPressed);
@@ -291,7 +291,7 @@ export class TabManager extends EventEmitter {
         this.removeCurrentVisibleTab();
         this.currentVisibleTab = viewId;
 
-        if (view.needsLoadingScreen()) {
+        if (view.needsLoadingScreen() && !ModalManager.isModalDisplayed()) {
             MainWindow.window?.showLoadingScreen();
         }
     };
@@ -378,6 +378,12 @@ export class TabManager extends EventEmitter {
             if (nextTab) {
                 this.switchToTab(nextTab.id);
             }
+        }
+    };
+
+    private onReloadView = () => {
+        if (!ModalManager.isModalDisplayed()) {
+            MainWindow.window?.showLoadingScreen();
         }
     };
 }
