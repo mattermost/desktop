@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "Es läuft ein Gespräch auf einem anderen Server, das beendet werden muss, bevor ein neues Gespräch aufgebaut werden kann.",
+  "callsWidgetWindow.cannotStartCall.title": "Anruf kann nicht gestartet werden",
   "common.permissions.canBasicAuth": "Web Authentifizierung",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
