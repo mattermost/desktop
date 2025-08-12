@@ -50,22 +50,6 @@ describe('EditServerModal', function desc() {
             name: 'example',
             url: env.exampleURL,
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         });
     });
 
@@ -80,22 +64,6 @@ describe('EditServerModal', function desc() {
             name: 'example',
             url: env.exampleURL,
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         });
     });
 
@@ -118,43 +86,11 @@ describe('EditServerModal', function desc() {
             name: 'example',
             url: env.exampleURL,
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         });
         savedConfig.teams.should.deep.contain({
             name: 'NewTestServer',
             url: env.exampleURL,
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         });
     });
 
@@ -170,43 +106,11 @@ describe('EditServerModal', function desc() {
             name: 'example',
             url: env.exampleURL,
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         });
         savedConfig.teams.should.deep.contain({
             name: 'example',
             url: 'http://google.com/',
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         });
     });
 
@@ -223,43 +127,11 @@ describe('EditServerModal', function desc() {
             name: 'example',
             url: env.exampleURL,
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         });
         savedConfig.teams.should.deep.contain({
             name: 'NewTestServer',
             url: 'http://google.com/',
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         });
     });
 });

@@ -427,6 +427,10 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     private handlePageTitleUpdated = (event: Event, newTitle: string) => {
+        if (!ServerManager.getServer(this.view.serverId)?.isLoggedIn) {
+            return;
+        }
+
         // Extract just the channel name (everything before the first " - ")
         // Remove any mention count in parentheses at the start
         const parts = newTitle.split(' - ');

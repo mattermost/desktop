@@ -23,7 +23,7 @@ describe('Trigger Notification From desktop', function desc() {
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
 
-        firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        firstServer = this.serverMap[config.teams[0].name][0].win;
         await env.loginToMattermost(firstServer);
         const textbox = await firstServer.waitForSelector('#post_textbox');
         textbox.focus();

@@ -21,24 +21,6 @@ describe('focus', function desc() {
                 name: 'community',
                 url: 'https://community.mattermost.com',
                 order: 0,
-                tabs: [
-                    {
-                        name: 'TAB_MESSAGING',
-                        order: 0,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_FOCALBOARD',
-                        order: 1,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_PLAYBOOKS',
-                        order: 2,
-                        isOpen: true,
-                    },
-                ],
-                lastActiveTab: 0,
             },
         ],
     };
@@ -53,7 +35,7 @@ describe('focus', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
-        firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        firstServer = this.serverMap[config.teams[0].name][0].win;
         await env.loginToMattermost(firstServer);
         const textbox = await firstServer.waitForSelector('#post_textbox');
         textbox.focus();
@@ -122,7 +104,7 @@ describe('focus', function desc() {
             await mainView.click('.ServerDropdownButton');
             await dropdownView.click('.ServerDropdown .ServerDropdown__button:has-text("community")');
             // eslint-disable-next-line dot-notation
-            const secondServer = this.serverMap['community___TAB_MESSAGING'].win;
+            const secondServer = this.serverMap['community'][0].win;
             await secondServer.waitForSelector('#input_loginId');
             await secondServer.focus('#input_loginId');
 

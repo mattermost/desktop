@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import pastDefaultPreferences from 'common/config/pastDefaultPreferences';
-import {upgradeV0toV1, upgradeV1toV2, upgradeV2toV3} from 'common/config/upgradePreferences';
+import {upgradeV0toV1, upgradeV1toV2, upgradeV2toV3, upgradeV3toV4} from 'common/config/upgradePreferences';
 
 jest.mock('electron', () => ({
     app: {
@@ -124,6 +124,83 @@ describe('common/config/upgradePreferences', () => {
                             order: 0,
                         },
                     ],
+                }],
+                spellCheckerLocale: undefined,
+                spellCheckerLocales: ['en-CA'],
+            });
+        });
+    });
+    describe('upgradeV3toV4', () => {
+        it('should upgrade from v3', () => {
+            const config = {
+                version: 3,
+                teams: [{
+                    name: 'Primary server',
+                    url: 'http://server-1.com',
+                    order: 0,
+                    lastActiveTab: 1,
+                    tabs: [
+                        {
+                            name: 'channels',
+                            isOpen: true,
+                            order: 0,
+                        },
+                        {
+                            name: 'threads',
+                            isOpen: false,
+                            order: 1,
+                        },
+                    ],
+                }, {
+                    name: 'Secondary server',
+                    url: 'http://server-2.com',
+                    order: 1,
+                    lastActiveTab: 0,
+                    tabs: [
+                        {
+                            name: 'channels',
+                            isOpen: true,
+                            order: 0,
+                        },
+                    ],
+                }],
+                showTrayIcon: true,
+                trayIconTheme: 'dark',
+                minimizeToTray: true,
+                notifications: {
+                    flashWindow: 2,
+                    bounceIcon: true,
+                    bounceIconType: 'informational',
+                },
+                showUnreadBadge: false,
+                useSpellChecker: false,
+                enableHardwareAcceleration: false,
+                startInFullscreen: false,
+                autostart: false,
+                hideOnStart: false,
+                spellCheckerLocales: ['en-CA', 'fr-CA'],
+                darkMode: true,
+                downloadLocation: '/some/folder/name',
+                lastActiveTeam: 1,
+                autoCheckForUpdates: true,
+                alwaysMinimize: false,
+                alwaysClose: false,
+                logLevel: 'debug',
+                appLanguage: 'en-CA',
+                enableMetrics: false,
+            };
+            expect(upgradeV3toV4(config)).toStrictEqual({
+                ...pastDefaultPreferences[4],
+                ...config,
+                version: 4,
+                teams: [{
+                    name: 'Primary server',
+                    url: 'http://server-1.com',
+                    order: 0,
+                }, {
+                    name: 'Secondary server',
+                    url: 'http://server-2.com',
+                    order: 1,
                 }],
             });
         });

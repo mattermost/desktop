@@ -155,6 +155,15 @@ export class WebContentsManager {
             return;
         }
         ServerManager.setLoggedIn(view.serverId, loggedIn);
+        if (!loggedIn) {
+            const primaryView = ViewManager.getPrimaryView(view.serverId);
+            if (primaryView) {
+                const server = ServerManager.getServer(primaryView.serverId);
+                if (server) {
+                    ViewManager.updateViewTitle(primaryView.id, server.name);
+                }
+            }
+        }
 
         flushCookiesStore();
     };

@@ -110,7 +110,7 @@ export class ServerManager extends EventEmitter {
         return newServer;
     };
 
-    private addServerToMap = (newServer: MattermostServer, setAsCurrentServer: boolean) => {
+    private addServerToMap = (newServer: MattermostServer, setAsCurrentServer: boolean, persist: boolean = true) => {
         this.servers.set(newServer.id, newServer);
         if (!newServer.isPredefined) {
             this.serverOrder.push(newServer.id);
@@ -120,8 +120,9 @@ export class ServerManager extends EventEmitter {
             this.currentServerId = newServer.id;
         }
 
-        // Emit this event whenever we update a server URL to ensure remote info is fetched
-        this.persistServers();
+        if (persist) {
+            this.persistServers();
+        }
         this.emit(SERVER_ADDED, newServer.id, setAsCurrentServer);
         return newServer;
     };
@@ -272,7 +273,7 @@ export class ServerManager extends EventEmitter {
             currentServerIndex = 0;
         }
 
-        initialServers.forEach((server, index) => this.addServerToMap(server, currentServerIndex === index));
+        initialServers.forEach((server, index) => this.addServerToMap(server, currentServerIndex === index, false));
     };
 
     private filterOutDuplicateServers = (servers: MattermostServer[]) => {

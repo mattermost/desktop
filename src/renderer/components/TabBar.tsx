@@ -174,6 +174,7 @@ class TabBar extends React.PureComponent<Props, State> {
                             {tabs}
                             {!this.props.tabsDisabled &&
                                 <button
+                                    id='newTabButton'
                                     className={classNames('TopBar-button', {
                                         darkMode: this.props.isDarkMode,
                                     })}

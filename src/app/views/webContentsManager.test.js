@@ -85,6 +85,7 @@ jest.mock('main/performanceMonitor', () => ({
 jest.mock('common/views/viewManager', () => ({
     getViewLog: jest.fn(),
     getView: jest.fn(),
+    getPrimaryView: jest.fn(),
 }));
 
 jest.mock('main/app/utils', () => ({

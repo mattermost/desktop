@@ -9,37 +9,20 @@ const {asyncSleep} = require('../../modules/utils');
 
 describe('server_management/drag_and_drop', function desc() {
     const config = {
-        ...env.demoConfig,
+        ...env.demoMattermostConfig,
         teams: [
-            ...env.demoConfig.teams,
+            ...env.demoMattermostConfig.teams,
             {
                 name: 'google',
                 url: 'https://google.com/',
                 order: 2,
-                tabs: [
-                    {
-                        name: 'TAB_MESSAGING',
-                        order: 0,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_FOCALBOARD',
-                        order: 1,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_PLAYBOOKS',
-                        order: 2,
-                        isOpen: true,
-                    },
-                ],
-                lastActiveTab: 0,
             },
         ],
-        lastActiveTeam: 2,
+        lastActiveTeam: 0,
     };
 
     const beforeFunc = async () => {
+        env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
@@ -119,7 +102,22 @@ describe('server_management/drag_and_drop', function desc() {
         let mainWindow;
         before(async () => {
             await beforeFunc();
+            this.serverMap = await env.getServerMap(this.app);
+            const mmServer = this.serverMap[config.teams[0].name][0].win;
+            await env.loginToMattermost(mmServer);
             mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            await mainWindow.click('#newTabButton');
+            await mainWindow.click('#newTabButton');
+            await asyncSleep(3000);
+            this.serverMap = await env.getServerMap(this.app);
+
+            const secondView = this.serverMap[config.teams[0].name][1].win;
+            await secondView.waitForSelector('#sidebarItem_off-topic');
+            await secondView.click('#sidebarItem_off-topic');
+
+            const thirdView = this.serverMap[config.teams[0].name][2].win;
+            await thirdView.waitForSelector('#sidebarItem_town-square');
+            await thirdView.click('#sidebarItem_town-square');
         });
         after(afterFunc);
 
@@ -127,13 +125,13 @@ describe('server_management/drag_and_drop', function desc() {
             // Verify the original order
             const firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
             const firstTabText = await firstTab.innerText();
-            firstTabText.should.equal('Channels');
+            firstTabText.should.equal('Town Square');
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
             const secondTabText = await secondTab.innerText();
-            secondTabText.should.equal('Boards');
+            secondTabText.should.equal('Off-Topic');
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
             const thirdTabText = await thirdTab.innerText();
-            thirdTabText.should.equal('Playbooks');
+            thirdTabText.should.equal('Town Square');
         });
 
         it('MM-T2635_2 after moving the tab to the right, the tab should be in the new order', async () => {
@@ -148,25 +146,13 @@ describe('server_management/drag_and_drop', function desc() {
             // Verify that the new order is visible
             firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
             const firstTabText = await firstTab.innerText();
-            firstTabText.should.equal('Boards');
+            firstTabText.should.equal('Off-Topic');
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
             const secondTabText = await secondTab.innerText();
-            secondTabText.should.equal('Channels');
+            secondTabText.should.equal('Town Square');
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
             const thirdTabText = await thirdTab.innerText();
-            thirdTabText.should.equal('Playbooks');
-        });
-
-        it('MM-T2635_3 should update the config file', () => {
-            // Verify config is updated
-            const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-            const firstTeam = newConfig.teams.find((team) => team.name === 'google');
-            const order0 = firstTeam.tabs.find((tab) => tab.name === 'TAB_FOCALBOARD');
-            order0.order.should.equal(0);
-            const order1 = firstTeam.tabs.find((tab) => tab.name === 'TAB_MESSAGING');
-            order1.order.should.equal(1);
-            const order2 = firstTeam.tabs.find((tab) => tab.name === 'TAB_PLAYBOOKS');
-            order2.order.should.equal(2);
+            thirdTabText.should.equal('Town Square');
         });
     });
 });

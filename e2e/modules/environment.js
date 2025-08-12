@@ -42,49 +42,15 @@ const exampleServer = {
     name: 'example',
     url: exampleURL,
     order: 0,
-    tabs: [
-        {
-            name: 'TAB_MESSAGING',
-            order: 0,
-            isOpen: true,
-        },
-        {
-            name: 'TAB_FOCALBOARD',
-            order: 1,
-        },
-        {
-            name: 'TAB_PLAYBOOKS',
-            order: 2,
-        },
-    ],
-    lastActiveTab: 0,
 };
 const githubServer = {
     name: 'github',
     url: 'https://github.com/',
     order: 1,
-    tabs: [
-        {
-            name: 'TAB_MESSAGING',
-            order: 0,
-            isOpen: true,
-        },
-        {
-            name: 'TAB_FOCALBOARD',
-            order: 1,
-            isOpen: true,
-        },
-        {
-            name: 'TAB_PLAYBOOKS',
-            order: 2,
-            isOpen: true,
-        },
-    ],
-    lastActiveTab: 0,
 };
 
 const demoConfig = {
-    version: 3,
+    version: 4,
     teams: [exampleServer, githubServer],
     showTrayIcon: false,
     trayIconTheme: 'light',
@@ -242,14 +208,13 @@ module.exports = {
                     if (!window.testHelper) {
                         return null;
                     }
-                    const info = await window.testHelper.getViewInfoForTest();
-                    if (!info) {
-                        return null;
-                    }
-                    return {viewName: `${info.serverName}___${info.viewType}`, webContentsId: info.webContentsId};
+                    return window.testHelper.getViewInfoForTest();
                 }).then((result) => {
                     if (result) {
-                        map[result.viewName] = {win, webContentsId: result.webContentsId};
+                        if (!map[result.serverName]) {
+                            map[result.serverName] = [];
+                        }
+                        map[result.serverName].push({win, webContentsId: result.webContentsId});
                     }
                 });
             }));

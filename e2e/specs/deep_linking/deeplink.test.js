@@ -41,7 +41,7 @@ describe('application', function desc() {
             }
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const webContentsId = this.serverMap[`${config.teams[1].name}___TAB_MESSAGING`].webContentsId;
+            const webContentsId = this.serverMap[config.teams[1].name][0].webContentsId;
             const isActive = await browserWindow.evaluate((window, id) => {
                 return window.contentView.children.find((view) => view.webContents.id === id).webContents.getURL();
             }, webContentsId);

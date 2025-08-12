@@ -32,7 +32,7 @@ export function upgradeV1toV2(configV1: ConfigV1) {
 }
 
 export function upgradeV2toV3(configV2: ConfigV2) {
-    const config: ConfigV3 = Object.assign({}, deepCopy<ConfigV3>(pastDefaultPreferences[3]), configV2);
+    const config: ConfigV3 = Object.assign({}, deepCopy<ConfigV3>(pastDefaultPreferences[3]), {...configV2, spellCheckerLocale: undefined});
     config.version = 3;
     config.teams = configV2.teams.map((value) => {
         return {
@@ -47,7 +47,7 @@ export function upgradeV2toV3(configV2: ConfigV2) {
         };
     });
     config.lastActiveTeam = 0;
-    config.spellCheckerLocales = [];
+    config.spellCheckerLocales = [configV2.spellCheckerLocale];
     config.startInFullscreen = false;
     return config;
 }

@@ -24,7 +24,7 @@ describe('popup', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
-        firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        firstServer = this.serverMap[config.teams[0].name][0].win;
         await env.loginToMattermost(firstServer);
 
         await firstServer.click('#post_textbox');

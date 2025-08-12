@@ -11,44 +11,30 @@ const {asyncSleep} = require('../../modules/utils');
 
 describe('Menu/window_menu', function desc() {
     const config = {
-        ...env.demoConfig,
+        ...env.demoMattermostConfig,
         teams: [
-            ...env.demoConfig.teams,
+            ...env.demoMattermostConfig.teams,
             {
                 name: 'google',
                 url: 'https://google.com/',
                 order: 2,
-                tabs: [
-                    {
-                        name: 'TAB_MESSAGING',
-                        order: 0,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_FOCALBOARD',
-                        order: 1,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_PLAYBOOKS',
-                        order: 2,
-                        isOpen: true,
-                    },
-                ],
-                lastActiveTab: 0,
             },
         ],
-        lastActiveTeam: 2,
+        lastActiveTeam: 0,
         minimizeToTray: true,
         alwaysMinimize: true,
     };
 
     const beforeFunc = async () => {
+        env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
+        this.serverMap = await env.getServerMap(this.app);
+        const mmServer = this.serverMap[config.teams[0].name][0].win;
+        await env.loginToMattermost(mmServer);
     };
 
     const afterFunc = async () => {
@@ -65,14 +51,13 @@ describe('Menu/window_menu', function desc() {
 
         before(async () => {
             await beforeFunc();
-            await env.getServerMap(this.app);
             mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         });
         after(afterFunc);
 
         it('MM-T826_1 should show the second server', async () => {
             let dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
-            dropdownButtonText.should.equal('google');
+            dropdownButtonText.should.equal('example');
 
             robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("github")');
@@ -98,31 +83,43 @@ describe('Menu/window_menu', function desc() {
         before(async () => {
             await beforeFunc();
             mainView = this.app.windows().find((window) => window.url().includes('index'));
+            await mainView.click('#newTabButton');
+            await mainView.click('#newTabButton');
+            await asyncSleep(3000);
+            this.serverMap = await env.getServerMap(this.app);
+
+            const secondView = this.serverMap[config.teams[0].name][1].win;
+            await secondView.waitForSelector('#sidebarItem_off-topic');
+            await secondView.click('#sidebarItem_off-topic');
+
+            const thirdView = this.serverMap[config.teams[0].name][2].win;
+            await thirdView.waitForSelector('#sidebarItem_town-square');
+            await thirdView.click('#sidebarItem_town-square');
         });
         after(afterFunc);
 
         it('MM-T4385_1 should show the second tab', async () => {
             let tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Channels');
+            tabViewButton.should.equal('Town Square');
 
             robot.keyTap('2', [env.cmdOrCtrl]);
             await asyncSleep(500);
             tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Boards');
+            tabViewButton.should.equal('Off-Topic');
         });
 
         it('MM-T4385_2 should show the third tab', async () => {
             robot.keyTap('3', [env.cmdOrCtrl]);
             await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Playbooks');
+            tabViewButton.should.equal('Town Square');
         });
 
         it('MM-T4385_3 should show the first tab', async () => {
             robot.keyTap('1', [env.cmdOrCtrl]);
             await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Channels');
+            tabViewButton.should.equal('Town Square');
         });
     });
 
@@ -131,18 +128,26 @@ describe('Menu/window_menu', function desc() {
 
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
 
+        await mainView.click('#newTabButton');
+        await asyncSleep(3000);
+        this.serverMap = await env.getServerMap(this.app);
+
+        const secondView = this.serverMap[config.teams[0].name][1].win;
+        await secondView.waitForSelector('#sidebarItem_off-topic');
+        await secondView.click('#sidebarItem_off-topic');
+
         let tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Channels');
+        tabViewButton.should.equal('Off-Topic');
 
         robot.keyTap('tab', ['control']);
         await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Boards');
+        tabViewButton.should.equal('Town Square');
 
         robot.keyTap('tab', ['shift', 'control']);
         await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Channels');
+        tabViewButton.should.equal('Off-Topic');
 
         await afterFunc();
     });

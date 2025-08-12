@@ -127,22 +127,6 @@ describe('Add Server Modal', function desc() {
                 name: 'TestServer',
                 url: 'http://example.org/',
                 order: 2,
-                lastActiveTab: 0,
-                tabs: [
-                    {
-                        name: 'TAB_MESSAGING',
-                        order: 0,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_FOCALBOARD',
-                        order: 1,
-                    },
-                    {
-                        name: 'TAB_PLAYBOOKS',
-                        order: 2,
-                    },
-                ],
             });
         });
     });
