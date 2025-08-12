@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "Na jiném serveru probíhá hovor, který musí být ukončen před připojením k novému hovoru.",
+  "callsWidgetWindow.cannotStartCall.title": "Hovor se nedá uskutečnit",
   "common.permissions.canBasicAuth": "Webová autentifikace",
   "common.tabs.TAB_FOCALBOARD": "Nástěnky",
   "common.tabs.TAB_MESSAGING": "Channels",
