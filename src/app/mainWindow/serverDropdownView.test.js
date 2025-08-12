@@ -8,7 +8,7 @@ import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHA
 
 import {ServerDropdownView} from './serverDropdownView';
 
-jest.mock('app/serverViewState', () => ({}));
+jest.mock('app/serverHub', () => ({}));
 
 jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
@@ -32,7 +32,7 @@ jest.mock('electron', () => ({
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     on: jest.fn(),
     get: jest.fn(),
     getBounds: jest.fn(),

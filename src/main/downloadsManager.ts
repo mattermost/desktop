@@ -8,7 +8,7 @@ import {ipcMain, dialog, shell, Menu, app, nativeImage} from 'electron';
 import type {ProgressInfo, UpdateInfo} from 'electron-updater';
 
 import MainWindow from 'app/mainWindow/mainWindow';
-import ViewManager from 'app/views/webContentsManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {
     CANCEL_UPDATE_DOWNLOAD,
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -557,7 +557,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         log.debug('doneEventController', {state});
 
         if (state === 'completed' && !this.open) {
-            const view = ViewManager.getViewByWebContentsId(webContents.id);
+            const view = WebContentsManager.getViewByWebContentsId(webContents.id);
             if (!view) {
                 return;
             }

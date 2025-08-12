@@ -5,23 +5,22 @@ import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
+import PermissionsManager from 'main/security/permissionsManager';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
 import {DownloadNotification} from './Download';
 import {Mention} from './Mention';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
-
-import MainWindow from '../../app/mainWindow/mainWindow';
-import ViewManager from '../../app/views/webContentsManager';
-import PermissionsManager from '../security/permissionsManager';
 
 const log = new Logger('Notifications');
 
@@ -58,7 +57,7 @@ class NotificationManager {
             return {status: 'not_sent', reason: 'os_dnd'};
         }
 
-        const view = ViewManager.getViewByWebContentsId(webcontents.id);
+        const view = WebContentsManager.getViewByWebContentsId(webcontents.id);
         if (!view) {
             log.error('missing view', webcontents.id);
             return {status: 'error', reason: 'missing_view'};

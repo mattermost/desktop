@@ -41,13 +41,6 @@ import type {UniqueView} from 'types/config';
 
 const log = new Logger('TabManager');
 
-export interface TabInfo {
-    id: string;
-    title: string;
-    isActive: boolean;
-    order: number;
-}
-
 export class TabManager extends EventEmitter {
     private activeTabs: Map<string, string>;
     private tabOrder: Map<string, string[]>;
@@ -164,6 +157,14 @@ export class TabManager extends EventEmitter {
         if (view) {
             view.reload(view.currentURL);
         }
+    };
+
+    switchToNextTab = () => {
+        this.goToTabOffset(1);
+    };
+
+    switchToPreviousTab = () => {
+        this.goToTabOffset(-1);
     };
 
     // Event handlers for ViewManager integration
@@ -378,14 +379,6 @@ export class TabManager extends EventEmitter {
                 this.switchToTab(nextTab.id);
             }
         }
-    };
-
-    switchToNextTab = () => {
-        this.goToTabOffset(1);
-    };
-
-    switchToPreviousTab = () => {
-        this.goToTabOffset(-1);
     };
 }
 

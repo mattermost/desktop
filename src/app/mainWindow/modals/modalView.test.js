@@ -23,9 +23,9 @@ jest.mock('electron', () => ({
     })),
 }));
 
-jest.mock('../contextMenu', () => jest.fn());
+jest.mock('main/contextMenu', () => jest.fn());
 
-jest.mock('../utils', () => ({
+jest.mock('main/utils', () => ({
     getWindowBoundaries: jest.fn(),
 }));
 jest.mock('main/performanceMonitor', () => ({

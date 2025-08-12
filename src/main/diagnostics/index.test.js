@@ -3,7 +3,7 @@
 
 import Diagnostics from '.';
 
-jest.mock('main/windows/mainWindow', () => ({}));
+jest.mock('app/mainWindow/mainWindow', () => ({}));
 jest.mock('common/config', () => ({
     configFilePath: 'mock/config/filepath/',
 }));

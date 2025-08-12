@@ -5,7 +5,8 @@
 
 import {shell, BrowserWindow} from 'electron';
 
-import ViewManager from 'app/views/webContentsManager';
+import NavigationManager from 'app/navigationManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
 
@@ -24,21 +25,21 @@ jest.mock('electron', () => ({
     session: {},
 }));
 jest.mock('main/contextMenu', () => jest.fn());
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
 }));
-jest.mock('../allowProtocolDialog', () => ({}));
-jest.mock('main/windows/callsWidgetWindow', () => ({}));
-jest.mock('main/views/viewManager', () => ({
+jest.mock('main/security/allowProtocolDialog', () => ({}));
+jest.mock('app/callsWidgetWindow', () => ({}));
+jest.mock('common/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
     handleDeepLink: jest.fn(),
 }));
 
-jest.mock('main/views/pluginsPopUps', () => ({
+jest.mock('app/views/pluginsPopUps', () => ({
     handleNewWindow: jest.fn(() => ({action: 'allow'})),
 }));
 
-jest.mock('../utils', () => ({
+jest.mock('main/utils', () => ({
     composeUserAgent: jest.fn(),
 }));
 
@@ -59,8 +60,17 @@ jest.mock('../../../electron-builder.json', () => ({
     ],
 }));
 
-jest.mock('../allowProtocolDialog', () => ({
+jest.mock('main/security/allowProtocolDialog', () => ({
     handleDialogEvent: jest.fn(),
+}));
+
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+    getServerURLByViewId: jest.fn(),
+}));
+
+jest.mock('app/navigationManager', () => ({
+    openLinkInPrimaryTab: jest.fn(),
 }));
 
 describe('main/views/webContentsEvents', () => {
@@ -165,7 +175,7 @@ describe('main/views/webContentsEvents', () => {
         });
 
         it('should open in the browser when there is no server matching', () => {
-            ViewManager.getViewByWebContentsId.mockReturnValue(undefined);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
             expect(newWindow({url: 'http://server-2.com/subpath'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).toBeCalledWith('http://server-2.com/subpath');
         });
@@ -182,7 +192,7 @@ describe('main/views/webContentsEvents', () => {
 
         it('should open team links in the app', () => {
             expect(newWindow({url: 'http://server-1.com/myteam/channels/mychannel'})).toStrictEqual({action: 'deny'});
-            expect(ViewManager.handleDeepLink).toBeCalledWith(new URL('http://server-1.com/myteam/channels/mychannel'));
+            expect(NavigationManager.openLinkInPrimaryTab).toBeCalledWith(new URL('http://server-1.com/myteam/channels/mychannel'));
         });
 
         it('should prevent admin links from opening in a new window', () => {

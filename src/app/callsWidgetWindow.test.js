@@ -4,9 +4,10 @@
 import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
-import ServerViewState from 'app/serverViewState';
+import NavigationManager from 'app/navigationManager';
+import TabManager from 'app/tabs/tabManager';
 import WebContentsEventManager from 'app/views/webContentEvents';
-import ViewManager from 'app/views/webContentsManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {
     CALLS_WIDGET_SHARE_SCREEN,
     BROWSER_HISTORY_PUSH,
@@ -14,6 +15,7 @@ import {
     CALLS_WIDGET_OPEN_THREAD,
     CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL,
 } from 'common/communication';
+import ServerManager from 'common/servers/serverManager';
 import {
     MINIMUM_CALLS_WIDGET_WIDTH,
     MINIMUM_CALLS_WIDGET_HEIGHT,
@@ -48,7 +50,7 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('../views/webContentEvents', () => ({
+jest.mock('app/views/webContentEvents', () => ({
     addWebContentsEventListeners: jest.fn(),
 }));
 
@@ -57,35 +59,63 @@ jest.mock('common/utils/url', () => ({
     getFormattedPathName: jest.fn(),
     parseURL: jest.fn(),
 }));
-jest.mock('main/permissionsManager', () => ({
+jest.mock('main/security/permissionsManager', () => ({
     doPermissionRequest: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     focus: jest.fn(),
+    window: {
+        getBounds: jest.fn(),
+    },
 }));
-jest.mock('app/serverViewState', () => ({
-    switchServer: jest.fn(),
+jest.mock('app/serverHub', () => ({
+    showNewServerModal: jest.fn(),
 }));
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     unregisterView: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({
+jest.mock('common/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
     showById: jest.fn(),
 }));
-jest.mock('../utils', () => ({
+jest.mock('main/utils', () => ({
     openScreensharePermissionsSettingsMacOS: jest.fn(),
     resetScreensharePermissionsMacOS: jest.fn(),
     getLocalPreload: jest.fn((file) => file),
     composeUserAgent: jest.fn(),
 }));
 
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+    getView: jest.fn(),
+    showById: jest.fn(),
+    getServerURLByViewId: jest.fn(),
+}));
+
+jest.mock('app/navigationManager', () => ({
+    openLinkInPrimaryTab: jest.fn(),
+}));
+
+jest.mock('app/mainWindow/modals/modalManager', () => ({
+    on: jest.fn(),
+}));
+
+jest.mock('app/tabs/tabManager', () => ({
+    on: jest.fn(),
+    switchToTab: jest.fn(),
+}));
+
+jest.mock('common/servers/serverManager', () => ({
+    on: jest.fn(),
+    updateCurrentServer: jest.fn(),
+}));
+
 const mockContextMenuReload = jest.fn();
 const mockContextMenuDispose = jest.fn();
-jest.mock('../contextMenu', () => {
+jest.mock('main/contextMenu', () => {
     return jest.fn().mockImplementation(() => {
         return {
             reload: mockContextMenuReload,
@@ -108,30 +138,29 @@ describe('main/windows/callsWidgetWindow', () => {
                 openDevTools: jest.fn(),
             },
         };
-        const mainWindow = {
-            getBounds: jest.fn(),
-        };
+        callsWidgetWindow.setBounds = jest.fn();
 
         beforeEach(() => {
-            mainWindow.getBounds.mockReturnValue({
-                x: 0,
-                y: 0,
-                width: 1280,
-                height: 720,
-            });
+            MainWindow.window = {
+                getBounds: jest.fn().mockReturnValue({
+                    x: 0,
+                    y: 0,
+                    width: 1280,
+                    height: 720,
+                }),
+            };
             callsWidgetWindow.win.getBounds.mockReturnValue({
                 x: 0,
                 y: 0,
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
                 height: MINIMUM_CALLS_WIDGET_HEIGHT,
             });
-            MainWindow.get.mockReturnValue(mainWindow);
         });
 
         it('should call certain functions upon showing the window', () => {
             callsWidgetWindow.onShow();
             expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalled();
-            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({
+            expect(callsWidgetWindow.setBounds).toHaveBeenCalledWith({
                 x: 12,
                 y: 618,
                 width: MINIMUM_CALLS_WIDGET_WIDTH,
@@ -156,7 +185,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         it('widget window visibility should have been toggled', async () => {
             callsWidgetWindow.onShow();
-            expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {skipTransformProcessType: true, visibleOnFullScreen: true});
+            expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {visibleOnFullScreen: true, skipTransformProcessType: true});
             expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(true, 'screen-saver');
             expect(callsWidgetWindow.win.focus).toHaveBeenCalled();
         });
@@ -272,10 +301,9 @@ describe('main/windows/callsWidgetWindow', () => {
                 title: 'call test title #/&',
             };
             callsWidgetWindow.mainView = {
-                server: {
-                    url: new URL('http://localhost:8065'),
-                },
+                id: 'test-view',
             };
+            WebContentsManager.getServerURLByViewId.mockReturnValue('http://localhost:8065');
         });
 
         it('getWidgetURL', () => {
@@ -284,11 +312,8 @@ describe('main/windows/callsWidgetWindow', () => {
         });
 
         it('getWidgetURL - under subpath', () => {
-            callsWidgetWindow.mainView = {
-                server: {
-                    url: new URL('http://localhost:8065/subpath'),
-                },
-            };
+            WebContentsManager.getServerURLByViewId.mockReturnValue('http://localhost:8065/subpath');
+            urlUtils.parseURL.mockReturnValue(new URL('http://localhost:8065/subpath'));
 
             const expected = `http://localhost:8065/subpath/plugins/${CALLS_PLUGIN_ID}/standalone/widget.html?call_id=test-call-id&title=call+test+title+%23%2F%26`;
             expect(callsWidgetWindow.getWidgetURL()).toBe(expected);
@@ -335,10 +360,9 @@ describe('main/windows/callsWidgetWindow', () => {
         beforeEach(() => {
             callsWidgetWindow.options = {callID: 'id'};
             callsWidgetWindow.mainView = {
-                server: {
-                    url: new URL('http://localhost:8065'),
-                },
+                id: 'test-view',
             };
+            callsWidgetWindow.getViewURL = jest.fn().mockReturnValue('http://localhost:8065');
         });
 
         afterEach(() => {
@@ -465,11 +489,10 @@ describe('main/windows/callsWidgetWindow', () => {
     it('getViewURL', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
         callsWidgetWindow.mainView = {
-            server: {
-                url: new URL('http://localhost:8065/'),
-            },
+            id: 'test-view',
         };
-        expect(callsWidgetWindow.getViewURL().toString()).toBe('http://localhost:8065/');
+        WebContentsManager.getServerURLByViewId.mockReturnValue('http://localhost:8065/');
+        expect(callsWidgetWindow.getViewURL()).toBe('http://localhost:8065/');
     });
 
     it('onNavigate', () => {
@@ -521,7 +544,7 @@ describe('main/windows/callsWidgetWindow', () => {
             BrowserWindow.mockReturnValue(browserWindow);
             callsWidgetWindow.close.mockReturnValue(Promise.resolve());
             callsWidgetWindow.getWidgetURL.mockReturnValue('http://server-1.com/widget');
-            ViewManager.getViewByWebContentsId.mockReturnValue(view);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(view);
         });
 
         afterEach(() => {
@@ -646,9 +669,10 @@ describe('main/windows/callsWidgetWindow', () => {
 
         beforeEach(() => {
             PermissionsManager.doPermissionRequest.mockReturnValue(Promise.resolve(true));
-            ViewManager.getViewByWebContentsId.mockImplementation((id) => [...views.values()].find((view) => view.webContentsId === id));
+            WebContentsManager.getViewByWebContentsId.mockImplementation((id) => [...views.values()].find((view) => view.webContentsId === id));
             callsWidgetWindow.mainView = views.get('server-1_view-1');
             callsWidgetWindow.options = {callID: 'callID'};
+            callsWidgetWindow.getViewURL = jest.fn().mockReturnValue('http://localhost:8065');
         });
 
         afterEach(() => {
@@ -811,9 +835,7 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('forwardToMainApp', () => {
         const view = {
             id: 'main-view',
-            server: {
-                id: 'server-1',
-            },
+            serverId: 'server-1',
             sendToRenderer: jest.fn(),
         };
         const callsWidgetWindow = new CallsWidgetWindow();
@@ -824,7 +846,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue({focus});
-            ViewManager.getView.mockReturnValue(view);
+            WebContentsManager.getView.mockReturnValue(view);
         });
 
         afterEach(() => {
@@ -834,8 +856,8 @@ describe('main/windows/callsWidgetWindow', () => {
         it('should pass through the arguments to the webapp', () => {
             const func = callsWidgetWindow.forwardToMainApp('some-channel');
             func({sender: {id: 1}}, 'thecallchannelid');
-            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
-            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('main-view');
+            expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith('some-channel', 'thecallchannelid');
         });
@@ -844,9 +866,7 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleCallsLinkClick', () => {
         const view = {
             id: 'main-view',
-            server: {
-                id: 'server-1',
-            },
+            serverId: 'server-1',
             sendToRenderer: jest.fn(),
         };
         const callsWidgetWindow = new CallsWidgetWindow();
@@ -864,23 +884,23 @@ describe('main/windows/callsWidgetWindow', () => {
                 }
             });
             MainWindow.get.mockReturnValue({focus});
-            ViewManager.getView.mockReturnValue(view);
-            ViewManager.handleDeepLink = jest.fn();
+            WebContentsManager.getView.mockReturnValue(view);
+            WebContentsManager.handleDeepLink = jest.fn();
         });
 
         it('should switch server, tab and focus and send history push event', () => {
             const url = '/team/channel';
             callsWidgetWindow.handleCallsLinkClick({sender: {id: 1}}, url);
-            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
-            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('main-view');
+            expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith(BROWSER_HISTORY_PUSH, url);
         });
 
-        it('should call ViewManager.handleDeepLink for parseable urls', () => {
+        it('should call navigationManager.openLinkInPrimaryTab for parseable urls', () => {
             const url = 'http://localhost:8065/team/channel';
             callsWidgetWindow.handleCallsLinkClick({sender: {id: 1}}, url);
-            expect(ViewManager.handleDeepLink).toHaveBeenCalledWith(new URL(url));
+            expect(NavigationManager.openLinkInPrimaryTab).toHaveBeenCalledWith(new URL(url));
         });
     });
 
@@ -909,9 +929,7 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleCallsOpenThread', () => {
         const view = {
             id: 'main-view',
-            server: {
-                id: 'server-1',
-            },
+            serverId: 'server-1',
             sendToRenderer: jest.fn(),
         };
         const callsWidgetWindow = new CallsWidgetWindow();
@@ -922,15 +940,15 @@ describe('main/windows/callsWidgetWindow', () => {
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue({focus});
-            ViewManager.getView.mockReturnValue(view);
-            ViewManager.handleDeepLink = jest.fn();
+            WebContentsManager.getView.mockReturnValue(view);
+            WebContentsManager.handleDeepLink = jest.fn();
         });
 
         it('should switch server, tab and focus and send open thread event', () => {
             const threadID = 'call-thread-id';
             callsWidgetWindow.handleCallsOpenThread({sender: {id: 1}}, threadID);
-            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
-            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('main-view');
+            expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith(CALLS_WIDGET_OPEN_THREAD, threadID);
         });
@@ -939,9 +957,7 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('handleCallsOpenStopRecordingModal', () => {
         const view = {
             id: 'main-view',
-            server: {
-                id: 'server-1',
-            },
+            serverId: 'server-1',
             sendToRenderer: jest.fn(),
         };
         const callsWidgetWindow = new CallsWidgetWindow();
@@ -952,14 +968,14 @@ describe('main/windows/callsWidgetWindow', () => {
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue({focus});
-            ViewManager.getView.mockReturnValue(view);
+            WebContentsManager.getView.mockReturnValue(view);
         });
 
         it('should switch server, tab and focus and send open modal event', () => {
             const channelID = 'call-channel-id';
             callsWidgetWindow.handleCallsOpenStopRecordingModal({sender: {id: 1}}, channelID);
-            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
-            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('main-view');
+            expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
             expect(view.sendToRenderer).toBeCalledWith(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, channelID);
         });
@@ -968,9 +984,7 @@ describe('main/windows/callsWidgetWindow', () => {
     describe('focusChannelView', () => {
         const view = {
             id: 'main-view',
-            server: {
-                id: 'server-1',
-            },
+            serverId: 'server-1',
             sendToRenderer: jest.fn(),
         };
 
@@ -980,21 +994,21 @@ describe('main/windows/callsWidgetWindow', () => {
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue({focus});
-            ViewManager.getView.mockReturnValue(view);
+            WebContentsManager.getView.mockReturnValue(view);
         });
 
         it('noop if not initialized', () => {
             callsWidgetWindow.focusChannelView();
-            expect(ServerViewState.switchServer).not.toHaveBeenCalled();
-            expect(ViewManager.showById).not.toHaveBeenCalled();
+            expect(TabManager.switchToTab).not.toHaveBeenCalled();
+            expect(ServerManager.updateCurrentServer).not.toHaveBeenCalled();
             expect(focus).not.toHaveBeenCalled();
         });
 
         it('should switch server, tab and focus', () => {
             callsWidgetWindow.mainView = view;
             callsWidgetWindow.focusChannelView();
-            expect(ServerViewState.switchServer).toHaveBeenCalledWith('server-1');
-            expect(ViewManager.showById).toHaveBeenCalledWith('main-view');
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('main-view');
+            expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
             expect(focus).toHaveBeenCalled();
         });
     });

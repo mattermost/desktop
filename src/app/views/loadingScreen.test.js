@@ -2,18 +2,39 @@
 // See LICENSE.txt for license information.
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import {TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 
 import {LoadingScreen} from './loadingScreen';
 
-jest.mock('electron', () => ({
-    ipcMain: {
-        on: jest.fn(),
-    },
-}));
+jest.mock('electron', () => {
+    const EventEmitter = jest.requireActual('events');
+    const mockIpcMain = new EventEmitter();
+    mockIpcMain.on = jest.fn();
+
+    return {
+        ipcMain: mockIpcMain,
+        WebContentsView: jest.fn().mockImplementation(() => {
+            const {EventEmitter} = jest.requireActual('events');
+            const mockWebContents = new EventEmitter();
+            mockWebContents.send = jest.fn();
+            mockWebContents.loadURL = jest.fn();
+            mockWebContents.isLoading = jest.fn();
+
+            return {
+                webContents: mockWebContents,
+                setBounds: jest.fn(),
+            };
+        }),
+    };
+});
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('main/utils', () => ({
+    getLocalPreload: jest.fn(),
+    getWindowBoundaries: jest.fn(),
+}));
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     on: jest.fn(),
 }));
@@ -24,37 +45,32 @@ describe('main/views/loadingScreen', () => {
             contentView: {
                 addChildView: jest.fn(),
                 children: [],
+                on: jest.fn(),
             },
         };
-        const loadingScreen = new LoadingScreen();
-        loadingScreen.create = jest.fn();
-        loadingScreen.setBounds = jest.fn();
-        const view = {webContents: {send: jest.fn(), isLoading: () => false}};
+        const loadingScreen = new LoadingScreen(mainWindow);
 
         beforeEach(() => {
             mainWindow.contentView.children = [];
             MainWindow.get.mockReturnValue(mainWindow);
         });
 
-        afterEach(() => {
-            delete loadingScreen.view;
-            jest.resetAllMocks();
+        it('should add the loading screen view to the window when not loading', () => {
+            loadingScreen.view.webContents.isLoading.mockReturnValue(false);
+            loadingScreen.show();
+            expect(loadingScreen.view.webContents.send).toHaveBeenCalledWith(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+            expect(mainWindow.contentView.addChildView).toHaveBeenCalledWith(loadingScreen.view);
         });
 
-        it('should create new loading screen if one doesnt exist and add it to the window', () => {
-            loadingScreen.create.mockImplementation(() => {
-                loadingScreen.view = view;
-            });
+        it('should add the loading screen view to the window after loading finishes', () => {
+            loadingScreen.view.webContents.isLoading.mockReturnValue(true);
             loadingScreen.show();
-            expect(loadingScreen.create).toHaveBeenCalled();
-            expect(mainWindow.contentView.addChildView).toHaveBeenCalled();
-        });
 
-        it('should set the browser view as top if already exists and needs to be shown', () => {
-            loadingScreen.view = view;
-            mainWindow.contentView.children = [view];
-            loadingScreen.show();
-            expect(mainWindow.contentView.addChildView).toHaveBeenCalled();
+            // Simulate the 'did-finish-load' event
+            loadingScreen.view.webContents.emit('did-finish-load');
+
+            expect(loadingScreen.view.webContents.send).toHaveBeenCalledWith(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+            expect(mainWindow.contentView.addChildView).toHaveBeenCalledWith(loadingScreen.view);
         });
     });
 });

@@ -70,10 +70,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         return;
     }
 
-    if (app.isReady()) {
-        ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
-    }
-
     setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
     updateSpellCheckerLocales();
 

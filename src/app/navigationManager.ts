@@ -69,12 +69,13 @@ export class NavigationManager {
             return;
         }
 
-        if (!ServerManager.getServer(currentView.serverId)?.isLoggedIn && !ViewManager.isPrimaryView(currentView.id)) {
+        const server = ServerManager.getServer(currentView.serverId);
+        if (!server) {
             return;
         }
 
-        const server = ServerManager.getServer(currentView.serverId);
-        if (!server) {
+        // We should disallow navigation to non-logged in servers from non-primary views
+        if (!server?.isLoggedIn && !ViewManager.isPrimaryView(currentView.id)) {
             return;
         }
 

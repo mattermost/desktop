@@ -18,7 +18,7 @@ import {
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
-import ViewManager from 'app/views/webContentsManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {
     GET_MEDIA_ACCESS_STATUS,
     OPEN_WINDOWS_CAMERA_PREFERENCES,
@@ -146,11 +146,11 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         if (CallsWidgetWindow.isCallsWidget(webContentsId)) {
             serverURL = CallsWidgetWindow.getViewURL();
         } else {
-            const view = ViewManager.getViewByWebContentsId(webContentsId);
+            const view = WebContentsManager.getViewByWebContentsId(webContentsId);
             if (!view) {
                 return false;
             }
-            serverURL = ViewManager.getServerURLByViewId(view.id);
+            serverURL = WebContentsManager.getServerURLByViewId(view.id);
         }
 
         if (!serverURL) {

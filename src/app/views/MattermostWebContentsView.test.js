@@ -7,6 +7,7 @@ import AppState from 'common/appState';
 import {LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
+import {MattermostView, ViewType} from 'common/views/MattermostView';
 import {updateServerInfos} from 'main/app/utils';
 import {getServerAPI} from 'main/server/serverAPI';
 
@@ -41,7 +42,7 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('../windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     focusThreeDotMenu: jest.fn(),
     get: jest.fn(),
     sendToRenderer: jest.fn(),
@@ -55,8 +56,8 @@ jest.mock('./webContentEvents', () => ({
     addWebContentsEventListeners: jest.fn(),
     removeWebContentsListeners: jest.fn(),
 }));
-jest.mock('../contextMenu', () => jest.fn());
-jest.mock('../utils', () => ({
+jest.mock('main/contextMenu', () => jest.fn());
+jest.mock('main/utils', () => ({
     getWindowBoundaries: jest.fn(),
     getLocalPreload: (file) => file,
     composeUserAgent: () => 'Mattermost/5.0.0',
@@ -75,6 +76,7 @@ jest.mock('main/performanceMonitor', () => ({
 }));
 jest.mock('common/servers/serverManager', () => ({
     getRemoteInfo: jest.fn(),
+    getServer: jest.fn(),
     getServerLog: jest.fn().mockReturnValue({
         verbose: jest.fn(),
         info: jest.fn(),
@@ -87,17 +89,25 @@ jest.mock('main/server/serverAPI', () => ({
     getServerAPI: jest.fn(),
 }));
 
-const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'});
+const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'}, false, undefined);
+const view = new MattermostView(server, ViewType.TAB);
 
 describe('main/views/MattermostWebContentsView', () => {
     describe('load', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
+            ServerManager.getServer.mockReturnValue(server);
             mattermostView.loadSuccess = jest.fn();
             mattermostView.loadRetry = jest.fn();
+            mattermostView.emit = jest.fn();
+            mattermostView.log = {
+                info: jest.fn(),
+                verbose: jest.fn(),
+                error: jest.fn(),
+            };
         });
 
         it('should load provided URL when provided', async () => {
@@ -150,8 +160,8 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('retry', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
         const retryInBackgroundFn = jest.fn();
 
         beforeEach(() => {
@@ -164,7 +174,7 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.retryInBackground = () => retryInBackgroundFn;
         });
 
-        afterAll(() => {
+        afterEach(() => {
             jest.runOnlyPendingTimers();
             jest.clearAllTimers();
             jest.useRealTimers();
@@ -206,7 +216,7 @@ describe('main/views/MattermostWebContentsView', () => {
             await expect(promise).rejects.toThrow(error);
             expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com', expect.any(Object));
             expect(mattermostView.loadRetry).not.toBeCalled();
-            expect(MainWindow.sendToRenderer).toBeCalledWith(LOAD_FAILED, mattermostView.id, expect.any(String), expect.any(String));
+            expect(window.webContents.send).toBeCalledWith(LOAD_FAILED, mattermostView.id, expect.any(String), expect.any(String));
             expect(mattermostView.status).toBe(-1);
             jest.runAllTimers();
             expect(retryInBackgroundFn).toBeCalled();
@@ -214,8 +224,8 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('retryInBackground', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
         mattermostView.reload = jest.fn();
 
         beforeEach(() => {
@@ -232,8 +242,8 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('goToOffset', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
         mattermostView.reload = jest.fn();
 
         afterEach(() => {
@@ -261,39 +271,9 @@ describe('main/views/MattermostWebContentsView', () => {
         });
     });
 
-    describe('onLogin', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
-        mattermostView.webContentsView.webContents.getURL = jest.fn();
-        mattermostView.reload = jest.fn();
-
-        afterEach(() => {
-            MainWindow.get.mockReturnValue(window);
-            jest.clearAllMocks();
-        });
-
-        it('should reload view when URL is not on subpath of original server URL', () => {
-            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-2.com/subpath');
-            mattermostView.onLogin(true);
-            expect(mattermostView.reload).toHaveBeenCalled();
-        });
-
-        it('should not reload if URLs are matching', () => {
-            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com');
-            mattermostView.onLogin(true);
-            expect(mattermostView.reload).not.toHaveBeenCalled();
-        });
-
-        it('should not reload if URL is subpath of server URL', () => {
-            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com/subpath');
-            mattermostView.onLogin(true);
-            expect(mattermostView.reload).not.toHaveBeenCalled();
-        });
-    });
-
     describe('loadSuccess', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
             jest.useFakeTimers();
@@ -320,82 +300,9 @@ describe('main/views/MattermostWebContentsView', () => {
         });
     });
 
-    describe('show', () => {
-        const window = {
-            contentView: {
-                addChildView: jest.fn(),
-                removeChildView: jest.fn(),
-            },
-            on: jest.fn(),
-        };
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
-
-        beforeEach(() => {
-            jest.useFakeTimers();
-            MainWindow.get.mockReturnValue(window);
-            mattermostView.setBounds = jest.fn();
-            mattermostView.focus = jest.fn();
-        });
-
-        afterAll(() => {
-            jest.runOnlyPendingTimers();
-            jest.clearAllTimers();
-            jest.useRealTimers();
-        });
-
-        it('should add browser view to window and set bounds when request is true and view not currently visible', () => {
-            mattermostView.isVisible = false;
-            mattermostView.show();
-            expect(window.contentView.addChildView).toBeCalledWith(mattermostView.webContentsView);
-            expect(mattermostView.setBounds).toBeCalled();
-            expect(mattermostView.isVisible).toBe(true);
-        });
-
-        it('should do nothing when not toggling', () => {
-            mattermostView.isVisible = true;
-            mattermostView.show();
-            expect(window.contentView.addChildView).not.toBeCalled();
-        });
-
-        it('should focus view if view is ready', () => {
-            mattermostView.status = 1;
-            mattermostView.isVisible = false;
-            mattermostView.show();
-            expect(mattermostView.focus).toBeCalled();
-        });
-    });
-
-    describe('hide', () => {
-        const window = {
-            contentView: {
-                addChildView: jest.fn(),
-                removeChildView: jest.fn(),
-            },
-            on: jest.fn(),
-        };
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
-
-        beforeEach(() => {
-            MainWindow.get.mockReturnValue(window);
-        });
-
-        it('should remove browser view', () => {
-            mattermostView.isVisible = true;
-            mattermostView.hide();
-            expect(window.contentView.removeChildView).toBeCalledWith(mattermostView.webContentsView);
-            expect(mattermostView.isVisible).toBe(false);
-        });
-
-        it('should do nothing when not toggling', () => {
-            mattermostView.isVisible = false;
-            mattermostView.hide();
-            expect(window.contentView.removeChildView).not.toBeCalled();
-        });
-    });
-
     describe('updateHistoryButton', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);
@@ -421,21 +328,21 @@ describe('main/views/MattermostWebContentsView', () => {
         });
 
         it('should remove browser view from window', () => {
-            const mattermostView = new MattermostWebContentsView(server, {}, {});
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
             mattermostView.webContentsView.webContents.close = jest.fn();
             mattermostView.destroy();
             expect(window.contentView.removeChildView).toBeCalledWith(mattermostView.webContentsView);
         });
 
         it('should clear mentions', () => {
-            const mattermostView = new MattermostWebContentsView(server, {}, {});
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
             mattermostView.webContentsView.webContents.close = jest.fn();
             mattermostView.destroy();
             expect(AppState.clear).toBeCalledWith(mattermostView.id);
         });
 
         it('should clear outstanding timeouts', () => {
-            const mattermostView = new MattermostWebContentsView(server, {}, {});
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
             mattermostView.webContentsView.webContents.close = jest.fn();
             const spy = jest.spyOn(global, 'clearTimeout');
             mattermostView.retryLoad = 999;
@@ -445,34 +352,9 @@ describe('main/views/MattermostWebContentsView', () => {
         });
     });
 
-    describe('handleInputEvents', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
-
-        it('should open three dot menu on pressing Alt', () => {
-            MainWindow.get.mockReturnValue(window);
-            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown', alt: true, shift: false, control: false, meta: false});
-            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyUp'});
-            expect(MainWindow.focusThreeDotMenu).toHaveBeenCalled();
-        });
-
-        it('should not open three dot menu on holding Alt', () => {
-            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown'});
-            expect(MainWindow.focusThreeDotMenu).not.toHaveBeenCalled();
-        });
-
-        it('should not open three dot menu on Alt as key combp', () => {
-            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyDown'});
-            mattermostView.handleInputEvents(null, {key: 'F', type: 'keyDown'});
-            mattermostView.handleInputEvents(null, {key: 'F', type: 'keyUp'});
-            mattermostView.handleInputEvents(null, {key: 'Alt', type: 'keyUp'});
-            expect(MainWindow.focusThreeDotMenu).not.toHaveBeenCalled();
-        });
-    });
-
     describe('handleUpdateTarget', () => {
-        const window = {on: jest.fn()};
-        const mattermostView = new MattermostWebContentsView(server, {}, {});
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(window);

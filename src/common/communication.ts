@@ -5,8 +5,6 @@ export const GET_APP_INFO = 'get-app-info';
 
 export const SWITCH_SERVER = 'switch-server';
 export const SWITCH_TAB = 'switch-tab';
-export const CLOSE_VIEW = 'close-view';
-export const OPEN_VIEW = 'open-view';
 export const SET_ACTIVE_VIEW = 'set-active-view';
 export const HISTORY = 'history';
 
@@ -151,7 +149,6 @@ export const DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE = 'downloads-dropdown-menu-clear
 export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-file';
 export const DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-menu-show-file-in-folder';
 
-export const SERVERS_URL_MODIFIED = 'servers-modified';
 export const UPDATE_SERVER_ORDER = 'update-server-order';
 export const UPDATE_TAB_ORDER = 'update-tab-order';
 export const GET_LAST_ACTIVE = 'get-last-active';

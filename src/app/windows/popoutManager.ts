@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {WebContentsView} from 'electron';
 import {ipcMain} from 'electron';
 
 import WebContentsManager from 'app/views/webContentsManager';
@@ -46,18 +47,6 @@ export class PopoutManager {
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.WINDOW) {
             const window = new BaseWindow({});
-            const webContentsView = WebContentsManager.createView(view, window);
-            webContentsView.on(LOADSCREEN_END, () => {
-                window.fadeLoadingScreen();
-            });
-            webContentsView.on(LOAD_FAILED, () => {
-                window.browserWindow?.contentView.removeChildView(webContentsView.getWebContentsView());
-                window.fadeLoadingScreen();
-            });
-            webContentsView.on(RELOAD_VIEW, () => {
-                window.showLoadingScreen();
-            });
-
             const localURL = 'mattermost-desktop://renderer/popout.html';
             performanceMonitor.registerView(`PopoutWindow-${viewId}`, window.browserWindow.webContents);
             window.browserWindow.loadURL(localURL).catch(
@@ -66,25 +55,37 @@ export class PopoutManager {
                 });
 
             this.popoutWindows.set(viewId, window);
-            const setBounds = () => {
-                if (window.browserWindow) {
-                    webContentsView.getWebContentsView().setBounds(getWindowBoundaries(window.browserWindow));
-                }
-            };
-            window.browserWindow.contentView.on('bounds-changed', setBounds);
-            window.browserWindow.on('focus', () => {
-                webContentsView.getWebContentsView().webContents.focus();
-            });
-            window.browserWindow.once('show', setBounds);
-            window.browserWindow.contentView.addChildView(webContentsView.getWebContentsView());
 
+            const webContentsView = WebContentsManager.createView(view, window);
+            webContentsView.on(LOADSCREEN_END, () => window.fadeLoadingScreen());
+            webContentsView.on(LOAD_FAILED, this.onPopoutLoadFailed(window, webContentsView.getWebContentsView()));
+            webContentsView.on(RELOAD_VIEW, () => window.showLoadingScreen());
+            window.browserWindow.contentView.on('bounds-changed', this.setBounds(window, webContentsView.getWebContentsView()));
+            window.browserWindow.on('focus', () => webContentsView.getWebContentsView().webContents.focus());
+            window.browserWindow.once('show', this.setBounds(window, webContentsView.getWebContentsView()));
+
+            window.browserWindow.contentView.addChildView(webContentsView.getWebContentsView());
             if (webContentsView.needsLoadingScreen()) {
                 window.showLoadingScreen();
             }
-            window.browserWindow.show();
 
-            // this.emit(TAB_ADDED, view.serverId, view.id);
+            window.browserWindow.show();
         }
+    };
+
+    private onPopoutLoadFailed = (window: BaseWindow, webContentsView: WebContentsView) => {
+        return () => {
+            window.browserWindow?.contentView.removeChildView(webContentsView);
+            window.fadeLoadingScreen();
+        };
+    };
+
+    private setBounds = (window: BaseWindow, webContentsView: WebContentsView) => {
+        return () => {
+            if (window.browserWindow) {
+                webContentsView.setBounds(getWindowBoundaries(window.browserWindow));
+            }
+        };
     };
 
     private handleViewUpdated = (viewId: string) => {

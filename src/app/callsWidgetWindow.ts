@@ -9,7 +9,7 @@ import NavigationManager from 'app/navigationManager';
 import TabManager from 'app/tabs/tabManager';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import webContentsEventManager from 'app/views/webContentEvents';
-import ViewManager from 'app/views/webContentsManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {
     BROWSER_HISTORY_PUSH,
     CALLS_ERROR,
@@ -116,7 +116,7 @@ export class CallsWidgetWindow {
     };
 
     getViewURL = () => {
-        return this.mainView && ViewManager.getServerURLByViewId(this.mainView.id);
+        return this.mainView && WebContentsManager.getServerURLByViewId(this.mainView.id);
     };
 
     isCallsWidget = (webContentsId: number) => {
@@ -423,7 +423,7 @@ export class CallsWidgetWindow {
             throw new Error('handleGetDesktopSources: blocked on wrong webContentsId');
         }
 
-        const view = ViewManager.getViewByWebContentsId(event.sender.id);
+        const view = WebContentsManager.getViewByWebContentsId(event.sender.id);
         if (!view) {
             throw new Error('handleGetDesktopSources: view not found');
         }
@@ -503,7 +503,7 @@ export class CallsWidgetWindow {
         // window to be fully closed.
         await this.close();
 
-        const currentView = ViewManager.getViewByWebContentsId(event.sender.id);
+        const currentView = WebContentsManager.getViewByWebContentsId(event.sender.id);
         if (!currentView) {
             log.error('unable to create calls widget window: currentView is missing');
             return Promise.resolve();

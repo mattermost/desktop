@@ -36,23 +36,23 @@ describe('common/servers/serverManager', () => {
         });
 
         it('should not save when there is nothing to update', () => {
-            serverManager.updateRemoteInfos(new Map([['server-1', {
+            serverManager.updateRemoteInfo('server-1', {
                 siteURL: 'http://server-1.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: false,
                 hasFocalboard: false,
-            }]]));
+            });
 
             expect(serverManager.persistServers).not.toHaveBeenCalled();
         });
 
         it('should update server URL using site URL', async () => {
-            serverManager.updateRemoteInfos(new Map([['server-1', {
+            serverManager.updateRemoteInfo('server-1', {
                 siteURL: 'http://server-2.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
-            }]]));
+            });
 
             expect(serverManager.servers.get('server-1').url.toString()).toBe('http://server-2.com/');
         });

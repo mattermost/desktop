@@ -45,43 +45,12 @@ export class ViewManager extends EventEmitter {
         return this.getView(viewId);
     };
 
-    getViewLog = (viewId: string, ...additionalPrefixes: string[]) => {
-        const view = this.getView(viewId);
-        if (!view) {
-            return new Logger(viewId);
-        }
-        const server = ServerManager.getServer(view.serverId);
-        if (!server) {
-            return new Logger(...additionalPrefixes, ...this.includeId(viewId));
-        }
-        return new Logger(...additionalPrefixes, ...this.includeId(viewId, server.name));
-    };
-
-    private includeId = (id: string, ...prefixes: string[]) => {
-        const shouldInclude = ['debug', 'silly'].includes(getLevel());
-        return shouldInclude ? [id, ...prefixes] : prefixes;
-    };
-
-    getViewsForServer = (serverId: string): MattermostView[] => {
-        return this.getAllViews().filter((view) => view.serverId === serverId);
-    };
-
-    getAllViews = (): MattermostView[] => {
-        return Array.from(this.views.values());
-    };
-
     isPrimaryView = (viewId: string): boolean => {
         const view = this.views.get(viewId);
         if (!view) {
             return false;
         }
         return this.serverPrimaryViews.get(view.serverId) === viewId;
-    };
-
-    addInitialServerViews = (server: MattermostServer) => {
-        log.debug('addInitialServerViews', server.id, server.name);
-
-        this.createView(server, ViewType.TAB);
     };
 
     createView = (server: MattermostServer, type: ViewType) => {
@@ -144,20 +113,31 @@ export class ViewManager extends EventEmitter {
         this.emit(VIEW_REMOVED, viewId);
     };
 
-    removeAllViewsForServer = (serverId: string) => {
-        log.debug('removeAllViewsForServer', serverId);
+    getViewLog = (viewId: string, ...additionalPrefixes: string[]) => {
+        const view = this.getView(viewId);
+        if (!view) {
+            return new Logger(viewId);
+        }
+        const server = ServerManager.getServer(view.serverId);
+        if (!server) {
+            return new Logger(...additionalPrefixes, ...this.includeId(viewId));
+        }
+        return new Logger(...additionalPrefixes, ...this.includeId(viewId, server.name));
+    };
+
+    private includeId = (id: string, ...prefixes: string[]) => {
+        const shouldInclude = ['debug', 'silly'].includes(getLevel());
+        return shouldInclude ? [id, ...prefixes] : prefixes;
+    };
+
+    private handleServerWasRemoved = (serverId: string) => {
+        log.debug('handleServerWasRemoved', serverId);
 
         this.views.forEach((view) => {
             if (view.serverId === serverId) {
                 this.removeView(view.id);
             }
         });
-    };
-
-    private handleServerWasRemoved = (serverId: string) => {
-        log.debug('handleServerWasRemoved', serverId);
-
-        this.removeAllViewsForServer(serverId);
     };
 
     private handleServerWasAdded = (serverId: string, setAsCurrentServer: boolean) => {
@@ -168,7 +148,8 @@ export class ViewManager extends EventEmitter {
             return;
         }
 
-        this.addInitialServerViews(server);
+        // Create an initial tab view for the server
+        this.createView(server, ViewType.TAB);
     };
 }
 

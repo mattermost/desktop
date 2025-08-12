@@ -11,8 +11,11 @@ import {getFocusAssist as notMockedGetFocusAssist} from 'windows-focus-assist';
 
 import notMockedMainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
+import notMockedWebContentsManager from 'app/views/webContentsManager';
 import {PLAY_SOUND} from 'common/communication';
 import notMockedConfig from 'common/config';
+import notMockedServerManager from 'common/servers/serverManager';
+import notMockedViewManager from 'common/views/viewManager';
 import {localizeMessage as notMockedLocalizeMessage} from 'main/i18nManager';
 import notMockedPermissionsManager from 'main/security/permissionsManager';
 
@@ -29,6 +32,9 @@ const MainWindow = jest.mocked(notMockedMainWindow);
 const localizeMessage = jest.mocked(notMockedLocalizeMessage);
 const cp = jest.mocked(notMockedCP);
 const ipcMain = jest.mocked(NotMockedIpcMain);
+const WebContentsManager = jest.mocked(notMockedWebContentsManager);
+const ServerManager = jest.mocked(notMockedServerManager);
+const ViewManager = jest.mocked(notMockedViewManager);
 
 const mentions: Array<{body: string; value: any}> = [];
 
@@ -73,6 +79,7 @@ jest.mock('electron', () => {
         ipcMain: {
             on: jest.fn(),
             off: jest.fn(),
+            handle: jest.fn(),
         },
         Notification: NotificationMock,
         shell: {
@@ -88,17 +95,12 @@ jest.mock('windows-focus-assist', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
-jest.mock('../views/viewManager', () => ({
-    getViewByWebContentsId: () => ({
-        id: 'server_id',
-        server: {
-            name: 'server_name',
-            url: new URL('http://someurl.com'),
-        },
-    }),
+jest.mock('common/views/viewManager', () => ({
+    getViewByWebContentsId: jest.fn(),
     showById: jest.fn(),
+    isPrimaryView: jest.fn(),
 }));
-jest.mock('../windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     show: jest.fn(),
     sendToRenderer: jest.fn(),
@@ -109,7 +111,24 @@ jest.mock('main/developerMode', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-jest.mock('main/permissionsManager', () => ({
+jest.mock('main/security/permissionsManager', () => ({
+    doPermissionRequest: jest.fn(),
+}));
+
+jest.mock('app/tabs/tabManager', () => ({
+    on: jest.fn(),
+    switchToTab: jest.fn(),
+}));
+
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+}));
+
+jest.mock('common/servers/serverManager', () => ({
+    getServer: jest.fn(),
+}));
+
+jest.mock('main/security/permissionsManager', () => ({
     doPermissionRequest: jest.fn(),
 }));
 
@@ -132,6 +151,21 @@ describe('main/notifications', () => {
                 bounceIconType: 'informational',
             };
             MainWindow.get.mockReturnValue(mainWindow);
+
+            // Setup mocks for the notification flow
+            const mockView = {
+                id: 'view-1',
+                serverId: 'server-1',
+            } as any;
+            const mockServer = {
+                id: 'server-1',
+                name: 'Test Server',
+                url: 'http://server-1.com',
+            } as any;
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockView);
+            ServerManager.getServer.mockReturnValue(mockServer);
+            ViewManager.isPrimaryView.mockReturnValue(true);
         });
 
         afterEach(() => {
@@ -325,13 +359,13 @@ describe('main/notifications', () => {
             const mention = mentions.find((m) => m.body === 'mention_click_body');
             mention?.value.click();
             expect(MainWindow.show).not.toHaveBeenCalled();
-            expect(TabManager.switchToTab).not.toHaveBeenCalledWith('server_id');
+            expect(TabManager.switchToTab).not.toHaveBeenCalledWith('view-1');
 
             // @ts-expect-error "Set by the click handler"
             listener?.({} as unknown as IpcMainEvent);
 
             expect(MainWindow.show).toHaveBeenCalled();
-            expect(TabManager.switchToTab).toHaveBeenCalledWith('server_id');
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('view-1');
         });
 
         it('linux/windows - should not flash frame when config item is not set', async () => {
@@ -426,6 +460,24 @@ describe('main/notifications', () => {
                 value: originalPlatform,
             });
             expect(app.dock!.bounce).toHaveBeenCalledWith('critical');
+        });
+
+        it('should not send notification when view is not primary', async () => {
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            const result = await NotificationManager.displayMention(
+                'test',
+                'test body',
+                'channel_id',
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                {id: 1} as WebContents,
+                '',
+            );
+
+            expect(result).toEqual({status: 'not_sent', reason: 'view_should_not_notify'});
+            expect(mentions.length).toBe(0);
         });
     });
 

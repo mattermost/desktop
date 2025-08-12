@@ -4,7 +4,7 @@ import type {AuthenticationResponseDetails, AuthInfo, WebContents, Event} from '
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import modalManager from 'app/mainWindow/modals/modalManager';
-import ViewManager from 'app/views/webContentsManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
@@ -40,11 +40,11 @@ export class AuthManager {
         if (!parsedURL) {
             return;
         }
-        const view = ViewManager.getViewByWebContentsId(webContents.id);
+        const view = WebContentsManager.getViewByWebContentsId(webContents.id);
         if (!view) {
             return;
         }
-        const serverURL = ViewManager.getServerURLByViewId(view.id);
+        const serverURL = WebContentsManager.getServerURLByViewId(view.id);
         if (!serverURL) {
             return;
         }

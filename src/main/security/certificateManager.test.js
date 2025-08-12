@@ -4,13 +4,13 @@
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
-import {CertificateManager} from 'main/certificateManager';
+import {CertificateManager} from 'main/security/certificateManager';
 
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('main/views/modalManager', () => ({
+jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
 }));
 

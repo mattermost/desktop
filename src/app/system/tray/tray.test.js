@@ -56,13 +56,13 @@ jest.mock('main/AutoLauncher', () => ({
     enable: jest.fn(),
     disable: jest.fn(),
 }));
-jest.mock('main/badge', () => ({
+jest.mock('app/system/badge', () => ({
     setUnreadBadgeSetting: jest.fn(),
 }));
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     sendToRenderer: jest.fn(),
     on: jest.fn(),
 }));

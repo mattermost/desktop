@@ -3,8 +3,9 @@
 
 import {shell} from 'electron';
 
-import ServerViewState from 'app/serverViewState';
-import ViewManager from 'app/views/webContentsManager';
+import NavigationManager from 'app/navigationManager';
+import WebContentsManager from 'app/views/webContentsManager';
+import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 
 import PluginsPopUpsManager from './pluginsPopUps';
@@ -17,24 +18,30 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('main/views/viewManager', () => ({
-    getView: jest.fn(),
+jest.mock('common/servers/serverManager', () => ({
+    getServer: jest.fn(),
+    updateCurrentServer: jest.fn(),
+    on: jest.fn(),
+}));
+
+jest.mock('app/views/webContentsManager', () => ({
     getViewByWebContentsId: jest.fn(),
-    handleDeepLink: jest.fn(),
+    getServerURLByViewId: jest.fn(),
 }));
 
-jest.mock('app/serverViewState', () => ({
-    switchServer: jest.fn(),
+jest.mock('app/navigationManager', () => ({
+    openLinkInPrimaryTab: jest.fn(),
 }));
 
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     focus: jest.fn(),
+    on: jest.fn(),
 }));
 
 const mockContextMenuReload = jest.fn();
 const mockContextMenuDispose = jest.fn();
-jest.mock('../contextMenu', () => {
+jest.mock('main/contextMenu', () => {
     return jest.fn().mockImplementation(() => {
         return {
             reload: mockContextMenuReload,
@@ -43,7 +50,7 @@ jest.mock('../contextMenu', () => {
     });
 });
 
-jest.mock('../allowProtocolDialog', () => ({
+jest.mock('main/security/allowProtocolDialog', () => ({
     handleDialogEvent: jest.fn(),
 }));
 
@@ -121,11 +128,11 @@ describe('PluginsPopUpsManager', () => {
         expect(shell.openExternal).not.toHaveBeenCalled();
 
         // Verify internal link is routed in main view
-        ViewManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1, server: {url: parseURL('http://localhost:8065'), id: 4545}});
+        WebContentsManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1, serverId: 'server-1'});
+        ServerManager.getServer.mockReturnValue({id: 'server-1', url: parseURL('http://localhost:8065')});
         expect(handlers['window-open']({url: 'http://localhost:8065/team/channel'})).toEqual({action: 'deny'});
         expect(shell.openExternal).not.toHaveBeenCalled();
-        expect(ServerViewState.switchServer).toHaveBeenCalledWith(4545);
-        expect(ViewManager.handleDeepLink).toHaveBeenCalledWith(parseURL('http://localhost:8065/team/channel'));
+        expect(NavigationManager.openLinkInPrimaryTab).toHaveBeenCalledWith(parseURL('http://localhost:8065/team/channel'));
 
         // Verify opening custom protocols is handled through allowProtocolDialog
         expect(handlers['window-open']({url: 'custom:somelink'})).toEqual({action: 'deny'});
@@ -164,7 +171,7 @@ describe('PluginsPopUpsManager', () => {
         expect(PluginsPopUpsManager.handleNewWindow(45, {url: 'about:blank'})).toEqual({action: 'deny'});
 
         // Finally, we allow if URL is `about:blank` and a parent view exists
-        ViewManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1});
+        WebContentsManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1});
         expect(PluginsPopUpsManager.handleNewWindow(45, {url: 'about:blank'})).toEqual({action: 'allow'});
     });
 });

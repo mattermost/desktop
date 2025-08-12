@@ -3,7 +3,7 @@
 
 'use strict';
 
-import ViewManager from 'app/views/webContentsManager';
+import TabManager from 'app/tabs/tabManager';
 
 import {ModalManager} from './modalManager';
 
@@ -15,17 +15,26 @@ jest.mock('electron', () => ({
     },
 }));
 
-jest.mock('main/views/webContentEvents', () => ({
+jest.mock('app/views/webContentEvents', () => ({
     addWebContentsEventListeners: jest.fn(),
+}));
+
+jest.mock('app/tabs/tabManager', () => ({
+    on: jest.fn(),
+    focusCurrentTab: jest.fn(),
+}));
+
+jest.mock('app/views/webContentsManager', () => ({
+    on: jest.fn(),
 }));
 
 jest.mock('./modalView', () => ({
     ModalView: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({
+jest.mock('common/views/viewManager', () => ({
     focusCurrentView: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     on: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
@@ -160,7 +169,7 @@ describe('main/views/modalManager', () => {
             modalManager.modalQueue.pop();
             modalManager.modalPromises.delete('test2');
             modalManager.handleModalFinished('resolve', {sender: {id: 1}}, 'something');
-            expect(ViewManager.focusCurrentView).toBeCalled();
+            expect(TabManager.focusCurrentTab).toBeCalled();
         });
     });
 });

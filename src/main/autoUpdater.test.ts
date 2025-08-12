@@ -48,7 +48,7 @@ jest.mock('main/notifications', () => ({
     displayRestartToUpgrade: jest.fn(),
 }));
 
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     sendToRenderer: jest.fn(),
 }));
 

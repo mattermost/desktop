@@ -79,10 +79,17 @@ jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
 jest.mock('main/notifications', () => ({}));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     sendToRenderer: jest.fn(),
+    on: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({}));
+jest.mock('common/views/viewManager', () => ({
+    on: jest.fn(),
+}));
+
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+}));
 jest.mock('common/config', () => {
     const original = jest.requireActual('common/config');
     return {

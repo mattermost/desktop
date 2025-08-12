@@ -3,7 +3,7 @@
 'use strict';
 
 import {BASIC_AUTH_PERMISSION} from 'common/permissions';
-import {TrustedOriginsStore} from 'main/trustedOrigins';
+import {TrustedOriginsStore} from 'main/security/trustedOrigins';
 
 jest.mock('path', () => ({
     resolve: jest.fn(),

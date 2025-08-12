@@ -5,7 +5,7 @@ import {dialog, systemPreferences} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
-import ViewManager from 'app/views/webContentsManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import Config from 'common/config';
 import {parseURL, isTrustedURL} from 'common/utils/url';
 
@@ -40,22 +40,31 @@ jest.mock('common/utils/url', () => ({
 
 jest.mock('common/config', () => ({
     registryData: {
-        servers: [],
+        servers: [
+            {url: 'http://gposerver.com'},
+        ],
     },
 }));
 
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({
+jest.mock('common/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
+    on: jest.fn(),
 }));
-jest.mock('main/windows/callsWidgetWindow', () => ({
+jest.mock('app/callsWidgetWindow', () => ({
     isCallsWidget: jest.fn(),
     getViewURL: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
+    on: jest.fn(),
+}));
+
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+    getServerURLByViewId: jest.fn(),
 }));
 
 describe('main/PermissionsManager', () => {
@@ -77,17 +86,32 @@ describe('main/PermissionsManager', () => {
         beforeEach(() => {
             process.env = {...env, NODE_ENV: 'jest'};
             MainWindow.get.mockReturnValue({webContents: {id: 1}});
-            ViewManager.getViewByWebContentsId.mockImplementation((id) => {
+            WebContentsManager.getViewByWebContentsId.mockImplementation((id) => {
                 if (id === 2) {
-                    return {server: {url: new URL('http://anyurl.com')}};
+                    return {id: 'view-2'};
                 }
                 if (id === 4) {
-                    return {server: {url: new URL('http://gposerver.com')}};
+                    return {id: 'view-4'};
+                }
+                if (id === 5) {
+                    return {id: 'view-5'};
                 }
 
                 return null;
             });
-            CallsWidgetWindow.isCallsWidget.mockImplementation((id) => id === 3);
+            WebContentsManager.getServerURLByViewId.mockImplementation((viewId) => {
+                if (viewId === 'view-2') {
+                    return new URL('http://anyurl.com');
+                }
+                if (viewId === 'view-4') {
+                    return new URL('http://gposerver.com');
+                }
+                if (viewId === 'view-5') {
+                    return new URL('http://wrongurl.com');
+                }
+                return null;
+            });
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(false);
             parseURL.mockImplementation((url) => {
                 try {
                     return new URL(url);
@@ -233,11 +257,16 @@ describe('main/PermissionsManager', () => {
         });
 
         it('should still pop dialog for media requests from the servers origin', async () => {
-            ViewManager.getViewByWebContentsId.mockImplementation((id) => {
+            WebContentsManager.getViewByWebContentsId.mockImplementation((id) => {
                 if (id === 2) {
-                    return {server: {url: new URL('http://anyurl.com/subpath')}};
+                    return {id: 'view-2'};
                 }
-
+                return null;
+            });
+            WebContentsManager.getServerURLByViewId.mockImplementation((viewId) => {
+                if (viewId === 'view-2') {
+                    return new URL('http://anyurl.com/subpath');
+                }
                 return null;
             });
             const permissionsManager = new PermissionsManager('anyfile.json');

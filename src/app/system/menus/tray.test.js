@@ -14,14 +14,14 @@ jest.mock('main/i18nManager', () => ({
 jest.mock('common/servers/serverManager', () => ({
     getOrderedServers: jest.fn(),
 }));
-jest.mock('app/serverViewState', () => ({
+jest.mock('app/serverHub', () => ({
     switchServer: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     sendToRenderer: jest.fn(),
     on: jest.fn(),
 }));
-jest.mock('main/views/modalManager', () => ({
+jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
 }));
 

@@ -4,10 +4,9 @@
 import os from 'os';
 import path from 'path';
 
-import {app} from 'electron';
+import {app, ipcMain} from 'electron';
 
-import MainWindow from 'app/mainWindow/mainWindow';
-import {RELOAD_CONFIGURATION} from 'common/communication';
+import {EMIT_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
 import {getDefaultDownloadLocation} from 'common/config/defaultPreferences';
 import {setLoggingLevel} from 'common/log';
@@ -44,17 +43,17 @@ jest.mock('main/AutoLauncher', () => ({
     enable: jest.fn(),
     disable: jest.fn(),
 }));
-jest.mock('main/badge', () => ({
+jest.mock('app/system/badge', () => ({
     setUnreadBadgeSetting: jest.fn(),
 }));
-jest.mock('main/tray/tray', () => ({
+jest.mock('app/system/tray/tray', () => ({
     refreshTrayImages: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({
+jest.mock('common/views/viewManager', () => ({
     reloadConfiguration: jest.fn(),
 }));
-jest.mock('main/views/loadingScreen', () => ({}));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/views/loadingScreen', () => ({}));
+jest.mock('app/mainWindow/mainWindow', () => ({
     sendToRenderer: jest.fn(),
 }));
 
@@ -82,13 +81,12 @@ describe('main/app/config', () => {
             global.__IS_MAC_APP_STORE__ = false;
         });
 
-        it('should reload renderer config only when app is ready', () => {
-            handleConfigUpdate({});
-            expect(MainWindow.sendToRenderer).not.toBeCalled();
-
-            app.isReady.mockReturnValue(true);
-            handleConfigUpdate({});
-            expect(MainWindow.sendToRenderer).toBeCalledWith(RELOAD_CONFIGURATION);
+        it('should emit configuration event', () => {
+            const newConfig = {
+                foo: 'bar',
+            };
+            handleConfigUpdate(newConfig);
+            expect(ipcMain.emit).toBeCalledWith(EMIT_CONFIGURATION, true, newConfig);
         });
 
         it('should set download path if applicable', () => {
@@ -164,6 +162,7 @@ describe('main/app/config', () => {
             });
             Config.registryConfigData = {};
 
+            app.isReady.mockReturnValue(true);
             handleConfigUpdate({servers: []});
             expect(handleMainWindowIsShown).toHaveBeenCalled();
 

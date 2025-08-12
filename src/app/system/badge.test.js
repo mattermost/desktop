@@ -22,7 +22,7 @@ jest.mock('electron', () => ({
 jest.mock('common/appState', () => ({
     emitStatus: jest.fn(),
 }));
-jest.mock('./windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
 }));
 

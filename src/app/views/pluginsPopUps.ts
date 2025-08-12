@@ -12,7 +12,7 @@ import {shell} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
 import {generateHandleConsoleMessage, isCustomProtocol} from 'app/views/webContentEventsCommon';
-import ViewManager from 'app/views/webContentsManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {
@@ -83,7 +83,7 @@ export class PluginsPopUpsManager {
                 return {action: 'deny'};
             }
 
-            const serverView = ViewManager.getViewByWebContentsId(parentId);
+            const serverView = WebContentsManager.getViewByWebContentsId(parentId);
             const server = serverView && ServerManager.getServer(serverView.serverId);
 
             // We allow internal (i.e., same server) links to be routed as expected.
@@ -133,7 +133,7 @@ export class PluginsPopUpsManager {
         }
 
         // Make sure the parent view exists.
-        const parentView = ViewManager.getViewByWebContentsId(parentId);
+        const parentView = WebContentsManager.getViewByWebContentsId(parentId);
         if (!parentView) {
             log.warn('handleNewWindow: parent view not found');
             return {action: 'deny'};

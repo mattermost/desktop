@@ -5,7 +5,7 @@ import path from 'path';
 
 import {app, session} from 'electron';
 
-import ViewManager from 'app/views/webContentsManager';
+import NavigationManager from 'app/navigationManager';
 import Config from 'common/config';
 import parseArgs from 'main/ParseArgs';
 
@@ -103,7 +103,7 @@ jest.mock('../../../electron-builder.json', () => ([
     },
 ]));
 
-jest.mock('app/serverViewState', () => ({
+jest.mock('app/serverHub', () => ({
     init: jest.fn(),
 }));
 jest.mock('common/config', () => ({
@@ -113,7 +113,7 @@ jest.mock('common/config', () => ({
     initRegistry: jest.fn(),
 }));
 
-jest.mock('main/allowProtocolDialog', () => ({
+jest.mock('main/security/allowProtocolDialog', () => ({
     init: jest.fn(),
 }));
 jest.mock('main/app/app', () => ({}));
@@ -138,15 +138,15 @@ jest.mock('common/appState', () => ({
     on: jest.fn(),
 }));
 jest.mock('main/AppVersionManager', () => ({}));
-jest.mock('main/authManager', () => ({}));
+jest.mock('main/security/authManager', () => ({}));
 jest.mock('main/AutoLauncher', () => ({
     upgradeAutoLaunch: jest.fn(),
 }));
 jest.mock('main/autoUpdater', () => ({}));
-jest.mock('main/badge', () => ({
+jest.mock('app/system/badge', () => ({
     setupBadge: jest.fn(),
 }));
-jest.mock('main/certificateManager', () => ({}));
+jest.mock('main/security/certificateManager', () => ({}));
 jest.mock('main/CriticalErrorHandler', () => ({
     init: jest.fn(),
 }));
@@ -160,26 +160,56 @@ jest.mock('common/servers/serverManager', () => ({
     getAllServers: jest.fn(),
     on: jest.fn(),
 }));
-jest.mock('main/tray/tray', () => ({
+jest.mock('app/system/tray/tray', () => ({
     refreshImages: jest.fn(),
     setup: jest.fn(),
 }));
-jest.mock('main/trustedOrigins', () => ({
+jest.mock('main/security/trustedOrigins', () => ({
     load: jest.fn(),
 }));
 jest.mock('main/UserActivityMonitor', () => ({
     on: jest.fn(),
     startMonitoring: jest.fn(),
 }));
-jest.mock('main/windows/callsWidgetWindow', () => ({}));
-jest.mock('main/views/viewManager', () => ({
+jest.mock('app/callsWidgetWindow', () => ({}));
+jest.mock('app/views/webContentsManager', () => ({
     getViewByWebContentsId: jest.fn(),
     handleDeepLink: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     show: jest.fn(),
     sendToRenderer: jest.fn(),
+    on: jest.fn(),
+}));
+
+jest.mock('app/views/webContentsManager', () => ({
+    on: jest.fn(),
+    getServerURLByViewId: jest.fn(),
+}));
+
+jest.mock('app/navigationManager', () => ({
+    on: jest.fn(),
+    openLinkInPrimaryTab: jest.fn(),
+}));
+
+jest.mock('app/tabs/tabManager', () => ({
+    on: jest.fn(),
+}));
+
+jest.mock('main/developerMode', () => ({
+    on: jest.fn(),
+    switchOff: jest.fn(),
+}));
+
+jest.mock('common/servers/serverManager', () => ({
+    init: jest.fn(),
+    on: jest.fn(),
+}));
+
+jest.mock('common/views/viewManager', () => ({
+    handleDeepLink: jest.fn(),
+    on: jest.fn(),
 }));
 const originalProcess = process;
 describe('main/app/initialize', () => {
@@ -272,7 +302,7 @@ describe('main/app/initialize', () => {
                 value: originalPlatform,
             });
 
-            expect(ViewManager.handleDeepLink).toHaveBeenCalledWith('mattermost://server-1.com');
+            expect(NavigationManager.openLinkInPrimaryTab).toHaveBeenCalledWith('mattermost://server-1.com');
         });
     });
 });

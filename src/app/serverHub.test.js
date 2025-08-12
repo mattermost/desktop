@@ -3,7 +3,6 @@
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
-import ViewManager from 'app/views/webContentsManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
@@ -11,7 +10,7 @@ import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 
-import {ServerViewState} from './serverViewState';
+import {ServerHub} from './serverHub';
 
 jest.mock('electron', () => ({
     app: {
@@ -37,6 +36,8 @@ jest.mock('common/servers/serverManager', () => ({
     getServerLog: jest.fn(),
     lookupServerByURL: jest.fn(),
     getOrderedServers: jest.fn(),
+    on: jest.fn(),
+    emit: jest.fn(),
 }));
 jest.mock('common/servers/MattermostServer', () => ({
     MattermostServer: jest.fn(),
@@ -44,21 +45,24 @@ jest.mock('common/servers/MattermostServer', () => ({
 jest.mock('main/server/serverInfo', () => ({
     ServerInfo: jest.fn(),
 }));
-jest.mock('main/views/modalManager', () => ({
+jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     show: jest.fn(),
+    on: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({
+
+jest.mock('common/views/viewManager', () => ({
     getView: jest.fn(),
     showById: jest.fn(),
+    on: jest.fn(),
 }));
-jest.mock('main/permissionsManager', () => ({
+jest.mock('main/security/permissionsManager', () => ({
     getForServer: jest.fn(),
     setForServer: jest.fn(),
 }));
@@ -82,79 +86,8 @@ const testServers = [
 ];
 
 describe('app/serverViewState', () => {
-    describe('switchServer', () => {
-        const serverViewState = new ServerViewState();
-
-        beforeEach(() => {
-            jest.useFakeTimers();
-
-            // Mock ServerManager to return different servers by ID
-            ServerManager.getServer.mockImplementation((serverId) => {
-                return testServers.find((server) => server.id === serverId);
-            });
-
-            ServerManager.getServerLog.mockReturnValue({debug: jest.fn(), error: jest.fn()});
-
-            // Mock views associated with servers - each view uses its server ID directly
-            ViewManager.getView.mockImplementation((serverId) => {
-                const server = testServers.find((s) => s.id === serverId);
-                return server ? {id: serverId, serverId: server.id} : undefined;
-            });
-
-            ServerManager.getLastActiveTabForServer.mockImplementation((serverId) => {
-                return {id: serverId};
-            });
-        });
-
-        afterEach(() => {
-            jest.resetAllMocks();
-        });
-
-        afterAll(() => {
-            jest.runOnlyPendingTimers();
-            jest.clearAllTimers();
-            jest.useRealTimers();
-        });
-
-        it('should do nothing if cannot find the server', () => {
-            serverViewState.switchServer('nonexistent-server');
-            expect(ViewManager.showById).not.toBeCalled();
-        });
-
-        it('should switch to server-1 and show its view', () => {
-            serverViewState.switchServer('server-1');
-            expect(ViewManager.showById).toHaveBeenCalledWith('server-1');
-        });
-
-        it('should switch to server-2 and show its view', () => {
-            serverViewState.switchServer('server-2');
-            expect(ViewManager.showById).toHaveBeenCalledWith('server-2');
-        });
-
-        it('should switch to server-3 and show its view', () => {
-            serverViewState.switchServer('server-3');
-            expect(ViewManager.showById).toHaveBeenCalledWith('server-3');
-        });
-
-        it('should wait for view to exist if specified', () => {
-            // Mock that the view doesn't exist initially
-            ViewManager.getView.mockReturnValue(undefined);
-
-            serverViewState.switchServer('server-1', true);
-            expect(ViewManager.showById).not.toBeCalled();
-
-            jest.advanceTimersByTime(200);
-            expect(ViewManager.showById).not.toBeCalled();
-
-            // Mock that the view now exists
-            ViewManager.getView.mockReturnValue({id: 'server-1', serverId: 'server-1'});
-            jest.advanceTimersByTime(200);
-            expect(ViewManager.showById).toBeCalledWith('server-1');
-        });
-    });
-
     describe('showNewServerModal', () => {
-        const serverViewState = new ServerViewState();
+        const serverViewState = new ServerHub();
         let serversCopy;
 
         beforeEach(() => {
@@ -200,7 +133,7 @@ describe('app/serverViewState', () => {
     });
 
     describe('handleEditServerModal', () => {
-        const serverViewState = new ServerViewState();
+        const serverViewState = new ServerHub();
         let serversCopy;
 
         beforeEach(() => {
@@ -280,7 +213,7 @@ describe('app/serverViewState', () => {
     });
 
     describe('handleRemoveServerModal', () => {
-        const serverViewState = new ServerViewState();
+        const serverViewState = new ServerHub();
         let serversCopy;
 
         beforeEach(() => {
@@ -333,7 +266,7 @@ describe('app/serverViewState', () => {
     });
 
     describe('handleServerURLValidation', () => {
-        const serverViewState = new ServerViewState();
+        const serverViewState = new ServerHub();
 
         beforeEach(() => {
             MattermostServer.mockImplementation(({url}) => ({url}));

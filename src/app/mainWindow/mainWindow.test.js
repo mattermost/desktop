@@ -63,9 +63,9 @@ jest.mock('common/Validator', () => ({
     validateBoundsInfo: jest.fn(),
 }));
 
-jest.mock('../contextMenu', () => jest.fn());
+jest.mock('main/contextMenu', () => jest.fn());
 
-jest.mock('../utils', () => ({
+jest.mock('main/utils', () => ({
     isInsideRectangle: jest.fn(),
     getLocalPreload: jest.fn(),
     isKDE: jest.fn(),
@@ -76,6 +76,21 @@ jest.mock('main/i18nManager', () => ({
 }));
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
+}));
+
+jest.mock('app/views/loadingScreen', () => ({
+    LoadingScreen: jest.fn().mockImplementation(() => ({
+        show: jest.fn(),
+        fade: jest.fn(),
+        destroy: jest.fn(),
+    })),
+}));
+
+jest.mock('app/views/urlView', () => ({
+    URLView: jest.fn().mockImplementation(() => ({
+        show: jest.fn(),
+        destroy: jest.fn(),
+    })),
 }));
 
 describe('main/windows/mainWindow', () => {
@@ -446,6 +461,8 @@ describe('main/windows/mainWindow', () => {
             });
             const window = {
                 ...baseWindow,
+                hide: jest.fn(),
+                blur: jest.fn(),
                 on: jest.fn().mockImplementation((event, cb) => {
                     if (event === 'close') {
                         cb({preventDefault: jest.fn()});
@@ -458,7 +475,7 @@ describe('main/windows/mainWindow', () => {
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-            expect(app.hide).toHaveBeenCalled();
+            expect(window.hide).toHaveBeenCalled();
         });
 
         it('should leave full screen and then hide window on close for Mac if app wont quit and window is full screen', () => {
@@ -468,6 +485,8 @@ describe('main/windows/mainWindow', () => {
             });
             const window = {
                 ...baseWindow,
+                hide: jest.fn(),
+                blur: jest.fn(),
                 isFullScreen: jest.fn().mockImplementation(() => true),
                 setFullScreen: jest.fn(),
                 once: jest.fn().mockImplementation((event, cb) => {
@@ -488,7 +507,7 @@ describe('main/windows/mainWindow', () => {
                 value: originalPlatform,
             });
             expect(window.once).toHaveBeenCalledWith('leave-full-screen', expect.any(Function));
-            expect(app.hide).toHaveBeenCalled();
+            expect(window.hide).toHaveBeenCalled();
             expect(window.setFullScreen).toHaveBeenCalledWith(false);
         });
 
@@ -529,6 +548,8 @@ describe('main/windows/mainWindow', () => {
             });
             const window = {
                 ...baseWindow,
+                getSize: jest.fn().mockReturnValue([800, 600]),
+                getContentBounds: jest.fn().mockReturnValue({x: 0, y: 0, width: 800, height: 600}),
                 on: jest.fn().mockImplementation((event, cb) => {
                     if (event === 'focus') {
                         cb();
@@ -537,7 +558,6 @@ describe('main/windows/mainWindow', () => {
             };
             BrowserWindow.mockImplementation(() => window);
             const mainWindow = new MainWindow();
-            mainWindow.getBounds = jest.fn();
             mainWindow.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -577,27 +597,25 @@ describe('main/windows/mainWindow', () => {
     describe('show', () => {
         const mainWindow = new MainWindow();
         mainWindow.win = {
-            visible: false,
-            isVisible: () => mainWindow.visible,
-            show: jest.fn(),
-            focus: jest.fn(),
-            on: jest.fn(),
-            once: jest.fn(),
-            webContents: {
-                setWindowOpenHandler: jest.fn(),
+            isReady: false,
+            browserWindow: {
+                visible: false,
+                isVisible: jest.fn(() => mainWindow.win.browserWindow.visible),
+                show: jest.fn(),
+                focus: jest.fn(),
             },
         };
         mainWindow.init = jest.fn();
 
         beforeEach(() => {
-            mainWindow.win.show.mockImplementation(() => {
-                mainWindow.visible = true;
+            mainWindow.win.browserWindow.show.mockImplementation(() => {
+                mainWindow.win.browserWindow.visible = true;
             });
         });
 
         afterEach(() => {
-            mainWindow.ready = false;
-            mainWindow.win.visible = false;
+            mainWindow.win.isReady = false;
+            mainWindow.win.browserWindow.visible = false;
             jest.resetAllMocks();
         });
 
@@ -606,9 +624,9 @@ describe('main/windows/mainWindow', () => {
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
-            mainWindow.ready = true;
+            mainWindow.win.isReady = true;
             mainWindow.show();
-            expect(mainWindow.win.show).toHaveBeenCalled();
+            expect(mainWindow.win.browserWindow.show).toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -619,10 +637,10 @@ describe('main/windows/mainWindow', () => {
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
             });
-            mainWindow.ready = true;
-            mainWindow.win.visible = true;
+            mainWindow.win.isReady = true;
+            mainWindow.win.browserWindow.isVisible.mockReturnValue(true);
             mainWindow.show();
-            expect(mainWindow.win.focus).toHaveBeenCalled();
+            expect(mainWindow.win.browserWindow.focus).toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
@@ -631,22 +649,6 @@ describe('main/windows/mainWindow', () => {
         it('should init if the main window does not exist', () => {
             mainWindow.show();
             expect(mainWindow.init).toHaveBeenCalled();
-        });
-    });
-
-    describe('onUnresponsive', () => {
-        const mainWindow = new MainWindow();
-
-        beforeEach(() => {
-            mainWindow.win = {};
-        });
-
-        it('should call app.relaunch when user elects not to wait', async () => {
-            const promise = Promise.resolve({response: 0});
-            dialog.showMessageBox.mockImplementation(() => promise);
-            mainWindow.onUnresponsive();
-            await promise;
-            expect(app.relaunch).toBeCalled();
         });
     });
 });

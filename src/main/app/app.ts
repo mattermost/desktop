@@ -6,7 +6,7 @@ import {app, dialog} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import Tray from 'app/system/tray/tray';
-import ViewManager from 'app/views/webContentsManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
@@ -102,7 +102,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     // update the callback
         const errorID = `${parsedURL.origin}:${error}`;
 
-        const view = ViewManager.getViewByWebContentsId(webContents.id);
+        const view = WebContentsManager.getViewByWebContentsId(webContents.id);
         const server = view && ServerManager.getServer(view.serverId);
         if (server) {
             const serverURL = parseURL(server.url);

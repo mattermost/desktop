@@ -6,7 +6,7 @@
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
-import ServerViewState from 'app/serverViewState';
+import TabManager from 'app/tabs/tabManager';
 import ServerManager from 'common/servers/serverManager';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -71,29 +71,49 @@ jest.mock('common/servers/serverManager', () => ({
     getOrderedServers: jest.fn(),
     getOrderedTabsForServer: jest.fn(),
     getRemoteInfo: jest.fn(),
+    getCurrentServerId: jest.fn(),
+    getServer: jest.fn(),
+    updateCurrentServer: jest.fn(),
+    on: jest.fn(),
 }));
-jest.mock('app/serverViewState', () => ({
-    switchServer: jest.fn(),
-    getCurrentServer: jest.fn(),
+jest.mock('app/tabs/tabManager', () => ({
+    getOrderedTabsForServer: jest.fn(),
+    switchToTab: jest.fn(),
+    switchToNextTab: jest.fn(),
+    switchToPreviousTab: jest.fn(),
+    getCurrentActiveTabView: jest.fn(),
 }));
 jest.mock('main/app/utils', () => ({}));
 jest.mock('main/diagnostics', () => ({}));
 jest.mock('main/downloadsManager', () => ({
     hasDownloads: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({}));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('main/autoUpdater', () => ({
+    on: jest.fn(),
+}));
+jest.mock('common/views/viewManager', () => ({
+    on: jest.fn(),
+}));
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
+    on: jest.fn(),
 }));
 jest.mock('main/AutoLauncher', () => ({
     enable: jest.fn(),
     disable: jest.fn(),
 }));
-jest.mock('main/windows/callsWidgetWindow', () => ({
+jest.mock('app/callsWidgetWindow', () => ({
     isOpen: jest.fn(),
 }));
-jest.mock('main/views/modalManager', () => ({
+jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+}));
+jest.mock('app/windows/popoutManager', () => ({
+    createNewWindow: jest.fn(),
+}));
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+    getFocusedView: jest.fn(),
 }));
 
 describe('main/menus/app', () => {
@@ -132,9 +152,10 @@ describe('main/menus/app', () => {
     ];
 
     beforeEach(() => {
-        ServerViewState.getCurrentServer.mockReturnValue(servers[0]);
+        ServerManager.getCurrentServerId.mockReturnValue(servers[0].id);
+        ServerManager.getServer.mockReturnValue(servers[0]);
         ServerManager.getOrderedServers.mockReturnValue(servers);
-        ServerManager.getOrderedTabsForServer.mockReturnValue(views);
+        TabManager.getOrderedTabsForServer.mockReturnValue(views);
         getDarwinDoNotDisturb.mockReturnValue(false);
     });
 
@@ -194,6 +215,7 @@ describe('main/menus/app', () => {
                 }
                 return id;
             });
+            ServerManager.hasServers.mockReturnValue(true);
             const menu = createTemplate(config);
             const windowMenu = menu.find((item) => item.label === '&Window');
             expect(windowMenu.role).toBe('windowMenu');
@@ -279,8 +301,9 @@ describe('main/menus/app', () => {
                 isOpen: true,
             },
         ];
+        ServerManager.hasServers.mockReturnValue(true);
         ServerManager.getOrderedServers.mockReturnValue(modifiedServers);
-        ServerManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
+        TabManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
         const menu = createTemplate(config);
         const windowMenu = menu.find((item) => item.label === '&Window');
         for (let i = 0; i < 9; i++) {
@@ -304,14 +327,16 @@ describe('main/menus/app', () => {
             return id;
         });
         ServerManager.hasServers.mockReturnValue(true);
-        ServerViewState.getCurrentServer.mockImplementation(() => ({id: servers[0].id}));
+        ServerManager.getCurrentServerId.mockReturnValue(servers[0].id);
+        ServerManager.getServer.mockReturnValue(servers[0]);
 
         const modifiedViews = [...Array(15).keys()].map((key) => ({
             id: `view-${key}`,
+            title: `view-${key}`,
             type: `view-${key}`,
             isOpen: true,
         }));
-        ServerManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
+        TabManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
         const menu = createTemplate(config);
         const windowMenu = menu.find((item) => item.label === '&Window');
         for (let i = 0; i < 9; i++) {
@@ -341,7 +366,7 @@ describe('main/menus/app', () => {
 
         expect(devToolsSubMenu.submenu.length).toBe(2);
         expect(devToolsSubMenu.submenu[0].label).toBe('main.menus.app.view.devToolsAppWrapper');
-        expect(devToolsSubMenu.submenu[1].label).toBe('main.menus.app.view.devToolsCurrentServer');
+        expect(devToolsSubMenu.submenu[1].label).toBe('main.menus.app.view.devToolsCurrentView');
     });
 
     it('should not show menu item if widget window is not open', () => {

@@ -49,13 +49,24 @@ jest.mock('main/constants', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-jest.mock('main/menus/app', () => ({}));
-jest.mock('main/menus/tray', () => ({}));
-jest.mock('main/tray/tray', () => ({}));
-jest.mock('main/views/viewManager', () => ({}));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/system/menus/app', () => ({}));
+jest.mock('app/system/menus/tray', () => ({}));
+jest.mock('app/system/tray/tray', () => ({}));
+jest.mock('app/views/webContentsManager', () => ({
+    on: jest.fn(),
+}));
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     getSize: jest.fn(),
+    on: jest.fn(),
+}));
+
+jest.mock('app/tabs/tabManager', () => ({
+    focusCurrentTab: jest.fn(),
+}));
+
+jest.mock('app/navigationManager', () => ({
+    openLinkInPrimaryTab: jest.fn(),
 }));
 
 jest.mock('./initialize', () => ({

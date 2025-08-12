@@ -42,7 +42,7 @@ jest.mock('common/Validator', () => ({
     validateAllowedProtocols: (protocols) => protocols,
 }));
 
-jest.mock('./windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
 }));
 
