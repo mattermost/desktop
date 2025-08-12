@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "Na innym serwerze trwa połączenie, które musi zostać zakończone przed dołączeniem do nowego połączenia.",
+  "callsWidgetWindow.cannotStartCall.title": "Nie można rozpocząć połączenia",
   "common.permissions.canBasicAuth": "Uwierzytelnianie przez Internet",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
