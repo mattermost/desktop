@@ -13,8 +13,7 @@ import NavigationManager from 'app/navigationManager';
 import {createMenu as createAppMenu} from 'app/system/menus/app';
 import {createMenu as createTrayMenu} from 'app/system/menus/tray';
 import Tray from 'app/system/tray/tray';
-import TabManager from 'app/tabs/tabManager';
-import {APP_MENU_WILL_CLOSE, MAIN_WINDOW_CREATED} from 'common/communication';
+import {MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
@@ -61,10 +60,6 @@ export function handleUpdateMenuEvent() {
 
     const aMenu = createAppMenu(Config, updateManager);
     Menu.setApplicationMenu(aMenu);
-    aMenu.addListener('menu-will-close', () => {
-        TabManager.focusCurrentTab();
-        MainWindow.sendToRenderer(APP_MENU_WILL_CLOSE);
-    });
 
     // set up context menu for tray icon
     if (shouldShowTrayIcon()) {

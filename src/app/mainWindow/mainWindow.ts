@@ -78,7 +78,7 @@ export class MainWindow extends EventEmitter {
             throw new Error('unable to create main window');
         }
 
-        this.win.browserWindow.once('ready-to-show', () => {
+        this.win.browserWindow.webContents.once('did-finish-load', () => {
             if (!this.win) {
                 return;
             }

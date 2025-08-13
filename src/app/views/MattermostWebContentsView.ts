@@ -314,10 +314,8 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     focus = () => {
-        if (this.webContentsView.webContents) {
+        if (this.parentWindow.isFocused()) {
             this.webContentsView.webContents.focus();
-        } else {
-            this.log.warn('trying to focus the browserview, but it doesn\'t yet have webcontents.');
         }
     };
 

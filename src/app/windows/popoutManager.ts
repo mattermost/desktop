@@ -47,29 +47,28 @@ export class PopoutManager {
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.WINDOW) {
             const window = new BaseWindow({});
-            const localURL = 'mattermost-desktop://renderer/popout.html';
             performanceMonitor.registerView(`PopoutWindow-${viewId}`, window.browserWindow.webContents);
-            window.browserWindow.loadURL(localURL).catch(
-                (reason) => {
-                    log.error('failed to load', reason);
-                });
-
             this.popoutWindows.set(viewId, window);
 
-            const webContentsView = WebContentsManager.createView(view, window);
-            webContentsView.on(LOADSCREEN_END, () => window.fadeLoadingScreen());
-            webContentsView.on(LOAD_FAILED, this.onPopoutLoadFailed(window, webContentsView.getWebContentsView()));
-            webContentsView.on(RELOAD_VIEW, () => window.showLoadingScreen());
-            window.browserWindow.contentView.on('bounds-changed', this.setBounds(window, webContentsView.getWebContentsView()));
-            window.browserWindow.on('focus', () => webContentsView.getWebContentsView().webContents.focus());
-            window.browserWindow.once('show', this.setBounds(window, webContentsView.getWebContentsView()));
+            const mattermostWebContentsView = WebContentsManager.createView(view, window);
+            const webContentsView = mattermostWebContentsView.getWebContentsView();
+            mattermostWebContentsView.on(LOADSCREEN_END, () => window.fadeLoadingScreen());
+            mattermostWebContentsView.on(LOAD_FAILED, this.onPopoutLoadFailed(window, webContentsView));
+            mattermostWebContentsView.on(RELOAD_VIEW, () => window.showLoadingScreen());
+            window.browserWindow.contentView.on('bounds-changed', this.setBounds(window, webContentsView));
+            window.browserWindow.on('focus', () => mattermostWebContentsView.focus());
+            window.browserWindow.once('show', this.setBounds(window, webContentsView));
 
-            window.browserWindow.contentView.addChildView(webContentsView.getWebContentsView());
-            if (webContentsView.needsLoadingScreen()) {
+            window.browserWindow.contentView.addChildView(webContentsView);
+            if (mattermostWebContentsView.needsLoadingScreen()) {
                 window.showLoadingScreen();
             }
 
-            window.browserWindow.show();
+            window.browserWindow.webContents.on('did-finish-load', () => window.browserWindow.show());
+            window.browserWindow.loadURL('mattermost-desktop://renderer/popout.html').catch(
+                (reason) => {
+                    log.error('failed to load', reason);
+                });
         }
     };
 

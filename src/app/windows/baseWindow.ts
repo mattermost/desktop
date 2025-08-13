@@ -69,7 +69,7 @@ export default class BaseWindow {
 
         this.win.setMenuBarVisibility(false);
 
-        this.win.once('ready-to-show', () => {
+        this.win.webContents.once('did-finish-load', () => {
             this.win.webContents.zoomLevel = 0;
             this.ready = true;
         });

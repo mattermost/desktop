@@ -286,7 +286,7 @@ export class TabManager extends EventEmitter {
         }
 
         mainWindow.contentView.addChildView(view.getWebContentsView());
-        view.getWebContentsView().webContents.focus();
+        view.focus();
         view.getWebContentsView().setBounds(getWindowBoundaries(mainWindow));
         this.removeCurrentVisibleTab();
         this.currentVisibleTab = viewId;
