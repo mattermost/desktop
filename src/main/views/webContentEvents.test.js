@@ -148,6 +148,7 @@ describe('main/views/webContentsEvents', () => {
 
         it('should deny and show dialog on invalid URL', () => {
             expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
+            expect(newWindow({url: 'https://example.com/path}'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).not.toBeCalled();
             expect(dialog.showErrorBox).toBeCalled();
         });
