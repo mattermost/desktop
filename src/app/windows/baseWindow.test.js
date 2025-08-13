@@ -51,13 +51,16 @@ jest.mock('electron', () => {
             mockBrowserWindow.on = jest.fn(mockBrowserWindow.on);
             mockBrowserWindow.once = jest.fn(mockBrowserWindow.once);
             mockBrowserWindow.setMenuBarVisibility = jest.fn();
-            mockBrowserWindow.webContents = {
-                zoomLevel: 0,
-                setWindowOpenHandler: jest.fn(),
-                openDevTools: jest.fn(),
-                send: jest.fn(),
-                focus: jest.fn(),
-            };
+            const mockWebContents = new EventEmitter();
+            mockWebContents.zoomLevel = 0;
+            mockWebContents.setWindowOpenHandler = jest.fn();
+            mockWebContents.openDevTools = jest.fn();
+            mockWebContents.send = jest.fn();
+            mockWebContents.focus = jest.fn();
+            mockWebContents.on = jest.fn(mockWebContents.on);
+            mockWebContents.once = jest.fn(mockWebContents.once);
+            mockWebContents.emit = jest.fn(mockWebContents.emit);
+            mockBrowserWindow.webContents = mockWebContents;
             mockBrowserWindow.getContentBounds = jest.fn(() => ({x: 0, y: 0, width: 800, height: 600}));
             mockBrowserWindow.getSize = jest.fn(() => [800, 600]);
             mockBrowserWindow.restore = jest.fn();
@@ -264,7 +267,6 @@ describe('BaseWindow', () => {
             const baseWindow = new BaseWindow({});
 
             expect(baseWindow).toBeDefined();
-            expect(baseWindow.browserWindow.once).toHaveBeenCalledWith('ready-to-show', expect.any(Function));
             expect(baseWindow.browserWindow.once).toHaveBeenCalledWith('restore', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('closed', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('focus', expect.any(Function));
@@ -327,11 +329,11 @@ describe('BaseWindow', () => {
         });
     });
 
-    describe('ready-to-show event', () => {
+    describe('did-finish-load event', () => {
         it('should set ready to true and zoom level to 0', () => {
             const baseWindow = new BaseWindow({});
 
-            baseWindow.browserWindow.emit('ready-to-show');
+            baseWindow.browserWindow.webContents.emit('did-finish-load');
 
             expect(baseWindow.isReady).toBe(true);
             expect(baseWindow.browserWindow.webContents.zoomLevel).toBe(0);

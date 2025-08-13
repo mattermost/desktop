@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {IpcMainEvent, type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
+import {type IpcMainEvent, type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
 
 import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 import {Logger} from 'common/log';

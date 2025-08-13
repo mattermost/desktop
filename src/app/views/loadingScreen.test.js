@@ -47,6 +47,9 @@ describe('main/views/loadingScreen', () => {
                 children: [],
                 on: jest.fn(),
             },
+            webContents: {
+                id: 123,
+            },
         };
         const loadingScreen = new LoadingScreen(mainWindow);
 

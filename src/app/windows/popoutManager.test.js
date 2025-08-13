@@ -33,12 +33,16 @@ jest.mock('app/views/webContentsManager', () => ({
 }));
 
 jest.mock('app/windows/baseWindow', () => {
+    const {EventEmitter} = jest.requireActual('events');
+    const mockWebContents = new EventEmitter();
+    mockWebContents.id = 123;
+    mockWebContents.send = jest.fn();
+    mockWebContents.focus = jest.fn();
+    mockWebContents.on = jest.fn(mockWebContents.on);
+    mockWebContents.once = jest.fn(mockWebContents.once);
+    mockWebContents.emit = jest.fn(mockWebContents.emit);
     const mockBrowserWindow = {
-        webContents: {
-            id: 123,
-            send: jest.fn(),
-            focus: jest.fn(),
-        },
+        webContents: mockWebContents,
         contentView: {
             addChildView: jest.fn(),
             removeChildView: jest.fn(),
@@ -93,13 +97,17 @@ jest.mock('main/utils', () => ({
 }));
 
 describe('PopoutManager', () => {
+    const {EventEmitter} = jest.requireActual('events');
+    const mockWebContents = new EventEmitter();
+    mockWebContents.id = 123;
+    mockWebContents.send = jest.fn();
+    mockWebContents.focus = jest.fn();
+    mockWebContents.on = jest.fn(mockWebContents.on);
+    mockWebContents.once = jest.fn(mockWebContents.once);
+    mockWebContents.emit = jest.fn(mockWebContents.emit);
     const mockBaseWindow = {
         browserWindow: {
-            webContents: {
-                id: 123,
-                send: jest.fn(),
-                focus: jest.fn(),
-            },
+            webContents: mockWebContents,
             contentView: {
                 addChildView: jest.fn(),
                 removeChildView: jest.fn(),
@@ -224,6 +232,9 @@ describe('PopoutManager', () => {
             ViewManager.getView.mockReturnValue(mockWindowView);
 
             ViewManager.mockViewManager.emit(VIEW_CREATED, 'new-window-id');
+
+            // Trigger the did-finish-load event to call show()
+            mockBaseWindow.browserWindow.webContents.emit('did-finish-load');
 
             expect(BaseWindow).toHaveBeenCalledWith({});
             expect(performanceMonitor.registerView).toHaveBeenCalledWith('PopoutWindow-new-window-id', mockBaseWindow.browserWindow.webContents);

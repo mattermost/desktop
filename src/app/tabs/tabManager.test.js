@@ -333,6 +333,7 @@ describe('TabManager', () => {
                 isErrored: jest.fn(() => false),
                 needsLoadingScreen: jest.fn(() => false),
                 getWebContentsView: jest.fn(() => mockWebContentsView),
+                focus: jest.fn(),
             };
             WebContentsManager.getView.mockReturnValue(mockView);
             tabManager.activeTabs.set('test-server', 'other-view');
@@ -350,6 +351,7 @@ describe('TabManager', () => {
                 serverId: 'test-server',
                 isErrored: jest.fn(() => true),
                 getWebContentsView: jest.fn(),
+                focus: jest.fn(),
             };
             WebContentsManager.getView.mockReturnValue(mockView);
 
@@ -370,6 +372,7 @@ describe('TabManager', () => {
                 isErrored: jest.fn(() => false),
                 needsLoadingScreen: jest.fn(() => true),
                 getWebContentsView: jest.fn(() => mockWebContentsView),
+                focus: jest.fn(),
             };
             WebContentsManager.getView.mockReturnValue(mockView);
             MainWindow.get.mockReturnValue(mockMainWindow);
