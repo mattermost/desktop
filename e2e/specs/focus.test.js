@@ -15,8 +15,8 @@ describe('focus', function desc() {
 
     const config = {
         ...env.demoMattermostConfig,
-        teams: [
-            ...env.demoMattermostConfig.teams,
+        servers: [
+            ...env.demoMattermostConfig.servers,
             {
                 name: 'community',
                 url: 'https://community.mattermost.com',
@@ -35,7 +35,7 @@ describe('focus', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
-        firstServer = this.serverMap[config.teams[0].name][0].win;
+        firstServer = this.serverMap[config.servers[0].name][0].win;
         await env.loginToMattermost(firstServer);
         const textbox = await firstServer.waitForSelector('#post_textbox');
         textbox.focus();
@@ -109,7 +109,7 @@ describe('focus', function desc() {
             await secondServer.focus('#input_loginId');
 
             await mainView.click('.ServerDropdownButton');
-            await dropdownView.click(`.ServerDropdown .ServerDropdown__button:has-text("${config.teams[0].name}")`);
+            await dropdownView.click(`.ServerDropdown .ServerDropdown__button:has-text("${config.servers[0].name}")`);
             const isTextboxFocused = await firstServer.$eval('#post_textbox', (el) => el === document.activeElement);
             isTextboxFocused.should.be.true;
 

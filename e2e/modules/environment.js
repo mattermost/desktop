@@ -51,7 +51,7 @@ const githubServer = {
 
 const demoConfig = {
     version: 4,
-    teams: [exampleServer, githubServer],
+    servers: [exampleServer, githubServer],
     showTrayIcon: false,
     trayIconTheme: 'light',
     minimizeToTray: false,
@@ -67,7 +67,7 @@ const demoConfig = {
     hideOnStart: false,
     spellCheckerLocales: [],
     darkMode: false,
-    lastActiveTeam: 0,
+    lastActiveServer: 0,
     startInFullscreen: false,
     autoCheckForUpdates: true,
     appLanguage: 'en',
@@ -76,7 +76,7 @@ const demoConfig = {
 
 const demoMattermostConfig = {
     ...demoConfig,
-    teams: [{
+    servers: [{
         ...exampleServer,
         url: mattermostURL,
     }, githubServer],

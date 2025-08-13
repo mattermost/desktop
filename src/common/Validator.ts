@@ -154,7 +154,7 @@ const configDataSchemaV3 = Joi.object<ConfigV3>({
 
 const configDataSchemaV4 = Joi.object<ConfigV4>({
     version: Joi.number().min(4).default(4),
-    teams: Joi.array().items(Joi.object({
+    servers: Joi.array().items(Joi.object({
         name: Joi.string().required(),
         url: Joi.string().required(),
         order: Joi.number().integer().min(0),
@@ -177,7 +177,7 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     spellCheckerURL: Joi.string().allow(null),
     darkMode: Joi.boolean().default(false),
     downloadLocation: Joi.string(),
-    lastActiveTeam: Joi.number().integer().min(0).default(0),
+    lastActiveServer: Joi.number().integer().min(0).default(0),
     autoCheckForUpdates: Joi.boolean().default(true),
     alwaysMinimize: Joi.boolean(),
     alwaysClose: Joi.boolean(),
@@ -297,7 +297,7 @@ export function validateV3ConfigData(data: ConfigV3) {
 }
 
 export function validateV4ConfigData(data: ConfigV4) {
-    data.teams = cleanServers(data.teams, cleanServer);
+    data.servers = cleanServers(data.servers, cleanServer);
     if (data.spellCheckerURL && !isValidURL(data.spellCheckerURL)) {
         log.error('Invalid download location for spellchecker dictionary, removing from config');
         delete data.spellCheckerURL;

@@ -53,16 +53,16 @@ export function upgradeV2toV3(configV2: ConfigV2) {
 }
 
 export function upgradeV3toV4(configV3: ConfigV3) {
-    const config: ConfigV4 = Object.assign({}, deepCopy<ConfigV4>(pastDefaultPreferences[4]), configV3);
+    const config: ConfigV4 = Object.assign({}, deepCopy<ConfigV4>(pastDefaultPreferences[4]), {...configV3, lastActiveTeam: undefined, teams: undefined});
     config.version = 4;
-    config.teams = configV3.teams.map((team) => {
+    config.servers = configV3.teams.map((team) => {
         return {
             name: team.name,
             url: team.url,
             order: team.order,
         };
     });
-    config.lastActiveTeam = configV3.lastActiveTeam;
+    config.lastActiveServer = configV3.lastActiveTeam;
     return config;
 }
 

@@ -125,15 +125,15 @@ describe('common/config', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.localConfigData = {teams: [server]};
+            config.localConfigData = {servers: [server]};
             config.regenerateCombinedConfigData = jest.fn().mockImplementation(() => {
                 config.combinedData = {...config.localConfigData};
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.set('teams', [{...buildServer, name: 'build-team-2'}]);
-            expect(config.localConfigData.teams).not.toContainEqual({...buildServer, name: 'build-team-2'});
-            expect(config.localConfigData.teams).toContainEqual(server);
+            config.set('servers', [{...buildServer, name: 'build-team-2'}]);
+            expect(config.localConfigData.servers).not.toContainEqual({...buildServer, name: 'build-team-2'});
+            expect(config.localConfigData.servers).toContainEqual(server);
         });
     });
 
@@ -149,8 +149,8 @@ describe('common/config', () => {
             config.saveLocalConfigData = jest.fn();
 
             config.setServers([{...buildServer, name: 'build-server-2'}, server], 0);
-            expect(config.localConfigData.teams).toContainEqual({...buildServer, name: 'build-server-2'});
-            expect(config.localConfigData.lastActiveTeam).toBe(0);
+            expect(config.localConfigData.servers).toContainEqual({...buildServer, name: 'build-server-2'});
+            expect(config.localConfigData.lastActiveServer).toBe(0);
             expect(config.regenerateCombinedConfigData).toHaveBeenCalled();
             expect(config.saveLocalConfigData).toHaveBeenCalled();
         });
@@ -310,7 +310,7 @@ describe('common/config', () => {
             config.buildConfigData = {enableServerManagement: true};
             config.registryConfigData = {};
             config.predefinedServers.push(server, server);
-            config.localConfigData = {teams: [
+            config.localConfigData = {servers: [
                 server,
                 {
                     ...server,

@@ -46,7 +46,7 @@ describe('EditServerModal', function desc() {
         existing.should.be.false;
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.deep.contain({
+        savedConfig.servers.should.deep.contain({
             name: 'example',
             url: env.exampleURL,
             order: 0,
@@ -60,7 +60,7 @@ describe('EditServerModal', function desc() {
         existing.should.be.false;
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.deep.contain({
+        savedConfig.servers.should.deep.contain({
             name: 'example',
             url: env.exampleURL,
             order: 0,
@@ -82,12 +82,12 @@ describe('EditServerModal', function desc() {
         existing.should.be.false;
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.not.deep.contain({
+        savedConfig.servers.should.not.deep.contain({
             name: 'example',
             url: env.exampleURL,
             order: 0,
         });
-        savedConfig.teams.should.deep.contain({
+        savedConfig.servers.should.deep.contain({
             name: 'NewTestServer',
             url: env.exampleURL,
             order: 0,
@@ -102,12 +102,12 @@ describe('EditServerModal', function desc() {
         existing.should.be.false;
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.not.deep.contain({
+        savedConfig.servers.should.not.deep.contain({
             name: 'example',
             url: env.exampleURL,
             order: 0,
         });
-        savedConfig.teams.should.deep.contain({
+        savedConfig.servers.should.deep.contain({
             name: 'example',
             url: 'http://google.com/',
             order: 0,
@@ -123,12 +123,12 @@ describe('EditServerModal', function desc() {
         existing.should.be.false;
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.not.deep.contain({
+        savedConfig.servers.should.not.deep.contain({
             name: 'example',
             url: env.exampleURL,
             order: 0,
         });
-        savedConfig.teams.should.deep.contain({
+        savedConfig.servers.should.deep.contain({
             name: 'NewTestServer',
             url: 'http://google.com/',
             order: 0,

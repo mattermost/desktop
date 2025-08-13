@@ -187,6 +187,46 @@ describe('common/Validator', () => {
         });
     });
 
+    describe('validateV4ConfigData', () => {
+        const config = {
+            autoCheckForUpdates: true,
+            autostart: true,
+            hideOnStart: false,
+            darkMode: false,
+            enableHardwareAcceleration: true,
+            startInFullscreen: false,
+            lastActiveServer: 0,
+            logLevel: 'info',
+            minimizeToTray: false,
+            showTrayIcon: false,
+            showUnreadBadge: true,
+            spellCheckerLocales: ['en-US'],
+            spellCheckerURL: 'http://spellcheckerservice.com',
+            servers: [
+                {
+                    name: 'server-1',
+                    url: 'http://server-1.com',
+                    order: 1,
+                },
+            ],
+            trayIconTheme: 'use_system',
+            useSpellChecker: true,
+            version: 4,
+        };
+
+        it('should validate v4 config data', () => {
+            expect(Validator.validateV4ConfigData(config)).toStrictEqual(config);
+        });
+
+        it('should remove invalid spellchecker URLs', () => {
+            const modifiedConfig = {
+                ...config,
+                spellCheckerURL: 'a-bad>url',
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).not.toHaveProperty('spellCheckerURL');
+        });
+    });
+
     describe('validateAllowedProtocols', () => {
         const allowedProtocols = [
             'spotify:',

@@ -193,7 +193,7 @@ describe('common/config/upgradePreferences', () => {
                 ...pastDefaultPreferences[4],
                 ...config,
                 version: 4,
-                teams: [{
+                servers: [{
                     name: 'Primary server',
                     url: 'http://server-1.com',
                     order: 0,
@@ -202,6 +202,9 @@ describe('common/config/upgradePreferences', () => {
                     url: 'http://server-2.com',
                     order: 1,
                 }],
+                lastActiveServer: 1,
+                teams: undefined,
+                lastActiveTeam: undefined,
             });
         });
     });

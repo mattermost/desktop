@@ -50,11 +50,11 @@ describe('config', function desc() {
 
         it('MM-T4401_2 should set src of browser view from config file', async () => {
             this.serverMap = await env.getServerMap(this.app);
-            const firstServer = this.serverMap[config.teams[0].name][0].win;
-            const secondServer = this.serverMap[config.teams[1].name][0].win;
+            const firstServer = this.serverMap[config.servers[0].name][0].win;
+            const secondServer = this.serverMap[config.servers[1].name][0].win;
 
-            firstServer.url().should.equal(config.teams[0].url);
-            secondServer.url().should.equal(config.teams[1].url);
+            firstServer.url().should.equal(config.servers[0].url);
+            secondServer.url().should.equal(config.servers[1].url);
         });
     });
 

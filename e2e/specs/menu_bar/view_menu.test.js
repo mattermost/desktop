@@ -56,7 +56,7 @@ describe('menu/view', function desc() {
     });
 
     it('MM-T813 Control+F should focus the search bar in Mattermost', async () => {
-        const firstServer = this.serverMap[config.teams[0].name][0].win;
+        const firstServer = this.serverMap[config.servers[0].name][0].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#searchFormContainer');
         await asyncSleep(1000);
@@ -71,8 +71,8 @@ describe('menu/view', function desc() {
     it('MM-T817 Actual Size Zoom in the menu bar', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
-        const firstServer = this.serverMap[config.teams[0].name][0].win;
-        const firstServerId = this.serverMap[config.teams[0].name][0].webContentsId;
+        const firstServer = this.serverMap[config.servers[0].name][0].win;
+        const firstServerId = this.serverMap[config.servers[0].name][0].webContentsId;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#searchFormContainer');
 
@@ -91,8 +91,8 @@ describe('menu/view', function desc() {
         it('MM-T818_1 Zoom in when CmdOrCtrl+Plus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const firstServer = this.serverMap[config.teams[0].name][0].win;
-            const firstServerId = this.serverMap[config.teams[0].name][0].webContentsId;
+            const firstServer = this.serverMap[config.servers[0].name][0].win;
+            const firstServerId = this.serverMap[config.servers[0].name][0].webContentsId;
             await env.loginToMattermost(firstServer);
             await firstServer.waitForSelector('#searchFormContainer');
 
@@ -106,8 +106,8 @@ describe('menu/view', function desc() {
         it('MM-T818_2 Zoom in when CmdOrCtrl+Shift+Plus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const firstServer = this.serverMap[config.teams[0].name][0].win;
-            const firstServerId = this.serverMap[config.teams[0].name][0].webContentsId;
+            const firstServer = this.serverMap[config.servers[0].name][0].win;
+            const firstServerId = this.serverMap[config.servers[0].name][0].webContentsId;
             await env.loginToMattermost(firstServer);
             await firstServer.waitForSelector('#searchFormContainer');
 
@@ -128,8 +128,8 @@ describe('menu/view', function desc() {
         it('MM-T819_1 Zoom out when CmdOrCtrl+Minus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const firstServer = this.serverMap[config.teams[0].name][0].win;
-            const firstServerId = this.serverMap[config.teams[0].name][0].webContentsId;
+            const firstServer = this.serverMap[config.servers[0].name][0].win;
+            const firstServerId = this.serverMap[config.servers[0].name][0].webContentsId;
             await env.loginToMattermost(firstServer);
             await firstServer.waitForSelector('#searchFormContainer');
 
@@ -142,8 +142,8 @@ describe('menu/view', function desc() {
         it('MM-T819_2 Zoom out when CmdOrCtrl+Shift+Minus is pressed', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const firstServer = this.serverMap[config.teams[0].name][0].win;
-            const firstServerId = this.serverMap[config.teams[0].name][0].webContentsId;
+            const firstServer = this.serverMap[config.servers[0].name][0].win;
+            const firstServerId = this.serverMap[config.servers[0].name][0].webContentsId;
             await env.loginToMattermost(firstServer);
             await firstServer.waitForSelector('#searchFormContainer');
 
@@ -167,7 +167,7 @@ describe('menu/view', function desc() {
         beforeEach(async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             browserWindow = await this.app.browserWindow(mainWindow);
-            webContentsId = this.serverMap[config.teams[0].name][0].webContentsId;
+            webContentsId = this.serverMap[config.servers[0].name][0].webContentsId;
         });
 
         it('MM-T814 should reload page when pressing Ctrl+R', async () => {

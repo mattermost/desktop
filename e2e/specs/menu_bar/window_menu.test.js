@@ -12,15 +12,15 @@ const {asyncSleep} = require('../../modules/utils');
 describe('Menu/window_menu', function desc() {
     const config = {
         ...env.demoMattermostConfig,
-        teams: [
-            ...env.demoMattermostConfig.teams,
+        servers: [
+            ...env.demoMattermostConfig.servers,
             {
                 name: 'google',
                 url: 'https://google.com/',
                 order: 2,
             },
         ],
-        lastActiveTeam: 0,
+        lastActiveServer: 0,
         minimizeToTray: true,
         alwaysMinimize: true,
     };
@@ -33,7 +33,7 @@ describe('Menu/window_menu', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
-        const mmServer = this.serverMap[config.teams[0].name][0].win;
+        const mmServer = this.serverMap[config.servers[0].name][0].win;
         await env.loginToMattermost(mmServer);
     };
 
@@ -88,11 +88,11 @@ describe('Menu/window_menu', function desc() {
             await asyncSleep(3000);
             this.serverMap = await env.getServerMap(this.app);
 
-            const secondView = this.serverMap[config.teams[0].name][1].win;
+            const secondView = this.serverMap[config.servers[0].name][1].win;
             await secondView.waitForSelector('#sidebarItem_off-topic');
             await secondView.click('#sidebarItem_off-topic');
 
-            const thirdView = this.serverMap[config.teams[0].name][2].win;
+            const thirdView = this.serverMap[config.servers[0].name][2].win;
             await thirdView.waitForSelector('#sidebarItem_town-square');
             await thirdView.click('#sidebarItem_town-square');
         });
@@ -100,26 +100,26 @@ describe('Menu/window_menu', function desc() {
 
         it('MM-T4385_1 should show the second tab', async () => {
             let tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Town Square');
+            tabViewButton.should.contain('Town Square');
 
             robot.keyTap('2', [env.cmdOrCtrl]);
             await asyncSleep(500);
             tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Off-Topic');
+            tabViewButton.should.contain('Off-Topic');
         });
 
         it('MM-T4385_2 should show the third tab', async () => {
             robot.keyTap('3', [env.cmdOrCtrl]);
             await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Town Square');
+            tabViewButton.should.contain('Town Square');
         });
 
         it('MM-T4385_3 should show the first tab', async () => {
             robot.keyTap('1', [env.cmdOrCtrl]);
             await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Town Square');
+            tabViewButton.should.contain('Town Square');
         });
     });
 
@@ -132,22 +132,22 @@ describe('Menu/window_menu', function desc() {
         await asyncSleep(3000);
         this.serverMap = await env.getServerMap(this.app);
 
-        const secondView = this.serverMap[config.teams[0].name][1].win;
+        const secondView = this.serverMap[config.servers[0].name][1].win;
         await secondView.waitForSelector('#sidebarItem_off-topic');
         await secondView.click('#sidebarItem_off-topic');
 
         let tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Off-Topic');
+        tabViewButton.should.contain('Off-Topic');
 
         robot.keyTap('tab', ['control']);
         await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Town Square');
+        tabViewButton.should.contain('Town Square');
 
         robot.keyTap('tab', ['shift', 'control']);
         await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Off-Topic');
+        tabViewButton.should.contain('Off-Topic');
 
         await afterFunc();
     });

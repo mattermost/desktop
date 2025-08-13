@@ -332,7 +332,7 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
             icon: 'server-variant',
             settings: [
                 {
-                    id: 'teams',
+                    id: 'servers',
                     component: ServerSetting,
                 },
             ],

@@ -27,7 +27,7 @@ export type Config = ConfigV4;
 
 export type ConfigV4 = {
     version: 4;
-    teams: ConfigServer[];
+    servers: ConfigServer[];
     showTrayIcon: boolean;
     trayIconTheme: string;
     minimizeToTray: boolean;
@@ -45,7 +45,7 @@ export type ConfigV4 = {
     darkMode: boolean;
     downloadLocation?: string;
     spellCheckerURL?: string;
-    lastActiveTeam?: number;
+    lastActiveServer?: number;
     startInFullscreen?: boolean;
     autoCheckForUpdates?: boolean;
     alwaysMinimize?: boolean;
@@ -57,7 +57,8 @@ export type ConfigV4 = {
 
 export type ConfigV3 = Omit<ConfigV4,
 'version' |
-'teams'> & {
+'servers' |
+'lastActiveServer'> & {
     version: 3;
     teams: Array<Server & {
         order: number;
@@ -68,15 +69,16 @@ export type ConfigV3 = Omit<ConfigV4,
             order: number;
         }>;
     }>;
+    lastActiveTeam?: number;
 }
 
 export type ConfigV2 =
     Omit<ConfigV3,
     'version' |
     'teams' |
+    'lastActiveTeam' |
     'hideOnStart' |
     'spellCheckerLocales' |
-    'lastActiveTeam' |
     'startInFullscreen' |
     'autoCheckForUpdates' |
     'alwaysMinimize' |
@@ -128,7 +130,7 @@ export type RegistryConfig = {
     enableAutoUpdater: boolean;
 }
 
-export type CombinedConfig = Omit<Config, 'teams'> & Omit<BuildConfig, 'defaultServers'> & {
+export type CombinedConfig = Omit<Config, 'servers'> & Omit<BuildConfig, 'defaultServers'> & {
     appName: string;
 }
 

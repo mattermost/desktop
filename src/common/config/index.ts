@@ -122,7 +122,7 @@ export class Config extends EventEmitter {
         if (newData.darkMode && newData.darkMode !== this.darkMode) {
             this.emit('darkModeChange', newData.darkMode);
         }
-        this.localConfigData = Object.assign({}, this.localConfigData, {...newData, teams: this.localConfigData?.teams});
+        this.localConfigData = Object.assign({}, this.localConfigData, {...newData, servers: this.localConfigData?.servers});
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
     };
@@ -130,7 +130,7 @@ export class Config extends EventEmitter {
     setServers = (servers: ConfigServer[], lastActiveServer?: number) => {
         log.debug('setServers', servers, lastActiveServer);
 
-        this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveServer ?? this.localConfigData?.lastActiveTeam});
+        this.localConfigData = Object.assign({}, this.localConfigData, {servers, lastActiveServer: lastActiveServer ?? this.localConfigData?.lastActiveServer});
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
     };
@@ -162,7 +162,7 @@ export class Config extends EventEmitter {
         return this.combinedData?.darkMode ?? defaultPreferences.darkMode;
     }
     get localServers() {
-        return this.localConfigData?.teams ?? defaultPreferences.teams;
+        return this.localConfigData?.servers ?? defaultPreferences.servers;
     }
     get predefinedServers() {
         return this._predefinedServers;
@@ -225,7 +225,7 @@ export class Config extends EventEmitter {
         return this.combinedData?.minimizeToTray;
     }
     get lastActiveServer() {
-        return this.combinedData?.lastActiveTeam;
+        return this.combinedData?.lastActiveServer;
     }
     get alwaysClose() {
         return this.combinedData?.alwaysClose;
@@ -375,7 +375,6 @@ export class Config extends EventEmitter {
         );
 
         // We don't want to include the servers in the combined config, they should only be accesible via the ServerManager
-        delete (this.combinedData as any).teams;
         delete (this.combinedData as any).servers;
         delete (this.combinedData as any).defaultServers;
 

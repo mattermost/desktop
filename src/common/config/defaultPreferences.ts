@@ -31,7 +31,7 @@ export const getDefaultDownloadLocation = (): string | undefined => {
 
 const defaultPreferences: ConfigV4 = {
     version: 4,
-    teams: [],
+    servers: [],
     showTrayIcon: true,
     trayIconTheme: 'use_system',
     minimizeToTray: process.platform !== 'linux',
@@ -47,7 +47,7 @@ const defaultPreferences: ConfigV4 = {
     hideOnStart: false,
     spellCheckerLocales: [],
     darkMode: false,
-    lastActiveTeam: 0,
+    lastActiveServer: 0,
     downloadLocation: getDefaultDownloadLocation(),
     startInFullscreen: false,
     logLevel: 'info',

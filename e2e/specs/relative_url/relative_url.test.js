@@ -32,7 +32,7 @@ describe('copylink', function desc() {
     });
 
     it('MM-T1308 Check that external links dont open in the app', async () => {
-        const firstServer = this.serverMap[config.teams[0].name][0].win;
+        const firstServer = this.serverMap[config.servers[0].name][0].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#post_textbox');
         await firstServer.click('#post_textbox');

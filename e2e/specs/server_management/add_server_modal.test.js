@@ -60,7 +60,7 @@ describe('Add Server Modal', function desc() {
 
         it('should warn the user if a server with the same URL exists, but still allow them to save', async () => {
             await newServerView.type('#serverNameInput', 'some-new-server');
-            await newServerView.type('#serverUrlInput', config.teams[0].url);
+            await newServerView.type('#serverUrlInput', config.servers[0].url);
             await newServerView.waitForSelector('#customMessage_url.Input___warning');
             const existing = await newServerView.isVisible('#customMessage_url.Input___warning');
             existing.should.be.true;
@@ -123,7 +123,7 @@ describe('Add Server Modal', function desc() {
             existing.should.be.false;
 
             const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-            savedConfig.teams.should.deep.contain({
+            savedConfig.servers.should.deep.contain({
                 name: 'TestServer',
                 url: 'http://example.org/',
                 order: 2,
