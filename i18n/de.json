@@ -154,6 +154,8 @@
   "main.tray.tray.unread": "Du hast ungelesene Kanäle",
   "main.views.viewManager.handleDeepLink.error.body": "Es gibt keinen konfigurierten Server in der Anwendung, der mit der angefragten URL übereinstimmt: {url}",
   "main.views.viewManager.handleDeepLink.error.title": "Kein übereinstimmender Server",
+  "main.webContentEvents.invalidLinkDescription": "Der Link, auf den du geklickt hast, scheint fehlerhaft zu sein und kann nicht geöffnet werden. Bitte überprüfe die URL auf Fehler, bevor du es erneut versuchst.",
+  "main.webContentEvents.invalidLinkTitle": "Ungültiger Link",
   "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "Nicht erneut fragen",
   "main.windows.mainWindow.closeApp.dialog.detail": "Du wirst keine weiteren Benachrichtigungen für Nachrichten erhalten. Wenn {appName} weiter in der Systemablage laufen soll, kannst du dies in den Einstellungen aktivieren.",
   "main.windows.mainWindow.closeApp.dialog.message": "Bist du sicher, dass du beenden möchtest?",
