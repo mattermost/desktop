@@ -111,10 +111,14 @@ describe('server_management/drag_and_drop', function desc() {
             await asyncSleep(3000);
             this.serverMap = await env.getServerMap(this.app);
 
+            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+            await secondTab.click();
             const secondView = this.serverMap[config.servers[0].name][1].win;
             await secondView.waitForSelector('#sidebarItem_off-topic');
             await secondView.click('#sidebarItem_off-topic');
 
+            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
+            await thirdTab.click();
             const thirdView = this.serverMap[config.servers[0].name][2].win;
             await thirdView.waitForSelector('#sidebarItem_town-square');
             await thirdView.click('#sidebarItem_town-square');
