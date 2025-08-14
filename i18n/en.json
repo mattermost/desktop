@@ -110,7 +110,7 @@
   "main.menus.app.window.bringAllToFront": "Bring All to Front",
   "main.menus.app.window.close": "Close",
   "main.menus.app.window.closeWindow": "Close Window",
-  "main.menus.app.window.createNewWindow": "Create New Window",
+  "main.menus.app.window.createNewWindow": "Create New Window for Current Server",
   "main.menus.app.window.minimize": "Minimize",
   "main.menus.app.window.selectNextTab": "Select Next Tab",
   "main.menus.app.window.selectPreviousTab": "Select Previous Tab",

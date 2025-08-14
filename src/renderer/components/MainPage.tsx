@@ -2,7 +2,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import classNames from 'classnames';
 import React from 'react';
 import type {DropResult} from 'react-beautiful-dnd';
 
@@ -398,11 +397,6 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.openServerExternally();
     };
 
-    handleCreateNewWindow = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
-        window.desktop.createNewWindow(this.state.activeServerId!);
-    };
-
     handleNewTab = async () => {
         const {currentServer} = this.state;
         if (!currentServer?.id) {
@@ -502,17 +496,6 @@ class MainPage extends React.PureComponent<Props, State> {
                     </>
                 )}
                 {tabsRow}
-                {!(this.state.modalOpen || !this.state.currentServer?.isLoggedIn) && (
-                    <button
-                        className={classNames('TopBar-button', {
-                            darkMode: this.props.darkMode,
-                        })}
-                        disabled={this.state.modalOpen || !this.state.currentServer?.isLoggedIn}
-                        onClick={this.handleCreateNewWindow}
-                    >
-                        <i className='icon-dock-window'/>
-                    </button>
-                )}
                 <DeveloperModeIndicator
                     darkMode={this.props.darkMode}
                     developerMode={this.state.developerMode}

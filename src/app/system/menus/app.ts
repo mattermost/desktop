@@ -365,7 +365,19 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             role: 'zoom',
             label: localizeMessage('main.menus.app.window.zoom', 'Zoom'),
         }, separatorItem,
-        ] : []), {
+        ] : []),
+        {
+            label: localizeMessage('main.menus.app.window.createNewWindow', 'Create New Window for Current Server'),
+            accelerator: 'CmdOrCtrl+N',
+            click() {
+                const serverId = ServerManager.getCurrentServerId();
+                if (!serverId) {
+                    return;
+                }
+                PopoutManager.createNewWindow(serverId);
+            },
+        },
+        {
             role: 'close',
             label: isMac ? localizeMessage('main.menus.app.window.closeWindow', 'Close Window') : localizeMessage('main.menus.app.window.close', 'Close'),
             accelerator: 'CmdOrCtrl+W',
@@ -377,19 +389,6 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 ipcMain.emit(OPEN_SERVERS_DROPDOWN);
             },
         }] : []),
-
-        {
-            label: localizeMessage('main.menus.app.window.createNewWindow', 'Create New Window'),
-            accelerator: 'CmdOrCtrl+N',
-            click() {
-                const serverId = ServerManager.getCurrentServerId();
-                if (!serverId) {
-                    return;
-                }
-                PopoutManager.createNewWindow(serverId);
-            },
-        },
-
         ...ServerManager.getOrderedServers().slice(0, 9).map((server, i) => {
             const items = [];
             items.push({
