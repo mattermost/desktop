@@ -48,8 +48,8 @@ describe('menu/view', function desc() {
             await asyncSleep(1000);
             const fullScreenWidth = await firstServer.evaluate('window.outerWidth');
             const fullScreenHeight = await firstServer.evaluate('window.outerHeight');
-            fullScreenWidth.should.be.equal(currentWidth);
-            fullScreenHeight.should.be.equal(currentHeight);
+            fullScreenWidth.should.be.greaterThan(currentWidth);
+            fullScreenHeight.should.be.greaterThan(currentHeight);
             await mainWindow.click('button.three-dot-menu');
             robot.keyTap('v');
             robot.keyTap('t');
@@ -57,8 +57,8 @@ describe('menu/view', function desc() {
             await asyncSleep(1000);
             currentWidth = await firstServer.evaluate('window.outerWidth');
             currentHeight = await firstServer.evaluate('window.outerHeight');
-            currentWidth.should.be.equal(fullScreenWidth);
-            currentHeight.should.be.equal(fullScreenHeight);
+            currentWidth.should.be.lessThan(fullScreenWidth);
+            currentHeight.should.be.lessThan(fullScreenHeight);
         });
     }
 });

@@ -149,6 +149,18 @@ export class TabManager extends EventEmitter {
             return;
         }
 
+        const view = ViewManager.getView(viewId);
+        if (!view) {
+            log.error(`switchToTab: Tab ${viewId} does not exist`);
+            return;
+        }
+
+        if (view.serverId !== ServerManager.getCurrentServerId()) {
+            this.activeTabs.set(view.serverId, view.id);
+            ServerManager.updateCurrentServer(view.serverId);
+            return;
+        }
+
         this.setActiveTab(viewId);
     };
 

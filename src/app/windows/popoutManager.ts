@@ -55,6 +55,10 @@ export class PopoutManager {
             mattermostWebContentsView.on(LOADSCREEN_END, () => window.fadeLoadingScreen());
             mattermostWebContentsView.on(LOAD_FAILED, this.onPopoutLoadFailed(window, webContentsView));
             mattermostWebContentsView.on(RELOAD_VIEW, () => window.showLoadingScreen());
+            if (process.platform !== 'darwin') {
+                // @ts-expect-error: The type is wrong on Electrons side
+                webContentsView.webContents.on('before-input-event', window.handleAltKeyPressed);
+            }
             window.browserWindow.contentView.on('bounds-changed', this.setBounds(window, webContentsView));
             window.browserWindow.on('focus', () => mattermostWebContentsView.focus());
             window.browserWindow.once('show', this.setBounds(window, webContentsView));

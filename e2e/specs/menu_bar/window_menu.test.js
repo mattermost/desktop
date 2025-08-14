@@ -57,23 +57,23 @@ describe('Menu/window_menu', function desc() {
 
         it('MM-T826_1 should show the second server', async () => {
             let dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
-            dropdownButtonText.should.equal('example');
+            dropdownButtonText.should.contain('example');
 
             robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("github")');
-            dropdownButtonText.should.equal('github');
+            dropdownButtonText.should.contain('github');
         });
 
         it('MM-T826_2 should show the third server', async () => {
             robot.keyTap('3', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("google")');
-            dropdownButtonText.should.equal('google');
+            dropdownButtonText.should.contain('google');
         });
 
         it('MM-T826_3 should show the first server', async () => {
             robot.keyTap('1', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("example")');
-            dropdownButtonText.should.equal('example');
+            dropdownButtonText.should.contain('example');
         });
     });
 

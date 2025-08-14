@@ -96,9 +96,7 @@ export default class BaseWindow {
         this.loadingScreen = new LoadingScreen(this.win);
         this.urlView = new URLView(this.win);
 
-        ipcMain.on(EMIT_CONFIGURATION, () => {
-            this.win.webContents.send(RELOAD_CONFIGURATION);
-        });
+        ipcMain.on(EMIT_CONFIGURATION, this.onEmitConfiguration);
     }
 
     get isReady() {
@@ -208,7 +206,9 @@ export default class BaseWindow {
     private onClosed = () => {
         log.info('window closed');
         this.ready = false;
+        ipcMain.off(EMIT_CONFIGURATION, this.onEmitConfiguration);
         this.loadingScreen.destroy();
+        this.urlView.destroy();
     };
 
     private onUnresponsive = () => {
@@ -238,5 +238,9 @@ export default class BaseWindow {
 
     private onLeaveFullScreen = () => {
         this.win?.webContents.send('leave-full-screen');
+    };
+
+    private onEmitConfiguration = () => {
+        this.win.webContents.send(RELOAD_CONFIGURATION);
     };
 }

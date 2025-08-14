@@ -28,7 +28,7 @@ export class URLView {
         this.urlView.webContents.loadURL('mattermost-desktop://renderer/urlView.html');
 
         parent.contentView.addChildView(this.urlView);
-        performanceMonitor.registerView('URLView', this.urlView.webContents);
+        performanceMonitor.registerView(`URLView-${parent.webContents.id}`, this.urlView.webContents);
     }
 
     show = (url: URL | string) => {
@@ -85,6 +85,11 @@ export class URLView {
                 hideView();
             };
         }
+    };
+
+    destroy = () => {
+        performanceMonitor.unregisterView(this.urlView.webContents.id);
+        this.urlView.webContents.close();
     };
 
     private isViewInFront = (view: WebContentsView) => {
