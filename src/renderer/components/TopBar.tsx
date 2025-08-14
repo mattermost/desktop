@@ -56,7 +56,7 @@ const TopBar = ({children, darkMode, title, openMenu}: Props) => {
     return (
         <div
             className={topBarClassName}
-            onDoubleClick={() => window.desktop.doubleClickOnWindow}
+            onDoubleClick={() => window.desktop.doubleClickOnWindow()}
         >
             <div
                 ref={topBar}
