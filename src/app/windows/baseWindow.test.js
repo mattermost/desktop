@@ -183,7 +183,8 @@ describe('BaseWindow', () => {
         });
 
         it('should not set icon for non-Linux platforms', () => {
-            os.platform.mockReturnValue('darwin');
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
 
             const baseWindow = new BaseWindow({});
 
@@ -191,6 +192,8 @@ describe('BaseWindow', () => {
             expect(BrowserWindow).toHaveBeenCalledWith(expect.not.objectContaining({
                 icon: expect.anything(),
             }));
+
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
 
         it('should set frameless window for macOS', () => {

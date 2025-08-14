@@ -306,6 +306,10 @@ async function initializeAfterAppReady() {
         return net.fetch(pathToFileURL(pathToServe).toString());
     });
 
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+        handleUpdateTheme();
+    }
+
     MainWindow.show();
     ServerManager.init();
     ServerManager.on(SERVER_ADDED, (serverId: string) => {
@@ -388,8 +392,6 @@ async function initializeAfterAppReady() {
             then(([react, redux]) => log.info(`Added Extension:  ${react.name}, ${redux.name}`)).
             catch((err) => log.error('An error occurred: ', err));
     }
-
-    handleUpdateTheme();
 
     let deeplinkingURL;
 
