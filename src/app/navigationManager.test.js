@@ -3,10 +3,12 @@
 
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
+import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {BROWSER_HISTORY_PUSH} from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import Utils from 'common/utils/util';
+import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
 
@@ -79,6 +81,7 @@ jest.mock('common/views/viewManager', () => ({
         error: jest.fn(),
     })),
     isPrimaryView: jest.fn(),
+    createView: jest.fn(),
 }));
 
 jest.mock('main/app/intercom', () => ({
@@ -88,6 +91,7 @@ jest.mock('main/app/intercom', () => ({
 describe('app/navigationManager', () => {
     describe('openLinkInPrimaryTab', () => {
         const navigationManager = new NavigationManager();
+        navigationManager.init();
         const baseView = {
             resetLoadingStatus: jest.fn(),
             load: jest.fn(),
@@ -98,6 +102,16 @@ describe('app/navigationManager', () => {
             id: 'view1',
             serverId: 'server1',
         };
+
+        it('should process queued deep link on init', () => {
+            const nav = new NavigationManager();
+            nav.openLinkInPrimaryTab('mattermost://server-1.com/deep/link?thing=yes');
+            expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+            expect(nav.queuedDeepLink).toBe('mattermost://server-1.com/deep/link?thing=yes');
+
+            nav.init();
+            expect(ServerManager.lookupServerByURL).toHaveBeenCalledWith(new URL('mattermost://server-1.com/deep/link?thing=yes'), true);
+        });
 
         it('should load URL into matching view', () => {
             ServerManager.lookupServerByURL.mockImplementation(() => ({id: 'server1', url: new URL('http://server-1.com/')}));
@@ -165,6 +179,95 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInPrimaryTab('');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('openLinkInNewTab', () => {
+        const navigationManager = new NavigationManager();
+        navigationManager.init();
+        const baseView = {
+            resetLoadingStatus: jest.fn(),
+            load: jest.fn(),
+            once: jest.fn(),
+            isReady: jest.fn(),
+            sendToRenderer: jest.fn(),
+            removeListener: jest.fn(),
+            id: 'view1',
+            serverId: 'server1',
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should create new tab and load URL for existing server', () => {
+            ServerManager.lookupServerByURL.mockImplementation(() => ({id: 'server1', url: new URL('http://server-1.com/')}));
+            ViewManager.createView.mockReturnValue({id: 'newView1'});
+            WebContentsManager.getView.mockReturnValue(baseView);
+            baseView.isReady.mockReturnValue(false);
+
+            navigationManager.openLinkInNewTab('mattermost://server-1.com/deep/link?thing=yes');
+
+            expect(ViewManager.createView).toHaveBeenCalledWith({id: 'server1', url: new URL('http://server-1.com/')}, ViewType.TAB);
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('newView1');
+            expect(baseView.load).toHaveBeenCalledWith('http://server-1.com/deep/link?thing=yes');
+        });
+
+        it('should send URL to renderer if view is ready on 6.0+ server', () => {
+            ServerManager.lookupServerByURL.mockImplementation(() => ({id: 'server1', url: new URL('http://server-1.com/')}));
+            ViewManager.createView.mockReturnValue({id: 'newView1'});
+            WebContentsManager.getView.mockReturnValue({
+                ...baseView,
+                serverId: 'server1',
+            });
+            ServerManager.getRemoteInfo.mockReturnValue({serverVersion: '6.0.0'});
+            Utils.isVersionGreaterThanOrEqualTo.mockReturnValue(true);
+            baseView.isReady.mockReturnValue(true);
+
+            navigationManager.openLinkInNewTab('mattermost://server-1.com/deep/link?thing=yes');
+
+            expect(baseView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/deep/link?thing=yes');
+        });
+
+        it('should open new server modal when using a server that does not exist', () => {
+            ServerManager.hasServers.mockReturnValue(true);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+
+            navigationManager.openLinkInNewTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
+        });
+
+        it('should handle welcome screen modal when no servers exist', () => {
+            ServerManager.hasServers.mockReturnValue(false);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+
+            navigationManager.openLinkInNewTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ModalManager.removeModal).toHaveBeenCalledWith('welcomeScreen');
+            expect(handleWelcomeScreenModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
+        });
+
+        it('should handle null URL gracefully', () => {
+            navigationManager.openLinkInNewTab(null);
+
+            expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+        });
+
+        it('should handle empty URL gracefully', () => {
+            navigationManager.openLinkInNewTab('');
+
+            expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+        });
+
+        it('should handle missing view gracefully', () => {
+            ServerManager.lookupServerByURL.mockImplementation(() => ({id: 'server1', url: new URL('http://server-1.com/')}));
+            ViewManager.createView.mockReturnValue({id: 'newView1'});
+            WebContentsManager.getView.mockReturnValue(null);
+
+            navigationManager.openLinkInNewTab('mattermost://server-1.com/deep/link?thing=yes');
+
+            expect(baseView.load).not.toHaveBeenCalled();
         });
     });
 

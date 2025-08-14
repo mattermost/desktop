@@ -10,36 +10,41 @@ import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSER_HISTORY_STATUS} from 'common/communication';
 import {Logger} from 'common/log';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {getFormattedPathName, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import type {MattermostView} from 'common/views/MattermostView';
+import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
 
 const log = new Logger('DeepLinking');
 
 export class NavigationManager {
+    private ready: boolean;
+    private queuedDeepLink?: string | URL;
+
     constructor() {
+        this.ready = false;
+
         ipcMain.handle(REQUEST_BROWSER_HISTORY_STATUS, this.handleRequestBrowserHistoryStatus);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
     }
 
-    openLinkInPrimaryTab = (url: string | URL) => {
+    private openLinkInTab = (url: string | URL, getView: (server: MattermostServer) => MattermostView) => {
         if (url) {
             const parsedURL = parseURL(url)!;
             const server = ServerManager.lookupServerByURL(parsedURL, true);
             if (server) {
-                const primaryView = ViewManager.getPrimaryView(server.id);
-                if (!primaryView) {
-                    log.error(`Couldn't find a primary view for the server ${server.id}`);
+                const view = getView(server);
+                const webContentsView = WebContentsManager.getView(view.id);
+                if (!webContentsView) {
+                    log.error(`Couldn't find a server for the view ${view.id}`);
                     return;
                 }
-                const webContentsView = WebContentsManager.getView(primaryView.id);
-                if (!server || !webContentsView) {
-                    log.error(`Couldn't find a server for the view ${primaryView.id}`);
-                    return;
-                }
+
                 const urlWithSchema = `${server.url.origin}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`;
                 if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
                     const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
@@ -59,6 +64,40 @@ export class NavigationManager {
                 handleWelcomeScreenModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
             }
         }
+    };
+
+    init = () => {
+        this.ready = true;
+        if (this.queuedDeepLink) {
+            this.openLinkInPrimaryTab(this.queuedDeepLink);
+            this.queuedDeepLink = undefined;
+        }
+    };
+
+    openLinkInPrimaryTab = (url: string | URL) => {
+        if (!this.ready) {
+            this.queuedDeepLink = url;
+            return;
+        }
+
+        this.openLinkInTab(url, (server: MattermostServer) => {
+            let view = ViewManager.getPrimaryView(server.id);
+
+            // We should only open in the primary tab for logging in, and if the app is just starting up
+            if (!view || server.isLoggedIn) {
+                view = ViewManager.createView(server, ViewType.TAB);
+                TabManager.switchToTab(view.id);
+            }
+            return view;
+        });
+    };
+
+    openLinkInNewTab = (url: string | URL) => {
+        this.openLinkInTab(url, (server: MattermostServer) => {
+            const view = ViewManager.createView(server, ViewType.TAB);
+            TabManager.switchToTab(view.id);
+            return view;
+        });
     };
 
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {

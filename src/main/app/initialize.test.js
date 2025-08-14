@@ -191,6 +191,7 @@ jest.mock('app/views/webContentsManager', () => ({
 jest.mock('app/navigationManager', () => ({
     on: jest.fn(),
     openLinkInPrimaryTab: jest.fn(),
+    init: jest.fn(),
 }));
 
 jest.mock('app/tabs/tabManager', () => ({

@@ -209,6 +209,7 @@ export class TabManager extends EventEmitter {
 
             this.updateTabOrder(view.serverId, [...this.tabOrder.get(view.serverId) || [], view.id]);
             this.emit(TAB_ADDED, view.serverId, view.id);
+            mainWindow.sendToRenderer(TAB_ADDED, view.serverId, view.id);
         }
     };
 
@@ -219,6 +220,7 @@ export class TabManager extends EventEmitter {
 
                 this.updateTabOrder(serverId, tabs.filter((tab) => tab !== viewId));
                 this.emit(TAB_REMOVED, serverId, viewId);
+                MainWindow.window?.sendToRenderer(TAB_REMOVED, serverId, viewId);
                 break;
             }
         }

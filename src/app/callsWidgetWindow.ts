@@ -609,7 +609,7 @@ export class CallsWidgetWindow {
 
         const parsedURL = parseURL(url);
         if (parsedURL) {
-            NavigationManager.openLinkInPrimaryTab(parsedURL);
+            NavigationManager.openLinkInNewTab(parsedURL);
             return;
         }
 

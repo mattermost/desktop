@@ -99,7 +99,7 @@ jest.mock('app/views/webContentsManager', () => ({
 }));
 
 jest.mock('app/navigationManager', () => ({
-    openLinkInPrimaryTab: jest.fn(),
+    openLinkInNewTab: jest.fn(),
 }));
 
 jest.mock('app/mainWindow/modals/modalManager', () => ({
@@ -921,10 +921,10 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(view.sendToRenderer).toBeCalledWith(BROWSER_HISTORY_PUSH, url);
         });
 
-        it('should call navigationManager.openLinkInPrimaryTab for parseable urls', () => {
+        it('should call navigationManager.openLinkInNewTab for parseable urls', () => {
             const url = 'http://localhost:8065/team/channel';
             callsWidgetWindow.handleCallsLinkClick({sender: {id: 1}}, url);
-            expect(NavigationManager.openLinkInPrimaryTab).toHaveBeenCalledWith(new URL(url));
+            expect(NavigationManager.openLinkInNewTab).toHaveBeenCalledWith(new URL(url));
         });
     });
 

@@ -395,6 +395,8 @@ async function initializeAfterAppReady() {
 
     let deeplinkingURL;
 
+    NavigationManager.init();
+
     // Protocol handler for win32 and linux
     if (process.platform !== 'darwin') {
         const args = process.argv.slice(1);

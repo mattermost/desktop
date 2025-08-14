@@ -143,7 +143,7 @@ export class WebContentsEventManager {
 
             // Check for mattermost protocol - handle internally
             if (isMattermostProtocol(parsedURL)) {
-                NavigationManager.openLinkInPrimaryTab(parsedURL);
+                NavigationManager.openLinkInNewTab(parsedURL);
                 return {action: 'deny'};
             }
 
@@ -187,7 +187,7 @@ export class WebContentsEventManager {
             }
 
             if (isTeamUrl(serverURL, parsedURL, true)) {
-                NavigationManager.openLinkInPrimaryTab(parsedURL);
+                NavigationManager.openLinkInNewTab(parsedURL);
                 return {action: 'deny'};
             }
             if (isAdminUrl(serverURL, parsedURL)) {
@@ -260,7 +260,7 @@ export class WebContentsEventManager {
 
             const otherServerURL = ServerManager.lookupServerByURL(parsedURL);
             if (otherServerURL && isTeamUrl(otherServerURL.url, parsedURL, true)) {
-                NavigationManager.openLinkInPrimaryTab(parsedURL);
+                NavigationManager.openLinkInNewTab(parsedURL);
                 return {action: 'deny'};
             }
 

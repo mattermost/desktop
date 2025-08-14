@@ -47,6 +47,7 @@ jest.mock('app/mainWindow/mainWindow', () => ({
     window: {
         showLoadingScreen: jest.fn(),
         fadeLoadingScreen: jest.fn(),
+        sendToRenderer: jest.fn(),
     },
 }));
 

@@ -30,7 +30,7 @@ jest.mock('app/views/webContentsManager', () => ({
 }));
 
 jest.mock('app/navigationManager', () => ({
-    openLinkInPrimaryTab: jest.fn(),
+    openLinkInNewTab: jest.fn(),
 }));
 
 jest.mock('app/mainWindow/mainWindow', () => ({
@@ -132,7 +132,7 @@ describe('PluginsPopUpsManager', () => {
         ServerManager.getServer.mockReturnValue({id: 'server-1', url: parseURL('http://localhost:8065')});
         expect(handlers['window-open']({url: 'http://localhost:8065/team/channel'})).toEqual({action: 'deny'});
         expect(shell.openExternal).not.toHaveBeenCalled();
-        expect(NavigationManager.openLinkInPrimaryTab).toHaveBeenCalledWith(parseURL('http://localhost:8065/team/channel'));
+        expect(NavigationManager.openLinkInNewTab).toHaveBeenCalledWith(parseURL('http://localhost:8065/team/channel'));
 
         // Verify opening custom protocols is handled through allowProtocolDialog
         expect(handlers['window-open']({url: 'custom:somelink'})).toEqual({action: 'deny'});

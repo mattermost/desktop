@@ -90,7 +90,7 @@ export class PluginsPopUpsManager {
             if (server && isTeamUrl(server.url, parsedURL, true)) {
                 ServerManager.updateCurrentServer(server.id);
                 MainWindow.get()?.focus();
-                NavigationManager.openLinkInPrimaryTab(parsedURL);
+                NavigationManager.openLinkInNewTab(parsedURL);
             } else {
                 // We allow to open external links through browser.
                 shell.openExternal(url);

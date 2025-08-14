@@ -70,7 +70,7 @@ jest.mock('app/views/webContentsManager', () => ({
 }));
 
 jest.mock('app/navigationManager', () => ({
-    openLinkInPrimaryTab: jest.fn(),
+    openLinkInNewTab: jest.fn(),
 }));
 
 describe('main/views/webContentsEvents', () => {
@@ -192,7 +192,7 @@ describe('main/views/webContentsEvents', () => {
 
         it('should open team links in the app', () => {
             expect(newWindow({url: 'http://server-1.com/myteam/channels/mychannel'})).toStrictEqual({action: 'deny'});
-            expect(NavigationManager.openLinkInPrimaryTab).toBeCalledWith(new URL('http://server-1.com/myteam/channels/mychannel'));
+            expect(NavigationManager.openLinkInNewTab).toBeCalledWith(new URL('http://server-1.com/myteam/channels/mychannel'));
         });
 
         it('should prevent admin links from opening in a new window', () => {

@@ -313,7 +313,8 @@ class MainPage extends React.PureComponent<Props, State> {
         window.removeEventListener('click', this.handleCloseDropdowns);
     }
 
-    setActiveView = (serverId: string, tabId: string) => {
+    setActiveView = async (serverId: string, tabId: string) => {
+        await this.updateServers();
         if (serverId === this.state.activeServerId && serverId === this.state.activeTabId) {
             return;
         }
