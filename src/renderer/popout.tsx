@@ -3,6 +3,7 @@
 
 import 'renderer/css/index.css';
 
+import classNames from 'classnames';
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
@@ -16,6 +17,7 @@ function Popout() {
     const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
     const [errorUrl, setErrorUrl] = useState<string | undefined>(undefined);
     const [title, setTitle] = useState<string | undefined>(undefined);
+    const [viewId, setViewId] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         // Deny drag&drop navigation in mainWindow.
@@ -34,8 +36,9 @@ function Popout() {
             setErrorUrl(loadUrl);
         });
 
-        window.desktop.onUpdateTabTitle((_, title) => {
+        window.desktop.onUpdateTabTitle((viewId, title) => {
             setTitle(title);
+            setViewId(viewId);
         });
     }, []);
 
@@ -59,7 +62,19 @@ function Popout() {
                 errorState={errorState}
                 errorMessage={errorMessage}
                 errorUrl={errorUrl}
-            />
+            >
+                <button
+                    className={classNames('TopBar-button', {
+                        darkMode: config.darkMode,
+                    })}
+                    onClick={() => {
+                        console.log('convertView', viewId);
+                        window.desktop.convertView(viewId!, 'tab');
+                    }}
+                >
+                    <i className='icon-dock-window'/>
+                </button>
+            </BasePage>
         </IntlProvider>
     );
 }

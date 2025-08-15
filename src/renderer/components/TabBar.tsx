@@ -18,6 +18,7 @@ type Props = {
     isDarkMode: boolean;
     onSelect: (id: string) => void;
     onCloseTab: (id: string) => void;
+    onConvertView: (id: string) => void;
     onNewTab?: () => void;
     tabs: UniqueView[];
     sessionsExpired: Record<string, boolean>;
@@ -54,6 +55,13 @@ class TabBar extends React.PureComponent<Props, State> {
         return (event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
             this.props.onCloseTab(id);
+        };
+    };
+
+    onConvertView = (id: string) => {
+        return (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation();
+            this.props.onConvertView(id);
         };
     };
 
@@ -135,12 +143,20 @@ class TabBar extends React.PureComponent<Props, State> {
                                         <span>{tab.title}</span>
                                         {badgeDiv}
                                         {this.props.tabs.length > 1 && !this.props.tabsDisabled && (
-                                            <button
-                                                className='serverTabItem__close'
-                                                onClick={this.onCloseTab(tab.id!)}
-                                            >
-                                                <i className='icon-close'/>
-                                            </button>
+                                            <>
+                                                <button
+                                                    className='serverTabItem__close'
+                                                    onClick={this.onCloseTab(tab.id!)}
+                                                >
+                                                    <i className='icon-close'/>
+                                                </button>
+                                                <button
+                                                    className='serverTabItem__close'
+                                                    onClick={this.onConvertView(tab.id!)}
+                                                >
+                                                    <i className='icon-dock-window'/>
+                                                </button>
+                                            </>
                                         )}
                                     </div>
                                 </a>

@@ -5,6 +5,8 @@ import classNames from 'classnames';
 import React, {useEffect, useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 
+import 'renderer/css/components/TopBar.scss';
+
 type Props = {
     children?: React.ReactNode;
     darkMode: boolean;
@@ -62,11 +64,6 @@ const TopBar = ({children, darkMode, title, openMenu}: Props) => {
                 ref={topBar}
                 className={'topBar-bg'}
             >
-                {title && (
-                    <div className='app-title'>
-                        {title}
-                    </div>
-                )}
                 <button
                     ref={threeDotMenu}
                     className='three-dot-menu'
@@ -83,6 +80,11 @@ const TopBar = ({children, darkMode, title, openMenu}: Props) => {
                     />
                 </button>
                 {children}
+                {title && (
+                    <div className='app-title'>
+                        {title}
+                    </div>
+                )}
                 {window.process.platform !== 'darwin' && fullScreen && (
                     <div
                         className={`button full-screen-button${darkMode ? ' darkMode' : ''}`}

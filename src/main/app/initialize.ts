@@ -35,7 +35,7 @@ import {
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
     SERVER_ADDED,
-    VIEW_UPDATED,
+    VIEW_TITLE_UPDATED,
     TAB_ADDED,
     TAB_REMOVED,
     TAB_ORDER_UPDATED,
@@ -442,7 +442,7 @@ async function initializeAfterAppReady() {
     TabManager.on(TAB_ADDED, handleUpdateMenuEvent);
     TabManager.on(TAB_REMOVED, handleUpdateMenuEvent);
     TabManager.on(TAB_ORDER_UPDATED, handleUpdateMenuEvent);
-    ViewManager.on(VIEW_UPDATED, handleUpdateMenuEvent);
+    ViewManager.on(VIEW_TITLE_UPDATED, handleUpdateMenuEvent);
 
     ipcMain.emit('update-dict');
 

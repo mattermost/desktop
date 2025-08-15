@@ -6,11 +6,13 @@ import EventEmitter from 'events';
 import AppState from 'common/appState';
 import {
     VIEW_CREATED,
-    VIEW_UPDATED,
+    VIEW_TITLE_UPDATED,
     VIEW_PRIMARY_UPDATED,
     VIEW_REMOVED,
     SERVER_ADDED,
     SERVER_REMOVED,
+    VIEW_TYPE_REMOVED,
+    VIEW_TYPE_ADDED,
 } from 'common/communication';
 import {Logger, getLevel} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
@@ -76,7 +78,19 @@ export class ViewManager extends EventEmitter {
             return;
         }
         view.title = title;
-        this.emit(VIEW_UPDATED, view.id);
+        this.emit(VIEW_TITLE_UPDATED, view.id);
+    };
+
+    updateViewType = (viewId: string, type: ViewType) => {
+        log.debug('updateViewType', viewId, type);
+
+        const view = this.views.get(viewId);
+        if (!view || view.type === type) {
+            return;
+        }
+        this.emit(VIEW_TYPE_REMOVED, view.id, view.type);
+        view.type = type;
+        this.emit(VIEW_TYPE_ADDED, view.id, view.type);
     };
 
     setPrimaryView = (viewId: string) => {
@@ -110,7 +124,7 @@ export class ViewManager extends EventEmitter {
         }
 
         this.views.delete(viewId);
-        this.emit(VIEW_REMOVED, viewId);
+        this.emit(VIEW_REMOVED, viewId, view.serverId);
     };
 
     getViewLog = (viewId: string, ...additionalPrefixes: string[]) => {

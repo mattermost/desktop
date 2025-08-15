@@ -16,13 +16,15 @@ import {
     VIEW_CREATED,
     VIEW_REMOVED,
     SERVER_SWITCHED,
-    VIEW_UPDATED,
+    VIEW_TITLE_UPDATED,
     UPDATE_TAB_TITLE,
     CREATE_NEW_TAB,
     SWITCH_TAB,
     CLOSE_TAB,
     SERVER_LOGGED_IN_CHANGED,
     UPDATE_TAB_ORDER,
+    VIEW_TYPE_REMOVED,
+    VIEW_TYPE_ADDED,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
@@ -117,6 +119,7 @@ describe('TabManager', () => {
         serverId: 'test-server-id',
         title: 'Test Tab',
         type: ViewType.TAB,
+        isErrored: jest.fn(() => false),
         toUniqueView: jest.fn(() => ({
             id: 'test-view-id',
             serverId: 'test-server-id',
@@ -134,6 +137,7 @@ describe('TabManager', () => {
             removeChildView: jest.fn(),
         },
         getContentBounds: jest.fn(() => ({width: 800, height: 600})),
+        sendToRenderer: jest.fn(),
     };
 
     const mockServer = {
@@ -516,7 +520,7 @@ describe('TabManager', () => {
             const tabIds = ['tab1', 'tab2', 'tab3'];
             tabManager.tabOrder.set('test-server-id', tabIds);
 
-            ViewManager.mockViewManager.emit(VIEW_REMOVED, 'tab2');
+            ViewManager.mockViewManager.emit(VIEW_REMOVED, 'tab2', 'test-server-id');
 
             expect(WebContentsManager.removeView).toHaveBeenCalledWith('tab2');
             expect(tabManager.tabOrder.get('test-server-id')).toEqual(['tab1', 'tab3']);
@@ -537,8 +541,7 @@ describe('TabManager', () => {
                     type: ViewType.TAB,
                 };
             });
-
-            ViewManager.mockViewManager.emit(VIEW_REMOVED, 'tab1');
+            ViewManager.mockViewManager.emit(VIEW_REMOVED, 'tab1', 'test-server-id');
 
             expect(tabManager.activeTabs.get('test-server-id')).toBe('tab2');
             expect(tabManager.tabOrder.get('test-server-id')).toEqual(['tab2', 'tab3']);
@@ -557,7 +560,7 @@ describe('TabManager', () => {
 
             ViewManager.getView.mockReturnValue(mockTabView);
 
-            ViewManager.mockViewManager.emit(VIEW_UPDATED, 'test-view-id');
+            ViewManager.mockViewManager.emit(VIEW_TITLE_UPDATED, 'test-view-id');
 
             expect(mockMainWindow.webContents.send).toHaveBeenCalledWith(
                 UPDATE_TAB_TITLE,
@@ -746,6 +749,372 @@ describe('TabManager', () => {
             tabManager.removeCurrentVisibleTab();
 
             expect(mockMainWindow.contentView.removeChildView).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleViewTypeRemoved', () => {
+        it('should handle TAB type removal correctly', () => {
+            const tabManager = new TabManager();
+            const emitSpy = jest.spyOn(tabManager, 'emit');
+            const switchToNextTabSpy = jest.spyOn(tabManager, 'switchToNextTabIfNecessary').mockImplementation(() => {});
+            const webContentsView = {
+                webContents: {focus: jest.fn()},
+                setBounds: jest.fn(),
+            };
+            const mockWebContentsView = {
+                getWebContentsView: jest.fn(() => webContentsView),
+            };
+
+            // Set up initial state
+            const tabIds = ['tab1', 'test-tab-id', 'tab3'];
+            tabManager.tabOrder.set('test-server-id', tabIds);
+            tabManager.activeTabs.set('test-server-id', 'test-tab-id');
+
+            // Clear the global mock and set up test-specific mock
+            ViewManager.getView.mockReset();
+            ViewManager.getView.mockImplementation((id) => {
+                if (id === null || id === undefined) {
+                    return null;
+                }
+                return {
+                    id,
+                    serverId: 'test-server-id',
+                    type: ViewType.TAB,
+                    isErrored: jest.fn(() => false),
+                };
+            });
+            WebContentsManager.getView.mockReturnValue(mockWebContentsView);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+
+            // Emit the event
+            ViewManager.mockViewManager.emit(VIEW_TYPE_REMOVED, 'test-tab-id', ViewType.TAB);
+
+            // Verify the tab was removed from order
+            expect(tabManager.tabOrder.get('test-server-id')).toEqual(['tab1', 'tab3']);
+
+            // Verify the web contents view was removed from main window
+            expect(mockMainWindow.contentView.removeChildView).toHaveBeenCalledWith(webContentsView);
+
+            // Verify TAB_REMOVED event was emitted
+            expect(emitSpy).toHaveBeenCalledWith(TAB_REMOVED, 'test-server-id', 'test-tab-id');
+
+            // Verify switchToNextTabIfNecessary was called
+            expect(switchToNextTabSpy).toHaveBeenCalledWith('test-tab-id');
+        });
+
+        it('should not handle non-TAB type removal', () => {
+            const tabManager = new TabManager();
+            const mockView = {
+                id: 'test-window-id',
+                serverId: 'test-server-id',
+                type: ViewType.WINDOW,
+            };
+
+            ViewManager.getView.mockReturnValue(mockView);
+
+            // Emit the event for WINDOW type
+            ViewManager.mockViewManager.emit(VIEW_TYPE_REMOVED, 'test-window-id', ViewType.WINDOW);
+
+            // Verify no tab-related actions were taken
+            expect(tabManager.tabOrder.get('test-server-id')).toBeUndefined();
+            expect(mockMainWindow.contentView.removeChildView).not.toHaveBeenCalled();
+        });
+
+        it('should handle removal when view does not exist', () => {
+            const tabManager = new TabManager();
+
+            ViewManager.getView.mockReturnValue(null);
+
+            // Emit the event for non-existent view
+            ViewManager.mockViewManager.emit(VIEW_TYPE_REMOVED, 'non-existent-id', ViewType.TAB);
+
+            // Verify no errors occurred and no actions were taken
+            expect(tabManager.tabOrder.get('test-server-id')).toBeUndefined();
+            expect(mockMainWindow.contentView.removeChildView).not.toHaveBeenCalled();
+        });
+
+        it('should switch to next tab if current active tab is removed', () => {
+            const tabManager = new TabManager();
+            const switchToNextTabSpy = jest.spyOn(tabManager, 'switchToNextTabIfNecessary').mockImplementation(() => {});
+            const mockWebContentsView = {
+                getWebContentsView: jest.fn(() => ({
+                    webContents: {focus: jest.fn()},
+                    setBounds: jest.fn(),
+                })),
+                isErrored: jest.fn(() => false),
+                focus: jest.fn(),
+                setBounds: jest.fn(),
+                needsLoadingScreen: jest.fn(() => false),
+            };
+
+            // Set up initial state with current tab as active
+            const tabIds = ['tab1', 'current-tab-id', 'tab3'];
+            tabManager.tabOrder.set('test-server-id', tabIds);
+            tabManager.activeTabs.set('test-server-id', 'current-tab-id');
+
+            // Clear the global mock and set up test-specific mock
+            ViewManager.getView.mockReset();
+            ViewManager.getView.mockImplementation((id) => {
+                if (id === null || id === undefined) {
+                    return null;
+                }
+                return {
+                    id,
+                    serverId: 'test-server-id',
+                    type: ViewType.TAB,
+                    isErrored: jest.fn(() => false),
+                };
+            });
+            WebContentsManager.getView.mockReturnValue(mockWebContentsView);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+
+            // Emit the event
+            ViewManager.mockViewManager.emit(VIEW_TYPE_REMOVED, 'current-tab-id', ViewType.TAB);
+
+            // Verify the active tab was switched to the next available tab
+            expect(tabManager.activeTabs.get('test-server-id')).toBe('current-tab-id');
+
+            // Verify switchToNextTabIfNecessary was called
+            expect(switchToNextTabSpy).toHaveBeenCalledWith('current-tab-id');
+        });
+
+        it('should clean up tab listeners when removing tab', () => {
+            const tabManager = new TabManager();
+            const switchToNextTabSpy = jest.spyOn(tabManager, 'switchToNextTabIfNecessary').mockImplementation(() => {});
+            const mockWebContentsView = {
+                getWebContentsView: jest.fn(() => ({
+                    webContents: {focus: jest.fn()},
+                })),
+            };
+            const mockCleanupFunction = jest.fn();
+
+            // Set up a tab listener
+            tabManager.tabListeners.set('test-tab-id', mockCleanupFunction);
+
+            // Clear the global mock and set up test-specific mock
+            ViewManager.getView.mockReset();
+            ViewManager.getView.mockImplementation((id) => {
+                if (id === null || id === undefined) {
+                    return null;
+                }
+                return {
+                    id,
+                    serverId: 'test-server-id',
+                    type: ViewType.TAB,
+                    isErrored: jest.fn(() => false),
+                };
+            });
+            WebContentsManager.getView.mockReturnValue(mockWebContentsView);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+
+            // Emit the event
+            ViewManager.mockViewManager.emit(VIEW_TYPE_REMOVED, 'test-tab-id', ViewType.TAB);
+
+            // Verify the cleanup function was called and listener was removed
+            expect(mockCleanupFunction).toHaveBeenCalled();
+            expect(tabManager.tabListeners.has('test-tab-id')).toBe(false);
+
+            // Verify switchToNextTabIfNecessary was called
+            expect(switchToNextTabSpy).toHaveBeenCalledWith('test-tab-id');
+        });
+    });
+
+    describe('handleViewTypeAdded', () => {
+        it('should handle TAB type addition correctly', () => {
+            const tabManager = new TabManager();
+            const emitSpy = jest.spyOn(tabManager, 'emit');
+            const switchToTabSpy = jest.spyOn(tabManager, 'switchToTab');
+            const mockWebContentsView = {
+                updateParentWindow: jest.fn(),
+                on: jest.fn(),
+                id: 'new-tab-id',
+                isErrored: jest.fn(() => false),
+                getWebContentsView: jest.fn(() => ({
+                    webContents: {focus: jest.fn()},
+                    setBounds: jest.fn(),
+                })),
+                focus: jest.fn(),
+                setBounds: jest.fn(),
+                needsLoadingScreen: jest.fn(() => false),
+            };
+
+            // Clear the global mock and set up test-specific mock
+            ViewManager.getView.mockReset();
+            ViewManager.getView.mockImplementation((id) => {
+                if (id === null || id === undefined) {
+                    return null;
+                }
+                return {
+                    id,
+                    serverId: 'test-server-id',
+                    type: ViewType.TAB,
+                    isErrored: jest.fn(() => false),
+                };
+            });
+            WebContentsManager.getView.mockReturnValue(mockWebContentsView);
+            MainWindow.window = mockMainWindow;
+
+            // Emit the event
+            ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'new-tab-id', ViewType.TAB);
+
+            // Verify the web contents view was updated with main window
+            expect(mockWebContentsView.updateParentWindow).toHaveBeenCalledWith(mockMainWindow.browserWindow);
+
+            // Verify the tab was set up
+            expect(tabManager.tabOrder.get('test-server-id')).toContain('new-tab-id');
+
+            // Verify TAB_ADDED event was emitted
+            expect(emitSpy).toHaveBeenCalledWith(TAB_ADDED, 'test-server-id', 'new-tab-id');
+
+            // Verify switchToTab was called
+            expect(switchToTabSpy).toHaveBeenCalledWith('new-tab-id');
+        });
+
+        it('should not handle non-TAB type addition', () => {
+            const tabManager = new TabManager();
+            const emitSpy = jest.spyOn(tabManager, 'emit');
+            const mockView = {
+                id: 'new-window-id',
+                serverId: 'test-server-id',
+                type: ViewType.WINDOW,
+            };
+
+            ViewManager.getView.mockReturnValue(mockView);
+
+            // Emit the event for WINDOW type
+            ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'new-window-id', ViewType.WINDOW);
+
+            // Verify no tab-related actions were taken
+            expect(tabManager.tabOrder.get('test-server-id')).toBeUndefined();
+            expect(emitSpy).not.toHaveBeenCalledWith(TAB_ADDED, expect.any(String), expect.any(String));
+        });
+
+        it('should handle addition when view does not exist', () => {
+            const tabManager = new TabManager();
+            const emitSpy = jest.spyOn(tabManager, 'emit');
+
+            ViewManager.getView.mockReturnValue(null);
+
+            // Emit the event for non-existent view
+            ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'non-existent-id', ViewType.TAB);
+
+            // Verify no errors occurred and no actions were taken
+            expect(tabManager.tabOrder.get('test-server-id')).toBeUndefined();
+            expect(emitSpy).not.toHaveBeenCalledWith(TAB_ADDED, expect.any(String), expect.any(String));
+        });
+
+        it('should handle addition when web contents view does not exist', () => {
+            const tabManager = new TabManager();
+            const emitSpy = jest.spyOn(tabManager, 'emit');
+
+            // Clear the global mock and set up test-specific mock
+            ViewManager.getView.mockReset();
+            ViewManager.getView.mockImplementation((id) => {
+                if (id === null || id === undefined) {
+                    return null;
+                }
+                return {
+                    id,
+                    serverId: 'test-server-id',
+                    type: ViewType.TAB,
+                    isErrored: jest.fn(() => false),
+                };
+            });
+            WebContentsManager.getView.mockReturnValue(null);
+
+            // Emit the event
+            ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'new-tab-id', ViewType.TAB);
+
+            // Verify no errors occurred and no actions were taken
+            expect(tabManager.tabOrder.get('test-server-id')).toBeUndefined();
+            expect(emitSpy).not.toHaveBeenCalledWith(TAB_ADDED, expect.any(String), expect.any(String));
+        });
+
+        it('should switch to the new tab when added', () => {
+            const tabManager = new TabManager();
+            const switchToTabSpy = jest.spyOn(tabManager, 'switchToTab');
+            const mockWebContentsView = {
+                updateParentWindow: jest.fn(),
+                on: jest.fn(),
+                id: 'new-tab-id',
+                isErrored: jest.fn(() => false),
+                getWebContentsView: jest.fn(() => ({
+                    webContents: {focus: jest.fn()},
+                    setBounds: jest.fn(),
+                })),
+                focus: jest.fn(),
+                setBounds: jest.fn(),
+                needsLoadingScreen: jest.fn(() => false),
+            };
+
+            // Clear the global mock and set up test-specific mock
+            ServerManager.getCurrentServerId.mockReturnValue('test-server-id');
+            ViewManager.getView.mockReset();
+            ViewManager.getView.mockImplementation((id) => {
+                if (id === null || id === undefined) {
+                    return null;
+                }
+                return {
+                    id,
+                    serverId: 'test-server-id',
+                    type: ViewType.TAB,
+                    isErrored: jest.fn(() => false),
+                };
+            });
+            WebContentsManager.getView.mockReturnValue(mockWebContentsView);
+            MainWindow.window = mockMainWindow;
+
+            // Emit the event
+            ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'new-tab-id', ViewType.TAB);
+
+            // Verify switchToTab was called
+            expect(switchToTabSpy).toHaveBeenCalledWith('new-tab-id');
+        });
+
+        it('should set up tab listeners when adding tab', () => {
+            const tabManager = new TabManager();
+            const switchToTabSpy = jest.spyOn(tabManager, 'switchToTab');
+            const mockWebContentsView = {
+                updateParentWindow: jest.fn(),
+                on: jest.fn(),
+                id: 'new-tab-id',
+                isErrored: jest.fn(() => false),
+                getWebContentsView: jest.fn(() => ({
+                    webContents: {focus: jest.fn()},
+                    setBounds: jest.fn(),
+                })),
+                focus: jest.fn(),
+                setBounds: jest.fn(),
+                needsLoadingScreen: jest.fn(() => false),
+            };
+
+            // Clear the global mock and set up test-specific mock
+            ViewManager.getView.mockReset();
+            ViewManager.getView.mockImplementation((id) => {
+                if (id === null || id === undefined) {
+                    return null;
+                }
+                return {
+                    id,
+                    serverId: 'test-server-id',
+                    type: ViewType.TAB,
+                    isErrored: jest.fn(() => false),
+                };
+            });
+            WebContentsManager.getView.mockReturnValue(mockWebContentsView);
+            MainWindow.window = mockMainWindow;
+
+            // Emit the event
+            ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'new-tab-id', ViewType.TAB);
+
+            // Verify event listeners were set up
+            expect(mockWebContentsView.on).toHaveBeenCalledWith(expect.any(String), expect.any(Function));
+
+            // Verify a cleanup function was stored
+            expect(tabManager.tabListeners.has('new-tab-id')).toBe(true);
+
+            // Verify switchToTab was called
+            expect(switchToTabSpy).toHaveBeenCalledWith('new-tab-id');
         });
     });
 });

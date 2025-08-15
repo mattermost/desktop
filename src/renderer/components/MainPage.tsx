@@ -124,6 +124,9 @@ class MainPage extends React.PureComponent<Props, State> {
                 });
             });
         });
+        console.log('servers', servers);
+        console.log('tabs', tabs);
+        console.log('tabViewStatus', tabViewStatus);
         this.setState({servers, tabs, tabViewStatus, currentServer: servers.find((srv) => srv.id === this.state.activeServerId)});
         return Boolean(servers.length);
     };
@@ -410,6 +413,10 @@ class MainPage extends React.PureComponent<Props, State> {
         }
     };
 
+    handleConvertView = (viewId: string) => {
+        window.desktop.convertView(viewId, 'window');
+    };
+
     render() {
         let currentTabs: UniqueView[] = [];
         if (this.state.activeServerId) {
@@ -428,6 +435,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 activeTabId={this.state.activeTabId}
                 onSelect={this.handleSelectTab}
                 onCloseTab={this.handleCloseTab}
+                onConvertView={this.handleConvertView}
                 onNewTab={this.handleNewTab}
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen || !this.state.currentServer?.isLoggedIn}

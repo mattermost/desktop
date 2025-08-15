@@ -99,9 +99,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
         this.altPressStatus = false;
 
-        this.parentWindow.on('blur', () => {
-            this.altPressStatus = false;
-        });
+        this.parentWindow.on('blur', this.handleAltBlur);
 
         ServerManager.on(SERVER_URL_CHANGED, this.handleServerWasModified);
     }
@@ -227,6 +225,12 @@ export class MattermostWebContentsView extends EventEmitter {
         if (this.removeLoading) {
             clearTimeout(this.removeLoading);
         }
+    };
+
+    updateParentWindow = (window: BrowserWindow) => {
+        this.parentWindow.off('blur', this.handleAltBlur);
+        this.parentWindow = window;
+        this.parentWindow.on('blur', this.handleAltBlur);
     };
 
     /**
@@ -443,5 +447,9 @@ export class MattermostWebContentsView extends EventEmitter {
         }
 
         ViewManager.updateViewTitle(this.id, channelName);
+    };
+
+    private handleAltBlur = () => {
+        this.altPressStatus = false;
     };
 }

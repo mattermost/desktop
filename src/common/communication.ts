@@ -193,6 +193,9 @@ export const ADD_SERVER = 'add-server';
 export const EDIT_SERVER = 'edit-server';
 export const REMOVE_SERVER = 'remove-server';
 
+// WebContents Manager Events
+export const CONVERT_VIEW = 'convert-view';
+
 // Server Manager Events
 export const SERVER_ADDED = 'server-added';
 export const SERVER_REMOVED = 'server-removed';
@@ -204,7 +207,9 @@ export const SERVER_ORDER_UPDATED = 'server-order-updated';
 
 // View Manager Events
 export const VIEW_CREATED = 'view-created';
-export const VIEW_UPDATED = 'view-updated';
+export const VIEW_TITLE_UPDATED = 'view-title-updated';
+export const VIEW_TYPE_REMOVED = 'view-type-removed';
+export const VIEW_TYPE_ADDED = 'view-type-added';
 export const VIEW_PRIMARY_UPDATED = 'view-primary-updated';
 export const VIEW_REMOVED = 'view-removed';
 

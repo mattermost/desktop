@@ -19,12 +19,13 @@ import {
     TAB_LOGIN_CHANGED,
     SERVER_URL_CHANGED,
     OPEN_SERVER_EXTERNALLY,
+    CONVERT_VIEW,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import type {MattermostView} from 'common/views/MattermostView';
+import type {MattermostView, ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
 import PermissionsManager from 'main/security/permissionsManager';
@@ -52,6 +53,7 @@ export class WebContentsManager {
         ipcMain.on(OPEN_CHANGELOG_LINK, this.handleOpenChangelogLink);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
+        ipcMain.on(CONVERT_VIEW, this.handleConvertView);
 
         ServerManager.on(SERVER_URL_CHANGED, this.handleServerURLChanged);
     }
@@ -241,6 +243,14 @@ export class WebContentsManager {
             webContentsId: view.webContentsId,
             serverName: server.name,
         };
+    };
+
+    private handleConvertView = (event: IpcMainEvent, viewId: string, type: ViewType) => {
+        const view = this.getView(viewId);
+        if (!view) {
+            return;
+        }
+        ViewManager.updateViewType(viewId, type);
     };
 }
 

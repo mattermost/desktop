@@ -56,6 +56,7 @@ declare global {
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             createNewTab: (serverId: string) => Promise<string>;
             createNewWindow: (serverId: string) => Promise<string>;
+            convertView: (viewId: string, type: 'tab' | 'window') => void;
             onUpdateTabTitle: (listener: (viewId: string, title: string) => void) => void;
             onServerAdded: (listener: (serverId: string, setAsCurrentServer: boolean) => void) => void;
             onServerRemoved: (listener: (serverId: string) => void) => void;

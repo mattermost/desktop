@@ -9,6 +9,7 @@
     overflow: hidden;
     -webkit-font-smoothing: auto;
     max-width: 400px;
+    -webkit-app-region: no-drag;
 
     &.disabled {
         opacity: 0.5;

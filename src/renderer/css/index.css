@@ -44,6 +44,7 @@ body {
 .topBar {
   height: 40px;
   z-index: 9;
+  -webkit-app-region: drag;
 }
 
 .topBar>.topBar-bg {
@@ -133,7 +134,7 @@ body {
   font-size: 14px;
   letter-spacing: -0.2px;
   z-index: 0;
-  -webkit-app-region: drag;
+  pointer-events: none;
 }
 
 .topBar.darkMode .app-title {
@@ -152,6 +153,7 @@ body {
   margin: 4px;
   position: relative;
   width: 32px;
+  -webkit-app-region: no-drag;
 
   i {
       color: rgba(63, 67, 80, 0.56);

@@ -112,6 +112,7 @@ import {
     SERVER_LOGGED_IN_CHANGED,
     TAB_ADDED,
     TAB_REMOVED,
+    CONVERT_VIEW,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -161,6 +162,7 @@ contextBridge.exposeInMainWorld('desktop', {
 
     createNewTab: (serverId) => ipcRenderer.invoke(CREATE_NEW_TAB, serverId),
     createNewWindow: (serverId) => ipcRenderer.invoke(CREATE_NEW_WINDOW, serverId),
+    convertView: (viewId, type) => ipcRenderer.send(CONVERT_VIEW, viewId, type),
     onUpdateTabTitle: (listener) => ipcRenderer.on(UPDATE_TAB_TITLE, (_, viewId, title) => listener(viewId, title)),
     onServerAdded: (listener) => ipcRenderer.on(SERVER_ADDED, (_, serverId, setAsCurrentServer) => listener(serverId, setAsCurrentServer)),
     onServerRemoved: (listener) => ipcRenderer.on(SERVER_REMOVED, (_, serverId) => listener(serverId)),

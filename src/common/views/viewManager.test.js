@@ -6,7 +6,7 @@
 import AppState from 'common/appState';
 import {
     VIEW_CREATED,
-    VIEW_UPDATED,
+    VIEW_TITLE_UPDATED,
     VIEW_PRIMARY_UPDATED,
     VIEW_REMOVED,
     SERVER_ADDED,
@@ -107,7 +107,7 @@ describe('ViewManager', () => {
             viewManager.updateViewTitle(view.id, 'New Title');
 
             expect(view.title).toBe('New Title');
-            expect(emitSpy).toHaveBeenCalledWith(VIEW_UPDATED, view.id);
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view.id);
         });
     });
 
@@ -159,7 +159,7 @@ describe('ViewManager', () => {
             viewManager.removeView(view.id);
 
             expect(viewManager.views.get(view.id)).toBeUndefined();
-            expect(emitSpy).toHaveBeenCalledWith(VIEW_REMOVED, view.id);
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_REMOVED, view.id, mockServer.id);
         });
 
         it('should set new primary view when removing primary view', () => {
