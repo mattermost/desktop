@@ -190,16 +190,23 @@ class TabBar extends React.PureComponent<Props, State> {
                         >
                             {tabs}
                             {!this.props.tabsDisabled && !snapshot.draggingFromThisWith && !this.isTabLimitReached() &&
-                                <button
-                                    id='newTabButton'
-                                    className={classNames('TopBar-button', {
-                                        darkMode: this.props.isDarkMode,
-                                    })}
-                                    onClick={this.props.onNewTab}
-                                    disabled={this.props.tabsDisabled || this.isTabLimitReached()}
-                                >
-                                    <i className='icon-plus'/>
-                                </button>
+                                <div className='TopBar-button--newTab_container'>
+                                    <div className='TopBar-button--newTab_divider'/>
+                                    <button
+                                        id='newTabButton'
+                                        className={classNames('TopBar-button', 'TopBar-button--newTab', {
+                                            darkMode: this.props.isDarkMode,
+                                        })}
+                                        onClick={this.props.onNewTab}
+                                        disabled={this.props.tabsDisabled || this.isTabLimitReached()}
+                                        title={this.props.intl.formatMessage({
+                                            id: 'renderer.components.tabBar.newTab.tooltip',
+                                            defaultMessage: 'New tab',
+                                        })}
+                                    >
+                                        <i className='icon-plus'/>
+                                    </button>
+                                </div>
                             }
                             {this.props.isMenuOpen ? <span className='TabBar-nonDrag'/> : null}
                             {provided.placeholder}

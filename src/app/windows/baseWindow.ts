@@ -17,7 +17,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
-import {MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import Utils from 'common/utils/util';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -45,6 +45,8 @@ export default class BaseWindow {
             paintWhenInitiallyHidden: true, // we want it to start painting to get info from the webapp
             minWidth: MINIMUM_WINDOW_WIDTH,
             minHeight: MINIMUM_WINDOW_HEIGHT,
+            height: DEFAULT_WINDOW_HEIGHT,
+            width: DEFAULT_WINDOW_WIDTH,
             frame: !this.isFramelessWindow(),
             titleBarStyle: 'hidden' as const,
             titleBarOverlay: this.getTitleBarOverlay(),

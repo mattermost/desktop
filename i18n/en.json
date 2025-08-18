@@ -295,6 +295,7 @@
   "renderer.components.showCertificateModal.serialNumber": "Serial Number",
   "renderer.components.showCertificateModal.subjectName": "Subject Name",
   "renderer.components.showCertificateModal.title": "Certificate information",
+  "renderer.components.tabBar.newTab.tooltip": "New tab",
   "renderer.components.welcomeScreen.button.getStarted": "Get Started",
   "renderer.components.welcomeScreen.slides.calls.subtitle": "When typing isn’t fast enough, seamlessly move from chat to audio calls and screenshare without switching tools.",
   "renderer.components.welcomeScreen.slides.calls.title": "Start secure calls instantly",
