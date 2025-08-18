@@ -930,7 +930,7 @@ describe('TabManager', () => {
                 id: 'new-tab-id',
                 isErrored: jest.fn(() => false),
                 getWebContentsView: jest.fn(() => ({
-                    webContents: {focus: jest.fn()},
+                    webContents: {focus: jest.fn(), on: jest.fn()},
                     setBounds: jest.fn(),
                 })),
                 focus: jest.fn(),
@@ -1039,7 +1039,7 @@ describe('TabManager', () => {
                 id: 'new-tab-id',
                 isErrored: jest.fn(() => false),
                 getWebContentsView: jest.fn(() => ({
-                    webContents: {focus: jest.fn()},
+                    webContents: {focus: jest.fn(), on: jest.fn()},
                     setBounds: jest.fn(),
                 })),
                 focus: jest.fn(),
@@ -1080,7 +1080,7 @@ describe('TabManager', () => {
                 id: 'new-tab-id',
                 isErrored: jest.fn(() => false),
                 getWebContentsView: jest.fn(() => ({
-                    webContents: {focus: jest.fn()},
+                    webContents: {focus: jest.fn(), on: jest.fn()},
                     setBounds: jest.fn(),
                 })),
                 focus: jest.fn(),

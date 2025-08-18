@@ -525,7 +525,7 @@ describe('PopoutManager', () => {
                 on: jest.fn(),
                 off: jest.fn(),
                 getWebContentsView: jest.fn(() => ({
-                    webContents: {focus: jest.fn()},
+                    webContents: {focus: jest.fn(), on: jest.fn()},
                     setBounds: jest.fn(),
                 })),
             };
@@ -614,7 +614,7 @@ describe('PopoutManager', () => {
                 on: jest.fn(),
                 off: jest.fn(),
                 getWebContentsView: jest.fn(() => ({
-                    webContents: {focus: jest.fn()},
+                    webContents: {focus: jest.fn(), on: jest.fn()},
                     setBounds: jest.fn(),
                 })),
             };
@@ -650,7 +650,7 @@ describe('PopoutManager', () => {
                 on: jest.fn(),
                 off: jest.fn(),
                 getWebContentsView: jest.fn(() => ({
-                    webContents: {focus: jest.fn()},
+                    webContents: {focus: jest.fn(), on: jest.fn()},
                     setBounds: jest.fn(),
                 })),
             };
@@ -682,7 +682,7 @@ describe('PopoutManager', () => {
                 on: jest.fn(),
                 off: jest.fn(),
                 getWebContentsView: jest.fn(() => ({
-                    webContents: {focus: jest.fn()},
+                    webContents: {focus: jest.fn(), on: jest.fn()},
                     setBounds: jest.fn(),
                 })),
             };
