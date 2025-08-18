@@ -34,6 +34,7 @@ import {
     VIEW_TYPE_ADDED,
     VIEW_TYPE_REMOVED,
 } from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import type {MattermostView} from 'common/views/MattermostView';
@@ -65,7 +66,7 @@ export class TabManager extends EventEmitter {
         ipcMain.handle(CREATE_NEW_TAB, (event, serverId) => this.handleCreateNewTab(serverId));
         ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => this.updateTabOrder(serverId, viewOrder));
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.switchToTab(viewId));
-        ipcMain.on(CLOSE_TAB, (event, viewId) => this.handleCloseTab(viewId));
+        ipcMain.on(CLOSE_TAB, (event, viewId) => ViewManager.removeView(viewId));
 
         // Subscribe to ViewManager events
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
@@ -252,6 +253,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleViewRemoved = (viewId: string, serverId: string) => {
+        this.switchToNextTabIfNecessary(viewId, serverId);
         this.unregisterTab(viewId, serverId);
         WebContentsManager.removeView(viewId);
     };
@@ -273,7 +275,7 @@ export class TabManager extends EventEmitter {
         if (type === ViewType.TAB) {
             const view = ViewManager.getView(viewId);
             if (view) {
-                this.switchToNextTabIfNecessary(viewId);
+                this.switchToNextTabIfNecessary(viewId, view.serverId);
                 const webContentsView = WebContentsManager.getView(viewId);
                 if (webContentsView) {
                     MainWindow.get()?.contentView.removeChildView(webContentsView.getWebContentsView());
@@ -425,24 +427,16 @@ export class TabManager extends EventEmitter {
             return undefined;
         }
 
+        if (Config.tabLimit && this.getOrderedTabsForServer(serverId).length >= Config.tabLimit) {
+            log.warn(`handleCreateNewTab: Tab limit reached for server ${serverId}`);
+            return undefined;
+        }
+
         return ViewManager.createView(server, ViewType.TAB).id;
     };
 
-    private handleCloseTab = (viewId: string) => {
-        log.debug('handleCloseTab', viewId);
-
-        this.switchToNextTabIfNecessary(viewId);
-        ViewManager.removeView(viewId);
-    };
-
-    private switchToNextTabIfNecessary = (viewId: string) => {
+    private switchToNextTabIfNecessary = (viewId: string, serverId: string) => {
         if (this.isActiveTab(viewId)) {
-            const serverId = ViewManager.getView(viewId)?.serverId;
-            if (!serverId) {
-                log.error('handleCloseTab: No server ID found for tab', viewId);
-                return;
-            }
-
             const currentTabs = this.tabOrder.get(serverId);
             if (!currentTabs) {
                 log.error('handleCloseTab: No tabs found for server', serverId);

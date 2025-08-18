@@ -27,6 +27,7 @@ type Props = {
     onDrop: (result: DropResult) => void;
     tabsDisabled?: boolean;
     isMenuOpen?: boolean;
+    tabLimit: number;
     intl: IntlShape;
 };
 
@@ -63,6 +64,11 @@ class TabBar extends React.PureComponent<Props, State> {
             event.stopPropagation();
             this.props.onOpenPopoutMenu(id);
         };
+    };
+
+    isTabLimitReached = () => {
+        const {tabs, tabLimit} = this.props;
+        return Boolean(tabLimit && tabs.length >= tabLimit);
     };
 
     componentDidMount(): void {
@@ -183,14 +189,14 @@ class TabBar extends React.PureComponent<Props, State> {
                             {...provided.droppableProps}
                         >
                             {tabs}
-                            {!this.props.tabsDisabled && !snapshot.draggingFromThisWith &&
+                            {!this.props.tabsDisabled && !snapshot.draggingFromThisWith && !this.isTabLimitReached() &&
                                 <button
                                     id='newTabButton'
                                     className={classNames('TopBar-button', {
                                         darkMode: this.props.isDarkMode,
                                     })}
                                     onClick={this.props.onNewTab}
-                                    disabled={this.props.tabsDisabled}
+                                    disabled={this.props.tabsDisabled || this.isTabLimitReached()}
                                 >
                                     <i className='icon-plus'/>
                                 </button>

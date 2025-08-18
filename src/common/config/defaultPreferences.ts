@@ -52,6 +52,7 @@ const defaultPreferences: ConfigV4 = {
     startInFullscreen: false,
     logLevel: 'info',
     enableMetrics: true,
+    tabLimit: 15,
 };
 
 export default defaultPreferences;

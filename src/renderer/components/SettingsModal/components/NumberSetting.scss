@@ -1,0 +1,33 @@
+.NumberSetting {
+    padding-bottom: 24px;
+
+    .NumberSetting__heading {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 20px;
+        color: var(--center-channel-color);
+    }
+
+    .NumberSetting__label {
+        margin-top: 8px;
+        font-size: 12px;
+        line-height: 16px;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+    }
+    
+    .Input_container {
+        max-width: 200px;
+
+        input {
+            height: 34px;
+            font-size: 14px;
+            line-height: 20px;
+        }
+    }
+}
+
+div + .NumberSetting {
+    padding-top: 24px;
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+}

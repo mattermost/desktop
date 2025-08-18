@@ -247,7 +247,11 @@ export class Config extends EventEmitter {
     }
 
     get enableMetrics() {
-        return this.combinedData?.enableMetrics;
+        return this.combinedData?.enableMetrics ?? true;
+    }
+
+    get tabLimit() {
+        return this.combinedData?.tabLimit ?? 15;
     }
 
     /**

@@ -12,6 +12,7 @@ import type {SettingsDefinition} from 'types/settings';
 import CheckSetting from './components/CheckSetting';
 import DownloadSetting from './components/DownloadSetting';
 import NotificationSetting from './components/NotificationSetting';
+import NumberSetting from './components/NumberSetting';
 import RadioSetting from './components/RadioSetting';
 import SelectSetting from './components/SelectSetting';
 import ServerSetting from './components/ServerSetting';
@@ -187,6 +188,26 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                                 values={{appName: (await window.desktop.getVersion()).name}}
                             />
                         ),
+                    },
+                },
+                {
+                    id: 'tabLimit',
+                    component: NumberSetting,
+                    props: {
+                        label: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.tabLimit'
+                                defaultMessage='Maximum number of open tabs'
+                            />
+                        ),
+                        subLabel: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.tabLimit.description'
+                                defaultMessage='The maximum number of tabs that can be open simultaneously in the application per server. 0 means no limit.'
+                            />
+                        ),
+                        min: 0,
+                        defaultValue: (await window.desktop.getLocalConfiguration()).tabLimit,
                     },
                 },
             ],

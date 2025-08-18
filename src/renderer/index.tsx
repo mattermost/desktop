@@ -35,6 +35,7 @@ function Root() {
         <IntlProvider>
             <MainPage
                 openMenu={openMenu}
+                tabLimit={config.tabLimit}
                 darkMode={config.darkMode}
                 appName={config.appName}
             />

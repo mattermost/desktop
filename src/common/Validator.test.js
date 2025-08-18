@@ -212,6 +212,7 @@ describe('common/Validator', () => {
             trayIconTheme: 'use_system',
             useSpellChecker: true,
             version: 4,
+            tabLimit: 15,
         };
 
         it('should validate v4 config data', () => {

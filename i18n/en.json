@@ -276,6 +276,8 @@
   "renderer.components.settingsPage.spellCheckerSetting.language": "Spell Checker Languages",
   "renderer.components.settingsPage.startAppOnLogin": "Start app on login",
   "renderer.components.settingsPage.startAppOnLogin.description": "If enabled, the app starts automatically when you log in to your machine.",
+  "renderer.components.settingsPage.tabLimit": "Maximum number of open tabs",
+  "renderer.components.settingsPage.tabLimit.description": "The maximum number of tabs that can be open simultaneously in the application per server. 0 means no limit.",
   "renderer.components.settingsPage.trayIcon.color": "Icon color: ",
   "renderer.components.settingsPage.trayIcon.show": "Show icon in the notification area",
   "renderer.components.settingsPage.trayIcon.theme.dark": "Dark",

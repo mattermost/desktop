@@ -33,6 +33,7 @@ type Props = {
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
+    tabLimit: number;
 };
 
 type State = {
@@ -437,6 +438,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen || !this.state.currentServer?.isLoggedIn}
                 isMenuOpen={this.state.isMenuOpen || this.state.isDownloadsDropdownOpen}
+                tabLimit={this.props.tabLimit}
             />
         );
 
