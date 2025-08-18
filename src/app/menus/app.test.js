@@ -49,6 +49,11 @@ jest.mock('electron', () => {
             removeHandler: jest.fn(),
             removeListener: jest.fn(),
         },
+        session: {
+            defaultSession: {
+                clearCache: jest.fn(),
+            },
+        },
         Notification: NotificationMock,
         nativeImage: {
             createFromPath: jest.fn(),
@@ -410,5 +415,55 @@ describe('main/menus/app', () => {
 
         const menuItem = devToolsSubMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsCurrentCallWidgetPopout');
         expect(menuItem).not.toBe(undefined);
+    });
+
+    it('should reload view with currentURL when reload menu item is clicked', () => {
+        const mockView = {
+            reload: jest.fn(),
+            currentURL: 'https://example.com/current-page',
+        };
+        const {getFocusedView} = require('app/views/webContentsManager');
+        getFocusedView.mockReturnValue(mockView);
+
+        const menu = createTemplate(config);
+        const viewMenu = menu.find((item) => item.label === 'main.menus.app.view');
+        const reloadMenuItem = viewMenu.submenu.find((item) => item.label === 'main.menus.app.view.reload');
+
+        expect(reloadMenuItem).not.toBe(undefined);
+        reloadMenuItem.click();
+
+        expect(mockView.reload).toHaveBeenCalledWith('https://example.com/current-page');
+    });
+
+    it('should reload view with currentURL when clear cache and reload menu item is clicked', () => {
+        const mockView = {
+            reload: jest.fn(),
+            currentURL: 'https://example.com/current-page',
+        };
+        const {getFocusedView} = require('app/views/webContentsManager');
+        getFocusedView.mockReturnValue(mockView);
+
+        const menu = createTemplate(config);
+        const viewMenu = menu.find((item) => item.label === 'main.menus.app.view');
+        const clearCacheMenuItem = viewMenu.submenu.find((item) => item.label === 'main.menus.app.view.clearCacheAndReload');
+
+        expect(clearCacheMenuItem).not.toBe(undefined);
+        clearCacheMenuItem.click();
+
+        expect(mockView.reload).toHaveBeenCalledWith('https://example.com/current-page');
+    });
+
+    it('should handle reload when no focused view is available', () => {
+        const {getFocusedView} = require('app/views/webContentsManager');
+        getFocusedView.mockReturnValue(null);
+
+        const menu = createTemplate(config);
+        const viewMenu = menu.find((item) => item.label === 'main.menus.app.view');
+        const reloadMenuItem = viewMenu.submenu.find((item) => item.label === 'main.menus.app.view.reload');
+
+        expect(reloadMenuItem).not.toBe(undefined);
+
+        // Should not throw an error when no view is available
+        expect(() => reloadMenuItem.click()).not.toThrow();
     });
 });
