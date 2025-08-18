@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {WebContents, Event} from 'electron';
-import {BrowserWindow, shell} from 'electron';
+import {BrowserWindow, dialog, shell} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -29,6 +29,7 @@ import {
 } from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
+import {localizeMessage} from 'main/i18nManager';
 
 import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
 
@@ -131,6 +132,18 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
+            if (!isValidURI(details.url)) {
+                this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
+                dialog.showErrorBox(
+                    localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
+                    localizeMessage(
+                        'main.webContentEvents.invalidLinkDescription',
+                        'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.',
+                    ),
+                );
+                return {action: 'deny'};
+            }
+
             // Dev tools case
             if (parsedURL.protocol === 'devtools:') {
                 return {action: 'allow'};
@@ -150,13 +163,6 @@ export class WebContentsEventManager {
             // Check for other custom protocols
             if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
-                return {action: 'deny'};
-            }
-
-            // Check for valid URL
-            // Let the browser handle invalid URIs
-            if (!isValidURI(details.url)) {
-                shell.openExternal(details.url);
                 return {action: 'deny'};
             }
 
