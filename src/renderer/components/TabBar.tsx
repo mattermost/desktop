@@ -172,7 +172,7 @@ class TabBar extends React.PureComponent<Props, State> {
                     droppableId='tabBar'
                     direction='horizontal'
                 >
-                    {(provided) => (
+                    {(provided, snapshot) => (
                         <div
                             ref={provided.innerRef}
                             className={classNames('TabBar', {
@@ -183,7 +183,7 @@ class TabBar extends React.PureComponent<Props, State> {
                             {...provided.droppableProps}
                         >
                             {tabs}
-                            {!this.props.tabsDisabled &&
+                            {!this.props.tabsDisabled && !snapshot.draggingFromThisWith &&
                                 <button
                                     id='newTabButton'
                                     className={classNames('TopBar-button', {
