@@ -9,9 +9,9 @@ import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
 import isDev from 'electron-is-dev';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import {createMenu as createAppMenu} from 'app/menus/app';
+import {createMenu as createTrayMenu} from 'app/menus/tray';
 import NavigationManager from 'app/navigationManager';
-import {createMenu as createAppMenu} from 'app/system/menus/app';
-import {createMenu as createTrayMenu} from 'app/system/menus/tray';
 import Tray from 'app/system/tray/tray';
 import {MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';

@@ -17,6 +17,7 @@ type Props = {
     errorState?: ErrorState;
     errorMessage?: string;
     openMenu: () => void;
+    openPopoutMenu?: () => void;
 };
 
 export enum ErrorState {
@@ -30,6 +31,7 @@ export default function BasePage({
     appName,
     errorUrl,
     openMenu,
+    openPopoutMenu,
     title,
     errorState,
     errorMessage,
@@ -63,6 +65,7 @@ export default function BasePage({
                 darkMode={darkMode}
                 title={title}
                 openMenu={openMenu}
+                openPopoutMenu={openPopoutMenu}
             >
                 {children}
             </TopBar>

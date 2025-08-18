@@ -140,6 +140,9 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
 }));
 jest.mock('./webContentEvents', () => ({}));
 jest.mock('common/appState', () => ({}));
+jest.mock('app/popoutMenu', () => ({
+    default: jest.fn(),
+}));
 
 describe('app/views/webContentsManager', () => {
     describe('getView', () => {

@@ -194,7 +194,7 @@ export const EDIT_SERVER = 'edit-server';
 export const REMOVE_SERVER = 'remove-server';
 
 // WebContents Manager Events
-export const CONVERT_VIEW = 'convert-view';
+export const OPEN_POPOUT_MENU = 'open-popout-menu';
 
 // Server Manager Events
 export const SERVER_ADDED = 'server-added';

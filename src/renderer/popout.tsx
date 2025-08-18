@@ -3,7 +3,6 @@
 
 import 'renderer/css/index.css';
 
-import classNames from 'classnames';
 import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
@@ -48,6 +47,13 @@ function Popout() {
         }
     };
 
+    const openPopoutMenu = () => {
+        if (!viewId) {
+            return;
+        }
+        window.desktop.openPopoutMenu(viewId);
+    };
+
     if (!config) {
         return null;
     }
@@ -56,25 +62,14 @@ function Popout() {
         <IntlProvider>
             <BasePage
                 openMenu={openMenu}
+                openPopoutMenu={openPopoutMenu}
                 darkMode={config.darkMode}
                 title={title ?? config.appName}
                 appName={config.appName}
                 errorState={errorState}
                 errorMessage={errorMessage}
                 errorUrl={errorUrl}
-            >
-                <button
-                    className={classNames('TopBar-button', {
-                        darkMode: config.darkMode,
-                    })}
-                    onClick={() => {
-                        console.log('convertView', viewId);
-                        window.desktop.convertView(viewId!, 'tab');
-                    }}
-                >
-                    <i className='icon-dock-window'/>
-                </button>
-            </BasePage>
+            />
         </IntlProvider>
     );
 }

@@ -12,9 +12,10 @@ type Props = {
     darkMode: boolean;
     title?: string;
     openMenu: () => void;
+    openPopoutMenu?: () => void;
 }
 
-const TopBar = ({children, darkMode, title, openMenu}: Props) => {
+const TopBar = ({children, darkMode, title, openMenu, openPopoutMenu}: Props) => {
     const intl = useIntl();
     const [fullScreen, setFullScreen] = useState(false);
     const [threeDotsIsFocused, setThreeDotsIsFocused] = useState(false);
@@ -58,6 +59,7 @@ const TopBar = ({children, darkMode, title, openMenu}: Props) => {
     return (
         <div
             className={topBarClassName}
+            onContextMenu={openPopoutMenu}
             onDoubleClick={() => window.desktop.doubleClickOnWindow()}
         >
             <div

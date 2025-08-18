@@ -49,8 +49,8 @@ jest.mock('main/constants', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-jest.mock('app/system/menus/app', () => ({}));
-jest.mock('app/system/menus/tray', () => ({}));
+jest.mock('app/menus/app', () => ({}));
+jest.mock('app/menus/tray', () => ({}));
 jest.mock('app/system/tray/tray', () => ({}));
 jest.mock('app/views/webContentsManager', () => ({
     on: jest.fn(),

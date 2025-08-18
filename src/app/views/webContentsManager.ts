@@ -5,6 +5,7 @@ import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {ipcMain, shell} from 'electron';
 import isDev from 'electron-is-dev';
 
+import popoutMenu from 'app/popoutMenu';
 import type BaseWindow from 'app/windows/baseWindow';
 import AppState from 'common/appState';
 import {
@@ -19,13 +20,13 @@ import {
     TAB_LOGIN_CHANGED,
     SERVER_URL_CHANGED,
     OPEN_SERVER_EXTERNALLY,
-    CONVERT_VIEW,
+    OPEN_POPOUT_MENU,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import type {MattermostView, ViewType} from 'common/views/MattermostView';
+import type {MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
 import PermissionsManager from 'main/security/permissionsManager';
@@ -53,7 +54,7 @@ export class WebContentsManager {
         ipcMain.on(OPEN_CHANGELOG_LINK, this.handleOpenChangelogLink);
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
-        ipcMain.on(CONVERT_VIEW, this.handleConvertView);
+        ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
 
         ServerManager.on(SERVER_URL_CHANGED, this.handleServerURLChanged);
     }
@@ -245,12 +246,10 @@ export class WebContentsManager {
         };
     };
 
-    private handleConvertView = (event: IpcMainEvent, viewId: string, type: ViewType) => {
-        const view = this.getView(viewId);
-        if (!view) {
-            return;
-        }
-        ViewManager.updateViewType(viewId, type);
+    private handleOpenPopoutMenu = (_: IpcMainEvent, viewId: string) => {
+        log.debug('handleOpenPopoutMenu', viewId);
+
+        popoutMenu(viewId);
     };
 }
 

@@ -18,7 +18,7 @@ type Props = {
     isDarkMode: boolean;
     onSelect: (id: string) => void;
     onCloseTab: (id: string) => void;
-    onConvertView: (id: string) => void;
+    onOpenPopoutMenu: (id: string) => void;
     onNewTab?: () => void;
     tabs: UniqueView[];
     sessionsExpired: Record<string, boolean>;
@@ -58,10 +58,10 @@ class TabBar extends React.PureComponent<Props, State> {
         };
     };
 
-    onConvertView = (id: string) => {
-        return (event: React.MouseEvent<HTMLButtonElement>) => {
+    onOpenPopoutMenu = (id: string) => {
+        return (event: React.MouseEvent<HTMLAnchorElement>) => {
             event.stopPropagation();
-            this.props.onConvertView(id);
+            this.props.onOpenPopoutMenu(id);
         };
     };
 
@@ -135,6 +135,7 @@ class TabBar extends React.PureComponent<Props, State> {
                                             this.props.onSelect(tab.id!);
                                         }
                                     }}
+                                    onContextMenu={this.onOpenPopoutMenu(tab.id!)}
                                     className={classNames({
                                         disabled: this.props.tabsDisabled,
                                     })}
@@ -149,12 +150,6 @@ class TabBar extends React.PureComponent<Props, State> {
                                                     onClick={this.onCloseTab(tab.id!)}
                                                 >
                                                     <i className='icon-close'/>
-                                                </button>
-                                                <button
-                                                    className='serverTabItem__close'
-                                                    onClick={this.onConvertView(tab.id!)}
-                                                >
-                                                    <i className='icon-dock-window'/>
                                                 </button>
                                             </>
                                         )}
