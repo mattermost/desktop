@@ -1,4 +1,6 @@
 {
+  "app.menus.contextMenu.openInNewTab": "Open in new tab",
+  "app.menus.contextMenu.openInNewWindow": "Open in new window",
   "callsWidgetWindow.cannotStartCall.message": "There is an in-progress call on another server that must be ended before joining a new call.",
   "callsWidgetWindow.cannotStartCall.title": "Cannot Start Call",
   "common.permissions.canBasicAuth": "Web Authentication",

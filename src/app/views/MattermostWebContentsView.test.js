@@ -47,6 +47,10 @@ jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
+jest.mock('app/navigationManager', () => ({
+    openLinkInNewTab: jest.fn(),
+    openLinkInNewWindow: jest.fn(),
+}));
 jest.mock('common/appState', () => ({
     clear: jest.fn(),
     updateMentions: jest.fn(),
@@ -62,6 +66,9 @@ jest.mock('main/utils', () => ({
     getLocalPreload: (file) => file,
     composeUserAgent: () => 'Mattermost/5.0.0',
     shouldHaveBackBar: jest.fn(),
+}));
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
 }));
 jest.mock('main/developerMode', () => ({
     get: jest.fn(),

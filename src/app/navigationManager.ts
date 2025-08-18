@@ -100,6 +100,12 @@ export class NavigationManager {
         });
     };
 
+    openLinkInNewWindow = (url: string | URL) => {
+        this.openLinkInTab(url, (server: MattermostServer) => {
+            return ViewManager.createView(server, ViewType.WINDOW);
+        });
+    };
+
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
         log.debug('handleBrowserHistoryPush', e.sender.id, pathName);
 
@@ -138,8 +144,8 @@ export class NavigationManager {
 
     private deeplinkSuccess = (viewId: string) => {
         ViewManager.getViewLog(viewId).debug('deeplinkSuccess');
-        TabManager.switchToTab(viewId);
         const view = WebContentsManager.getView(viewId);
+        TabManager.switchToTab(viewId);
         if (view) {
             view.removeListener(LOAD_FAILED, this.deeplinkFailed);
         }

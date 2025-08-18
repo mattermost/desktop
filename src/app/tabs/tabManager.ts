@@ -167,6 +167,11 @@ export class TabManager extends EventEmitter {
             return;
         }
 
+        if (view.type !== ViewType.TAB) {
+            log.error(`switchToTab: Tab ${viewId} is not a tab, will not show`);
+            return;
+        }
+
         if (view.serverId !== ServerManager.getCurrentServerId()) {
             this.activeTabs.set(view.serverId, view.id);
             ServerManager.updateCurrentServer(view.serverId);

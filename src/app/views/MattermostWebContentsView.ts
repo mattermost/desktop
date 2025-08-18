@@ -3,9 +3,11 @@
 
 import {type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
 import type {WebContentsViewConstructorOptions, Event} from 'electron/main';
+import type {Options} from 'electron-context-menu';
 import {EventEmitter} from 'events';
 import semver from 'semver';
 
+import NavigationManager from 'app/navigationManager';
 import AppState from 'common/appState';
 import {
     LOAD_RETRY,
@@ -25,10 +27,11 @@ import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
 import {isInternalURL, parseURL} from 'common/utils/url';
-import type {MattermostView} from 'common/views/MattermostView';
+import {type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
+import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import {getServerAPI} from 'main/server/serverAPI';
 
@@ -93,7 +96,7 @@ export class MattermostWebContentsView extends EventEmitter {
         WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
         if (!DeveloperMode.get('disableContextMenu')) {
-            this.contextMenu = new ContextMenu({}, this.webContentsView.webContents);
+            this.contextMenu = new ContextMenu(this.generateContextMenu(), this.webContentsView.webContents);
         }
         this.maxRetries = MAX_SERVER_RETRIES;
 
@@ -451,5 +454,38 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private handleAltBlur = () => {
         this.altPressStatus = false;
+    };
+
+    private generateContextMenu = (): Options => {
+        const server = ServerManager.getServer(this.view.serverId);
+        if (!server) {
+            return {};
+        }
+
+        return {
+            append: (_, parameters) => {
+                const parsedURL = parseURL(parameters.linkURL);
+                if (parsedURL && isInternalURL(parsedURL, server.url)) {
+                    return [
+                        {
+                            type: 'separator' as const,
+                        },
+                        {
+                            label: localizeMessage('app.menus.contextMenu.openInNewTab', 'Open in new tab'),
+                            click() {
+                                NavigationManager.openLinkInNewTab(parsedURL.toString());
+                            },
+                        },
+                        {
+                            label: localizeMessage('app.menus.contextMenu.openInNewWindow', 'Open in new window'),
+                            click() {
+                                NavigationManager.openLinkInNewWindow(parsedURL.toString());
+                            },
+                        },
+                    ];
+                }
+                return [];
+            },
+        };
     };
 }

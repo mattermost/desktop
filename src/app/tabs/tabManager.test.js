@@ -327,6 +327,21 @@ describe('TabManager', () => {
             expect(MainWindow.get).not.toHaveBeenCalled();
         });
 
+        it('should not switch if tab is not a tab', () => {
+            const mockView = {
+                id: 'test-view',
+                serverId: 'test-server',
+                type: ViewType.WINDOW,
+            };
+            ServerManager.getCurrentServerId.mockReturnValue('test-server');
+            WebContentsManager.getView.mockReturnValue(mockView);
+            tabManager.activeTabs.set('test-server', 'test-view');
+            const setActiveTabSpy = jest.spyOn(tabManager, 'setActiveTab');
+
+            tabManager.switchToTab('test-view');
+            expect(setActiveTabSpy).not.toHaveBeenCalled();
+        });
+
         it('should switch to tab and show it', () => {
             const mockWebContentsView = {
                 webContents: {focus: jest.fn()},
