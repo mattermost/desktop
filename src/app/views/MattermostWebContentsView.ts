@@ -91,7 +91,8 @@ export class MattermostWebContentsView extends EventEmitter {
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
-        this.webContentsView.webContents.on('page-title-updated', this.handlePageTitleUpdated);
+        this.webContentsView.webContents.on('did-navigate-in-page', () => this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle()));
+        this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
 
         WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
 
@@ -431,7 +432,9 @@ export class MattermostWebContentsView extends EventEmitter {
         }
     };
 
-    private handlePageTitleUpdated = (event: Event, newTitle: string) => {
+    private handlePageTitleUpdated = (newTitle: string) => {
+        this.log.silly('handlePageTitleUpdated', newTitle);
+
         if (!ServerManager.getServer(this.view.serverId)?.isLoggedIn) {
             return;
         }
