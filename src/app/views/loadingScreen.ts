@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {type IpcMainEvent, type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
+import {type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
 
-import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
+import {EMIT_CONFIGURATION, LOADING_SCREEN_ANIMATION_FINISHED, RELOAD_CONFIGURATION, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 import {Logger} from 'common/log';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload, getWindowBoundaries} from 'main/utils';
@@ -40,7 +40,7 @@ export class LoadingScreen {
 
         parent.contentView.on('bounds-changed', this.setBounds);
         ipcMain.on(LOADING_SCREEN_ANIMATION_FINISHED, this.handleAnimationFinished);
-        ipcMain.on(EMIT_CONFIGURATION, this.handleDarkModeChange);
+        ipcMain.on(EMIT_CONFIGURATION, this.onEmitConfiguration);
     }
 
     /**
@@ -71,7 +71,7 @@ export class LoadingScreen {
     };
 
     destroy = () => {
-        ipcMain.off(EMIT_CONFIGURATION, this.handleDarkModeChange);
+        ipcMain.off(EMIT_CONFIGURATION, this.onEmitConfiguration);
         ipcMain.off(LOADING_SCREEN_ANIMATION_FINISHED, this.handleAnimationFinished);
         performanceMonitor.unregisterView(this.view.webContents.id);
         this.view.webContents.close();
@@ -95,7 +95,7 @@ export class LoadingScreen {
         this.view.setBounds(getWindowBoundaries(this.parent));
     };
 
-    private handleDarkModeChange = (event: IpcMainEvent, darkMode: boolean) => {
-        this.view.webContents.send(DARK_MODE_CHANGE, darkMode);
+    private onEmitConfiguration = () => {
+        this.view.webContents.send(RELOAD_CONFIGURATION);
     };
 }
