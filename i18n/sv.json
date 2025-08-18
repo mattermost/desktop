@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "Det finns ett pågående samtal på en annan server som måste avslutas innan det går att ansluta till ett nytt samtal.",
+  "callsWidgetWindow.cannotStartCall.title": "Kan inte starta samtal",
   "common.permissions.canBasicAuth": "Webbautentisering",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
@@ -152,6 +154,8 @@
   "main.tray.tray.unread": "Du har olästa kanaler",
   "main.views.viewManager.handleDeepLink.error.body": "Det finns ingen konfigurerad server i appen som matchar den begärda webbadressen: {url}",
   "main.views.viewManager.handleDeepLink.error.title": "Ingen matchande server",
+  "main.webContentEvents.invalidLinkDescription": "Länken du klickade på verkar vara felformad och kan inte öppnas. Kontrollera om det finns några fel i webbadressen innan du försöker igen.",
+  "main.webContentEvents.invalidLinkTitle": "Ogiltig länk",
   "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "Fråga inte igen",
   "main.windows.mainWindow.closeApp.dialog.detail": "Du kommer inte längre att få notifieringar. Om du vill att {appName} ska fortsätta att köras i systemfältet kan du aktivera detta i Inställningar.",
   "main.windows.mainWindow.closeApp.dialog.message": "Är du säker på att du vill avsluta?",

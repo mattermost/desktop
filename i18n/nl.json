@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "Er is een actieve callop een andere server dat eerst beëindigd moet worden voordat je aan een nieuw gesprek kan deelnemen.",
+  "callsWidgetWindow.cannotStartCall.title": "Kan call niet starten",
   "common.permissions.canBasicAuth": "Webauthenticatie",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
@@ -152,6 +154,8 @@
   "main.tray.tray.unread": "Je hebt ongelezen kanalen",
   "main.views.viewManager.handleDeepLink.error.body": "Er is geen geconfigureerde server in de app die overeenkomt met de gevraagde url: {url}",
   "main.views.viewManager.handleDeepLink.error.title": "Geen overeenkomende server",
+  "main.webContentEvents.invalidLinkDescription": "De link waarop je hebt geklikt lijkt foutief gevormd en kan niet worden geopend. Controleer de URL op fouten voordat je het opnieuw probeert.",
+  "main.webContentEvents.invalidLinkTitle": "Ongeldige link",
   "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "Niet meer opnieuw vragen",
   "main.windows.mainWindow.closeApp.dialog.detail": "Je zal niet langer meldingen voor berichten ontvangen. Als je {appName} in het systeemvak wilt laten draaien, kan je dit bij Instellingen inschakelen.",
   "main.windows.mainWindow.closeApp.dialog.message": "Weet je zeker dat je wilt afsluiten?",
