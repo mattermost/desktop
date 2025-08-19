@@ -146,13 +146,34 @@ export class NavigationManager {
             return;
         }
 
-        let cleanedPathName = pathName;
-        if (server.url.pathname !== '/' && pathName.startsWith(server.url.pathname)) {
-            cleanedPathName = pathName.replace(server.url.pathname, '');
+        const cleanedPathName = this.cleanPathName(pathName, server);
+
+        if (ViewManager.getView(currentView.id)?.type === ViewType.TAB) {
+            const otherTab = TabManager.getOrderedTabsForServer(server.id).
+                filter((tab) => tab.id !== currentView.id).
+                map((tab) => WebContentsManager.getView(tab.id)).
+                find((view) => this.isMatchingPathName(pathName, view?.currentURL ?? new URL(''), server));
+
+            if (otherTab) {
+                TabManager.switchToTab(otherTab.id);
+                return;
+            }
         }
 
         currentView.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
         currentView.updateHistoryButton();
+    };
+
+    private cleanPathName = (pathName: string, server: MattermostServer) => {
+        let cleanedPathName = pathName;
+        if (server.url.pathname !== '/' && pathName.startsWith(server.url.pathname)) {
+            cleanedPathName = pathName.replace(server.url.pathname, '');
+        }
+        return cleanedPathName;
+    };
+
+    private isMatchingPathName = (pathName: string, currentURL: URL, server: MattermostServer) => {
+        return this.cleanPathName(currentURL.pathname, server) === this.cleanPathName(pathName, server);
     };
 
     private handleRequestBrowserHistoryStatus = (e: IpcMainInvokeEvent) => {

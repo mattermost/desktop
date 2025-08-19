@@ -31,6 +31,7 @@ jest.mock('app/serverHub', () => ({
 
 jest.mock('app/tabs/tabManager', () => ({
     switchToTab: jest.fn(),
+    getOrderedTabsForServer: jest.fn(),
 }));
 
 jest.mock('app/views/webContentsManager', () => ({
@@ -82,6 +83,7 @@ jest.mock('common/views/viewManager', () => ({
     })),
     isPrimaryView: jest.fn(),
     createView: jest.fn(),
+    getView: jest.fn(),
 }));
 
 jest.mock('main/app/intercom', () => ({
@@ -304,7 +306,7 @@ describe('app/navigationManager', () => {
         });
 
         it('should process browser history push for primary view even when not logged in', () => {
-            mockServer.isLoggedIn = false;
+            ServerManager.getServer.mockReturnValue({...mockServer, isLoggedIn: false});
             ViewManager.isPrimaryView.mockReturnValue(true);
 
             navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
@@ -323,7 +325,7 @@ describe('app/navigationManager', () => {
         });
 
         it('should not process browser history push when not logged in and not primary view', () => {
-            mockServer.isLoggedIn = false;
+            ServerManager.getServer.mockReturnValue({...mockServer, isLoggedIn: false});
             ViewManager.isPrimaryView.mockReturnValue(false);
 
             navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
@@ -352,6 +354,26 @@ describe('app/navigationManager', () => {
 
             expect(mockView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
             expect(mockView.updateHistoryButton).toHaveBeenCalled();
+        });
+
+        it('should switch to other tab if pathname matches', () => {
+            ViewManager.getView.mockImplementation((id) => ({
+                id,
+                serverId: 'server-1',
+                type: ViewType.TAB,
+            }));
+            TabManager.getOrderedTabsForServer.mockReturnValue([{id: 'test-view'}, {id: 'test-view-2'}]);
+            WebContentsManager.getView.mockImplementation((id) => ({
+                id,
+                webContentsId: id === 'test-view' ? 1 : 2,
+                serverId: 'server-1',
+                type: ViewType.TAB,
+                currentURL: {pathname: '/team/channel'},
+            }));
+
+            console.log('aaa', ViewManager.getView('test-view'));
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('test-view-2');
         });
     });
 });
