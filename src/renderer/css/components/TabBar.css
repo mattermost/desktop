@@ -162,27 +162,22 @@
 
 .TabBar>li.serverTabItem:not(.active)+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(61,60,64,0.08);
-  margin-left: -1px;
 }
 
 .TabBar.darkMode>li.serverTabItem:not(.active)+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(221,221,221,0.08);
-  margin-left: -1px;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled):hover+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid rgba(0, 0, 0, 0);
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled):hover+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid rgba(0, 0, 0, 0);
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled)+li.serverTabItem:not(.active)>a:hover>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid rgba(0, 0, 0, 0);
 }
 
 .TabBar .TabBar-dot {
