@@ -39,7 +39,7 @@ import {
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {parseURL} from 'common/utils/url';
+import {parseURL, getFormattedPathName} from 'common/utils/url';
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
 import AuthManager from 'main/authManager';
@@ -380,9 +380,13 @@ async function initializeAfterAppReady() {
                         return;
                     }
                 } else {
-                    // Fallback: Check if this URL matches any server domain
+                    // Fallback: Check if this URL matches any server using normalized URL comparison
+                    const requestNormalizedUrl = `${url.origin}${getFormattedPathName(url.pathname)}`;
                     const allServers = ServerManager.getAllServers();
-                    const matchingServer = allServers.find((server) => url.host === server.url.host);
+                    const matchingServer = allServers.find((server) => {
+                        const serverNormalizedUrl = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
+                        return requestNormalizedUrl.startsWith(serverNormalizedUrl);
+                    });
 
                     if (matchingServer) {
                         const secureStorage = getSecureStorage(app.getPath('userData'));

@@ -15,7 +15,6 @@ import type {UniqueServer} from 'types/config';
 
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/ConfigureServer.scss';
-import 'renderer/css/components/ConfigureServer_advanced.scss';
 import 'renderer/css/components/LoadingScreen.css';
 
 import ServerImage from './Images/server';

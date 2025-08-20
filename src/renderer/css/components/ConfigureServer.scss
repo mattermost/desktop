@@ -156,6 +156,46 @@
                             margin-top: 30px;
                         }
                     }
+
+                    // Advanced dropdown section styles
+                    .ConfigureServer__advanced-section {
+                        margin-top: 12px;
+
+                        .ConfigureServer__advanced-toggle {
+                            display: flex;
+                            align-items: center;
+                            background: none;
+                            border: none;
+                            color: var(--button-bg);
+                            cursor: pointer;
+                            font-family: inherit;
+                            font-size: 14px;
+                            padding: 4px 0;
+                            
+                            &:hover {
+                                color: var(--button-bg-hover);
+                            }
+                            
+                            &:disabled {
+                                opacity: 0.6;
+                                cursor: not-allowed;
+                            }
+
+                            .icon {
+                                margin-right: 4px;
+                                font-size: 12px;
+                            }
+                        }
+
+                        .ConfigureServer__advanced-content {
+                            margin-top: 12px;
+                            border-left: 2px solid var(--center-channel-color-16);
+                            
+                            .ConfigureServer__card-form-input-container {
+                                margin-left: 16px;
+                            }
+                        }
+                    }
                 }
 
                 &.inFromRight {
