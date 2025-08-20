@@ -315,7 +315,7 @@ class MainPage extends React.PureComponent<Props, State> {
 
     setActiveView = async (serverId: string, tabId: string) => {
         await this.updateServers();
-        if (serverId === this.state.activeServerId && serverId === this.state.activeTabId) {
+        if (serverId === this.state.activeServerId && tabId === this.state.activeTabId) {
             return;
         }
 
