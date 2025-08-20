@@ -3,6 +3,7 @@
 
 'use strict';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import WebContentsManager from 'app/views/webContentsManager';
 import BaseWindow from 'app/windows/baseWindow';
 import {
@@ -33,6 +34,9 @@ jest.mock('app/views/webContentsManager', () => ({
     createView: jest.fn(),
     removeView: jest.fn(),
     getView: jest.fn(),
+}));
+jest.mock('app/mainWindow/mainWindow', () => ({
+    get: jest.fn(),
 }));
 
 jest.mock('app/windows/baseWindow', () => {
@@ -225,6 +229,10 @@ describe('PopoutManager', () => {
     describe('handleViewCreated', () => {
         const popoutManager = new PopoutManager();
 
+        afterEach(() => {
+            MainWindow.get.mockReset();
+        });
+
         it('should create new window for WINDOW type view', () => {
             const mockWindowView = {
                 id: 'new-window-id',
@@ -232,6 +240,7 @@ describe('PopoutManager', () => {
                 type: ViewType.WINDOW,
             };
 
+            MainWindow.get.mockReturnValue({getPosition: jest.fn(() => [500, 500])});
             ViewManager.getView.mockReturnValue(mockWindowView);
 
             ViewManager.mockViewManager.emit(VIEW_CREATED, 'new-window-id');
@@ -239,7 +248,7 @@ describe('PopoutManager', () => {
             // Trigger the did-finish-load event to call show()
             mockBaseWindow.browserWindow.webContents.emit('did-finish-load');
 
-            expect(BaseWindow).toHaveBeenCalledWith({});
+            expect(BaseWindow).toHaveBeenCalledWith({x: 540, y: 540});
             expect(performanceMonitor.registerView).toHaveBeenCalledWith('PopoutWindow-new-window-id', mockBaseWindow.browserWindow.webContents);
             expect(mockBaseWindow.browserWindow.loadURL).toHaveBeenCalledWith('mattermost-desktop://renderer/popout.html');
             expect(WebContentsManager.createView).toHaveBeenCalledWith(mockWindowView, mockBaseWindow);

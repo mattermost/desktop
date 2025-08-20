@@ -4,12 +4,14 @@
 import type {WebContentsView} from 'electron';
 import {ipcMain} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import WebContentsManager from 'app/views/webContentsManager';
 import BaseWindow from 'app/windows/baseWindow';
 import {CREATE_NEW_WINDOW, LOAD_FAILED, LOADSCREEN_END, RELOAD_VIEW, UPDATE_TAB_TITLE, VIEW_CREATED, VIEW_REMOVED, VIEW_TITLE_UPDATED, VIEW_TYPE_ADDED, VIEW_TYPE_REMOVED} from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
+import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import performanceMonitor from 'main/performanceMonitor';
@@ -64,7 +66,15 @@ export class PopoutManager {
     };
 
     private createPopoutWindow = (viewId: string) => {
-        const window = new BaseWindow({});
+        let options = {};
+        const mainWindow = MainWindow.get();
+        if (mainWindow) {
+            options = {
+                x: mainWindow.getPosition()[0] + TAB_BAR_HEIGHT,
+                y: mainWindow.getPosition()[1] + TAB_BAR_HEIGHT,
+            };
+        }
+        const window = new BaseWindow(options);
         performanceMonitor.registerView(`PopoutWindow-${viewId}`, window.browserWindow.webContents);
         this.popoutWindows.set(viewId, window);
 
