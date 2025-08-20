@@ -341,7 +341,7 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
             title: (
                 <FormattedMessage
                     id='renderer.components.settingsPage.advanced'
-                    defaultMessage='Advanced'
+                    defaultMessage='Advanced options'
                 />
             ),
             icon: 'tune',

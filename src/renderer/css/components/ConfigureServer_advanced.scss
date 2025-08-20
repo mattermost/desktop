@@ -11,7 +11,7 @@
         cursor: pointer;
         font-family: inherit;
         font-size: 14px;
-        padding: 8px 0;
+        padding: 4px 0;
         
         &:hover {
             color: var(--button-bg-hover);
@@ -23,7 +23,7 @@
         }
 
         .icon {
-            margin-right: 8px;
+            margin-right: 4px;
             font-size: 12px;
         }
     }
@@ -33,7 +33,7 @@
         border-left: 2px solid var(--center-channel-color-16);
         
         .ConfigureServer__card-form-input-container {
-            margin-left: 20px;
+            margin-left: 16px;
         }
     }
 }

@@ -105,7 +105,7 @@ import {
     SECURE_STORAGE_SET,
     SECURE_STORAGE_DELETE,
     SECURE_STORAGE_HAS,
-    SECURE_STORAGE_IS_AVAILABLE,
+    SECURE_STORAGE_GET_STATUS,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -268,11 +268,11 @@ contextBridge.exposeInMainWorld('desktop', {
     },
 
     secureStorage: {
-        getSecret: (serverId, key) => ipcRenderer.invoke(SECURE_STORAGE_GET, serverId, key),
-        setSecret: (serverId, key, value) => ipcRenderer.invoke(SECURE_STORAGE_SET, serverId, key, value),
-        deleteSecret: (serverId, key) => ipcRenderer.invoke(SECURE_STORAGE_DELETE, serverId, key),
-        hasSecret: (serverId, key) => ipcRenderer.invoke(SECURE_STORAGE_HAS, serverId, key),
-        isAvailable: () => ipcRenderer.invoke(SECURE_STORAGE_IS_AVAILABLE),
+        getSecret: (serverUrl, keySuffix) => ipcRenderer.invoke(SECURE_STORAGE_GET, serverUrl, keySuffix),
+        setSecret: (serverUrl, keySuffix, value) => ipcRenderer.invoke(SECURE_STORAGE_SET, serverUrl, keySuffix, value),
+        deleteSecret: (serverUrl, keySuffix) => ipcRenderer.invoke(SECURE_STORAGE_DELETE, serverUrl, keySuffix),
+        hasSecret: (serverUrl, keySuffix) => ipcRenderer.invoke(SECURE_STORAGE_HAS, serverUrl, keySuffix),
+        getStatus: () => ipcRenderer.invoke(SECURE_STORAGE_GET_STATUS),
     },
 });
 

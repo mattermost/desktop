@@ -70,7 +70,7 @@ function ConfigureServer({
     const editing = useRef(false);
 
     const [showAdvanced, setShowAdvanced] = useState(false);
-    const [secureSecret, setSecureSecret] = useState('');
+    const [preAuthSecret, setPreAuthSecret] = useState('');
 
     const canSave = name && url && !nameError && !validating && urlError && urlError.type !== STATUS.ERROR;
 
@@ -226,8 +226,8 @@ function ConfigureServer({
         }, 1000);
     };
 
-    const handleSecureSecretOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
-        setSecureSecret(value);
+    const handlePreAuthSecretOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
+        setPreAuthSecret(value);
     };
 
     const toggleAdvanced = () => {
@@ -265,15 +265,15 @@ function ConfigureServer({
         setTransition('outToLeft');
 
         setTimeout(() => {
-            const serverData = {
+            const serverData: UniqueServer = {
                 url,
                 name,
                 id,
             };
 
             // Pass the secret through the system to be stored after server creation
-            if (secureSecret && secureSecret.trim()) {
-                (serverData as any).tempSecret = secureSecret.trim();
+            if (preAuthSecret && preAuthSecret.trim()) {
+                serverData.preAuthSecret = preAuthSecret.trim();
             }
 
             onConnect(serverData);
@@ -382,8 +382,6 @@ function ConfigureServer({
                                         placeholder={formatMessage({id: 'renderer.components.configureServer.name.placeholder', defaultMessage: 'Server display name'})}
                                         disabled={waiting}
                                     />
-                                    
-                                    {/* Advanced Settings Dropdown */}
                                     <div className='ConfigureServer__advanced-section'>
                                         <button
                                             type='button'
@@ -391,31 +389,30 @@ function ConfigureServer({
                                             onClick={toggleAdvanced}
                                             disabled={waiting}
                                         >
-                                            <i className={`icon ${showAdvanced ? 'icon-chevron-down' : 'icon-chevron-right'}`} />
+                                            <i className={`icon ${showAdvanced ? 'icon-chevron-down' : 'icon-chevron-right'}`}/>
                                             <span>{formatMessage({id: 'renderer.components.configureServer.advanced', defaultMessage: 'Advanced'})}</span>
                                         </button>
-                                        
+
                                         {showAdvanced && (
                                             <div className='ConfigureServer__advanced-content'>
                                                 <Input
-                                                    name='secureSecret'
+                                                    name='preAuthSecret'
                                                     className='ConfigureServer__card-form-input'
                                                     containerClassName='ConfigureServer__card-form-input-container'
                                                     type='password'
                                                     inputSize={SIZE.LARGE}
-                                                    value={secureSecret || ''}
-                                                    onChange={handleSecureSecretOnChange}
+                                                    value={preAuthSecret || ''}
+                                                    onChange={handlePreAuthSecretOnChange}
                                                     customMessage={{
                                                         type: STATUS.INFO,
-                                                        value: formatMessage({id: 'renderer.components.configureServer.secureSecret.info', defaultMessage: 'A secure secret that will be stored encrypted on your device'}),
+                                                        value: formatMessage({id: 'renderer.components.configureServer.secureSecret.info', defaultMessage: 'The pre-authentication secret shared by the administrator.'}),
                                                     }}
-                                                    placeholder={formatMessage({id: 'renderer.components.configureServer.secureSecret.placeholder', defaultMessage: 'Secure secret'})}
+                                                    placeholder={formatMessage({id: 'renderer.components.configureServer.secureSecret.placeholder', defaultMessage: 'Pre-authentication Secret'})}
                                                     disabled={waiting}
                                                 />
                                             </div>
                                         )}
                                     </div>
-                                    
                                     <SaveButton
                                         id='connectConfigureServer'
                                         extraClasses='ConfigureServer__card-form-button'

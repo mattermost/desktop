@@ -12,6 +12,7 @@ import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
 import {getSecureStorage} from 'main/secureStorage';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -110,29 +111,27 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-            
-            // Extract the temporary secret before creating the server
-            const tempSecret = (data as any).tempSecret;
-            
-            // Remove tempSecret from data before passing to ServerManager
+
+            // Extract the pre-auth secret before creating the server
+            const preAuthSecret = data.preAuthSecret;
+
+            // Remove preAuthSecret from data before passing to ServerManager (sanitize for config)
             const cleanData = {
                 url: data.url,
                 name: data.name,
                 id: data.id,
             };
-            
+
             const newServer = ServerManager.addServer(cleanData, initialLoadURL);
-            
-            // Store the secret with the final server ID
-            if (tempSecret) {
+            // Store the secret with the server URL
+            if (preAuthSecret) {
                 try {
                     const secureStorage = getSecureStorage(app.getPath('userData'));
-                    await secureStorage.setSecret(newServer.id, 'secret', tempSecret);
+                    await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, preAuthSecret);
                 } catch (error) {
-                    log.error('Failed to store secure secret with final server ID:', error);
+                    log.error('Failed to store secure secret with server URL:', error);
                 }
             }
-            
             ServerViewState.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation

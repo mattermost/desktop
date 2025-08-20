@@ -33,6 +33,7 @@ import {URLValidationStatus} from 'common/utils/constants';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/permissionsManager';
 import {getSecureStorage} from 'main/secureStorage';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
@@ -147,7 +148,7 @@ export class ServerViewState {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<{prefillURL?: string}, Server>(
+        const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(
             ModalConstants.NEW_SERVER_MODAL,
             'mattermost-desktop://renderer/newServer.html',
             getLocalPreload('internalAPI.js'),
@@ -164,28 +165,22 @@ export class ServerViewState {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-            
-            // Extract the temporary secret before creating the server
-            const tempSecret = (data as any).tempSecret;
-            
-            // Remove tempSecret from data before passing to ServerManager
-            const cleanData = {
-                url: data.url,
+
+            const newServer = ServerManager.addServer({
                 name: data.name,
-            };
-            
-            const newServer = ServerManager.addServer(cleanData, initialLoadURL);
-            
-            // Store the secret with the final server ID
-            if (tempSecret) {
+                url: data.url,
+            }, initialLoadURL);
+
+            // Store the secret with the server URL
+            if (data.preAuthSecret) {
                 try {
                     const secureStorage = getSecureStorage(app.getPath('userData'));
-                    await secureStorage.setSecret(newServer.id, 'secret', tempSecret);
+                    await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, data.preAuthSecret);
                 } catch (error) {
-                    log.error('Failed to store secure secret with final server ID:', error);
+                    log.error('Failed to store secure secret with server URL:', error);
                 }
             }
-            
+
             this.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -249,14 +244,23 @@ export class ServerViewState {
             mainWindow,
         );
 
-        modalPromise.then((remove) => {
+        modalPromise.then(async (remove) => {
             if (remove) {
                 const remainingServers = ServerManager.getOrderedServers().filter((orderedServer) => server.id !== orderedServer.id);
                 if (this.currentServerId === server.id && remainingServers.length) {
                     this.currentServerId = remainingServers[0].id;
                 }
 
+                // Remove the server
                 ServerManager.removeServer(server.id);
+
+                // Clean up associated secret
+                try {
+                    const secureStorage = getSecureStorage(app.getPath('userData'));
+                    await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+                } catch (error) {
+                    log.warn('Failed to clean up secure secret for removed server:', error);
+                }
 
                 if (!remainingServers.length) {
                     delete this.currentServerId;
@@ -472,8 +476,11 @@ export class ServerViewState {
         }
     };
 
-    private handleRemoveServer = (event: IpcMainEvent, serverId: string) => {
+    private handleRemoveServer = async (event: IpcMainEvent, serverId: string) => {
         log.debug('handleRemoveServer', serverId);
+
+        // Get server info before removing it so we can clean up its secret
+        const server = ServerManager.getServer(serverId);
 
         const remainingServers = ServerManager.getOrderedServers().filter((orderedServer) => serverId !== orderedServer.id);
         if (this.currentServerId === serverId && remainingServers.length) {
@@ -482,7 +489,18 @@ export class ServerViewState {
             delete this.currentServerId;
         }
 
+        // Remove the server
         ServerManager.removeServer(serverId);
+
+        // Clean up associated secret
+        if (server) {
+            try {
+                const secureStorage = getSecureStorage(app.getPath('userData'));
+                await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+            } catch (error) {
+                log.warn('Failed to clean up secure secret for removed server:', error);
+            }
+        }
     };
 }
 

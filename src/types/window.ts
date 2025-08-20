@@ -162,11 +162,11 @@ declare global {
             };
 
             secureStorage: {
-                getSecret: (serverId: string, key: string) => Promise<string | null>;
-                setSecret: (serverId: string, key: string, value: string) => Promise<boolean>;
-                deleteSecret: (serverId: string, key: string) => Promise<boolean>;
-                hasSecret: (serverId: string, key: string) => Promise<boolean>;
-                isAvailable: () => Promise<boolean>;
+                getSecret: (serverUrl: string, keySuffix?: string) => Promise<string | null>;
+                setSecret: (serverUrl: string, keySuffix: string, value: string) => Promise<boolean>;
+                deleteSecret: (serverUrl: string, keySuffix?: string) => Promise<boolean>;
+                hasSecret: (serverUrl: string, keySuffix?: string) => Promise<boolean>;
+                getStatus: () => Promise<{ encrypted: boolean; available: boolean; warning?: string }>;
             };
         };
     }

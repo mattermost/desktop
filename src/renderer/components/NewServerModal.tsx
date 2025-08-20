@@ -12,6 +12,7 @@ import Toggle from 'renderer/components/Toggle';
 import type {UniqueServer} from 'types/config';
 import type {Permissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 
 import Input, {SIZE, STATUS} from './Input';
 import {Modal} from './Modal';
@@ -43,7 +44,7 @@ type State = {
     cameraDisabled: boolean;
     microphoneDisabled: boolean;
     showAdvanced: boolean;
-    secureSecret: string;
+    preAuthSecret: string;
 }
 
 class NewServerModal extends React.PureComponent<Props, State> {
@@ -68,7 +69,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
             cameraDisabled: false,
             microphoneDisabled: false,
             showAdvanced: false,
-            secureSecret: '', // Always start with empty string for controlled input
+            preAuthSecret: '', // Always start with empty string for controlled input
         };
     }
 
@@ -109,15 +110,15 @@ class NewServerModal extends React.PureComponent<Props, State> {
             microphoneDisabled,
         });
 
-        // Check if editing existing server has a secure secret (but don't load it for security)
-        if (this.props.editMode && this.props.server?.id) {
+        // Check if editing existing server has a secure secret (but don't load it)
+        if (this.props.editMode && this.props.server?.url) {
             try {
-                const hasSecret = await window.desktop.secureStorage.hasSecret(this.props.server.id, 'secret');
-                
+                const hasSecret = await window.desktop.secureStorage.hasSecret(this.props.server.url, SECURE_STORAGE_KEYS.PREAUTH);
+
                 // Show advanced section if there's an existing secret, but don't prefill
                 this.setState({
                     showAdvanced: hasSecret,
-                    secureSecret: '', // Never prefill for security
+                    preAuthSecret: '', // Never prefill
                 });
             } catch (error) {
                 console.warn('Failed to check for existing secure secret:', error);
@@ -155,9 +156,9 @@ class NewServerModal extends React.PureComponent<Props, State> {
         };
     };
 
-    handleSecureSecretChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handlePreAuthSecretChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({
-            secureSecret: e.target.value,
+            preAuthSecret: e.target.value,
         });
     };
 
@@ -338,14 +339,12 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 };
 
                 // Handle secure secret storage
-                const serverId = this.state.serverId || `${Date.now()}`;
                 try {
-                    if (this.state.secureSecret && this.state.secureSecret.trim()) {
-                        console.log('NewServerModal: Storing secure secret:', this.state.secureSecret.trim());
-                        await window.desktop.secureStorage.setSecret(serverId, 'secret', this.state.secureSecret.trim());
-                    } else if (this.props.editMode && this.state.serverId) {
+                    if (this.state.preAuthSecret && this.state.preAuthSecret.trim()) {
+                        await window.desktop.secureStorage.setSecret(this.state.serverUrl, SECURE_STORAGE_KEYS.PREAUTH, this.state.preAuthSecret.trim());
+                    } else if (this.props.editMode && this.props.server?.url) {
                         // Clear secret if it was removed
-                        await window.desktop.secureStorage.deleteSecret(this.state.serverId, 'secret');
+                        await window.desktop.secureStorage.deleteSecret(this.props.server.url, SECURE_STORAGE_KEYS.PREAUTH);
                     }
                 } catch (error) {
                     console.warn('Failed to handle secure secret:', error);
@@ -461,31 +460,28 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                     defaultMessage: 'Server display name',
                                 })}
                             />
-                            
-                            {/* Advanced Settings Dropdown */}
                             <div className='NewServerModal__advanced-section'>
                                 <button
                                     type='button'
                                     className='NewServerModal__advanced-toggle'
                                     onClick={this.toggleAdvanced}
                                 >
-                                    <i className={`icon ${this.state.showAdvanced ? 'icon-chevron-down' : 'icon-chevron-right'}`} />
-                                    <span>{this.props.intl.formatMessage({id: 'renderer.components.newServerModal.advanced', defaultMessage: 'Advanced'})}</span>
+                                    <i className={`icon ${this.state.showAdvanced ? 'icon-chevron-down' : 'icon-chevron-right'}`}/>
+                                    <span>{this.props.intl.formatMessage({id: 'renderer.components.newServerModal.advanced', defaultMessage: 'Advanced options'})}</span>
                                 </button>
-                                
                                 {this.state.showAdvanced && (
                                     <div className='NewServerModal__advanced-content'>
                                         <Input
-                                            name='secureSecret'
+                                            name='preAuthSecret'
                                             type='password'
                                             inputSize={SIZE.LARGE}
-                                            value={this.state.secureSecret || ''}
-                                            onChange={this.handleSecureSecretChange}
+                                            value={this.state.preAuthSecret || ''}
+                                            onChange={this.handlePreAuthSecretChange}
                                             customMessage={{
                                                 type: STATUS.INFO,
-                                                value: this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.info', defaultMessage: 'A secure secret that will be stored encrypted on your device'}),
+                                                value: this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.info', defaultMessage: 'The pre-authentication secret shared by the administrator.'}),
                                             }}
-                                            placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Secure secret'})}
+                                            placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Pre-authentication Secret'})}
                                         />
                                     </div>
                                 )}

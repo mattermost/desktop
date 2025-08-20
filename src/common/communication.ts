@@ -202,4 +202,4 @@ export const SECURE_STORAGE_GET = 'secure-storage-get';
 export const SECURE_STORAGE_SET = 'secure-storage-set';
 export const SECURE_STORAGE_DELETE = 'secure-storage-delete';
 export const SECURE_STORAGE_HAS = 'secure-storage-has';
-export const SECURE_STORAGE_IS_AVAILABLE = 'secure-storage-is-available';
+export const SECURE_STORAGE_GET_STATUS = 'secure-storage-get-status';

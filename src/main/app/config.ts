@@ -9,6 +9,7 @@ import {Logger, setLoggingLevel} from 'common/log';
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
 import {getSecureStorage} from 'main/secureStorage';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import Tray from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
 import MainWindow from 'main/windows/mainWindow';
@@ -122,24 +123,20 @@ export function handleDarkModeChange(darkMode: boolean) {
 // secure storage event handlers
 //
 
-export async function handleSecureStorageGet(event: Electron.IpcMainEvent, serverId: string, key: string): Promise<string | null> {
-    log.debug('handleSecureStorageGet', serverId, key);
-
+export async function handleSecureStorageGet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string = SECURE_STORAGE_KEYS.PREAUTH): Promise<string | null> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
-        return await secureStorage.getSecret(serverId, key);
+        return await secureStorage.getSecret(serverUrl, keySuffix as any);
     } catch (error) {
         log.error('Failed to get secure storage:', error);
         return null;
     }
 }
 
-export async function handleSecureStorageSet(event: Electron.IpcMainEvent, serverId: string, key: string, value: string): Promise<boolean> {
-    log.debug('handleSecureStorageSet', serverId, key);
-
+export async function handleSecureStorageSet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string = SECURE_STORAGE_KEYS.PREAUTH, value: string): Promise<boolean> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
-        await secureStorage.setSecret(serverId, key, value);
+        await secureStorage.setSecret(serverUrl, keySuffix as any, value);
         return true;
     } catch (error) {
         log.error('Failed to set secure storage:', error);
@@ -147,12 +144,10 @@ export async function handleSecureStorageSet(event: Electron.IpcMainEvent, serve
     }
 }
 
-export async function handleSecureStorageDelete(event: Electron.IpcMainEvent, serverId: string, key: string): Promise<boolean> {
-    log.debug('handleSecureStorageDelete', serverId, key);
-
+export async function handleSecureStorageDelete(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string = SECURE_STORAGE_KEYS.PREAUTH): Promise<boolean> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
-        await secureStorage.deleteSecret(serverId, key);
+        await secureStorage.deleteSecret(serverUrl, keySuffix as any);
         return true;
     } catch (error) {
         log.error('Failed to delete from secure storage:', error);
@@ -160,27 +155,23 @@ export async function handleSecureStorageDelete(event: Electron.IpcMainEvent, se
     }
 }
 
-export async function handleSecureStorageHas(event: Electron.IpcMainEvent, serverId: string, key: string): Promise<boolean> {
-    log.debug('handleSecureStorageHas', serverId, key);
-
+export async function handleSecureStorageHas(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string = SECURE_STORAGE_KEYS.PREAUTH): Promise<boolean> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
-        const value = await secureStorage.getSecret(serverId, key);
-        return value !== null;
+        return await secureStorage.hasSecret(serverUrl, keySuffix as any);
     } catch (error) {
         log.error('Failed to check secure storage:', error);
         return false;
     }
 }
 
-export function handleSecureStorageIsAvailable(): boolean {
-    log.debug('handleSecureStorageIsAvailable');
-
+export async function handleSecureStorageGetStatus(event: Electron.IpcMainInvokeEvent): Promise<{ encrypted: boolean; available: boolean; warning?: string }> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
-        return secureStorage.isAvailable();
+        return secureStorage.getStorageStatus();
     } catch (error) {
-        log.error('Failed to check secure storage availability:', error);
-        return false;
+        log.error('Failed to get secure storage status:', error);
+        return { encrypted: false, available: false, warning: 'Failed to access secure storage' };
     }
 }
+
