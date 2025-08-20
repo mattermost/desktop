@@ -41,6 +41,9 @@ export default function NumberSetting({
             if (min !== undefined && newValue < min) {
                 setValue(min);
                 onSave(id, min);
+            } else if (max !== undefined && newValue > max) {
+                setValue(max);
+                onSave(id, max);
             } else {
                 setValue(newValue);
                 onSave(id, newValue);
