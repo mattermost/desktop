@@ -196,3 +196,10 @@ export const GET_UNIQUE_SERVERS_WITH_PERMISSIONS = 'get-unique-servers-with-perm
 export const ADD_SERVER = 'add-server';
 export const EDIT_SERVER = 'edit-server';
 export const REMOVE_SERVER = 'remove-server';
+
+// Secure storage
+export const SECURE_STORAGE_GET = 'secure-storage-get';
+export const SECURE_STORAGE_SET = 'secure-storage-set';
+export const SECURE_STORAGE_DELETE = 'secure-storage-delete';
+export const SECURE_STORAGE_HAS = 'secure-storage-has';
+export const SECURE_STORAGE_IS_AVAILABLE = 'secure-storage-is-available';

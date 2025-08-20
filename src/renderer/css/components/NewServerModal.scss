@@ -29,6 +29,37 @@
     max-width: 400px;
 }
 
+.NewServerModal__advanced-section {
+    margin-top: 20px;
+
+    .NewServerModal__advanced-toggle {
+        display: flex;
+        align-items: center;
+        background: none;
+        border: none;
+        color: var(--button-bg);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        padding: 8px 0;
+        
+        &:hover {
+            color: var(--button-bg-hover);
+        }
+
+        .icon {
+            margin-right: 8px;
+            font-size: 12px;
+        }
+    }
+
+    .NewServerModal__advanced-content {
+        margin-top: 16px;
+        padding-left: 20px;
+        border-left: 2px solid var(--center-channel-color-16);
+    }
+}
+
 .NewServerModal__permissions__title {
     margin-top: 24px;
     margin-bottom: 12px;

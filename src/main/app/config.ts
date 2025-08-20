@@ -8,6 +8,7 @@ import Config from 'common/config';
 import {Logger, setLoggingLevel} from 'common/log';
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
+import {getSecureStorage} from 'main/secureStorage';
 import Tray from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
 import MainWindow from 'main/windows/mainWindow';
@@ -115,4 +116,71 @@ export function handleDarkModeChange(darkMode: boolean) {
     LoadingScreen.setDarkMode(darkMode);
 
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
+}
+
+//
+// secure storage event handlers
+//
+
+export async function handleSecureStorageGet(event: Electron.IpcMainEvent, serverId: string, key: string): Promise<string | null> {
+    log.debug('handleSecureStorageGet', serverId, key);
+
+    try {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        return await secureStorage.getSecret(serverId, key);
+    } catch (error) {
+        log.error('Failed to get secure storage:', error);
+        return null;
+    }
+}
+
+export async function handleSecureStorageSet(event: Electron.IpcMainEvent, serverId: string, key: string, value: string): Promise<boolean> {
+    log.debug('handleSecureStorageSet', serverId, key);
+
+    try {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        await secureStorage.setSecret(serverId, key, value);
+        return true;
+    } catch (error) {
+        log.error('Failed to set secure storage:', error);
+        return false;
+    }
+}
+
+export async function handleSecureStorageDelete(event: Electron.IpcMainEvent, serverId: string, key: string): Promise<boolean> {
+    log.debug('handleSecureStorageDelete', serverId, key);
+
+    try {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        await secureStorage.deleteSecret(serverId, key);
+        return true;
+    } catch (error) {
+        log.error('Failed to delete from secure storage:', error);
+        return false;
+    }
+}
+
+export async function handleSecureStorageHas(event: Electron.IpcMainEvent, serverId: string, key: string): Promise<boolean> {
+    log.debug('handleSecureStorageHas', serverId, key);
+
+    try {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        const value = await secureStorage.getSecret(serverId, key);
+        return value !== null;
+    } catch (error) {
+        log.error('Failed to check secure storage:', error);
+        return false;
+    }
+}
+
+export function handleSecureStorageIsAvailable(): boolean {
+    log.debug('handleSecureStorageIsAvailable');
+
+    try {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        return secureStorage.isAvailable();
+    } catch (error) {
+        log.error('Failed to check secure storage availability:', error);
+        return false;
+    }
 }

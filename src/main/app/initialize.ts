@@ -30,6 +30,11 @@ import {
     GET_APP_INFO,
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
+    SECURE_STORAGE_GET,
+    SECURE_STORAGE_SET,
+    SECURE_STORAGE_DELETE,
+    SECURE_STORAGE_HAS,
+    SECURE_STORAGE_IS_AVAILABLE,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -48,6 +53,7 @@ import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
+import {getSecureStorage} from 'main/secureStorage';
 import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
@@ -72,6 +78,11 @@ import {
     handleDarkModeChange,
     handleGetConfiguration,
     handleGetLocalConfiguration,
+    handleSecureStorageDelete,
+    handleSecureStorageGet,
+    handleSecureStorageHas,
+    handleSecureStorageIsAvailable,
+    handleSecureStorageSet,
     handleUpdateTheme,
     updateConfiguration,
 } from './config';
@@ -282,6 +293,13 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 
+    // Secure storage handlers
+    ipcMain.handle(SECURE_STORAGE_GET, handleSecureStorageGet);
+    ipcMain.handle(SECURE_STORAGE_SET, handleSecureStorageSet);
+    ipcMain.handle(SECURE_STORAGE_DELETE, handleSecureStorageDelete);
+    ipcMain.handle(SECURE_STORAGE_HAS, handleSecureStorageHas);
+    ipcMain.handle(SECURE_STORAGE_IS_AVAILABLE, handleSecureStorageIsAvailable);
+
     if (process.env.NODE_ENV === 'test') {
         ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
     }
@@ -307,6 +325,16 @@ async function initializeAfterAppReady() {
     });
 
     ServerManager.reloadFromConfig();
+    
+    // Initialize secure storage cache after servers are loaded
+    try {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        await secureStorage.initializeCache();
+        log.info('Secure storage cache initialized successfully');
+    } catch (error) {
+        log.warn('Failed to initialize secure storage cache:', error);
+    }
+    
     ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
         if (serverIds && serverIds.length) {
             updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
@@ -328,6 +356,55 @@ async function initializeAfterAppReady() {
         }
 
         downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
+    });
+
+    // Inject X-Mattermost-Preauth-Secret header for all server requests
+    defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+        (async () => {
+            try {
+                const url = new URL(details.url);
+                const view = ServerManager.lookupViewByURL(details.url);
+                
+                if (view && view.server) {
+                    const secureStorage = getSecureStorage(app.getPath('userData'));
+                    const secret = await secureStorage.getSecret(view.server.id, 'secret');
+                    
+                    if (secret) {
+                        const requestHeaders = {
+                            ...details.requestHeaders,
+                            'X-Mattermost-Preauth-Secret': secret,
+                        };
+                        
+                        callback({ requestHeaders });
+                        return;
+                    }
+                } else {
+                    // Fallback: Check if this URL matches any server domain
+                    const allServers = ServerManager.getAllServers();
+                    for (const server of allServers) {
+                        if (url.host === server.url.host) {
+                            const secureStorage = getSecureStorage(app.getPath('userData'));
+                            const secret = await secureStorage.getSecret(server.id, 'secret');
+                            
+                            if (secret) {
+                                const requestHeaders = {
+                                    ...details.requestHeaders,
+                                    'X-Mattermost-Preauth-Secret': secret,
+                                };
+                                
+                                callback({ requestHeaders });
+                                return;
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                log.debug('Error injecting preauth secret header:', error);
+            }
+            
+            // If no secret found or error occurred, proceed with original headers
+            callback({ requestHeaders: details.requestHeaders });
+        })();
     });
 
     if (process.platform !== 'darwin') {

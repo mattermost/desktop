@@ -101,6 +101,11 @@ import {
     OPEN_SERVER_UPGRADE_LINK,
     OPEN_CHANGELOG_LINK,
     SET_URL_FOR_URL_VIEW,
+    SECURE_STORAGE_GET,
+    SECURE_STORAGE_SET,
+    SECURE_STORAGE_DELETE,
+    SECURE_STORAGE_HAS,
+    SECURE_STORAGE_IS_AVAILABLE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -260,6 +265,14 @@ contextBridge.exposeInMainWorld('desktop', {
         isModalUncloseable: () => ipcRenderer.invoke(GET_MODAL_UNCLOSEABLE),
         confirmProtocol: (protocol, url) => ipcRenderer.send('confirm-protocol', protocol, url),
         pingDomain: (url) => ipcRenderer.invoke(PING_DOMAIN, url),
+    },
+
+    secureStorage: {
+        getSecret: (serverId, key) => ipcRenderer.invoke(SECURE_STORAGE_GET, serverId, key),
+        setSecret: (serverId, key, value) => ipcRenderer.invoke(SECURE_STORAGE_SET, serverId, key, value),
+        deleteSecret: (serverId, key) => ipcRenderer.invoke(SECURE_STORAGE_DELETE, serverId, key),
+        hasSecret: (serverId, key) => ipcRenderer.invoke(SECURE_STORAGE_HAS, serverId, key),
+        isAvailable: () => ipcRenderer.invoke(SECURE_STORAGE_IS_AVAILABLE),
     },
 });
 

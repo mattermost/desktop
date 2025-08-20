@@ -160,6 +160,14 @@ declare global {
                     unreads?: Map<string, boolean>,
                 ) => void) => void;
             };
+
+            secureStorage: {
+                getSecret: (serverId: string, key: string) => Promise<string | null>;
+                setSecret: (serverId: string, key: string, value: string) => Promise<boolean>;
+                deleteSecret: (serverId: string, key: string) => Promise<boolean>;
+                hasSecret: (serverId: string, key: string) => Promise<boolean>;
+                isAvailable: () => Promise<boolean>;
+            };
         };
     }
 

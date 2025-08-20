@@ -42,6 +42,8 @@ type State = {
     permissions: Permissions;
     cameraDisabled: boolean;
     microphoneDisabled: boolean;
+    showAdvanced: boolean;
+    secureSecret: string;
 }
 
 class NewServerModal extends React.PureComponent<Props, State> {
@@ -56,14 +58,17 @@ class NewServerModal extends React.PureComponent<Props, State> {
         this.wasShown = false;
         this.mounted = false;
         this.state = {
-            serverName: '',
-            serverUrl: '',
+            serverName: props.server?.name || '',
+            serverUrl: props.server?.url || props.prefillURL || '',
+            serverId: props.server?.id,
             serverOrder: props.currentOrder || 0,
             saveStarted: false,
             validationStarted: false,
-            permissions: {},
+            permissions: props.permissions || {},
             cameraDisabled: false,
             microphoneDisabled: false,
+            showAdvanced: false,
+            secureSecret: '', // Always start with empty string for controlled input
         };
     }
 
@@ -80,15 +85,21 @@ class NewServerModal extends React.PureComponent<Props, State> {
             this.setState({serverUrl: this.props.prefillURL});
             this.validateServerURL(this.props.prefillURL);
         }
+
+        // Initialize when modal becomes visible or server changes
+        if ((this.props.show && !prevProps.show) || (this.props.server !== prevProps.server)) {
+            this.initializeOnShow();
+        }
     }
 
     initializeOnShow = async () => {
         const cameraDisabled = window.process.platform === 'win32' && await window.desktop.getMediaAccessStatus('camera') !== 'granted';
         const microphoneDisabled = window.process.platform === 'win32' && await window.desktop.getMediaAccessStatus('microphone') !== 'granted';
 
+        // Update state with async values
         this.setState({
-            serverName: this.props.server ? this.props.server.name : '',
-            serverUrl: this.props.server ? this.props.server.url : '',
+            serverName: this.props.server?.name || '',
+            serverUrl: this.props.server?.url || this.props.prefillURL || '',
             serverId: this.props.server?.id,
             saveStarted: false,
             validationStarted: false,
@@ -97,6 +108,21 @@ class NewServerModal extends React.PureComponent<Props, State> {
             cameraDisabled,
             microphoneDisabled,
         });
+
+        // Check if editing existing server has a secure secret (but don't load it for security)
+        if (this.props.editMode && this.props.server?.id) {
+            try {
+                const hasSecret = await window.desktop.secureStorage.hasSecret(this.props.server.id, 'secret');
+                
+                // Show advanced section if there's an existing secret, but don't prefill
+                this.setState({
+                    showAdvanced: hasSecret,
+                    secureSecret: '', // Never prefill for security
+                });
+            } catch (error) {
+                console.warn('Failed to check for existing secure secret:', error);
+            }
+        }
 
         if (this.props.editMode && this.props.server) {
             this.validateServerURL(this.props.server.url);
@@ -127,6 +153,18 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 },
             });
         };
+    };
+
+    handleSecureSecretChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({
+            secureSecret: e.target.value,
+        });
+    };
+
+    toggleAdvanced = () => {
+        this.setState({
+            showAdvanced: !this.state.showAdvanced,
+        });
     };
 
     validateServerURL = (serverUrl: string) => {
@@ -274,7 +312,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
         return null;
     };
 
-    save = () => {
+    save = async () => {
         if (this.props.editMode && this.props.server?.isPredefined) {
             this.setState({
                 saveStarted: true,
@@ -292,12 +330,28 @@ class NewServerModal extends React.PureComponent<Props, State> {
 
             this.setState({
                 saveStarted: true,
-            }, () => {
-                this.props.onSave?.({
+            }, async () => {
+                const serverData = {
                     url: this.state.serverUrl,
                     name: this.state.serverName,
                     id: this.state.serverId,
-                }, this.state.permissions);
+                };
+
+                // Handle secure secret storage
+                const serverId = this.state.serverId || `${Date.now()}`;
+                try {
+                    if (this.state.secureSecret && this.state.secureSecret.trim()) {
+                        console.log('NewServerModal: Storing secure secret:', this.state.secureSecret.trim());
+                        await window.desktop.secureStorage.setSecret(serverId, 'secret', this.state.secureSecret.trim());
+                    } else if (this.props.editMode && this.state.serverId) {
+                        // Clear secret if it was removed
+                        await window.desktop.secureStorage.deleteSecret(this.state.serverId, 'secret');
+                    }
+                } catch (error) {
+                    console.warn('Failed to handle secure secret:', error);
+                }
+
+                this.props.onSave?.(serverData, this.state.permissions);
             });
         }
     };
@@ -337,9 +391,6 @@ class NewServerModal extends React.PureComponent<Props, State> {
     }
 
     render() {
-        if (this.wasShown !== this.props.show && this.props.show) {
-            this.initializeOnShow();
-        }
         this.wasShown = this.props.show;
 
         const notificationValues = {
@@ -410,6 +461,35 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                     defaultMessage: 'Server display name',
                                 })}
                             />
+                            
+                            {/* Advanced Settings Dropdown */}
+                            <div className='NewServerModal__advanced-section'>
+                                <button
+                                    type='button'
+                                    className='NewServerModal__advanced-toggle'
+                                    onClick={this.toggleAdvanced}
+                                >
+                                    <i className={`icon ${this.state.showAdvanced ? 'icon-chevron-down' : 'icon-chevron-right'}`} />
+                                    <span>{this.props.intl.formatMessage({id: 'renderer.components.newServerModal.advanced', defaultMessage: 'Advanced'})}</span>
+                                </button>
+                                
+                                {this.state.showAdvanced && (
+                                    <div className='NewServerModal__advanced-content'>
+                                        <Input
+                                            name='secureSecret'
+                                            type='password'
+                                            inputSize={SIZE.LARGE}
+                                            value={this.state.secureSecret || ''}
+                                            onChange={this.handleSecureSecretChange}
+                                            customMessage={{
+                                                type: STATUS.INFO,
+                                                value: this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.info', defaultMessage: 'A secure secret that will be stored encrypted on your device'}),
+                                            }}
+                                            placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Secure secret'})}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </>
                     }
                     {this.props.editMode &&

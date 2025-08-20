@@ -1,0 +1,39 @@
+// Advanced dropdown section styles for ConfigureServer component
+.ConfigureServer__advanced-section {
+    margin-top: 12px;
+
+    .ConfigureServer__advanced-toggle {
+        display: flex;
+        align-items: center;
+        background: none;
+        border: none;
+        color: var(--button-bg);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        padding: 8px 0;
+        
+        &:hover {
+            color: var(--button-bg-hover);
+        }
+        
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .icon {
+            margin-right: 8px;
+            font-size: 12px;
+        }
+    }
+
+    .ConfigureServer__advanced-content {
+        margin-top: 12px;
+        border-left: 2px solid var(--center-channel-color-16);
+        
+        .ConfigureServer__card-form-input-container {
+            margin-left: 20px;
+        }
+    }
+}

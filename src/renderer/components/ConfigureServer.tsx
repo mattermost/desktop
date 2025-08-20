@@ -15,6 +15,7 @@ import type {UniqueServer} from 'types/config';
 
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/ConfigureServer.scss';
+import 'renderer/css/components/ConfigureServer_advanced.scss';
 import 'renderer/css/components/LoadingScreen.css';
 
 import ServerImage from './Images/server';
@@ -67,6 +68,9 @@ function ConfigureServer({
     const validationTimestamp = useRef<number>();
     const validationTimeout = useRef<NodeJS.Timeout>();
     const editing = useRef(false);
+
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [secureSecret, setSecureSecret] = useState('');
 
     const canSave = name && url && !nameError && !validating && urlError && urlError.type !== STATUS.ERROR;
 
@@ -222,6 +226,14 @@ function ConfigureServer({
         }, 1000);
     };
 
+    const handleSecureSecretOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
+        setSecureSecret(value);
+    };
+
+    const toggleAdvanced = () => {
+        setShowAdvanced(!showAdvanced);
+    };
+
     const handleOnSaveButtonClick = (e: React.MouseEvent) => {
         submit(e);
     };
@@ -253,11 +265,18 @@ function ConfigureServer({
         setTransition('outToLeft');
 
         setTimeout(() => {
-            onConnect({
+            const serverData = {
                 url,
                 name,
                 id,
-            });
+            };
+
+            // Pass the secret through the system to be stored after server creation
+            if (secureSecret && secureSecret.trim()) {
+                (serverData as any).tempSecret = secureSecret.trim();
+            }
+
+            onConnect(serverData);
         }, MODAL_TRANSITION_TIMEOUT);
     };
 
@@ -363,6 +382,40 @@ function ConfigureServer({
                                         placeholder={formatMessage({id: 'renderer.components.configureServer.name.placeholder', defaultMessage: 'Server display name'})}
                                         disabled={waiting}
                                     />
+                                    
+                                    {/* Advanced Settings Dropdown */}
+                                    <div className='ConfigureServer__advanced-section'>
+                                        <button
+                                            type='button'
+                                            className='ConfigureServer__advanced-toggle'
+                                            onClick={toggleAdvanced}
+                                            disabled={waiting}
+                                        >
+                                            <i className={`icon ${showAdvanced ? 'icon-chevron-down' : 'icon-chevron-right'}`} />
+                                            <span>{formatMessage({id: 'renderer.components.configureServer.advanced', defaultMessage: 'Advanced'})}</span>
+                                        </button>
+                                        
+                                        {showAdvanced && (
+                                            <div className='ConfigureServer__advanced-content'>
+                                                <Input
+                                                    name='secureSecret'
+                                                    className='ConfigureServer__card-form-input'
+                                                    containerClassName='ConfigureServer__card-form-input-container'
+                                                    type='password'
+                                                    inputSize={SIZE.LARGE}
+                                                    value={secureSecret || ''}
+                                                    onChange={handleSecureSecretOnChange}
+                                                    customMessage={{
+                                                        type: STATUS.INFO,
+                                                        value: formatMessage({id: 'renderer.components.configureServer.secureSecret.info', defaultMessage: 'A secure secret that will be stored encrypted on your device'}),
+                                                    }}
+                                                    placeholder={formatMessage({id: 'renderer.components.configureServer.secureSecret.placeholder', defaultMessage: 'Secure secret'})}
+                                                    disabled={waiting}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                    
                                     <SaveButton
                                         id='connectConfigureServer'
                                         extraClasses='ConfigureServer__card-form-button'

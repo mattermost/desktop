@@ -11,6 +11,7 @@ import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
+import {getSecureStorage} from 'main/secureStorage';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -101,7 +102,7 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
     }
     const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
-        modalPromise.then((data) => {
+        modalPromise.then(async (data) => {
             let initialLoadURL;
             if (prefillURL) {
                 const parsedServerURL = parseURL(data.url);
@@ -109,7 +110,29 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-            const newServer = ServerManager.addServer(data, initialLoadURL);
+            
+            // Extract the temporary secret before creating the server
+            const tempSecret = (data as any).tempSecret;
+            
+            // Remove tempSecret from data before passing to ServerManager
+            const cleanData = {
+                url: data.url,
+                name: data.name,
+                id: data.id,
+            };
+            
+            const newServer = ServerManager.addServer(cleanData, initialLoadURL);
+            
+            // Store the secret with the final server ID
+            if (tempSecret) {
+                try {
+                    const secureStorage = getSecureStorage(app.getPath('userData'));
+                    await secureStorage.setSecret(newServer.id, 'secret', tempSecret);
+                } catch (error) {
+                    log.error('Failed to store secure secret with final server ID:', error);
+                }
+            }
+            
             ServerViewState.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
