@@ -10,7 +10,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {Modal} from 'renderer/components/Modal';
 
-import type {Config, LocalConfiguration} from 'types/config';
+import type {CurrentConfig, LocalConfiguration} from 'types/config';
 import type {SaveQueueItem, SettingsDefinition} from 'types/settings';
 
 import generateDefinition from './definition';
@@ -91,7 +91,7 @@ export default function SettingsModal({
         setTimeout(sendSave, 500);
     }, [sendSave]);
 
-    const save = useCallback((key: keyof Config, data: Config[keyof Config]) => {
+    const save = useCallback((key: keyof CurrentConfig, data: CurrentConfig[keyof CurrentConfig]) => {
         saveQueue.current.push({
             key,
             data,

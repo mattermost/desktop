@@ -169,15 +169,15 @@
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled):hover+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
-  border-left: 1px solid rgba(0, 0, 0, 0);
+  border-left: 1px solid transparent;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled):hover+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
-  border-left: 1px solid rgba(0, 0, 0, 0);
+  border-left: 1px solid transparent;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled)+li.serverTabItem:not(.active)>a:hover>div.TabBar-tabSeperator {
-  border-left: 1px solid rgba(0, 0, 0, 0);
+  border-left: 1px solid transparent;
 }
 
 .TabBar .TabBar-dot {

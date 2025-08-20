@@ -15,8 +15,8 @@ import type {
     BuildConfig,
     CombinedConfig,
     ConfigServer,
-    Config as ConfigType,
-    RegistryConfig as RegistryConfigType,
+    CurrentConfig,
+    RegistryConfig as RegistryCurrentConfig,
 } from 'types/config';
 
 import buildConfig from './buildConfig';
@@ -36,9 +36,9 @@ export class Config extends EventEmitter {
     private _predefinedServers: ConfigServer[];
 
     private combinedData?: CombinedConfig;
-    private localConfigData?: ConfigType;
-    private registryConfigData?: Partial<RegistryConfigType>;
-    private defaultConfigData?: ConfigType;
+    private localConfigData?: CurrentConfig;
+    private registryConfigData?: Partial<RegistryCurrentConfig>;
+    private defaultConfigData?: CurrentConfig;
     private buildConfigData?: BuildConfig;
     private canUpgradeValue?: boolean;
 
@@ -102,7 +102,7 @@ export class Config extends EventEmitter {
      * @param {string} key name of config property to be saved
      * @param {*} data value to save for provided key
      */
-    set = (key: keyof ConfigType, data: ConfigType[keyof ConfigType]): void => {
+    set = (key: keyof CurrentConfig, data: CurrentConfig[keyof CurrentConfig]): void => {
         log.debug('set');
         this.setMultiple({[key]: data});
     };
@@ -116,7 +116,7 @@ export class Config extends EventEmitter {
      *
      * @param {array} properties an array of config properties to save
      */
-    setMultiple = (newData: Partial<ConfigType>) => {
+    setMultiple = (newData: Partial<CurrentConfig>) => {
         log.debug('setMultiple', newData);
 
         if (newData.darkMode && newData.darkMode !== this.darkMode) {
@@ -260,7 +260,7 @@ export class Config extends EventEmitter {
      * @param {object} registryData Server configuration from the registry and if servers can be managed by user
      */
 
-    private onLoadRegistry = (registryData: Partial<RegistryConfigType>): void => {
+    private onLoadRegistry = (registryData: Partial<RegistryCurrentConfig>): void => {
         log.debug('loadRegistry', {registryData});
 
         this.registryConfigData = registryData;
@@ -359,7 +359,7 @@ export class Config extends EventEmitter {
             }
         }
 
-        return configData as ConfigType;
+        return configData as CurrentConfig;
     };
 
     /**
@@ -388,7 +388,7 @@ export class Config extends EventEmitter {
     };
 
     // helper functions
-    private writeFile = (filePath: string, configData: Partial<ConfigType>, callback?: fs.NoParamCallback) => {
+    private writeFile = (filePath: string, configData: Partial<CurrentConfig>, callback?: fs.NoParamCallback) => {
         if (!this.defaultConfigData) {
             return;
         }

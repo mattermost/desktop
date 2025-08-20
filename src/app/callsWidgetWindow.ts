@@ -130,7 +130,7 @@ export class CallsWidgetWindow {
         if (!serverURL) {
             return undefined;
         }
-        const u = parseURL(serverURL.toString()) as URL;
+        const u = parseURL(new URL(serverURL)) as URL;
 
         u.pathname = getFormattedPathName(u.pathname);
         u.pathname += `plugins/${CALLS_PLUGIN_ID}/standalone/widget.html`;

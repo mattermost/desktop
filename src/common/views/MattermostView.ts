@@ -38,7 +38,7 @@ export class MattermostView {
             return serverURL;
         }
         if (serverURL.pathname === '/') {
-            const url = parseURL(serverURL.toString());
+            const url = parseURL(new URL(serverURL));
             if (!url) {
                 throw new Error(`URL for server ${this.serverId} is not valid`);
             }

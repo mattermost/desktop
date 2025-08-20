@@ -11,7 +11,7 @@ import {Logger, setLoggingLevel} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import AutoLauncher from 'main/AutoLauncher';
 
-import type {CombinedConfig, Config as ConfigType} from 'types/config';
+import type {CombinedConfig, CurrentConfig} from 'types/config';
 import type {DeveloperSettings} from 'types/settings';
 
 import {handleMainWindowIsShown} from './intercom';
@@ -40,14 +40,14 @@ export function handleGetLocalConfiguration() {
     };
 }
 
-export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []) {
+export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof CurrentConfig; data: CurrentConfig[keyof CurrentConfig]}> = []) {
     log.debug('updateConfiguration', properties);
 
     if (properties.length) {
         const newData = properties.reduce((obj, data) => {
             (obj as any)[data.key] = data.data;
             return obj;
-        }, {} as Partial<ConfigType>);
+        }, {} as Partial<CurrentConfig>);
         Config.setMultiple(newData);
     }
 }

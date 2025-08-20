@@ -4,9 +4,9 @@
 import JsonFileManager from 'common/JsonFileManager';
 import {migrationInfoPath} from 'main/constants';
 
-import type {Config, MigrationInfo} from 'types/config';
+import type {CurrentConfig, MigrationInfo} from 'types/config';
 
-export default function migrateConfigItems(config: Config) {
+export default function migrateConfigItems(config: CurrentConfig) {
     const migrationPrefs = new JsonFileManager<MigrationInfo>(migrationInfoPath);
     let didMigrate = false;
 

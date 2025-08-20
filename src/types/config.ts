@@ -23,7 +23,7 @@ export type UniqueView = {
     isDisabled?: boolean;
 }
 
-export type Config = ConfigV4;
+export type CurrentConfig = ConfigV4;
 
 export type ConfigV4 = {
     version: 4;
@@ -132,11 +132,11 @@ export type RegistryConfig = {
     enableAutoUpdater: boolean;
 }
 
-export type CombinedConfig = Omit<Config, 'servers'> & Omit<BuildConfig, 'defaultServers'> & {
+export type CombinedConfig = Omit<CurrentConfig, 'servers'> & Omit<BuildConfig, 'defaultServers'> & {
     appName: string;
 }
 
-export type LocalConfiguration = Config & {
+export type LocalConfiguration = CurrentConfig & {
     appName: string;
     enableServerManagement: boolean;
     canUpgrade: boolean;

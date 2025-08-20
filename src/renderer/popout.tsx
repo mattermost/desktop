@@ -9,6 +9,7 @@ import ReactDOM from 'react-dom';
 import BasePage, {ErrorState} from './components/BasePage';
 import {useConfig} from './hooks/useConfig';
 import IntlProvider from './intl_provider';
+import {printVersion} from './utils';
 
 function Popout() {
     const {config} = useConfig();
@@ -19,6 +20,8 @@ function Popout() {
     const [viewId, setViewId] = useState<string | undefined>(undefined);
 
     useEffect(() => {
+        printVersion();
+
         // Deny drag&drop navigation in mainWindow.
         // Drag&drop is allowed in webview of index.html.
         document.addEventListener('dragover', (event) => event.preventDefault());
@@ -73,13 +76,6 @@ function Popout() {
         </IntlProvider>
     );
 }
-
-window.desktop.getVersion().then(({name, version}) => {
-    // eslint-disable-next-line no-undef
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    console.log(`Starting ${name} v${version}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`);
-});
 
 ReactDOM.render(
     <Popout/>,
