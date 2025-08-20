@@ -123,7 +123,7 @@ export function handleDarkModeChange(darkMode: boolean) {
 // secure storage event handlers
 //
 
-export async function handleSecureStorageGet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string = SECURE_STORAGE_KEYS.PREAUTH): Promise<string | null> {
+export async function handleSecureStorageGet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string): Promise<string | null> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
         return await secureStorage.getSecret(serverUrl, keySuffix as any);
@@ -133,7 +133,7 @@ export async function handleSecureStorageGet(event: Electron.IpcMainInvokeEvent,
     }
 }
 
-export async function handleSecureStorageSet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string = SECURE_STORAGE_KEYS.PREAUTH, value: string): Promise<boolean> {
+export async function handleSecureStorageSet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string, value: string): Promise<boolean> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
         await secureStorage.setSecret(serverUrl, keySuffix as any, value);
@@ -144,7 +144,7 @@ export async function handleSecureStorageSet(event: Electron.IpcMainInvokeEvent,
     }
 }
 
-export async function handleSecureStorageDelete(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string = SECURE_STORAGE_KEYS.PREAUTH): Promise<boolean> {
+export async function handleSecureStorageDelete(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string): Promise<boolean> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
         await secureStorage.deleteSecret(serverUrl, keySuffix as any);
@@ -155,7 +155,7 @@ export async function handleSecureStorageDelete(event: Electron.IpcMainInvokeEve
     }
 }
 
-export async function handleSecureStorageHas(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string = SECURE_STORAGE_KEYS.PREAUTH): Promise<boolean> {
+export async function handleSecureStorageHas(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string): Promise<boolean> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
         return await secureStorage.hasSecret(serverUrl, keySuffix as any);

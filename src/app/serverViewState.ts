@@ -251,7 +251,6 @@ export class ServerViewState {
                     this.currentServerId = remainingServers[0].id;
                 }
 
-                // Remove the server
                 ServerManager.removeServer(server.id);
 
                 // Clean up associated secret
@@ -489,7 +488,6 @@ export class ServerViewState {
             delete this.currentServerId;
         }
 
-        // Remove the server
         ServerManager.removeServer(serverId);
 
         // Clean up associated secret
