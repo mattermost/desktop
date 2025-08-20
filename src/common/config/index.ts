@@ -320,7 +320,7 @@ export class Config extends EventEmitter {
                 throw new Error('Provided configuration file does not validate, using defaults instead.');
             }
         } catch (e) {
-            log.warn('Failed to load configuration file from the filesystem. Using defaults.');
+            log.warn('Failed to load configuration file from the filesystem. Using defaults.', e);
             configData = copy(this.defaultConfigData);
 
             this.writeFile(this.configFilePath, configData);
@@ -399,8 +399,10 @@ export class Config extends EventEmitter {
         if (callback) {
             fs.writeFile(filePath, json, 'utf8', callback);
         } else {
+            log.info(`Writing config data to file ${filePath}`);
             const dir = path.dirname(filePath);
             if (!fs.existsSync(dir)) {
+                log.info(`Creating directory ${dir}`);
                 fs.mkdirSync(dir);
             }
 
