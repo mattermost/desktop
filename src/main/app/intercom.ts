@@ -6,13 +6,13 @@ import {app, Menu} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
 import {ModalConstants} from 'common/constants';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
 import {getSecureStorage} from 'main/secureStorage';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -123,6 +123,7 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
             };
 
             const newServer = ServerManager.addServer(cleanData, initialLoadURL);
+
             // Store the secret with the server URL
             if (preAuthSecret) {
                 try {

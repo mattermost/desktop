@@ -6,6 +6,7 @@
  * These suffixes are appended to server URLs to create unique storage keys.
  */
 export const SECURE_STORAGE_KEYS = {
+
     /**
      * Pre-authentication secret shared by server administrators
      * Used to automatically authenticate with servers that require this secret

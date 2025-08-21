@@ -6,8 +6,8 @@ import path from 'path';
 
 import {safeStorage} from 'electron';
 
-import {Logger} from 'common/log';
 import type {SecureStorageKey} from 'common/constants/secureStorage';
+import {Logger} from 'common/log';
 import {parseURL, getFormattedPathName} from 'common/utils/url';
 
 const log = new Logger('SecureStorage');
@@ -30,7 +30,7 @@ export class SecureStorage {
         this.secretsPath = path.join(this.storageDir, SECURE_SECRETS_FILE);
         this.plaintextSecretsPath = path.join(this.storageDir, PLAINTEXT_SECRETS_FILE);
         this.encryptionAvailable = safeStorage.isEncryptionAvailable();
-        
+
         if (!this.encryptionAvailable) {
             log.warn(ENCRYPTION_UNAVAILABLE_WARNING);
         }
@@ -47,7 +47,7 @@ export class SecureStorage {
     private async loadSecrets(): Promise<Record<string, string>> {
         try {
             await this.ensureStorageDir();
-            
+
             if (this.encryptionAvailable) {
                 // Try to load encrypted secrets
                 try {
@@ -60,7 +60,7 @@ export class SecureStorage {
                     }
                 }
             }
-            
+
             // Fall back to plaintext storage (or use it directly if encryption unavailable)
             try {
                 const plaintextData = await readFile(this.plaintextSecretsPath, 'utf-8');
@@ -83,7 +83,7 @@ export class SecureStorage {
         try {
             await this.ensureStorageDir();
             const jsonData = JSON.stringify(secrets, null, 2);
-            
+
             if (this.encryptionAvailable) {
                 // Save encrypted
                 const encryptedData = safeStorage.encryptString(jsonData);
@@ -110,7 +110,7 @@ export class SecureStorage {
     async initializeCache(): Promise<void> {
         if (this.memoryCache === null) {
             this.memoryCache = await this.loadSecrets();
-            log.info(`Initialized secure storage cache`);
+            log.info('Initialized secure storage cache');
         }
     }
 
@@ -150,6 +150,7 @@ export class SecureStorage {
             return `${parsed.origin}${normalizedPath}`;
         } catch (error) {
             log.warn(`Failed to normalize URL for secure storage: ${url}`, error);
+
             // Fallback to the original URL if parsing fails
             return url;
         }
@@ -180,7 +181,6 @@ export class SecureStorage {
         return secretKey in secrets;
     }
 
-    
     isEncrypted(): boolean {
         return this.encryptionAvailable;
     }

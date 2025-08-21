@@ -9,7 +9,6 @@ import {Logger, setLoggingLevel} from 'common/log';
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
 import {getSecureStorage} from 'main/secureStorage';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import Tray from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
 import MainWindow from 'main/windows/mainWindow';
@@ -165,13 +164,13 @@ export async function handleSecureStorageHas(event: Electron.IpcMainInvokeEvent,
     }
 }
 
-export async function handleSecureStorageGetStatus(event: Electron.IpcMainInvokeEvent): Promise<{ encrypted: boolean; available: boolean; warning?: string }> {
+export async function handleSecureStorageGetStatus(): Promise<{ encrypted: boolean; available: boolean; warning?: string }> {
     try {
         const secureStorage = getSecureStorage(app.getPath('userData'));
         return secureStorage.getStorageStatus();
     } catch (error) {
         log.error('Failed to get secure storage status:', error);
-        return { encrypted: false, available: false, warning: 'Failed to access secure storage' };
+        return {encrypted: false, available: false, warning: 'Failed to access secure storage'};
     }
 }
 

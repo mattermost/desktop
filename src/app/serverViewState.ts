@@ -10,6 +10,7 @@ import {
     GET_ORDERED_SERVERS,
     GET_ORDERED_TABS_FOR_SERVER,
     OPEN_VIEW,
+    RELOAD_VIEW,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_NEW_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
@@ -26,6 +27,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import {ModalConstants} from 'common/constants';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -33,7 +35,6 @@ import {URLValidationStatus} from 'common/utils/constants';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/permissionsManager';
 import {getSecureStorage} from 'main/secureStorage';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
@@ -62,6 +63,7 @@ export class ServerViewState {
         ipcMain.on(OPEN_VIEW, this.handleOpenView);
         ipcMain.handle(GET_LAST_ACTIVE, this.handleGetLastActive);
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, this.handleGetOrderedViewsForServer);
+        ipcMain.handle(RELOAD_VIEW, this.handleReloadView);
         ipcMain.on(UPDATE_TAB_ORDER, this.updateTabOrder);
 
         ipcMain.handle(GET_UNIQUE_SERVERS_WITH_PERMISSIONS, this.getUniqueServersWithPermissions);
@@ -204,18 +206,31 @@ export class ServerViewState {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
+        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, UniqueServerWithPermissions>(
             ModalConstants.EDIT_SERVER_MODAL,
             'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
             {server: server.toUniqueServer(), permissions: PermissionsManager.getForServer(server) ?? {}},
             mainWindow);
 
-        modalPromise.then((data) => {
+        modalPromise.then(async (data) => {
             if (!server.isPredefined) {
                 ServerManager.editServer(id, data.server);
             }
             PermissionsManager.setForServer(server, data.permissions);
+
+            // Handle pre-auth secret changes and reload view if needed
+            if (data.server.preAuthSecret !== undefined) {
+                const preAuthSecretChanged = await this.handlePreAuthSecretChange(server, data.server.preAuthSecret || '');
+                if (preAuthSecretChanged) {
+                    // Reload the web view to apply new authentication
+                    const views = ServerManager.getOrderedTabsForServer(server.id);
+                    if (views && views.length > 0) {
+                        // Use our existing reload handler
+                        this.handleReloadView({} as IpcMainInvokeEvent, views[0].id);
+                    }
+                }
+            }
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -277,7 +292,7 @@ export class ServerViewState {
      * IPC Handlers
      */
 
-    private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string): Promise<URLValidationResult> => {
+    private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string, preAuthSecret?: string | null): Promise<URLValidationResult> => {
         log.debug('handleServerURLValidation', url, currentId);
 
         // If the URL is missing or null, reject
@@ -314,13 +329,38 @@ export class ServerViewState {
             return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
         }
 
+        // Try to retrieve saved pre-auth secret for this URL
+        // Priority logic:
+        // - preAuthSecret === null: Use saved secret (initial validation)
+        // - preAuthSecret === undefined: No secret provided (new server)
+        // - preAuthSecret === string (including ''): Use exact input value (user interaction)
+        let effectivePreAuthSecret: string | undefined;
+
+        if (preAuthSecret === null) {
+            // Initial validation - use saved secret if exists
+            try {
+                const secureStorage = getSecureStorage(app.getPath('userData'));
+                const savedSecret = await secureStorage.getSecret(secureURL.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+                effectivePreAuthSecret = savedSecret || undefined;
+            } catch (error) {
+                log.warn('Failed to retrieve saved pre-auth secret:', error);
+                effectivePreAuthSecret = undefined;
+            }
+        } else if (preAuthSecret !== undefined && preAuthSecret !== null) {
+            // User provided input (including empty string) - use exact value
+            effectivePreAuthSecret = preAuthSecret || undefined;
+        } else {
+            // New server, no input - no secret
+            effectivePreAuthSecret = undefined;
+        }
+
         // Try and get remote info from the most secure URL, otherwise use the insecure one
         let remoteURL = secureURL;
         const insecureURL = parseURL(secureURL.toString().replace(/^https:/, 'http:'));
-        let remoteInfo = await this.testRemoteServer(secureURL);
+        let remoteInfo = await this.testRemoteServer(secureURL, effectivePreAuthSecret);
         if (!remoteInfo && insecureURL) {
             // Try to fall back to HTTP
-            remoteInfo = await this.testRemoteServer(insecureURL);
+            remoteInfo = await this.testRemoteServer(insecureURL, effectivePreAuthSecret);
             if (remoteInfo) {
                 remoteURL = insecureURL;
             }
@@ -332,7 +372,7 @@ export class ServerViewState {
         if (!remoteInfo) {
             // If the URL provided has a path, try to validate the server with parts of the path removed, until we reach the root and then return a failure
             if (parsedURL.pathname !== '/') {
-                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId);
+                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId, effectivePreAuthSecret || undefined);
             }
 
             return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString().replace(/\/$/, '')};
@@ -356,7 +396,7 @@ export class ServerViewState {
                 }
 
                 // If we can't reach the remote Site URL, there's probably a configuration issue
-                const remoteSiteURLInfo = await this.testRemoteServer(parsedSiteURL);
+                const remoteSiteURLInfo = await this.testRemoteServer(parsedSiteURL, effectivePreAuthSecret);
                 if (!remoteSiteURLInfo) {
                     return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
                 }
@@ -392,6 +432,18 @@ export class ServerViewState {
         return ServerManager.getOrderedTabsForServer(serverId).map((view) => view.toUniqueView());
     };
 
+    private handleReloadView = (event: IpcMainInvokeEvent, viewId: string) => {
+        log.debug('handleReloadView', {viewId});
+
+        const view = ViewManager.getView(viewId);
+        if (view) {
+            view.reload();
+            return Promise.resolve();
+        }
+        log.warn('Attempted to reload non-existent view:', viewId);
+        return Promise.reject(new Error(`View ${viewId} not found`));
+    };
+
     private handleGetLastActive = () => {
         const server = this.getCurrentServer();
         const view = ServerManager.getLastActiveTabForServer(server.id);
@@ -407,9 +459,32 @@ export class ServerViewState {
      * Helper functions
      */
 
-    private testRemoteServer = async (parsedURL: URL) => {
+    private handlePreAuthSecretChange = async (server: MattermostServer, newSecret: string): Promise<boolean> => {
+        try {
+            const secureStorage = getSecureStorage(app.getPath('userData'));
+            const currentSecret = await secureStorage.getSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+
+            const hasChanged = (currentSecret || '') !== (newSecret || '');
+
+            if (newSecret && newSecret.trim()) {
+                // Set new secret
+                await secureStorage.setSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, newSecret.trim());
+            } else {
+                // Clear secret if empty
+                await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+            }
+
+            log.debug('Pre-auth secret updated:', {serverId: server.id, hasChanged});
+            return hasChanged;
+        } catch (error) {
+            log.warn('Failed to handle pre-auth secret change:', error);
+            return false;
+        }
+    };
+
+    private testRemoteServer = async (parsedURL: URL, preAuthSecret?: string) => {
         const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false);
-        const serverInfo = new ServerInfo(server);
+        const serverInfo = new ServerInfo(server, preAuthSecret);
         try {
             const remoteInfo = await serverInfo.fetchConfigData();
             return remoteInfo;

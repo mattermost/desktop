@@ -30,7 +30,7 @@
 }
 
 .NewServerModal__advanced-section {
-    margin-top: 20px;
+    margin-top: 24px;
 
     .NewServerModal__advanced-toggle {
         display: flex;
@@ -40,21 +40,23 @@
         color: var(--button-bg);
         cursor: pointer;
         font-family: inherit;
-        font-size: 14px;
-        padding: 8px 0;
+        font-size: 12px;
+        line-height: 16px;
+        font-weight: 600;
+        padding: 0;
         
         &:hover {
             color: var(--button-bg-hover);
         }
 
         .icon {
-            margin-right: 8px;
+            margin-right: 2px;
             font-size: 12px;
         }
     }
 
     .NewServerModal__advanced-content {
-        margin-top: 16px;
+        margin-top: 24px;
         border-left: 2px solid var(--center-channel-color-16);
     }
 }

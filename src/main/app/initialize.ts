@@ -37,6 +37,7 @@ import {
     SECURE_STORAGE_GET_STATUS,
 } from 'common/communication';
 import Config from 'common/config';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL, getFormattedPathName} from 'common/utils/url';
@@ -58,7 +59,6 @@ import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
 import {getSecureStorage} from 'main/secureStorage';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import Tray from 'main/tray/tray';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import UserActivityMonitor from 'main/UserActivityMonitor';
@@ -370,7 +370,7 @@ async function initializeAfterAppReady() {
                     const secureStorage = getSecureStorage(app.getPath('userData'));
                     const secret = await secureStorage.getSecret(view.server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
 
-                    if (secret) {
+                    if (secret && !details.requestHeaders['X-Mattermost-Preauth-Secret']) {
                         const requestHeaders = {
                             ...details.requestHeaders,
                             'X-Mattermost-Preauth-Secret': secret,
@@ -392,7 +392,7 @@ async function initializeAfterAppReady() {
                         const secureStorage = getSecureStorage(app.getPath('userData'));
                         const secret = await secureStorage.getSecret(matchingServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
 
-                        if (secret) {
+                        if (secret && !details.requestHeaders['X-Mattermost-Preauth-Secret']) {
                             const requestHeaders = {
                                 ...details.requestHeaders,
                                 'X-Mattermost-Preauth-Secret': secret,

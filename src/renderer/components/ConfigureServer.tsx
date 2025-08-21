@@ -70,6 +70,7 @@ function ConfigureServer({
 
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [preAuthSecret, setPreAuthSecret] = useState('');
+    const [preAuthSecretError, setPreAuthSecretError] = useState<{type: STATUS; value: string}>();
 
     const canSave = name && url && !nameError && !validating && urlError && urlError.type !== STATUS.ERROR;
 
@@ -79,7 +80,7 @@ function ConfigureServer({
         mounted.current = true;
 
         if (url) {
-            fetchValidationResult(url);
+            fetchValidationResult(url, preAuthSecret);
         }
 
         return () => {
@@ -87,7 +88,7 @@ function ConfigureServer({
         };
     }, []);
 
-    const fetchValidationResult = (urlToValidate: string) => {
+    const fetchValidationResult = (urlToValidate: string, preAuthSecret?: string) => {
         setValidating(true);
         setURLError({
             type: STATUS.INFO,
@@ -95,10 +96,11 @@ function ConfigureServer({
         });
         const requestTime = Date.now();
         validationTimestamp.current = requestTime;
-        validateURL(urlToValidate).then(({validatedURL, serverName, message}) => {
+        validateURL(urlToValidate, preAuthSecret).then(({validatedURL, serverName, message, status}) => {
             if (editing.current) {
                 setValidating(false);
                 setURLError(undefined);
+                setPreAuthSecretError(undefined);
                 return;
             }
             if (!validationTimestamp.current || requestTime < validationTimestamp.current) {
@@ -116,6 +118,20 @@ function ConfigureServer({
                 setTransition(undefined);
                 setURLError(message);
             }
+
+            // Set preauth secret error if NotMattermost and preauth secret is provided
+            if (status === URLValidationStatus.NotMattermost && preAuthSecret) {
+                setPreAuthSecretError({
+                    type: STATUS.WARNING,
+                    value: formatMessage({
+                        id: 'renderer.components.configureServer.error.preAuthInvalid',
+                        defaultMessage: 'The pre-authentication header may be invalid.',
+                    }),
+                });
+            } else {
+                setPreAuthSecretError(undefined);
+            }
+
             setValidating(false);
         });
     };
@@ -133,9 +149,9 @@ function ConfigureServer({
         return '';
     };
 
-    const validateURL = async (url: string) => {
+    const validateURL = async (url: string, preAuthSecret?: string) => {
         let message;
-        const validationResult = await window.desktop.validateServerURL(url);
+        const validationResult = await window.desktop.validateServerURL(url, undefined, preAuthSecret);
 
         if (validationResult?.status === URLValidationStatus.Missing) {
             message = {
@@ -196,6 +212,7 @@ function ConfigureServer({
             validatedURL: validationResult.validatedURL,
             serverName: validationResult.serverName,
             message,
+            status: validationResult.status,
         };
     };
 
@@ -221,12 +238,23 @@ function ConfigureServer({
                 return;
             }
             editing.current = false;
-            fetchValidationResult(value);
+            fetchValidationResult(value, preAuthSecret);
         }, 1000);
     };
 
     const handlePreAuthSecretOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
         setPreAuthSecret(value);
+
+        // Trigger validation when pre-auth secret is entered and URL exists
+        if (url && !validating) {
+            clearTimeout(validationTimeout.current as unknown as number);
+            validationTimeout.current = setTimeout(() => {
+                if (!mounted.current) {
+                    return;
+                }
+                fetchValidationResult(url, value);
+            }, 1000);
+        }
     };
 
     const toggleAdvanced = () => {
@@ -402,10 +430,10 @@ function ConfigureServer({
                                                     inputSize={SIZE.LARGE}
                                                     value={preAuthSecret || ''}
                                                     onChange={handlePreAuthSecretOnChange}
-                                                    customMessage={{
+                                                    customMessage={preAuthSecretError ?? ({
                                                         type: STATUS.INFO,
                                                         value: formatMessage({id: 'renderer.components.configureServer.secureSecret.info', defaultMessage: 'The pre-authentication secret shared by the administrator.'}),
-                                                    }}
+                                                    })}
                                                     placeholder={formatMessage({id: 'renderer.components.configureServer.secureSecret.placeholder', defaultMessage: 'Pre-authentication Secret'})}
                                                     disabled={waiting}
                                                 />

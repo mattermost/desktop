@@ -6,13 +6,13 @@ import React from 'react';
 import type {IntlShape} from 'react-intl';
 import {FormattedMessage, injectIntl} from 'react-intl';
 
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {URLValidationStatus} from 'common/utils/constants';
 import Toggle from 'renderer/components/Toggle';
 
 import type {UniqueServer} from 'types/config';
 import type {Permissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 
 import Input, {SIZE, STATUS} from './Input';
 import {Modal} from './Modal';
@@ -45,6 +45,7 @@ type State = {
     microphoneDisabled: boolean;
     showAdvanced: boolean;
     preAuthSecret: string;
+    originalPreAuthSecret?: string;
 }
 
 class NewServerModal extends React.PureComponent<Props, State> {
@@ -69,7 +70,8 @@ class NewServerModal extends React.PureComponent<Props, State> {
             cameraDisabled: false,
             microphoneDisabled: false,
             showAdvanced: false,
-            preAuthSecret: '', // Always start with empty string for controlled input
+            preAuthSecret: '',
+            originalPreAuthSecret: undefined,
         };
     }
 
@@ -110,23 +112,25 @@ class NewServerModal extends React.PureComponent<Props, State> {
             microphoneDisabled,
         });
 
-        // Check if editing existing server has a secure secret (but don't load it)
+        // Check if editing existing server has a secure secret and prefill it
         if (this.props.editMode && this.props.server?.url) {
             try {
-                const hasSecret = await window.desktop.secureStorage.hasSecret(this.props.server.url, SECURE_STORAGE_KEYS.PREAUTH);
+                const savedSecret = await window.desktop.secureStorage.getSecret(this.props.server.url, SECURE_STORAGE_KEYS.PREAUTH);
 
-                // Show advanced section if there's an existing secret, but don't prefill
+                // Always keep advanced section closed on open, but prefill secret if it exists
                 this.setState({
-                    showAdvanced: hasSecret,
-                    preAuthSecret: '', // Never prefill
+                    showAdvanced: false,
+                    preAuthSecret: savedSecret || '', // Prefill with saved secret
+                    originalPreAuthSecret: savedSecret || '', // Track original value
                 });
             } catch (error) {
-                console.warn('Failed to check for existing secure secret:', error);
+                console.warn('Failed to load existing secure secret:', error);
             }
         }
 
         if (this.props.editMode && this.props.server) {
-            this.validateServerURL(this.props.server.url);
+            // Use null to indicate "use saved secret" for initial validation
+            this.validateServerURL(this.props.server.url, null);
         }
     };
 
@@ -139,7 +143,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
     handleServerUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const serverUrl = e.target.value;
         this.setState({serverUrl, validationResult: undefined});
-        this.validateServerURL(serverUrl);
+        this.validateServerURL(serverUrl, this.state.preAuthSecret);
     };
 
     handleChangePermission = (permissionKey: string) => {
@@ -157,9 +161,15 @@ class NewServerModal extends React.PureComponent<Props, State> {
     };
 
     handlePreAuthSecretChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const preAuthSecret = e.target.value;
         this.setState({
-            preAuthSecret: e.target.value,
+            preAuthSecret,
         });
+
+        // Trigger validation when pre-auth secret is entered and URL exists
+        if (this.state.serverUrl && !this.state.validationStarted) {
+            this.validateServerURL(this.state.serverUrl, preAuthSecret);
+        }
     };
 
     toggleAdvanced = () => {
@@ -168,7 +178,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
         });
     };
 
-    validateServerURL = (serverUrl: string) => {
+    validateServerURL = (serverUrl: string, preAuthSecret?: string | null) => {
         clearTimeout(this.validationTimeout as unknown as number);
         this.validationTimeout = setTimeout(() => {
             if (!this.mounted) {
@@ -176,7 +186,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
             }
             const currentTimeout = this.validationTimeout;
             this.setState({validationStarted: true});
-            window.desktop.validateServerURL(serverUrl, this.props.server?.id).then((validationResult) => {
+            window.desktop.validateServerURL(serverUrl, this.props.server?.id, preAuthSecret).then((validationResult) => {
                 if (!this.mounted) {
                     return;
                 }
@@ -191,6 +201,21 @@ class NewServerModal extends React.PureComponent<Props, State> {
     isServerURLErrored = () => {
         return this.state.validationResult?.status === URLValidationStatus.Invalid ||
             this.state.validationResult?.status === URLValidationStatus.Missing;
+    };
+
+    getPreAuthSecretMessage = () => {
+        // Only show error if we have NotMattermost status and there's a preAuthSecret value
+        if (this.state.validationResult?.status === URLValidationStatus.NotMattermost && this.state.preAuthSecret) {
+            return {
+                type: STATUS.WARNING,
+                value: this.props.intl.formatMessage({
+                    id: 'renderer.components.newServerModal.error.preAuthInvalid',
+                    defaultMessage: 'The pre-authentication header may be invalid.',
+                }),
+            };
+        }
+
+        return null;
     };
 
     getServerURLMessage = () => {
@@ -318,7 +343,12 @@ class NewServerModal extends React.PureComponent<Props, State> {
             this.setState({
                 saveStarted: true,
             }, () => {
-                this.props.onSave?.(this.props.server!, this.state.permissions);
+                // Include preAuthSecret in server data for predefined servers
+                const serverData = {
+                    ...this.props.server!,
+                    preAuthSecret: this.state.preAuthSecret,
+                };
+                this.props.onSave?.(serverData, this.state.permissions);
             });
         } else {
             if (!this.state.validationResult) {
@@ -331,24 +361,13 @@ class NewServerModal extends React.PureComponent<Props, State> {
 
             this.setState({
                 saveStarted: true,
-            }, async () => {
+            }, () => {
                 const serverData = {
                     url: this.state.serverUrl,
                     name: this.state.serverName,
                     id: this.state.serverId,
+                    preAuthSecret: this.state.preAuthSecret,
                 };
-
-                // Handle secure secret storage
-                try {
-                    if (this.state.preAuthSecret && this.state.preAuthSecret.trim()) {
-                        await window.desktop.secureStorage.setSecret(this.state.serverUrl, SECURE_STORAGE_KEYS.PREAUTH, this.state.preAuthSecret.trim());
-                    } else if (this.props.editMode && this.props.server?.url) {
-                        // Clear secret if it was removed
-                        await window.desktop.secureStorage.deleteSecret(this.props.server.url, SECURE_STORAGE_KEYS.PREAUTH);
-                    }
-                } catch (error) {
-                    console.warn('Failed to handle secure secret:', error);
-                }
 
                 this.props.onSave?.(serverData, this.state.permissions);
             });
@@ -477,10 +496,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                             inputSize={SIZE.LARGE}
                                             value={this.state.preAuthSecret || ''}
                                             onChange={this.handlePreAuthSecretChange}
-                                            customMessage={{
+                                            customMessage={this.getPreAuthSecretMessage() ?? ({
                                                 type: STATUS.INFO,
                                                 value: this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.info', defaultMessage: 'The pre-authentication secret shared by the administrator.'}),
-                                            }}
+                                            })}
                                             placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Pre-authentication Secret'})}
                                         />
                                     </div>

@@ -55,8 +55,9 @@ declare global {
             getLastActive: () => Promise<{server: string; view: string}>;
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
+            reloadView: (viewId: string) => Promise<void>;
             onUpdateServers: (listener: () => void) => void;
-            validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
+            validateServerURL: (url: string, currentId?: string, preAuthSecret?: string | null) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
             editServer: (server: UniqueServer, permissions?: Permissions) => void;
