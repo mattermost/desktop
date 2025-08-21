@@ -60,13 +60,13 @@ class NewServerModal extends React.PureComponent<Props, State> {
         this.wasShown = false;
         this.mounted = false;
         this.state = {
-            serverName: props.server?.name || '',
-            serverUrl: props.server?.url || props.prefillURL || '',
+            serverName: '',
+            serverUrl: '',
             serverId: props.server?.id,
             serverOrder: props.currentOrder || 0,
             saveStarted: false,
             validationStarted: false,
-            permissions: props.permissions || {},
+            permissions: {},
             cameraDisabled: false,
             microphoneDisabled: false,
             showAdvanced: false,
@@ -87,11 +87,6 @@ class NewServerModal extends React.PureComponent<Props, State> {
         if (this.props.prefillURL && this.props.prefillURL !== prevProps.prefillURL) {
             this.setState({serverUrl: this.props.prefillURL});
             this.validateServerURL(this.props.prefillURL);
-        }
-
-        // Initialize when modal becomes visible or server changes
-        if ((this.props.show && !prevProps.show) || (this.props.server !== prevProps.server)) {
-            this.initializeOnShow();
         }
     }
 
@@ -409,6 +404,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
     }
 
     render() {
+        if (this.wasShown !== this.props.show && this.props.show) {
+            this.initializeOnShow();
+        }
+
         this.wasShown = this.props.show;
 
         const notificationValues = {

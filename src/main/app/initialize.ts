@@ -40,7 +40,7 @@ import Config from 'common/config';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {parseURL, getFormattedPathName} from 'common/utils/url';
+import {parseURL} from 'common/utils/url';
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
 import AuthManager from 'main/authManager';
@@ -363,10 +363,9 @@ async function initializeAfterAppReady() {
     defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
         (async () => {
             try {
-                const url = new URL(details.url);
                 const view = ServerManager.lookupViewByURL(details.url);
 
-                if (view && view.server) {
+                if (view) {
                     const secureStorage = getSecureStorage(app.getPath('userData'));
                     const secret = await secureStorage.getSecret(view.server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
 
@@ -378,29 +377,6 @@ async function initializeAfterAppReady() {
 
                         callback({requestHeaders});
                         return;
-                    }
-                } else {
-                    // Fallback: Check if this URL matches any server using normalized URL comparison
-                    const requestNormalizedUrl = `${url.origin}${getFormattedPathName(url.pathname)}`;
-                    const allServers = ServerManager.getAllServers();
-                    const matchingServer = allServers.find((server) => {
-                        const serverNormalizedUrl = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
-                        return requestNormalizedUrl.startsWith(serverNormalizedUrl);
-                    });
-
-                    if (matchingServer) {
-                        const secureStorage = getSecureStorage(app.getPath('userData'));
-                        const secret = await secureStorage.getSecret(matchingServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-
-                        if (secret && !details.requestHeaders['X-Mattermost-Preauth-Secret']) {
-                            const requestHeaders = {
-                                ...details.requestHeaders,
-                                'X-Mattermost-Preauth-Secret': secret,
-                            };
-
-                            callback({requestHeaders});
-                            return;
-                        }
                     }
                 }
             } catch (error) {

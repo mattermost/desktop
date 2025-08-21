@@ -247,11 +247,13 @@ function ConfigureServer({
 
         // Trigger validation when pre-auth secret is entered and URL exists
         if (url && !validating) {
+            editing.current = true;
             clearTimeout(validationTimeout.current as unknown as number);
             validationTimeout.current = setTimeout(() => {
                 if (!mounted.current) {
                     return;
                 }
+                editing.current = false;
                 fetchValidationResult(url, value);
             }, 1000);
         }
