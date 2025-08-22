@@ -124,8 +124,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
         }
 
         if (this.props.editMode && this.props.server) {
-            // Use null to indicate "use saved secret" for initial validation
-            this.validateServerURL(this.props.server.url, null);
+            this.validateServerURL(this.props.server.url, this.props.server.preAuthSecret);
         }
     };
 
@@ -173,7 +172,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
         });
     };
 
-    validateServerURL = (serverUrl: string, preAuthSecret?: string | null) => {
+    validateServerURL = (serverUrl: string, preAuthSecret?: string) => {
         clearTimeout(this.validationTimeout as unknown as number);
         this.validationTimeout = setTimeout(() => {
             if (!this.mounted) {

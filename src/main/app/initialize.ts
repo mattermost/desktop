@@ -373,7 +373,7 @@ async function initializeAfterAppReady() {
             if (view && view.server.preAuthSecret) {
                 const secret = view.server.preAuthSecret;
 
-                if (!details.requestHeaders['X-Mattermost-Preauth-Secret']) {
+                if (!('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
                     const requestHeaders = {
                         ...details.requestHeaders,
                         'X-Mattermost-Preauth-Secret': secret,

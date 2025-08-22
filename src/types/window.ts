@@ -57,7 +57,7 @@ declare global {
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             onUpdateServers: (listener: () => void) => void;
-            validateServerURL: (url: string, currentId?: string, preAuthSecret?: string | null) => Promise<URLValidationResult>;
+            validateServerURL: (url: string, currentId?: string, preAuthSecret?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
             editServer: (server: UniqueServer, permissions?: Permissions) => void;

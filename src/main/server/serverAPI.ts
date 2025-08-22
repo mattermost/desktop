@@ -36,8 +36,8 @@ export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess
         useSessionCookies: true,
     });
 
-    // Add pre-auth header if provided
-    if (preAuthSecret) {
+    // Add pre-auth header if provided. We want to ensure we send the header if the user has cleared the pre-auth secret
+    if (preAuthSecret || preAuthSecret === '') {
         req.setHeader('X-Mattermost-Preauth-Secret', preAuthSecret);
     }
 

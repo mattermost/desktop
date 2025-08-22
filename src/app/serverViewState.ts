@@ -293,7 +293,7 @@ export class ServerViewState {
      * IPC Handlers
      */
 
-    private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string, preAuthSecret?: string | null): Promise<URLValidationResult> => {
+    private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string, preAuthSecret?: string): Promise<URLValidationResult> => {
         log.debug('handleServerURLValidation', url, currentId);
 
         // If the URL is missing or null, reject
@@ -330,30 +330,7 @@ export class ServerViewState {
             return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
         }
 
-        // Try to retrieve saved pre-auth secret for this URL
-        // Priority logic:
-        // - preAuthSecret === null: Use saved secret (initial validation)
-        // - preAuthSecret === undefined: No secret provided (new server)
-        // - preAuthSecret === string (including ''): Use exact input value (user interaction)
-        let effectivePreAuthSecret: string | undefined;
-
-        if (preAuthSecret === null) {
-            // Initial validation - use saved secret if exists
-            try {
-                const secureStorage = getSecureStorage(app.getPath('userData'));
-                const savedSecret = await secureStorage.getSecret(secureURL.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-                effectivePreAuthSecret = savedSecret || undefined;
-            } catch (error) {
-                log.warn('Failed to retrieve saved pre-auth secret:', error);
-                effectivePreAuthSecret = undefined;
-            }
-        } else if (preAuthSecret !== undefined && preAuthSecret !== null) {
-            // User provided input (including empty string) - use exact value
-            effectivePreAuthSecret = preAuthSecret || undefined;
-        } else {
-            // New server, no input - no secret
-            effectivePreAuthSecret = undefined;
-        }
+        const effectivePreAuthSecret = preAuthSecret;
 
         // Try and get remote info from the most secure URL, otherwise use the insecure one
         let remoteURL = secureURL;
@@ -373,7 +350,7 @@ export class ServerViewState {
         if (!remoteInfo) {
             // If the URL provided has a path, try to validate the server with parts of the path removed, until we reach the root and then return a failure
             if (parsedURL.pathname !== '/') {
-                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId, effectivePreAuthSecret || undefined);
+                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId, effectivePreAuthSecret);
             }
 
             return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString().replace(/\/$/, '')};
