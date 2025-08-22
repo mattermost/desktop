@@ -17,7 +17,7 @@ import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import type {UniqueServer} from 'types/config';
+import type {NewServer} from 'types/config';
 
 import {handleAppBeforeQuit} from './app';
 
@@ -101,7 +101,7 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<{prefillURL?: string}, NewServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then(async (data) => {
             let initialLoadURL;

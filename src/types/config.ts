@@ -24,6 +24,9 @@ export type ConfigServer = Server & {
 export type UniqueServer = Server & {
     id?: string;
     isPredefined?: boolean;
+}
+
+export type NewServer = UniqueServer & {
 
     /**
      * Pre-authentication secret for server access.

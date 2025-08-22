@@ -41,7 +41,7 @@ import ModalManager from 'main/views/modalManager';
 import ViewManager from 'main/views/viewManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import type {Server, UniqueServer} from 'types/config';
+import type {Server, UniqueServer, NewServer} from 'types/config';
 import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
 
@@ -150,7 +150,7 @@ export class ServerViewState {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(
+        const modalPromise = ModalManager.addModal<{prefillURL?: string}, NewServer>(
             ModalConstants.NEW_SERVER_MODAL,
             'mattermost-desktop://renderer/newServer.html',
             getLocalPreload('internalAPI.js'),
@@ -206,7 +206,7 @@ export class ServerViewState {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, UniqueServerWithPermissions>(
+        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: NewServer; permissions: Permissions}>(
             ModalConstants.EDIT_SERVER_MODAL,
             'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
@@ -226,7 +226,6 @@ export class ServerViewState {
                     // Reload the web view to apply new authentication
                     const views = ServerManager.getOrderedTabsForServer(server.id);
                     if (views && views.length > 0) {
-                        // Use our existing reload handler
                         this.handleReloadView({} as IpcMainInvokeEvent, views[0].id);
                     }
                 }

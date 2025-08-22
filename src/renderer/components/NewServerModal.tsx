@@ -10,7 +10,7 @@ import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {URLValidationStatus} from 'common/utils/constants';
 import Toggle from 'renderer/components/Toggle';
 
-import type {UniqueServer} from 'types/config';
+import type {UniqueServer, NewServer} from 'types/config';
 import type {Permissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
 
@@ -21,7 +21,7 @@ import 'renderer/css/components/NewServerModal.scss';
 
 type Props = {
     onClose: () => void;
-    onSave?: (server: UniqueServer, permissions?: Permissions) => void;
+    onSave?: (server: NewServer, permissions?: Permissions) => void;
     server?: UniqueServer;
     permissions?: Permissions;
     editMode?: boolean;
@@ -338,8 +338,8 @@ class NewServerModal extends React.PureComponent<Props, State> {
             this.setState({
                 saveStarted: true,
             }, () => {
-                // Include preAuthSecret in server data for predefined servers
-                const serverData = {
+                // For predefined servers, create server data with preAuthSecret
+                const serverData: NewServer = {
                     ...this.props.server!,
                     preAuthSecret: this.state.preAuthSecret,
                 };
@@ -357,7 +357,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
             this.setState({
                 saveStarted: true,
             }, () => {
-                const serverData = {
+                const serverData: NewServer = {
                     url: this.state.serverUrl,
                     name: this.state.serverName,
                     id: this.state.serverId,

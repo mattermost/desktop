@@ -11,7 +11,7 @@ import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
 
-import type {UniqueServer} from 'types/config';
+import type {UniqueServer, NewServer} from 'types/config';
 
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/ConfigureServer.scss';
@@ -30,7 +30,7 @@ type ConfigureServerProps = {
     alternateLinkMessage?: string;
     alternateLinkText?: string;
     alternateLinkURL?: string;
-    onConnect: (data: UniqueServer) => void;
+    onConnect: (data: NewServer) => void;
 };
 
 function ConfigureServer({
@@ -294,16 +294,12 @@ function ConfigureServer({
         setTransition('outToLeft');
 
         setTimeout(() => {
-            const serverData: UniqueServer = {
+            const serverData: NewServer = {
                 url,
                 name,
                 id,
+                preAuthSecret: preAuthSecret && preAuthSecret.trim() ? preAuthSecret.trim() : undefined,
             };
-
-            // Pass the secret through the system to be stored after server creation
-            if (preAuthSecret && preAuthSecret.trim()) {
-                serverData.preAuthSecret = preAuthSecret.trim();
-            }
 
             onConnect(serverData);
         }, MODAL_TRANSITION_TIMEOUT);
