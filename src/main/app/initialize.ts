@@ -23,7 +23,7 @@ import {
     GET_LOCAL_CONFIGURATION,
     UPDATE_CONFIGURATION,
     UPDATE_PATHS,
-    SERVERS_URL_MODIFIED,
+    SERVERS_MODIFIED,
     GET_DARK_MODE,
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
@@ -342,7 +342,7 @@ async function initializeAfterAppReady() {
         log.warn('Failed to initialize secure storage cache:', error);
     }
 
-    ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
+    ServerManager.on(SERVERS_MODIFIED, (serverIds?: string[]) => {
         if (serverIds && serverIds.length) {
             updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
         }

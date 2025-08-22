@@ -4,8 +4,7 @@
 import EventEmitter from 'events';
 
 import {
-    SERVERS_URL_MODIFIED,
-    SERVER_SECRET_MODIFIED,
+    SERVERS_MODIFIED,
     SERVERS_UPDATE,
 } from 'common/communication';
 import Config from 'common/config';
@@ -174,11 +173,8 @@ export class ServerManager extends EventEmitter {
         });
         this.viewOrder.set(newServer.id, viewOrder);
 
-        // Emit events for secret changes and URL modifications
-        if (server.preAuthSecret) {
-            this.emit(SERVER_SECRET_MODIFIED, [newServer.id]);
-        }
-        this.emit(SERVERS_URL_MODIFIED, [newServer.id]);
+        // Emit event for server modifications (URL and/or secret changes)
+        this.emit(SERVERS_MODIFIED, [newServer.id]);
 
         this.persistServers();
         return newServer;
@@ -190,10 +186,10 @@ export class ServerManager extends EventEmitter {
             return;
         }
 
-        let urlModified;
+        let serverModified;
         if (existingServer.url.toString() !== parseURL(server.url)?.toString()) {
             // Emit this event whenever we update a server URL to ensure remote info is fetched
-            urlModified = () => this.emit(SERVERS_URL_MODIFIED, [serverId]);
+            serverModified = () => this.emit(SERVERS_MODIFIED, [serverId]);
         }
         existingServer.name = server.name;
         existingServer.updateURL(server.url);
@@ -206,7 +202,7 @@ export class ServerManager extends EventEmitter {
             } else {
                 existingServer.preAuthSecret = undefined;
             }
-            this.emit(SERVER_SECRET_MODIFIED, [serverId]);
+            serverModified = () => this.emit(SERVERS_MODIFIED, [serverId]);
         }
 
         this.servers.set(serverId, existingServer);
@@ -219,7 +215,7 @@ export class ServerManager extends EventEmitter {
             }
         });
 
-        urlModified?.();
+        serverModified?.();
         this.persistServers();
     };
 

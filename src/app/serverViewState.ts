@@ -166,11 +166,7 @@ export class ServerViewState {
                 }
             }
 
-            const newServer = ServerManager.addServer({
-                name: data.name,
-                url: data.url,
-                preAuthSecret: data.preAuthSecret,
-            }, initialLoadURL);
+            const newServer = ServerManager.addServer(data, initialLoadURL);
 
             // Handle secure storage persistence separately
             if (data.preAuthSecret) {

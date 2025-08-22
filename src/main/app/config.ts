@@ -116,4 +116,3 @@ export function handleDarkModeChange(darkMode: boolean) {
 
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
 }
-
