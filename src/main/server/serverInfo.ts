@@ -63,7 +63,11 @@ export class ServerInfo {
                     }
                 },
                 () => reject(new Error('Aborted')),
-                (error: Error) => reject(error),
+                (error: Error, statusCode?: number) => {
+                    const enhancedError = error as Error & { statusCode?: number };
+                    enhancedError.statusCode = statusCode;
+                    reject(enhancedError);
+                },
                 this.preAuthSecret);
         });
     };

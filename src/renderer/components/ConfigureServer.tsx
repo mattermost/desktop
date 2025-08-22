@@ -71,8 +71,32 @@ function ConfigureServer({
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [preAuthSecret, setPreAuthSecret] = useState('');
     const [preAuthSecretError, setPreAuthSecretError] = useState<{type: STATUS; value: string}>();
+    const [currentValidationStatus, setCurrentValidationStatus] = useState<string>();
 
-    const canSave = name && url && !nameError && !validating && urlError && urlError.type !== STATUS.ERROR;
+    // Basic form requirements
+    const hasBasicRequirements = name && url && !nameError && !validating;
+
+    // Determine if we can save based on validation status
+    const canSaveBasedOnValidation = () => {
+        if (!currentValidationStatus) {
+            return false; // No validation result yet
+        }
+
+        // PreAuthRequired (403) is always allowed - user can connect and provide auth later
+        if (currentValidationStatus === URLValidationStatus.PreAuthRequired) {
+            return true;
+        }
+
+        // Other statuses: allow if URL error is not blocking
+        if (urlError) {
+            return urlError.type !== STATUS.ERROR;
+        }
+
+        // No URL error: allow if validation was successful
+        return currentValidationStatus === URLValidationStatus.OK;
+    };
+
+    const canSave = hasBasicRequirements && canSaveBasedOnValidation();
 
     useEffect(() => {
         setTransition('inFromRight');
@@ -114,23 +138,16 @@ function ConfigureServer({
                     return prev.length ? prev : serverName;
                 });
             }
+            setCurrentValidationStatus(status);
             if (message) {
                 setTransition(undefined);
                 setURLError(message);
+            } else {
+                setURLError(undefined);
             }
 
-            // Set preauth secret error if NotMattermost and preauth secret is provided
-            if (status === URLValidationStatus.NotMattermost && preAuthSecret) {
-                setPreAuthSecretError({
-                    type: STATUS.WARNING,
-                    value: formatMessage({
-                        id: 'renderer.components.configureServer.error.preAuthInvalid',
-                        defaultMessage: 'The pre-authentication header may be invalid.',
-                    }),
-                });
-            } else {
-                setPreAuthSecretError(undefined);
-            }
+            // Handle pre-auth validation messaging
+            handlePreAuthValidation(status, preAuthSecret);
 
             setValidating(false);
         });
@@ -201,6 +218,11 @@ function ConfigureServer({
             };
         }
 
+        if (validationResult?.status === URLValidationStatus.PreAuthRequired) {
+            // Don't show server URL error for 403 - let the pre-auth field handle it
+            message = null;
+        }
+
         if (validationResult?.status === URLValidationStatus.OK) {
             message = {
                 type: STATUS.SUCCESS,
@@ -214,6 +236,40 @@ function ConfigureServer({
             message,
             status: validationResult.status,
         };
+    };
+
+    const handlePreAuthValidation = (status: string, preAuthSecret?: string) => {
+        if (status === URLValidationStatus.PreAuthRequired) {
+            if (preAuthSecret) {
+                setPreAuthSecretError({
+                    type: STATUS.ERROR,
+                    value: formatMessage({
+                        id: 'renderer.components.configureServer.error.preAuthInvalid',
+                        defaultMessage: 'The pre-authentication header is invalid. Please check the secret value.',
+                    }),
+                });
+            } else {
+                setPreAuthSecretError({
+                    type: STATUS.ERROR,
+                    value: formatMessage({
+                        id: 'renderer.components.configureServer.error.preAuthRequired',
+                        defaultMessage: 'This server requires a pre-authentication header. Please provide the pre-authentication secret.',
+                    }),
+                });
+            }
+            setShowAdvanced(true); // Automatically expand advanced section
+        } else if (status === URLValidationStatus.OK && preAuthSecret) {
+            // Show success message if validation passed and we have a pre-auth secret
+            setPreAuthSecretError({
+                type: STATUS.SUCCESS,
+                value: formatMessage({
+                    id: 'renderer.components.configureServer.success.preAuthValid',
+                    defaultMessage: 'Pre-authentication header is valid.',
+                }),
+            });
+        } else {
+            setPreAuthSecretError(undefined);
+        }
     };
 
     const handleNameOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
@@ -443,7 +499,7 @@ function ConfigureServer({
                                         extraClasses='ConfigureServer__card-form-button'
                                         saving={waiting}
                                         onClick={handleOnSaveButtonClick}
-                                        defaultMessage={urlError?.type === STATUS.WARNING ?
+                                        defaultMessage={(urlError?.type === STATUS.WARNING || currentValidationStatus === URLValidationStatus.PreAuthRequired) ?
                                             formatMessage({id: 'renderer.components.configureServer.connect.override', defaultMessage: 'Connect anyway'}) :
                                             formatMessage({id: 'renderer.components.configureServer.connect.default', defaultMessage: 'Connect'})
                                         }

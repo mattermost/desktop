@@ -42,7 +42,7 @@ import MainWindow from 'main/windows/mainWindow';
 
 import type {Server, UniqueServer, NewServer} from 'types/config';
 import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';
-import type {URLValidationResult} from 'types/server';
+import type {ServerTestResult, URLValidationResult} from 'types/server';
 
 const log = new Logger('App', 'ServerViewState');
 
@@ -335,13 +335,41 @@ export class ServerViewState {
         // Try and get remote info from the most secure URL, otherwise use the insecure one
         let remoteURL = secureURL;
         const insecureURL = parseURL(secureURL.toString().replace(/^https:/, 'http:'));
-        let remoteInfo = await this.testRemoteServer(secureURL, effectivePreAuthSecret);
-        if (!remoteInfo && insecureURL) {
-            // Try to fall back to HTTP
-            remoteInfo = await this.testRemoteServer(insecureURL, effectivePreAuthSecret);
-            if (remoteInfo) {
-                remoteURL = insecureURL;
+        let remoteInfo;
+        let preAuthRequired = false;
+
+        const httpsResult = await this.testRemoteServer(secureURL, effectivePreAuthSecret);
+        if ('data' in httpsResult) {
+            remoteInfo = httpsResult.data;
+        } else {
+            // Check if HTTPS returned 403
+            const httpsIs403 = httpsResult.error?.statusCode === 403;
+
+            if (insecureURL) {
+                // Try to fall back to HTTP
+                const httpResult = await this.testRemoteServer(insecureURL, effectivePreAuthSecret);
+                if ('data' in httpResult) {
+                    remoteInfo = httpResult.data;
+                    remoteURL = insecureURL;
+                } else {
+                    // Both HTTPS and HTTP failed
+                    const httpIs403 = httpResult.error?.statusCode === 403;
+                    if (httpsIs403 || httpIs403) {
+                        preAuthRequired = true;
+
+                        // Use the URL that returned 403, preferring HTTPS
+                        remoteURL = httpsIs403 ? secureURL : insecureURL;
+                    }
+                }
+            } else if (httpsIs403) {
+                // No HTTP fallback available, but HTTPS returned 403
+                preAuthRequired = true;
             }
+        }
+
+        // If we detected a 403 error, return PreAuthRequired status
+        if (preAuthRequired) {
+            return {status: URLValidationStatus.PreAuthRequired, validatedURL: remoteURL.toString().replace(/\/$/, '')};
         }
 
         // If we can't get the remote info, warn the user that this might not be the right URL
@@ -374,8 +402,8 @@ export class ServerViewState {
                 }
 
                 // If we can't reach the remote Site URL, there's probably a configuration issue
-                const remoteSiteURLInfo = await this.testRemoteServer(parsedSiteURL, effectivePreAuthSecret);
-                if (!remoteSiteURLInfo) {
+                const remoteSiteURLResult = await this.testRemoteServer(parsedSiteURL, effectivePreAuthSecret);
+                if ('error' in remoteSiteURLResult) {
                     return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
                 }
             }
@@ -425,37 +453,14 @@ export class ServerViewState {
      * Helper functions
      */
 
-    private handlePreAuthSecretChange = async (server: MattermostServer, newSecret: string): Promise<boolean> => {
-        try {
-            const secureStorage = getSecureStorage(app.getPath('userData'));
-            const currentSecret = await secureStorage.getSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-
-            const hasChanged = (currentSecret || '') !== (newSecret || '');
-
-            if (newSecret && newSecret.trim()) {
-                // Set new secret
-                await secureStorage.setSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, newSecret.trim());
-            } else {
-                // Clear secret if empty
-                await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-            }
-
-            log.debug('Pre-auth secret updated:', {serverId: server.id, hasChanged});
-            return hasChanged;
-        } catch (error) {
-            log.warn('Failed to handle pre-auth secret change:', error);
-            return false;
-        }
-    };
-
-    private testRemoteServer = async (parsedURL: URL, preAuthSecret?: string) => {
+    private testRemoteServer = async (parsedURL: URL, preAuthSecret?: string): Promise<ServerTestResult> => {
         const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false, undefined, preAuthSecret);
         const serverInfo = new ServerInfo(server, preAuthSecret);
         try {
             const remoteInfo = await serverInfo.fetchConfigData();
-            return remoteInfo;
+            return {data: remoteInfo};
         } catch (error) {
-            return undefined;
+            return {error: error as Error & { statusCode?: number }};
         }
     };
 

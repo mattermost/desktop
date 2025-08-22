@@ -8,7 +8,7 @@ import {Logger} from 'common/log';
 
 const log = new Logger('serverAPI');
 
-export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess?: (raw: string) => void, onAbort?: () => void, onError?: (error: Error) => void, preAuthSecret?: string) {
+export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess?: (raw: string) => void, onAbort?: () => void, onError?: (error: Error, statusCode?: number) => void, preAuthSecret?: string) {
     if (isAuthenticated) {
         const cookies = await session.defaultSession.cookies.get({});
         if (!cookies) {
@@ -60,7 +60,7 @@ export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess
                     }
                 });
             } else {
-                onError?.(new Error(`Bad status code ${response.statusCode} requesting from ${url.toString()}`));
+                onError?.(new Error(`Bad status code ${response.statusCode} requesting from ${url.toString()}`), response.statusCode);
             }
             response.on('error', onError || (() => {}));
         });

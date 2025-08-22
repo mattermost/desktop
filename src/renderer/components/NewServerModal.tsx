@@ -187,7 +187,13 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 if (currentTimeout !== this.validationTimeout) {
                     return;
                 }
-                this.setState({validationResult, validationStarted: false, serverUrl: validationResult.validatedURL ?? serverUrl, serverName: this.state.serverName ? this.state.serverName : validationResult.serverName ?? ''});
+                this.setState({
+                    validationResult,
+                    validationStarted: false,
+                    serverUrl: validationResult.validatedURL ?? serverUrl,
+                    serverName: this.state.serverName ? this.state.serverName : validationResult.serverName ?? '',
+                    showAdvanced: this.state.showAdvanced || validationResult.status === URLValidationStatus.PreAuthRequired,
+                });
             });
         }, 1000);
     };
@@ -198,13 +204,33 @@ class NewServerModal extends React.PureComponent<Props, State> {
     };
 
     getPreAuthSecretMessage = () => {
-        // Only show error if we have NotMattermost status and there's a preAuthSecret value
-        if (this.state.validationResult?.status === URLValidationStatus.NotMattermost && this.state.preAuthSecret) {
+        // Show success message if validation passed and we have a pre-auth secret
+        if (this.state.validationResult?.status === URLValidationStatus.OK && this.state.preAuthSecret) {
             return {
-                type: STATUS.WARNING,
+                type: STATUS.SUCCESS,
+                value: this.props.intl.formatMessage({
+                    id: 'renderer.components.newServerModal.success.preAuthValid',
+                    defaultMessage: 'Pre-authentication header is valid.',
+                }),
+            };
+        }
+
+        // Show error for PreAuthRequired status regardless of whether pre-auth secret is provided
+        if (this.state.validationResult?.status === URLValidationStatus.PreAuthRequired) {
+            if (!this.state.preAuthSecret) {
+                return {
+                    type: STATUS.ERROR,
+                    value: this.props.intl.formatMessage({
+                        id: 'renderer.components.newServerModal.error.preAuthRequired',
+                        defaultMessage: 'This server requires a pre-authentication header. Please provide the pre-authentication secret.',
+                    }),
+                };
+            }
+            return {
+                type: STATUS.ERROR,
                 value: this.props.intl.formatMessage({
                     id: 'renderer.components.newServerModal.error.preAuthInvalid',
-                    defaultMessage: 'The pre-authentication header may be invalid.',
+                    defaultMessage: 'The pre-authentication header is invalid. Please check the secret value.',
                 }),
             };
         }
@@ -290,6 +316,9 @@ class NewServerModal extends React.PureComponent<Props, State> {
                     serverVersion: this.state.validationResult.serverVersion,
                 }),
             };
+        case URLValidationStatus.PreAuthRequired:
+            // Don't show server URL error for 403 - let the pre-auth field handle it
+            return null;
         }
 
         return {
