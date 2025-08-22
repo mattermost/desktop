@@ -66,6 +66,7 @@ jest.mock('electron', () => ({
         defaultSession: {
             webRequest: {
                 onHeadersReceived: jest.fn(),
+                onBeforeSendHeaders: jest.fn(),
             },
             setSpellCheckerDictionaryDownloadURL: jest.fn(),
             setPermissionRequestHandler: jest.fn(),
@@ -83,6 +84,13 @@ jest.mock('main/performanceMonitor', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
     setLocale: jest.fn(),
+}));
+jest.mock('../secureStorage', () => ({
+    getSecureStorage: jest.fn(() => ({
+        setSecret: jest.fn(),
+        deleteSecret: jest.fn(),
+        getSecret: jest.fn(),
+    })),
 }));
 
 jest.mock('electron-devtools-installer', () => {

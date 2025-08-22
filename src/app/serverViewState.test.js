@@ -66,6 +66,13 @@ jest.mock('main/permissionsManager', () => ({
     getForServer: jest.fn(),
     setForServer: jest.fn(),
 }));
+jest.mock('main/secureStorage', () => ({
+    getSecureStorage: jest.fn(() => ({
+        setSecret: jest.fn(),
+        deleteSecret: jest.fn(),
+        getSecret: jest.fn(),
+    })),
+}));
 
 const tabs = [
     {
@@ -464,7 +471,7 @@ describe('app/serverViewState', () => {
             ServerInfo.mockImplementation(({url}) => ({
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     if (url.startsWith('https:')) {
-                        return undefined;
+                        throw new Error('HTTPS failed');
                     }
 
                     return {
@@ -484,7 +491,7 @@ describe('app/serverViewState', () => {
             ServerInfo.mockImplementation(({url}) => ({
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     if (url.startsWith('https:')) {
-                        return undefined;
+                        throw new Error('HTTPS failed');
                     }
 
                     return {
@@ -548,7 +555,7 @@ describe('app/serverViewState', () => {
             ServerInfo.mockImplementation(({url}) => ({
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     if (url === 'https://mainserver.com/') {
-                        return undefined;
+                        throw new Error('Site URL unreachable');
                     }
                     return {
                         serverVersion: '7.8.0',
