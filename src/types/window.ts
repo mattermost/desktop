@@ -49,6 +49,7 @@ declare global {
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
             getNonce: () => Promise<string | undefined>;
             isDeveloperModeEnabled: () => Promise<boolean>;
+            getSecret: (serverUrl: string, keySuffix?: string) => Promise<string | null>;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
@@ -161,13 +162,6 @@ declare global {
                 ) => void) => void;
             };
 
-            secureStorage: {
-                getSecret: (serverUrl: string, keySuffix?: string) => Promise<string | null>;
-                setSecret: (serverUrl: string, keySuffix: string, value: string) => Promise<boolean>;
-                deleteSecret: (serverUrl: string, keySuffix?: string) => Promise<boolean>;
-                hasSecret: (serverUrl: string, keySuffix?: string) => Promise<boolean>;
-                getStatus: () => Promise<{ encrypted: boolean; available: boolean; warning?: string }>;
-            };
         };
     }
 

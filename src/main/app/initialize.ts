@@ -31,10 +31,6 @@ import {
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
     SECURE_STORAGE_GET,
-    SECURE_STORAGE_SET,
-    SECURE_STORAGE_DELETE,
-    SECURE_STORAGE_HAS,
-    SECURE_STORAGE_GET_STATUS,
 } from 'common/communication';
 import Config from 'common/config';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
@@ -79,11 +75,6 @@ import {
     handleDarkModeChange,
     handleGetConfiguration,
     handleGetLocalConfiguration,
-    handleSecureStorageDelete,
-    handleSecureStorageGet,
-    handleSecureStorageGetStatus,
-    handleSecureStorageHas,
-    handleSecureStorageSet,
     handleUpdateTheme,
     updateConfiguration,
 } from './config';
@@ -295,11 +286,10 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 
     // Secure storage handlers
-    ipcMain.handle(SECURE_STORAGE_GET, handleSecureStorageGet);
-    ipcMain.handle(SECURE_STORAGE_SET, handleSecureStorageSet);
-    ipcMain.handle(SECURE_STORAGE_DELETE, handleSecureStorageDelete);
-    ipcMain.handle(SECURE_STORAGE_HAS, handleSecureStorageHas);
-    ipcMain.handle(SECURE_STORAGE_GET_STATUS, handleSecureStorageGetStatus);
+    ipcMain.handle(SECURE_STORAGE_GET, (event, serverUrl, keySuffix) => {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        return secureStorage.handleSecureStorageGet(event, serverUrl, keySuffix);
+    });
 
     if (process.env.NODE_ENV === 'test') {
         ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);

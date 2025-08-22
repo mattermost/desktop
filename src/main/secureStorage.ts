@@ -215,6 +215,16 @@ export class SecureStorage {
             warning: this.encryptionAvailable ? undefined : ENCRYPTION_UNAVAILABLE_WARNING,
         };
     }
+
+    // IPC handler for secure storage get requests
+    async handleSecureStorageGet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string): Promise<string | null> {
+        try {
+            return await this.getSecret(serverUrl, keySuffix as any);
+        } catch (error) {
+            log.error('Failed to get secure storage:', error);
+            return null;
+        }
+    }
 }
 
 let secureStorageInstance: SecureStorage | null = null;

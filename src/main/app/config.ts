@@ -8,7 +8,6 @@ import Config from 'common/config';
 import {Logger, setLoggingLevel} from 'common/log';
 import AutoLauncher from 'main/AutoLauncher';
 import {setUnreadBadgeSetting} from 'main/badge';
-import {getSecureStorage} from 'main/secureStorage';
 import Tray from 'main/tray/tray';
 import LoadingScreen from 'main/views/loadingScreen';
 import MainWindow from 'main/windows/mainWindow';
@@ -116,61 +115,5 @@ export function handleDarkModeChange(darkMode: boolean) {
     LoadingScreen.setDarkMode(darkMode);
 
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
-}
-
-//
-// secure storage event handlers
-//
-
-export async function handleSecureStorageGet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string): Promise<string | null> {
-    try {
-        const secureStorage = getSecureStorage(app.getPath('userData'));
-        return await secureStorage.getSecret(serverUrl, keySuffix as any);
-    } catch (error) {
-        log.error('Failed to get secure storage:', error);
-        return null;
-    }
-}
-
-export async function handleSecureStorageSet(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string, value: string): Promise<boolean> {
-    try {
-        const secureStorage = getSecureStorage(app.getPath('userData'));
-        await secureStorage.setSecret(serverUrl, keySuffix as any, value);
-        return true;
-    } catch (error) {
-        log.error('Failed to set secure storage:', error);
-        return false;
-    }
-}
-
-export async function handleSecureStorageDelete(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string): Promise<boolean> {
-    try {
-        const secureStorage = getSecureStorage(app.getPath('userData'));
-        await secureStorage.deleteSecret(serverUrl, keySuffix as any);
-        return true;
-    } catch (error) {
-        log.error('Failed to delete from secure storage:', error);
-        return false;
-    }
-}
-
-export async function handleSecureStorageHas(event: Electron.IpcMainInvokeEvent, serverUrl: string, keySuffix: string): Promise<boolean> {
-    try {
-        const secureStorage = getSecureStorage(app.getPath('userData'));
-        return await secureStorage.hasSecret(serverUrl, keySuffix as any);
-    } catch (error) {
-        log.error('Failed to check secure storage:', error);
-        return false;
-    }
-}
-
-export async function handleSecureStorageGetStatus(): Promise<{ encrypted: boolean; available: boolean; warning?: string }> {
-    try {
-        const secureStorage = getSecureStorage(app.getPath('userData'));
-        return secureStorage.getStorageStatus();
-    } catch (error) {
-        log.error('Failed to get secure storage status:', error);
-        return {encrypted: false, available: false, warning: 'Failed to access secure storage'};
-    }
 }
 
