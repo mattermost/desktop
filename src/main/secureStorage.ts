@@ -4,11 +4,13 @@
 import {readFile, writeFile, access, mkdir} from 'fs/promises';
 import path from 'path';
 
-import {safeStorage} from 'electron';
+import {safeStorage, ipcMain} from 'electron';
 
 import type {SecureStorageKey} from 'common/constants/secureStorage';
+import {UPDATE_PATHS} from 'common/communication';
 import {Logger} from 'common/log';
 import {parseURL, getFormattedPathName} from 'common/utils/url';
+import {secureStoragePath} from './constants';
 
 const log = new Logger('SecureStorage');
 
@@ -18,22 +20,36 @@ const PLAINTEXT_SECRETS_FILE = 'secrets.plaintext';
 const ENCRYPTION_UNAVAILABLE_WARNING = 'Secure storage is not available on this system. Secrets will be stored in plain text. Consider installing keyring services for better security.';
 
 export class SecureStorage {
-    private storageDir: string;
-    private secretsPath: string;
-    private plaintextSecretsPath: string;
-    private memoryCache: Record<string, string> | null = null;
+    userDataPath: string;
+
+    // ts can't tell that updatePaths() initializes these in the constructor
+    private storageDir!: string;
+    private secretsPath!: string;
+    private plaintextSecretsPath!: string;
+    memoryCache: Record<string, string> | null = null;
     private encryptionAvailable: boolean;
     private hasWarnedAboutPlaintext: boolean = false;
 
     constructor(userDataPath: string) {
-        this.storageDir = path.join(userDataPath, SECURE_STORAGE_DIR);
-        this.secretsPath = path.join(this.storageDir, SECURE_SECRETS_FILE);
-        this.plaintextSecretsPath = path.join(this.storageDir, PLAINTEXT_SECRETS_FILE);
+        this.userDataPath = userDataPath;
+        this.updatePaths();
         this.encryptionAvailable = safeStorage.isEncryptionAvailable();
 
         if (!this.encryptionAvailable) {
             log.warn(ENCRYPTION_UNAVAILABLE_WARNING);
         }
+    }
+
+    private updatePaths(): void {
+        this.storageDir = path.join(this.userDataPath, SECURE_STORAGE_DIR);
+        this.secretsPath = path.join(this.storageDir, SECURE_SECRETS_FILE);
+        this.plaintextSecretsPath = path.join(this.storageDir, PLAINTEXT_SECRETS_FILE);
+    }
+
+    async load(): Promise<void> {
+        this.updatePaths();
+        this.memoryCache = await this.loadSecrets();
+        log.debug('Reloaded secure storage after path update');
     }
 
     private async ensureStorageDir(): Promise<void> {
@@ -209,3 +225,14 @@ export function getSecureStorage(userDataPath: string): SecureStorage {
     }
     return secureStorageInstance;
 }
+
+const secureStorage = new SecureStorage(secureStoragePath);
+export default secureStorage;
+
+ipcMain.on(UPDATE_PATHS, () => {
+    log.debug('UPDATE_PATHS');
+    secureStorage.userDataPath = secureStoragePath;
+    if (secureStorage.memoryCache) {
+        void secureStorage.load();
+    }
+});
