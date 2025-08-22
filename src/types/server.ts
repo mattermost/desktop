@@ -30,6 +30,10 @@ export type URLValidationResult = {
     serverName?: string;
 }
 
-export type ServerTestResult =
-    | { data: RemoteInfo }
-    | { error: Error & { statusCode?: number } };
+export type ServerTestResult = {
+    data: RemoteInfo;
+} | {
+    error: Error & {
+        statusCode?: number;
+    };
+};
