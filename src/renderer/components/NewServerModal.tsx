@@ -357,7 +357,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
             this.setState({
                 saveStarted: true,
             }, () => {
-                const serverData: NewServer = {
+                const serverData = {
                     url: this.state.serverUrl,
                     name: this.state.serverName,
                     id: this.state.serverId,

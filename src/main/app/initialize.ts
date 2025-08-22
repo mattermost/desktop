@@ -332,6 +332,22 @@ async function initializeAfterAppReady() {
         const secureStorage = getSecureStorage(app.getPath('userData'));
         await secureStorage.initializeCache();
         log.info('Secure storage cache initialized successfully');
+
+        // Load pre-auth secrets from secure storage into memory
+        const servers = ServerManager.getAllServers();
+        await Promise.allSettled(
+            servers.map(async (server) => {
+                try {
+                    const secret = await secureStorage.getSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+                    if (secret) {
+                        server.preAuthSecret = secret;
+                        log.debug('Loaded pre-auth secret for server:', {serverId: server.id});
+                    }
+                } catch (error) {
+                    log.warn('Failed to load pre-auth secret for server:', {serverId: server.id, error});
+                }
+            }),
+        );
     } catch (error) {
         log.warn('Failed to initialize secure storage cache:', error);
     }
@@ -361,31 +377,28 @@ async function initializeAfterAppReady() {
 
     // Inject X-Mattermost-Preauth-Secret header for all server requests
     defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-        (async () => {
-            try {
-                const view = ServerManager.lookupViewByURL(details.url);
+        try {
+            const view = ServerManager.lookupViewByURL(details.url);
 
-                if (view) {
-                    const secureStorage = getSecureStorage(app.getPath('userData'));
-                    const secret = await secureStorage.getSecret(view.server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+            if (view && view.server.preAuthSecret) {
+                const secret = view.server.preAuthSecret;
 
-                    if (secret && !details.requestHeaders['X-Mattermost-Preauth-Secret']) {
-                        const requestHeaders = {
-                            ...details.requestHeaders,
-                            'X-Mattermost-Preauth-Secret': secret,
-                        };
+                if (!details.requestHeaders['X-Mattermost-Preauth-Secret']) {
+                    const requestHeaders = {
+                        ...details.requestHeaders,
+                        'X-Mattermost-Preauth-Secret': secret,
+                    };
 
-                        callback({requestHeaders});
-                        return;
-                    }
+                    callback({requestHeaders});
+                    return;
                 }
-            } catch (error) {
-                log.debug('Error injecting preauth secret header:', error);
             }
+        } catch (error) {
+            log.debug('Error injecting preauth secret header:', error);
+        }
 
-            // If no secret found or error occurred, proceed with original headers
-            callback({requestHeaders: details.requestHeaders});
-        })();
+        // If no secret found or error occurred, proceed with original headers
+        callback({requestHeaders: details.requestHeaders});
     });
 
     if (process.platform !== 'darwin') {

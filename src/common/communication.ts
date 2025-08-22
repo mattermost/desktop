@@ -152,13 +152,13 @@ export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-f
 export const DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-menu-show-file-in-folder';
 
 export const SERVERS_URL_MODIFIED = 'servers-modified';
+export const SERVER_SECRET_MODIFIED = 'server-secret-modified';
 export const SERVERS_UPDATE = 'servers-update';
 export const UPDATE_SERVER_ORDER = 'update-server-order';
 export const UPDATE_TAB_ORDER = 'update-tab-order';
 export const GET_LAST_ACTIVE = 'get-last-active';
 export const GET_ORDERED_SERVERS = 'get-ordered-servers';
 export const GET_ORDERED_TABS_FOR_SERVER = 'get-ordered-tabs-for-server';
-export const RELOAD_VIEW = 'reload-view';
 
 export const UPDATE_APPSTATE = 'update-appstate';
 export const UPDATE_APPSTATE_TOTALS = 'update-appstate-totals';

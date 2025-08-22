@@ -294,7 +294,7 @@ function ConfigureServer({
         setTransition('outToLeft');
 
         setTimeout(() => {
-            const serverData: NewServer = {
+            const serverData = {
                 url,
                 name,
                 id,

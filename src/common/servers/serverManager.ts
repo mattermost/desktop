@@ -5,6 +5,7 @@ import EventEmitter from 'events';
 
 import {
     SERVERS_URL_MODIFIED,
+    SERVER_SECRET_MODIFIED,
     SERVERS_UPDATE,
 } from 'common/communication';
 import Config from 'common/config';
@@ -17,7 +18,7 @@ import PlaybooksView from 'common/views/PlaybooksView';
 import type {MattermostView} from 'common/views/View';
 import {TAB_FOCALBOARD, TAB_MESSAGING, TAB_PLAYBOOKS, getDefaultViews} from 'common/views/View';
 
-import type {Server, ConfigServer, ConfigView} from 'types/config';
+import type {ConfigServer, ConfigView, NewServer} from 'types/config';
 import type {RemoteInfo} from 'types/server';
 
 const log = new Logger('ServerManager');
@@ -156,8 +157,8 @@ export class ServerManager extends EventEmitter {
         this.persistServers();
     };
 
-    addServer = (server: Server, initialLoadURL?: URL) => {
-        const newServer = new MattermostServer(server, false, initialLoadURL);
+    addServer = (server: NewServer, initialLoadURL?: URL) => {
+        const newServer = new MattermostServer(server, false, initialLoadURL, server.preAuthSecret);
 
         if (this.servers.has(newServer.id)) {
             throw new Error('ID Collision detected. Cannot add server.');
@@ -173,13 +174,17 @@ export class ServerManager extends EventEmitter {
         });
         this.viewOrder.set(newServer.id, viewOrder);
 
-        // Emit this event whenever we update a server URL to ensure remote info is fetched
+        // Emit events for secret changes and URL modifications
+        if (server.preAuthSecret) {
+            this.emit(SERVER_SECRET_MODIFIED, [newServer.id]);
+        }
         this.emit(SERVERS_URL_MODIFIED, [newServer.id]);
+
         this.persistServers();
         return newServer;
     };
 
-    editServer = (serverId: string, server: Server) => {
+    editServer = (serverId: string, server: NewServer) => {
         const existingServer = this.servers.get(serverId);
         if (!existingServer) {
             return;
@@ -192,6 +197,18 @@ export class ServerManager extends EventEmitter {
         }
         existingServer.name = server.name;
         existingServer.updateURL(server.url);
+
+        // Handle pre-auth secret changes in memory
+        if ('preAuthSecret' in server) {
+            const secretValue = server.preAuthSecret || '';
+            if (secretValue.trim()) {
+                existingServer.preAuthSecret = secretValue.trim();
+            } else {
+                existingServer.preAuthSecret = undefined;
+            }
+            this.emit(SERVER_SECRET_MODIFIED, [serverId]);
+        }
+
         this.servers.set(serverId, existingServer);
 
         this.viewOrder.get(serverId)?.forEach((viewId) => {

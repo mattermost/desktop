@@ -24,15 +24,10 @@ export type ConfigServer = Server & {
 export type UniqueServer = Server & {
     id?: string;
     isPredefined?: boolean;
+    preAuthSecret?: string;
 }
 
-export type NewServer = UniqueServer & {
-
-    /**
-     * Pre-authentication secret for server access.
-     * WARNING: This field is for temporary transport only and MUST NOT be persisted to config.
-     * The secret should be immediately stored in secure storage and this field cleared.
-     */
+export type NewServer = Server & {
     preAuthSecret?: string;
 }
 

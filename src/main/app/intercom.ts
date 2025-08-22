@@ -17,7 +17,7 @@ import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
 
-import type {NewServer} from 'types/config';
+import type {UniqueServer} from 'types/config';
 
 import {handleAppBeforeQuit} from './app';
 
@@ -101,7 +101,7 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
     if (!mainWindow) {
         return;
     }
-    const modalPromise = ModalManager.addModal<{prefillURL?: string}, NewServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
+    const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then(async (data) => {
             let initialLoadURL;
@@ -112,23 +112,13 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                 }
             }
 
-            // Extract the pre-auth secret before creating the server
-            const preAuthSecret = data.preAuthSecret;
-
-            // Remove preAuthSecret from data before passing to ServerManager (sanitize for config)
-            const cleanData = {
-                url: data.url,
-                name: data.name,
-                id: data.id,
-            };
-
-            const newServer = ServerManager.addServer(cleanData, initialLoadURL);
+            const newServer = ServerManager.addServer(data, initialLoadURL);
 
             // Store the secret with the server URL
-            if (preAuthSecret) {
+            if (data.preAuthSecret) {
                 try {
                     const secureStorage = getSecureStorage(app.getPath('userData'));
-                    await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, preAuthSecret);
+                    await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, data.preAuthSecret);
                 } catch (error) {
                     log.error('Failed to store secure secret with server URL:', error);
                 }

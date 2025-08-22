@@ -10,7 +10,6 @@ import {
     GET_ORDERED_SERVERS,
     GET_ORDERED_TABS_FOR_SERVER,
     OPEN_VIEW,
-    RELOAD_VIEW,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_NEW_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
@@ -63,7 +62,6 @@ export class ServerViewState {
         ipcMain.on(OPEN_VIEW, this.handleOpenView);
         ipcMain.handle(GET_LAST_ACTIVE, this.handleGetLastActive);
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, this.handleGetOrderedViewsForServer);
-        ipcMain.handle(RELOAD_VIEW, this.handleReloadView);
         ipcMain.on(UPDATE_TAB_ORDER, this.updateTabOrder);
 
         ipcMain.handle(GET_UNIQUE_SERVERS_WITH_PERMISSIONS, this.getUniqueServersWithPermissions);
@@ -171,15 +169,16 @@ export class ServerViewState {
             const newServer = ServerManager.addServer({
                 name: data.name,
                 url: data.url,
+                preAuthSecret: data.preAuthSecret,
             }, initialLoadURL);
 
-            // Store the secret with the server URL
+            // Handle secure storage persistence separately
             if (data.preAuthSecret) {
                 try {
                     const secureStorage = getSecureStorage(app.getPath('userData'));
                     await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, data.preAuthSecret);
                 } catch (error) {
-                    log.error('Failed to store secure secret with server URL:', error);
+                    log.error('Failed to persist pre-auth secret to secure storage:', error);
                 }
             }
 
@@ -216,20 +215,23 @@ export class ServerViewState {
         modalPromise.then(async (data) => {
             if (!server.isPredefined) {
                 ServerManager.editServer(id, data.server);
-            }
-            PermissionsManager.setForServer(server, data.permissions);
 
-            // Handle pre-auth secret changes and reload view if needed
-            if (data.server.preAuthSecret !== undefined) {
-                const preAuthSecretChanged = await this.handlePreAuthSecretChange(server, data.server.preAuthSecret || '');
-                if (preAuthSecretChanged) {
-                    // Reload the web view to apply new authentication
-                    const views = ServerManager.getOrderedTabsForServer(server.id);
-                    if (views && views.length > 0) {
-                        this.handleReloadView({} as IpcMainInvokeEvent, views[0].id);
+                // Handle secure storage persistence separately
+                if ('preAuthSecret' in data.server) {
+                    const secretValue = data.server.preAuthSecret || '';
+                    try {
+                        const secureStorage = getSecureStorage(app.getPath('userData'));
+                        if (secretValue.trim()) {
+                            await secureStorage.setSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, secretValue.trim());
+                        } else {
+                            await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+                        }
+                    } catch (error) {
+                        log.error('Failed to persist pre-auth secret to secure storage:', error);
                     }
                 }
             }
+            PermissionsManager.setForServer(server, data.permissions);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -431,18 +433,6 @@ export class ServerViewState {
         return ServerManager.getOrderedTabsForServer(serverId).map((view) => view.toUniqueView());
     };
 
-    private handleReloadView = (event: IpcMainInvokeEvent, viewId: string) => {
-        log.debug('handleReloadView', {viewId});
-
-        const view = ViewManager.getView(viewId);
-        if (view) {
-            view.reload();
-            return Promise.resolve();
-        }
-        log.warn('Attempted to reload non-existent view:', viewId);
-        return Promise.reject(new Error(`View ${viewId} not found`));
-    };
-
     private handleGetLastActive = () => {
         const server = this.getCurrentServer();
         const view = ServerManager.getLastActiveTabForServer(server.id);
@@ -482,7 +472,7 @@ export class ServerViewState {
     };
 
     private testRemoteServer = async (parsedURL: URL, preAuthSecret?: string) => {
-        const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false);
+        const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false, undefined, preAuthSecret);
         const serverInfo = new ServerInfo(server, preAuthSecret);
         try {
             const remoteInfo = await serverInfo.fetchConfigData();
@@ -525,13 +515,23 @@ export class ServerViewState {
             }));
     };
 
-    private handleAddServer = (event: IpcMainEvent, server: Server) => {
+    private handleAddServer = async (event: IpcMainEvent, server: Server & {preAuthSecret?: string}) => {
         log.debug('handleAddServer', server);
 
-        ServerManager.addServer(server);
+        const newServer = ServerManager.addServer(server);
+
+        // Handle secure storage persistence separately
+        if (server.preAuthSecret) {
+            try {
+                const secureStorage = getSecureStorage(app.getPath('userData'));
+                await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, server.preAuthSecret);
+            } catch (error) {
+                log.error('Failed to persist pre-auth secret to secure storage:', error);
+            }
+        }
     };
 
-    private handleEditServer = (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
+    private handleEditServer = async (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
         log.debug('handleEditServer', server, permissions);
 
         if (!server.id) {
@@ -540,6 +540,21 @@ export class ServerViewState {
 
         if (!server.isPredefined) {
             ServerManager.editServer(server.id, server);
+
+            // Handle secure storage persistence separately
+            if ('preAuthSecret' in server) {
+                const secretValue = server.preAuthSecret || '';
+                try {
+                    const secureStorage = getSecureStorage(app.getPath('userData'));
+                    if (secretValue.trim()) {
+                        await secureStorage.setSecret(server.url, SECURE_STORAGE_KEYS.PREAUTH, secretValue.trim());
+                    } else {
+                        await secureStorage.deleteSecret(server.url, SECURE_STORAGE_KEYS.PREAUTH);
+                    }
+                } catch (error) {
+                    log.error('Failed to persist pre-auth secret to secure storage:', error);
+                }
+            }
         }
         if (permissions) {
             const mattermostServer = ServerManager.getServer(server.id);
