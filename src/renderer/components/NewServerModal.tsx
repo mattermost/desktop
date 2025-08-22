@@ -110,7 +110,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
         // Check if editing existing server has a secure secret and prefill it
         if (this.props.editMode && this.props.server?.url) {
             try {
-                const savedSecret = await window.desktop.secureStorage.getSecret(this.props.server.url, SECURE_STORAGE_KEYS.PREAUTH);
+                const savedSecret = await window.desktop.getSecret(this.props.server.url, SECURE_STORAGE_KEYS.PREAUTH);
 
                 // Always keep advanced section closed on open, but prefill secret if it exists
                 this.setState({

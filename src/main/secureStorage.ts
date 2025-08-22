@@ -6,10 +6,11 @@ import path from 'path';
 
 import {safeStorage, ipcMain} from 'electron';
 
-import type {SecureStorageKey} from 'common/constants/secureStorage';
 import {UPDATE_PATHS} from 'common/communication';
+import type {SecureStorageKey} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import {parseURL, getFormattedPathName} from 'common/utils/url';
+
 import {secureStoragePath} from './constants';
 
 const log = new Logger('SecureStorage');
@@ -243,6 +244,8 @@ ipcMain.on(UPDATE_PATHS, () => {
     log.debug('UPDATE_PATHS');
     secureStorage.userDataPath = secureStoragePath;
     if (secureStorage.memoryCache) {
-        void secureStorage.load();
+        secureStorage.load().catch((error) => {
+            log.error('Failed to reload secure storage after path update:', error);
+        });
     }
 });

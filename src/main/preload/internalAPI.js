@@ -143,6 +143,7 @@ contextBridge.exposeInMainWorld('desktop', {
     updateConfiguration: (saveQueueItems) => ipcRenderer.send(UPDATE_CONFIGURATION, saveQueueItems),
     getNonce: () => ipcRenderer.invoke(GET_NONCE),
     isDeveloperModeEnabled: () => ipcRenderer.invoke(IS_DEVELOPER_MODE_ENABLED),
+    getSecret: (serverUrl, keySuffix) => ipcRenderer.invoke(SECURE_STORAGE_GET, serverUrl, keySuffix),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
