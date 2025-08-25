@@ -262,4 +262,108 @@ describe('EditServerModal', function desc() {
             lastActiveTab: 0,
         });
     });
+
+    describe('Pre-Auth Header Editing', () => {
+        it('should show advanced section with pre-auth field in edit mode', async () => {
+            await editServerView.click('.AdvancedSection button');
+            await editServerView.waitForSelector('#preAuthSecretInput');
+            const preAuthField = await editServerView.isVisible('#preAuthSecretInput');
+            preAuthField.should.be.true;
+        });
+
+        it('should show masked pre-auth secret if one exists', async () => {
+            // Simulate existing pre-auth secret by typing in the field and checking if it shows masked characters
+            await editServerView.click('.AdvancedSection button');
+            const inputType = await editServerView.getAttribute('#preAuthSecretInput', 'type');
+            inputType.should.equal('password');
+        });
+
+        it('should allow editing pre-auth secret', async () => {
+            await editServerView.click('.AdvancedSection button');
+            await editServerView.fill('#preAuthSecretInput', 'new-secret-123');
+            const value = await editServerView.inputValue('#preAuthSecretInput');
+            value.should.equal('new-secret-123');
+        });
+
+        it('should validate server with updated pre-auth secret', async () => {
+            // Mock server response for validation
+            await editServerView.route('**/api/v4/system/ping', (route) => {
+                const authHeader = route.request().headers()['x-mattermost-preauth-secret'];
+                if (authHeader === 'valid-updated-secret') {
+                    route.fulfill({
+                        status: 200,
+                        contentType: 'application/json',
+                        body: JSON.stringify({status: 'OK'}),
+                    });
+                } else {
+                    route.fulfill({
+                        status: 403,
+                        contentType: 'application/json',
+                        body: JSON.stringify({message: 'Invalid pre-authentication secret'}),
+                    });
+                }
+            });
+
+            await editServerView.click('.AdvancedSection button');
+            await editServerView.fill('#preAuthSecretInput', 'valid-updated-secret');
+            await editServerView.waitForSelector('#customMessage_url.Input___success');
+
+            const successMessage = await editServerView.isVisible('#customMessage_url.Input___success');
+            successMessage.should.be.true;
+        });
+
+        it('should save server with updated pre-auth secret', async () => {
+            // Mock successful validation
+            await editServerView.route('**/api/v4/system/ping', (route) => {
+                route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({status: 'OK'}),
+                });
+            });
+
+            await editServerView.click('.AdvancedSection button');
+            await editServerView.fill('#preAuthSecretInput', 'updated-secret');
+            await editServerView.fill('#serverNameInput', 'UpdatedServerName');
+            await editServerView.click('#newServerModal_confirm');
+            await asyncSleep(1000);
+
+            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
+            existing.should.be.false;
+
+            // Verify server name was updated in config
+            const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
+            savedConfig.teams.should.deep.contain({
+                name: 'UpdatedServerName',
+                url: env.exampleURL,
+                order: 0,
+                tabs: [
+                    {
+                        name: 'TAB_MESSAGING',
+                        order: 0,
+                        isOpen: true,
+                    },
+                    {
+                        name: 'TAB_FOCALBOARD',
+                        order: 1,
+                    },
+                    {
+                        name: 'TAB_PLAYBOOKS',
+                        order: 2,
+                    },
+                ],
+                lastActiveTab: 0,
+            });
+        });
+
+        it('should allow clearing pre-auth secret', async () => {
+            await editServerView.click('.AdvancedSection button');
+            await editServerView.fill('#preAuthSecretInput', '');
+            await editServerView.click('#newServerModal_confirm');
+            await asyncSleep(1000);
+
+            const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
+            existing.should.be.false;
+        });
+    });
 });

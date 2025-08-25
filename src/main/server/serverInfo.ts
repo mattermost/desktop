@@ -11,10 +11,12 @@ import {getServerAPI} from './serverAPI';
 export class ServerInfo {
     private server: MattermostServer;
     private remoteInfo: RemoteInfo;
+    private preAuthSecret?: string;
 
-    constructor(server: MattermostServer) {
+    constructor(server: MattermostServer, preAuthSecret?: string) {
         this.server = server;
         this.remoteInfo = {};
+        this.preAuthSecret = preAuthSecret;
     }
 
     fetchConfigData = async () => {
@@ -61,7 +63,12 @@ export class ServerInfo {
                     }
                 },
                 () => reject(new Error('Aborted')),
-                (error: Error) => reject(error));
+                (error: Error, statusCode?: number) => {
+                    const enhancedError = error as Error & { statusCode?: number };
+                    enhancedError.statusCode = statusCode;
+                    reject(enhancedError);
+                },
+                this.preAuthSecret);
         });
     };
 

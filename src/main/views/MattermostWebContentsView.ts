@@ -13,7 +13,7 @@ import {
     LOAD_FAILED,
     UPDATE_TARGET_URL,
     LOADSCREEN_END,
-    SERVERS_URL_MODIFIED,
+    SERVERS_MODIFIED,
     BROWSER_HISTORY_STATUS_UPDATED,
     CLOSE_SERVERS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -104,7 +104,7 @@ export class MattermostWebContentsView extends EventEmitter {
             this.altPressStatus = false;
         });
 
-        ServerManager.on(SERVERS_URL_MODIFIED, this.handleServerWasModified);
+        ServerManager.on(SERVERS_MODIFIED, this.handleServerWasModified);
     }
 
     get id() {

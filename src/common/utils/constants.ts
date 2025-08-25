@@ -52,6 +52,7 @@ export const URLValidationStatus = {
     NotMattermost: 'NOT_MATTERMOST',
     URLNotMatched: 'URL_NOT_MATCHED',
     URLUpdated: 'URL_UPDATED',
+    PreAuthRequired: 'PREAUTH_REQUIRED',
 };
 
 export const nonTeamUrlPaths = [

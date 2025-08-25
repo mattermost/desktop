@@ -49,6 +49,7 @@ declare global {
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
             getNonce: () => Promise<string | undefined>;
             isDeveloperModeEnabled: () => Promise<boolean>;
+            getSecret: (serverUrl: string, keySuffix?: string) => Promise<string | null>;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
@@ -56,7 +57,7 @@ declare global {
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
             onUpdateServers: (listener: () => void) => void;
-            validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
+            validateServerURL: (url: string, currentId?: string, preAuthSecret?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
             editServer: (server: UniqueServer, permissions?: Permissions) => void;
@@ -160,6 +161,7 @@ declare global {
                     unreads?: Map<string, boolean>,
                 ) => void) => void;
             };
+
         };
     }
 

@@ -23,15 +23,17 @@ import {
     GET_LOCAL_CONFIGURATION,
     UPDATE_CONFIGURATION,
     UPDATE_PATHS,
-    SERVERS_URL_MODIFIED,
+    SERVERS_MODIFIED,
     GET_DARK_MODE,
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
+    SECURE_STORAGE_GET,
 } from 'common/communication';
 import Config from 'common/config';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
@@ -52,6 +54,7 @@ import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
+import {getSecureStorage} from 'main/secureStorage';
 import Tray from 'main/tray/tray';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import UserActivityMonitor from 'main/UserActivityMonitor';
@@ -282,6 +285,12 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 
+    // Secure storage handlers
+    ipcMain.handle(SECURE_STORAGE_GET, (event, serverUrl, keySuffix) => {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        return secureStorage.handleSecureStorageGet(event, serverUrl, keySuffix);
+    });
+
     if (process.env.NODE_ENV === 'test') {
         ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
     }
@@ -307,7 +316,33 @@ async function initializeAfterAppReady() {
     });
 
     ServerManager.reloadFromConfig();
-    ServerManager.on(SERVERS_URL_MODIFIED, (serverIds?: string[]) => {
+
+    // Initialize secure storage cache after servers are loaded
+    try {
+        const secureStorage = getSecureStorage(app.getPath('userData'));
+        await secureStorage.initializeCache();
+        log.info('Secure storage cache initialized successfully');
+
+        // Load pre-auth secrets from secure storage into memory
+        const servers = ServerManager.getAllServers();
+        await Promise.allSettled(
+            servers.map(async (server) => {
+                try {
+                    const secret = await secureStorage.getSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+                    if (secret) {
+                        server.preAuthSecret = secret;
+                        log.debug('Loaded pre-auth secret for server:', {serverId: server.id});
+                    }
+                } catch (error) {
+                    log.warn('Failed to load pre-auth secret for server:', {serverId: server.id, error});
+                }
+            }),
+        );
+    } catch (error) {
+        log.warn('Failed to initialize secure storage cache:', error);
+    }
+
+    ServerManager.on(SERVERS_MODIFIED, (serverIds?: string[]) => {
         if (serverIds && serverIds.length) {
             updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
         }
@@ -328,6 +363,32 @@ async function initializeAfterAppReady() {
         }
 
         downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
+    });
+
+    // Inject X-Mattermost-Preauth-Secret header for all server requests
+    defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+        try {
+            const view = ServerManager.lookupViewByURL(details.url);
+
+            if (view && view.server.preAuthSecret) {
+                const secret = view.server.preAuthSecret;
+
+                if (!('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
+                    const requestHeaders = {
+                        ...details.requestHeaders,
+                        'X-Mattermost-Preauth-Secret': secret,
+                    };
+
+                    callback({requestHeaders});
+                    return;
+                }
+            }
+        } catch (error) {
+            log.debug('Error injecting preauth secret header:', error);
+        }
+
+        // If no secret found or error occurred, proceed with original headers
+        callback({requestHeaders: details.requestHeaders});
     });
 
     if (process.platform !== 'darwin') {
