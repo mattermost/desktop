@@ -50,7 +50,7 @@ export default class RegistryConfig extends EventEmitter {
             // extract EnableServerManagement from the registry
             try {
                 const enableServerManagement = this.getEnableServerManagementFromRegistry();
-                if (enableServerManagement !== null) {
+                if (enableServerManagement !== undefined) {
                     this.data.enableServerManagement = enableServerManagement;
                 }
             } catch (error) {
@@ -60,7 +60,7 @@ export default class RegistryConfig extends EventEmitter {
             // extract EnableAutoUpdater from the registry
             try {
                 const enableAutoUpdater = this.getEnableAutoUpdatorFromRegistry();
-                if (enableAutoUpdater !== null) {
+                if (enableAutoUpdater !== undefined) {
                     this.data.enableAutoUpdater = enableAutoUpdater;
                 }
             } catch (error) {
@@ -93,18 +93,14 @@ export default class RegistryConfig extends EventEmitter {
    * Determines whether server management has been enabled, disabled or isn't configured
    */
     private getEnableServerManagementFromRegistry() {
-        const entries = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement');
-        const entry = entries.pop();
-        return entry ? entry === '0x1' : null;
+        return this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement').pop() === 1;
     }
 
     /**
    * Determines whether the auto updated has been enabled, disabled or isn't configured
    */
     private getEnableAutoUpdatorFromRegistry() {
-        const entries = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdater');
-        const entry = entries.pop();
-        return entry ? entry === '0x1' : null;
+        return this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdater').pop() === 1;
     }
 
     /**
@@ -118,7 +114,7 @@ export default class RegistryConfig extends EventEmitter {
         for (const hive of REGISTRY_HIVE_LIST) {
             results.push(this.getRegistryEntryValues(hive, key, name));
         }
-        return results.filter((value) => value);
+        return results.filter((value) => value !== undefined);
     }
 
     /**
@@ -134,8 +130,7 @@ export default class RegistryConfig extends EventEmitter {
                 return undefined;
             }
             if (name) { // looking for a single entry value
-                const registryItem = results.find((item) => item.name === name);
-                return registryItem && registryItem.data ? registryItem.data : undefined;
+                return results.find((item) => item.name === name)?.data;
             }
 
             // looking for an entry list
