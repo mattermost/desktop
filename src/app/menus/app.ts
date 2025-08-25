@@ -16,6 +16,8 @@ import {OPEN_SERVERS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication
 import type {Config} from 'common/config';
 import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK, ModalConstants} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
+import {ViewType} from 'common/views/MattermostView';
+import ViewManager from 'common/views/viewManager';
 import {clearAllData, clearDataForServer} from 'main/app/utils';
 import type {UpdateManager} from 'main/autoUpdater';
 import DeveloperMode from 'main/developerMode';
@@ -373,7 +375,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         }, separatorItem,
         ] : []),
         {
-            label: localizeMessage('main.menus.app.window.createNewWindow', 'Create New Window for Current Server'),
+            label: localizeMessage('main.menus.app.window.newWindowForCurrentServer', 'New Window for Current Server'),
             accelerator: 'CmdOrCtrl+N',
             click() {
                 const serverId = ServerManager.getCurrentServerId();
@@ -384,9 +386,22 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             },
         },
         {
+            label: localizeMessage('main.menus.app.window.closeCurrentView', 'Close Current View'),
+            accelerator: 'CmdOrCtrl+W',
+            click(event: Electron.Event, window: BrowserWindow) {
+                if (MainWindow.get() === window) {
+                    const view = TabManager.getCurrentActiveTabView();
+                    if (view) {
+                        ViewManager.removeView(view.id);
+                    }
+                } else {
+                    window.close();
+                }
+            },
+        }, {
             role: 'close',
             label: isMac ? localizeMessage('main.menus.app.window.closeWindow', 'Close Window') : localizeMessage('main.menus.app.window.close', 'Close'),
-            accelerator: 'CmdOrCtrl+W',
+            accelerator: 'CmdOrCtrl+Shift+W',
         }, separatorItem,
         ...(ServerManager.hasServers() ? [{
             label: localizeMessage('main.menus.app.window.showServers', 'Show Servers'),
@@ -417,6 +432,22 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             }
             return items;
         }).flat(), separatorItem,
+        {
+            label: localizeMessage('main.menus.app.window.newTabForCurrentServer', 'New Tab for Current Server'),
+            accelerator: 'CmdOrCtrl+T',
+            click() {
+                const serverId = ServerManager.getCurrentServerId();
+                if (!serverId) {
+                    return;
+                }
+                const server = ServerManager.getServer(serverId);
+                if (!server) {
+                    return;
+                }
+                const view = ViewManager.createView(server, ViewType.TAB);
+                TabManager.switchToTab(view.id);
+            },
+        },
         {
             label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
             accelerator: 'Ctrl+Tab',
