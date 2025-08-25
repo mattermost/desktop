@@ -46,13 +46,13 @@ describe('RemoveServerModal', function desc() {
         await removeServerView.click('button:has-text("Remove")');
         await asyncSleep(1000);
 
-        const expectedConfig = JSON.parse(JSON.stringify(config.teams.slice(1)));
+        const expectedConfig = JSON.parse(JSON.stringify(config.servers.slice(1)));
         expectedConfig.forEach((value) => {
             value.order--;
         });
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.deep.equal(expectedConfig);
+        savedConfig.servers.should.deep.equal(expectedConfig);
     });
 
     it('MM-T4390_2 should NOT remove existing server on click Cancel', async () => {
@@ -60,7 +60,7 @@ describe('RemoveServerModal', function desc() {
         await asyncSleep(1000);
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.deep.equal(config.teams);
+        savedConfig.servers.should.deep.equal(config.servers);
     });
 
     it('MM-T4390_3 should disappear on click Close', async () => {

@@ -9,6 +9,7 @@
   padding: 6px 8px;
   margin-bottom: 0;
   list-style: none;
+  overflow: hidden;
 }
 
 .TabBar-nonDrag {
@@ -28,10 +29,10 @@
 .TabBar>li {
   -webkit-app-region: no-drag;
   -webkit-user-select: none;
-  min-width: 48px;
   max-width: 224px;
   position: relative;
   margin: 0 2px;
+  overflow: hidden;
 }
 
 .TabBar>li>a {
@@ -115,6 +116,38 @@
   align-items: center;
 }
 
+/* Style the text container */
+.TabBar>li>a>div.TabBar-tabSeperator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The text node needs to be wrapped in a span for this to work */
+.TabBar>li>a>div.TabBar-tabSeperator>span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 16px;
+}
+
+.TabBar>li:has(.TabBar-dot) {
+  min-width: 60px;
+}
+
+.TabBar>li:has(.TabBar-badge) {
+  min-width: 66px;
+}
+
+/* Ensure badges and close button don't shrink and remain visible */
+.TabBar .TabBar-badge,
+.TabBar .TabBar-dot,
+.TabBar .TabBar-expired,
+.TabBar>li.serverTabItem>a>div.TabBar-tabSeperator>.serverTabItem__close {
+  flex: 0 0 auto;
+}
+
 .TabBar>li.serverTabItem.active>a, .TabBar>li.serverTabItem.dragging>a {
   border: none;
   background-color: #fff;
@@ -129,27 +162,22 @@
 
 .TabBar>li.serverTabItem:not(.active)+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(61,60,64,0.08);
-  margin-left: -1px;
 }
 
 .TabBar.darkMode>li.serverTabItem:not(.active)+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(221,221,221,0.08);
-  margin-left: -1px;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled):hover+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid transparent;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled):hover+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid transparent;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled)+li.serverTabItem:not(.active)>a:hover>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid transparent;
 }
 
 .TabBar .TabBar-dot {

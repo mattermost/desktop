@@ -3,7 +3,7 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import type {Config} from 'types/config';
+import type {CurrentConfig} from 'types/config';
 
 import CheckSetting from './CheckSetting';
 import RadioSetting from './RadioSetting';
@@ -12,8 +12,8 @@ export default function NotificationSetting({
     onSave,
     value,
 }: {
-    onSave: (key: 'notifications', value: Config['notifications']) => void;
-    value: Config['notifications'];
+    onSave: (key: 'notifications', value: CurrentConfig['notifications']) => void;
+    value: CurrentConfig['notifications'];
 }) {
     if (window.process.platform === 'darwin') {
         return (

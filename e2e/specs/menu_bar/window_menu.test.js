@@ -11,44 +11,30 @@ const {asyncSleep} = require('../../modules/utils');
 
 describe('Menu/window_menu', function desc() {
     const config = {
-        ...env.demoConfig,
-        teams: [
-            ...env.demoConfig.teams,
+        ...env.demoMattermostConfig,
+        servers: [
+            ...env.demoMattermostConfig.servers,
             {
                 name: 'google',
                 url: 'https://google.com/',
                 order: 2,
-                tabs: [
-                    {
-                        name: 'TAB_MESSAGING',
-                        order: 0,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_FOCALBOARD',
-                        order: 1,
-                        isOpen: true,
-                    },
-                    {
-                        name: 'TAB_PLAYBOOKS',
-                        order: 2,
-                        isOpen: true,
-                    },
-                ],
-                lastActiveTab: 0,
             },
         ],
-        lastActiveTeam: 2,
+        lastActiveServer: 0,
         minimizeToTray: true,
         alwaysMinimize: true,
     };
 
     const beforeFunc = async () => {
+        env.cleanDataDir();
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
+        this.serverMap = await env.getServerMap(this.app);
+        const mmServer = this.serverMap[config.servers[0].name][0].win;
+        await env.loginToMattermost(mmServer);
     };
 
     const afterFunc = async () => {
@@ -65,30 +51,29 @@ describe('Menu/window_menu', function desc() {
 
         before(async () => {
             await beforeFunc();
-            await env.getServerMap(this.app);
             mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         });
         after(afterFunc);
 
         it('MM-T826_1 should show the second server', async () => {
             let dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
-            dropdownButtonText.should.equal('google');
+            dropdownButtonText.should.contain('example');
 
             robot.keyTap('2', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("github")');
-            dropdownButtonText.should.equal('github');
+            dropdownButtonText.should.contain('github');
         });
 
         it('MM-T826_2 should show the third server', async () => {
             robot.keyTap('3', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("google")');
-            dropdownButtonText.should.equal('google');
+            dropdownButtonText.should.contain('google');
         });
 
         it('MM-T826_3 should show the first server', async () => {
             robot.keyTap('1', ['control', process.platform === 'darwin' ? 'command' : 'shift']);
             const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("example")');
-            dropdownButtonText.should.equal('example');
+            dropdownButtonText.should.contain('example');
         });
     });
 
@@ -98,31 +83,47 @@ describe('Menu/window_menu', function desc() {
         before(async () => {
             await beforeFunc();
             mainView = this.app.windows().find((window) => window.url().includes('index'));
+            await mainView.click('#newTabButton');
+            await mainView.click('#newTabButton');
+            await asyncSleep(3000);
+            this.serverMap = await env.getServerMap(this.app);
+
+            const secondTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+            await secondTab.click();
+            const secondView = this.serverMap[config.servers[0].name][1].win;
+            await secondView.waitForSelector('#sidebarItem_off-topic');
+            await secondView.click('#sidebarItem_off-topic');
+
+            const thirdTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
+            await thirdTab.click();
+            const thirdView = this.serverMap[config.servers[0].name][2].win;
+            await thirdView.waitForSelector('#sidebarItem_town-square');
+            await thirdView.click('#sidebarItem_town-square');
         });
         after(afterFunc);
 
         it('MM-T4385_1 should show the second tab', async () => {
             let tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Channels');
+            tabViewButton.should.contain('Town Square');
 
             robot.keyTap('2', [env.cmdOrCtrl]);
             await asyncSleep(500);
             tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Boards');
+            tabViewButton.should.contain('Off-Topic');
         });
 
         it('MM-T4385_2 should show the third tab', async () => {
             robot.keyTap('3', [env.cmdOrCtrl]);
             await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Playbooks');
+            tabViewButton.should.contain('Town Square');
         });
 
         it('MM-T4385_3 should show the first tab', async () => {
             robot.keyTap('1', [env.cmdOrCtrl]);
             await asyncSleep(500);
             const tabViewButton = await mainView.innerText('.active');
-            tabViewButton.should.equal('Channels');
+            tabViewButton.should.contain('Town Square');
         });
     });
 
@@ -131,18 +132,28 @@ describe('Menu/window_menu', function desc() {
 
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
 
+        await mainView.click('#newTabButton');
+        await asyncSleep(3000);
+        this.serverMap = await env.getServerMap(this.app);
+
+        const secondTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+        await secondTab.click();
+        const secondView = this.serverMap[config.servers[0].name][1].win;
+        await secondView.waitForSelector('#sidebarItem_off-topic');
+        await secondView.click('#sidebarItem_off-topic');
+
         let tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Channels');
+        tabViewButton.should.contain('Off-Topic');
 
         robot.keyTap('tab', ['control']);
         await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Boards');
+        tabViewButton.should.contain('Town Square');
 
         robot.keyTap('tab', ['shift', 'control']);
         await asyncSleep(500);
         tabViewButton = await mainView.innerText('.active');
-        tabViewButton.should.equal('Channels');
+        tabViewButton.should.contain('Off-Topic');
 
         await afterFunc();
     });

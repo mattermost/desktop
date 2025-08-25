@@ -5,10 +5,7 @@ export const GET_APP_INFO = 'get-app-info';
 
 export const SWITCH_SERVER = 'switch-server';
 export const SWITCH_TAB = 'switch-tab';
-export const CLOSE_VIEW = 'close-view';
-export const OPEN_VIEW = 'open-view';
 export const SET_ACTIVE_VIEW = 'set-active-view';
-export const FOCUS_BROWSERVIEW = 'focus-browserview';
 export const HISTORY = 'history';
 
 export const QUIT = 'quit';
@@ -31,6 +28,7 @@ export const LOAD_RETRY = 'load_retry';
 export const LOAD_SUCCESS = 'load_success';
 export const LOAD_FAILED = 'load_fail';
 export const LOAD_INCOMPATIBLE_SERVER = 'load_incompatible_server';
+export const RELOAD_VIEW = 'reload_view';
 
 export const MAXIMIZE_CHANGE = 'maximized_change';
 
@@ -151,8 +149,6 @@ export const DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE = 'downloads-dropdown-menu-clear
 export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-file';
 export const DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-menu-show-file-in-folder';
 
-export const SERVERS_URL_MODIFIED = 'servers-modified';
-export const SERVERS_UPDATE = 'servers-update';
 export const UPDATE_SERVER_ORDER = 'update-server-order';
 export const UPDATE_TAB_ORDER = 'update-tab-order';
 export const GET_LAST_ACTIVE = 'get-last-active';
@@ -196,3 +192,39 @@ export const GET_UNIQUE_SERVERS_WITH_PERMISSIONS = 'get-unique-servers-with-perm
 export const ADD_SERVER = 'add-server';
 export const EDIT_SERVER = 'edit-server';
 export const REMOVE_SERVER = 'remove-server';
+
+// WebContents Manager Events
+export const OPEN_POPOUT_MENU = 'open-popout-menu';
+
+// Server Manager Events
+export const SERVER_ADDED = 'server-added';
+export const SERVER_REMOVED = 'server-removed';
+export const SERVER_URL_CHANGED = 'server-url-changed';
+export const SERVER_NAME_CHANGED = 'server-name-changed';
+export const SERVER_SWITCHED = 'server-switched';
+export const SERVER_LOGGED_IN_CHANGED = 'server-logged-in-changed';
+export const SERVER_ORDER_UPDATED = 'server-order-updated';
+
+// View Manager Events
+export const VIEW_CREATED = 'view-created';
+export const VIEW_TITLE_UPDATED = 'view-title-updated';
+export const VIEW_TYPE_REMOVED = 'view-type-removed';
+export const VIEW_TYPE_ADDED = 'view-type-added';
+export const VIEW_PRIMARY_UPDATED = 'view-primary-updated';
+export const VIEW_REMOVED = 'view-removed';
+
+// Tab Manager Events
+export const ACTIVE_TAB_CHANGED = 'active-tab-changed';
+export const TAB_ORDER_UPDATED = 'tab-order-updated';
+export const TAB_ADDED = 'tab-added';
+export const TAB_REMOVED = 'tab-removed';
+
+// Front-end tab management
+export const GET_CURRENT_SERVER = 'get-current-server';
+export const GET_ACTIVE_TAB_FOR_SERVER = 'get-active-tab-for-server';
+export const UPDATE_TAB_TITLE = 'update-tab-title';
+export const CREATE_NEW_TAB = 'create-new-tab';
+export const CLOSE_TAB = 'close-tab';
+
+// Popout Manager Events
+export const CREATE_NEW_WINDOW = 'create-new-window';

@@ -8,8 +8,8 @@ const base = require('./webpack.config.base');
 
 module.exports = merge(base, {
     entry: {
-        internalAPI: './src/main/preload/internalAPI.js',
-        externalAPI: './src/main/preload/externalAPI.ts',
+        internalAPI: './src/app/preload/internalAPI.js',
+        externalAPI: './src/app/preload/externalAPI.ts',
     },
     externalsPresets: {
         electronPreload: true,

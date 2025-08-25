@@ -13,15 +13,6 @@ import {
     isTrustedURL,
 } from 'common/utils/url';
 
-jest.mock('common/views/View', () => ({
-    getServerView: (srv, view) => {
-        return {
-            name: `${srv.name}_${view.name}`,
-            url: `${srv.url}${srv.url.toString().endsWith('/') ? '' : '/'}${view.name.split('-')[1] || ''}`,
-        };
-    },
-}));
-
 describe('common/utils/url', () => {
     describe('getFormattedPathName', () => {
         it('should add trailing slash', () => {

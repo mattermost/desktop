@@ -35,8 +35,7 @@ describe('menu/menu', function desc() {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;
 
-            await mainWindow.bringToFront();
-            await mainWindow.click('#app');
+            await mainWindow.waitForSelector('button.three-dot-menu');
 
             // Settings window should open if Alt works
             robot.keyTap('alt');

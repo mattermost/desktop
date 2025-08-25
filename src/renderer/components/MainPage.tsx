@@ -2,26 +2,23 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import classNames from 'classnames';
-import React, {Fragment} from 'react';
+import React from 'react';
 import type {DropResult} from 'react-beautiful-dnd';
-import type {IntlShape} from 'react-intl';
-import {injectIntl} from 'react-intl';
 
 import type {UniqueView, UniqueServer} from 'types/config';
 import type {DownloadedItems} from 'types/downloads';
 
-import ConnectionErrorView from './ConnectionErrorView';
+import BasePage, {ErrorState} from './BasePage';
 import DeveloperModeIndicator from './DeveloperModeIndicator';
 import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
-import IncompatibleErrorView from './IncompatibleErrorView';
 import ServerDropdownButton from './ServerDropdownButton';
 import TabBar from './TabBar';
 
 import {playSound} from '../notificationSounds';
 
 import '../css/components/UpgradeButton.scss';
-import '../css/components/MainPage.css';
+import '../css/components/BasePage.css';
+import '../css/components/TopBar.scss';
 
 enum Status {
     LOADING = 1,
@@ -36,7 +33,7 @@ type Props = {
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
-    intl: IntlShape;
+    tabLimit: number;
 };
 
 type State = {
@@ -50,13 +47,13 @@ type State = {
     maximized: boolean;
     tabViewStatus: Map<string, TabViewStatus>;
     modalOpen?: boolean;
-    fullScreen?: boolean;
     isMenuOpen: boolean;
     isDownloadsDropdownOpen: boolean;
     showDownloadsBadge: boolean;
     hasDownloads: boolean;
-    threeDotsIsFocused: boolean;
     developerMode: boolean;
+    primaryTabId?: string;
+    currentServer?: UniqueServer;
 };
 
 type TabViewStatus = {
@@ -68,14 +65,8 @@ type TabViewStatus = {
 }
 
 class MainPage extends React.PureComponent<Props, State> {
-    threeDotMenu: React.RefObject<HTMLButtonElement>;
-    topBar: React.RefObject<HTMLDivElement>;
-
     constructor(props: Props) {
         super(props);
-
-        this.topBar = React.createRef();
-        this.threeDotMenu = React.createRef();
 
         this.state = {
             servers: [],
@@ -89,7 +80,6 @@ class MainPage extends React.PureComponent<Props, State> {
             isDownloadsDropdownOpen: false,
             showDownloadsBadge: false,
             hasDownloads: false,
-            threeDotsIsFocused: false,
             developerMode: false,
         };
     }
@@ -135,13 +125,23 @@ class MainPage extends React.PureComponent<Props, State> {
                 });
             });
         });
-        this.setState({servers, tabs, tabViewStatus});
+        this.setState({servers, tabs, tabViewStatus, currentServer: servers.find((srv) => srv.id === this.state.activeServerId)});
         return Boolean(servers.length);
     };
 
     setInitialActiveTab = async () => {
-        const lastActive = await window.desktop.getLastActive();
-        this.setActiveView(lastActive.server, lastActive.view);
+        const currentServer = await window.desktop.getCurrentServer();
+        if (!currentServer?.id) {
+            return;
+        }
+        const view = await window.desktop.getActiveTabForServer(currentServer.id);
+        if (view) {
+            this.setState({
+                currentServer,
+                activeServerId: currentServer.id,
+                activeTabId: view.id,
+            });
+        }
     };
 
     updateServers = async () => {
@@ -151,12 +151,53 @@ class MainPage extends React.PureComponent<Props, State> {
         }
     };
 
+    handleServerAdded = async (serverId: string, setAsCurrentServer: boolean) => {
+        // Refresh servers and tabs when a server is added
+        await this.updateServers();
+        if (setAsCurrentServer) {
+            await this.setInitialActiveTab();
+        }
+    };
+
+    handleServerSwitched = async () => {
+        const currentServer = await window.desktop.getCurrentServer();
+        if (currentServer?.id) {
+            this.setState({
+                currentServer,
+                activeServerId: currentServer.id,
+            });
+        }
+    };
+
     async componentDidMount() {
         // request downloads
         await this.requestDownloadsLength();
         await this.updateServers();
 
-        window.desktop.onUpdateServers(this.updateServers);
+        window.desktop.onServerAdded(this.handleServerAdded);
+        window.desktop.onServerRemoved(this.updateServers);
+        window.desktop.onServerUrlChanged(this.updateServers);
+        window.desktop.onServerNameChanged(this.updateServers);
+        window.desktop.onServerSwitched(this.handleServerSwitched);
+        window.desktop.onServerLoggedInChanged(this.updateServers);
+        window.desktop.onTabAdded(this.updateServers);
+        window.desktop.onTabRemoved(this.updateServers);
+
+        // Add tab title update handler
+        window.desktop.onUpdateTabTitle((viewId, title) => {
+            const tabs = new Map(this.state.tabs);
+            for (const [serverId, serverTabs] of tabs.entries()) {
+                const tab = serverTabs.find((t) => t.id === viewId);
+                if (tab) {
+                    const updatedTabs = serverTabs.map((t) =>
+                        (t.id === viewId ? {...t, title} : t),
+                    );
+                    tabs.set(serverId, updatedTabs);
+                    this.setState({tabs});
+                    break;
+                }
+            }
+        });
 
         // set page on retry
         window.desktop.onLoadRetry((viewId, retry, err, loadUrl) => {
@@ -203,11 +244,6 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.onSetActiveView(this.setActiveView);
 
         window.desktop.onMaximizeChange(this.handleMaximizeState);
-
-        window.desktop.onEnterFullScreen(() => this.handleFullScreenState(true));
-        window.desktop.onLeaveFullScreen(() => this.handleFullScreenState(false));
-
-        window.desktop.getFullScreenStatus().then((fullScreenStatus) => this.handleFullScreenState(fullScreenStatus));
 
         window.desktop.onPlaySound((soundName) => {
             playSound(soundName);
@@ -266,12 +302,6 @@ class MainPage extends React.PureComponent<Props, State> {
             });
         });
 
-        window.desktop.onAppMenuWillClose(this.unFocusThreeDotsButton);
-
-        if (window.process.platform !== 'darwin') {
-            window.desktop.onFocusThreeDotMenu(this.focusThreeDotsButton);
-        }
-
         window.addEventListener('click', this.handleCloseDropdowns);
 
         window.desktop.isDeveloperModeEnabled().then((developerMode) => {
@@ -283,11 +313,30 @@ class MainPage extends React.PureComponent<Props, State> {
         window.removeEventListener('click', this.handleCloseDropdowns);
     }
 
-    setActiveView = (serverId: string, tabId: string) => {
+    setActiveView = async (serverId: string, tabId: string) => {
+        await this.updateServers();
         if (serverId === this.state.activeServerId && tabId === this.state.activeTabId) {
             return;
         }
-        this.setState({activeServerId: serverId, activeTabId: tabId});
+
+        // Find the current server
+        const currentServer = this.state.servers.find((srv) => srv.id === serverId);
+        if (!currentServer) {
+            return;
+        }
+
+        // Find the tab in the current server's tabs
+        const serverTabs = this.state.tabs.get(serverId) || [];
+        const tab = serverTabs.find((t) => t.id === tabId);
+        if (!tab) {
+            return;
+        }
+
+        this.setState({
+            activeServerId: serverId,
+            activeTabId: tabId,
+            currentServer,
+        });
     };
 
     handleCloseDropdowns = () => {
@@ -299,16 +348,13 @@ class MainPage extends React.PureComponent<Props, State> {
         this.setState({maximized});
     };
 
-    handleFullScreenState = (isFullScreen: boolean) => {
-        this.setState({fullScreen: isFullScreen});
-    };
-
     handleSelectTab = (tabId: string) => {
         window.desktop.switchTab(tabId);
     };
 
-    handleCloseTab = (tabId: string) => {
-        window.desktop.closeView(tabId);
+    handleCloseTab = async (viewId: string) => {
+        await window.desktop.closeTab(viewId);
+        await this.updateServers();
     };
 
     handleDragAndDrop = async (dropResult: DropResult) => {
@@ -335,28 +381,6 @@ class MainPage extends React.PureComponent<Props, State> {
         this.handleSelectTab(tab[0].id!);
     };
 
-    handleExitFullScreen = (e: React.MouseEvent<HTMLDivElement>) => {
-        e.stopPropagation(); // since it is our button, the event goes into MainPage's onclick event, getting focus back.
-
-        if (!this.state.fullScreen) {
-            return;
-        }
-        window.desktop.exitFullScreen();
-    };
-
-    openMenu = () => {
-        this.props.openMenu();
-    };
-
-    handleDoubleClick = () => {
-        window.desktop.doubleClickOnWindow();
-    };
-
-    focusOnWebView = () => {
-        window.desktop.focusCurrentView();
-        this.handleCloseDropdowns();
-    };
-
     showHideDownloadsBadge(value = false) {
         this.setState({showDownloadsBadge: value});
     }
@@ -370,26 +394,28 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.openDownloadsDropdown();
     }
 
-    focusThreeDotsButton = () => {
-        this.threeDotMenu.current?.focus();
-        this.setState({
-            threeDotsIsFocused: true,
-        });
-    };
-
-    unFocusThreeDotsButton = () => {
-        this.threeDotMenu.current?.blur();
-        this.setState({
-            threeDotsIsFocused: false,
-        });
-    };
-
     openServerExternally = () => {
         window.desktop.openServerExternally();
     };
 
+    handleNewTab = async () => {
+        const {currentServer} = this.state;
+        if (!currentServer?.id) {
+            return;
+        }
+
+        const newTabId = await window.desktop.createNewTab(currentServer.id);
+        await this.updateServers();
+        if (newTabId) {
+            await window.desktop.switchTab(newTabId);
+        }
+    };
+
+    handleOpenPopoutMenu = (viewId: string) => {
+        window.desktop.openPopoutMenu(viewId);
+    };
+
     render() {
-        const {intl} = this.props;
         let currentTabs: UniqueView[] = [];
         if (this.state.activeServerId) {
             currentTabs = this.state.tabs.get(this.state.activeServerId) ?? [];
@@ -407,17 +433,14 @@ class MainPage extends React.PureComponent<Props, State> {
                 activeTabId={this.state.activeTabId}
                 onSelect={this.handleSelectTab}
                 onCloseTab={this.handleCloseTab}
+                onOpenPopoutMenu={this.handleOpenPopoutMenu}
+                onNewTab={this.handleNewTab}
                 onDrop={this.handleDragAndDrop}
-                tabsDisabled={this.state.modalOpen}
+                tabsDisabled={this.state.modalOpen || !this.state.currentServer?.isLoggedIn}
                 isMenuOpen={this.state.isMenuOpen || this.state.isDownloadsDropdownOpen}
+                tabLimit={this.props.tabLimit}
             />
         );
-
-        const topBarClassName = classNames('topBar', {
-            macOS: window.process.platform === 'darwin',
-            darkMode: this.props.darkMode,
-            fullScreen: this.state.fullScreen,
-        });
 
         const downloadsDropdownButton = this.state.hasDownloads ? (
             <DownloadsDropdownButton
@@ -444,37 +467,31 @@ class MainPage extends React.PureComponent<Props, State> {
         }, false);
 
         const activeServer = this.state.servers.find((srv) => srv.id === this.state.activeServerId);
+        const tabStatus = activeServer && this.getTabViewStatus();
+        if (!tabStatus) {
+            if (this.state.activeTabId) {
+                console.error(`Not tabStatus for ${this.state.activeTabId}`);
+            }
+        }
+        let errorState: ErrorState | undefined;
+        if (tabStatus?.status === Status.FAILED) {
+            errorState = ErrorState.FAILED;
+        } else if (tabStatus?.status === Status.INCOMPATIBLE) {
+            errorState = ErrorState.INCOMPATIBLE;
+        }
 
-        const topRow = (
-            <div
-                className={topBarClassName}
-                onDoubleClick={this.handleDoubleClick}
+        return (
+            <BasePage
+                darkMode={this.props.darkMode}
+                appName={this.props.appName}
+                openMenu={this.props.openMenu}
+                title={window.process.platform !== 'linux' && this.state.servers.length === 0 ? this.props.appName : undefined}
+                errorState={errorState}
+                errorMessage={tabStatus?.extra?.error}
+                errorUrl={tabStatus?.extra?.url}
             >
-                <div
-                    ref={this.topBar}
-                    className={'topBar-bg'}
-                >
-                    {window.process.platform !== 'linux' && this.state.servers.length === 0 && (
-                        <div className='app-title'>
-                            {intl.formatMessage({id: 'renderer.components.mainPage.titleBar', defaultMessage: '{appName}'}, {appName: this.props.appName})}
-                        </div>
-                    )}
-                    <button
-                        ref={this.threeDotMenu}
-                        className='three-dot-menu'
-                        onClick={this.openMenu}
-                        onMouseOver={this.focusThreeDotsButton}
-                        onMouseOut={this.unFocusThreeDotsButton}
-                        tabIndex={0}
-                        aria-label={intl.formatMessage({id: 'renderer.components.mainPage.contextMenu.ariaLabel', defaultMessage: 'Context menu'})}
-                    >
-                        <i
-                            className={classNames('icon-dots-vertical', {
-                                isFocused: this.state.threeDotsIsFocused,
-                            })}
-                        />
-                    </button>
-                    {activeServer && (
+                {activeServer && (
+                    <>
                         <ServerDropdownButton
                             isDisabled={this.state.modalOpen}
                             activeServerName={activeServer.name}
@@ -483,86 +500,17 @@ class MainPage extends React.PureComponent<Props, State> {
                             isMenuOpen={this.state.isMenuOpen}
                             darkMode={this.props.darkMode}
                         />
-                    )}
-                    {tabsRow}
-                    <DeveloperModeIndicator
-                        darkMode={this.props.darkMode}
-                        developerMode={this.state.developerMode}
-                    />
-                    {downloadsDropdownButton}
-                    {window.process.platform !== 'darwin' && this.state.fullScreen && (
-                        <div
-                            className={`button full-screen-button${this.props.darkMode ? ' darkMode' : ''}`}
-                            onClick={this.handleExitFullScreen}
-                        >
-                            <i className='icon icon-arrow-collapse'/>
-                        </div>
-                    )}
-                    {window.process.platform !== 'darwin' && !this.state.fullScreen && (
-                        <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
-                    )}
-                </div>
-            </div>
-        );
-
-        const views = () => {
-            if (!activeServer) {
-                return null;
-            }
-            let component;
-            const tabStatus = this.getTabViewStatus();
-            if (!tabStatus) {
-                if (this.state.activeTabId) {
-                    console.error(`Not tabStatus for ${this.state.activeTabId}`);
-                }
-                return null;
-            }
-            switch (tabStatus.status) {
-            case Status.FAILED:
-                component = (
-                    <ConnectionErrorView
-                        darkMode={this.props.darkMode}
-                        errorInfo={tabStatus.extra?.error}
-                        url={tabStatus.extra ? tabStatus.extra.url : ''}
-                        appName={this.props.appName}
-                        handleLink={this.openServerExternally}
-                    />);
-                break;
-            case Status.INCOMPATIBLE:
-                component = (
-                    <IncompatibleErrorView
-                        darkMode={this.props.darkMode}
-                        url={tabStatus.extra ? tabStatus.extra.url : ''}
-                        appName={this.props.appName}
-                        handleLink={this.openServerExternally}
-                        handleUpgradeLink={() => window.desktop.openServerUpgradeLink()}
-                    />);
-                break;
-            case Status.LOADING:
-            case Status.RETRY:
-            case Status.DONE:
-                component = null;
-            }
-            return component;
-        };
-
-        const viewsRow = (
-            <Fragment>
-                <div className={classNames('MainPage__body', {darkMode: this.props.darkMode})}>
-                    {views()}
-                </div>
-            </Fragment>);
-
-        return (
-            <div
-                className='MainPage'
-                onClick={this.focusOnWebView}
-            >
-                {topRow}
-                {viewsRow}
-            </div>
+                    </>
+                )}
+                {tabsRow}
+                <DeveloperModeIndicator
+                    darkMode={this.props.darkMode}
+                    developerMode={this.state.developerMode}
+                />
+                {downloadsDropdownButton}
+            </BasePage>
         );
     }
 }
 
-export default injectIntl(MainPage);
+export default MainPage;

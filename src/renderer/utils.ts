@@ -86,10 +86,20 @@ const prettyETA = (ms = 0, intl: IntlShape) => {
     return `${eta} ${intl.formatMessage({id: 'renderer.downloadsDropdown.remaining', defaultMessage: 'remaining'})}`;
 };
 
+const printVersion = () => {
+    window.desktop.getVersion().then(({name, version}) => {
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        console.log(`Starting ${name} v${version}${__HASH_VERSION__ ? ` commit: ${__HASH_VERSION__}` : ''}`);
+    });
+};
+
 export {
     getDownloadingFileStatus,
     getFileSizeOrBytesProgress,
     getIconClassName,
     isImageFile,
     prettyETA,
+    printVersion,
 };

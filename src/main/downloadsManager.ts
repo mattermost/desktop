@@ -7,6 +7,8 @@ import type {DownloadItem, Event, WebContents, FileFilter, IpcMainInvokeEvent} f
 import {ipcMain, dialog, shell, Menu, app, nativeImage} from 'electron';
 import type {ProgressInfo, UpdateInfo} from 'electron-updater';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import WebContentsManager from 'app/views/webContentsManager';
 import {
     CANCEL_UPDATE_DOWNLOAD,
     CLOSE_DOWNLOADS_DROPDOWN,
@@ -28,13 +30,12 @@ import Config from 'common/config';
 import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import {DOWNLOADS_DROPDOWN_AUTOCLOSE_TIMEOUT, DOWNLOADS_DROPDOWN_MAX_ITEMS} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
 import NotificationManager from 'main/notifications';
 import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
-import ViewManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import {type DownloadedItem, type DownloadItemDoneEventState, type DownloadedItems, type DownloadItemState, type DownloadItemUpdatedEventState, DownloadItemTypeEnum} from 'types/downloads';
 
@@ -556,7 +557,15 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         log.debug('doneEventController', {state});
 
         if (state === 'completed' && !this.open) {
-            NotificationManager.displayDownloadCompleted(path.basename(item.savePath), item.savePath, ViewManager.getViewByWebContentsId(webContents.id)?.view.server.name ?? '');
+            const view = WebContentsManager.getViewByWebContentsId(webContents.id);
+            if (!view) {
+                return;
+            }
+            const server = ServerManager.getServer(view.serverId);
+            if (!server) {
+                return;
+            }
+            NotificationManager.displayDownloadCompleted(path.basename(item.savePath), item.savePath, server.name);
         }
 
         const bookmark = this.bookmarks.get(this.getFileId(item));

@@ -72,7 +72,7 @@
         {
             "files": [
                 "scripts/**/*",
-                "src/main/preload/**/*",
+                "src/app/preload/**/*",
                 "src/renderer/**/*"
             ],
             "rules": {

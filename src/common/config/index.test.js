@@ -24,36 +24,10 @@ jest.mock('common/Validator', () => ({
     validateConfigData: (configData) => (configData.version === 3 ? configData : null),
 }));
 
-jest.mock('common/views/View', () => ({
-    getDefaultViewsForConfigServer: (value) => ({
-        ...value,
-        tabs: [
-            {
-                name: 'view1',
-            },
-            {
-                name: 'view2',
-            },
-        ],
-    }),
-}));
-
 const buildServer = {
     name: 'build-server-1',
     order: 0,
     url: 'http://build-server-1.com',
-};
-
-const buildServerWithViews = {
-    ...buildServer,
-    tabs: [
-        {
-            name: 'view1',
-        },
-        {
-            name: 'view2',
-        },
-    ],
 };
 
 const registryServer = {
@@ -66,14 +40,6 @@ const server = {
     name: 'server-1',
     order: 0,
     url: 'http://server-1.com',
-    tabs: [
-        {
-            name: 'view1',
-        },
-        {
-            name: 'view2',
-        },
-    ],
 };
 
 jest.mock('common/config/upgradePreferences', () => {
@@ -105,7 +71,7 @@ describe('common/config', () => {
         const config = new Config();
         config.reload = jest.fn();
         config.init(configPath, appName, appPath);
-        expect(config.predefinedServers).toContainEqual(buildServerWithViews);
+        expect(config.predefinedServers).toContainEqual(buildServer);
     });
 
     describe('loadRegistry', () => {
@@ -115,17 +81,7 @@ describe('common/config', () => {
             config.init(configPath, appName, appPath);
             config.onLoadRegistry({servers: [registryServer]});
             expect(config.reload).toHaveBeenCalled();
-            expect(config.predefinedServers).toContainEqual({
-                ...registryServer,
-                tabs: [
-                    {
-                        name: 'view1',
-                    },
-                    {
-                        name: 'view2',
-                    },
-                ],
-            });
+            expect(config.predefinedServers).toContainEqual(registryServer);
         });
     });
 
@@ -169,15 +125,15 @@ describe('common/config', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.localConfigData = {teams: [server]};
+            config.localConfigData = {servers: [server]};
             config.regenerateCombinedConfigData = jest.fn().mockImplementation(() => {
                 config.combinedData = {...config.localConfigData};
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.set('teams', [{...buildServerWithViews, name: 'build-team-2'}]);
-            expect(config.localConfigData.teams).not.toContainEqual({...buildServerWithViews, name: 'build-team-2'});
-            expect(config.localConfigData.teams).toContainEqual(server);
+            config.set('servers', [{...buildServer, name: 'build-team-2'}]);
+            expect(config.localConfigData.servers).not.toContainEqual({...buildServer, name: 'build-team-2'});
+            expect(config.localConfigData.servers).toContainEqual(server);
         });
     });
 
@@ -192,9 +148,9 @@ describe('common/config', () => {
             });
             config.saveLocalConfigData = jest.fn();
 
-            config.setServers([{...buildServerWithViews, name: 'build-server-2'}, server], 0);
-            expect(config.localConfigData.teams).toContainEqual({...buildServerWithViews, name: 'build-server-2'});
-            expect(config.localConfigData.lastActiveTeam).toBe(0);
+            config.setServers([{...buildServer, name: 'build-server-2'}, server], 0);
+            expect(config.localConfigData.servers).toContainEqual({...buildServer, name: 'build-server-2'});
+            expect(config.localConfigData.lastActiveServer).toBe(0);
             expect(config.regenerateCombinedConfigData).toHaveBeenCalled();
             expect(config.saveLocalConfigData).toHaveBeenCalled();
         });
@@ -354,7 +310,7 @@ describe('common/config', () => {
             config.buildConfigData = {enableServerManagement: true};
             config.registryConfigData = {};
             config.predefinedServers.push(server, server);
-            config.localConfigData = {teams: [
+            config.localConfigData = {servers: [
                 server,
                 {
                     ...server,

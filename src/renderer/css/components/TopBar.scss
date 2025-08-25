@@ -1,0 +1,61 @@
+.TopBar-button {
+    background: none;
+    border: none;
+    color: rgba(61,60,64,0.7);
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    -webkit-app-region: no-drag;
+}
+
+.TopBar-button--newTab {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 4px;
+    min-width: 28px;
+}
+
+.TopBar-button--newTab_divider {
+    width: 1px;
+    height: 28px;
+    margin: 0 4px;
+    background-color: rgba(61,60,64,0.08);
+}
+
+.TopBar-button--newTab_container {
+    display: flex;
+}
+
+.TopBar-button--newTab_container:hover .TopBar-button--newTab_divider {
+    visibility: hidden;
+}
+
+.TopBar-button--newTab:hover {
+    border-left: none;
+}
+
+.TopBar-button:hover {
+    background-color: rgba(255,255,255,0.56);
+}
+
+.TopBar-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.darkMode .TopBar-button {
+    color: rgba(221,221,221,0.64);
+}
+
+.darkMode .TopBar-button:hover {
+    background-color: rgba(31, 31, 31, 0.56);
+}
+
+.darkMode .TopBar-button--newTab_divider {
+    background-color: rgba(221,221,221,0.08);
+}

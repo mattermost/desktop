@@ -6,9 +6,10 @@
     display: flex;
     align-items: center;
     font-family: Open Sans;
-    overflow: hidden;
     -webkit-font-smoothing: auto;
+    min-width: 72px;
     max-width: 400px;
+    -webkit-app-region: no-drag;
 
     &.disabled {
         opacity: 0.5;
@@ -122,9 +123,6 @@
 
     .ServerDropdownButton__badge-unreads {
         border-color: #2e2e2e;
-    }
-
-    .ServerDropdownButton__badge-unreads {
         background: #196CAF;
     }
 }

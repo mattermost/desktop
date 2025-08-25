@@ -70,7 +70,7 @@ describe('Configure Server Modal', function desc() {
 
     it('MM-T5119 should add the server to the config file', async () => {
         await configureServerModal.type('#input_name', 'TestServer');
-        await configureServerModal.type('#input_url', 'http://example.org');
+        await configureServerModal.type('#input_url', 'https://web.archive.org/');
 
         await configureServerModal.click('#connectConfigureServer');
 
@@ -80,26 +80,10 @@ describe('Configure Server Modal', function desc() {
         existing.should.be.false;
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.deep.contain({
-            url: 'http://example.org/',
+        savedConfig.servers.should.deep.contain({
+            url: 'https://web.archive.org/',
             name: 'TestServer',
             order: 0,
-            lastActiveTab: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
         });
     });
 });

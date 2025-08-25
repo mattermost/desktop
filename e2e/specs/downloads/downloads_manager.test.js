@@ -9,28 +9,12 @@ const {asyncSleep, rmDirAsync} = require('../../modules/utils');
 
 const config = {
     ...env.demoMattermostConfig,
-    teams: [
-        ...env.demoMattermostConfig.teams,
+    servers: [
+        ...env.demoMattermostConfig.servers,
         {
             url: 'https://community.mattermost.com',
             name: 'community',
             order: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
-            lastActiveTab: 0,
         },
     ],
 };
@@ -48,7 +32,7 @@ describe('downloads/downloads_manager', function desc() {
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
-        firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        firstServer = this.serverMap[config.servers[0].name][0].win;
         await env.loginToMattermost(firstServer);
         await asyncSleep(2000);
 

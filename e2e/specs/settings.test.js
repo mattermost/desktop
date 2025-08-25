@@ -205,7 +205,6 @@ describe('Settings', function desc() {
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-advanced');
                 await settingsWindow.click('#settingCategoryButton-advanced');
-                console.log('balls');
                 const selected = await settingsWindow.isChecked('#checkSetting-enableHardwareAcceleration');
                 selected.should.equal(true); // default is true
 

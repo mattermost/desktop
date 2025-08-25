@@ -3,7 +3,7 @@
 
 import type {ipcRenderer, Rectangle} from 'electron/renderer';
 
-import type {CombinedConfig, LocalConfiguration, UniqueView, UniqueServer, Server} from './config';
+import type {CombinedConfig, LocalConfiguration, UniqueServer, Server, UniqueView} from './config';
 import type {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import type {UniqueServerWithPermissions, Permissions} from './permissions';
 import type {URLValidationResult} from './server';
@@ -34,10 +34,9 @@ declare global {
             closeServersDropdown: () => void;
             openServersDropdown: () => void;
             switchTab: (viewId: string) => void;
-            closeView: (viewId: string) => void;
+            closeTab: (viewId: string) => void;
             exitFullScreen: () => void;
             doubleClickOnWindow: (windowName?: string) => void;
-            focusCurrentView: () => void;
             openServerExternally: () => void;
             openServerUpgradeLink: () => void;
             openChangelogLink: () => void;
@@ -49,18 +48,29 @@ declare global {
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
             getNonce: () => Promise<string | undefined>;
             isDeveloperModeEnabled: () => Promise<boolean>;
-
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
-            getLastActive: () => Promise<{server: string; view: string}>;
+            getCurrentServer: () => Promise<UniqueServer>;
+            getActiveTabForServer: (serverId: string) => Promise<UniqueView | null>;
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
-            onUpdateServers: (listener: () => void) => void;
+            createNewTab: (serverId: string) => Promise<string>;
+            createNewWindow: (serverId: string) => Promise<string>;
+            openPopoutMenu: (viewId: string) => void;
+            onUpdateTabTitle: (listener: (viewId: string, title: string) => void) => void;
+            onServerAdded: (listener: (serverId: string, setAsCurrentServer: boolean) => void) => void;
+            onServerRemoved: (listener: (serverId: string) => void) => void;
+            onServerUrlChanged: (listener: (serverId: string) => void) => void;
+            onServerNameChanged: (listener: (serverId: string) => void) => void;
+            onServerSwitched: (listener: (serverId: string) => void) => void;
+            onTabAdded: (listener: (serverId: string, tabId: string) => void) => void;
+            onTabRemoved: (listener: (serverId: string, tabId: string) => void) => void;
             validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
             editServer: (server: UniqueServer, permissions?: Permissions) => void;
             removeServer: (serverId: string) => void;
+            onServerLoggedInChanged: (listener: (serverId: string, loggedIn: boolean) => void) => void;
 
             getConfiguration: () => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
             getVersion: () => Promise<{name: string; version: string}>;
@@ -73,7 +83,6 @@ declare global {
             getDownloadLocation: (downloadLocation?: string) => Promise<string>;
             getLanguageInformation: () => Promise<Language>;
 
-            onSynchronizeConfig: (listener: () => void) => void;
             onReloadConfiguration: (listener: () => void) => () => void;
             onDarkModeChange: (listener: (darkMode: boolean) => void) => void;
             onLoadRetry: (listener: (viewId: string, retry: Date, err: string, loadUrl: string) => void) => void;
