@@ -1,4 +1,5 @@
 {
+  "callsWidgetWindow.cannotStartCall.title": "Não É Possível Iniciar a Chamada",
   "common.permissions.canBasicAuth": "Autenticação da Web",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
