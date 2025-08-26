@@ -103,7 +103,7 @@ export class NavigationManager {
 
     openLinkInNewTab = (url: string | URL) => {
         this.openLinkInTab(url, (server: MattermostServer) => {
-            const view = ViewManager.createView(server, ViewType.TAB) ?? ViewManager.getPrimaryView(server.id);
+            const view = ViewManager.createView(server, ViewType.TAB);
             if (!view) {
                 this.showViewLimitReachedError();
                 return undefined;

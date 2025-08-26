@@ -475,12 +475,14 @@ export class MattermostWebContentsView extends EventEmitter {
                         },
                         {
                             label: localizeMessage('app.menus.contextMenu.openInNewTab', 'Open in new tab'),
+                            enabled: !ViewManager.isViewLimitReached(),
                             click() {
                                 NavigationManager.openLinkInNewTab(parsedURL.toString());
                             },
                         },
                         {
                             label: localizeMessage('app.menus.contextMenu.openInNewWindow', 'Open in new window'),
+                            enabled: !ViewManager.isViewLimitReached(),
                             click() {
                                 NavigationManager.openLinkInNewWindow(parsedURL.toString());
                             },
