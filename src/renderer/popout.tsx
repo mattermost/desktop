@@ -44,17 +44,17 @@ function Popout() {
         });
     }, []);
 
-    const openMenu = () => {
-        if (window.process.platform !== 'darwin') {
-            window.desktop.openAppMenu();
-        }
-    };
-
     const openPopoutMenu = () => {
         if (!viewId) {
             return;
         }
         window.desktop.openPopoutMenu(viewId);
+    };
+
+    const openMenu = () => {
+        if (window.process.platform !== 'darwin') {
+            openPopoutMenu();
+        }
     };
 
     if (!config) {
