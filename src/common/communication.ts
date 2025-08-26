@@ -228,3 +228,7 @@ export const CLOSE_TAB = 'close-tab';
 
 // Popout Manager Events
 export const CREATE_NEW_WINDOW = 'create-new-window';
+
+// View limit events
+export const VIEW_LIMIT_UPDATED = 'view-limit-updated';
+export const GET_IS_VIEW_LIMIT_REACHED = 'get-is-view-limit-reached';

@@ -113,6 +113,8 @@ import {
     TAB_ADDED,
     TAB_REMOVED,
     OPEN_POPOUT_MENU,
+    VIEW_LIMIT_UPDATED,
+    GET_IS_VIEW_LIMIT_REACHED,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -177,6 +179,8 @@ contextBridge.exposeInMainWorld('desktop', {
     editServer: (server, permissions) => ipcRenderer.send(EDIT_SERVER, server, permissions),
     removeServer: (serverId) => ipcRenderer.send(REMOVE_SERVER, serverId),
     onServerLoggedInChanged: (listener) => ipcRenderer.on(SERVER_LOGGED_IN_CHANGED, (_, serverId, loggedIn) => listener(serverId, loggedIn)),
+    onViewLimitUpdated: (listener) => ipcRenderer.on(VIEW_LIMIT_UPDATED, () => listener()),
+    getIsViewLimitReached: () => ipcRenderer.invoke(GET_IS_VIEW_LIMIT_REACHED),
 
     getConfiguration: () => ipcRenderer.invoke(GET_CONFIGURATION),
     getVersion: () => ipcRenderer.invoke(GET_APP_INFO),

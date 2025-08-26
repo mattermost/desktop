@@ -377,6 +377,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         {
             label: localizeMessage('main.menus.app.window.newWindowForCurrentServer', 'New Window for Current Server'),
             accelerator: 'CmdOrCtrl+N',
+            enabled: !ViewManager.isViewLimitReached(),
             click() {
                 const serverId = ServerManager.getCurrentServerId();
                 if (!serverId) {
@@ -435,6 +436,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         {
             label: localizeMessage('main.menus.app.window.newTabForCurrentServer', 'New Tab for Current Server'),
             accelerator: 'CmdOrCtrl+T',
+            enabled: !ViewManager.isViewLimitReached(),
             click() {
                 const serverId = ServerManager.getCurrentServerId();
                 if (!serverId) {
@@ -445,6 +447,9 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                     return;
                 }
                 const view = ViewManager.createView(server, ViewType.TAB);
+                if (!view) {
+                    return;
+                }
                 TabManager.switchToTab(view.id);
             },
         },

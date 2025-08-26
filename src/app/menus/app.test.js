@@ -120,6 +120,9 @@ jest.mock('app/views/webContentsManager', () => ({
     getViewByWebContentsId: jest.fn(),
     getFocusedView: jest.fn(),
 }));
+jest.mock('common/views/viewManager', () => ({
+    isViewLimitReached: jest.fn(),
+}));
 
 describe('main/menus/app', () => {
     const config = {

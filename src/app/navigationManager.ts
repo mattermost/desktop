@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain} from 'electron';
+import {dialog, ipcMain} from 'electron';
 
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
@@ -18,6 +18,7 @@ import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
+import {localizeMessage} from 'main/i18nManager';
 
 const log = new Logger('DeepLinking');
 
@@ -33,12 +34,16 @@ export class NavigationManager {
         ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
     }
 
-    private openLinkInTab = (url: string | URL, getView: (server: MattermostServer) => MattermostView) => {
+    private openLinkInTab = (url: string | URL, getView: (server: MattermostServer) => MattermostView | undefined) => {
         if (url) {
             const parsedURL = parseURL(url)!;
             const server = ServerManager.lookupServerByURL(parsedURL, true);
             if (server) {
                 const view = getView(server);
+                if (!view) {
+                    return;
+                }
+
                 const webContentsView = WebContentsManager.getView(view.id);
                 if (!webContentsView) {
                     log.error(`Couldn't find a server for the view ${view.id}`);
@@ -86,6 +91,10 @@ export class NavigationManager {
             // We should only open in the primary tab for logging in, and if the app is just starting up
             if (!view || server.isLoggedIn) {
                 view = ViewManager.createView(server, ViewType.TAB);
+                if (!view) {
+                    this.showViewLimitReachedError();
+                    return undefined;
+                }
                 TabManager.switchToTab(view.id);
             }
             return view;
@@ -94,7 +103,11 @@ export class NavigationManager {
 
     openLinkInNewTab = (url: string | URL) => {
         this.openLinkInTab(url, (server: MattermostServer) => {
-            const view = ViewManager.createView(server, ViewType.TAB);
+            const view = ViewManager.createView(server, ViewType.TAB) ?? ViewManager.getPrimaryView(server.id);
+            if (!view) {
+                this.showViewLimitReachedError();
+                return undefined;
+            }
             TabManager.switchToTab(view.id);
             return view;
         });
@@ -104,6 +117,13 @@ export class NavigationManager {
         this.openLinkInTab(url, (server: MattermostServer) => {
             return ViewManager.createView(server, ViewType.WINDOW);
         });
+    };
+
+    private showViewLimitReachedError = () => {
+        dialog.showErrorBox(
+            localizeMessage('app.navigationManager.viewLimitReached', 'View limit reached'),
+            localizeMessage('app.navigationManager.viewLimitReached.description', 'You have reached the maximum number of open windows and tabs for this server. Please close an existing window or tab, or adjust the view limit in the Settings modal.'),
+        );
     };
 
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {

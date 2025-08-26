@@ -26,12 +26,17 @@ import {
     EMIT_CONFIGURATION,
     EXIT_FULLSCREEN,
     SERVER_LOGGED_IN_CHANGED,
+    VIEW_REMOVED,
+    VIEW_CREATED,
+    VIEW_LIMIT_UPDATED,
+    GET_IS_VIEW_LIMIT_REACHED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
+import ViewManager from 'common/views/viewManager';
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
@@ -50,8 +55,9 @@ export class MainWindow extends EventEmitter {
         super();
 
         ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.browserWindow?.isFullScreen());
-        ipcMain.on(EMIT_CONFIGURATION, this.handleUpdateTitleBarOverlay);
+        ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
         ipcMain.on(EXIT_FULLSCREEN, this.handleExitFullScreen);
+        ipcMain.handle(GET_IS_VIEW_LIMIT_REACHED, this.handleGetIsViewLimitReached);
 
         ServerManager.on(SERVER_ADDED, this.handleServerAdded);
         ServerManager.on(SERVER_REMOVED, this.handleServerRemoved);
@@ -59,6 +65,9 @@ export class MainWindow extends EventEmitter {
         ServerManager.on(SERVER_NAME_CHANGED, this.handleServerNameChanged);
         ServerManager.on(SERVER_SWITCHED, this.handleServerSwitched);
         ServerManager.on(SERVER_LOGGED_IN_CHANGED, this.handleServerLoggedInChanged);
+
+        ViewManager.on(VIEW_CREATED, this.sendViewLimitUpdated);
+        ViewManager.on(VIEW_REMOVED, this.sendViewLimitUpdated);
 
         AppState.on(UPDATE_APPSTATE_FOR_VIEW_ID, this.handleUpdateAppStateForViewId);
     }
@@ -383,10 +392,19 @@ export class MainWindow extends EventEmitter {
         this.win?.browserWindow.webContents.send(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
     };
 
-    private handleUpdateTitleBarOverlay = () => {
+    private handleEmitConfiguration = () => {
+        this.sendViewLimitUpdated();
         if (process.platform === 'linux') {
             this.win?.browserWindow.setTitleBarOverlay?.(this.getTitleBarOverlay());
         }
+    };
+
+    private sendViewLimitUpdated = () => {
+        this.win?.browserWindow.webContents.send(VIEW_LIMIT_UPDATED);
+    };
+
+    private handleGetIsViewLimitReached = () => {
+        return ViewManager.isViewLimitReached();
     };
 }
 

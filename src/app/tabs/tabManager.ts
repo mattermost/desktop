@@ -34,7 +34,6 @@ import {
     VIEW_TYPE_ADDED,
     VIEW_TYPE_REMOVED,
 } from 'common/communication';
-import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import type {MattermostView} from 'common/views/MattermostView';
@@ -427,12 +426,7 @@ export class TabManager extends EventEmitter {
             return undefined;
         }
 
-        if (Config.tabLimit && this.getOrderedTabsForServer(serverId).length >= Config.tabLimit) {
-            log.warn(`handleCreateNewTab: Tab limit reached for server ${serverId}`);
-            return undefined;
-        }
-
-        return ViewManager.createView(server, ViewType.TAB).id;
+        return ViewManager.createView(server, ViewType.TAB)?.id;
     };
 
     private switchToNextTabIfNecessary = (viewId: string, serverId: string) => {

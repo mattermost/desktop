@@ -209,7 +209,7 @@ export class PopoutManager {
             return undefined;
         }
 
-        return ViewManager.createView(server, ViewType.WINDOW).id;
+        return ViewManager.createView(server, ViewType.WINDOW)?.id;
     };
 }
 

@@ -27,7 +27,7 @@ type Props = {
     onDrop: (result: DropResult) => void;
     tabsDisabled?: boolean;
     isMenuOpen?: boolean;
-    tabLimit: number;
+    isViewLimitReached: boolean;
     intl: IntlShape;
 };
 
@@ -64,11 +64,6 @@ class TabBar extends React.PureComponent<Props, State> {
             event.stopPropagation();
             this.props.onOpenPopoutMenu(id);
         };
-    };
-
-    isTabLimitReached = () => {
-        const {tabs, tabLimit} = this.props;
-        return Boolean(tabLimit && tabs.length >= tabLimit);
     };
 
     componentDidMount(): void {
@@ -189,7 +184,7 @@ class TabBar extends React.PureComponent<Props, State> {
                             {...provided.droppableProps}
                         >
                             {tabs}
-                            {!this.props.tabsDisabled && !snapshot.draggingFromThisWith && !this.isTabLimitReached() &&
+                            {!this.props.tabsDisabled && !snapshot.draggingFromThisWith && !this.props.isViewLimitReached &&
                                 <div className='TopBar-button--newTab_container'>
                                     <div className='TopBar-button--newTab_divider'/>
                                     <button
@@ -198,7 +193,7 @@ class TabBar extends React.PureComponent<Props, State> {
                                             darkMode: this.props.isDarkMode,
                                         })}
                                         onClick={this.props.onNewTab}
-                                        disabled={this.props.tabsDisabled || this.isTabLimitReached()}
+                                        disabled={this.props.tabsDisabled || this.props.isViewLimitReached}
                                         title={this.props.intl.formatMessage({
                                             id: 'renderer.components.tabBar.newTab.tooltip',
                                             defaultMessage: 'New tab',

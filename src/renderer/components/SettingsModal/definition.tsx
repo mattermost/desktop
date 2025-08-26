@@ -191,23 +191,24 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                     },
                 },
                 {
-                    id: 'tabLimit',
+                    id: 'viewLimit',
                     component: NumberSetting,
                     props: {
                         label: (
                             <FormattedMessage
-                                id='renderer.components.settingsPage.tabLimit'
-                                defaultMessage='Maximum number of open tabs'
+                                id='renderer.components.settingsPage.viewLimit'
+                                defaultMessage='Maximum number of open views'
                             />
                         ),
                         subLabel: (
                             <FormattedMessage
-                                id='renderer.components.settingsPage.tabLimit.description'
-                                defaultMessage='The maximum number of tabs that can be open simultaneously in the application per server. 0 means no limit.'
+                                id='renderer.components.settingsPage.viewLimit.description'
+                                defaultMessage='The maximum number of tabs and windows combined that can be open simultaneously in the application per server. 0 means no limit.'
                             />
                         ),
-                        min: 0,
-                        defaultValue: (await window.desktop.getLocalConfiguration()).tabLimit,
+                        allowUndefinedValue: true,
+                        min: (await window.desktop.getLocalConfiguration()).servers.length,
+                        defaultValue: (await window.desktop.getLocalConfiguration()).viewLimit,
                     },
                 },
             ],

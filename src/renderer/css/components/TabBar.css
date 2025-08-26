@@ -85,8 +85,11 @@
     background: none;
     border: none;
     color: rgba(61,60,64,0.32);
-    margin-left: 6px;
     padding: 0;
+    height: 24px;
+    width: 24px;
+    margin-left: -12px;
+    margin-right: 3px;
 }
 
 .TabBar>li.serverTabItem>a>div.TabBar-tabSeperator>.serverTabItem__close:hover {
@@ -112,15 +115,9 @@
 
 .TabBar>li>a>div.TabBar-tabSeperator {
   display: flex;
-  padding: 5px 12px;
-  align-items: center;
-}
-
-/* Style the text container */
-.TabBar>li>a>div.TabBar-tabSeperator {
-  display: flex;
   align-items: center;
   gap: 6px;
+  border-left: 1px solid transparent;
 }
 
 /* The text node needs to be wrapped in a span for this to work */
@@ -130,6 +127,8 @@
   white-space: nowrap;
   flex: 1;
   min-width: 16px;
+  padding: 5px 0 5px 12px;
+  margin-right: 12px;
 }
 
 .TabBar>li:has(.TabBar-dot) {
@@ -185,7 +184,8 @@
   float: right;
   height: 8px;
   width: 8px;
-  margin-left: 8px;
+  margin-left: -8px;
+  margin-right: 12px;
   border-radius: 4px;
   flex: 0 0 8px;
 }
@@ -198,7 +198,8 @@
   float: right;
   font-size: 18px;
   line-height: 12px;
-  margin-left: 8px;
+  margin-left: -8px;
+  margin-right: 12px;
   color: rgba(61,60,64,0.32);
 }
 
@@ -225,7 +226,8 @@
     letter-spacing: normal;
     -webkit-font-smoothing: auto;
     
-    margin-left: 6px;
+    margin-left: -6px;
+    margin-right: 12px;
     height: 12px;
 }
 

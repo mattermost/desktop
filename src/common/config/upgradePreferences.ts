@@ -63,7 +63,7 @@ export function upgradeV3toV4(configV3: ConfigV3) {
         };
     });
     config.lastActiveServer = configV3.lastActiveTeam;
-    config.tabLimit = 15;
+    config.viewLimit = 15;
     return config;
 }
 

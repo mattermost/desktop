@@ -11,14 +11,15 @@ import './NumberSetting.scss';
 type Props = {
     id: string;
     label: React.ReactNode;
-    value: number;
-    onSave: (key: string, value: number) => void;
+    value?: number;
+    onSave: (key: string, value?: number) => void;
     subLabel?: React.ReactNode;
     min?: number;
     max?: number;
     step?: number;
     bottomBorder?: boolean;
     defaultValue?: number;
+    allowUndefinedValue?: boolean;
 };
 
 export default function NumberSetting({
@@ -32,10 +33,16 @@ export default function NumberSetting({
     step = 1,
     bottomBorder,
     defaultValue,
+    allowUndefinedValue,
 }: Props) {
-    const [value, setValue] = useState<number>(propValue ?? defaultValue);
+    const [value, setValue] = useState<number | undefined>(allowUndefinedValue ? propValue : propValue ?? defaultValue);
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (allowUndefinedValue && event.target.value === '') {
+            setValue(undefined);
+            onSave(id, undefined);
+            return;
+        }
         const newValue = parseInt(event.target.value, 10);
         if (!isNaN(newValue)) {
             if (min !== undefined && newValue < min) {

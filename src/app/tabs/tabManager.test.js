@@ -97,7 +97,7 @@ jest.mock('common/views/viewManager', () => {
 });
 
 jest.mock('common/config', () => ({
-    tabLimit: 15,
+    viewLimit: 15,
 }));
 
 describe('TabManager', () => {
@@ -1134,39 +1134,6 @@ describe('TabManager', () => {
 
             // Verify switchToTab was called
             expect(switchToTabSpy).toHaveBeenCalledWith('new-tab-id');
-        });
-
-        it('should respect tab limit when creating new tabs', () => {
-            const tabManager = new TabManager();
-            const mockServer = {
-                id: 'test-server-id',
-                name: 'Test Server',
-                url: 'http://test.com',
-            };
-
-            // Mock existing tabs
-            const existingTabs = [
-                {id: 'tab-1', serverId: 'test-server-id', type: ViewType.TAB},
-                {id: 'tab-2', serverId: 'test-server-id', type: ViewType.TAB},
-            ];
-
-            ServerManager.getServer.mockReturnValue(mockServer);
-            ViewManager.getView.mockImplementation((id) => {
-                return existingTabs.find((tab) => tab.id === id);
-            });
-
-            // Mock getOrderedTabsForServer to return existing tabs
-            jest.spyOn(tabManager, 'getOrderedTabsForServer').mockReturnValue(existingTabs);
-
-            // Mock Config.tabLimit to return 2 for this test
-            const Config = require('common/config');
-            Config.tabLimit = 2;
-
-            // Try to create a new tab when limit is reached
-            const result = tabManager.handleCreateNewTab('test-server-id');
-
-            // Should return undefined when limit is reached
-            expect(result).toBeUndefined();
         });
     });
 });

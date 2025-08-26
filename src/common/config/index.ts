@@ -130,7 +130,11 @@ export class Config extends EventEmitter {
     setServers = (servers: ConfigServer[], lastActiveServer?: number) => {
         log.debug('setServers', servers, lastActiveServer);
 
-        this.localConfigData = Object.assign({}, this.localConfigData, {servers, lastActiveServer: lastActiveServer ?? this.localConfigData?.lastActiveServer});
+        this.localConfigData = Object.assign({}, this.localConfigData, {
+            servers,
+            lastActiveServer: lastActiveServer ?? this.localConfigData?.lastActiveServer,
+            viewLimit: this.localConfigData?.viewLimit ? Math.max(this.localConfigData.viewLimit, servers.length + this.predefinedServers.length) : undefined,
+        });
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
     };
@@ -250,8 +254,8 @@ export class Config extends EventEmitter {
         return this.combinedData?.enableMetrics ?? true;
     }
 
-    get tabLimit() {
-        return this.combinedData?.tabLimit ?? 15;
+    get viewLimit() {
+        return this.combinedData?.viewLimit ?? 15;
     }
 
     /**

@@ -33,7 +33,6 @@ type Props = {
     openMenu: () => void;
     darkMode: boolean;
     appName: string;
-    tabLimit: number;
 };
 
 type State = {
@@ -54,6 +53,7 @@ type State = {
     developerMode: boolean;
     primaryTabId?: string;
     currentServer?: UniqueServer;
+    isViewLimitReached: boolean;
 };
 
 type TabViewStatus = {
@@ -81,6 +81,7 @@ class MainPage extends React.PureComponent<Props, State> {
             showDownloadsBadge: false,
             hasDownloads: false,
             developerMode: false,
+            isViewLimitReached: false,
         };
     }
 
@@ -151,6 +152,11 @@ class MainPage extends React.PureComponent<Props, State> {
         }
     };
 
+    updateIsViewLimitReached = async () => {
+        const isViewLimitReached = await window.desktop.getIsViewLimitReached();
+        this.setState({isViewLimitReached});
+    };
+
     handleServerAdded = async (serverId: string, setAsCurrentServer: boolean) => {
         // Refresh servers and tabs when a server is added
         await this.updateServers();
@@ -173,6 +179,7 @@ class MainPage extends React.PureComponent<Props, State> {
         // request downloads
         await this.requestDownloadsLength();
         await this.updateServers();
+        await this.updateIsViewLimitReached();
 
         window.desktop.onServerAdded(this.handleServerAdded);
         window.desktop.onServerRemoved(this.updateServers);
@@ -182,6 +189,7 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.onServerLoggedInChanged(this.updateServers);
         window.desktop.onTabAdded(this.updateServers);
         window.desktop.onTabRemoved(this.updateServers);
+        window.desktop.onViewLimitUpdated(this.updateIsViewLimitReached);
 
         // Add tab title update handler
         window.desktop.onUpdateTabTitle((viewId, title) => {
@@ -438,7 +446,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 onDrop={this.handleDragAndDrop}
                 tabsDisabled={this.state.modalOpen || !this.state.currentServer?.isLoggedIn}
                 isMenuOpen={this.state.isMenuOpen || this.state.isDownloadsDropdownOpen}
-                tabLimit={this.props.tabLimit}
+                isViewLimitReached={this.state.isViewLimitReached}
             />
         );
 

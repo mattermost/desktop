@@ -46,7 +46,6 @@ function createTemplate(viewId: string) {
                     ViewManager.updateViewType(viewId, ViewType.WINDOW);
                 }
             },
-            accelerator: isWindow ? 'CmdOrCtrl+Shift+M' : 'CmdOrCtrl+Shift+N',
         },
         {
             label: isWindow ? localizeMessage('main.menus.popoutMenu.closeWindow', 'Close window') : localizeMessage('main.menus.popoutMenu.closeTab', 'Close tab'),

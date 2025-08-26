@@ -29,6 +29,9 @@ jest.mock('common/servers/serverManager', () => {
     };
 });
 
+jest.mock('common/config', () => ({
+    viewLimit: 15,
+}));
 jest.mock('common/appState', () => ({
     switch: jest.fn(),
 }));
@@ -95,6 +98,32 @@ describe('ViewManager', () => {
             expect(view.title).toBe(mockServer.name);
             expect(viewManager.views.get(view.id)).toBe(view);
             expect(emitSpy).toHaveBeenCalledWith(VIEW_CREATED, view.id);
+        });
+
+        it('should respect viewLimit when creating new views', () => {
+            // Set up a ViewManager with a viewLimit of 2
+            const viewManager = new ViewManager();
+            const mockServer = {
+                id: 'test-server-id',
+                name: 'Test Server',
+                url: 'http://test.com',
+            };
+
+            // Set the viewLimit for this test
+            const Config = require('common/config');
+            Config.viewLimit = 2;
+
+            // Create up to the limit
+            const view1 = viewManager.createView(mockServer, ViewType.TAB);
+            const view2 = viewManager.createView(mockServer, ViewType.TAB);
+
+            expect(view1).toBeDefined();
+            expect(view2).toBeDefined();
+
+            // Try to create a third view, which should fail due to the limit
+            const view3 = viewManager.createView(mockServer, ViewType.TAB);
+
+            expect(view3).toBeUndefined();
         });
     });
 

@@ -71,6 +71,8 @@ declare global {
             editServer: (server: UniqueServer, permissions?: Permissions) => void;
             removeServer: (serverId: string) => void;
             onServerLoggedInChanged: (listener: (serverId: string, loggedIn: boolean) => void) => void;
+            onViewLimitUpdated: (listener: () => void) => void;
+            getIsViewLimitReached: () => Promise<boolean>;
 
             getConfiguration: () => Promise<CombinedConfig[keyof CombinedConfig] | CombinedConfig>;
             getVersion: () => Promise<{name: string; version: string}>;

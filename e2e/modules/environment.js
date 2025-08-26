@@ -72,7 +72,7 @@ const demoConfig = {
     autoCheckForUpdates: true,
     appLanguage: 'en',
     logLevel: 'silly',
-    tabLimit: 15,
+    viewLimit: 15,
 };
 
 const demoMattermostConfig = {

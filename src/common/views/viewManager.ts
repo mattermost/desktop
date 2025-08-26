@@ -14,6 +14,7 @@ import {
     VIEW_TYPE_REMOVED,
     VIEW_TYPE_ADDED,
 } from 'common/communication';
+import Config from 'common/config';
 import {Logger, getLevel} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -42,7 +43,7 @@ export class ViewManager extends EventEmitter {
     getPrimaryView = (serverId: string) => {
         const viewId = this.serverPrimaryViews.get(serverId);
         if (!viewId) {
-            return null;
+            return undefined;
         }
         return this.getView(viewId);
     };
@@ -55,8 +56,17 @@ export class ViewManager extends EventEmitter {
         return this.serverPrimaryViews.get(view.serverId) === viewId;
     };
 
+    isViewLimitReached = () => {
+        return Boolean(Config.viewLimit && this.views.size >= Config.viewLimit);
+    };
+
     createView = (server: MattermostServer, type: ViewType) => {
         log.debug('createView', server.id, server.name, type);
+
+        if (this.isViewLimitReached()) {
+            log.warn(`createView: View limit reached for server ${server.id}`);
+            return undefined;
+        }
 
         const newView = new MattermostView(server, type);
         this.views.set(newView.id, newView);

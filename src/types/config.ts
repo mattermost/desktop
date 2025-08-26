@@ -53,13 +53,13 @@ export type ConfigV4 = {
     logLevel?: string;
     appLanguage?: string;
     enableMetrics?: boolean;
-    tabLimit: number;
+    viewLimit?: number;
 }
 
 export type ConfigV3 = Omit<ConfigV4,
 'version' |
 'servers' |
-'tabLimit' |
+'viewLimit' |
 'lastActiveServer'> & {
     version: 3;
     teams: Array<Server & {
