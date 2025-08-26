@@ -442,7 +442,7 @@ export class MattermostWebContentsView extends EventEmitter {
         // Extract just the channel name (everything before the first " - ")
         // Remove any mention count in parentheses at the start
         const parts = newTitle.split(' - ');
-        let channelName = parts[0];
+        let channelName = parts.slice(0, -1).join(' - ');
 
         // Remove mention count if present
         if (channelName.startsWith('(')) {

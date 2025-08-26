@@ -98,6 +98,7 @@ export class ViewManager extends EventEmitter {
         if (!view || view.type === type) {
             return;
         }
+        this.setNewPrimaryViewIfNeeded(view);
         this.emit(VIEW_TYPE_REMOVED, view.id, view.type);
         view.type = type;
         this.emit(VIEW_TYPE_ADDED, view.id, view.type);
@@ -126,15 +127,19 @@ export class ViewManager extends EventEmitter {
             return;
         }
 
-        if (this.serverPrimaryViews.get(view.serverId) === viewId) {
-            const newPrimaryView = Array.from(this.views.values()).find((v) => view.serverId === v.serverId && v.id !== viewId);
+        this.setNewPrimaryViewIfNeeded(view);
+
+        this.views.delete(viewId);
+        this.emit(VIEW_REMOVED, viewId, view.serverId);
+    };
+
+    private setNewPrimaryViewIfNeeded = (view: MattermostView) => {
+        if (this.serverPrimaryViews.get(view.serverId) === view.id) {
+            const newPrimaryView = Array.from(this.views.values()).find((v) => view.serverId === v.serverId && v.id !== view.id && v.type === ViewType.TAB);
             if (newPrimaryView) {
                 this.setPrimaryView(newPrimaryView.id);
             }
         }
-
-        this.views.delete(viewId);
-        this.emit(VIEW_REMOVED, viewId, view.serverId);
     };
 
     getViewLog = (viewId: string, ...additionalPrefixes: string[]) => {

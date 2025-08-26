@@ -8,6 +8,7 @@ import {LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
+import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
 import {getServerAPI} from 'main/server/serverAPI';
 
@@ -94,6 +95,15 @@ jest.mock('common/servers/serverManager', () => ({
 }));
 jest.mock('main/server/serverAPI', () => ({
     getServerAPI: jest.fn(),
+}));
+jest.mock('common/views/viewManager', () => ({
+    updateViewTitle: jest.fn(),
+    getViewLog: jest.fn().mockReturnValue({
+        info: jest.fn(),
+        verbose: jest.fn(),
+        error: jest.fn(),
+        silly: jest.fn(),
+    }),
 }));
 
 const server = new MattermostServer({name: 'server_name', url: 'http://server-1.com'}, false, undefined);
@@ -388,6 +398,64 @@ describe('main/views/MattermostWebContentsView', () => {
         it('should still emit even if URL is blank', () => {
             mattermostView.handleUpdateTarget(null, '');
             expect(mattermostView.emit).toHaveBeenCalled();
+        });
+    });
+
+    describe('handlePageTitleUpdated', () => {
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
+            ServerManager.getServer.mockReturnValue({
+                isLoggedIn: true,
+            });
+            mattermostView.log = {
+                info: jest.fn(),
+                verbose: jest.fn(),
+                error: jest.fn(),
+                silly: jest.fn(),
+            };
+            ViewManager.updateViewTitle.mockClear();
+        });
+
+        it('should extract channel name from title with standard format', () => {
+            mattermostView.handlePageTitleUpdated('Channel Name - Team Name Server Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name');
+        });
+
+        it('should handle channel name with dash in it', () => {
+            mattermostView.handlePageTitleUpdated('Channel - Name - Team Name Server Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel - Name');
+        });
+
+        it('should handle title with mention count', () => {
+            mattermostView.handlePageTitleUpdated('(3) Channel Name - Team Name Server Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name');
+        });
+
+        it('should handle channel name with dash and mention count', () => {
+            mattermostView.handlePageTitleUpdated('(5) Channel - Name - Team Name Server Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel - Name');
+        });
+
+        it('should not update title when user is not logged in', () => {
+            ServerManager.getServer.mockReturnValue({
+                isLoggedIn: false,
+            });
+
+            mattermostView.handlePageTitleUpdated('Channel Name - Team Name Server Name');
+            expect(ViewManager.updateViewTitle).not.toHaveBeenCalled();
+        });
+
+        it('should handle title with only one dash', () => {
+            mattermostView.handlePageTitleUpdated('Channel Name - Team Name Server');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name');
+        });
+
+        it('should handle title with no dash', () => {
+            mattermostView.handlePageTitleUpdated('Just Channel Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, '');
         });
     });
 });

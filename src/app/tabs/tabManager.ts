@@ -372,14 +372,22 @@ export class TabManager extends EventEmitter {
             return;
         }
 
-        mainWindow.contentView.addChildView(view.getWebContentsView());
+        if (ModalManager.isModalDisplayed()) {
+            mainWindow.contentView.addChildView(view.getWebContentsView(), 1);
+        } else {
+            mainWindow.contentView.addChildView(view.getWebContentsView());
+        }
         view.focus();
         view.getWebContentsView().setBounds(getWindowBoundaries(mainWindow));
         this.removeCurrentVisibleTab();
         this.currentVisibleTab = viewId;
 
-        if (view.needsLoadingScreen() && !ModalManager.isModalDisplayed()) {
-            MainWindow.window?.showLoadingScreen();
+        if (view.needsLoadingScreen()) {
+            if (ModalManager.isModalDisplayed()) {
+                MainWindow.window?.showLoadingScreen(1);
+            } else {
+                MainWindow.window?.showLoadingScreen();
+            }
         }
     };
 
@@ -459,7 +467,9 @@ export class TabManager extends EventEmitter {
     };
 
     private onReloadView = () => {
-        if (!ModalManager.isModalDisplayed()) {
+        if (ModalManager.isModalDisplayed()) {
+            MainWindow.window?.showLoadingScreen(1);
+        } else {
             MainWindow.window?.showLoadingScreen();
         }
     };

@@ -76,6 +76,7 @@ export class AppState extends EventEmitter {
         this.mentions.delete(oldViewId);
         this.unreads.delete(oldViewId);
 
+        this.emitStatusForView(oldViewId);
         this.emitStatusForView(newViewId);
     };
 
