@@ -45,7 +45,6 @@ type State = {
     mentionCounts: Record<string, number>;
     mentionsPerServer: Record<string, number>;
     unreadsPerServer: Record<string, boolean>;
-    maximized: boolean;
     tabViewStatus: Map<string, TabViewStatus>;
     modalOpen?: boolean;
     isMenuOpen: boolean;
@@ -78,7 +77,6 @@ class MainPage extends React.PureComponent<Props, State> {
             mentionCounts: {},
             mentionsPerServer: {},
             unreadsPerServer: {},
-            maximized: false,
             tabViewStatus: new Map(),
             isMenuOpen: false,
             isDownloadsDropdownOpen: false,
@@ -255,8 +253,6 @@ class MainPage extends React.PureComponent<Props, State> {
         // can't switch tabs sequentially for some reason...
         window.desktop.onSetActiveView(this.setActiveView);
 
-        window.desktop.onMaximizeChange(this.handleMaximizeState);
-
         window.desktop.onPlaySound((soundName) => {
             playSound(soundName);
         });
@@ -366,10 +362,6 @@ class MainPage extends React.PureComponent<Props, State> {
     handleCloseDropdowns = () => {
         window.desktop.closeServersDropdown();
         this.closeDownloadsDropdown();
-    };
-
-    handleMaximizeState = (maximized: boolean) => {
-        this.setState({maximized});
     };
 
     handleSelectTab = (tabId: string) => {

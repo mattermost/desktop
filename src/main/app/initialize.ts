@@ -4,7 +4,8 @@
 import path from 'path';
 import {pathToFileURL} from 'url';
 
-import {app, ipcMain, nativeTheme, net, protocol, session} from 'electron';
+import type {IpcMainInvokeEvent} from 'electron';
+import {app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
 
@@ -39,6 +40,7 @@ import {
     TAB_ADDED,
     TAB_REMOVED,
     TAB_ORDER_UPDATED,
+    GET_FULL_SCREEN_STATUS,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -285,6 +287,10 @@ function initializeInterCommunicationEventListeners() {
     if (process.env.NODE_ENV === 'test') {
         ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
     }
+
+    ipcMain.handle(GET_FULL_SCREEN_STATUS, (event: IpcMainInvokeEvent) => {
+        return BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
+    });
 }
 
 async function initializeAfterAppReady() {

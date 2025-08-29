@@ -3,7 +3,7 @@
 
 import fs from 'fs';
 
-import type {BrowserWindowConstructorOptions, Event, Input, BrowserWindow} from 'electron';
+import type {BrowserWindowConstructorOptions, Event, Input, BrowserWindow, IpcMainEvent} from 'electron';
 import {app, dialog, ipcMain, screen} from 'electron';
 import {EventEmitter} from 'events';
 
@@ -12,7 +12,6 @@ import AppState from 'common/appState';
 import {
     SELECT_NEXT_TAB,
     SELECT_PREVIOUS_TAB,
-    GET_FULL_SCREEN_STATUS,
     SERVER_ADDED,
     SERVER_REMOVED,
     SERVER_URL_CHANGED,
@@ -56,7 +55,6 @@ export class MainWindow extends EventEmitter {
     constructor() {
         super();
 
-        ipcMain.handle(GET_FULL_SCREEN_STATUS, () => this.win?.browserWindow?.isFullScreen());
         ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
         ipcMain.on(EXIT_FULLSCREEN, this.handleExitFullScreen);
         ipcMain.handle(GET_IS_VIEW_LIMIT_REACHED, this.handleGetIsViewLimitReached);
@@ -354,9 +352,11 @@ export class MainWindow extends EventEmitter {
         this.emit(MAIN_WINDOW_RESIZED, this.win?.browserWindow.getContentBounds());
     };
 
-    private handleExitFullScreen = () => {
-        if (this.win?.browserWindow.isFullScreen()) {
-            this.win.browserWindow.setFullScreen(false);
+    private handleExitFullScreen = (event: IpcMainEvent) => {
+        const window = this.get();
+
+        if (window && window.webContents.id === event.sender.id) {
+            window.setFullScreen(false);
         }
     };
 
