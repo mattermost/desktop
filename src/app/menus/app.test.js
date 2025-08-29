@@ -374,8 +374,8 @@ describe('main/menus/app', () => {
         const devToolsSubMenu = appMenu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
 
         expect(devToolsSubMenu.submenu.length).toBe(2);
-        expect(devToolsSubMenu.submenu[0].label).toBe('main.menus.app.view.devToolsAppWrapper');
-        expect(devToolsSubMenu.submenu[1].label).toBe('main.menus.app.view.devToolsCurrentView');
+        expect(devToolsSubMenu.submenu[0].label).toBe('main.menus.app.view.devToolsMainWindow');
+        expect(devToolsSubMenu.submenu[1].label).toBe('main.menus.app.view.devToolsCurrentTab');
     });
 
     it('should not show menu item if widget window is not open', () => {

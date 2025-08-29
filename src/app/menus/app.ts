@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import type {MenuItemConstructorOptions, MenuItem} from 'electron';
-import {app, ipcMain, Menu, session, shell, clipboard, BrowserWindow} from 'electron';
+import type {MenuItemConstructorOptions, MenuItem, BrowserWindow} from 'electron';
+import {app, ipcMain, Menu, session, shell, clipboard} from 'electron';
 import log from 'electron-log';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
@@ -145,7 +145,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
 
     const devToolsSubMenu: Electron.MenuItemConstructorOptions[] = [
         {
-            label: localizeMessage('main.menus.app.view.devToolsAppWrapper', 'Developer Tools for Application Wrapper'),
+            label: localizeMessage('main.menus.app.view.devToolsMainWindow', 'Developer Tools for Main Window'),
             accelerator: (() => {
                 if (process.platform === 'darwin') {
                     return 'Alt+Command+I';
@@ -153,21 +153,11 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 return 'Ctrl+Shift+I';
             })(),
             click() {
-                // TODO: This is a bit unreliable, find a better way to get the focused window
-                const focusedWindow = BrowserWindow.getFocusedWindow();
-                if (!focusedWindow) {
-                    return;
-                }
-
-                if (focusedWindow.webContents.isDevToolsOpened()) {
-                    focusedWindow.webContents.closeDevTools();
-                } else {
-                    focusedWindow.webContents.openDevTools({mode: 'detach'});
-                }
+                MainWindow.get()?.webContents.openDevTools({mode: 'detach'});
             },
         },
         {
-            label: localizeMessage('main.menus.app.view.devToolsCurrentView', 'Developer Tools for Current View'),
+            label: localizeMessage('main.menus.app.view.devToolsCurrentTab', 'Developer Tools for Current Tab'),
             click() {
                 TabManager.getCurrentActiveTabView()?.openDevTools();
             },

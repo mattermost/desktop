@@ -5,6 +5,7 @@ import type {MenuItem, MenuItemConstructorOptions} from 'electron';
 import {clipboard, Menu} from 'electron';
 
 import WebContentsManager from 'app/views/webContentsManager';
+import PopoutManager from 'app/windows/popoutManager';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {localizeMessage} from 'main/i18nManager';
@@ -53,6 +54,28 @@ function createTemplate(viewId: string) {
                 ViewManager.removeView(viewId);
             },
         }]);
+    }
+
+    if (isWindow) {
+        template.push({
+            type: 'separator',
+        }, {
+            label: localizeMessage('main.menus.popoutMenu.developerTools', 'Developer Tools'),
+            submenu: [
+                {
+                    label: localizeMessage('main.menus.popoutMenu.developerToolsApplicationWrapper', 'Developer Tools for Application Wrapper'),
+                    click() {
+                        PopoutManager.getWindow(viewId)?.browserWindow.webContents.openDevTools({mode: 'detach'});
+                    },
+                },
+                {
+                    label: localizeMessage('main.menus.popoutMenu.developerToolsCurrentView', 'Developer Tools for Current View'),
+                    click() {
+                        WebContentsManager.getView(viewId)?.getWebContentsView().webContents.openDevTools({mode: 'detach'});
+                    },
+                },
+            ],
+        });
     }
     return template;
 }

@@ -47,6 +47,10 @@ jest.mock('./tabs/tabManager', () => ({
     getOrderedTabsForServer: jest.fn(),
 }));
 
+jest.mock('app/windows/popoutManager', () => ({
+    getWindow: jest.fn(),
+}));
+
 describe('main/app/popoutMenu', () => {
     const mockViewId = 'test-view-id';
     const mockServerId = 'test-server-id';
