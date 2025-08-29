@@ -8,7 +8,7 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import WebContentsManager from 'app/views/webContentsManager';
 import BaseWindow from 'app/windows/baseWindow';
-import {CREATE_NEW_WINDOW, LOAD_FAILED, LOADSCREEN_END, RELOAD_VIEW, UPDATE_TAB_TITLE, VIEW_CREATED, VIEW_REMOVED, VIEW_TITLE_UPDATED, VIEW_TYPE_ADDED, VIEW_TYPE_REMOVED} from 'common/communication';
+import {CREATE_NEW_WINDOW, LOAD_FAILED, LOADSCREEN_END, RELOAD_VIEW, UPDATE_POPOUT_TITLE, VIEW_CREATED, VIEW_REMOVED, VIEW_TITLE_UPDATED, VIEW_TYPE_ADDED, VIEW_TYPE_REMOVED} from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
@@ -154,9 +154,9 @@ export class PopoutManager {
             const window = this.popoutWindows.get(viewId);
             if (window) {
                 const server = ServerManager.getServer(view.serverId);
-                const title = `${server?.name} - ${view.title}`;
+                const title = `${server?.name} - ${ViewManager.getViewTitle(viewId)}`;
                 window.browserWindow.setTitle(title);
-                window.browserWindow.webContents.send(UPDATE_TAB_TITLE, view.id, title);
+                window.browserWindow.webContents.send(UPDATE_POPOUT_TITLE, view.id, title);
             }
         }
     };

@@ -20,6 +20,8 @@ import {
     SERVER_SWITCHED,
     UPDATE_APPSTATE_FOR_VIEW_ID,
     UPDATE_MENTIONS,
+    UPDATE_MENTIONS_FOR_SERVER,
+    UPDATE_APPSTATE_FOR_SERVER_ID,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
@@ -70,6 +72,7 @@ export class MainWindow extends EventEmitter {
         ViewManager.on(VIEW_REMOVED, this.sendViewLimitUpdated);
 
         AppState.on(UPDATE_APPSTATE_FOR_VIEW_ID, this.handleUpdateAppStateForViewId);
+        AppState.on(UPDATE_APPSTATE_FOR_SERVER_ID, this.handleUpdateAppStateForServerId);
     }
 
     init = () => {
@@ -390,6 +393,10 @@ export class MainWindow extends EventEmitter {
 
     private handleUpdateAppStateForViewId = (viewId: string, isExpired: boolean, newMentions: number, newUnreads: boolean) => {
         this.win?.browserWindow.webContents.send(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
+    };
+
+    private handleUpdateAppStateForServerId = (serverId: string, expired: boolean, newMentions: number, newUnreads: boolean) => {
+        this.win?.browserWindow.webContents.send(UPDATE_MENTIONS_FOR_SERVER, serverId, expired, newMentions, newUnreads);
     };
 
     private handleEmitConfiguration = () => {

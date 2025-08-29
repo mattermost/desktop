@@ -3,7 +3,6 @@
 
 import EventEmitter from 'events';
 
-import AppState from 'common/appState';
 import {
     VIEW_CREATED,
     VIEW_TITLE_UPDATED,
@@ -38,6 +37,26 @@ export class ViewManager extends EventEmitter {
 
     getView = (id: string) => {
         return this.views.get(id);
+    };
+
+    getViewTitle = (viewId: string) => {
+        const view = this.getView(viewId);
+        if (!view) {
+            return '';
+        }
+        const {channelName, teamName, serverName} = view.title;
+        if (channelName) {
+            if (teamName && [...this.views.values()].some((v) => v.id !== view.id && v.title.channelName === channelName)) {
+                return `${channelName} - ${teamName}`;
+            }
+            return channelName;
+        }
+
+        return teamName ?? serverName;
+    };
+
+    getViewsByServerId = (serverId: string) => {
+        return Array.from(this.views.values()).filter((view) => view.serverId === serverId);
     };
 
     getPrimaryView = (serverId: string) => {
@@ -80,14 +99,18 @@ export class ViewManager extends EventEmitter {
         return newView;
     };
 
-    updateViewTitle = (viewId: string, title: string) => {
-        log.debug('updateViewTitle', viewId, title);
+    updateViewTitle = (viewId: string, channelName?: string, teamName?: string) => {
+        log.debug('updateViewTitle', viewId, channelName, teamName);
 
         const view = this.views.get(viewId);
         if (!view) {
             return;
         }
-        view.title = title;
+        view.title = {
+            serverName: view.title.serverName,
+            channelName,
+            teamName,
+        };
         this.emit(VIEW_TITLE_UPDATED, view.id);
     };
 
@@ -111,10 +134,7 @@ export class ViewManager extends EventEmitter {
         if (!view) {
             return;
         }
-        const currentPrimaryViewId = this.serverPrimaryViews.get(view.serverId);
-        if (currentPrimaryViewId) {
-            AppState.switch(currentPrimaryViewId, viewId);
-        }
+
         this.serverPrimaryViews.set(view.serverId, viewId);
         this.emit(VIEW_PRIMARY_UPDATED, view.serverId, viewId);
     };

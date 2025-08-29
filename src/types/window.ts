@@ -57,7 +57,8 @@ declare global {
             createNewTab: (serverId: string) => Promise<string>;
             createNewWindow: (serverId: string) => Promise<string>;
             openPopoutMenu: (viewId: string) => void;
-            onUpdateTabTitle: (listener: (viewId: string, title: string) => void) => void;
+            onUpdateTabTitle: (listener: (viewId: string, title: {channelName?: string; teamName?: string; serverName: string}) => void) => void;
+            onUpdatePopoutTitle: (listener: (viewId: string, title: string) => void) => void;
             onServerAdded: (listener: (serverId: string, setAsCurrentServer: boolean) => void) => void;
             onServerRemoved: (listener: (serverId: string) => void) => void;
             onServerUrlChanged: (listener: (serverId: string) => void) => void;
@@ -108,7 +109,7 @@ declare global {
             onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems, darkMode: boolean, windowBounds: Rectangle, item: DownloadedItem) => void) => void;
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
-
+            onUpdateMentionsForServer: (listener: (serverId: string, expired: boolean, mentions: number, unreads: boolean) => void) => void;
             onSetURLForURLView: (listener: (link?: string) => void) => void;
             updateURLViewWidth: (width?: number) => void;
             openNotificationPreferences: () => void;

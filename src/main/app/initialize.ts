@@ -311,12 +311,12 @@ async function initializeAfterAppReady() {
     }
 
     MainWindow.show();
-    ServerManager.init();
     ServerManager.on(SERVER_ADDED, (serverId: string) => {
         if (serverId) {
             updateServerInfos([ServerManager.getServer(serverId)!]);
         }
     });
+    ServerManager.init();
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;

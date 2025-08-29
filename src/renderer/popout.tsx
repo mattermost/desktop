@@ -38,7 +38,7 @@ function Popout() {
             setErrorUrl(loadUrl);
         });
 
-        window.desktop.onUpdateTabTitle((viewId, title) => {
+        window.desktop.onUpdatePopoutTitle((viewId, title) => {
             setTitle(title);
             setViewId(viewId);
         });

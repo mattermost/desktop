@@ -423,7 +423,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             if (currentServer?.id === server.id) {
                 TabManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view: UniqueView, i: number) => {
                     items.push({
-                        label: `    ${view.title}`,
+                        label: `    ${ViewManager.getViewTitle(view.id)}`,
                         accelerator: `CmdOrCtrl+${i + 1}`,
                         click() {
                             TabManager.switchToTab(view.id);

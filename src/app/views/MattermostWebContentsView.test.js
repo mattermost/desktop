@@ -410,6 +410,9 @@ describe('main/views/MattermostWebContentsView', () => {
             ServerManager.getServer.mockReturnValue({
                 isLoggedIn: true,
             });
+            ServerManager.getRemoteInfo.mockReturnValue({
+                siteName: 'Server Name',
+            });
             mattermostView.log = {
                 info: jest.fn(),
                 verbose: jest.fn(),
@@ -421,22 +424,22 @@ describe('main/views/MattermostWebContentsView', () => {
 
         it('should extract channel name from title with standard format', () => {
             mattermostView.handlePageTitleUpdated('Channel Name - Team Name Server Name');
-            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name', 'Team Name');
         });
 
         it('should handle channel name with dash in it', () => {
             mattermostView.handlePageTitleUpdated('Channel - Name - Team Name Server Name');
-            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel - Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel - Name', 'Team Name');
         });
 
         it('should handle title with mention count', () => {
             mattermostView.handlePageTitleUpdated('(3) Channel Name - Team Name Server Name');
-            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name', 'Team Name');
         });
 
         it('should handle channel name with dash and mention count', () => {
             mattermostView.handlePageTitleUpdated('(5) Channel - Name - Team Name Server Name');
-            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel - Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel - Name', 'Team Name');
         });
 
         it('should not update title when user is not logged in', () => {
@@ -449,13 +452,13 @@ describe('main/views/MattermostWebContentsView', () => {
         });
 
         it('should handle title with only one dash', () => {
-            mattermostView.handlePageTitleUpdated('Channel Name - Team Name Server');
-            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name');
+            mattermostView.handlePageTitleUpdated('Channel Name - Team Name Server Name');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Channel Name', 'Team Name');
         });
 
         it('should handle title with no dash', () => {
             mattermostView.handlePageTitleUpdated('Just Channel Name');
-            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, '');
+            expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Just Channel Name');
         });
     });
 });

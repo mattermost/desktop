@@ -19,7 +19,9 @@ export type UniqueServer = Server & {
 export type UniqueView = {
     id: string;
     serverId: string;
-    title?: string;
+    channelName?: string;
+    teamName?: string;
+    serverName: string;
     isDisabled?: boolean;
 }
 

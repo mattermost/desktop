@@ -179,7 +179,7 @@
   border-left: 1px solid transparent;
 }
 
-.TabBar .TabBar-dot {
+.TabBar-dot {
   background: #579eff;
   float: right;
   height: 8px;
@@ -190,7 +190,7 @@
   flex: 0 0 8px;
 }
 
-.TabBar.darkMode .TabBar-dot {
+.darkMode .TabBar-dot {
   background: #196CAF;
 }
 
@@ -211,7 +211,7 @@
     color: rgba(221,221,221,0.32);
 }
 
-.TabBar .TabBar-badge {
+.TabBar-badge {
     background: #F74343;
     border-radius: 8px;
     display: flex;
@@ -231,7 +231,18 @@
     height: 12px;
 }
 
-.TabBar .TabBar-badge.TabBar-badge-nomention:after {
+.TabBar-badge.unreads {
+  background: #579eff;
+  font-size: 16px;
+  padding: 4px;
+  height: 0;
+}
+
+.darkMode .TabBar-badge.unreads {
+  background: #196CAF;
+}
+
+.TabBar-badge.TabBar-badge-nomention:after {
   content: "";
   width: 4px;
   height: 4px;

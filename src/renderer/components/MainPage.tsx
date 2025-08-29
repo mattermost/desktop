@@ -43,6 +43,8 @@ type State = {
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
     mentionCounts: Record<string, number>;
+    mentionsPerServer: Record<string, number>;
+    unreadsPerServer: Record<string, boolean>;
     maximized: boolean;
     tabViewStatus: Map<string, TabViewStatus>;
     modalOpen?: boolean;
@@ -74,6 +76,8 @@ class MainPage extends React.PureComponent<Props, State> {
             sessionsExpired: {},
             unreadCounts: {},
             mentionCounts: {},
+            mentionsPerServer: {},
+            unreadsPerServer: {},
             maximized: false,
             tabViewStatus: new Map(),
             isMenuOpen: false,
@@ -198,7 +202,7 @@ class MainPage extends React.PureComponent<Props, State> {
                 const tab = serverTabs.find((t) => t.id === viewId);
                 if (tab) {
                     const updatedTabs = serverTabs.map((t) =>
-                        (t.id === viewId ? {...t, title} : t),
+                        (t.id === viewId ? {...t, ...title} : t),
                     );
                     tabs.set(serverId, updatedTabs);
                     this.setState({tabs});
@@ -278,6 +282,18 @@ class MainPage extends React.PureComponent<Props, State> {
             expired[view] = isExpired || false;
 
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
+        });
+
+        window.desktop.onUpdateMentionsForServer((serverId, _, mentions, unreads) => {
+            const {mentionsPerServer, unreadsPerServer} = this.state;
+
+            const newMentionsPerServer = {...mentionsPerServer};
+            newMentionsPerServer[serverId] = mentions || 0;
+
+            const newUnreadsPerServer = {...unreadsPerServer};
+            newUnreadsPerServer[serverId] = unreads || false;
+
+            this.setState({mentionsPerServer: newMentionsPerServer, unreadsPerServer: newUnreadsPerServer});
         });
 
         window.desktop.onCloseServersDropdown(() => {
@@ -460,18 +476,18 @@ class MainPage extends React.PureComponent<Props, State> {
             />
         ) : null;
 
-        const totalMentionCount = Object.keys(this.state.mentionCounts).reduce((sum, key) => {
+        const totalMentionCount = Object.keys(this.state.mentionsPerServer).reduce((sum, key) => {
             // Strip out current server from unread and mention counts
-            if (this.state.tabs.get(this.state.activeServerId!)?.map((tab) => tab.id).includes(key)) {
+            if (key === this.state.activeServerId) {
                 return sum;
             }
-            return sum + this.state.mentionCounts[key];
+            return sum + this.state.mentionsPerServer[key];
         }, 0);
-        const hasAnyUnreads = Object.keys(this.state.unreadCounts).reduce((sum, key) => {
-            if (this.state.tabs.get(this.state.activeServerId!)?.map((tab) => tab.id).includes(key)) {
+        const hasAnyUnreads = Object.keys(this.state.unreadsPerServer).reduce((sum, key) => {
+            if (key === this.state.activeServerId) {
                 return sum;
             }
-            return sum || this.state.unreadCounts[key];
+            return sum || this.state.unreadsPerServer[key];
         }, false);
 
         const activeServer = this.state.servers.find((srv) => srv.id === this.state.activeServerId);
@@ -504,6 +520,8 @@ class MainPage extends React.PureComponent<Props, State> {
                             isDisabled={this.state.modalOpen}
                             activeServerName={activeServer.name}
                             totalMentionCount={totalMentionCount}
+                            currentMentions={this.state.mentionsPerServer[this.state.activeServerId!]}
+                            currentUnread={this.state.unreadsPerServer[this.state.activeServerId!]}
                             hasUnreads={hasAnyUnreads}
                             isMenuOpen={this.state.isMenuOpen}
                             darkMode={this.props.darkMode}

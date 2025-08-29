@@ -11,13 +11,15 @@ type Props = {
     isDisabled?: boolean;
     activeServerName?: string;
     totalMentionCount: number;
+    currentMentions: number;
+    currentUnread: boolean;
     hasUnreads: boolean;
     isMenuOpen: boolean;
     darkMode: boolean;
 }
 
 const ServerDropdownButton: React.FC<Props> = (props: Props) => {
-    const {isDisabled, activeServerName, totalMentionCount, hasUnreads, isMenuOpen, darkMode} = props;
+    const {isDisabled, activeServerName, totalMentionCount, currentMentions, currentUnread, hasUnreads, isMenuOpen, darkMode} = props;
     const buttonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
     useEffect(() => {
@@ -39,13 +41,24 @@ const ServerDropdownButton: React.FC<Props> = (props: Props) => {
     let badgeDiv: React.ReactNode;
     if (totalMentionCount > 0) {
         badgeDiv = (
-            <div className='ServerDropdownButton__badge-count'>
-                <span>{totalMentionCount > 99 ? '99+' : totalMentionCount}</span>
-            </div>
+            <div className='ServerDropdownButton__badge-unreads mentions'/>
         );
     } else if (hasUnreads) {
         badgeDiv = (
             <div className='ServerDropdownButton__badge-unreads'/>
+        );
+    }
+
+    let currentServerBadgeDiv: React.ReactNode;
+    if (currentMentions > 0) {
+        currentServerBadgeDiv = (
+            <div className='TabBar-badge'>
+                <span>{currentMentions}</span>
+            </div>
+        );
+    } else if (currentUnread) {
+        currentServerBadgeDiv = (
+            <div className='TabBar-badge unreads'/>
         );
     }
 
@@ -74,6 +87,7 @@ const ServerDropdownButton: React.FC<Props> = (props: Props) => {
                     defaultMessage='No servers configured'
                 />
             }
+            {currentServerBadgeDiv}
             <i className='icon-chevron-down'/>
         </button>
     );

@@ -3,7 +3,6 @@
 
 'use strict';
 
-import AppState from 'common/appState';
 import {
     VIEW_CREATED,
     VIEW_TITLE_UPDATED,
@@ -95,7 +94,7 @@ describe('ViewManager', () => {
             expect(view).toBeDefined();
             expect(view.serverId).toBe(mockServer.id);
             expect(view.type).toBe(ViewType.TAB);
-            expect(view.title).toBe(mockServer.name);
+            expect(view.title).toStrictEqual({serverName: mockServer.name});
             expect(viewManager.views.get(view.id)).toBe(view);
             expect(emitSpy).toHaveBeenCalledWith(VIEW_CREATED, view.id);
         });
@@ -135,7 +134,7 @@ describe('ViewManager', () => {
 
             viewManager.updateViewTitle(view.id, 'New Title');
 
-            expect(view.title).toBe('New Title');
+            expect(view.title).toEqual({serverName: mockServer.name, channelName: 'New Title'});
             expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view.id);
         });
     });
@@ -155,15 +154,6 @@ describe('ViewManager', () => {
             viewManager.setPrimaryView(view2.id);
             expect(viewManager.serverPrimaryViews.get(mockServer.id)).toBe(view2.id);
             expect(emitSpy).toHaveBeenCalledWith(VIEW_PRIMARY_UPDATED, mockServer.id, view2.id);
-        });
-
-        it('should call AppState.switch when changing primary view', () => {
-            const view1 = viewManager.createView(mockServer, ViewType.TAB);
-            const view2 = viewManager.createView(mockServer, ViewType.TAB);
-
-            viewManager.setPrimaryView(view2.id);
-
-            expect(AppState.switch).toHaveBeenCalledWith(view1.id, view2.id);
         });
 
         it('should not set non-existent view as primary', () => {

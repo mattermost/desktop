@@ -10,7 +10,6 @@ import {
     EMIT_CONFIGURATION,
     OPEN_SERVERS_DROPDOWN,
     UPDATE_SERVERS_DROPDOWN,
-    UPDATE_APPSTATE,
     REQUEST_SERVERS_DROPDOWN_INFO,
     RECEIVE_DROPDOWN_MENU_SIZE,
     MAIN_WINDOW_CREATED,
@@ -21,12 +20,12 @@ import {
     SERVER_SWITCHED,
     SWITCH_SERVER,
     SERVER_ORDER_UPDATED,
+    UPDATE_APPSTATE_FOR_SERVER_ID,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
-import ViewManager from 'common/views/viewManager';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload} from 'main/utils';
 
@@ -43,10 +42,6 @@ export class ServerDropdownView {
     private isOpen: boolean;
     private bounds: Electron.Rectangle;
 
-    private unreads: Map<string, boolean>;
-    private mentions: Map<string, number>;
-    private expired: Map<string, boolean>;
-
     private windowBounds?: Electron.Rectangle;
 
     constructor() {
@@ -54,10 +49,6 @@ export class ServerDropdownView {
         this.hasGPOServers = false;
         this.isOpen = false;
         this.bounds = this.getBounds(0, 0);
-
-        this.unreads = new Map();
-        this.mentions = new Map();
-        this.expired = new Map();
 
         MainWindow.on(MAIN_WINDOW_CREATED, this.init);
         MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
@@ -69,8 +60,7 @@ export class ServerDropdownView {
 
         ipcMain.on(EMIT_CONFIGURATION, this.updateDropdown);
         ipcMain.on(REQUEST_SERVERS_DROPDOWN_INFO, this.updateDropdown);
-
-        AppState.on(UPDATE_APPSTATE, this.updateMentions);
+        AppState.on(UPDATE_APPSTATE_FOR_SERVER_ID, this.updateDropdown);
 
         ServerManager.on(SERVER_ADDED, this.updateServers);
         ServerManager.on(SERVER_REMOVED, this.updateServers);
@@ -112,23 +102,14 @@ export class ServerDropdownView {
             ServerManager.hasServers() ? ServerManager.getCurrentServerId() : undefined,
             Config.enableServerManagement,
             this.hasGPOServers,
-            this.expired,
-            this.mentions,
-            this.unreads,
+            AppState.getExpired(),
+            AppState.getMentionsPerServer(),
+            AppState.getUnreadsPerServer(),
         );
     };
 
     private updateServers = () => {
         this.setOrderedServers();
-        this.updateDropdown();
-    };
-
-    private updateMentions = (expired: Map<string, boolean>, mentions: Map<string, number>, unreads: Map<string, boolean>) => {
-        log.silly('updateMentions', {expired, mentions, unreads});
-
-        this.unreads = this.reduceNotifications(this.unreads, unreads, (base, value) => base || value || false);
-        this.mentions = this.reduceNotifications(this.mentions, mentions, (base, value) => (base ?? 0) + (value ?? 0));
-        this.expired = this.reduceNotifications(this.expired, expired, (base, value) => base || value || false);
         this.updateDropdown();
     };
 
@@ -180,22 +161,6 @@ export class ServerDropdownView {
             width,
             height,
         };
-    };
-
-    private reduceNotifications = <T>(inputMap: Map<string, T>, items: Map<string, T>, modifier: (base?: T, value?: T) => T) => {
-        inputMap.clear();
-        return [...items.keys()].reduce((map, key) => {
-            const view = ViewManager.getView(key);
-            if (!view) {
-                return map;
-            }
-            const server = ServerManager.getServer(view.serverId);
-            if (!server) {
-                return map;
-            }
-            map.set(server.id, modifier(map.get(server.id), items.get(key)));
-            return map;
-        }, inputMap);
     };
 
     private setOrderedServers = () => {

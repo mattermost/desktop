@@ -54,6 +54,7 @@ export const PLAY_SOUND = 'play_sound';
 export const GET_DOWNLOAD_LOCATION = 'get_download_location';
 
 export const UPDATE_MENTIONS = 'update_mentions';
+export const UPDATE_MENTIONS_FOR_SERVER = 'update_mentions_for_server';
 export const UNREADS_AND_MENTIONS = 'unreads-and-mentions';
 export const SESSION_EXPIRED = 'session_expired';
 
@@ -158,6 +159,7 @@ export const GET_ORDERED_TABS_FOR_SERVER = 'get-ordered-tabs-for-server';
 export const UPDATE_APPSTATE = 'update-appstate';
 export const UPDATE_APPSTATE_TOTALS = 'update-appstate-totals';
 export const UPDATE_APPSTATE_FOR_VIEW_ID = 'update-appstate-for-view-id';
+export const UPDATE_APPSTATE_FOR_SERVER_ID = 'update-appstate-for-server-id';
 
 export const MAIN_WINDOW_CREATED = 'main-window-created';
 export const MAIN_WINDOW_RESIZED = 'main-window-resized';
@@ -228,6 +230,7 @@ export const CLOSE_TAB = 'close-tab';
 
 // Popout Manager Events
 export const CREATE_NEW_WINDOW = 'create-new-window';
+export const UPDATE_POPOUT_TITLE = 'update-popout-title';
 
 // View limit events
 export const VIEW_LIMIT_UPDATED = 'view-limit-updated';

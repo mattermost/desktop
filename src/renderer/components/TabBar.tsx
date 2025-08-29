@@ -74,6 +74,18 @@ class TabBar extends React.PureComponent<Props, State> {
         });
     }
 
+    makeTabName = (tab: UniqueView) => {
+        const {id, channelName, teamName, serverName} = tab;
+        if (channelName) {
+            if (teamName && this.props.tabs.some((tab) => tab.id !== id && tab.channelName === channelName)) {
+                return `${channelName} - ${teamName}`;
+            }
+            return channelName;
+        }
+
+        return teamName ?? serverName;
+    };
+
     render() {
         if (!this.state.nonce) {
             return null;
@@ -120,7 +132,7 @@ class TabBar extends React.PureComponent<Props, State> {
                                 ref={provided.innerRef}
                                 id={`serverTabItem${index}`}
                                 draggable={false}
-                                title={tab.title}
+                                title={this.makeTabName(tab)}
                                 className={classNames('serverTabItem', {
                                     active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
@@ -142,7 +154,7 @@ class TabBar extends React.PureComponent<Props, State> {
                                     })}
                                 >
                                     <div className='TabBar-tabSeperator'>
-                                        <span>{tab.title}</span>
+                                        <span>{this.makeTabName(tab)}</span>
                                         {badgeDiv}
                                         {this.props.tabs.length > 1 && !this.props.tabsDisabled && (
                                             <>

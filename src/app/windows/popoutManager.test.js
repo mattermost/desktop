@@ -10,7 +10,7 @@ import {
     LOAD_FAILED,
     LOADSCREEN_END,
     RELOAD_VIEW,
-    UPDATE_TAB_TITLE,
+    UPDATE_POPOUT_TITLE,
     VIEW_CREATED,
     VIEW_TITLE_UPDATED,
     VIEW_REMOVED,
@@ -91,6 +91,7 @@ jest.mock('common/views/viewManager', () => {
         emit: jest.fn((event, ...args) => mockViewManager.emit(event, ...args)),
         getView: jest.fn(),
         createView: jest.fn(),
+        getViewTitle: jest.fn(),
         mockViewManager,
     };
 });
@@ -337,11 +338,12 @@ describe('PopoutManager', () => {
 
             popoutManager.popoutWindows.set('test-view-id', mockBaseWindow);
             ViewManager.getView.mockReturnValue(mockWindowView);
+            ViewManager.getViewTitle.mockReturnValue('Updated Title');
 
             ViewManager.mockViewManager.emit(VIEW_TITLE_UPDATED, 'test-view-id');
 
             expect(mockBaseWindow.browserWindow.setTitle).toHaveBeenCalledWith('Test Server - Updated Title');
-            expect(mockBaseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(UPDATE_TAB_TITLE, 'test-view-id', 'Test Server - Updated Title');
+            expect(mockBaseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(UPDATE_POPOUT_TITLE, 'test-view-id', 'Test Server - Updated Title');
         });
 
         it('should not update title for non-WINDOW type view', () => {

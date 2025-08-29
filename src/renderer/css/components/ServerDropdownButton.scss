@@ -47,7 +47,21 @@
         color: rgba(61, 60, 64, 0.56);
         font-size: 18px;
         line-height: 21px;
-    }    
+    }
+
+    &:has(.TabBar-dot) {
+        min-width: 108px;
+    }
+
+    &:has(.TabBar-badge) {
+        min-width: 120px;
+    }
+
+    .TabBar-dot, .TabBar-badge {
+        margin-left: 10px;
+        margin-right: 4px;
+        line-height: 18px;
+    }
 }
 
 .ServerDropdownButton__badge {
@@ -81,13 +95,17 @@
 .ServerDropdownButton__badge-unreads {
     background: #579eff;
     border-radius: 100px;
-    width: 12px;
-    height: 12px;
+    width: 9px;
+    height: 9px;
     position: absolute;
-    top: -5px;
-    right: -1px;
+    top: -2px;
+    right: 0px;
     border: 2px solid #efefef;
     box-sizing: border-box;
+
+    &.mentions {
+        background: #F74343;
+    }
 }
 
 .ServerDropdownButton.darkMode {
@@ -124,5 +142,9 @@
     .ServerDropdownButton__badge-unreads {
         border-color: #2e2e2e;
         background: #196CAF;
+
+        &.mentions {
+            background: #F74343;
+        }
     }
 }

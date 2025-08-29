@@ -8,6 +8,7 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import TabManager from 'app/tabs/tabManager';
 import ServerManager from 'common/servers/serverManager';
+import ViewManager from 'common/views/viewManager';
 import {localizeMessage} from 'main/i18nManager';
 
 import {createTemplate} from './app';
@@ -98,6 +99,8 @@ jest.mock('main/autoUpdater', () => ({
 }));
 jest.mock('common/views/viewManager', () => ({
     on: jest.fn(),
+    getViewTitle: jest.fn(),
+    isViewLimitReached: jest.fn(),
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
@@ -119,9 +122,6 @@ jest.mock('app/windows/popoutManager', () => ({
 jest.mock('app/views/webContentsManager', () => ({
     getViewByWebContentsId: jest.fn(),
     getFocusedView: jest.fn(),
-}));
-jest.mock('common/views/viewManager', () => ({
-    isViewLimitReached: jest.fn(),
 }));
 
 describe('main/menus/app', () => {
@@ -344,6 +344,7 @@ describe('main/menus/app', () => {
             type: `view-${key}`,
             isOpen: true,
         }));
+        ViewManager.getViewTitle.mockImplementation((viewId) => `${viewId}`);
         TabManager.getOrderedTabsForServer.mockReturnValue(modifiedViews);
         const menu = createTemplate(config);
         const windowMenu = menu.find((item) => item.label === '&Window');

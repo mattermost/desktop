@@ -157,13 +157,17 @@ export class WebContentsManager {
         if (!view) {
             return;
         }
+        this.setLoggedIn(view, loggedIn);
+    };
+
+    private setLoggedIn = (view: MattermostWebContentsView, loggedIn: boolean) => {
         ServerManager.setLoggedIn(view.serverId, loggedIn);
         if (!loggedIn) {
             const primaryView = ViewManager.getPrimaryView(view.serverId);
             if (primaryView) {
                 const server = ServerManager.getServer(primaryView.serverId);
                 if (server) {
-                    ViewManager.updateViewTitle(primaryView.id, server.name);
+                    ViewManager.updateViewTitle(primaryView.id, undefined, undefined);
                 }
             }
         }
@@ -216,8 +220,8 @@ export class WebContentsManager {
             return;
         }
 
-        AppState.updateUnreads(view.id, isUnread);
-        AppState.updateMentions(view.id, mentionCount);
+        AppState.updateUnreadsPerServer(view.serverId, isUnread);
+        AppState.updateMentionsPerServer(view.serverId, mentionCount);
     };
 
     private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean) => {
@@ -227,7 +231,11 @@ export class WebContentsManager {
         }
         ViewManager.getViewLog(view.id).debug('handleSessionExpired', isExpired);
 
-        AppState.updateExpired(view.id, isExpired);
+        if (isExpired) {
+            this.setLoggedIn(view, false);
+        }
+
+        AppState.updateExpired(view.serverId, isExpired);
     };
 
     private handleGetViewInfoForTest = (event: IpcMainInvokeEvent) => {

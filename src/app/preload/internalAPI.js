@@ -107,6 +107,7 @@ import {
     GET_CURRENT_SERVER,
     GET_ACTIVE_TAB_FOR_SERVER,
     UPDATE_TAB_TITLE,
+    UPDATE_POPOUT_TITLE,
     CREATE_NEW_TAB,
     CREATE_NEW_WINDOW,
     SERVER_LOGGED_IN_CHANGED,
@@ -115,6 +116,7 @@ import {
     OPEN_POPOUT_MENU,
     VIEW_LIMIT_UPDATED,
     GET_IS_VIEW_LIMIT_REACHED,
+    UPDATE_MENTIONS_FOR_SERVER,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -166,6 +168,7 @@ contextBridge.exposeInMainWorld('desktop', {
     createNewWindow: (serverId) => ipcRenderer.invoke(CREATE_NEW_WINDOW, serverId),
     openPopoutMenu: (viewId) => ipcRenderer.send(OPEN_POPOUT_MENU, viewId),
     onUpdateTabTitle: (listener) => ipcRenderer.on(UPDATE_TAB_TITLE, (_, viewId, title) => listener(viewId, title)),
+    onUpdatePopoutTitle: (listener) => ipcRenderer.on(UPDATE_POPOUT_TITLE, (_, viewId, title) => listener(viewId, title)),
     onServerAdded: (listener) => ipcRenderer.on(SERVER_ADDED, (_, serverId, setAsCurrentServer) => listener(serverId, setAsCurrentServer)),
     onServerRemoved: (listener) => ipcRenderer.on(SERVER_REMOVED, (_, serverId) => listener(serverId)),
     onServerUrlChanged: (listener) => ipcRenderer.on(SERVER_URL_CHANGED, (_, serverId) => listener(serverId)),
@@ -210,6 +213,7 @@ contextBridge.exposeInMainWorld('desktop', {
     onModalOpen: (listener) => ipcRenderer.on(MODAL_OPEN, () => listener()),
     onModalClose: (listener) => ipcRenderer.on(MODAL_CLOSE, () => listener()),
     onUpdateMentions: (listener) => ipcRenderer.on(UPDATE_MENTIONS, (_event, view, mentions, unreads, isExpired) => listener(view, mentions, unreads, isExpired)),
+    onUpdateMentionsForServer: (listener) => ipcRenderer.on(UPDATE_MENTIONS_FOR_SERVER, (_, serverId, expired, mentions, unreads) => listener(serverId, expired, mentions, unreads)),
     onCloseServersDropdown: (listener) => ipcRenderer.on(CLOSE_SERVERS_DROPDOWN, () => listener()),
     onOpenServersDropdown: (listener) => ipcRenderer.on(OPEN_SERVERS_DROPDOWN, () => listener()),
     onCloseDownloadsDropdown: (listener) => ipcRenderer.on(CLOSE_DOWNLOADS_DROPDOWN, () => listener()),

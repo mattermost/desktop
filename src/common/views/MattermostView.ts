@@ -17,14 +17,14 @@ export class MattermostView {
     id: string;
     serverId: string;
     type: ViewType;
-    title: string;
+    title: {channelName?: string; teamName?: string; serverName: string};
     initialPath?: string;
 
     constructor(server: MattermostServer, type: ViewType, initialPath?: string) {
         this.id = uuid();
         this.serverId = server.id;
         this.type = type;
-        this.title = server.name;
+        this.title = {serverName: server.name};
         this.initialPath = initialPath;
     }
 
@@ -56,7 +56,9 @@ export class MattermostView {
         return {
             id: this.id,
             serverId: this.serverId,
-            title: this.title,
+            channelName: this.title.channelName,
+            teamName: this.title.teamName,
+            serverName: this.title.serverName,
         };
     }
 }

@@ -197,7 +197,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
     reload = (loadURL?: URL | string) => {
         this.resetLoadingStatus();
-        AppState.updateExpired(this.id, false);
+        AppState.updateExpired(this.serverId, false);
         this.emit(RELOAD_VIEW, loadURL);
         this.load(loadURL);
     };
@@ -442,6 +442,11 @@ export class MattermostWebContentsView extends EventEmitter {
         // Extract just the channel name (everything before the first " - ")
         // Remove any mention count in parentheses at the start
         const parts = newTitle.split(' - ');
+        if (parts.length <= 1) {
+            ViewManager.updateViewTitle(this.id, newTitle);
+            return;
+        }
+
         let channelName = parts.slice(0, -1).join(' - ');
 
         // Remove mention count if present
@@ -452,7 +457,14 @@ export class MattermostWebContentsView extends EventEmitter {
             }
         }
 
-        ViewManager.updateViewTitle(this.id, channelName);
+        // Team name and server name
+        const secondPart = parts[parts.length - 1];
+        const serverInfo = ServerManager.getRemoteInfo(this.serverId);
+        if (serverInfo?.siteName) {
+            ViewManager.updateViewTitle(this.id, channelName, secondPart.replace(serverInfo.siteName, '').trim());
+        } else {
+            ViewManager.updateViewTitle(this.id, channelName, secondPart);
+        }
     };
 
     private handleAltBlur = () => {
