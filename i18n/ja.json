@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "新しい通話に参加する前に別のサーバーで実行中の通話を終了する必要があります。",
+  "callsWidgetWindow.cannotStartCall.title": "通話を開始できません",
   "common.permissions.canBasicAuth": "Web認証",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
@@ -152,6 +154,8 @@
   "main.tray.tray.unread": "未読のチャンネルがあります",
   "main.views.viewManager.handleDeepLink.error.body": "要求されたURLに一致する設定済みサーバーがアプリ内に存在しません: {url}",
   "main.views.viewManager.handleDeepLink.error.title": "該当するサーバーがありません",
+  "main.webContentEvents.invalidLinkDescription": "あなたがクリックしたリンクは不正な形式のため開けません。URLにエラーがないことを確認してから再度試してください。",
+  "main.webContentEvents.invalidLinkTitle": "不正なリンク",
   "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "次から確認しない",
   "main.windows.mainWindow.closeApp.dialog.detail": "以降、メッセージの通知が届かなくなります。システムトレイで {appName} を実行したままにしたい場合、設定から有効にすることができます。",
   "main.windows.mainWindow.closeApp.dialog.message": "本当に終了しますか?",
