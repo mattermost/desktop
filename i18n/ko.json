@@ -36,6 +36,7 @@
   "main.app.app.handleAppCertificateError.certNotTrusted.dialog.title": "인증서를 신뢰할 수 없습니다",
   "main.app.app.handleAppCertificateError.dialog.extraDetail": "현재 인증서가 이전 인증서와 다릅니다.\n\n",
   "main.app.initialize.downloadBox.allFiles": "모든 파일",
+  "main.app.utils.clearAllData.cancel": "취소",
   "main.app.utils.migrateMacAppStore.button.dontImport": "가져오지 않기",
   "main.app.utils.migrateMacAppStore.button.selectAndImport": "폴더를 선택하고 가져오기",
   "main.app.utils.migrateMacAppStore.dialog.detail": "기존의 {appName}에 해당하는 설정이 있는 것 같습니다. 가져오시겠습니까? 올바른 설정 폴더를 선택해야 합니다.",
