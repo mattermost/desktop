@@ -298,6 +298,10 @@ describe('app/serverViewState', () => {
 
             serverViewState.showEditServerModal(null, 'server-1');
             await promise;
+
+            // Wait for the async .then() callback to execute
+            await new Promise(resolve => setImmediate(resolve));
+
             expect(PermissionsManager.setForServer).toHaveBeenCalledWith(expect.objectContaining({
                 id: 'server-1',
                 name: 'server-1',

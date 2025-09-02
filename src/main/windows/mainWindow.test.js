@@ -45,6 +45,11 @@ jest.mock('electron', () => ({
         register: jest.fn(),
         registerAll: jest.fn(),
     },
+    safeStorage: {
+        isEncryptionAvailable: jest.fn(() => true),
+        encryptString: jest.fn((str) => Buffer.from(str)),
+        decryptString: jest.fn((buffer) => buffer.toString()),
+    },
 }));
 
 jest.mock('common/config', () => ({

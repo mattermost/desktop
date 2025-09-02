@@ -27,7 +27,7 @@ export class SecureStorage {
     private storageDir!: string;
     private secretsPath!: string;
     private plaintextSecretsPath!: string;
-    memoryCache: Record<string, string> | null = null;
+    memoryCache?: Record<string, string>;
     private encryptionAvailable: boolean;
     private hasWarnedAboutPlaintext: boolean = false;
 
@@ -130,14 +130,14 @@ export class SecureStorage {
     }
 
     async initializeCache(): Promise<void> {
-        if (this.memoryCache === null) {
+        if (!this.memoryCache) {
             this.memoryCache = await this.loadSecrets();
             log.info('Initialized secure storage cache');
         }
     }
 
     private async getSecretsFromCache(): Promise<Record<string, string>> {
-        if (this.memoryCache === null) {
+        if (!this.memoryCache) {
             await this.initializeCache();
         }
         return this.memoryCache!;
