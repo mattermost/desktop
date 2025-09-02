@@ -19,7 +19,7 @@ jest.mock('electron', () => ({
         setSecureKeyboardEntryEnabled: jest.fn(),
     },
 }));
-jest.mock('../secureStorage', () => ({
+jest.mock('main/secureStorage', () => ({
     setSecret: jest.fn(),
     deleteSecret: jest.fn(),
     getSecret: jest.fn(),

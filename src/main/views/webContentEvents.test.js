@@ -25,15 +25,6 @@ jest.mock('electron', () => ({
     dialog: {
         showErrorBox: jest.fn(),
     },
-    ipcMain: {
-        handle: jest.fn(),
-        on: jest.fn(),
-    },
-    safeStorage: {
-        isEncryptionAvailable: jest.fn(() => true),
-        encryptString: jest.fn((str) => Buffer.from(str)),
-        decryptString: jest.fn((buffer) => buffer.toString()),
-    },
 }));
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),

@@ -85,7 +85,7 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
     setLocale: jest.fn(),
 }));
-jest.mock('../secureStorage', () => ({
+jest.mock('main/secureStorage', () => ({
     setSecret: jest.fn(),
     deleteSecret: jest.fn(),
     getSecret: jest.fn(),

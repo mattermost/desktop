@@ -10,7 +10,6 @@ import {
 import Config from 'common/config';
 import {Logger, getLevel} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {extractPreAuthSecret} from 'common/utils/preAuthSecret';
 import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
 import FocalboardView from 'common/views/FocalboardView';
 import MessagingView from 'common/views/MessagingView';
@@ -181,7 +180,7 @@ export class ServerManager extends EventEmitter {
         return newServer;
     };
 
-    editServer = (serverId: string, server: NewServer) => {
+    editServer = (serverId: string, server: NewServer, preAuthSecret?: string) => {
         const existingServer = this.servers.get(serverId);
         if (!existingServer) {
             return;
@@ -196,9 +195,8 @@ export class ServerManager extends EventEmitter {
         existingServer.updateURL(server.url);
 
         // Handle pre-auth secret changes in memory
-        const extractedSecret = extractPreAuthSecret(server);
-        if (extractedSecret !== undefined) {
-            existingServer.preAuthSecret = extractedSecret;
+        if (preAuthSecret !== undefined) {
+            existingServer.preAuthSecret = preAuthSecret;
             serverModified = () => this.emit(SERVERS_MODIFIED, [serverId]);
         } else if ('preAuthSecret' in server) {
             existingServer.preAuthSecret = undefined;

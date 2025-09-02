@@ -238,7 +238,6 @@ export default secureStorage;
 
 // IPC event handlers
 ipcMain.on(UPDATE_PATHS, () => {
-    log.debug('UPDATE_PATHS');
     secureStorage.userDataPath = secureStoragePath;
     if (secureStorage.memoryCache) {
         secureStorage.load().catch((error) => {

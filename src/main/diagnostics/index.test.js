@@ -3,17 +3,6 @@
 
 import Diagnostics from '.';
 
-jest.mock('electron', () => ({
-    ipcMain: {
-        handle: jest.fn(),
-        on: jest.fn(),
-    },
-    safeStorage: {
-        isEncryptionAvailable: jest.fn(() => true),
-        encryptString: jest.fn((str) => Buffer.from(str)),
-        decryptString: jest.fn((buffer) => buffer.toString()),
-    },
-}));
 jest.mock('main/windows/mainWindow', () => ({}));
 jest.mock('common/config', () => ({
     configFilePath: 'mock/config/filepath/',

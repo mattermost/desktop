@@ -31,9 +31,9 @@ import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
-import {savePreAuthSecret, saveOrDeletePreAuthSecret} from 'common/utils/preAuthSecret';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/permissionsManager';
+import {savePreAuthSecret, saveOrDeletePreAuthSecret, extractPreAuthSecret} from 'main/preAuthSecret';
 import secureStorage from 'main/secureStorage';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
@@ -204,7 +204,7 @@ export class ServerViewState {
 
         modalPromise.then(async (data) => {
             if (!server.isPredefined) {
-                ServerManager.editServer(id, data.server);
+                ServerManager.editServer(id, data.server, extractPreAuthSecret(data.server));
 
                 // Handle secure storage persistence separately
                 await saveOrDeletePreAuthSecret(data.server, server.url.toString());
@@ -491,7 +491,7 @@ export class ServerViewState {
         }
 
         if (!server.isPredefined) {
-            ServerManager.editServer(server.id, server);
+            ServerManager.editServer(server.id, server, extractPreAuthSecret(server));
 
             // Handle secure storage persistence separately
             await saveOrDeletePreAuthSecret(server, server.url);

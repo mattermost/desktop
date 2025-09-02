@@ -41,11 +41,6 @@ jest.mock('electron', () => {
         nativeTheme: {
             shouldUseDarkColors: true, // the value doesn't matter
         },
-        safeStorage: {
-            isEncryptionAvailable: jest.fn(() => true),
-            encryptString: jest.fn((str) => Buffer.from(str)),
-            decryptString: jest.fn((buffer) => buffer.toString()),
-        },
     };
 });
 jest.mock('main/app/utils', () => ({

@@ -7,17 +7,6 @@ import {TAB_MESSAGING, TAB_FOCALBOARD, TAB_PLAYBOOKS} from 'common/views/View';
 
 import {ServerManager} from './serverManager';
 
-jest.mock('electron', () => ({
-    ipcMain: {
-        handle: jest.fn(),
-        on: jest.fn(),
-    },
-    safeStorage: {
-        isEncryptionAvailable: jest.fn(() => true),
-        encryptString: jest.fn((str) => Buffer.from(str)),
-        decryptString: jest.fn((buffer) => buffer.toString()),
-    },
-}));
 jest.mock('common/config', () => ({
     set: jest.fn(),
 }));
