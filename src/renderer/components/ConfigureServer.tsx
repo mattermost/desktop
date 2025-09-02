@@ -245,7 +245,7 @@ function ConfigureServer({
                     type: STATUS.ERROR,
                     value: formatMessage({
                         id: 'renderer.components.configureServer.error.preAuthInvalid',
-                        defaultMessage: 'The pre-authentication header is invalid. Please check the secret value.',
+                        defaultMessage: 'The pre-authentication secret is invalid. Please check the secret value.',
                     }),
                 });
             } else {
@@ -253,7 +253,7 @@ function ConfigureServer({
                     type: STATUS.ERROR,
                     value: formatMessage({
                         id: 'renderer.components.configureServer.error.preAuthRequired',
-                        defaultMessage: 'This server requires a pre-authentication header. Please provide the pre-authentication secret.',
+                        defaultMessage: 'This server requires a pre-authentication secret. Please provide the pre-authentication secret.',
                     }),
                 });
             }
@@ -264,7 +264,7 @@ function ConfigureServer({
                 type: STATUS.SUCCESS,
                 value: formatMessage({
                     id: 'renderer.components.configureServer.success.preAuthValid',
-                    defaultMessage: 'Pre-authentication header is valid.',
+                    defaultMessage: 'Pre-authentication secret is valid.',
                 }),
             });
         } else {
@@ -488,7 +488,7 @@ function ConfigureServer({
                                                         type: STATUS.INFO,
                                                         value: formatMessage({id: 'renderer.components.configureServer.secureSecret.info', defaultMessage: 'The pre-authentication secret shared by the administrator.'}),
                                                     })}
-                                                    placeholder={formatMessage({id: 'renderer.components.configureServer.secureSecret.placeholder', defaultMessage: 'Pre-authentication Secret'})}
+                                                    placeholder={formatMessage({id: 'renderer.components.configureServer.secureSecret.placeholder', defaultMessage: 'Pre-authentication secret'})}
                                                     disabled={waiting}
                                                 />
                                             </div>

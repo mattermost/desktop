@@ -210,7 +210,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 type: STATUS.SUCCESS,
                 value: this.props.intl.formatMessage({
                     id: 'renderer.components.newServerModal.success.preAuthValid',
-                    defaultMessage: 'Pre-authentication header is valid.',
+                    defaultMessage: 'Pre-authentication secret is valid.',
                 }),
             };
         }
@@ -222,7 +222,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                     type: STATUS.ERROR,
                     value: this.props.intl.formatMessage({
                         id: 'renderer.components.newServerModal.error.preAuthRequired',
-                        defaultMessage: 'This server requires a pre-authentication header. Please provide the pre-authentication secret.',
+                        defaultMessage: 'This server requires a pre-authentication secret. Please provide the pre-authentication secret.',
                     }),
                 };
             }
@@ -230,7 +230,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 type: STATUS.ERROR,
                 value: this.props.intl.formatMessage({
                     id: 'renderer.components.newServerModal.error.preAuthInvalid',
-                    defaultMessage: 'The pre-authentication header is invalid. Please check the secret value.',
+                    defaultMessage: 'The pre-authentication secret is invalid. Please check the secret value.',
                 }),
             };
         }
@@ -527,7 +527,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                                 type: STATUS.INFO,
                                                 value: this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.info', defaultMessage: 'The pre-authentication secret shared by the administrator.'}),
                                             })}
-                                            placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Pre-authentication Secret'})}
+                                            placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Pre-authentication secret'})}
                                         />
                                     </div>
                                 )}
