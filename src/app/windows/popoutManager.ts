@@ -8,7 +8,7 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import WebContentsManager from 'app/views/webContentsManager';
 import BaseWindow from 'app/windows/baseWindow';
-import {CREATE_NEW_WINDOW, LOAD_FAILED, LOADSCREEN_END, RELOAD_VIEW, UPDATE_POPOUT_TITLE, VIEW_CREATED, VIEW_REMOVED, VIEW_TITLE_UPDATED, VIEW_TYPE_ADDED, VIEW_TYPE_REMOVED} from 'common/communication';
+import {CREATE_NEW_WINDOW, LOAD_FAILED, LOADSCREEN_END, RELOAD_VIEW, SERVER_LOGGED_IN_CHANGED, UPDATE_POPOUT_TITLE, VIEW_CREATED, VIEW_REMOVED, VIEW_TITLE_UPDATED, VIEW_TYPE_ADDED, VIEW_TYPE_REMOVED} from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
@@ -34,6 +34,8 @@ export class PopoutManager {
         ViewManager.on(VIEW_TITLE_UPDATED, this.handleViewUpdated);
         ViewManager.on(VIEW_TYPE_REMOVED, this.handleViewTypeRemoved);
         ViewManager.on(VIEW_TYPE_ADDED, this.handleViewTypeAdded);
+
+        ServerManager.on(SERVER_LOGGED_IN_CHANGED, this.handleServerLoggedInChanged);
     }
 
     createNewWindow = (serverId: string) => {
@@ -210,6 +212,20 @@ export class PopoutManager {
         }
 
         return ViewManager.createView(server, ViewType.WINDOW)?.id;
+    };
+
+    private handleServerLoggedInChanged = (serverId: string, loggedIn: boolean) => {
+        log.debug('handleServerLoggedInChanged', serverId, loggedIn);
+
+        if (!loggedIn) {
+            // TODO: The flow I'd prefer is to disable each popout window
+            // But that's not easily feasible yet, so for now we just remove them
+            [...this.popoutWindows.keys()].forEach((viewId) => {
+                if (ViewManager.getView(viewId)?.serverId === serverId) {
+                    ViewManager.removeView(viewId);
+                }
+            });
+        }
     };
 }
 
