@@ -12,7 +12,7 @@ import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
-import {getSecureStorage} from 'main/secureStorage';
+import secureStorage from 'main/secureStorage';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -117,7 +117,6 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
             // Store the secret with the server URL
             if (data.preAuthSecret) {
                 try {
-                    const secureStorage = getSecureStorage(app.getPath('userData'));
                     await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, data.preAuthSecret);
                 } catch (error) {
                     log.error('Failed to store secure secret with server URL:', error);

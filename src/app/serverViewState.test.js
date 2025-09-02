@@ -67,11 +67,9 @@ jest.mock('main/permissionsManager', () => ({
     setForServer: jest.fn(),
 }));
 jest.mock('main/secureStorage', () => ({
-    getSecureStorage: jest.fn(() => ({
-        setSecret: jest.fn(),
-        deleteSecret: jest.fn(),
-        getSecret: jest.fn(),
-    })),
+    setSecret: jest.fn(),
+    deleteSecret: jest.fn(),
+    getSecret: jest.fn(),
 }));
 
 const tabs = [

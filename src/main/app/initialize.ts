@@ -54,7 +54,7 @@ import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/permissionsManager';
-import {getSecureStorage} from 'main/secureStorage';
+import secureStorage from 'main/secureStorage';
 import Tray from 'main/tray/tray';
 import TrustedOriginsStore from 'main/trustedOrigins';
 import UserActivityMonitor from 'main/UserActivityMonitor';
@@ -287,7 +287,6 @@ function initializeInterCommunicationEventListeners() {
 
     // Secure storage handlers
     ipcMain.handle(SECURE_STORAGE_GET, (event, serverUrl, keySuffix) => {
-        const secureStorage = getSecureStorage(app.getPath('userData'));
         return secureStorage.handleSecureStorageGet(event, serverUrl, keySuffix);
     });
 
@@ -319,7 +318,6 @@ async function initializeAfterAppReady() {
 
     // Initialize secure storage cache after servers are loaded
     try {
-        const secureStorage = getSecureStorage(app.getPath('userData'));
         await secureStorage.initializeCache();
         log.info('Secure storage cache initialized successfully');
 

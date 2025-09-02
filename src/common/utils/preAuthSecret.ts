@@ -1,11 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app} from 'electron';
-
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
-import {getSecureStorage} from 'main/secureStorage';
+import secureStorage from 'main/secureStorage';
 
 const log = new Logger('PreAuthSecretHelper');
 
@@ -18,7 +16,7 @@ export const normalizePreAuthSecret = (secretValue?: string): string | undefined
     if (!secretValue) {
         return undefined;
     }
-    
+
     const trimmed = secretValue.trim();
     return trimmed || undefined;
 };
@@ -30,14 +28,12 @@ export const normalizePreAuthSecret = (secretValue?: string): string | undefined
  */
 export const saveOrDeletePreAuthSecret = async (
     serverData: {preAuthSecret?: string},
-    serverUrl: string
+    serverUrl: string,
 ): Promise<void> => {
     if ('preAuthSecret' in serverData) {
         const normalizedSecret = normalizePreAuthSecret(serverData.preAuthSecret);
-        
+
         try {
-            const secureStorage = getSecureStorage(app.getPath('userData'));
-            
             if (normalizedSecret) {
                 await secureStorage.setSecret(serverUrl, SECURE_STORAGE_KEYS.PREAUTH, normalizedSecret);
             } else {
@@ -56,14 +52,13 @@ export const saveOrDeletePreAuthSecret = async (
  * @param serverUrl The server URL for storage
  */
 export const savePreAuthSecret = async (
-    serverData: {preAuthSecret?: string}, 
-    serverUrl: string
+    serverData: {preAuthSecret?: string},
+    serverUrl: string,
 ): Promise<void> => {
     if (serverData.preAuthSecret) {
         const normalizedSecret = normalizePreAuthSecret(serverData.preAuthSecret);
         if (normalizedSecret) {
             try {
-                const secureStorage = getSecureStorage(app.getPath('userData'));
                 await secureStorage.setSecret(serverUrl, SECURE_STORAGE_KEYS.PREAUTH, normalizedSecret);
             } catch (error) {
                 log.error('Failed to persist pre-auth secret to secure storage:', error);
@@ -72,7 +67,6 @@ export const savePreAuthSecret = async (
         }
     }
 };
-
 
 /**
  * Extracts and normalizes pre-auth secret from server data for in-memory use

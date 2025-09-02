@@ -31,8 +31,8 @@ export class SecureStorage {
     private encryptionAvailable: boolean;
     private hasWarnedAboutPlaintext: boolean = false;
 
-    constructor(userDataPath: string) {
-        this.userDataPath = userDataPath;
+    constructor() {
+        this.userDataPath = secureStoragePath;
         this.updatePaths();
         this.encryptionAvailable = safeStorage.isEncryptionAvailable();
 
@@ -228,16 +228,7 @@ export class SecureStorage {
     }
 }
 
-let secureStorageInstance: SecureStorage | null = null;
-
-export function getSecureStorage(userDataPath: string): SecureStorage {
-    if (!secureStorageInstance) {
-        secureStorageInstance = new SecureStorage(userDataPath);
-    }
-    return secureStorageInstance;
-}
-
-const secureStorage = new SecureStorage(secureStoragePath);
+const secureStorage = new SecureStorage();
 export default secureStorage;
 
 ipcMain.on(UPDATE_PATHS, () => {

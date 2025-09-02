@@ -20,11 +20,9 @@ jest.mock('electron', () => ({
     },
 }));
 jest.mock('../secureStorage', () => ({
-    getSecureStorage: jest.fn(() => ({
-        setSecret: jest.fn(),
-        deleteSecret: jest.fn(),
-        getSecret: jest.fn(),
-    })),
+    setSecret: jest.fn(),
+    deleteSecret: jest.fn(),
+    getSecret: jest.fn(),
 }));
 
 jest.mock('app/serverViewState', () => ({}));

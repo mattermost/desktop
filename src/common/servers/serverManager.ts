@@ -10,8 +10,8 @@ import {
 import Config from 'common/config';
 import {Logger, getLevel} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
 import {extractPreAuthSecret} from 'common/utils/preAuthSecret';
+import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
 import FocalboardView from 'common/views/FocalboardView';
 import MessagingView from 'common/views/MessagingView';
 import PlaybooksView from 'common/views/PlaybooksView';

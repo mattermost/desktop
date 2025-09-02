@@ -86,11 +86,11 @@ jest.mock('main/i18nManager', () => ({
     setLocale: jest.fn(),
 }));
 jest.mock('../secureStorage', () => ({
-    getSecureStorage: jest.fn(() => ({
-        setSecret: jest.fn(),
-        deleteSecret: jest.fn(),
-        getSecret: jest.fn(),
-    })),
+    setSecret: jest.fn(),
+    deleteSecret: jest.fn(),
+    getSecret: jest.fn(),
+    initializeCache: jest.fn(),
+    handleSecureStorageGet: jest.fn(),
 }));
 
 jest.mock('electron-devtools-installer', () => {

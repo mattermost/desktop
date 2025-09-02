@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {app, ipcMain} from 'electron';
+import {ipcMain} from 'electron';
 
 import {
     CLOSE_VIEW,
@@ -34,7 +34,7 @@ import {URLValidationStatus} from 'common/utils/constants';
 import {savePreAuthSecret, saveOrDeletePreAuthSecret} from 'common/utils/preAuthSecret';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/permissionsManager';
-import {getSecureStorage} from 'main/secureStorage';
+import secureStorage from 'main/secureStorage';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
@@ -249,7 +249,6 @@ export class ServerViewState {
 
                 // Clean up associated secret
                 try {
-                    const secureStorage = getSecureStorage(app.getPath('userData'));
                     await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
                 } catch (error) {
                     log.warn('Failed to clean up secure secret for removed server:', error);
@@ -523,7 +522,6 @@ export class ServerViewState {
         // Clean up associated secret
         if (server) {
             try {
-                const secureStorage = getSecureStorage(app.getPath('userData'));
                 await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
             } catch (error) {
                 log.warn('Failed to clean up secure secret for removed server:', error);
