@@ -198,7 +198,7 @@ export class MattermostWebContentsView extends EventEmitter {
     reload = (loadURL?: URL | string) => {
         this.resetLoadingStatus();
         AppState.updateExpired(this.serverId, false);
-        this.emit(RELOAD_VIEW, loadURL);
+        this.emit(RELOAD_VIEW, this.id, loadURL);
         this.load(loadURL);
     };
 

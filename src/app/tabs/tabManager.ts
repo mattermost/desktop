@@ -422,6 +422,9 @@ export class TabManager extends EventEmitter {
             if (view) {
                 MainWindow.get()?.contentView.removeChildView(view.getWebContentsView());
             }
+            if (this.currentVisibleTab === viewId) {
+                this.currentVisibleTab = undefined;
+            }
             MainWindow.window?.fadeLoadingScreen();
         }
     };
@@ -466,7 +469,15 @@ export class TabManager extends EventEmitter {
         }
     };
 
-    private onReloadView = () => {
+    private onReloadView = (viewId: string) => {
+        // For reloading errored tabs
+        if (!this.isActiveTab(viewId)) {
+            return;
+        } else if (this.currentVisibleTab !== viewId) {
+            this.setActiveTab(viewId);
+            return;
+        }
+
         if (ModalManager.isModalDisplayed()) {
             MainWindow.window?.showLoadingScreen(1);
         } else {
