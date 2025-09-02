@@ -31,6 +31,7 @@ import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
+import {savePreAuthSecret, saveOrDeletePreAuthSecret} from 'common/utils/preAuthSecret';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/permissionsManager';
 import {getSecureStorage} from 'main/secureStorage';
@@ -169,14 +170,7 @@ export class ServerViewState {
             const newServer = ServerManager.addServer(data, initialLoadURL);
 
             // Handle secure storage persistence separately
-            if (data.preAuthSecret) {
-                try {
-                    const secureStorage = getSecureStorage(app.getPath('userData'));
-                    await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, data.preAuthSecret);
-                } catch (error) {
-                    log.error('Failed to persist pre-auth secret to secure storage:', error);
-                }
-            }
+            await savePreAuthSecret(data, newServer.url.toString());
 
             this.switchServer(newServer.id, true);
         }).catch((e) => {
@@ -213,19 +207,7 @@ export class ServerViewState {
                 ServerManager.editServer(id, data.server);
 
                 // Handle secure storage persistence separately
-                if ('preAuthSecret' in data.server) {
-                    const secretValue = data.server.preAuthSecret || '';
-                    try {
-                        const secureStorage = getSecureStorage(app.getPath('userData'));
-                        if (secretValue.trim()) {
-                            await secureStorage.setSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, secretValue.trim());
-                        } else {
-                            await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-                        }
-                    } catch (error) {
-                        log.error('Failed to persist pre-auth secret to secure storage:', error);
-                    }
-                }
+                await saveOrDeletePreAuthSecret(data.server, server.url.toString());
             }
             PermissionsManager.setForServer(server, data.permissions);
         }).catch((e) => {
@@ -499,14 +481,7 @@ export class ServerViewState {
         const newServer = ServerManager.addServer(server);
 
         // Handle secure storage persistence separately
-        if (server.preAuthSecret) {
-            try {
-                const secureStorage = getSecureStorage(app.getPath('userData'));
-                await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, server.preAuthSecret);
-            } catch (error) {
-                log.error('Failed to persist pre-auth secret to secure storage:', error);
-            }
-        }
+        await savePreAuthSecret(server, newServer.url.toString());
     };
 
     private handleEditServer = async (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
@@ -520,19 +495,7 @@ export class ServerViewState {
             ServerManager.editServer(server.id, server);
 
             // Handle secure storage persistence separately
-            if ('preAuthSecret' in server) {
-                const secretValue = server.preAuthSecret || '';
-                try {
-                    const secureStorage = getSecureStorage(app.getPath('userData'));
-                    if (secretValue.trim()) {
-                        await secureStorage.setSecret(server.url, SECURE_STORAGE_KEYS.PREAUTH, secretValue.trim());
-                    } else {
-                        await secureStorage.deleteSecret(server.url, SECURE_STORAGE_KEYS.PREAUTH);
-                    }
-                } catch (error) {
-                    log.error('Failed to persist pre-auth secret to secure storage:', error);
-                }
-            }
+            await saveOrDeletePreAuthSecret(server, server.url);
         }
         if (permissions) {
             const mattermostServer = ServerManager.getServer(server.id);

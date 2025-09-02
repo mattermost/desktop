@@ -11,6 +11,7 @@ import Config from 'common/config';
 import {Logger, getLevel} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
+import {extractPreAuthSecret} from 'common/utils/preAuthSecret';
 import FocalboardView from 'common/views/FocalboardView';
 import MessagingView from 'common/views/MessagingView';
 import PlaybooksView from 'common/views/PlaybooksView';
@@ -195,13 +196,12 @@ export class ServerManager extends EventEmitter {
         existingServer.updateURL(server.url);
 
         // Handle pre-auth secret changes in memory
-        if ('preAuthSecret' in server) {
-            const secretValue = server.preAuthSecret || '';
-            if (secretValue.trim()) {
-                existingServer.preAuthSecret = secretValue.trim();
-            } else {
-                existingServer.preAuthSecret = undefined;
-            }
+        const extractedSecret = extractPreAuthSecret(server);
+        if (extractedSecret !== undefined) {
+            existingServer.preAuthSecret = extractedSecret;
+            serverModified = () => this.emit(SERVERS_MODIFIED, [serverId]);
+        } else if ('preAuthSecret' in server) {
+            existingServer.preAuthSecret = undefined;
             serverModified = () => this.emit(SERVERS_MODIFIED, [serverId]);
         }
 
