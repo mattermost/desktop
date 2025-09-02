@@ -6,7 +6,7 @@ import path from 'path';
 
 import {safeStorage, ipcMain} from 'electron';
 
-import {UPDATE_PATHS} from 'common/communication';
+import {UPDATE_PATHS, SECURE_STORAGE_GET} from 'common/communication';
 import type {SecureStorageKey} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import {parseURL, getFormattedPathName} from 'common/utils/url';
@@ -39,6 +39,11 @@ export class SecureStorage {
         if (!this.encryptionAvailable) {
             log.warn(ENCRYPTION_UNAVAILABLE_WARNING);
         }
+
+        // Set up IPC handler
+        ipcMain.handle(SECURE_STORAGE_GET, (event, serverUrl, keySuffix) => {
+            return this.handleSecureStorageGet(event, serverUrl, keySuffix);
+        });
     }
 
     private updatePaths(): void {
@@ -231,6 +236,7 @@ export class SecureStorage {
 const secureStorage = new SecureStorage();
 export default secureStorage;
 
+// IPC event handlers
 ipcMain.on(UPDATE_PATHS, () => {
     log.debug('UPDATE_PATHS');
     secureStorage.userDataPath = secureStoragePath;

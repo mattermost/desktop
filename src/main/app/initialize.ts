@@ -30,7 +30,6 @@ import {
     GET_APP_INFO,
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
-    SECURE_STORAGE_GET,
 } from 'common/communication';
 import Config from 'common/config';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
@@ -284,11 +283,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
-
-    // Secure storage handlers
-    ipcMain.handle(SECURE_STORAGE_GET, (event, serverUrl, keySuffix) => {
-        return secureStorage.handleSecureStorageGet(event, serverUrl, keySuffix);
-    });
 
     if (process.env.NODE_ENV === 'test') {
         ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
