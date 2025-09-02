@@ -383,6 +383,9 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
                 if (MainWindow.get() === window) {
                     const view = TabManager.getCurrentActiveTabView();
                     if (view) {
+                        if (TabManager.getOrderedTabsForServer(view.serverId).length === 1) {
+                            return;
+                        }
                         ViewManager.removeView(view.id);
                     }
                 } else {
