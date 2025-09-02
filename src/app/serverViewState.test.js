@@ -300,7 +300,7 @@ describe('app/serverViewState', () => {
             await promise;
 
             // Wait for the async .then() callback to execute
-            await new Promise(resolve => setImmediate(resolve));
+            await new Promise((resolve) => setImmediate(resolve));
 
             expect(PermissionsManager.setForServer).toHaveBeenCalledWith(expect.objectContaining({
                 id: 'server-1',
