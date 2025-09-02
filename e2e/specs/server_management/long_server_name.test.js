@@ -12,7 +12,7 @@ describe('LongServerName', function desc() {
     this.timeout(30000);
     const config = env.demoConfig;
     const longServerName = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus quis malesuada dolor, vel scelerisque sem';
-    const longServerUrl = 'https://web.archive.org';
+    const longServerUrl = 'https://example.org';
     let newServerView;
 
     beforeEach(async () => {

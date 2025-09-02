@@ -82,7 +82,7 @@ describe('Add Server Modal', function desc() {
 
         describe('Valid server url', () => {
             beforeEach(async () => {
-                await newServerView.type('#serverUrlInput', 'https://web.archive.org/');
+                await newServerView.type('#serverUrlInput', 'http://example.org');
             });
 
             it('MM-T4389_3 URL should not be marked invalid, name should be marked invalid', async () => {
@@ -106,7 +106,7 @@ describe('Add Server Modal', function desc() {
 
     describe('Valid Team Settings', () => {
         beforeEach(async () => {
-            await newServerView.type('#serverUrlInput', 'https://web.archive.org/');
+            await newServerView.type('#serverUrlInput', 'http://example.org');
             await newServerView.type('#serverNameInput', 'TestServer');
             await newServerView.waitForSelector('#customMessage_url.Input___warning');
         });
@@ -125,7 +125,7 @@ describe('Add Server Modal', function desc() {
             const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
             savedConfig.servers.should.deep.contain({
                 name: 'TestServer',
-                url: 'https://web.archive.org/',
+                url: 'http://example.org/',
                 order: 2,
             });
         });
