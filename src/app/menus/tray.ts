@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import type {MenuItem, MenuItemConstructorOptions} from 'electron';
+import type {MenuItemConstructorOptions} from 'electron';
 import {Menu} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -14,7 +14,7 @@ import {getLocalPreload} from 'main/utils';
 
 export function createTemplate() {
     const servers = ServerManager.getOrderedServers();
-    const template = [
+    const template: MenuItemConstructorOptions[] = [
         ...servers.slice(0, 9).map((server) => {
             return {
                 label: server.name.length > 50 ? `${server.name.slice(0, 50)}...` : server.name,
@@ -51,5 +51,5 @@ export function createTemplate() {
 
 export function createMenu() {
     // Electron is enforcing certain variables that it doesn't need
-    return Menu.buildFromTemplate(createTemplate() as Array<MenuItemConstructorOptions | MenuItem>);
+    return Menu.buildFromTemplate(createTemplate());
 }

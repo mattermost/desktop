@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
-import type {MenuItemConstructorOptions, MenuItem, BrowserWindow} from 'electron';
+import type {MenuItemConstructorOptions, BaseWindow, MenuItem} from 'electron';
 import {app, ipcMain, Menu, session, shell, clipboard} from 'electron';
 import log from 'electron-log';
 
@@ -36,11 +36,11 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     const isMac = process.platform === 'darwin';
     const appName = app.name;
     const firstMenuName = isMac ? '&' + appName : localizeMessage('main.menus.app.file', '&File');
-    const template = [];
+    const template: MenuItemConstructorOptions[] = [];
 
     const settingsLabel = isMac ? localizeMessage('main.menus.app.file.preferences', 'Preferences...') : localizeMessage('main.menus.app.file.settings', 'Settings...');
 
-    let platformAppMenu = [];
+    let platformAppMenu: MenuItemConstructorOptions[] = [];
     if (isMac) {
         platformAppMenu.push(
             {
@@ -117,7 +117,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.edit.undo', 'Undo'),
             accelerator: 'CmdOrCtrl+Z',
         }, {
-            role: 'Redo',
+            role: 'redo',
             label: localizeMessage('main.menus.app.edit.redo', 'Redo'),
             accelerator: 'CmdOrCtrl+SHIFT+Z',
         }, separatorItem, {
@@ -137,7 +137,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             label: localizeMessage('main.menus.app.edit.pasteAndMatchStyle', 'Paste and Match Style'),
             accelerator: 'CmdOrCtrl+SHIFT+V',
         }, {
-            role: 'selectall',
+            role: 'selectAll',
             label: localizeMessage('main.menus.app.edit.selectAll', 'Select All'),
             accelerator: 'CmdOrCtrl+A',
         }],
@@ -349,125 +349,134 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     const serverId = ServerManager.getCurrentServerId();
     const currentServer = serverId ? ServerManager.getServer(serverId) : undefined;
     const currentRemoteInfo = currentServer ? ServerManager.getRemoteInfo(currentServer.id) : undefined;
-    const windowMenu = {
-        id: 'window',
-        label: localizeMessage('main.menus.app.window', '&Window'),
-        role: isMac ? 'windowMenu' : null,
-        submenu: [{
-            role: 'minimize',
-            label: localizeMessage('main.menus.app.window.minimize', 'Minimize'),
 
-            // empty string removes shortcut on Windows; null will default by OS
-            accelerator: process.platform === 'win32' ? '' : null,
-        }, ...(isMac ? [{
+    const windowSubMenu: MenuItemConstructorOptions[] = [];
+    windowSubMenu.push({
+        role: 'minimize',
+        label: localizeMessage('main.menus.app.window.minimize', 'Minimize'),
+
+        // empty string removes shortcut on Windows; null will default by OS
+        accelerator: process.platform === 'win32' ? '' : undefined,
+    });
+    if (isMac) {
+        windowSubMenu.push({
             role: 'zoom',
             label: localizeMessage('main.menus.app.window.zoom', 'Zoom'),
-        }, separatorItem,
-        ] : []),
-        {
-            label: localizeMessage('main.menus.app.window.newWindowForCurrentServer', 'New Window for Current Server'),
-            accelerator: 'CmdOrCtrl+N',
-            enabled: !ViewManager.isViewLimitReached(),
-            click() {
-                const serverId = ServerManager.getCurrentServerId();
-                if (!serverId) {
-                    return;
-                }
-                PopoutManager.createNewWindow(serverId);
-            },
+        }, separatorItem);
+    }
+    windowSubMenu.push({
+        label: localizeMessage('main.menus.app.window.newWindowForCurrentServer', 'New Window for Current Server'),
+        accelerator: 'CmdOrCtrl+N',
+        enabled: !ViewManager.isViewLimitReached(),
+        click() {
+            const serverId = ServerManager.getCurrentServerId();
+            if (!serverId) {
+                return;
+            }
+            PopoutManager.createNewWindow(serverId);
         },
-        {
-            label: localizeMessage('main.menus.app.window.closeCurrentView', 'Close Current View'),
-            accelerator: 'CmdOrCtrl+W',
-            click(event: Electron.Event, window: BrowserWindow) {
-                if (MainWindow.get() === window) {
-                    const view = TabManager.getCurrentActiveTabView();
-                    if (view) {
-                        if (TabManager.getOrderedTabsForServer(view.serverId).length === 1) {
-                            return;
-                        }
-                        ViewManager.removeView(view.id);
+    },
+    {
+        label: localizeMessage('main.menus.app.window.closeCurrentView', 'Close Current View'),
+        accelerator: 'CmdOrCtrl+W',
+        click(_: MenuItem, window?: BaseWindow) {
+            if (MainWindow.get() === window) {
+                const view = TabManager.getCurrentActiveTabView();
+                if (view) {
+                    if (TabManager.getOrderedTabsForServer(view.serverId).length === 1) {
+                        return;
                     }
-                } else {
-                    window.close();
+                    ViewManager.removeView(view.id);
                 }
-            },
-        }, {
-            role: 'close',
-            label: isMac ? localizeMessage('main.menus.app.window.closeWindow', 'Close Window') : localizeMessage('main.menus.app.window.close', 'Close'),
-            accelerator: 'CmdOrCtrl+Shift+W',
-        }, separatorItem,
-        ...(ServerManager.hasServers() ? [{
+            } else {
+                window?.close();
+            }
+        },
+    }, {
+        role: 'close',
+        label: isMac ? localizeMessage('main.menus.app.window.closeWindow', 'Close Window') : localizeMessage('main.menus.app.window.close', 'Close'),
+        accelerator: 'CmdOrCtrl+Shift+W',
+    }, separatorItem);
+    if (ServerManager.hasServers()) {
+        windowSubMenu.push({
             label: localizeMessage('main.menus.app.window.showServers', 'Show Servers'),
             accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+S`,
             click() {
                 ipcMain.emit(OPEN_SERVERS_DROPDOWN);
             },
-        }] : []),
-        ...ServerManager.getOrderedServers().slice(0, 9).map((server, i) => {
-            const items = [];
-            items.push({
-                label: server.name,
-                accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
-                click() {
-                    ServerManager.updateCurrentServer(server.id);
-                },
-            });
-            if (currentServer?.id === server.id) {
-                TabManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view: UniqueView, i: number) => {
-                    items.push({
-                        label: `    ${ViewManager.getViewTitle(view.id)}`,
-                        accelerator: `CmdOrCtrl+${i + 1}`,
-                        click() {
-                            TabManager.switchToTab(view.id);
-                        },
-                    });
+        });
+    }
+    const serverItems = ServerManager.getOrderedServers().slice(0, 9).map((server, i) => {
+        const items: MenuItemConstructorOptions[] = [];
+        items.push({
+            label: server.name,
+            accelerator: `${process.platform === 'darwin' ? 'Cmd+Ctrl' : 'Ctrl+Shift'}+${i + 1}`,
+            click() {
+                ServerManager.updateCurrentServer(server.id);
+            },
+        });
+        if (currentServer?.id === server.id) {
+            TabManager.getOrderedTabsForServer(server.id).slice(0, 9).forEach((view: UniqueView, i: number) => {
+                items.push({
+                    label: `    ${ViewManager.getViewTitle(view.id)}`,
+                    accelerator: `CmdOrCtrl+${i + 1}`,
+                    click() {
+                        TabManager.switchToTab(view.id);
+                    },
                 });
+            });
+        }
+        return items;
+    }).flat();
+    windowSubMenu.push(...serverItems);
+    windowSubMenu.push(separatorItem);
+    windowSubMenu.push({
+        label: localizeMessage('main.menus.app.window.newTabForCurrentServer', 'New Tab for Current Server'),
+        accelerator: 'CmdOrCtrl+T',
+        enabled: !ViewManager.isViewLimitReached(),
+        click() {
+            const serverId = ServerManager.getCurrentServerId();
+            if (!serverId) {
+                return;
             }
-            return items;
-        }).flat(), separatorItem,
-        {
-            label: localizeMessage('main.menus.app.window.newTabForCurrentServer', 'New Tab for Current Server'),
-            accelerator: 'CmdOrCtrl+T',
-            enabled: !ViewManager.isViewLimitReached(),
-            click() {
-                const serverId = ServerManager.getCurrentServerId();
-                if (!serverId) {
-                    return;
-                }
-                const server = ServerManager.getServer(serverId);
-                if (!server) {
-                    return;
-                }
-                const view = ViewManager.createView(server, ViewType.TAB);
-                if (!view) {
-                    return;
-                }
-                TabManager.switchToTab(view.id);
-            },
+            const server = ServerManager.getServer(serverId);
+            if (!server) {
+                return;
+            }
+            const view = ViewManager.createView(server, ViewType.TAB);
+            if (!view) {
+                return;
+            }
+            TabManager.switchToTab(view.id);
         },
-        {
-            label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
-            accelerator: 'Ctrl+Tab',
-            click() {
-                TabManager.switchToNextTab();
-            },
-            enabled: (ServerManager.hasServers()),
-        }, {
-            label: localizeMessage('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
-            accelerator: 'Ctrl+Shift+Tab',
-            click() {
-                TabManager.switchToPreviousTab();
-            },
-            enabled: (ServerManager.hasServers()),
+    },
+    {
+        label: localizeMessage('main.menus.app.window.selectNextTab', 'Select Next Tab'),
+        accelerator: 'Ctrl+Tab',
+        click() {
+            TabManager.switchToNextTab();
         },
-        ...(isMac ? [separatorItem, {
+        enabled: (ServerManager.hasServers()),
+    }, {
+        label: localizeMessage('main.menus.app.window.selectPreviousTab', 'Select Previous Tab'),
+        accelerator: 'Ctrl+Shift+Tab',
+        click() {
+            TabManager.switchToPreviousTab();
+        },
+        enabled: (ServerManager.hasServers()),
+    });
+    if (isMac) {
+        windowSubMenu.push(separatorItem, {
             role: 'front',
             label: localizeMessage('main.menus.app.window.bringAllToFront', 'Bring All to Front'),
-        }] : []),
-        ],
-    };
-    template.push(windowMenu);
+        });
+    }
+    template.push({
+        id: 'window',
+        label: localizeMessage('main.menus.app.window', '&Window'),
+        role: isMac ? 'windowMenu' : undefined,
+        submenu: windowSubMenu,
+    });
     const submenu = [];
     if (updateManager && config.canUpgrade) {
         if (updateManager.versionDownloaded) {
@@ -574,5 +583,5 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
 
 export function createMenu(config: Config, updateManager: UpdateManager) {
     // TODO: Electron is enforcing certain variables that it doesn't need
-    return Menu.buildFromTemplate(createTemplate(config, updateManager) as Array<MenuItemConstructorOptions | MenuItem>);
+    return Menu.buildFromTemplate(createTemplate(config, updateManager));
 }

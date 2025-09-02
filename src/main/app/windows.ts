@@ -13,8 +13,8 @@ export const handleGetDarkMode = () => {
     return Config.darkMode;
 };
 
-export const handleDoubleClick = (event: IpcMainEvent, windowType?: string) => {
-    log.debug('handleDoubleClick', windowType);
+export const handleDoubleClick = (event: IpcMainEvent) => {
+    log.debug('handleDoubleClick');
 
     let action = 'Maximize';
     if (process.platform === 'darwin') {

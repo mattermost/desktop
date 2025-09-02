@@ -36,7 +36,7 @@ declare global {
             switchTab: (viewId: string) => void;
             closeTab: (viewId: string) => void;
             exitFullScreen: () => void;
-            doubleClickOnWindow: (windowName?: string) => void;
+            doubleClickOnWindow: () => void;
             openServerExternally: () => void;
             openServerUpgradeLink: () => void;
             openChangelogLink: () => void;

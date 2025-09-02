@@ -44,7 +44,7 @@ export default function BasePage({
                 errorInfo={errorMessage}
                 url={errorUrl}
                 appName={appName}
-                handleLink={() => window.desktop.openServerExternally()}
+                handleLink={window.desktop.openServerExternally}
             />
         );
     } else if (errorState === ErrorState.INCOMPATIBLE) {
@@ -53,8 +53,8 @@ export default function BasePage({
                 darkMode={darkMode}
                 url={errorUrl}
                 appName={appName}
-                handleLink={() => window.desktop.openServerExternally()}
-                handleUpgradeLink={() => window.desktop.openServerUpgradeLink()}
+                handleLink={window.desktop.openServerExternally}
+                handleUpgradeLink={window.desktop.openServerUpgradeLink}
             />
         );
     }

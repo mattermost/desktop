@@ -22,23 +22,21 @@ export function useConfig() {
         return undefined;
     }, []);
 
-    const setInitialConfig = useCallback(async () => {
-        const configData = await requestConfig(true);
-        setConfig(configData);
-    }, [requestConfig]);
-
     const reloadConfig = useCallback(async () => {
         const configData = await requestConfig();
         setConfig(configData);
     }, [requestConfig]);
 
     useEffect(() => {
-        setInitialConfig();
-
-        window.desktop.onReloadConfiguration(() => {
-            reloadConfig();
+        requestConfig(true).then((configData) => {
+            setConfig(configData);
         });
-    }, [setInitialConfig, reloadConfig]);
+    }, []);
+
+    useEffect(() => {
+        const off = window.desktop.onReloadConfiguration(reloadConfig);
+        return off;
+    }, [reloadConfig]);
 
     return {
         config,

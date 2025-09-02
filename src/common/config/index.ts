@@ -340,7 +340,7 @@ export class Config extends EventEmitter {
      *
      * @param {*} data locally stored data
      */
-    private checkForConfigUpdates = (data: AnyConfig) => {
+    private checkForConfigUpdates = (data: AnyConfig): CurrentConfig => {
         if (!this.configFilePath) {
             throw new Error('Config not initialized');
         }

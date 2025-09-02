@@ -33,6 +33,7 @@ import ServerManager from 'common/servers/serverManager';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import PermissionsManager from 'main/security/permissionsManager';
@@ -47,8 +48,6 @@ import type {
     CallsJoinCallMessage,
     CallsWidgetWindowConfig,
 } from 'types/calls';
-
-import ContextMenu from '../main/contextMenu';
 
 const log = new Logger('CallsWidgetWindow');
 

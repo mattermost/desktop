@@ -20,7 +20,7 @@ function createTemplate(viewId: string) {
     const isWindow = view.type === ViewType.WINDOW;
     const isLastTab = view.type === ViewType.TAB && TabManager.getOrderedTabsForServer(view.serverId).length === 1;
 
-    const template = [
+    const template: Array<MenuItemConstructorOptions | MenuItem> = [
         {
             label: localizeMessage('main.menus.popoutMenu.copyLink', 'Copy Link'),
             click() {
@@ -32,7 +32,7 @@ function createTemplate(viewId: string) {
                 clipboard.writeText(url);
             },
         },
-    ] as Array<MenuItemConstructorOptions | MenuItem>;
+    ];
 
     if (!isLastTab) {
         template.push(...[{
@@ -82,7 +82,7 @@ function createTemplate(viewId: string) {
 
 function createMenu(viewId: string) {
     // Electron is enforcing certain variables that it doesn't need
-    return Menu.buildFromTemplate(createTemplate(viewId) as Array<MenuItemConstructorOptions | MenuItem>);
+    return Menu.buildFromTemplate(createTemplate(viewId));
 }
 
 export default function PopoutMenu(viewId: string) {

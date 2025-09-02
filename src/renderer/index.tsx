@@ -12,6 +12,12 @@ import {useConfig} from './hooks/useConfig';
 import IntlProvider from './intl_provider';
 import {printVersion} from './utils';
 
+const openMenu = () => {
+    if (window.process.platform !== 'darwin') {
+        window.desktop.openAppMenu();
+    }
+};
+
 function Root() {
     const {config} = useConfig();
 
@@ -23,12 +29,6 @@ function Root() {
         document.addEventListener('dragover', (event) => event.preventDefault());
         document.addEventListener('drop', (event) => event.preventDefault());
     }, []);
-
-    const openMenu = () => {
-        if (window.process.platform !== 'darwin') {
-            window.desktop.openAppMenu();
-        }
-    };
 
     if (!config) {
         return null;

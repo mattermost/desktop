@@ -35,39 +35,41 @@ export class NavigationManager {
     }
 
     private openLinkInTab = (url: string | URL, getView: (server: MattermostServer) => MattermostView | undefined) => {
-        if (url) {
-            const parsedURL = parseURL(url)!;
-            const server = ServerManager.lookupServerByURL(parsedURL, true);
-            if (server) {
-                const view = getView(server);
-                if (!view) {
-                    return;
-                }
+        if (!url) {
+            return;
+        }
 
-                const webContentsView = WebContentsManager.getView(view.id);
-                if (!webContentsView) {
-                    log.error(`Couldn't find a server for the view ${view.id}`);
-                    return;
-                }
-
-                const urlWithSchema = `${server.url.origin}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`;
-                if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
-                    const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
-                    const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
-                    webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
-                    this.deeplinkSuccess(webContentsView.id);
-                } else {
-                    webContentsView.resetLoadingStatus();
-                    webContentsView.once(LOAD_SUCCESS, this.deeplinkSuccess);
-                    webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
-                    webContentsView.load(urlWithSchema);
-                }
-            } else if (ServerManager.hasServers()) {
-                ServerHub.showNewServerModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
-            } else {
-                ModalManager.removeModal('welcomeScreen');
-                handleWelcomeScreenModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
+        const parsedURL = parseURL(url)!;
+        const server = ServerManager.lookupServerByURL(parsedURL, true);
+        if (server) {
+            const view = getView(server);
+            if (!view) {
+                return;
             }
+
+            const webContentsView = WebContentsManager.getView(view.id);
+            if (!webContentsView) {
+                log.error(`Couldn't find a server for the view ${view.id}`);
+                return;
+            }
+
+            const urlWithSchema = `${server.url.origin}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`;
+            if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
+                const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
+                const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
+                webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
+                this.deeplinkSuccess(webContentsView.id);
+            } else {
+                webContentsView.resetLoadingStatus();
+                webContentsView.once(LOAD_SUCCESS, this.deeplinkSuccess);
+                webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
+                webContentsView.load(urlWithSchema);
+            }
+        } else if (ServerManager.hasServers()) {
+            ServerHub.showNewServerModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
+        } else {
+            ModalManager.removeModal('welcomeScreen');
+            handleWelcomeScreenModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
         }
     };
 

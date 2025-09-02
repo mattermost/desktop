@@ -5,10 +5,9 @@ import type {BrowserWindow} from 'electron';
 import {WebContentsView} from 'electron';
 
 import {Logger} from 'common/log';
+import ContextMenu from 'main/contextMenu';
 import performanceMonitor from 'main/performanceMonitor';
-
-import ContextMenu from '../../../main/contextMenu';
-import {getWindowBoundaries} from '../../../main/utils';
+import {getWindowBoundaries} from 'main/utils';
 
 enum Status {
     ACTIVE,

@@ -11,6 +11,15 @@ import LoadingScreen from '../../components/LoadingScreen';
 import 'renderer/css/components/LoadingAnimation.css';
 import 'renderer/css/components/LoadingScreen.css';
 
+const onFadeOutComplete = () => {
+    window.desktop.loadingScreen.loadingScreenAnimationFinished();
+};
+
+const closeDropdowns = () => {
+    window.desktop.closeServersDropdown();
+    window.desktop.closeDownloadsDropdown();
+};
+
 const LoadingScreenRoot: React.FC = () => {
     const [showLoadingScreen, setShowLoadingScreen] = useState(true);
     const {config} = useConfig();
@@ -22,11 +31,7 @@ const LoadingScreenRoot: React.FC = () => {
 
         const initializeApp = async () => {
             window.desktop.loadingScreen.onToggleLoadingScreenVisibility(handleToggleLoadingScreenVisibility);
-
-            window.addEventListener('click', () => {
-                window.desktop.closeServersDropdown();
-                window.desktop.closeDownloadsDropdown();
-            });
+            window.addEventListener('click', closeDropdowns);
         };
 
         initializeApp();
@@ -37,10 +42,6 @@ const LoadingScreenRoot: React.FC = () => {
             // but since this is a root component that doesn't unmount, it's not strictly necessary
         };
     }, []);
-
-    const onFadeOutComplete = () => {
-        window.desktop.loadingScreen.loadingScreenAnimationFinished();
-    };
 
     if (!config) {
         return null;

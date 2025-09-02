@@ -31,6 +31,7 @@ import {
     VIEW_CREATED,
     VIEW_LIMIT_UPDATED,
     GET_IS_VIEW_LIMIT_REACHED,
+    TOGGLE_SECURE_INPUT,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -41,10 +42,9 @@ import ViewManager from 'common/views/viewManager';
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
+import {isInsideRectangle, isKDE} from 'main/utils';
 
 import type {SavedWindowState} from 'types/mainWindow';
-
-import {isInsideRectangle, isKDE} from '../../main/utils';
 
 const log = new Logger('MainWindow');
 
@@ -265,6 +265,7 @@ export class MainWindow extends EventEmitter {
         }
 
         this.emit(MAIN_WINDOW_RESIZED, this.win?.getBounds());
+        ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
 
         // App should save bounds when a window is closed.
         // However, 'close' is not fired in some situations(shutdown, ctrl+c)

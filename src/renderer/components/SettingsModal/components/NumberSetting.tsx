@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import classNames from 'classnames';
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 
 import Input, {SIZE} from 'renderer/components/Input';
 
@@ -37,7 +37,7 @@ export default function NumberSetting({
 }: Props) {
     const [value, setValue] = useState<number | undefined>(allowUndefinedValue ? propValue : propValue ?? defaultValue);
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         if (allowUndefinedValue && event.target.value === '') {
             setValue(undefined);
             onSave(id, undefined);
@@ -56,7 +56,7 @@ export default function NumberSetting({
                 onSave(id, newValue);
             }
         }
-    };
+    }, [allowUndefinedValue, id, min, max, onSave]);
 
     return (
         <div className={classNames('NumberSetting', {'NumberSetting-bottomBorder': bottomBorder})}>

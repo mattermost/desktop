@@ -141,7 +141,7 @@ contextBridge.exposeInMainWorld('desktop', {
     switchTab: (viewId) => ipcRenderer.send(SWITCH_TAB, viewId),
     closeTab: (viewId) => ipcRenderer.send(CLOSE_TAB, viewId),
     exitFullScreen: () => ipcRenderer.send(EXIT_FULLSCREEN),
-    doubleClickOnWindow: (windowName) => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW, windowName),
+    doubleClickOnWindow: () => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW),
     openServerExternally: () => ipcRenderer.send(OPEN_SERVER_EXTERNALLY),
     openServerUpgradeLink: () => ipcRenderer.send(OPEN_SERVER_UPGRADE_LINK),
     openChangelogLink: () => ipcRenderer.send(OPEN_CHANGELOG_LINK),

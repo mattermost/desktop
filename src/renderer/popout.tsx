@@ -3,7 +3,7 @@
 
 import 'renderer/css/index.css';
 
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
 import BasePage, {ErrorState} from './components/BasePage';
@@ -44,18 +44,18 @@ function Popout() {
         });
     }, []);
 
-    const openPopoutMenu = () => {
+    const openPopoutMenu = useCallback(() => {
         if (!viewId) {
             return;
         }
         window.desktop.openPopoutMenu(viewId);
-    };
+    }, [viewId]);
 
-    const openMenu = () => {
+    const openMenu = useCallback(() => {
         if (window.process.platform !== 'darwin') {
             openPopoutMenu();
         }
-    };
+    }, [openPopoutMenu]);
 
     if (!config) {
         return null;
