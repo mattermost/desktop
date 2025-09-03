@@ -162,7 +162,10 @@ class NewServerModal extends React.PureComponent<Props, State> {
 
         // Trigger validation when pre-auth secret is entered and URL exists
         if (this.state.serverUrl && !this.state.validationStarted) {
-            this.validateServerURL(this.state.serverUrl, preAuthSecret);
+            clearTimeout(this.validationTimeout as unknown as number);
+            this.validationTimeout = setTimeout(() => {
+                this.validateServerURL(this.state.serverUrl, preAuthSecret);
+            }, 1000);
         }
     };
 
