@@ -46,6 +46,7 @@ type State = {
     showAdvanced: boolean;
     preAuthSecret: string;
     originalPreAuthSecret?: string;
+    showPassword: boolean;
 }
 
 class NewServerModal extends React.PureComponent<Props, State> {
@@ -72,6 +73,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
             showAdvanced: false,
             preAuthSecret: '',
             originalPreAuthSecret: undefined,
+            showPassword: false,
         };
     }
 
@@ -158,14 +160,12 @@ class NewServerModal extends React.PureComponent<Props, State> {
         const preAuthSecret = e.target.value;
         this.setState({
             preAuthSecret,
+            validationResult: undefined,
         });
 
         // Trigger validation when pre-auth secret is entered and URL exists
         if (this.state.serverUrl && !this.state.validationStarted) {
-            clearTimeout(this.validationTimeout as unknown as number);
-            this.validationTimeout = setTimeout(() => {
-                this.validateServerURL(this.state.serverUrl, preAuthSecret);
-            }, 1000);
+            this.validateServerURL(this.state.serverUrl, preAuthSecret);
         }
     };
 
@@ -529,7 +529,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                     <div className='NewServerModal__advanced-content'>
                                         <Input
                                             name='preAuthSecret'
-                                            type='password'
+                                            type={this.state.showPassword ? 'text' : 'password'}
                                             inputSize={SIZE.LARGE}
                                             value={this.state.preAuthSecret || ''}
                                             onChange={this.handlePreAuthSecretChange}
@@ -538,6 +538,15 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                                 value: this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.info', defaultMessage: 'The authentication secret shared by the administrator.'}),
                                             })}
                                             placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Authentication secret'})}
+                                            inputSuffix={
+                                                <button
+                                                    type='button'
+                                                    className='Input__toggle-password'
+                                                    onClick={() => this.setState({showPassword: !this.state.showPassword})}
+                                                >
+                                                    <i className={this.state.showPassword ? 'icon icon-eye-off-outline' : 'icon icon-eye-outline'}/>
+                                                </button>
+                                            }
                                         />
                                     </div>
                                 )}

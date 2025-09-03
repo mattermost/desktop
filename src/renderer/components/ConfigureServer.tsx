@@ -71,6 +71,7 @@ function ConfigureServer({
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [preAuthSecret, setPreAuthSecret] = useState('');
     const [preAuthSecretError, setPreAuthSecretError] = useState<{type: STATUS; value: string}>();
+    const [showPassword, setShowPassword] = useState(false);
     const [currentValidationStatus, setCurrentValidationStatus] = useState<string>();
 
     // Basic form requirements
@@ -301,6 +302,10 @@ function ConfigureServer({
     const handlePreAuthSecretOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
         setPreAuthSecret(value);
 
+        // Clear any existing pre-auth error and transition animation when user starts typing
+        setPreAuthSecretError(undefined);
+        setTransition(undefined);
+
         // Trigger validation when pre-auth secret is entered and URL exists
         if (url && !validating) {
             editing.current = true;
@@ -480,7 +485,7 @@ function ConfigureServer({
                                                     name='preAuthSecret'
                                                     className='ConfigureServer__card-form-input'
                                                     containerClassName='ConfigureServer__card-form-input-container'
-                                                    type='password'
+                                                    type={showPassword ? 'text' : 'password'}
                                                     inputSize={SIZE.LARGE}
                                                     value={preAuthSecret || ''}
                                                     onChange={handlePreAuthSecretOnChange}
@@ -490,6 +495,16 @@ function ConfigureServer({
                                                     })}
                                                     placeholder={formatMessage({id: 'renderer.components.configureServer.secureSecret.placeholder', defaultMessage: 'Authentication secret'})}
                                                     disabled={waiting}
+                                                    inputSuffix={
+                                                        <button
+                                                            type='button'
+                                                            className='Input__toggle-password'
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            disabled={waiting}
+                                                        >
+                                                            <i className={showPassword ? 'icon icon-eye-off-outline' : 'icon icon-eye-outline'}/>
+                                                        </button>
+                                                    }
                                                 />
                                             </div>
                                         )}
