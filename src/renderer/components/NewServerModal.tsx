@@ -210,29 +210,25 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 type: STATUS.SUCCESS,
                 value: this.props.intl.formatMessage({
                     id: 'renderer.components.newServerModal.success.preAuthValid',
-                    defaultMessage: 'Pre-authentication secret is valid.',
+                    defaultMessage: 'Authentication secret is valid.',
                 }),
             };
         }
 
-        // Show error for PreAuthRequired status regardless of whether pre-auth secret is provided
+        // Show error for PreAuthRequired status only when pre-auth secret is provided but invalid
         if (this.state.validationResult?.status === URLValidationStatus.PreAuthRequired) {
-            if (!this.state.preAuthSecret) {
+            if (this.state.preAuthSecret) {
                 return {
                     type: STATUS.ERROR,
                     value: this.props.intl.formatMessage({
-                        id: 'renderer.components.newServerModal.error.preAuthRequired',
-                        defaultMessage: 'This server requires a pre-authentication secret. Please provide the pre-authentication secret.',
+                        id: 'renderer.components.newServerModal.error.preAuthInvalid',
+                        defaultMessage: 'Authentication secret is invalid. Try again or contact your admin.',
                     }),
                 };
             }
-            return {
-                type: STATUS.ERROR,
-                value: this.props.intl.formatMessage({
-                    id: 'renderer.components.newServerModal.error.preAuthInvalid',
-                    defaultMessage: 'The pre-authentication secret is invalid. Please check the secret value.',
-                }),
-            };
+
+            // Don't show error on pre-auth field when empty - it's now shown on URL field
+            return null;
         }
 
         return null;
@@ -317,7 +313,18 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 }),
             };
         case URLValidationStatus.PreAuthRequired:
-            // Don't show server URL error for 403 - let the pre-auth field handle it
+            // Show error on URL field if pre-auth secret is empty
+            if (!this.state.preAuthSecret) {
+                return {
+                    type: STATUS.ERROR,
+                    value: this.props.intl.formatMessage({
+                        id: 'renderer.components.newServerModal.error.preAuthRequired',
+                        defaultMessage: 'Cannot connect to this server. It may require an authentication secret.',
+                    }),
+                };
+            }
+
+            // Don't show server URL error for 403 when pre-auth secret is provided - let the pre-auth field handle it
             return null;
         }
 
@@ -525,9 +532,9 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                             onChange={this.handlePreAuthSecretChange}
                                             customMessage={this.getPreAuthSecretMessage() ?? ({
                                                 type: STATUS.INFO,
-                                                value: this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.info', defaultMessage: 'The pre-authentication secret shared by the administrator.'}),
+                                                value: this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.info', defaultMessage: 'The authentication secret shared by the administrator.'}),
                                             })}
-                                            placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Pre-authentication secret'})}
+                                            placeholder={this.props.intl.formatMessage({id: 'renderer.components.newServerModal.secureSecret.placeholder', defaultMessage: 'Authentication secret'})}
                                         />
                                     </div>
                                 )}

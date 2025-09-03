@@ -117,7 +117,7 @@ describe('Configure Server Modal', function desc() {
                 route.fulfill({
                     status: 403,
                     contentType: 'application/json',
-                    body: JSON.stringify({message: 'Pre-authentication required'}),
+                    body: JSON.stringify({message: 'Authentication required'}),
                 });
             });
 
@@ -144,7 +144,7 @@ describe('Configure Server Modal', function desc() {
                     route.fulfill({
                         status: 403,
                         contentType: 'application/json',
-                        body: JSON.stringify({message: 'Pre-authentication required'}),
+                        body: JSON.stringify({message: 'Authentication required'}),
                     });
                 }
             });
@@ -165,7 +165,7 @@ describe('Configure Server Modal', function desc() {
                 route.fulfill({
                     status: 403,
                     contentType: 'application/json',
-                    body: JSON.stringify({message: 'Invalid pre-authentication secret'}),
+                    body: JSON.stringify({message: 'Invalid authentication secret'}),
                 });
             });
 
@@ -232,7 +232,7 @@ describe('Configure Server Modal', function desc() {
                 route.fulfill({
                     status: 403,
                     contentType: 'application/json',
-                    body: JSON.stringify({message: 'Pre-authentication required'}),
+                    body: JSON.stringify({message: 'Authentication required'}),
                 });
             });
 

@@ -8,7 +8,7 @@
 export const SECURE_STORAGE_KEYS = {
 
     /**
-     * Pre-authentication secret shared by server administrators
+     * Authentication secret shared by server administrators
      * Used to automatically authenticate with servers that require this secret
      */
     PREAUTH: 'preauth',

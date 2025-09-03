@@ -182,7 +182,7 @@ describe('Welcome Screen Modal', function desc() {
                     route.fulfill({
                         status: 403,
                         contentType: 'application/json',
-                        body: JSON.stringify({message: 'Pre-authentication required'}),
+                        body: JSON.stringify({message: 'Authentication required'}),
                     });
                 }
             });
@@ -218,7 +218,7 @@ describe('Welcome Screen Modal', function desc() {
                 route.fulfill({
                     status: 403,
                     contentType: 'application/json',
-                    body: JSON.stringify({message: 'Pre-authentication required'}),
+                    body: JSON.stringify({message: 'Authentication required'}),
                 });
             });
 

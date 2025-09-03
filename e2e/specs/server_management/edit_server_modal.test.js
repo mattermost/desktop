@@ -299,7 +299,7 @@ describe('EditServerModal', function desc() {
                     route.fulfill({
                         status: 403,
                         contentType: 'application/json',
-                        body: JSON.stringify({message: 'Invalid pre-authentication secret'}),
+                        body: JSON.stringify({message: 'Invalid authentication secret'}),
                     });
                 }
             });
