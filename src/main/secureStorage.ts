@@ -28,17 +28,12 @@ export class SecureStorage {
     private secretsPath!: string;
     private plaintextSecretsPath!: string;
     memoryCache?: Record<string, string>;
-    private encryptionAvailable: boolean;
+    private encryptionAvailable: boolean = false;
     private hasWarnedAboutPlaintext: boolean = false;
 
     constructor() {
         this.userDataPath = secureStoragePath;
         this.updatePaths();
-        this.encryptionAvailable = safeStorage.isEncryptionAvailable();
-
-        if (!this.encryptionAvailable) {
-            log.warn(ENCRYPTION_UNAVAILABLE_WARNING);
-        }
 
         // Set up IPC handler
         ipcMain.handle(SECURE_STORAGE_GET, (event, serverUrl, keySuffix) => {
@@ -50,6 +45,22 @@ export class SecureStorage {
         this.storageDir = path.join(this.userDataPath, SECURE_STORAGE_DIR);
         this.secretsPath = path.join(this.storageDir, SECURE_SECRETS_FILE);
         this.plaintextSecretsPath = path.join(this.storageDir, PLAINTEXT_SECRETS_FILE);
+    }
+
+    async init(): Promise<void> {
+        this.encryptionAvailable = safeStorage.isEncryptionAvailable();
+
+        if (!this.encryptionAvailable) {
+            log.warn(ENCRYPTION_UNAVAILABLE_WARNING);
+        }
+
+        log.info(`Secure storage initialized - encryption ${this.encryptionAvailable ? 'available' : 'unavailable'}`);
+
+        // Initialize cache as part of init
+        if (!this.memoryCache) {
+            this.memoryCache = await this.loadSecrets();
+            log.info('Initialized secure storage cache');
+        }
     }
 
     async load(): Promise<void> {
@@ -129,16 +140,9 @@ export class SecureStorage {
         }
     }
 
-    async initializeCache(): Promise<void> {
-        if (!this.memoryCache) {
-            this.memoryCache = await this.loadSecrets();
-            log.info('Initialized secure storage cache');
-        }
-    }
-
     private async getSecretsFromCache(): Promise<Record<string, string>> {
         if (!this.memoryCache) {
-            await this.initializeCache();
+            this.memoryCache = await this.loadSecrets();
         }
         return this.memoryCache!;
     }

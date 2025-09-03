@@ -310,10 +310,9 @@ async function initializeAfterAppReady() {
 
     ServerManager.reloadFromConfig();
 
-    // Initialize secure storage cache after servers are loaded
+    // Initialize secure storage after app is ready
     try {
-        await secureStorage.initializeCache();
-        log.info('Secure storage cache initialized successfully');
+        await secureStorage.init();
 
         // Load pre-auth secrets from secure storage into memory
         const servers = ServerManager.getAllServers();
