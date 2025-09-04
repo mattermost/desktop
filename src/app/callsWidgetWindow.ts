@@ -27,12 +27,14 @@ import {
     DESKTOP_SOURCES_MODAL_REQUEST,
     GET_DESKTOP_SOURCES,
     UPDATE_SHORTCUT_MENU,
+    VIEW_REMOVED,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
@@ -82,6 +84,8 @@ export class CallsWidgetWindow {
         ipcMain.on(CALLS_WIDGET_OPEN_THREAD, this.handleCallsOpenThread);
         ipcMain.on(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, this.handleCallsOpenStopRecordingModal);
         ipcMain.on(CALLS_WIDGET_OPEN_USER_SETTINGS, this.forwardToMainApp(CALLS_WIDGET_OPEN_USER_SETTINGS));
+
+        ViewManager.on(VIEW_REMOVED, this.handleViewRemoved);
     }
 
     /**
@@ -523,6 +527,16 @@ export class CallsWidgetWindow {
             log.error('unable to create calls widget window: currentView is missing');
             return Promise.resolve();
         }
+        const primaryView = ViewManager.getPrimaryView(currentView.serverId);
+        if (!primaryView) {
+            log.error('unable to create calls widget window: primaryView is missing');
+            return Promise.resolve();
+        }
+        const primaryWebContentsView = WebContentsManager.getView(primaryView.id);
+        if (!primaryWebContentsView) {
+            log.error('unable to create calls widget window: primaryWebContentsView is missing');
+            return Promise.resolve();
+        }
 
         const promise = new Promise((resolve) => {
             const connected = (ev: IpcMainEvent, incomingCallId: string, incomingSessionId: string) => {
@@ -544,7 +558,7 @@ export class CallsWidgetWindow {
             ipcMain.on(CALLS_JOINED_CALL, connected);
         });
 
-        this.init(currentView, {
+        this.init(primaryWebContentsView, {
             callID: msg.callID,
             title: msg.title,
             rootID: msg.rootID,
@@ -617,6 +631,22 @@ export class CallsWidgetWindow {
 
         this.focusChannelView();
         this.mainView?.sendToRenderer(BROWSER_HISTORY_PUSH, url);
+    };
+
+    private handleViewRemoved = (viewId: string, serverId: string) => {
+        if (viewId === this.mainView?.id) {
+            const primaryView = ViewManager.getPrimaryView(serverId);
+            if (primaryView) {
+                const primaryWebContentsView = WebContentsManager.getView(primaryView.id);
+                if (primaryWebContentsView) {
+                    this.mainView = primaryWebContentsView;
+                } else {
+                    this.close();
+                }
+            } else {
+                this.close();
+            }
+        }
     };
 }
 

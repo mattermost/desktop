@@ -22,6 +22,7 @@ import {
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
+import ViewManager from 'common/views/viewManager';
 import PermissionsManager from 'main/security/permissionsManager';
 import {
     resetScreensharePermissionsMacOS,
@@ -83,6 +84,8 @@ jest.mock('common/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
     showById: jest.fn(),
+    on: jest.fn(),
+    getPrimaryView: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     openScreensharePermissionsSettingsMacOS: jest.fn(),
@@ -515,7 +518,7 @@ describe('main/windows/callsWidgetWindow', () => {
         callsWidgetWindow.close = jest.fn();
         callsWidgetWindow.getWidgetURL = jest.fn();
         const view = {
-            name: 'server-1_view-messaging',
+            id: 'server-1_view-messaging',
             serverInfo: {
                 server: {
                     url: new URL('http://server-1.com'),
@@ -548,6 +551,8 @@ describe('main/windows/callsWidgetWindow', () => {
             callsWidgetWindow.close.mockReturnValue(Promise.resolve());
             callsWidgetWindow.getWidgetURL.mockReturnValue('http://server-1.com/widget');
             WebContentsManager.getViewByWebContentsId.mockReturnValue(view);
+            WebContentsManager.getView.mockReturnValue(view);
+            ViewManager.getPrimaryView.mockReturnValue({id: 'server-1_view-messaging'});
         });
 
         afterEach(() => {
@@ -573,6 +578,22 @@ describe('main/windows/callsWidgetWindow', () => {
                 backgroundColor: '#00ffffff',
             }));
             expect(callsWidgetWindow.win).toBeDefined();
+        });
+
+        it('should create calls widget window with primary view', async () => {
+            const primaryView = {
+                id: 'primary-view',
+                webContentsId: 3,
+            };
+            ViewManager.getPrimaryView.mockReturnValue({id: 'primary-view'});
+            WebContentsManager.getView.mockImplementation((id) => {
+                if (id === primaryView.id) {
+                    return primaryView;
+                }
+                return view;
+            });
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            expect(callsWidgetWindow.mainView).toEqual(primaryView);
         });
 
         it('should catch error when failing to load the URL', async () => {
