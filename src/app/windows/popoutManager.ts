@@ -8,7 +8,19 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import WebContentsManager from 'app/views/webContentsManager';
 import BaseWindow from 'app/windows/baseWindow';
-import {CREATE_NEW_WINDOW, LOAD_FAILED, LOADSCREEN_END, RELOAD_VIEW, SERVER_LOGGED_IN_CHANGED, UPDATE_POPOUT_TITLE, VIEW_CREATED, VIEW_REMOVED, VIEW_TITLE_UPDATED, VIEW_TYPE_ADDED, VIEW_TYPE_REMOVED} from 'common/communication';
+import {
+    CREATE_NEW_WINDOW,
+    LOAD_FAILED,
+    LOADSCREEN_END,
+    RELOAD_VIEW,
+    SERVER_LOGGED_IN_CHANGED,
+    UPDATE_POPOUT_TITLE,
+    VIEW_CREATED,
+    VIEW_REMOVED,
+    VIEW_TITLE_UPDATED,
+    VIEW_TYPE_ADDED,
+    VIEW_TYPE_REMOVED,
+} from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
