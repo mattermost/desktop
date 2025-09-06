@@ -1,4 +1,5 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "Un appel est en cours sur un autre serveur et doit être terminé avant de pouvoir rejoindre un nouvel appel.",
   "callsWidgetWindow.cannotStartCall.title": "Impossible de démarrer l’appel",
   "common.permissions.canBasicAuth": "Authentification Web",
   "common.tabs.TAB_FOCALBOARD": "Boards",
