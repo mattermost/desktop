@@ -146,6 +146,8 @@
   "main.tray.tray.unread": "Máte nepřečtené kanály",
   "main.views.viewManager.handleDeepLink.error.body": "V aplikaci není nakonfigurován žádný server, který by odpovídal požadované url adrese: {url}",
   "main.views.viewManager.handleDeepLink.error.title": "Žádný odpovídající server",
+  "main.webContentEvents.invalidLinkDescription": "Odkaz, na který jste klikli, je pravděpodobně poškozený a nelze jej otevřít. Před opětovným pokusem prosím zkontrolujte URL na případné chyby.",
+  "main.webContentEvents.invalidLinkTitle": "Neplatný odkaz",
   "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "Neptat se znovu",
   "main.windows.mainWindow.closeApp.dialog.detail": "Nebudete již dostávat oznámení o zprávách. Pokud chcete nechat {appName} běžet v systémové liště, můžete to povolit v Nastavení.",
   "main.windows.mainWindow.closeApp.dialog.message": "Jste si jistý, že chcete odejít?",
