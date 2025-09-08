@@ -4,6 +4,20 @@
 
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
+::-webkit-scrollbar {
+    width: 6px;  // for vertical scrollbars
+    height: 6px; // for horizontal scrollbars
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0);
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: var(--radius-s);
+    background: rgba(var(--center-channel-color-rgb), 0.4);
+}
+
 body {
     font-size: 1rem;
     font-weight: 400;
@@ -142,6 +156,7 @@ body {
         position: relative;
         width: auto;
         max-width: 500px;
+        margin-top: -24px;
 
         &.Modal_xl {
             width: 800px;
@@ -254,6 +269,9 @@ body {
         border: var(--border-default);
         border-radius: var(--radius-l);
         background: var(--center-channel-bg);
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
     }
 
     .Modal_chevron-icon {
@@ -297,6 +315,7 @@ body {
     .Modal_body {
         max-height: 100%;
         padding: 0;
+        overflow-y: auto;
 
         &.divider {
             border-top: var(--border-light);
