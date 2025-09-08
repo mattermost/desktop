@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "在另一个服务器上有一个正在进行的通话，必须先结束该通话才能加入新通话。",
+  "callsWidgetWindow.cannotStartCall.title": "无法发起通话",
   "common.permissions.canBasicAuth": "Web 认证",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
@@ -151,6 +153,8 @@
   "main.tray.tray.unread": "您有未读的频道",
   "main.views.viewManager.handleDeepLink.error.body": "应用程序中没有匹配请求url的配置服务器:{url}",
   "main.views.viewManager.handleDeepLink.error.title": "无匹配服务器",
+  "main.webContentEvents.invalidLinkDescription": "您点击的链接格式有误，无法打开。请检查链接地址是否正确后再试一次。",
+  "main.webContentEvents.invalidLinkTitle": "无效链接",
   "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "不再询问",
   "main.windows.mainWindow.closeApp.dialog.detail": "您将不再收到消息的邮件通知。如果您想让 {appName} 在系统托盘中运行，可以在设定中启用。",
   "main.windows.mainWindow.closeApp.dialog.message": "确认退出？",
