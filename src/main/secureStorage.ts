@@ -120,7 +120,9 @@ export class SecureStorage {
             if (this.encryptionAvailable) {
                 // Save encrypted
                 const encryptedData = safeStorage.encryptString(jsonData);
-                await writeFile(this.secretsPath, encryptedData);
+                await writeFile(this.secretsPath, encryptedData, {
+                    mode: 0o600,
+                });
                 log.debug('Secrets saved with encryption');
             } else {
                 // Save as plaintext with warning
@@ -128,7 +130,10 @@ export class SecureStorage {
                     log.warn(ENCRYPTION_UNAVAILABLE_WARNING);
                     this.hasWarnedAboutPlaintext = true;
                 }
-                await writeFile(this.plaintextSecretsPath, jsonData, 'utf-8');
+                await writeFile(this.plaintextSecretsPath, jsonData, {
+                    encoding: 'utf-8',
+                    mode: 0o600,
+                });
                 log.debug('Secrets saved in plaintext (encryption unavailable)');
             }
 
