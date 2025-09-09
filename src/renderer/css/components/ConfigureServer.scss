@@ -174,8 +174,8 @@
                             font-weight: 600;
                             padding: 0;
                             
-                            &:hover {
-                                color: rgba(var(--button-color-rgb), 1);
+                            &:hover:not(:disabled) {
+                                text-decoration: underline;
                             }
                             
                             &:disabled {

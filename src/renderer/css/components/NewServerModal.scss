@@ -44,9 +44,9 @@
         line-height: 16px;
         font-weight: 600;
         padding: 0;
-        
+
         &:hover {
-            color: var(--button-bg-hover);
+            text-decoration: underline;
         }
 
         .icon {
