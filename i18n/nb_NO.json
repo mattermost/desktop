@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "Det pågår et anrop på en annen server som må avsluttes før du kan bli med i et nytt anrop.",
+  "callsWidgetWindow.cannotStartCall.title": "Kan ikke starte samtalen",
   "common.permissions.canBasicAuth": "Web-autentisering",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Kanaler",
