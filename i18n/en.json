@@ -152,7 +152,7 @@
   "main.windows.mainWindow.minimizeToTray.dialog.title": "Minimize to Tray",
   "modal.cancel": "Cancel",
   "modal.confirm": "Confirm",
-  "renderer.components.configureServer.advanced": "Advanced",
+  "renderer.components.configureServer.advanced": "Advanced options",
   "renderer.components.configureServer.cardtitle": "Enter your server details",
   "renderer.components.configureServer.connect.default": "Connect",
   "renderer.components.configureServer.connect.override": "Connect anyway",

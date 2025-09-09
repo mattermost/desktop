@@ -476,7 +476,7 @@ function ConfigureServer({
                                             disabled={waiting}
                                         >
                                             <i className={`icon ${showAdvanced ? 'icon-chevron-down' : 'icon-chevron-right'}`}/>
-                                            <span>{formatMessage({id: 'renderer.components.configureServer.advanced', defaultMessage: 'Advanced'})}</span>
+                                            <span>{formatMessage({id: 'renderer.components.configureServer.advanced', defaultMessage: 'Advanced options'})}</span>
                                         </button>
 
                                         {showAdvanced && (
