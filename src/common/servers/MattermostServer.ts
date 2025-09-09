@@ -13,8 +13,9 @@ export class MattermostServer {
     url!: URL;
     isPredefined: boolean;
     initialLoadURL?: URL;
+    preAuthSecret?: string;
 
-    constructor(server: Server, isPredefined: boolean, initialLoadURL?: URL) {
+    constructor(server: Server, isPredefined: boolean, initialLoadURL?: URL, preAuthSecret?: string) {
         this.id = uuid();
 
         this.name = server.name;
@@ -22,6 +23,7 @@ export class MattermostServer {
 
         this.isPredefined = isPredefined;
         this.initialLoadURL = initialLoadURL;
+        this.preAuthSecret = preAuthSecret;
     }
 
     updateURL = (url: string) => {
@@ -37,6 +39,7 @@ export class MattermostServer {
             url: this.url.toString(),
             id: this.id,
             isPredefined: this.isPredefined,
+            preAuthSecret: this.preAuthSecret,
         };
     };
 }

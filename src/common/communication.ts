@@ -151,7 +151,7 @@ export const DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE = 'downloads-dropdown-menu-clear
 export const DOWNLOADS_DROPDOWN_MENU_OPEN_FILE = 'downloads-dropdown-menu-open-file';
 export const DOWNLOADS_DROPDOWN_MENU_SHOW_FILE_IN_FOLDER = 'downloads-dropdown-menu-show-file-in-folder';
 
-export const SERVERS_URL_MODIFIED = 'servers-modified';
+export const SERVERS_MODIFIED = 'servers-modified';
 export const SERVERS_UPDATE = 'servers-update';
 export const UPDATE_SERVER_ORDER = 'update-server-order';
 export const UPDATE_TAB_ORDER = 'update-tab-order';
@@ -196,3 +196,6 @@ export const GET_UNIQUE_SERVERS_WITH_PERMISSIONS = 'get-unique-servers-with-perm
 export const ADD_SERVER = 'add-server';
 export const EDIT_SERVER = 'edit-server';
 export const REMOVE_SERVER = 'remove-server';
+
+// Secure storage
+export const SECURE_STORAGE_GET = 'secure-storage-get';

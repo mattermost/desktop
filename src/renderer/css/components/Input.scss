@@ -69,6 +69,29 @@
         line-height: 20px;
     }
 
+    .Input__toggle-password {
+        align-self: center;
+        padding: 0;
+        border: 0;
+        background-color: var(--center-channel-bg);
+        color: rgba(var(--center-channel-color-rgb), 0.75);
+        cursor: pointer;
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.5;
+        }
+
+        i {
+            font-size: 18px;
+            line-height: 18px;
+
+            &::before {
+                margin: 0;
+            }
+        }
+    }
+
     .Input-border-error {
         border-color: var(--error-text);
     }
