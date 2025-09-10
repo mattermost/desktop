@@ -26,6 +26,7 @@ import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
+import {handleUpdateMenuEvent} from 'main/app/utils';
 import performanceMonitor from 'main/performanceMonitor';
 import {getWindowBoundaries} from 'main/utils';
 
@@ -112,7 +113,10 @@ export class PopoutManager {
         const loadScreenEnd = () => window.fadeLoadingScreen();
         const loadFailed = this.onPopoutLoadFailed(window, webContentsView);
         const reloadView = () => window.showLoadingScreen();
-        const focus = () => mattermostWebContentsView.focus();
+        const focus = () => {
+            mattermostWebContentsView.focus();
+            handleUpdateMenuEvent();
+        };
         const setBounds = this.setBounds(window, webContentsView);
         const close = () => ViewManager.removeView(viewId);
 

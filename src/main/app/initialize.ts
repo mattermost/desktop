@@ -41,6 +41,7 @@ import {
     TAB_REMOVED,
     TAB_ORDER_UPDATED,
     GET_FULL_SCREEN_STATUS,
+    MAIN_WINDOW_FOCUSED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -449,6 +450,7 @@ async function initializeAfterAppReady() {
     TabManager.on(TAB_REMOVED, handleUpdateMenuEvent);
     TabManager.on(TAB_ORDER_UPDATED, handleUpdateMenuEvent);
     ViewManager.on(VIEW_TITLE_UPDATED, handleUpdateMenuEvent);
+    MainWindow.on(MAIN_WINDOW_FOCUSED, handleUpdateMenuEvent);
 
     ipcMain.emit('update-dict');
 

@@ -3,7 +3,7 @@
 'use strict';
 
 import type {MenuItemConstructorOptions, BaseWindow, MenuItem} from 'electron';
-import {app, ipcMain, Menu, session, shell, clipboard} from 'electron';
+import {app, ipcMain, Menu, session, shell, clipboard, BrowserWindow} from 'electron';
 import log from 'electron-log';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
@@ -377,7 +377,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     },
     {
-        label: localizeMessage('main.menus.app.window.closeCurrentView', 'Close Current View'),
+        label: (BrowserWindow.getFocusedWindow() === MainWindow.get()) ? localizeMessage('main.menus.app.window.closeTab', 'Close Tab') : localizeMessage('main.menus.app.window.closeWindow', 'Close Window'),
         accelerator: 'CmdOrCtrl+W',
         click(_: MenuItem, window?: BaseWindow) {
             if (MainWindow.get() === window) {
@@ -394,7 +394,7 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         },
     }, {
         role: 'close',
-        label: isMac ? localizeMessage('main.menus.app.window.closeWindow', 'Close Window') : localizeMessage('main.menus.app.window.close', 'Close'),
+        label: isMac ? localizeMessage('main.menus.app.window.closeMainWindow', 'Close Main Window') : localizeMessage('main.menus.app.window.close', 'Close'),
         accelerator: 'CmdOrCtrl+Shift+W',
     }, separatorItem);
     if (ServerManager.hasServers()) {

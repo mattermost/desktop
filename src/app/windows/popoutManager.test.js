@@ -103,6 +103,9 @@ jest.mock('main/performanceMonitor', () => ({
 jest.mock('main/utils', () => ({
     getWindowBoundaries: jest.fn(() => ({x: 0, y: 0, width: 800, height: 600})),
 }));
+jest.mock('main/app/utils', () => ({
+    handleUpdateMenuEvent: jest.fn(),
+}));
 
 describe('PopoutManager', () => {
     const {EventEmitter} = jest.requireActual('events');

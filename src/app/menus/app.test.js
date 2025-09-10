@@ -59,6 +59,9 @@ jest.mock('electron', () => {
         nativeImage: {
             createFromPath: jest.fn(),
         },
+        BrowserWindow: {
+            getFocusedWindow: jest.fn(),
+        },
     };
 });
 jest.mock('fs', () => ({
