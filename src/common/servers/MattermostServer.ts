@@ -14,8 +14,9 @@ export class MattermostServer {
     isPredefined: boolean;
     initialLoadURL?: URL;
     isLoggedIn: boolean;
+    preAuthSecret?: string;
 
-    constructor(server: Server, isPredefined: boolean, initialLoadURL?: URL) {
+    constructor(server: Server, isPredefined: boolean, initialLoadURL?: URL, preAuthSecret?: string) {
         this.id = uuid();
 
         this.name = server.name;
@@ -24,6 +25,7 @@ export class MattermostServer {
         this.isPredefined = isPredefined;
         this.initialLoadURL = initialLoadURL;
         this.isLoggedIn = false;
+        this.preAuthSecret = preAuthSecret;
     }
 
     updateURL = (url: string) => {
@@ -40,6 +42,7 @@ export class MattermostServer {
             id: this.id,
             isPredefined: this.isPredefined,
             isLoggedIn: this.isLoggedIn,
+            preAuthSecret: this.preAuthSecret,
         };
     };
 }

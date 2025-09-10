@@ -117,6 +117,7 @@ import {
     VIEW_LIMIT_UPDATED,
     GET_IS_VIEW_LIMIT_REACHED,
     UPDATE_MENTIONS_FOR_SERVER,
+    SECURE_STORAGE_GET,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -153,6 +154,7 @@ contextBridge.exposeInMainWorld('desktop', {
     updateConfiguration: (saveQueueItems) => ipcRenderer.send(UPDATE_CONFIGURATION, saveQueueItems),
     getNonce: () => ipcRenderer.invoke(GET_NONCE),
     isDeveloperModeEnabled: () => ipcRenderer.invoke(IS_DEVELOPER_MODE_ENABLED),
+    getSecret: (serverUrl, keySuffix) => ipcRenderer.invoke(SECURE_STORAGE_GET, serverUrl, keySuffix),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
@@ -176,7 +178,8 @@ contextBridge.exposeInMainWorld('desktop', {
     onServerSwitched: (listener) => ipcRenderer.on(SERVER_SWITCHED, (_, serverId) => listener(serverId)),
     onTabAdded: (listener) => ipcRenderer.on(TAB_ADDED, (_, serverId, tabId) => listener(serverId, tabId)),
     onTabRemoved: (listener) => ipcRenderer.on(TAB_REMOVED, (_, serverId, tabId) => listener(serverId, tabId)),
-    validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
+    validateServerURL: (url, currentId, preAuthSecret) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId, preAuthSecret),
+
     getUniqueServersWithPermissions: () => ipcRenderer.invoke(GET_UNIQUE_SERVERS_WITH_PERMISSIONS),
     addServer: (server) => ipcRenderer.send(ADD_SERVER, server),
     editServer: (server, permissions) => ipcRenderer.send(EDIT_SERVER, server, permissions),

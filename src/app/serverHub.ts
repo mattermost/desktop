@@ -24,18 +24,21 @@ import {
     GET_CURRENT_SERVER,
 } from 'common/communication';
 import {ModalConstants} from 'common/constants';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
+import {savePreAuthSecret, saveOrDeletePreAuthSecret, extractPreAuthSecret} from 'main/preAuthSecret';
+import secureStorage from 'main/secureStorage';
 import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 
-import type {Server, UniqueServer} from 'types/config';
+import type {Server, UniqueServer, NewServer} from 'types/config';
 import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';
-import type {URLValidationResult} from 'types/server';
+import type {ServerTestResult, URLValidationResult} from 'types/server';
 
 const log = new Logger('App', 'ServerHub');
 
@@ -88,7 +91,7 @@ export class ServerHub {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<{prefillURL?: string}, Server>(
+        const modalPromise = ModalManager.addModal<{prefillURL?: string}, NewServer>(
             ModalConstants.NEW_SERVER_MODAL,
             'mattermost-desktop://renderer/newServer.html',
             getLocalPreload('internalAPI.js'),
@@ -97,7 +100,7 @@ export class ServerHub {
             !ServerManager.hasServers(),
         );
 
-        modalPromise.then((data) => {
+        modalPromise.then(async (data) => {
             let initialLoadURL;
             if (prefillURL) {
                 const parsedServerURL = parseURL(data.url);
@@ -105,7 +108,10 @@ export class ServerHub {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-            ServerManager.addServer(data, initialLoadURL);
+            const newServer = ServerManager.addServer(data, initialLoadURL);
+
+            // Handle secure storage persistence separately
+            await savePreAuthSecret(data, newServer.url.toString());
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -128,16 +134,19 @@ export class ServerHub {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
+        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: NewServer; permissions: Permissions}>(
             ModalConstants.EDIT_SERVER_MODAL,
             'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
             {server: server.toUniqueServer(), permissions: PermissionsManager.getForServer(server) ?? {}},
             mainWindow);
 
-        modalPromise.then((data) => {
+        modalPromise.then(async (data) => {
             if (!server.isPredefined) {
-                ServerManager.editServer(id, data.server);
+                ServerManager.editServer(id, data.server, extractPreAuthSecret(data.server));
+
+                // Handle secure storage persistence separately
+                await saveOrDeletePreAuthSecret(data.server, server.url.toString());
             }
             PermissionsManager.setForServer(server, data.permissions);
         }).catch((e) => {
@@ -168,9 +177,16 @@ export class ServerHub {
             mainWindow,
         );
 
-        modalPromise.then((remove) => {
+        modalPromise.then(async (remove) => {
             if (remove) {
                 ServerManager.removeServer(server.id);
+
+                // Clean up associated secret
+                try {
+                    await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+                } catch (error) {
+                    log.warn('Failed to clean up secure secret for removed server:', error);
+                }
             }
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -184,7 +200,7 @@ export class ServerHub {
      * IPC Handlers
      */
 
-    private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string): Promise<URLValidationResult> => {
+    private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string, preAuthSecret?: string): Promise<URLValidationResult> => {
         log.debug('handleServerURLValidation', url, currentId);
 
         // If the URL is missing or null, reject
@@ -221,16 +237,46 @@ export class ServerHub {
             return {status: URLValidationStatus.URLExists, existingServerName: existingServer.name, validatedURL: existingServer.url.toString()};
         }
 
+        const effectivePreAuthSecret = preAuthSecret;
+
         // Try and get remote info from the most secure URL, otherwise use the insecure one
         let remoteURL = secureURL;
         const insecureURL = parseURL(secureURL.toString().replace(/^https:/, 'http:'));
-        let remoteInfo = await this.testRemoteServer(secureURL);
-        if (!remoteInfo && insecureURL) {
-            // Try to fall back to HTTP
-            remoteInfo = await this.testRemoteServer(insecureURL);
-            if (remoteInfo) {
-                remoteURL = insecureURL;
+        let remoteInfo;
+        let preAuthRequired = false;
+
+        const httpsResult = await this.testRemoteServer(secureURL, effectivePreAuthSecret);
+        if ('data' in httpsResult) {
+            remoteInfo = httpsResult.data;
+        } else {
+            // Check if HTTPS returned 403
+            const httpsIs403 = httpsResult.error?.statusCode === 403;
+
+            if (insecureURL) {
+                // Try to fall back to HTTP
+                const httpResult = await this.testRemoteServer(insecureURL, effectivePreAuthSecret);
+                if ('data' in httpResult) {
+                    remoteInfo = httpResult.data;
+                    remoteURL = insecureURL;
+                } else {
+                    // Both HTTPS and HTTP failed
+                    const httpIs403 = httpResult.error?.statusCode === 403;
+                    if (httpsIs403 || httpIs403) {
+                        preAuthRequired = true;
+
+                        // Use the URL that returned 403, preferring HTTPS
+                        remoteURL = httpsIs403 ? secureURL : insecureURL;
+                    }
+                }
+            } else if (httpsIs403) {
+                // No HTTP fallback available, but HTTPS returned 403
+                preAuthRequired = true;
             }
+        }
+
+        // If we detected a 403 error, return PreAuthRequired status
+        if (preAuthRequired) {
+            return {status: URLValidationStatus.PreAuthRequired, validatedURL: remoteURL.toString().replace(/\/$/, '')};
         }
 
         // If we can't get the remote info, warn the user that this might not be the right URL
@@ -239,7 +285,7 @@ export class ServerHub {
         if (!remoteInfo) {
             // If the URL provided has a path, try to validate the server with parts of the path removed, until we reach the root and then return a failure
             if (parsedURL.pathname !== '/') {
-                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId);
+                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId, effectivePreAuthSecret);
             }
 
             return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString().replace(/\/$/, '')};
@@ -263,8 +309,8 @@ export class ServerHub {
                 }
 
                 // If we can't reach the remote Site URL, there's probably a configuration issue
-                const remoteSiteURLInfo = await this.testRemoteServer(parsedSiteURL);
-                if (!remoteSiteURLInfo) {
+                const remoteSiteURLResult = await this.testRemoteServer(parsedSiteURL, effectivePreAuthSecret);
+                if ('error' in remoteSiteURLResult) {
                     return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
                 }
             }
@@ -282,14 +328,14 @@ export class ServerHub {
      * Helper functions
      */
 
-    private testRemoteServer = async (parsedURL: URL) => {
-        const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false);
-        const serverInfo = new ServerInfo(server);
+    private testRemoteServer = async (parsedURL: URL, preAuthSecret?: string): Promise<ServerTestResult> => {
+        const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false, undefined, preAuthSecret);
+        const serverInfo = new ServerInfo(server, preAuthSecret);
         try {
             const remoteInfo = await serverInfo.fetchConfigData();
-            return remoteInfo;
+            return {data: remoteInfo};
         } catch (error) {
-            return undefined;
+            return {error: error as Error & { statusCode?: number }};
         }
     };
 
@@ -301,13 +347,16 @@ export class ServerHub {
             }));
     };
 
-    private handleAddServer = (event: IpcMainEvent, server: Server) => {
+    private handleAddServer = async (event: IpcMainEvent, server: Server & {preAuthSecret?: string}) => {
         log.debug('handleAddServer', server);
 
-        ServerManager.addServer(server);
+        const newServer = ServerManager.addServer(server);
+
+        // Handle secure storage persistence separately
+        await savePreAuthSecret(server, newServer.url.toString());
     };
 
-    private handleEditServer = (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
+    private handleEditServer = async (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
         log.debug('handleEditServer', server, permissions);
 
         if (!server.id) {
@@ -315,7 +364,10 @@ export class ServerHub {
         }
 
         if (!server.isPredefined) {
-            ServerManager.editServer(server.id, server);
+            ServerManager.editServer(server.id, server, extractPreAuthSecret(server));
+
+            // Handle secure storage persistence separately
+            await saveOrDeletePreAuthSecret(server, server.url);
         }
         if (permissions) {
             const mattermostServer = ServerManager.getServer(server.id);
@@ -325,11 +377,23 @@ export class ServerHub {
         }
     };
 
-    private handleRemoveServer = (event: IpcMainEvent, serverId: string) => {
+    private handleRemoveServer = async (event: IpcMainEvent, serverId: string) => {
         log.debug('handleRemoveServer', serverId);
+
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            return;
+        }
 
         // Remove the server from ServerManager
         ServerManager.removeServer(serverId);
+
+        // Clean up associated secret
+        try {
+            await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+        } catch (error) {
+            log.warn('Failed to clean up secure secret for removed server:', error);
+        }
     };
 
     private handleGetLastActive = () => {

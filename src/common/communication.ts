@@ -206,6 +206,7 @@ export const SERVER_NAME_CHANGED = 'server-name-changed';
 export const SERVER_SWITCHED = 'server-switched';
 export const SERVER_LOGGED_IN_CHANGED = 'server-logged-in-changed';
 export const SERVER_ORDER_UPDATED = 'server-order-updated';
+export const SERVER_PRE_AUTH_SECRET_CHANGED = 'server-pre-auth-secret-changed';
 
 // View Manager Events
 export const VIEW_CREATED = 'view-created';
@@ -235,3 +236,6 @@ export const UPDATE_POPOUT_TITLE = 'update-popout-title';
 // View limit events
 export const VIEW_LIMIT_UPDATED = 'view-limit-updated';
 export const GET_IS_VIEW_LIMIT_REACHED = 'get-is-view-limit-reached';
+
+// Secure storage
+export const SECURE_STORAGE_GET = 'secure-storage-get';

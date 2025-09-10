@@ -48,12 +48,15 @@ declare global {
             updateConfiguration: (saveQueueItems: SaveQueueItem[]) => void;
             getNonce: () => Promise<string | undefined>;
             isDeveloperModeEnabled: () => Promise<boolean>;
+            getSecret: (serverUrl: string, keySuffix?: string) => Promise<string | null>;
+
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
             getCurrentServer: () => Promise<UniqueServer>;
             getActiveTabForServer: (serverId: string) => Promise<UniqueView | null>;
             getOrderedServers: () => Promise<UniqueServer[]>;
             getOrderedTabsForServer: (serverId: string) => Promise<UniqueView[]>;
+
             createNewTab: (serverId: string) => Promise<string>;
             createNewWindow: (serverId: string) => Promise<string>;
             openPopoutMenu: (viewId: string) => void;
@@ -66,7 +69,7 @@ declare global {
             onServerSwitched: (listener: (serverId: string) => void) => void;
             onTabAdded: (listener: (serverId: string, tabId: string) => void) => void;
             onTabRemoved: (listener: (serverId: string, tabId: string) => void) => void;
-            validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
+            validateServerURL: (url: string, currentId?: string, preAuthSecret?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
             editServer: (server: UniqueServer, permissions?: Permissions) => void;
@@ -172,6 +175,7 @@ declare global {
                     unreads?: Map<string, boolean>,
                 ) => void) => void;
             };
+
         };
     }
 

@@ -42,8 +42,11 @@ import {
     TAB_ORDER_UPDATED,
     GET_FULL_SCREEN_STATUS,
     MAIN_WINDOW_FOCUSED,
+    SERVER_PRE_AUTH_SECRET_CHANGED,
+    SERVER_URL_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
@@ -60,6 +63,7 @@ import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
+import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import AuthManager from 'main/security/authManager';
 import CertificateManager from 'main/security/certificateManager';
@@ -313,16 +317,42 @@ async function initializeAfterAppReady() {
         return net.fetch(pathToFileURL(pathToServe).toString());
     });
 
+    // Initialize secure storage after app is ready
+    try {
+        await secureStorage.init();
+
+        // Load pre-auth secrets from secure storage into memory
+        const servers = ServerManager.getAllServers();
+        await Promise.allSettled(
+            servers.map(async (server) => {
+                try {
+                    const secret = await secureStorage.getSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
+                    if (secret) {
+                        server.preAuthSecret = secret;
+                        log.debug('Loaded pre-auth secret for server:', {serverId: server.id});
+                    }
+                } catch (error) {
+                    log.warn('Failed to load pre-auth secret for server:', {serverId: server.id, error});
+                }
+            }),
+        );
+    } catch (error) {
+        log.warn('Failed to initialize secure storage cache:', error);
+    }
+
     if (process.platform === 'darwin' || process.platform === 'win32') {
         handleUpdateTheme();
     }
 
     MainWindow.show();
-    ServerManager.on(SERVER_ADDED, (serverId: string) => {
+    const updateServerInfo = (serverId: string) => {
         if (serverId) {
             updateServerInfos([ServerManager.getServer(serverId)!]);
         }
-    });
+    };
+    ServerManager.on(SERVER_ADDED, updateServerInfo);
+    ServerManager.on(SERVER_URL_CHANGED, updateServerInfo);
+    ServerManager.on(SERVER_PRE_AUTH_SECRET_CHANGED, updateServerInfo);
     ServerManager.init();
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
@@ -340,6 +370,32 @@ async function initializeAfterAppReady() {
         }
 
         downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
+    });
+
+    // Inject X-Mattermost-Preauth-Secret header for all server requests
+    defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+        try {
+            const server = ServerManager.lookupServerByURL(details.url);
+
+            if (server && server.preAuthSecret) {
+                const secret = server.preAuthSecret;
+
+                if (!('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
+                    const requestHeaders = {
+                        ...details.requestHeaders,
+                        'X-Mattermost-Preauth-Secret': secret,
+                    };
+
+                    callback({requestHeaders});
+                    return;
+                }
+            }
+        } catch (error) {
+            log.debug('Error injecting preauth secret header:', error);
+        }
+
+        // If no secret found or error occurred, proceed with original headers
+        callback({requestHeaders: details.requestHeaders});
     });
 
     if (process.platform !== 'darwin') {
