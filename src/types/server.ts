@@ -29,3 +29,11 @@ export type URLValidationResult = {
     serverVersion?: string;
     serverName?: string;
 }
+
+export type ServerTestResult = {
+    data: RemoteInfo;
+} | {
+    error: Error & {
+        statusCode?: number;
+    };
+};

@@ -24,6 +24,11 @@ export type ConfigServer = Server & {
 export type UniqueServer = Server & {
     id?: string;
     isPredefined?: boolean;
+    preAuthSecret?: string;
+}
+
+export type NewServer = Server & {
+    preAuthSecret?: string;
 }
 
 export type UniqueView = View & {

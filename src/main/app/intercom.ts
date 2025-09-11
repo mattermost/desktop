@@ -6,11 +6,13 @@ import {app, Menu} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
 import {ModalConstants} from 'common/constants';
+import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
+import secureStorage from 'main/secureStorage';
 import {getLocalPreload} from 'main/utils';
 import ModalManager from 'main/views/modalManager';
 import MainWindow from 'main/windows/mainWindow';
@@ -101,7 +103,7 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
     }
     const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
-        modalPromise.then((data) => {
+        modalPromise.then(async (data) => {
             let initialLoadURL;
             if (prefillURL) {
                 const parsedServerURL = parseURL(data.url);
@@ -109,7 +111,17 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
+
             const newServer = ServerManager.addServer(data, initialLoadURL);
+
+            // Store the secret with the server URL
+            if (data.preAuthSecret) {
+                try {
+                    await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, data.preAuthSecret);
+                } catch (error) {
+                    log.error('Failed to store secure secret with server URL:', error);
+                }
+            }
             ServerViewState.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation

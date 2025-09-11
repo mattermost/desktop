@@ -8,7 +8,7 @@ import {Logger} from 'common/log';
 
 const log = new Logger('serverAPI');
 
-export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess?: (raw: string) => void, onAbort?: () => void, onError?: (error: Error) => void) {
+export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess?: (raw: string) => void, onAbort?: () => void, onError?: (error: Error, statusCode?: number) => void, preAuthSecret?: string) {
     if (isAuthenticated) {
         const cookies = await session.defaultSession.cookies.get({});
         if (!cookies) {
@@ -36,6 +36,11 @@ export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess
         useSessionCookies: true,
     });
 
+    // Add pre-auth header if provided. We want to ensure we send the header if the user has cleared the pre-auth secret
+    if (preAuthSecret || preAuthSecret === '') {
+        req.setHeader('X-Mattermost-Preauth-Secret', preAuthSecret);
+    }
+
     if (onSuccess) {
         req.on('response', (response: Electron.IncomingMessage) => {
             log.silly('response', response);
@@ -55,7 +60,7 @@ export async function getServerAPI(url: URL, isAuthenticated: boolean, onSuccess
                     }
                 });
             } else {
-                onError?.(new Error(`Bad status code requesting from ${url.toString()}`));
+                onError?.(new Error(`Bad status code ${response.statusCode} requesting from ${url.toString()}`), response.statusCode);
             }
             response.on('error', onError || (() => {}));
         });

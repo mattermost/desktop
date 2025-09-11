@@ -21,6 +21,7 @@ export let migrationInfoPath = '';
 export let downloadsJson = '';
 export let permissionsJson = '';
 export let developerModeJson = '';
+export let secureStoragePath = '';
 
 export function updatePaths(emit = false) {
     userDataPath = app.getPath('userData');
@@ -35,6 +36,7 @@ export function updatePaths(emit = false) {
     downloadsJson = path.resolve(userDataPath, 'downloads.json');
     permissionsJson = path.resolve(userDataPath, 'permissions.json');
     developerModeJson = path.resolve(userDataPath, 'developerMode.json');
+    secureStoragePath = userDataPath;
 
     if (emit) {
         ipcMain.emit(UPDATE_PATHS);
