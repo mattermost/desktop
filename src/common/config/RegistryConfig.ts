@@ -94,7 +94,7 @@ export default class RegistryConfig extends EventEmitter {
    */
     private getEnableServerManagementFromRegistry() {
         const value = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement').pop();
-        return value !== undefined ? value === 1 : value;
+        return value === undefined ? value : value === 1;
     }
 
     /**
@@ -102,7 +102,7 @@ export default class RegistryConfig extends EventEmitter {
    */
     private getEnableAutoUpdatorFromRegistry() {
         const value = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdater').pop();
-        return value !== undefined ? value === 1 : value;
+        return value === undefined ? value : value === 1;
     }
 
     /**
