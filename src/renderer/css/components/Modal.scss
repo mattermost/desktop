@@ -44,7 +44,6 @@ body {
     color: var(--center-channel-color);
     outline: 0;
     display: flex;
-    align-items: center;
     user-select: none;
 
     .Modal_body {
@@ -157,7 +156,7 @@ body {
         position: relative;
         width: auto;
         max-width: 500px;
-        margin-top: -24px;
+        margin-top: 5vh;
 
         &.Modal_xl {
             width: 800px;
