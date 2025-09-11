@@ -19,6 +19,13 @@ export class ServerInfo {
         this.preAuthSecret = preAuthSecret;
     }
 
+    pingServer = async () => {
+        await this.getRemoteInfo<{status: string}>(
+            () => {}, // No callback needed for ping, just checking if it responds
+            parseURL(`${this.server.url}/api/v4/system/ping`),
+        );
+    };
+
     fetchConfigData = async () => {
         await this.getRemoteInfo<ClientConfig>(
             this.onGetConfig,
