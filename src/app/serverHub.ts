@@ -332,6 +332,10 @@ export class ServerHub {
         const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false, undefined, preAuthSecret);
         const serverInfo = new ServerInfo(server, preAuthSecret);
         try {
+            // Ping server first for pre-auth - config endpoint might be whitelisted
+            await serverInfo.pingServer();
+
+            // Only proceed to fetch config if ping is successful
             const remoteInfo = await serverInfo.fetchConfigData();
             return {data: remoteInfo};
         } catch (error) {

@@ -93,14 +93,16 @@ export default class RegistryConfig extends EventEmitter {
    * Determines whether server management has been enabled, disabled or isn't configured
    */
     private getEnableServerManagementFromRegistry() {
-        return this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement').pop() === 1;
+        const value = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableServerManagement').pop();
+        return value === undefined ? value : value === 1;
     }
 
     /**
    * Determines whether the auto updated has been enabled, disabled or isn't configured
    */
     private getEnableAutoUpdatorFromRegistry() {
-        return this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdater').pop() === 1;
+        const value = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdater').pop();
+        return value === undefined ? value : value === 1;
     }
 
     /**

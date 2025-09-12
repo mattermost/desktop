@@ -279,6 +279,9 @@ describe('app/serverViewState', () => {
         beforeEach(() => {
             MattermostServer.mockImplementation(({url}) => ({url}));
             ServerInfo.mockImplementation(({url}) => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
                 fetchConfigData: jest.fn().mockImplementation(() => ({
                     serverVersion: '7.8.0',
                     siteName: 'Mattermost',
@@ -375,6 +378,9 @@ describe('app/serverViewState', () => {
 
         it('should attempt HTTP when HTTPS fails, and generate a warning', async () => {
             ServerInfo.mockImplementation(({url}) => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     if (url.startsWith('https:')) {
                         throw new Error('HTTPS failed');
@@ -395,6 +401,9 @@ describe('app/serverViewState', () => {
 
         it('should be able to recognize localhost with a port and add the appropriate prefix', async () => {
             ServerInfo.mockImplementation(({url}) => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     if (url.startsWith('https:')) {
                         throw new Error('HTTPS failed');
@@ -415,7 +424,7 @@ describe('app/serverViewState', () => {
 
         it('should show a warning when the ping request times out', async () => {
             ServerInfo.mockImplementation(() => ({
-                fetchConfigData: jest.fn().mockImplementation(() => {
+                pingServer: jest.fn().mockImplementation(() => {
                     throw new Error();
                 }),
             }));
@@ -427,6 +436,9 @@ describe('app/serverViewState', () => {
 
         it('should update the users URL when the Site URL is different', async () => {
             ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     return {
                         serverVersion: '7.8.0',
@@ -443,6 +455,9 @@ describe('app/serverViewState', () => {
 
         it('should not update the users URL when the Site URL is blank', async () => {
             ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     return {
                         serverVersion: '7.8.0',
@@ -459,6 +474,9 @@ describe('app/serverViewState', () => {
 
         it('should warn the user when the Site URL is different but unreachable', async () => {
             ServerInfo.mockImplementation(({url}) => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     if (url === 'https://mainserver.com/') {
                         throw new Error('Site URL unreachable');
@@ -479,6 +497,9 @@ describe('app/serverViewState', () => {
         it('should warn the user when the Site URL already exists as another server', async () => {
             ServerManager.lookupServerByURL.mockReturnValue({name: 'Test Server 1', id: 'server-1', url: new URL('https://mainserver.com')});
             ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
                 fetchConfigData: jest.fn().mockImplementation(() => {
                     return {
                         serverVersion: '7.8.0',

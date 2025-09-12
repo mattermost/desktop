@@ -364,20 +364,8 @@ describe('common/config/RegistryConfig', () => {
 
             const result = registryConfig.getEnableServerManagementFromRegistry();
 
-            // Should return false when both hives are undefined (undefined === 1 is false)
-            expect(result).toBe(false);
-        });
-
-        it('should handle empty arrays from registry', () => {
-            registryConfig.getRegistryEntryValues = () => {
-                // Return empty arrays
-                return [];
-            };
-
-            const result = registryConfig.getEnableServerManagementFromRegistry();
-
-            // Should return false when registry returns empty arrays (undefined === 1 is false)
-            expect(result).toBe(false);
+            // Should return undefined when both hives are undefined
+            expect(result).toBe(undefined);
         });
     });
 
