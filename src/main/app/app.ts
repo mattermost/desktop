@@ -4,14 +4,15 @@
 import type {BrowserWindow, Event, WebContents, Certificate, Details} from 'electron';
 import {app, dialog} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import Tray from 'app/system/tray/tray';
+import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 import updateManager from 'main/autoUpdater';
-import CertificateStore from 'main/certificateStore';
 import {localizeMessage} from 'main/i18nManager';
-import Tray from 'main/tray/tray';
-import ViewManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
+import CertificateStore from 'main/security/certificateStore';
 
 import {getDeeplinkingURL, openDeepLink, resizeScreen} from './utils';
 
@@ -101,9 +102,10 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     // update the callback
         const errorID = `${parsedURL.origin}:${error}`;
 
-        const view = ViewManager.getViewByWebContentsId(webContents.id);
-        if (view?.view.server) {
-            const serverURL = parseURL(view.view.server.url);
+        const view = WebContentsManager.getViewByWebContentsId(webContents.id);
+        const server = view && ServerManager.getServer(view.serverId);
+        if (server) {
+            const serverURL = parseURL(server.url);
             if (serverURL && serverURL.origin !== parsedURL.origin) {
                 log.warn(`Ignoring certificate for unmatched origin ${parsedURL.origin}, will not trust`);
                 callback(false);

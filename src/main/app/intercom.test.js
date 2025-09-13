@@ -3,10 +3,10 @@
 
 import {app} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerManager from 'common/servers/serverManager';
 import {getLocalPreload} from 'main/utils';
-import ModalManager from 'main/views/modalManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import {
     handleWelcomeScreenModal,
@@ -25,7 +25,7 @@ jest.mock('main/secureStorage', () => ({
     getSecret: jest.fn(),
 }));
 
-jest.mock('app/serverViewState', () => ({}));
+jest.mock('app/serverHub', () => ({}));
 jest.mock('common/config', () => ({
     setServers: jest.fn(),
 }));
@@ -44,11 +44,11 @@ jest.mock('common/servers/serverManager', () => ({
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({}));
-jest.mock('main/views/modalManager', () => ({
+jest.mock('common/views/viewManager', () => ({}));
+jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
 }));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
 }));
 

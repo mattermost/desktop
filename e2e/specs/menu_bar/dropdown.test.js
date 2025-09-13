@@ -36,8 +36,8 @@ describe('menu_bar/dropdown', function desc() {
         const firstMenuItem = await dropdownView.innerText('.ServerDropdown button.ServerDropdown__button:nth-child(1) span');
         const secondMenuItem = await dropdownView.innerText('.ServerDropdown button.ServerDropdown__button:nth-child(2) span');
 
-        firstMenuItem.should.equal(config.teams[0].name);
-        secondMenuItem.should.equal(config.teams[1].name);
+        firstMenuItem.should.equal(config.servers[0].name);
+        secondMenuItem.should.equal(config.servers[1].name);
 
         await afterFunc();
     });

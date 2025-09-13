@@ -34,7 +34,7 @@ describe('copylink', function desc() {
 
     if (process.platform !== 'linux') {
         it('MM-T125 Copy Link can be used from channel LHS', async () => {
-            const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+            const firstServer = this.serverMap[config.servers[0].name][0].win;
             await env.loginToMattermost(firstServer);
             await asyncSleep(2000);
             await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 5000});

@@ -1,0 +1,18 @@
+.BasePage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.BasePage__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  background-size: cover;
+  background-image: url('renderer/assets/svg/background-light.svg');
+}
+
+.BasePage__body.darkMode {
+  background-image: url('renderer/assets/svg/background-dark.svg');
+}

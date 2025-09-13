@@ -9,6 +9,7 @@
   padding: 6px 8px;
   margin-bottom: 0;
   list-style: none;
+  overflow: hidden;
 }
 
 .TabBar-nonDrag {
@@ -28,10 +29,10 @@
 .TabBar>li {
   -webkit-app-region: no-drag;
   -webkit-user-select: none;
-  min-width: 48px;
   max-width: 224px;
   position: relative;
   margin: 0 2px;
+  overflow: hidden;
 }
 
 .TabBar>li>a {
@@ -84,8 +85,11 @@
     background: none;
     border: none;
     color: rgba(61,60,64,0.32);
-    margin-left: 6px;
     padding: 0;
+    height: 24px;
+    width: 24px;
+    margin-left: -16px;
+    margin-right: 3px;
 }
 
 .TabBar>li.serverTabItem>a>div.TabBar-tabSeperator>.serverTabItem__close:hover {
@@ -111,8 +115,36 @@
 
 .TabBar>li>a>div.TabBar-tabSeperator {
   display: flex;
-  padding: 5px 12px;
   align-items: center;
+  gap: 6px;
+  border-left: 1px solid transparent;
+}
+
+/* The text node needs to be wrapped in a span for this to work */
+.TabBar>li>a>div.TabBar-tabSeperator>span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 16px;
+  padding: 5px 0 5px 12px;
+  margin-right: 12px;
+}
+
+.TabBar>li:has(.TabBar-dot) {
+  min-width: 60px;
+}
+
+.TabBar>li:has(.TabBar-badge) {
+  min-width: 66px;
+}
+
+/* Ensure badges and close button don't shrink and remain visible */
+.TabBar .TabBar-badge,
+.TabBar .TabBar-dot,
+.TabBar .TabBar-expired,
+.TabBar>li.serverTabItem>a>div.TabBar-tabSeperator>.serverTabItem__close {
+  flex: 0 0 auto;
 }
 
 .TabBar>li.serverTabItem.active>a, .TabBar>li.serverTabItem.dragging>a {
@@ -129,40 +161,36 @@
 
 .TabBar>li.serverTabItem:not(.active)+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(61,60,64,0.08);
-  margin-left: -1px;
 }
 
 .TabBar.darkMode>li.serverTabItem:not(.active)+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
   border-left: 1px solid rgba(221,221,221,0.08);
-  margin-left: -1px;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled):hover+.TabBar-addServerButton>a>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid transparent;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled):hover+li.serverTabItem:not(.active)>a>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid transparent;
 }
 
 .TabBar>li.serverTabItem:not(.active):not(.disabled)+li.serverTabItem:not(.active)>a:hover>div.TabBar-tabSeperator {
-  border-left: none;
-  margin-left: 0px;
+  border-left: 1px solid transparent;
 }
 
-.TabBar .TabBar-dot {
+.TabBar-dot {
   background: #579eff;
   float: right;
   height: 8px;
   width: 8px;
-  margin-left: 8px;
+  margin-left: -8px;
+  margin-right: 12px;
   border-radius: 4px;
   flex: 0 0 8px;
 }
 
-.TabBar.darkMode .TabBar-dot {
+.darkMode .TabBar-dot {
   background: #196CAF;
 }
 
@@ -170,7 +198,8 @@
   float: right;
   font-size: 18px;
   line-height: 12px;
-  margin-left: 8px;
+  margin-left: -8px;
+  margin-right: 12px;
   color: rgba(61,60,64,0.32);
 }
 
@@ -182,7 +211,7 @@
     color: rgba(221,221,221,0.32);
 }
 
-.TabBar .TabBar-badge {
+.TabBar-badge {
     background: #F74343;
     border-radius: 8px;
     display: flex;
@@ -197,11 +226,23 @@
     letter-spacing: normal;
     -webkit-font-smoothing: auto;
     
-    margin-left: 6px;
+    margin-left: -6px;
+    margin-right: 12px;
     height: 12px;
 }
 
-.TabBar .TabBar-badge.TabBar-badge-nomention:after {
+.TabBar-badge.unreads {
+  background: #579eff;
+  font-size: 16px;
+  padding: 4px;
+  height: 0;
+}
+
+.darkMode .TabBar-badge.unreads {
+  background: #196CAF;
+}
+
+.TabBar-badge.TabBar-badge-nomention:after {
   content: "";
   width: 4px;
   height: 4px;

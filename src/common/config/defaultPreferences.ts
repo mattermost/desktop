@@ -12,7 +12,7 @@ import {app} from 'electron';
  * @param {number} version - Scheme version. (Not application version)
  */
 
-import type {ConfigV3} from 'types/config';
+import type {ConfigV4} from 'types/config';
 
 export const getDefaultDownloadLocation = (): string | undefined => {
     // eslint-disable-next-line no-undef
@@ -29,9 +29,9 @@ export const getDefaultDownloadLocation = (): string | undefined => {
     return app.getPath('downloads') || path.join(os.homedir(), 'Downloads');
 };
 
-const defaultPreferences: ConfigV3 = {
-    version: 3,
-    teams: [],
+const defaultPreferences: ConfigV4 = {
+    version: 4,
+    servers: [],
     showTrayIcon: true,
     trayIconTheme: 'use_system',
     minimizeToTray: process.platform !== 'linux',
@@ -47,11 +47,12 @@ const defaultPreferences: ConfigV3 = {
     hideOnStart: false,
     spellCheckerLocales: [],
     darkMode: false,
-    lastActiveTeam: 0,
+    lastActiveServer: 0,
     downloadLocation: getDefaultDownloadLocation(),
     startInFullscreen: false,
     logLevel: 'info',
     enableMetrics: true,
+    viewLimit: 15,
 };
 
 export default defaultPreferences;

@@ -26,14 +26,11 @@ function startElectron() {
 function restartElectron() {
     if (electronProcess) {
         electronProcess.kill();
-        electronProcess.on('close', () => {
-            startElectron();
-        });
-    } else {
-        startElectron();
     }
+    startElectron();
 }
 
+let hasStarted = false;
 Promise.all([mainConfig, preloadConfig, rendererConfig].map((config) => {
     return new Promise((resolve) => {
         const compiler = webpack(config);
@@ -43,7 +40,7 @@ Promise.all([mainConfig, preloadConfig, rendererConfig].map((config) => {
             }
             process.stdout.write(stats.toString({colors: true}));
             process.stdout.write('\n');
-            if (!stats.hasErrors()) {
+            if (!stats.hasErrors() && hasStarted) {
                 restartElectron();
             }
             resolve();
@@ -51,4 +48,5 @@ Promise.all([mainConfig, preloadConfig, rendererConfig].map((config) => {
     });
 })).then(() => {
     startElectron();
+    hasStarted = true;
 });

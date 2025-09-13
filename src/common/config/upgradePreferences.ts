@@ -2,9 +2,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {getDefaultViewsForConfigServer} from 'common/views/View';
-
-import type {ConfigV3, ConfigV2, ConfigV1, ConfigV0, AnyConfig} from 'types/config';
+import type {ConfigV4, ConfigV3, ConfigV2, ConfigV1, ConfigV0, AnyConfig} from 'types/config';
 
 import pastDefaultPreferences from './pastDefaultPreferences';
 
@@ -34,21 +32,47 @@ export function upgradeV1toV2(configV1: ConfigV1) {
 }
 
 export function upgradeV2toV3(configV2: ConfigV2) {
-    const config: ConfigV3 = Object.assign({}, deepCopy<ConfigV3>(pastDefaultPreferences[3]), configV2);
+    const config: ConfigV3 = Object.assign({}, deepCopy<ConfigV3>(pastDefaultPreferences[3]), {...configV2, spellCheckerLocale: undefined});
     config.version = 3;
     config.teams = configV2.teams.map((value) => {
-        return getDefaultViewsForConfigServer(value);
+        return {
+            ...value,
+            tabs: [
+                {
+                    name: 'channels',
+                    order: 0,
+                    isOpen: true,
+                },
+            ],
+        };
     });
     config.lastActiveTeam = 0;
-    config.spellCheckerLocales = [];
+    config.spellCheckerLocales = [configV2.spellCheckerLocale];
     config.startInFullscreen = false;
     return config;
 }
 
-export default function upgradeToLatest(config: AnyConfig): ConfigV3 {
+export function upgradeV3toV4(configV3: ConfigV3) {
+    const config: ConfigV4 = Object.assign({}, deepCopy<ConfigV4>(pastDefaultPreferences[4]), {...configV3, lastActiveTeam: undefined, teams: undefined});
+    config.version = 4;
+    config.servers = configV3.teams.map((team) => {
+        return {
+            name: team.name,
+            url: team.url,
+            order: team.order,
+        };
+    });
+    config.lastActiveServer = configV3.lastActiveTeam;
+    config.viewLimit = 15;
+    return config;
+}
+
+export default function upgradeToLatest(config: AnyConfig): ConfigV4 {
     switch (config.version) {
+    case 4:
+        return config as ConfigV4;
     case 3:
-        return config as ConfigV3;
+        return upgradeToLatest(upgradeV3toV4(config as ConfigV3));
     case 2:
         return upgradeToLatest(upgradeV2toV3(config as ConfigV2));
     case 1:

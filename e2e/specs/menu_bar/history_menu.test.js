@@ -30,7 +30,7 @@ describe('history_menu', function desc() {
     });
 
     it('Click back and forward from history', async () => {
-        const firstServer = this.serverMap[`${config.teams[0].name}___TAB_MESSAGING`].win;
+        const firstServer = this.serverMap[config.servers[0].name][0].win;
         await env.loginToMattermost(firstServer);
         await firstServer.waitForSelector('#sidebarItem_off-topic');
 

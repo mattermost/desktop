@@ -3,16 +3,16 @@
 
 import {app, ipcMain, nativeTheme} from 'electron';
 
-import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
+import {setUnreadBadgeSetting} from 'app/system/badge';
+import Tray from 'app/system/tray/tray';
+import {EMIT_CONFIGURATION} from 'common/communication';
 import Config from 'common/config';
 import {Logger, setLoggingLevel} from 'common/log';
+import ServerManager from 'common/servers/serverManager';
 import AutoLauncher from 'main/AutoLauncher';
-import {setUnreadBadgeSetting} from 'main/badge';
-import Tray from 'main/tray/tray';
-import LoadingScreen from 'main/views/loadingScreen';
-import MainWindow from 'main/windows/mainWindow';
 
-import type {CombinedConfig, Config as ConfigType} from 'types/config';
+import type {CombinedConfig, CurrentConfig} from 'types/config';
+import type {DeveloperSettings} from 'types/settings';
 
 import {handleMainWindowIsShown} from './intercom';
 import {handleUpdateMenuEvent, updateSpellCheckerLocales} from './utils';
@@ -40,14 +40,14 @@ export function handleGetLocalConfiguration() {
     };
 }
 
-export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof ConfigType; data: ConfigType[keyof ConfigType]}> = []) {
+export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof CurrentConfig; data: CurrentConfig[keyof CurrentConfig]}> = []) {
     log.debug('updateConfiguration', properties);
 
     if (properties.length) {
         const newData = properties.reduce((obj, data) => {
             (obj as any)[data.key] = data.data;
             return obj;
-        }, {} as Partial<ConfigType>);
+        }, {} as Partial<CurrentConfig>);
         Config.setMultiple(newData);
     }
 }
@@ -68,11 +68,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 
     if (!newConfig) {
         return;
-    }
-
-    if (app.isReady()) {
-        MainWindow.sendToRenderer(RELOAD_CONFIGURATION);
-        ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
     }
 
     setUnreadBadgeSetting(newConfig && newConfig.showUnreadBadge);
@@ -111,8 +106,13 @@ export function handleDarkModeChange(darkMode: boolean) {
     log.debug('handleDarkModeChange', darkMode);
 
     Tray.refreshImages(Config.trayIconTheme);
-    MainWindow.sendToRenderer(DARK_MODE_CHANGE, darkMode);
-    LoadingScreen.setDarkMode(darkMode);
-
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
+}
+
+export function handleDeveloperModeUpdated(json: DeveloperSettings) {
+    log.debug('handleDeveloperModeUpdated', json);
+
+    if (['browserOnly', 'disableContextMenu'].some((key) => Object.hasOwn(json, key))) {
+        ServerManager.init();
+    }
 }

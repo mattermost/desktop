@@ -2,9 +2,12 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {app, Menu} from 'electron';
+import {app, BrowserWindow, Menu} from 'electron';
 
-import ServerViewState from 'app/serverViewState';
+import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
+import ServerViewState from 'app/serverHub';
+import {APP_MENU_WILL_CLOSE} from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
@@ -14,8 +17,6 @@ import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
 import secureStorage from 'main/secureStorage';
 import {getLocalPreload} from 'main/utils';
-import ModalManager from 'main/views/modalManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import type {UniqueServer} from 'types/config';
 
@@ -111,7 +112,6 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-
             const newServer = ServerManager.addServer(data, initialLoadURL);
 
             // Store the secret with the server URL
@@ -122,11 +122,11 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                     log.error('Failed to store secure secret with server URL:', error);
                 }
             }
-            ServerViewState.switchServer(newServer.id, true);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
                 log.error(`there was an error in the welcome screen modal: ${e}`);
+                log.error(e);
             }
         });
     } else {
@@ -139,7 +139,7 @@ export function handleMentionNotification(event: IpcMainInvokeEvent, title: stri
     return NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
-export function handleOpenAppMenu() {
+export function handleOpenAppMenu(event: IpcMainEvent) {
     log.debug('handleOpenAppMenu');
 
     const windowMenu = Menu.getApplicationMenu();
@@ -147,8 +147,17 @@ export function handleOpenAppMenu() {
         log.error('No application menu found');
         return;
     }
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+        log.error('window not found');
+        return;
+    }
+    windowMenu.once('menu-will-close', () => {
+        window.focus();
+        window.webContents.send(APP_MENU_WILL_CLOSE);
+    });
     windowMenu.popup({
-        window: MainWindow.get(),
+        window,
         x: 18,
         y: 18,
     });

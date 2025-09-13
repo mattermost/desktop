@@ -1,29 +1,19 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-export type View = {
-    name: string;
-    isOpen?: boolean;
-}
-
 export type Server = {
     name: string;
     url: string;
 }
 
-export type ConfigView = View & {
-    order: number;
-}
-
 export type ConfigServer = Server & {
     order: number;
-    lastActiveTab?: number;
-    tabs: ConfigView[];
 }
 
 export type UniqueServer = Server & {
     id?: string;
     isPredefined?: boolean;
+    isLoggedIn?: boolean;
     preAuthSecret?: string;
 }
 
@@ -31,15 +21,20 @@ export type NewServer = Server & {
     preAuthSecret?: string;
 }
 
-export type UniqueView = View & {
-    id?: string;
+export type UniqueView = {
+    id: string;
+    serverId: string;
+    channelName?: string;
+    teamName?: string;
+    serverName: string;
+    isDisabled?: boolean;
 }
 
-export type Config = ConfigV3;
+export type CurrentConfig = ConfigV4;
 
-export type ConfigV3 = {
-    version: 3;
-    teams: ConfigServer[];
+export type ConfigV4 = {
+    version: 4;
+    servers: ConfigServer[];
     showTrayIcon: boolean;
     trayIconTheme: string;
     minimizeToTray: boolean;
@@ -57,7 +52,7 @@ export type ConfigV3 = {
     darkMode: boolean;
     downloadLocation?: string;
     spellCheckerURL?: string;
-    lastActiveTeam?: number;
+    lastActiveServer?: number;
     startInFullscreen?: boolean;
     autoCheckForUpdates?: boolean;
     alwaysMinimize?: boolean;
@@ -65,15 +60,34 @@ export type ConfigV3 = {
     logLevel?: string;
     appLanguage?: string;
     enableMetrics?: boolean;
+    viewLimit?: number;
+}
+
+export type ConfigV3 = Omit<ConfigV4,
+'version' |
+'servers' |
+'viewLimit' |
+'lastActiveServer'> & {
+    version: 3;
+    teams: Array<Server & {
+        order: number;
+        lastActiveTab?: number;
+        tabs: Array<{
+            name: string;
+            isOpen?: boolean;
+            order: number;
+        }>;
+    }>;
+    lastActiveTeam?: number;
 }
 
 export type ConfigV2 =
     Omit<ConfigV3,
     'version' |
     'teams' |
+    'lastActiveTeam' |
     'hideOnStart' |
     'spellCheckerLocales' |
-    'lastActiveTeam' |
     'startInFullscreen' |
     'autoCheckForUpdates' |
     'alwaysMinimize' |
@@ -106,7 +120,7 @@ export type ConfigV1 =
 
 export type ConfigV0 = {version: 0; url: string};
 
-export type AnyConfig = ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
+export type AnyConfig = ConfigV4 | ConfigV3 | ConfigV2 | ConfigV1 | ConfigV0;
 
 export type BuildConfig = {
     defaultServers?: Server[];
@@ -125,11 +139,11 @@ export type RegistryConfig = {
     enableAutoUpdater: boolean;
 }
 
-export type CombinedConfig = Omit<Config, 'teams'> & Omit<BuildConfig, 'defaultServers'> & {
+export type CombinedConfig = Omit<CurrentConfig, 'servers'> & Omit<BuildConfig, 'defaultServers'> & {
     appName: string;
 }
 
-export type LocalConfiguration = Config & {
+export type LocalConfiguration = CurrentConfig & {
     appName: string;
     enableServerManagement: boolean;
     canUpgrade: boolean;

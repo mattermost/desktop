@@ -42,50 +42,16 @@ const exampleServer = {
     name: 'example',
     url: exampleURL,
     order: 0,
-    tabs: [
-        {
-            name: 'TAB_MESSAGING',
-            order: 0,
-            isOpen: true,
-        },
-        {
-            name: 'TAB_FOCALBOARD',
-            order: 1,
-        },
-        {
-            name: 'TAB_PLAYBOOKS',
-            order: 2,
-        },
-    ],
-    lastActiveTab: 0,
 };
 const githubServer = {
     name: 'github',
     url: 'https://github.com/',
     order: 1,
-    tabs: [
-        {
-            name: 'TAB_MESSAGING',
-            order: 0,
-            isOpen: true,
-        },
-        {
-            name: 'TAB_FOCALBOARD',
-            order: 1,
-            isOpen: true,
-        },
-        {
-            name: 'TAB_PLAYBOOKS',
-            order: 2,
-            isOpen: true,
-        },
-    ],
-    lastActiveTab: 0,
 };
 
 const demoConfig = {
-    version: 3,
-    teams: [exampleServer, githubServer],
+    version: 4,
+    servers: [exampleServer, githubServer],
     showTrayIcon: false,
     trayIconTheme: 'light',
     minimizeToTray: false,
@@ -101,16 +67,17 @@ const demoConfig = {
     hideOnStart: false,
     spellCheckerLocales: [],
     darkMode: false,
-    lastActiveTeam: 0,
+    lastActiveServer: 0,
     startInFullscreen: false,
     autoCheckForUpdates: true,
     appLanguage: 'en',
     logLevel: 'silly',
+    viewLimit: 15,
 };
 
 const demoMattermostConfig = {
     ...demoConfig,
-    teams: [{
+    servers: [{
         ...exampleServer,
         url: mattermostURL,
     }, githubServer],
@@ -242,14 +209,13 @@ module.exports = {
                     if (!window.testHelper) {
                         return null;
                     }
-                    const info = await window.testHelper.getViewInfoForTest();
-                    if (!info) {
-                        return null;
-                    }
-                    return {viewName: `${info.serverName}___${info.viewType}`, webContentsId: info.webContentsId};
+                    return window.testHelper.getViewInfoForTest();
                 }).then((result) => {
                     if (result) {
-                        map[result.viewName] = {win, webContentsId: result.webContentsId};
+                        if (!map[result.serverName]) {
+                            map[result.serverName] = [];
+                        }
+                        map[result.serverName].push({win, webContentsId: result.webContentsId});
                     }
                 });
             }));

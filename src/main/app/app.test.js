@@ -3,11 +3,12 @@
 
 import {app, dialog} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import WebContentsManager from 'app/views/webContentsManager';
+import ServerManager from 'common/servers/serverManager';
 import {handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
 import {getDeeplinkingURL, openDeepLink} from 'main/app/utils';
-import CertificateStore from 'main/certificateStore';
-import ViewManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
+import CertificateStore from 'main/security/certificateStore';
 
 jest.mock('electron', () => ({
     app: {
@@ -26,7 +27,7 @@ jest.mock('main/app/utils', () => ({
 }));
 jest.mock('main/autoUpdater', () => ({}));
 
-jest.mock('main/certificateStore', () => ({
+jest.mock('main/security/certificateStore', () => ({
     isExplicitlyUntrusted: jest.fn(),
     isTrusted: jest.fn(),
     isExisting: jest.fn(),
@@ -36,14 +37,23 @@ jest.mock('main/certificateStore', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-jest.mock('main/tray/tray', () => ({}));
-jest.mock('main/windows/mainWindow', () => ({
+jest.mock('app/system/tray/tray', () => ({}));
+jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     show: jest.fn(),
+    on: jest.fn(),
 }));
-jest.mock('main/views/viewManager', () => ({
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+}));
+jest.mock('common/servers/serverManager', () => ({
+    on: jest.fn(),
+    getServer: jest.fn(),
+}));
+jest.mock('common/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
+    on: jest.fn(),
 }));
 
 describe('main/app/app', () => {
@@ -94,18 +104,16 @@ describe('main/app/app', () => {
         const promise = Promise.resolve({});
         const certificate = {};
         const view = {
-            view: {
-                server: {
-                    name: 'test-server',
-                    url: new URL(testURL),
-                },
+            server: {
+                name: 'test-server',
+                url: new URL(testURL),
             },
             load: jest.fn(),
         };
 
         beforeEach(() => {
             MainWindow.get.mockReturnValue(mainWindow);
-            ViewManager.getViewByWebContentsId.mockReturnValue(view);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(view);
         });
 
         afterEach(() => {
@@ -129,8 +137,12 @@ describe('main/app/app', () => {
             expect(callback).toHaveBeenCalledWith(true);
         });
 
-        it('should ignore and untrust when the origin of the certificate does not match the server URL', () => {
-            handleAppCertificateError(event, webContents, 'http://a-different-url.com', 'error-1', certificate, callback);
+        it('should ignore and untrust when the origin of the certificate does not match the server URL', async () => {
+            // Mock the server lookup to return a server with a different origin
+            const mockServer = {url: 'http://server-1.com'};
+            ServerManager.getServer.mockReturnValue(mockServer);
+
+            await handleAppCertificateError(event, webContents, 'http://a-different-url.com', 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
         });
 

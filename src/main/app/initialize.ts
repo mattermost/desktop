@@ -4,12 +4,18 @@
 import path from 'path';
 import {pathToFileURL} from 'url';
 
-import {app, ipcMain, nativeTheme, net, protocol, session} from 'electron';
+import type {IpcMainInvokeEvent} from 'electron';
+import {app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
 
+import MainWindow from 'app/mainWindow/mainWindow';
+import NavigationManager from 'app/navigationManager';
+import {setupBadge} from 'app/system/badge';
+import Tray from 'app/system/tray/tray';
+import TabManager from 'app/tabs/tabManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {
-    FOCUS_BROWSERVIEW,
     QUIT,
     NOTIFY_MENTION,
     UPDATE_SHORTCUT_MENU,
@@ -23,26 +29,31 @@ import {
     GET_LOCAL_CONFIGURATION,
     UPDATE_CONFIGURATION,
     UPDATE_PATHS,
-    SERVERS_MODIFIED,
     GET_DARK_MODE,
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
+    SERVER_ADDED,
+    VIEW_TITLE_UPDATED,
+    TAB_ADDED,
+    TAB_REMOVED,
+    TAB_ORDER_UPDATED,
+    GET_FULL_SCREEN_STATUS,
+    MAIN_WINDOW_FOCUSED,
+    SERVER_PRE_AUTH_SECRET_CHANGED,
+    SERVER_URL_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
-import AllowProtocolDialog from 'main/allowProtocolDialog';
+import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
-import AuthManager from 'main/authManager';
 import AutoLauncher from 'main/AutoLauncher';
 import updateManager from 'main/autoUpdater';
-import {setupBadge} from 'main/badge';
-import CertificateManager from 'main/certificateManager';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
@@ -52,13 +63,13 @@ import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
-import PermissionsManager from 'main/permissionsManager';
 import secureStorage from 'main/secureStorage';
-import Tray from 'main/tray/tray';
-import TrustedOriginsStore from 'main/trustedOrigins';
+import AllowProtocolDialog from 'main/security/allowProtocolDialog';
+import AuthManager from 'main/security/authManager';
+import CertificateManager from 'main/security/certificateManager';
+import PermissionsManager from 'main/security/permissionsManager';
+import TrustedOriginsStore from 'main/security/trustedOrigins';
 import UserActivityMonitor from 'main/UserActivityMonitor';
-import ViewManager from 'main/views/viewManager';
-import MainWindow from 'main/windows/mainWindow';
 
 import {
     handleAppBeforeQuit,
@@ -72,6 +83,7 @@ import {
 import {
     handleConfigUpdate,
     handleDarkModeChange,
+    handleDeveloperModeUpdated,
     handleGetConfiguration,
     handleGetLocalConfiguration,
     handleUpdateTheme,
@@ -96,7 +108,6 @@ import {
     wasUpdated,
     migrateMacAppStore,
     updateServerInfos,
-    flushCookiesStore,
 } from './utils';
 import {
     handleDoubleClick,
@@ -203,12 +214,6 @@ function initializeAppEventListeners() {
     app.on('child-process-gone', handleChildProcessGone);
     app.on('login', AuthManager.handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
-
-    // Somehow cookies are not immediately saved to disk.
-    // So manually flush cookie store to disk on closing the app.
-    // https://github.com/electron/electron/issues/8416
-    // TODO: We can remove this once every server supported will flush on login/logout
-    app.on('before-quit', flushCookiesStore);
 }
 
 function initializeBeforeAppReady() {
@@ -263,7 +268,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
-    ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);
 
     if (process.platform !== 'darwin') {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
@@ -281,12 +285,17 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);
     ipcMain.on(DOUBLE_CLICK_ON_WINDOW, handleDoubleClick);
+    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleDeveloperModeUpdated);
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 
     if (process.env.NODE_ENV === 'test') {
         ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
     }
+
+    ipcMain.handle(GET_FULL_SCREEN_STATUS, (event: IpcMainInvokeEvent) => {
+        return BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
+    });
 }
 
 async function initializeAfterAppReady() {
@@ -307,8 +316,6 @@ async function initializeAfterAppReady() {
 
         return net.fetch(pathToFileURL(pathToServe).toString());
     });
-
-    ServerManager.reloadFromConfig();
 
     // Initialize secure storage after app is ready
     try {
@@ -333,11 +340,20 @@ async function initializeAfterAppReady() {
         log.warn('Failed to initialize secure storage cache:', error);
     }
 
-    ServerManager.on(SERVERS_MODIFIED, (serverIds?: string[]) => {
-        if (serverIds && serverIds.length) {
-            updateServerInfos(serverIds.map((srvId) => ServerManager.getServer(srvId)!));
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+        handleUpdateTheme();
+    }
+
+    MainWindow.show();
+    const updateServerInfo = (serverId: string) => {
+        if (serverId) {
+            updateServerInfos([ServerManager.getServer(serverId)!]);
         }
-    });
+    };
+    ServerManager.on(SERVER_ADDED, updateServerInfo);
+    ServerManager.on(SERVER_URL_CHANGED, updateServerInfo);
+    ServerManager.on(SERVER_PRE_AUTH_SECRET_CHANGED, updateServerInfo);
+    ServerManager.init();
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
@@ -359,10 +375,10 @@ async function initializeAfterAppReady() {
     // Inject X-Mattermost-Preauth-Secret header for all server requests
     defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
         try {
-            const view = ServerManager.lookupViewByURL(details.url);
+            const server = ServerManager.lookupServerByURL(details.url);
 
-            if (view && view.server.preAuthSecret) {
-                const secret = view.server.preAuthSecret;
+            if (server && server.preAuthSecret) {
+                const secret = server.preAuthSecret;
 
                 if (!('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
                     const requestHeaders = {
@@ -440,10 +456,9 @@ async function initializeAfterAppReady() {
             catch((err) => log.error('An error occurred: ', err));
     }
 
-    handleUpdateTheme();
-    MainWindow.show();
-
     let deeplinkingURL;
+
+    NavigationManager.init();
 
     // Protocol handler for win32 and linux
     if (process.platform !== 'darwin') {
@@ -451,7 +466,7 @@ async function initializeAfterAppReady() {
         if (Array.isArray(args) && args.length > 0) {
             deeplinkingURL = getDeeplinkingURL(args);
             if (deeplinkingURL) {
-                ViewManager.handleDeepLink(deeplinkingURL);
+                NavigationManager.openLinkInPrimaryTab(deeplinkingURL);
             }
         }
     }
@@ -487,6 +502,11 @@ async function initializeAfterAppReady() {
 
     handleUpdateMenuEvent();
     DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleUpdateMenuEvent);
+    TabManager.on(TAB_ADDED, handleUpdateMenuEvent);
+    TabManager.on(TAB_REMOVED, handleUpdateMenuEvent);
+    TabManager.on(TAB_ORDER_UPDATED, handleUpdateMenuEvent);
+    ViewManager.on(VIEW_TITLE_UPDATED, handleUpdateMenuEvent);
+    MainWindow.on(MAIN_WINDOW_FOCUSED, handleUpdateMenuEvent);
 
     ipcMain.emit('update-dict');
 
@@ -512,7 +532,7 @@ function onUserActivityStatus(status: {
     isSystemEvent: boolean;
 }) {
     log.debug('UserActivityMonitor.on(status)', status);
-    ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
+    WebContentsManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 
 function handleStartDownload() {

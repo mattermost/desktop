@@ -12,6 +12,7 @@ import type {SettingsDefinition} from 'types/settings';
 import CheckSetting from './components/CheckSetting';
 import DownloadSetting from './components/DownloadSetting';
 import NotificationSetting from './components/NotificationSetting';
+import NumberSetting from './components/NumberSetting';
 import RadioSetting from './components/RadioSetting';
 import SelectSetting from './components/SelectSetting';
 import ServerSetting from './components/ServerSetting';
@@ -189,6 +190,27 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                         ),
                     },
                 },
+                {
+                    id: 'viewLimit',
+                    component: NumberSetting,
+                    props: {
+                        label: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.viewLimit'
+                                defaultMessage='Maximum number of open views'
+                            />
+                        ),
+                        subLabel: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.viewLimit.description'
+                                defaultMessage='The maximum number of tabs and windows combined that can be open simultaneously in the application per server. 0 means no limit.'
+                            />
+                        ),
+                        allowUndefinedValue: true,
+                        min: (await window.desktop.getLocalConfiguration()).servers.length,
+                        defaultValue: (await window.desktop.getLocalConfiguration()).viewLimit,
+                    },
+                },
             ],
         },
         notifications: {
@@ -332,7 +354,7 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
             icon: 'server-variant',
             settings: [
                 {
-                    id: 'teams',
+                    id: 'servers',
                     component: ServerSetting,
                 },
             ],

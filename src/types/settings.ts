@@ -3,11 +3,11 @@
 
 import type {ReactNode, ComponentType, ComponentProps} from 'react';
 
-import type {Config} from './config';
+import type {CurrentConfig} from './config';
 
 export type SaveQueueItem = {
-    key: keyof Config;
-    data: Config[keyof Config];
+    key: keyof CurrentConfig;
+    data: CurrentConfig[keyof CurrentConfig];
 };
 
 export type DeveloperSettings = {
@@ -24,7 +24,7 @@ export type SettingCategory = {
     settings: Setting[];
 };
 export type Setting = {
-    id: keyof Config;
+    id: keyof CurrentConfig;
     component: ComponentType<any>;
     condition?: boolean;
     props?: ComponentProps<Setting['component']>;

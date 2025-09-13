@@ -80,26 +80,10 @@ describe('Configure Server Modal', function desc() {
         existing.should.be.false;
 
         const savedConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf8'));
-        savedConfig.teams.should.deep.contain({
+        savedConfig.servers.should.deep.contain({
             url: 'http://example.org/',
             name: 'TestServer',
             order: 0,
-            lastActiveTab: 0,
-            tabs: [
-                {
-                    name: 'TAB_MESSAGING',
-                    order: 0,
-                    isOpen: true,
-                },
-                {
-                    name: 'TAB_FOCALBOARD',
-                    order: 1,
-                },
-                {
-                    name: 'TAB_PLAYBOOKS',
-                    order: 2,
-                },
-            ],
         });
     });
 

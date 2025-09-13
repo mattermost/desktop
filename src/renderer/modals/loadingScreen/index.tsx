@@ -1,65 +1,61 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import ReactDOM from 'react-dom';
+
+import {useConfig} from 'renderer/hooks/useConfig';
 
 import LoadingScreen from '../../components/LoadingScreen';
 
 import 'renderer/css/components/LoadingAnimation.css';
 import 'renderer/css/components/LoadingScreen.css';
 
-type Props = Record<string, never>;
+const onFadeOutComplete = () => {
+    window.desktop.loadingScreen.loadingScreenAnimationFinished();
+};
 
-type State = {
-    showLoadingScreen: boolean;
-    darkMode: boolean;
-}
+const closeDropdowns = () => {
+    window.desktop.closeServersDropdown();
+    window.desktop.closeDownloadsDropdown();
+};
 
-class LoadingScreenRoot extends React.PureComponent<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = {
-            showLoadingScreen: true,
-            darkMode: false,
+const LoadingScreenRoot: React.FC = () => {
+    const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+    const {config} = useConfig();
+
+    useEffect(() => {
+        const handleToggleLoadingScreenVisibility = (showLoadingScreen: boolean) => {
+            setShowLoadingScreen(showLoadingScreen);
         };
+
+        const initializeApp = async () => {
+            window.desktop.loadingScreen.onToggleLoadingScreenVisibility(handleToggleLoadingScreenVisibility);
+            window.addEventListener('click', closeDropdowns);
+        };
+
+        initializeApp();
+
+        // Cleanup function
+        return () => {
+            // Note: In a real app, you might want to remove event listeners here
+            // but since this is a root component that doesn't unmount, it's not strictly necessary
+        };
+    }, []);
+
+    if (!config) {
+        return null;
     }
 
-    async componentDidMount() {
-        window.desktop.onDarkModeChange(this.setDarkMode);
-        const darkMode = await window.desktop.getDarkMode();
-        this.setDarkMode(darkMode);
+    return (
+        <LoadingScreen
+            loading={showLoadingScreen}
+            darkMode={config.darkMode}
+            onFadeOutComplete={onFadeOutComplete}
+        />
+    );
+};
 
-        window.desktop.loadingScreen.onToggleLoadingScreenVisibility(this.onToggleLoadingScreenVisibility);
-
-        window.addEventListener('click', () => {
-            window.desktop.closeServersDropdown();
-            window.desktop.closeDownloadsDropdown();
-        });
-    }
-
-    setDarkMode = (darkMode: boolean) => {
-        this.setState({darkMode});
-    };
-
-    onToggleLoadingScreenVisibility = (showLoadingScreen: boolean) => {
-        this.setState({showLoadingScreen});
-    };
-
-    onFadeOutComplete = () => {
-        window.desktop.loadingScreen.loadingScreenAnimationFinished();
-    };
-
-    render() {
-        return (
-            <LoadingScreen
-                loading={this.state.showLoadingScreen}
-                darkMode={this.state.darkMode}
-                onFadeOutComplete={this.onFadeOutComplete}
-            />
-        );
-    }
-}
 const start = async () => {
     ReactDOM.render(
         <LoadingScreenRoot/>,

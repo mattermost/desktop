@@ -7,10 +7,7 @@ import React from 'react';
 import type {DraggingStyle, DropResult, NotDraggingStyle} from 'react-beautiful-dnd';
 import {DragDropContext, Draggable, Droppable} from 'react-beautiful-dnd';
 import type {IntlShape} from 'react-intl';
-import {FormattedMessage, injectIntl} from 'react-intl';
-
-import type {ViewType} from 'common/views/View';
-import {canCloseView, getViewDisplayName} from 'common/views/View';
+import {injectIntl} from 'react-intl';
 
 import type {UniqueView} from 'types/config';
 
@@ -21,6 +18,8 @@ type Props = {
     isDarkMode: boolean;
     onSelect: (id: string) => void;
     onCloseTab: (id: string) => void;
+    onOpenPopoutMenu: (id: string) => void;
+    onNewTab?: () => void;
     tabs: UniqueView[];
     sessionsExpired: Record<string, boolean>;
     unreadCounts: Record<string, boolean>;
@@ -28,6 +27,7 @@ type Props = {
     onDrop: (result: DropResult) => void;
     tabsDisabled?: boolean;
     isMenuOpen?: boolean;
+    isViewLimitReached: boolean;
     intl: IntlShape;
 };
 
@@ -59,6 +59,13 @@ class TabBar extends React.PureComponent<Props, State> {
         };
     };
 
+    onOpenPopoutMenu = (id: string) => {
+        return (event: React.MouseEvent<HTMLAnchorElement>) => {
+            event.stopPropagation();
+            this.props.onOpenPopoutMenu(id);
+        };
+    };
+
     componentDidMount(): void {
         window.desktop.getNonce().then((nonce) => {
             this.setState({
@@ -66,6 +73,18 @@ class TabBar extends React.PureComponent<Props, State> {
             });
         });
     }
+
+    makeTabName = (tab: UniqueView) => {
+        const {id, channelName, teamName, serverName} = tab;
+        if (channelName) {
+            if (teamName && this.props.tabs.some((tab) => tab.id !== id && tab.channelName === channelName)) {
+                return `${channelName} - ${teamName}`;
+            }
+            return channelName;
+        }
+
+        return teamName ?? serverName;
+    };
 
     render() {
         if (!this.state.nonce) {
@@ -105,24 +124,15 @@ class TabBar extends React.PureComponent<Props, State> {
                     key={tab.id}
                     draggableId={`serverTabItem-${tab.id}`}
                     index={index}
+                    isDragDisabled={this.props.tabsDisabled || this.props.isMenuOpen}
                 >
                     {(provided, snapshot) => {
-                        if (!tab.isOpen) {
-                            return (
-                                <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                />
-                            );
-                        }
-
                         return (
                             <li
                                 ref={provided.innerRef}
                                 id={`serverTabItem${index}`}
                                 draggable={false}
-                                title={this.props.intl.formatMessage({id: `common.tabs.${tab.name}`, defaultMessage: getViewDisplayName(tab.name as ViewType)})}
+                                title={this.makeTabName(tab)}
                                 className={classNames('serverTabItem', {
                                     active: this.props.activeTabId === tab.id,
                                     dragging: snapshot.isDragging,
@@ -138,24 +148,24 @@ class TabBar extends React.PureComponent<Props, State> {
                                             this.props.onSelect(tab.id!);
                                         }
                                     }}
+                                    onContextMenu={this.onOpenPopoutMenu(tab.id!)}
                                     className={classNames({
                                         disabled: this.props.tabsDisabled,
                                     })}
                                 >
                                     <div className='TabBar-tabSeperator'>
-                                        <FormattedMessage
-                                            id={`common.tabs.${tab.name}`}
-                                            defaultMessage={getViewDisplayName(tab.name as ViewType)}
-                                        />
-                                        { badgeDiv }
-                                        {canCloseView(tab.name as ViewType) &&
-                                            <button
-                                                className='serverTabItem__close'
-                                                onClick={this.onCloseTab(tab.id!)}
-                                            >
-                                                <i className='icon-close'/>
-                                            </button>
-                                        }
+                                        <span>{this.makeTabName(tab)}</span>
+                                        {badgeDiv}
+                                        {this.props.tabs.length > 1 && !this.props.tabsDisabled && (
+                                            <>
+                                                <button
+                                                    className='serverTabItem__close'
+                                                    onClick={this.onCloseTab(tab.id!)}
+                                                >
+                                                    <i className='icon-close'/>
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </a>
                             </li>
@@ -175,16 +185,36 @@ class TabBar extends React.PureComponent<Props, State> {
                     droppableId='tabBar'
                     direction='horizontal'
                 >
-                    {(provided) => (
+                    {(provided, snapshot) => (
                         <div
                             ref={provided.innerRef}
                             className={classNames('TabBar', {
                                 darkMode: this.props.isDarkMode,
+                                disabled: this.props.tabsDisabled,
                             })}
                             id={this.props.id}
                             {...provided.droppableProps}
                         >
                             {tabs}
+                            {!this.props.tabsDisabled && !snapshot.draggingFromThisWith && !this.props.isViewLimitReached &&
+                                <div className='TopBar-button--newTab_container'>
+                                    <div className='TopBar-button--newTab_divider'/>
+                                    <button
+                                        id='newTabButton'
+                                        className={classNames('TopBar-button', 'TopBar-button--newTab', {
+                                            darkMode: this.props.isDarkMode,
+                                        })}
+                                        onClick={this.props.onNewTab}
+                                        disabled={this.props.tabsDisabled || this.props.isViewLimitReached}
+                                        title={this.props.intl.formatMessage({
+                                            id: 'renderer.components.tabBar.newTab.tooltip',
+                                            defaultMessage: 'New tab',
+                                        })}
+                                    >
+                                        <i className='icon-plus'/>
+                                    </button>
+                                </div>
+                            }
                             {this.props.isMenuOpen ? <span className='TabBar-nonDrag'/> : null}
                             {provided.placeholder}
                         </div>

@@ -54,12 +54,12 @@ describe('LongServerName', function desc() {
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
 
-        const isServerTabExists = Boolean(mainView.locator(`text=${longServerName}`));
+        const isServerTabExists = Boolean(mainView.locator(`.ServerDropdownButton span:has-text("${longServerName}")`));
         const isServerAddedDropdown = Boolean(dropdownView.locator(`text=${longServerName}`));
         isServerTabExists.should.be.true;
         isServerAddedDropdown.should.be.true;
 
-        const serverNameLocator = mainView.locator(`text=${longServerName}`);
+        const serverNameLocator = mainView.locator(`.ServerDropdownButton span:has-text("${longServerName}")`);
 
         const isTruncated = await serverNameLocator.evaluate((element) => {
             return element.offsetWidth < element.scrollWidth;
