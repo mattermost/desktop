@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.openInNewTab": "In nieuw tabblad openen",
   "callsWidgetWindow.cannotStartCall.message": "Er is een actieve callop een andere server dat eerst beëindigd moet worden voordat je aan een nieuw gesprek kan deelnemen.",
   "callsWidgetWindow.cannotStartCall.title": "Kan call niet starten",
   "common.permissions.canBasicAuth": "Webauthenticatie",
