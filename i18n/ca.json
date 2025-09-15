@@ -1,4 +1,6 @@
 {
+  "app.menus.contextMenu.openInNewTab": "Obre a una pestanya nova",
+  "app.menus.contextMenu.openInNewWindow": "Obra a una nova finestra",
   "common.permissions.canBasicAuth": "Autentificació Web",
   "common.tabs.TAB_FOCALBOARD": "Taulells",
   "common.tabs.TAB_MESSAGING": "Canals",
