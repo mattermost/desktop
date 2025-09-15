@@ -77,11 +77,25 @@ export const Modal: React.FC<Props> = ({
 }) => {
     const [showState, setShowState] = useState<boolean>();
     const backdropRef = useRef<HTMLDivElement>(null);
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    // Using react-bootstraps way of dealing with backdrop clicks
+    const ignoreBackdropClickRef = useRef<boolean>(false);
+    const waitingForMouseUpRef = useRef<boolean>(false);
 
     const onClose = useCallback(async () => {
         await onHide();
         onExited();
     }, [onExited]);
+
+    const onClickBackdrop = useCallback(async (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        if (ignoreBackdropClickRef.current || e.target !== e.currentTarget) {
+            ignoreBackdropClickRef.current = false;
+            return;
+        }
+
+        onClose();
+    }, [onClose]);
 
     useEffect(() => {
         const escListener = (e: KeyboardEvent) => {
@@ -143,6 +157,17 @@ export const Modal: React.FC<Props> = ({
             }
         }
         handleKeydown?.(event);
+    };
+
+    const onMouseDown = () => {
+        waitingForMouseUpRef.current = true;
+    };
+
+    const onMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        if (waitingForMouseUpRef.current && backdropRef.current && e.target !== backdropRef.current) {
+            ignoreBackdropClickRef.current = true;
+        }
+        waitingForMouseUpRef.current = false;
     };
 
     let confirmButton;
@@ -219,10 +244,12 @@ export const Modal: React.FC<Props> = ({
             <div
                 role='dialog'
                 className={classNames('Modal fade', {show: showState})}
-                onClick={onClose}
+                onClick={onClickBackdrop}
+                onMouseUp={onMouseUp}
             >
                 <div
                     id={id}
+                    ref={modalRef}
                     role='dialog'
                     aria-label={ariaLabel}
                     aria-labelledby={ariaLabel ? undefined : 'modalLabel'}
@@ -230,7 +257,7 @@ export const Modal: React.FC<Props> = ({
                         'Modal_dialog Modal__compassDesign',
                         className,
                     )}
-                    onClick={useCallback((event) => event.stopPropagation(), [])}
+                    onMouseDown={onMouseDown}
                 >
                     <div
                         onKeyDown={onEnterKeyDown}
