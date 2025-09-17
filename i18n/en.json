@@ -168,7 +168,7 @@
   "renderer.components.configureServer.connect.saving": "Connecting…",
   "renderer.components.configureServer.error.basicAuthRequired": "This server requires basic authentication. You will be prompted to enter your username and password when you connect to the server.",
   "renderer.components.configureServer.error.clientCertRequired": "This server requires that you select a certificate. You will be prompted to select a certificate when you connect to the server.",
-  "renderer.components.configureServer.error.preAuthRequired": "This secret requires an authentication secret. You will be prompted to enter it when you connect to the server.",
+  "renderer.components.configureServer.error.preAuthRequired": "This server requires an authentication secret. You will be prompted to enter it when you connect to the server.",
   "renderer.components.configureServer.name.info": "The name that will be displayed in your server list",
   "renderer.components.configureServer.name.placeholder": "Server display name",
   "renderer.components.configureServer.subtitle": "Set up your first server to connect to your<br></br>team’s communication hub",

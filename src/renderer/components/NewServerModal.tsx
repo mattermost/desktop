@@ -245,7 +245,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                 type: STATUS.WARNING,
                 value: this.props.intl.formatMessage({
                     id: 'renderer.components.configureServer.error.preAuthRequired',
-                    defaultMessage: 'This secret requires an authentication secret. You will be prompted to enter it when you connect to the server.',
+                    defaultMessage: 'This server requires an authentication secret. You will be prompted to enter it when you connect to the server.',
                 }),
             };
         case URLValidationStatus.ClientCertRequired:
