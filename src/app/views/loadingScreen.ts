@@ -47,7 +47,7 @@ export class LoadingScreen {
      * Loading Screen
      */
 
-    show = (index?: number) => {
+    show = (condition?: () => boolean) => {
         this.state = LoadingScreenState.VISIBLE;
 
         if (this.view.webContents.isLoading()) {
@@ -55,16 +55,16 @@ export class LoadingScreen {
                 this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
 
                 // Electron does a weird thing where even if the index is undefined, it will not add the view on top properly
-                if (index) {
-                    this.parent.contentView.addChildView(this.view, index);
+                if (condition?.()) {
+                    this.parent.contentView.addChildView(this.view, 1);
                 } else {
                     this.parent.contentView.addChildView(this.view);
                 }
             });
         } else {
             this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-            if (index) {
-                this.parent.contentView.addChildView(this.view, index);
+            if (condition?.()) {
+                this.parent.contentView.addChildView(this.view, 1);
             } else {
                 this.parent.contentView.addChildView(this.view);
             }

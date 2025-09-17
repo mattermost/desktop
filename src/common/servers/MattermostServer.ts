@@ -42,7 +42,6 @@ export class MattermostServer {
             id: this.id,
             isPredefined: this.isPredefined,
             isLoggedIn: this.isLoggedIn,
-            preAuthSecret: this.preAuthSecret,
         };
     };
 }
