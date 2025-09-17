@@ -1,4 +1,8 @@
 {
+  "app.menus.contextMenu.openInNewTab": "새 탭으로 열기",
+  "app.menus.contextMenu.openInNewWindow": "새 창으로 열기",
+  "app.navigationManager.viewLimitReached": "보기 제한에 도달했습니다",
+  "app.navigationManager.viewLimitReached.description": "본 서버에서 최대 열린 창과 탭의 제한을 도달했습니다. 열린 창/탭을 닫거나 보기 제한을 조정하세요.",
   "callsWidgetWindow.cannotStartCall.message": "본 통화에 참여하기 전에 다른 서버에서 진행 중인 통화가 먼저 중지되어야 합니다.",
   "callsWidgetWindow.cannotStartCall.title": "통화가 시작할 수 없습니다",
   "common.permissions.canBasicAuth": "웹 인증",
