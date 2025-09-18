@@ -1,7 +1,9 @@
+@use 'base/css_variables';
+
 .ServerDropdownButton {
     background-color: transparent;
     border-width: 0 1px;
-    border-color: rgba(61, 60, 64, 0.08);
+    border-color: rgba(var(--center-channel-color-rgb), 0.08);
     border-style: solid;
     display: flex;
     align-items: center;
@@ -15,24 +17,16 @@
         opacity: 0.5;
     }
 
-    &:not(.disabled):hover {
-        background-color: #f4f4f4;
-
-        .ServerDropdownButton__badge-count, .ServerDropdownButton__badge-unreads {
-            border-color: #f4f4f4;
-        }
+    &:not(.disabled):hover, &:not(.disabled):focus {
+        background-color: rgba(var(--center-channel-bg-rgb), 0.32);
     }
 
-    &:not(.disabled):focus, &.isMenuOpen {
-        background-color: #fff;
-
-        .ServerDropdownButton__badge-count, .ServerDropdownButton__badge-unreads {
-            border-color: #fff;
-        }
+    &.isMenuOpen, &.isMenuOpen:hover, &.isMenuOpen:focus {
+        background-color: var(--center-channel-bg);
     }
 
     > span {
-        color: rgba(61, 60, 64, 0.64);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
         font-weight: 600;
         font-size: 12px;
         line-height: 16px;
@@ -44,7 +38,7 @@
     }
 
     i {
-        color: rgba(61, 60, 64, 0.56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
         font-size: 18px;
         line-height: 21px;
     }
@@ -69,7 +63,7 @@
 }
 
 .ServerDropdownButton__badge-count {
-    background: #F74343;
+    background: var(--error-text);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -86,65 +80,25 @@
     position: absolute;
     top: -4px;
     right: -2px;
-    border: 2px solid #efefef;
+    border: 2px solid var(--center-channel-bg);
     height: 12px;
     line-height: 12px;
     box-sizing: unset;
 }
 
 .ServerDropdownButton__badge-unreads {
-    background: #579eff;
+    background: var(--sidebar-text-active-border);
     border-radius: 100px;
     width: 9px;
     height: 9px;
     position: absolute;
     top: -2px;
     right: 0px;
-    border: 2px solid #efefef;
+    border: 2px solid var(--center-channel-bg);
     box-sizing: border-box;
 
     &.mentions {
-        background: #F74343;
+        background: var(--error-text);
     }
 }
 
-.ServerDropdownButton.darkMode {
-    border-color: rgba(221, 221, 221, 0.08);
-
-    &:hover {
-        background-color: #292929;
-
-        .ServerDropdownButton__badge-count, .ServerDropdownButton__badge-unreads {
-            border-color: #292929;
-        }
-    }
-
-    &:focus, &.isMenuOpen {
-        background-color: #1f1f1f;
-
-        .ServerDropdownButton__badge-count, .ServerDropdownButton__badge-unreads {
-            border-color: #1f1f1f;
-        }
-    }
-
-    > span {
-        color: rgba(221, 221, 221, 0.64);
-    }
-
-    i {
-        color: rgba(221, 221, 221, 0.56);
-    }
-
-    .ServerDropdownButton__badge-count {
-        border-color: #2e2e2e;
-    }
-
-    .ServerDropdownButton__badge-unreads {
-        border-color: #2e2e2e;
-        background: #196CAF;
-
-        &.mentions {
-            background: #F74343;
-        }
-    }
-}

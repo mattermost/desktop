@@ -1,6 +1,8 @@
+@use 'base/css_variables';
+
 .LoadingAnimation {
   --fade-duration: 150ms;
-  --colour: #1E325C;
+  --colour: var(--center-channel-color);
   --animation-initial-delay: 500ms;
   --animation-start-duration: 750ms;
   --animation-end-duration: 600ms;
@@ -209,10 +211,6 @@
       stroke-dashoffset: 0;
     }
   }
-}
-
-.darkMode .LoadingAnimation {
-  --colour: white;
 }
 
 @keyframes LoadingAnimation__fade-in {

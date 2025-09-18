@@ -1,3 +1,5 @@
+@use 'base/css_variables';
+
 .TabBar {
   border: none;
   max-height: 40px;
@@ -36,7 +38,7 @@
     > a {
       display: block;
       cursor: pointer;
-      color: rgba(61,60,64,0.7);
+      color: rgba(var(--center-channel-color-rgb), 0.7);
       font-family: "Open Sans", sans-serif;
       font-weight: 600;
       font-size: 12px;
@@ -49,46 +51,30 @@
       text-decoration: none;
 
       &.disabled {
-        color: #6c757d;
+        color: rgba(var(--center-channel-color-rgb), 0.32);
         background-color: transparent;
         pointer-events: none;
         cursor: default;
       }
 
       &:hover {
-        background-color: rgba(255,255,255,0.56);
+        background-color: rgba(var(--center-channel-bg-rgb), 0.56);
         text-decoration: none;
       }
 
       &:focus {
-        background-color: #fff;
-        color: #3d3c40;
+        background-color: var(--center-channel-bg);
+        color: var(--center-channel-color);
         text-decoration: none;
       }
     }
   }
 
-  &.darkMode > li > a {
-    color: rgba(221,221,221,0.64);
-
-    &.disabled {
-      color: #6c757d;
-    }
-
-    &:hover {
-      background-color: rgba(31, 31, 31, 0.56);
-    }
-
-    &:focus {
-      background-color: #1f1f1f;
-      color: #ddd;
-    }
-  }
 
   > li.serverTabItem > a > div.TabBar-tabSeperator > .serverTabItem__close {
     background: none;
     border: none;
-    color: rgba(61,60,64,0.32);
+    color: rgba(var(--center-channel-color-rgb), 0.32);
     padding: 0;
     height: 24px;
     width: 24px;
@@ -96,7 +82,7 @@
     margin-right: 3px;
 
     &:hover {
-      color: #3d3c40;
+      color: var(--center-channel-color);
     }
 
     > i::before {
@@ -104,13 +90,6 @@
     }
   }
 
-  &.darkMode > li.serverTabItem > a > div.TabBar-tabSeperator > .serverTabItem__close {
-    color: rgba(221,221,221,0.32);
-
-    &:hover {
-      color: #ddd;
-    }
-  }
 
   > li > a > div.TabBar-tabSeperator {
     display: flex;
@@ -149,24 +128,16 @@
   > li.serverTabItem.active > a,
   > li.serverTabItem.dragging > a {
     border: none;
-    background-color: #fff;
-    color: #3d3c40;
+    background-color: var(--center-channel-bg);
+    color: var(--center-channel-color);
     z-index: 9;
   }
 
-  &.darkMode > li.serverTabItem.active > a,
-  &.darkMode > li.serverTabItem.dragging > a {
-    background-color: #1f1f1f;
-    color: #ddd;
-  }
 
   > li.serverTabItem:not(.active) + li.serverTabItem:not(.active) > a > div.TabBar-tabSeperator {
-    border-left: 1px solid rgba(61,60,64,0.08);
+    border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
   }
 
-  &.darkMode > li.serverTabItem:not(.active) + li.serverTabItem:not(.active) > a > div.TabBar-tabSeperator {
-    border-left: 1px solid rgba(221,221,221,0.08);
-  }
 
   > li.serverTabItem:not(.active):not(.disabled):hover + .TabBar-addServerButton > a > div.TabBar-tabSeperator {
     border-left: 1px solid transparent;
@@ -181,7 +152,7 @@
   }
 
   &-dot {
-    background: #579eff;
+    background: var(--sidebar-text-active-border);
     float: right;
     height: 8px;
     width: 8px;
@@ -197,7 +168,7 @@
     line-height: 12px;
     margin-left: -8px;
     margin-right: 12px;
-    color: rgba(61,60,64,0.32);
+    color: rgba(var(--center-channel-color-rgb), 0.32);
 
     > i::before {
       margin: 0;
@@ -205,7 +176,7 @@
   }
 
   &-badge {
-    background: #F74343;
+    background: var(--dnd-indicator);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -224,7 +195,7 @@
     height: 12px;
 
     &.unreads {
-      background: #579eff;
+      background: var(--sidebar-text-active-border);
       font-size: 16px;
       padding: 4px;
       height: 0;
@@ -234,7 +205,7 @@
       content: "";
       width: 4px;
       height: 4px;
-      background: #fff;
+      background: var(--center-channel-bg);
       display: block;
       border-radius: 50%;
     }
@@ -245,14 +216,3 @@
   }
 }
 
-.darkMode .TabBar-dot {
-  background: #196CAF;
-}
-
-.TabBar.darkMode .TabBar-expired {
-  color: rgba(221,221,221,0.32);
-}
-
-.darkMode .TabBar-badge.unreads {
-  background: #196CAF;
-}

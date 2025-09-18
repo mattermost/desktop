@@ -1,3 +1,4 @@
+@use 'base/css_variables';
 @use 'base/typography';
 
 @import '~@mattermost/compass-icons/css/compass-icons.css';
@@ -36,11 +37,11 @@ body {
 
 :invalid .col-form-label,
 :invalid .form-text {
-  color: #333;
+  color: var(--center-channel-color);
 }
 
 .modal-error {
-  color: #a94442;
+  color: var(--error-text);
 }
 
 .topBar {
@@ -52,16 +53,12 @@ body {
     display: flex;
     overflow: hidden;
     height: 40px;
-    background-color: #efefef;
+    background: linear-gradient(0deg, rgba(var(--center-channel-color-rgb), 0.08) 0%, rgba(var(--center-channel-color-rgb), 0.08) 100%), var(--center-channel-bg);
     width: 100%;
 
     &.unfocused {
       opacity: 0.4;
     }
-  }
-
-  &.darkMode > .topBar-bg {
-    background-color: #2e2e2e;
   }
 
   .three-dot-menu {
@@ -74,7 +71,7 @@ body {
     border: none;
     flex: 0 0 40px;
     z-index: 9;
-    color: rgba(61,60,64,0.7);
+    color: rgba(var(--center-channel-color-rgb), 0.7);
     -webkit-app-region: no-drag;
     background-color: transparent;
 
@@ -91,15 +88,7 @@ body {
 
     i.icon-dots-vertical.isFocused {
       outline: none;
-      background-color: #c8c8c8;
-    }
-  }
-
-  &.darkMode .three-dot-menu {
-    color: rgba(243,243,243,0.7);
-
-    i.icon-dots-vertical.isFocused {
-      background-color: #383A3F;
+      background-color: rgba(var(--center-channel-color-rgb), 0.16);
     }
   }
 
@@ -129,17 +118,13 @@ body {
     height: 40px;
     justify-content: center;
     align-items: center;
-    color: rgba(61,60,64,0.7);
+    color: rgba(var(--center-channel-color-rgb), 0.7);
     font-family: "Open Sans", sans-serif;
     font-weight: 600;
     font-size: 14px;
     letter-spacing: -0.2px;
     z-index: 0;
     pointer-events: none;
-  }
-
-  &.darkMode .app-title {
-    color: rgba(221,221,221,0.64);
   }
 
   .overlay-gradient {
@@ -150,9 +135,6 @@ body {
     margin-top: 4px;
   }
 
-  &.darkMode .overlay-gradient {
-    /* background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #202124 100%); */
-  }
 }
 
 .full-screen-button {
@@ -170,7 +152,7 @@ body {
   -webkit-app-region: no-drag;
 
   i {
-    color: rgba(63, 67, 80, 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     cursor: pointer;
     font-size: 21px;
     line-height: 21px;
@@ -178,19 +160,7 @@ body {
 
   &:hover, &:focus {
     i {
-      color: rgba(63, 67, 80, 0.78);
-    }
-  }
-
-  &.darkMode {
-    i {
-      color: rgba(221, 223, 228, 0.56);
-    }
-
-    &:hover, &:focus {
-      i {
-        color: rgba(221, 223, 228, 0.78);
-      }
+      color: rgba(var(--center-channel-color-rgb), 0.78);
     }
   }
 }
