@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain} from 'electron';
+import {ipcMain, session} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -22,6 +22,7 @@ import {
     GET_LAST_ACTIVE,
     SERVER_SWITCHED,
     GET_CURRENT_SERVER,
+    SERVER_REMOVED,
 } from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
@@ -59,6 +60,7 @@ export class ServerHub {
         ipcMain.handle(GET_CURRENT_SERVER, this.handleGetCurrentServer);
 
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
+        ServerManager.on(SERVER_REMOVED, this.handleServerCleanup);
     }
 
     // TODO: Move me somewhere else later
@@ -402,6 +404,19 @@ export class ServerHub {
         } catch (error) {
             log.warn('Failed to clean up secure secret for removed server:', error);
         }
+    };
+
+    private handleServerCleanup = (serverId: string) => {
+        log.debug('handleServerCleanup', {serverId});
+
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            return;
+        }
+
+        session.defaultSession.clearData({
+            origins: [server.url.origin],
+        });
     };
 
     private handleGetLastActive = () => {
