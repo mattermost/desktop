@@ -14,7 +14,7 @@ import {
     SERVER_PRE_AUTH_SECRET_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
-import {Logger, getLevel} from 'common/log';
+import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
 
@@ -65,7 +65,7 @@ export class ServerManager extends EventEmitter {
         if (!server) {
             return new Logger(serverId);
         }
-        return new Logger(...additionalPrefixes, ...this.includeId(serverId, server.name));
+        return new Logger(...additionalPrefixes, serverId);
     };
 
     getRemoteInfo = (serverId: string) => {
@@ -73,7 +73,7 @@ export class ServerManager extends EventEmitter {
     };
 
     lookupServerByURL = (inputURL: URL | string, ignoreScheme = false) => {
-        log.silly('lookupViewByURL', `${inputURL}`, ignoreScheme);
+        log.silly('lookupViewByURL', {ignoreScheme});
 
         const parsedURL = parseURL(inputURL);
         if (!parsedURL) {
@@ -86,7 +86,7 @@ export class ServerManager extends EventEmitter {
     };
 
     addServer = (server: NewServer, initialLoadURL?: URL) => {
-        log.debug('addServer', server, initialLoadURL);
+        log.debug('addServer');
 
         const mattermostServer = this.createServer(server, false, initialLoadURL);
         this.addServerToMap(mattermostServer, true);
@@ -112,6 +112,9 @@ export class ServerManager extends EventEmitter {
     };
 
     private addServerToMap = (newServer: MattermostServer, setAsCurrentServer: boolean, persist: boolean = true) => {
+        // This is the only place where we log the server name
+        log.debug('addServerToMap', newServer.id, newServer.name);
+
         this.servers.set(newServer.id, newServer);
         if (!newServer.isPredefined) {
             this.serverOrder.push(newServer.id);
@@ -129,16 +132,16 @@ export class ServerManager extends EventEmitter {
     };
 
     editServer = (serverId: string, server: Server, preAuthSecret?: string) => {
-        log.debug('editServer', serverId, server);
+        log.debug('editServer', {serverId});
 
         const existingServer = this.servers.get(serverId);
         if (!existingServer) {
-            log.warn('Server not found', serverId);
+            log.warn('Server not found', {serverId});
             return undefined;
         }
 
         if (existingServer.isPredefined) {
-            log.warn('Cannot edit predefined server', existingServer.id);
+            log.warn('Cannot edit predefined server', {serverId: existingServer.id});
             return existingServer;
         }
 
@@ -170,7 +173,7 @@ export class ServerManager extends EventEmitter {
     };
 
     updateRemoteInfo = (serverId: string, remoteInfo: RemoteInfo) => {
-        log.debug('updateRemoteInfo', serverId, remoteInfo);
+        log.debug('updateRemoteInfo', {serverId});
 
         const server = this.servers.get(serverId);
         if (!server) {
@@ -188,7 +191,7 @@ export class ServerManager extends EventEmitter {
     };
 
     updateServerOrder = (serverOrder: string[]) => {
-        log.debug('updateServerOrder', serverOrder);
+        log.debug('updateServerOrder', {serverOrder});
 
         this.serverOrder = serverOrder.filter((id) => {
             const server = this.servers.get(id);
@@ -200,7 +203,7 @@ export class ServerManager extends EventEmitter {
 
     // Remove setCurrentServer method since we only need to persist changes when switching or removing servers
     updateCurrentServer = (serverId: string) => {
-        log.debug('updateCurrentServer', serverId);
+        log.debug('updateCurrentServer', {serverId});
 
         if (this.currentServerId === serverId) {
             return;
@@ -212,7 +215,7 @@ export class ServerManager extends EventEmitter {
     };
 
     removeServer = (serverId: string) => {
-        log.debug('removeServer', serverId);
+        log.debug('removeServer', {serverId});
 
         const index = this.serverOrder.findIndex((id) => id === serverId);
         this.serverOrder.splice(index, 1);
@@ -230,7 +233,7 @@ export class ServerManager extends EventEmitter {
     };
 
     reloadServer = (serverId: string) => {
-        log.debug('reloadServer', serverId);
+        log.debug('reloadServer', {serverId});
 
         const index = this.serverOrder.findIndex((id) => id === serverId);
         if (index === -1) {
@@ -304,11 +307,6 @@ export class ServerManager extends EventEmitter {
                 order: this.serverOrder.indexOf(srv.id),
             }));
         Config.setServers(localServers, this.currentServerId ? this.serverOrder.indexOf(this.currentServerId) : undefined);
-    };
-
-    private includeId = (id: string, ...prefixes: string[]) => {
-        const shouldInclude = ['debug', 'silly'].includes(getLevel());
-        return shouldInclude ? [id, ...prefixes] : prefixes;
     };
 }
 

@@ -63,7 +63,7 @@ export class UpdateManager {
         this.cancellationToken = new CancellationToken();
 
         autoUpdater.on('error', (err: Error) => {
-            log.error('There was an error while trying to update', err);
+            log.error('There was an error while trying to update', {err});
         });
 
         autoUpdater.on('update-available', (info: UpdateInfo) => {
@@ -178,7 +178,7 @@ export class UpdateManager {
                 }
             }).catch((reason) => {
                 ipcMain.emit(NO_UPDATE_AVAILABLE);
-                log.error('Failed to check for updates:', reason);
+                log.error('Failed to check for updates:', {reason});
             });
             this.lastCheck = setTimeout(() => this.checkForUpdates(false), NEXT_CHECK);
         }

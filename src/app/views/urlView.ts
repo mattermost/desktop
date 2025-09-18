@@ -32,7 +32,7 @@ export class URLView {
     }
 
     show = (url: URL | string) => {
-        log.silly('showURLView', url);
+        log.silly('showURLView');
 
         if (this.urlViewCancel) {
             this.urlViewCancel();
@@ -57,7 +57,7 @@ export class URLView {
             };
 
             const adjustWidth = (event: IpcMainEvent, width: number) => {
-                log.silly('showURLView.adjustWidth', width);
+                log.silly('showURLView.adjustWidth', {width});
 
                 if (!boundaries) {
                     return;
