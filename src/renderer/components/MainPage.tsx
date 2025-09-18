@@ -17,7 +17,6 @@ import TabBar from './TabBar';
 import {playSound} from '../notificationSounds';
 
 import '../css/components/UpgradeButton.scss';
-import '../css/components/BasePage.css';
 import '../css/components/TopBar.scss';
 
 enum Status {

@@ -1,4 +1,4 @@
-@import url("../_css_variables.scss");
+@use '../css_variables';
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
 .error {

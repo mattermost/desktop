@@ -8,6 +8,8 @@ import ConnectionErrorView from './ConnectionErrorView';
 import IncompatibleErrorView from './IncompatibleErrorView';
 import TopBar from './TopBar';
 
+import 'renderer/css/components/BasePage.scss';
+
 type Props = {
     children?: React.ReactNode;
     darkMode: boolean;

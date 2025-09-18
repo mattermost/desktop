@@ -8,9 +8,6 @@ import setupDarkMode from 'renderer/modals/darkMode';
 
 import LoadingScreen from '../../components/LoadingScreen';
 
-import 'renderer/css/components/LoadingAnimation.css';
-import 'renderer/css/components/LoadingScreen.css';
-
 const onFadeOutComplete = () => {
     window.desktop.loadingScreen.loadingScreenAnimationFinished();
 };

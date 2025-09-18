@@ -10,6 +10,7 @@
     margin: 4px;
     position: relative;
     width: 32px;
+    -webkit-app-region: no-drag;
 
     i {
         color: rgba(63, 67, 80, 0.56);

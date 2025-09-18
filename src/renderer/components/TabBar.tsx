@@ -11,6 +11,8 @@ import {injectIntl} from 'react-intl';
 
 import type {UniqueView} from 'types/config';
 
+import 'renderer/css/components/TabBar.scss';
+
 type Props = {
     activeTabId?: string;
     activeServerId?: string;

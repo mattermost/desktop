@@ -1,4 +1,4 @@
-@import '../_mixins.scss';
+@use '../mixins';
 
 .Carousel {
     display: flex;
@@ -36,25 +36,25 @@
 }
 
 .inFromRight {
-    @include inFromRight(30);
+    @include mixins.inFromRight(30);
 
     animation: inFromRight30 0.4s ease-in-out;
 }
 
 .inFromLeft {
-    @include inFromLeft(30);
+    @include mixins.inFromLeft(30);
 
     animation: inFromLeft30 0.4s ease-in-out;
 }
 
 .outToRight {
-    @include outToRight(30);
+    @include mixins.outToRight(30);
 
     animation: outToRight30 0.4s ease-in-out;
 }
 
 .outToLeft {
-    @include outToLeft(30);
+    @include mixins.outToLeft(30);
 
     animation: outToLeft30 0.4s ease-in-out;
 }

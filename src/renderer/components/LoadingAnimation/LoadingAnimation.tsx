@@ -8,6 +8,8 @@ import LoadingIcon from './LoadingIcon';
 
 import useAnimationEnd from '../../hooks/useAnimationEnd';
 
+import 'renderer/css/components/LoadingAnimation.scss';
+
 const LOADING_STATE = {
     INITIALIZING: 'initializing', // animation graphics are hidden
     LOADING: 'loading', // animation graphics fade in and animate

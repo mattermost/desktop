@@ -1,5 +1,5 @@
-@import url("../_css_variables.scss");
-@import url("../fonts.css");
+@use "../_css_variables";
+@use "../typography";
 
 .WelcomeScreenSlide {
     display: flex;

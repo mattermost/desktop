@@ -9,6 +9,8 @@ import LoadingBackground from './LoadingBackground';
 import useTransitionEnd from '../../hooks/useTransitionEnd';
 import LoadingAnimation from '../LoadingAnimation';
 
+import 'renderer/css/components/LoadingScreen.scss';
+
 type Props = {
     loading?: boolean;
     onFadeOutComplete?: () => void;

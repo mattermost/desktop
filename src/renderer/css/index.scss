@@ -1,0 +1,196 @@
+@use 'typography';
+
+@import '~@mattermost/compass-icons/css/compass-icons.css';
+
+html {
+  height: 100%;
+  font-size: 14px;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+#app {
+  height: 100vh;
+}
+
+.hovering-enter {
+  opacity: 0.01;
+}
+
+.hovering-enter.hovering-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-in-out;
+}
+
+.hovering-exit {
+  opacity: 1;
+}
+
+.hovering-exit.hovering-exit-active {
+  opacity: 0.01;
+  transition: opacity 500ms ease-in-out;
+}
+
+:invalid .col-form-label,
+:invalid .form-text {
+  color: #333;
+}
+
+.modal-error {
+  color: #a94442;
+}
+
+.topBar {
+  height: 40px;
+  z-index: 9;
+  -webkit-app-region: drag;
+
+  > .topBar-bg {
+    display: flex;
+    overflow: hidden;
+    height: 40px;
+    background-color: #efefef;
+    width: 100%;
+
+    &.unfocused {
+      opacity: 0.4;
+    }
+  }
+
+  &.darkMode > .topBar-bg {
+    background-color: #2e2e2e;
+  }
+
+  .three-dot-menu {
+    font-size: 20px;
+    line-height: 20px;
+    height: 36px;
+    float: left;
+    margin-left: 4px;
+    padding-top: 5px;
+    border: none;
+    flex: 0 0 40px;
+    z-index: 9;
+    color: rgba(61,60,64,0.7);
+    -webkit-app-region: no-drag;
+    background-color: transparent;
+
+    i.icon-dots-vertical {
+      border-radius: 100px;
+      padding: 2px;
+      height: 28px;
+      width: 28px;
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    i.icon-dots-vertical.isFocused {
+      outline: none;
+      background-color: #c8c8c8;
+    }
+  }
+
+  &.darkMode .three-dot-menu {
+    color: rgba(243,243,243,0.7);
+
+    i.icon-dots-vertical.isFocused {
+      background-color: #383A3F;
+    }
+  }
+
+  &.macOS .three-dot-menu {
+    flex-basis: 80px;
+    -webkit-app-region: drag;
+
+    i.icon-dots-vertical.isFocused {
+      background: none !important;
+    }
+
+    > i.icon-dots-vertical {
+      display: none;
+    }
+  }
+
+  &.macOS.fullScreen .three-dot-menu {
+    flex-basis: 0px;
+  }
+
+  .app-title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    width: 100%;
+    height: 40px;
+    justify-content: center;
+    align-items: center;
+    color: rgba(61,60,64,0.7);
+    font-family: "Open Sans", sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.2px;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  &.darkMode .app-title {
+    color: rgba(221,221,221,0.64);
+  }
+
+  .overlay-gradient {
+    flex: 0 0 40px;
+    z-index: 9;
+    /* background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #e5e5e5 100%); */
+    -webkit-app-region: drag;
+    margin-top: 4px;
+  }
+
+  &.darkMode .overlay-gradient {
+    /* background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, #202124 100%); */
+  }
+}
+
+.full-screen-button {
+  align-items: center;
+  background: transparent;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 4px;
+  position: relative;
+  width: 32px;
+  -webkit-app-region: no-drag;
+
+  i {
+    color: rgba(63, 67, 80, 0.56);
+    cursor: pointer;
+    font-size: 21px;
+    line-height: 21px;
+  }
+
+  &:hover, &:focus {
+    i {
+      color: rgba(63, 67, 80, 0.78);
+    }
+  }
+
+  &.darkMode {
+    i {
+      color: rgba(221, 223, 228, 0.56);
+    }
+
+    &:hover, &:focus {
+      i {
+        color: rgba(221, 223, 228, 0.78);
+      }
+    }
+  }
+}

@@ -18,7 +18,7 @@ import WelcomeScreenSlide from './WelcomeScreenSlide';
 
 import 'renderer/css/components/Button.scss';
 import 'renderer/css/components/WelcomeScreen.scss';
-import 'renderer/css/components/LoadingScreen.css';
+import 'renderer/css/components/LoadingScreen.scss';
 
 type WelcomeScreenProps = {
     darkMode?: boolean;

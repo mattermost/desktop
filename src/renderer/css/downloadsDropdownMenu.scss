@@ -1,4 +1,5 @@
-@import url("fonts.css");
+@use 'typography';
+
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
 @mixin file-icon($path) {
