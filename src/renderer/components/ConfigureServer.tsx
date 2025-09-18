@@ -394,7 +394,7 @@ function ConfigureServer({
         <div
             className={classNames(
                 'LoadingScreen',
-                {'LoadingScreen--darkMode': darkMode},
+                darkMode,
                 'ConfigureServer',
             )}
         >
@@ -514,9 +514,7 @@ function ConfigureServer({
                                         extraClasses='ConfigureServer__card-form-button'
                                         saving={waiting}
                                         onClick={handleOnSaveButtonClick}
-                                        defaultMessage={urlError?.type === STATUS.WARNING ?
-                                            formatMessage({id: 'renderer.components.configureServer.connect.override', defaultMessage: 'Connect anyway'}) :
-                                            formatMessage({id: 'renderer.components.configureServer.connect.default', defaultMessage: 'Connect'})
+                                        defaultMessage={urlError?.type === STATUS.WARNING ? formatMessage({id: 'renderer.components.configureServer.connect.override', defaultMessage: 'Connect anyway'}) : formatMessage({id: 'renderer.components.configureServer.connect.default', defaultMessage: 'Connect'})
                                         }
                                         savingMessage={formatMessage({id: 'renderer.components.configureServer.connect.saving', defaultMessage: 'Connecting…'})}
                                         disabled={!canSave}

@@ -4,7 +4,7 @@
 import React, {useState, useEffect} from 'react';
 import ReactDOM from 'react-dom';
 
-import {useConfig} from 'renderer/hooks/useConfig';
+import setupDarkMode from 'renderer/modals/darkMode';
 
 import LoadingScreen from '../../components/LoadingScreen';
 
@@ -20,9 +20,10 @@ const closeDropdowns = () => {
     window.desktop.closeDownloadsDropdown();
 };
 
+setupDarkMode();
+
 const LoadingScreenRoot: React.FC = () => {
     const [showLoadingScreen, setShowLoadingScreen] = useState(true);
-    const {config} = useConfig();
 
     useEffect(() => {
         const handleToggleLoadingScreenVisibility = (showLoadingScreen: boolean) => {
@@ -43,14 +44,9 @@ const LoadingScreenRoot: React.FC = () => {
         };
     }, []);
 
-    if (!config) {
-        return null;
-    }
-
     return (
         <LoadingScreen
             loading={showLoadingScreen}
-            darkMode={config.darkMode}
             onFadeOutComplete={onFadeOutComplete}
         />
     );

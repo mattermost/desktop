@@ -21,7 +21,7 @@ body {
     transition: opacity 150ms 0ms ease-out, visibility 150ms 0ms step-start;
 }
 
-.LoadingScreen--darkMode .LoadingScreen__background {
+.darkMode .LoadingScreen .LoadingScreen__background {
     background-image: url('renderer/assets/svg/background-dark.svg');
 }
 

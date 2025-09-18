@@ -103,7 +103,7 @@ function WelcomeScreen({
         <div
             className={classNames(
                 'LoadingScreen',
-                {'LoadingScreen--darkMode': darkMode},
+                darkMode,
                 'WelcomeScreen',
             )}
         >

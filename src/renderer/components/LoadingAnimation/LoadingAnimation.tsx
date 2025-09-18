@@ -18,7 +18,6 @@ const ANIMATION_COMPLETION_DELAY = 500;
 
 type Props = {
     loading: boolean;
-    darkMode: boolean;
     onLoadAnimationComplete?: () => void;
 }
 
@@ -30,7 +29,6 @@ type Props = {
  */
 function LoadingAnimation({
     loading = false,
-    darkMode = false,
     onLoadAnimationComplete = undefined}: Props,
 ) {
     const loadingIconContainerRef = React.useRef(null);
@@ -77,7 +75,6 @@ function LoadingAnimation({
         <div
             ref={loadingIconContainerRef}
             className={classNames('LoadingAnimation', {
-                'LoadingAnimation--darkMode': darkMode,
                 'LoadingAnimation--spinning': animationState !== LOADING_STATE.INITIALIZING,
                 'LoadingAnimation--loading': animationState === LOADING_STATE.LOADING,
                 'LoadingAnimation--loaded': animationState === LOADING_STATE.LOADED,

@@ -3,7 +3,9 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 
-export default function UrlDescription() {
+import 'renderer/css/components/UrlView.scss';
+
+export default function UrlView() {
     const urlRef = useRef<HTMLDivElement>(null);
 
     const [url, setUrl] = useState<string | undefined>();
@@ -24,7 +26,7 @@ export default function UrlDescription() {
         return (
             <div
                 ref={urlRef}
-                className='HoveringURL HoveringURL-left'
+                className='UrlView'
             >
                 <p>{url}</p>
             </div>
