@@ -4,7 +4,7 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import ErrorView from './ErrorView';
+import ErrorView from 'renderer/components/ErrorView';
 
 type Props = {
     darkMode: boolean;

@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import React, {useEffect} from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import '../css/components/ServerDropdownButton.scss';
+import './ServerDropdownButton.scss';
 
 type Props = {
     isDisabled?: boolean;

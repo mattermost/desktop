@@ -5,9 +5,9 @@ import classNames from 'classnames';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import 'renderer/css/components/DeveloperModeIndicator.scss';
+import WithTooltip from 'renderer/components/WithTooltip';
 
-import WithTooltip from './WithTooltip';
+import './DeveloperModeIndicator.scss';
 
 export default function DeveloperModeIndicator({developerMode, darkMode}: {developerMode: boolean; darkMode: boolean}) {
     if (!developerMode) {

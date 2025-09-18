@@ -3,7 +3,7 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 
-import 'renderer/css/components/UrlView.scss';
+import './UrlView.scss';
 
 export default function UrlView() {
     const urlRef = useRef<HTMLDivElement>(null);

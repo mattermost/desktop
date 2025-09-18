@@ -4,11 +4,11 @@
 import classNames from 'classnames';
 import React from 'react';
 
-import LoadingIcon from './LoadingIcon';
+import LoadingIcon from 'renderer/components/LoadingAnimation/LoadingIcon';
 
 import useAnimationEnd from '../../hooks/useAnimationEnd';
 
-import 'renderer/css/components/LoadingAnimation.scss';
+import './LoadingAnimation.scss';
 
 const LOADING_STATE = {
     INITIALIZING: 'initializing', // animation graphics are hidden

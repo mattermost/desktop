@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import React, {useState, useEffect} from 'react';
 import {useIntl} from 'react-intl';
 
-import 'renderer/css/components/Input.scss';
+import './Input.scss';
 
 export enum STATUS {
     NONE = 'none',

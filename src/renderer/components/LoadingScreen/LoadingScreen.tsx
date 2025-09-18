@@ -4,12 +4,12 @@
 import classNames from 'classnames';
 import React from 'react';
 
-import LoadingBackground from './LoadingBackground';
+import LoadingAnimation from 'renderer/components/LoadingAnimation';
+import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 
 import useTransitionEnd from '../../hooks/useTransitionEnd';
-import LoadingAnimation from '../LoadingAnimation';
 
-import 'renderer/css/components/LoadingScreen.scss';
+import './LoadingScreen.scss';
 
 type Props = {
     loading?: boolean;

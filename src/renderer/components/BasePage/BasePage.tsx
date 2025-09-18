@@ -4,11 +4,11 @@
 import classNames from 'classnames';
 import React from 'react';
 
-import ConnectionErrorView from './ConnectionErrorView';
-import IncompatibleErrorView from './IncompatibleErrorView';
-import TopBar from './TopBar';
+import ConnectionErrorView from 'renderer/components/ConnectionErrorView';
+import IncompatibleErrorView from 'renderer/components/IncompatibleErrorView';
+import TopBar from 'renderer/components/TopBar';
 
-import 'renderer/css/components/BasePage.scss';
+import './BasePage.scss';
 
 type Props = {
     children?: React.ReactNode;

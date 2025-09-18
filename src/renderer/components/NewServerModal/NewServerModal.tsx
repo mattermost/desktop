@@ -1,4 +1,3 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
@@ -8,16 +7,15 @@ import {FormattedMessage, injectIntl} from 'react-intl';
 
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {URLValidationStatus} from 'common/utils/constants';
+import Input, {SIZE, STATUS} from 'renderer/components/Input';
+import {Modal} from 'renderer/components/Modal';
 import Toggle from 'renderer/components/Toggle';
 
 import type {UniqueServer, NewServer} from 'types/config';
 import type {Permissions} from 'types/permissions';
 import type {URLValidationResult} from 'types/server';
 
-import Input, {SIZE, STATUS} from './Input';
-import {Modal} from './Modal';
-
-import 'renderer/css/components/NewServerModal.scss';
+import './NewServerModal.scss';
 
 type Props = {
     onClose: () => void;

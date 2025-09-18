@@ -1,4 +1,3 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
@@ -8,9 +7,9 @@ import classNames from 'classnames';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import AlertImage from './Images/alert';
+import AlertImage from 'renderer/components/Images/alert';
 
-import 'renderer/css/components/ErrorView.scss';
+import './ErrorView.scss';
 
 type ErrorViewProps = {
     darkMode: boolean;

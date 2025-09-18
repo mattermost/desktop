@@ -7,6 +7,7 @@ import {useIntl, FormattedMessage} from 'react-intl';
 
 import {MODAL_TRANSITION_TIMEOUT, URLValidationStatus} from 'common/utils/constants';
 import Header from 'renderer/components/Header';
+import ServerImage from 'renderer/components/Images/server';
 import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
@@ -14,10 +15,8 @@ import SaveButton from 'renderer/components/SaveButton/SaveButton';
 import type {UniqueServer, NewServer} from 'types/config';
 
 import 'renderer/css/components/Button.scss';
-import 'renderer/css/components/ConfigureServer.scss';
-import 'renderer/css/components/LoadingScreen.scss';
-
-import ServerImage from './Images/server';
+import './ConfigureServer.scss';
+import 'renderer/components/LoadingScreen/LoadingScreen.scss';
 
 type ConfigureServerProps = {
     server?: UniqueServer;

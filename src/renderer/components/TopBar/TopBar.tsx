@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import React, {useEffect, useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 
-import 'renderer/css/components/TopBar.scss';
+import './TopBar.scss';
 
 type Props = {
     children?: React.ReactNode;

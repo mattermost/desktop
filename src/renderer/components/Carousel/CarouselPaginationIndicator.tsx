@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import React, {useCallback} from 'react';
 
 import 'renderer/css/components/Button.scss';
-import 'renderer/css/components/CarouselPaginationIndicator.scss';
+import './CarouselPaginationIndicator.scss';
 
 type CarouselPaginationIndicatorProps = {
     pages: number;

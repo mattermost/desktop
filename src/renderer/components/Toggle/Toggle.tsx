@@ -4,7 +4,7 @@
 import classNames from 'classnames';
 import React from 'react';
 
-import 'renderer/css/components/Toggle.scss';
+import './Toggle.scss';
 
 interface ToggleProps {
     children?: React.ReactNode;
