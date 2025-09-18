@@ -1,4 +1,6 @@
-@import url("fonts.css");
+@use 'base/css_variables';
+@use 'base/typography';
+
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
 @mixin file-icon($path) {
@@ -26,7 +28,7 @@
     display: none;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(63, 67, 80, 0.6);
+    background: rgba(var(--center-channel-color-rgb), 0.6);
     border-radius: 4px;
     width: 8px;
 }
@@ -42,9 +44,9 @@ body {
         padding: 0 24px 24px;
 
         .DownloadsDropdown {
-            background: #ffffff;
+            background: var(--center-channel-bg);
             border-radius: 4px;
-            border: 1px solid rgba(61, 60, 64, 0.16);
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
             box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
             display: flex;
             flex-direction: column;
@@ -56,7 +58,7 @@ body {
 
             .DownloadsDropdown__Thumbnail__Container {
                 align-items: center;
-                background: rgba(63, 67, 80, 0.08);
+                background: rgba(var(--center-channel-color-rgb), 0.08);
                 border-radius: 4px;
                 display: flex;
                 height: 32px;
@@ -68,9 +70,9 @@ body {
                 width: 32px;
 
                 > svg {
-                    background: #ffffff;
+                    background: var(--center-channel-bg);
                     border-radius: 50%;
-                    border: 1px solid #ffffff;
+                    border: 1px solid var(--center-channel-bg);
                     position: absolute;
                     right: 0;
                     top: 0;
@@ -83,45 +85,45 @@ body {
                     height: 100%;
 
                     &.mattermost {
-                        @include file-icon('./thumbnails/mattermost.svg');
+                        @include file-icon('assets/thumbnails/mattermost.svg');
                         background-size: 32px 32px;
                     }
                     &.text {
-                        @include file-icon('./thumbnails/text.svg');
+                        @include file-icon('assets/thumbnails/text.svg');
                     }
                     &.audio {
-                        @include file-icon('./thumbnails/audio.svg');
+                        @include file-icon('assets/thumbnails/audio.svg');
                     }
                     &.video {
-                        @include file-icon('./thumbnails/video.svg');
+                        @include file-icon('assets/thumbnails/video.svg');
                     }
                     &.ppt {
-                        @include file-icon('./thumbnails/ppt.svg');
+                        @include file-icon('assets/thumbnails/ppt.svg');
                     }
                     &.generic,
                     &.other {
-                        @include file-icon('./thumbnails/generic.svg');
+                        @include file-icon('assets/thumbnails/generic.svg');
                     }
                     &.code {
-                        @include file-icon('./thumbnails/code.svg');
+                        @include file-icon('assets/thumbnails/code.svg');
                     }
                     &.excel {
-                        @include file-icon('./thumbnails/excel.svg');
+                        @include file-icon('assets/thumbnails/excel.svg');
                     }
                     &.word {
-                        @include file-icon('./thumbnails/word.svg');
+                        @include file-icon('assets/thumbnails/word.svg');
                     }
                     &.pdf {
-                        @include file-icon('./thumbnails/pdf.svg');
+                        @include file-icon('assets/thumbnails/pdf.svg');
                     }
                     &.patch {
-                        @include file-icon('./thumbnails/patch.svg');
+                        @include file-icon('assets/thumbnails/patch.svg');
                     }
                     &.image {
-                        @include file-icon('./thumbnails/image.svg');
+                        @include file-icon('assets/thumbnails/image.svg');
                     }
                     &.zip {
-                        @include file-icon('./thumbnails/zip.svg');
+                        @include file-icon('assets/thumbnails/zip.svg');
                     }
                 }
             }
@@ -138,13 +140,13 @@ body {
                     font-weight: 600;
                     font-size: 14px;
                     line-height: 20px;
-                    color: #3D3C40;
+                    color: var(--center-channel-color);
                 }
 
                 .DownloadsDropdown__clearAllButton {
                     background: transparent;
                     border-radius: 4px;
-                    color: #1C58D9;
+                    color: var(--button-bg);
                     cursor: pointer;
                     font-size: 11px;
                     font-style: normal;
@@ -154,20 +156,22 @@ body {
                     padding: 4px 10px;
 
                     &:hover {
-                        background: rgba(28, 88, 217, 0.08);
+                        background: rgba(var(--button-bg-rgb), 0.08);
                     }
 
                     &.disabled {
                         background: transparent;
                         cursor: default;
-                        color: rgba(63, 67, 80, 0.32);
+                        color: rgba(var(--center-channel-color-rgb), 0.32);
                     }
                 }
             }
 
             .DownloadsDropdown__divider {
-                border-top: 1px solid rgba(61, 60, 64, 0.08);
+                border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
                 border-bottom: 0;
+                border-left: 0;
+                border-right: 0;
                 width: 100%;
                 margin: 0 0 8px;
             }
@@ -218,7 +222,7 @@ body {
                     }
 
                     &:hover {
-                        background: rgba(63, 67, 80, 0.08);
+                        background: rgba(var(--center-channel-color-rgb), 0.08);
                     }
 
                     .DownloadsDropdown__File__Body {
@@ -241,18 +245,18 @@ body {
                                 width: 100%;
 
                                 &.DownloadsDropdown__File__Body__Details__Filename {
-                                    color: #3F4350;
+                                    color: var(--center-channel-color);
                                     font-size: 12px;
                                     font-weight: 600;
                                 }
                                 &.DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
                                     margin-top: 2px;
-                                    color: rgba(63, 67, 80, 0.64);
+                                    color: rgba(var(--center-channel-color-rgb), 0.64);
                                     font-size: 10px;
                                     font-weight: 400;
 
                                     &.cancelled {
-                                        color: #D24B4E;
+                                        color: var(--error-text);
                                     }
                                 }
                             }
@@ -262,7 +266,7 @@ body {
                             background: transparent;
                             border: none;
                             border-radius: 4px;
-                            color: rgba(63, 67, 80, 0.56);
+                            color: rgba(var(--center-channel-color-rgb), 0.56);
                             cursor: pointer;
                             visibility: hidden;
                             font-size: 18px;
@@ -276,20 +280,20 @@ body {
                             }
                             &.active {
                                 visibility: visible;
-                                background: rgba(28, 88, 217, 0.08);
-                                color: rgba(28, 88, 217, 1);
+                                background: rgba(var(--button-bg-rgb), 0.08);
+                                color: var(--button-bg);
                             }
                             &:hover {
-                                background-color: rgba(63, 67, 80, 0.08);
-                                color: rgba(63, 67, 80, 0.72)
+                                background-color: rgba(var(--center-channel-color-rgb), 0.08);
+                                color: rgba(var(--center-channel-color-rgb), 0.72)
                             }
                             *.active:hover {
-                                background: rgba(28, 88, 217, 0.16);
-                                color: rgba(28, 88, 217, 1);
+                                background: rgba(var(--button-bg-rgb), 0.16);
+                                color: var(--button-bg);
                             }
                             &:active {
-                                background: rgba(28, 88, 217, 0.08);
-                                color: rgba(28, 88, 217, 1);
+                                background: rgba(var(--button-bg-rgb), 0.08);
+                                color: var(--button-bg);
                             }
                             > .icon-dots-vertical {
                                 position: absolute;
@@ -303,14 +307,14 @@ body {
                     .DownloadsDropdown__File__ProgressBarContainer {
                         width: 100%;
                         height: 4px;
-                        background: rgba(63, 67, 80, 0.16);
+                        background: rgba(var(--center-channel-color-rgb), 0.16);
                         border-radius: 4px;
                         margin-top: 4px;
                         overflow: hidden;
                         position: relative;
 
                         .DownloadsDropdown__File__ProgressBar {
-                            background: #1c58d9;
+                            background: var(--button-bg);
                             height: 100%;
                             left: 0;
                             position: absolute;
@@ -336,7 +340,7 @@ body {
                         justify-content: space-between;
 
                         .DownloadsDropdown__Update__Details__Title {
-                            color: #3F4350;
+                            color: var(--center-channel-color);
                             font-family: 'Open Sans';
                             font-size: 12px;
                             font-style: normal;
@@ -379,106 +383,6 @@ body {
                             height: 32px;
                             margin-top: 6px;
                             padding: 10px 16px;
-                        }
-                    }
-                }
-            }
-
-            &.darkMode {
-                background: #1f1f1f;
-                border: 1px solid rgba(221, 223, 228, 0.16);
-
-                .DownloadsDropdown__header {
-                    .DownloadsDropdown__clearAllButton {
-                        color: rgb(56, 111, 229);
-                        &:hover {
-                            background: rgba(56, 111, 229, 0.08);
-                        }
-                        &.disabled {
-                            background: transparent;
-                            color: rgba(221, 223, 228, 0.32);
-                        }
-                    }
-                    .DownloadsDropdown__Downloads {
-                        color: #DDD;
-                    }
-                }
-
-                .DownloadsDropdown__divider {
-                    border-color: rgba(221, 221, 221, 0.08);
-                }
-
-                .DownloadsDropdown__list {
-                    color: #DDD;
-
-                    .DownloadsDropdown__File {
-                        &:hover {
-                            background: rgba(221, 223, 228, 0.08);
-                        }
-
-                        .DownloadsDropdown__Thumbnail__Container {
-                            background: rgba(221, 223, 228, 0.08);
-
-                            > svg {
-                                background: #1f1f1f;
-                                border: 1px solid transparent;
-                            }
-                        }
-
-                        .DownloadsDropdown__File__Body {
-                            align-items: flex-start;
-
-                            .DownloadsDropdown__File__Body__Details {
-                                .DownloadsDropdown__File__Body__Details__Filename {
-                                    color: rgba(221, 223, 228, 1);
-                                }
-
-                                .DownloadsDropdown__File__Body__Details__FileSizeAndStatus {
-                                    color: rgba(221, 223, 228, 0.64);
-
-                                    &.cancelled {
-                                        color: #D24B4E;
-                                    }
-                                }
-                            }
-
-                            .DownloadsDropdown__File__Body__ThreeDotButton {
-                                color: rgba(221, 223, 228, 0.56);
-
-                                &:hover {
-                                    background: rgba(221, 223, 228, 0.08);
-                                }
-                                &:active {
-                                    background: rgba(56, 111, 229, 0.08);
-                                    color: rgb(56, 111, 229);
-                                }
-                                &.active {
-                                    background: rgba(56, 111, 229, 0.08);
-                                    color: rgb(56, 111, 229);
-                                }
-                                &.active:hover {
-                                    background: rgba(56, 111, 229, 0.16);
-                                    color: rgba(28, 88, 217, 1);
-                                }
-                            }
-                        }
-                    }
-
-                    .DownloadsDropdown__Update .DownloadsDropdown__Update__Details {
-                        .DownloadsDropdown__Update__Details__Title {
-                            color: rgba(221, 223, 228, 1);
-                        }
-
-                        .DownloadsDropdown__Update__Details__Description {
-                            color: rgba(221, 223, 228, 0.64);
-                        }
-
-                        .DownloadsDropdown__Update__Details__Button {
-                            &:disabled {
-                                background: rgba(221, 223, 228, 0.08);
-                                color: rgba(221, 223, 228, 0.32) !important;
-                                opacity: 1;
-                            }
                         }
                     }
                 }

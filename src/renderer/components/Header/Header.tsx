@@ -4,9 +4,9 @@
 import classNames from 'classnames';
 import React from 'react';
 
-import Logo from 'renderer/components/Logo';
+import Logo from 'renderer/components/Images/Logo';
 
-import 'renderer/css/components/Header.scss';
+import './Header.scss';
 
 type HeaderProps = {
     alternateLink?: React.ReactElement;

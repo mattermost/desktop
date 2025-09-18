@@ -1,0 +1,218 @@
+@use 'base/css_variables';
+
+.TabBar {
+  border: none;
+  max-height: 40px;
+  flex: 1 1 auto;
+  display: flex !important;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  -webkit-app-region: drag;
+  padding: 6px 8px;
+  margin-bottom: 0;
+  list-style: none;
+  overflow: hidden;
+
+  &-nonDrag {
+    flex-grow: 1;
+    -webkit-app-region: no-drag;
+  }
+
+  .serverTabItem span {
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    -webkit-font-smoothing: auto;
+  }
+
+  > li {
+    -webkit-app-region: no-drag;
+    -webkit-user-select: none;
+    max-width: 224px;
+    position: relative;
+    margin: 0 2px;
+    overflow: hidden;
+
+    > a {
+      display: block;
+      cursor: pointer;
+      color: rgba(var(--center-channel-color-rgb), 0.7);
+      font-family: "Open Sans", sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: -0.2px;
+      transition: 0.3s;
+      line-height: 18px;
+      border-radius: 4px;
+      border: none !important;
+      padding: 0;
+      text-decoration: none;
+
+      &.disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background-color: transparent;
+        pointer-events: none;
+        cursor: default;
+      }
+
+      &:hover {
+        background-color: rgba(var(--center-channel-bg-rgb), 0.56);
+        text-decoration: none;
+      }
+
+      &:focus {
+        background-color: var(--center-channel-bg);
+        color: var(--center-channel-color);
+        text-decoration: none;
+      }
+    }
+  }
+
+
+  > li.serverTabItem > a > div.TabBar-tabSeperator > .serverTabItem__close {
+    background: none;
+    border: none;
+    color: rgba(var(--center-channel-color-rgb), 0.32);
+    padding: 0;
+    height: 24px;
+    width: 24px;
+    margin-left: -16px;
+    margin-right: 3px;
+
+    &:hover {
+      color: var(--center-channel-color);
+    }
+
+    > i::before {
+      margin: 0;
+    }
+  }
+
+
+  > li > a > div.TabBar-tabSeperator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-left: 1px solid transparent;
+
+    /* The text node needs to be wrapped in a span for this to work */
+    > span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 16px;
+      padding: 5px 0 5px 12px;
+      margin-right: 12px;
+    }
+  }
+
+  > li:has(.TabBar-dot) {
+    min-width: 60px;
+  }
+
+  > li:has(.TabBar-badge) {
+    min-width: 66px;
+  }
+
+  /* Ensure badges and close button don't shrink and remain visible */
+  .TabBar-badge,
+  .TabBar-dot,
+  .TabBar-expired,
+  > li.serverTabItem > a > div.TabBar-tabSeperator > .serverTabItem__close {
+    flex: 0 0 auto;
+  }
+
+  > li.serverTabItem.active > a,
+  > li.serverTabItem.dragging > a {
+    border: none;
+    background-color: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    z-index: 9;
+  }
+
+
+  > li.serverTabItem:not(.active) + li.serverTabItem:not(.active) > a > div.TabBar-tabSeperator {
+    border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+  }
+
+
+  > li.serverTabItem:not(.active):not(.disabled):hover + .TabBar-addServerButton > a > div.TabBar-tabSeperator {
+    border-left: 1px solid transparent;
+  }
+
+  > li.serverTabItem:not(.active):not(.disabled):hover + li.serverTabItem:not(.active) > a > div.TabBar-tabSeperator {
+    border-left: 1px solid transparent;
+  }
+
+  > li.serverTabItem:not(.active):not(.disabled) + li.serverTabItem:not(.active) > a:hover > div.TabBar-tabSeperator {
+    border-left: 1px solid transparent;
+  }
+
+  &-dot {
+    background: var(--sidebar-text-active-border);
+    float: right;
+    height: 8px;
+    width: 8px;
+    margin-left: -8px;
+    margin-right: 12px;
+    border-radius: 4px;
+    flex: 0 0 8px;
+  }
+
+  .TabBar-expired {
+    float: right;
+    font-size: 18px;
+    line-height: 12px;
+    margin-left: -8px;
+    margin-right: 12px;
+    color: rgba(var(--center-channel-color-rgb), 0.32);
+
+    > i::before {
+      margin: 0;
+    }
+  }
+
+  &-badge {
+    background: var(--dnd-indicator);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: white;
+    font-size: 9px;
+    padding: 0px 5px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: bold;
+    letter-spacing: normal;
+    -webkit-font-smoothing: auto;
+    
+    margin-left: -6px;
+    margin-right: 12px;
+    height: 12px;
+
+    &.unreads {
+      background: var(--sidebar-text-active-border);
+      font-size: 16px;
+      padding: 4px;
+      height: 0;
+    }
+
+    &.TabBar-badge-nomention:after {
+      content: "";
+      width: 4px;
+      height: 4px;
+      background: var(--center-channel-bg);
+      display: block;
+      border-radius: 50%;
+    }
+  }
+
+  .serverTabItem-unread {
+    font-weight: bold;
+  }
+}
+

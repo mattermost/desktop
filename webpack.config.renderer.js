@@ -163,7 +163,7 @@ module.exports = merge(base, {
                     loader: 'sass-loader',
                     options: {
                         sassOptions: {
-                            includePaths: [path.resolve(__dirname, 'node_modules')],
+                            loadPaths: ['src/renderer/css'],
                         },
                     },
                 },

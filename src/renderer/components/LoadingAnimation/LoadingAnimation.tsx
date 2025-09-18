@@ -4,9 +4,11 @@
 import classNames from 'classnames';
 import React from 'react';
 
-import LoadingIcon from './LoadingIcon';
+import LoadingIcon from 'renderer/components/LoadingAnimation/LoadingIcon';
 
 import useAnimationEnd from '../../hooks/useAnimationEnd';
+
+import './LoadingAnimation.scss';
 
 const LOADING_STATE = {
     INITIALIZING: 'initializing', // animation graphics are hidden
@@ -18,7 +20,6 @@ const ANIMATION_COMPLETION_DELAY = 500;
 
 type Props = {
     loading: boolean;
-    darkMode: boolean;
     onLoadAnimationComplete?: () => void;
 }
 
@@ -30,7 +31,6 @@ type Props = {
  */
 function LoadingAnimation({
     loading = false,
-    darkMode = false,
     onLoadAnimationComplete = undefined}: Props,
 ) {
     const loadingIconContainerRef = React.useRef(null);
@@ -77,7 +77,6 @@ function LoadingAnimation({
         <div
             ref={loadingIconContainerRef}
             className={classNames('LoadingAnimation', {
-                'LoadingAnimation--darkMode': darkMode,
                 'LoadingAnimation--spinning': animationState !== LOADING_STATE.INITIALIZING,
                 'LoadingAnimation--loading': animationState === LOADING_STATE.LOADING,
                 'LoadingAnimation--loaded': animationState === LOADING_STATE.LOADED,

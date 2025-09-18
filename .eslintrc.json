@@ -149,13 +149,7 @@
                 "src/main/menus/app.ts",
                 "src/renderer/components/RemoveServerModal.tsx",
                 "src/renderer/components/MainPage.tsx",
-                "src/renderer/components/AutoSaveIndicator.tsx",
-                "src/renderer/components/TabBar.tsx",
                 "src/renderer/components/DestructiveConfirmModal.tsx",
-                "src/renderer/components/ErrorView.tsx",
-                "src/renderer/components/SettingsPage.tsx",
-                "src/renderer/components/NewServerModal.tsx",
-                "src/renderer/settings.tsx",
                 "src/renderer/index.tsx"
             ],
             "rules": {

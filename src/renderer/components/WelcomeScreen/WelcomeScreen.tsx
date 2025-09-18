@@ -13,12 +13,11 @@ import CollaborateImage from 'renderer/components/Images/collaborate';
 import ThreadsEmptyImage from 'renderer/components/Images/threads-empty';
 import ToolsImage from 'renderer/components/Images/tools';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
-
-import WelcomeScreenSlide from './WelcomeScreenSlide';
+import WelcomeScreenSlide from 'renderer/components/WelcomeScreen/WelcomeScreenSlide';
 
 import 'renderer/css/components/Button.scss';
-import 'renderer/css/components/WelcomeScreen.scss';
-import 'renderer/css/components/LoadingScreen.css';
+import './WelcomeScreen.scss';
+import 'renderer/components/LoadingScreen/LoadingScreen.scss';
 
 type WelcomeScreenProps = {
     darkMode?: boolean;
@@ -103,7 +102,7 @@ function WelcomeScreen({
         <div
             className={classNames(
                 'LoadingScreen',
-                {'LoadingScreen--darkMode': darkMode},
+                darkMode,
                 'WelcomeScreen',
             )}
         >

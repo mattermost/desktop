@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import React from 'react';
 
 import 'renderer/css/components/Button.scss';
-import 'renderer/css/components/CarouselButton.scss';
+import './CarouselButton.scss';
 
 export enum ButtonDirection {
     NEXT = 'next',

@@ -4,7 +4,7 @@
 import classNames from 'classnames';
 import React from 'react';
 
-import 'renderer/css/components/WelcomeScreenSlide.scss';
+import './WelcomeScreenSlide.scss';
 
 type WelcomeScreenSlideProps = {
     title: string;
