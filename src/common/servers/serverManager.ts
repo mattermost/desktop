@@ -179,7 +179,7 @@ export class ServerManager extends EventEmitter {
     };
 
     updatePreAuthSecret = (serverId: string, preAuthSecret: string) => {
-        log.debug('updatePreAuthSecret', serverId);
+        log.debug('updatePreAuthSecret', {serverId});
         const server = this.servers.get(serverId);
         if (!server) {
             return;
