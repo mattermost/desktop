@@ -67,7 +67,7 @@ async function setOverlayIcon(badgeText: string | undefined, description: string
                 const dataUrl = await createDataURL(mainWindow, badgeText, small);
                 overlay = nativeImage.createFromDataURL(dataUrl);
             } catch (err) {
-                log.error('Could not generate a badge:', err);
+                log.error('Could not generate a badge:', {err});
             }
         }
         mainWindow.setOverlayIcon(overlay, description);

@@ -63,7 +63,7 @@ export class PerformanceMonitor {
     };
 
     registerServerView = (name: string, webContents: WebContents, serverId: string) => {
-        log.debug('registerServerView', webContents.id, serverId);
+        log.debug('registerServerView', {webContentsId: webContents.id, serverId});
 
         webContents.on('did-finish-load', () => {
             this.serverViews.set(webContents.id, {name, webContents, serverId});
@@ -71,7 +71,7 @@ export class PerformanceMonitor {
     };
 
     unregisterView = (webContentsId: number) => {
-        log.debug('unregisterView', webContentsId);
+        log.debug('unregisterView', {webContentsId});
 
         this.views.delete(webContentsId);
         this.serverViews.delete(webContentsId);

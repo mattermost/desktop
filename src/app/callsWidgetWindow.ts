@@ -190,7 +190,7 @@ export class CallsWidgetWindow {
         this.win?.loadURL(widgetURL, {
             userAgent: composeUserAgent(),
         }).catch((reason) => {
-            log.error(`failed to load: ${reason}`);
+            log.error('failed to load', {reason});
         });
     };
 
@@ -245,12 +245,12 @@ export class CallsWidgetWindow {
         if (url === this.getWidgetURL()) {
             return;
         }
-        log.warn(`prevented widget window from navigating to: ${url}`);
+        log.warn('prevented widget window from navigating');
         ev.preventDefault();
     };
 
     private setWidgetWindowStacking = ({onTop}: {onTop: boolean}) => {
-        log.debug('setWidgetWindowStacking', onTop);
+        log.debug('setWidgetWindowStacking', {onTop});
 
         if (!this.win) {
             return;
@@ -319,7 +319,7 @@ export class CallsWidgetWindow {
             };
         }
 
-        log.warn(`onPopOutOpen: prevented window open to ${url}`);
+        log.warn('onPopOutOpen: prevented window open');
         return {action: 'deny' as const};
     };
 
@@ -365,7 +365,7 @@ export class CallsWidgetWindow {
                     userAgent: composeUserAgent(),
                 });
             } catch (e) {
-                log.error('did-frame-finish-load, failed to reload with correct userAgent', e);
+                log.error('did-frame-finish-load, failed to reload with correct userAgent', {e});
             }
         });
     };
@@ -375,7 +375,7 @@ export class CallsWidgetWindow {
      ************************/
 
     private handleResize = (ev: IpcMainEvent, width: number, height: number) => {
-        log.debug('handleResize', width, height);
+        log.debug('handleResize', {width, height});
 
         if (!this.win) {
             return;
@@ -420,7 +420,7 @@ export class CallsWidgetWindow {
     };
 
     private handleGetDesktopSources = async (event: IpcMainInvokeEvent, opts: Electron.SourcesOptions) => {
-        log.debug('handleGetDesktopSources', opts);
+        log.debug('handleGetDesktopSources');
 
         // For Calls we make an extra check to ensure the event is coming from the expected window (main view).
         // Otherwise we want to allow for other plugins to ask for screen sharing sources.
@@ -446,7 +446,7 @@ export class CallsWidgetWindow {
                 }
                 this.missingScreensharePermissions = true;
             } catch (err) {
-                log.error('failed to reset screen sharing permissions', err);
+                log.error('failed to reset screen sharing permissions', {err});
             }
         }
 
@@ -464,7 +464,7 @@ export class CallsWidgetWindow {
             let hasScreenPermissions = true;
             if (systemPreferences.getMediaAccessStatus) {
                 const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
-                log.debug('screenPermissions', screenPermissions);
+                log.debug('screenPermissions', {screenPermissions});
                 if (screenPermissions === 'denied') {
                     log.info('no screen sharing permissions');
                     hasScreenPermissions = false;
@@ -540,7 +540,7 @@ export class CallsWidgetWindow {
 
         const promise = new Promise((resolve) => {
             const connected = (ev: IpcMainEvent, incomingCallId: string, incomingSessionId: string) => {
-                log.debug('onJoinedCall', incomingCallId);
+                log.debug('onJoinedCall', {incomingCallId});
 
                 if (!this.isCallsWidget(ev.sender.id)) {
                     log.debug('onJoinedCall', 'blocked on wrong webContentsId');
@@ -610,7 +610,7 @@ export class CallsWidgetWindow {
     };
 
     private handleCallsLinkClick = (event: IpcMainEvent, url: string) => {
-        log.debug('handleCallsLinkClick', url);
+        log.debug('handleCallsLinkClick');
 
         if (!this.isCallsWidget(event.sender.id)) {
             return;

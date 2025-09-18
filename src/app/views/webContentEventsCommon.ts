@@ -6,6 +6,7 @@ import type {Event, WebContentsConsoleMessageEventParams} from 'electron';
 
 import type {Logger} from 'common/log';
 import {getLevel} from 'common/log';
+import {parseURL} from 'common/utils/url';
 
 import {protocols} from '../../../electron-builder.json';
 
@@ -22,13 +23,21 @@ export const generateHandleConsoleMessage = (log: Logger) => (event: Event<WebCo
     }
 
     // Only include line entries if we're debugging
-    const entries = [event.message];
+    const entries = [sanitizeMessage(event.sourceId, event.message)];
     if (['debug', 'silly'].includes(getLevel())) {
-        entries.push(`(${path.basename(event.sourceId)}:${event.lineNumber})`);
+        entries.push(sanitizeMessage(event.sourceId, `(${path.basename(event.sourceId)}:${event.lineNumber})`));
     }
 
     logFn(...entries);
 };
+
+function sanitizeMessage(sourceURL: string, message: string) {
+    const parsedURL = parseURL(sourceURL);
+    if (!parsedURL) {
+        return message;
+    }
+    return message.replace(parsedURL.host, '<host>');
+}
 
 export function isCustomProtocol(url: URL) {
     const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];

@@ -75,7 +75,7 @@ export class DownloadsDropdownView {
     };
 
     private updateDownloadsDropdownMenuItem = (event: IpcMainEvent, item?: DownloadedItem) => {
-        log.silly('updateDownloadsDropdownMenuItem', {item});
+        log.silly('updateDownloadsDropdownMenuItem');
         this.item = item;
         this.updateDownloadsDropdown();
     };
@@ -120,7 +120,7 @@ export class DownloadsDropdownView {
     };
 
     private openFile = (e: IpcMainEvent, item: DownloadedItem) => {
-        log.debug('openFile', {item});
+        log.debug('openFile');
 
         downloadsManager.openFile(item);
     };

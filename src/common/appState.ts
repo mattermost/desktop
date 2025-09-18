@@ -125,7 +125,7 @@ export class AppState extends EventEmitter {
     private emitStatusForView = (viewId: string) => {
         const view = ViewManager.getView(viewId);
         if (!view) {
-            log.warn('emitStatusForView: view not found', viewId);
+            log.warn('emitStatusForView: view not found', {viewId});
             this.emitStatus();
             return;
         }

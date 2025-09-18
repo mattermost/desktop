@@ -72,7 +72,7 @@ export class UserActivityMonitor extends EventEmitter {
             try {
                 this.updateIdleTime(powerMonitor.getSystemIdleTime());
             } catch (err) {
-                log.error('Error getting system idle time:', err);
+                log.error('Error getting system idle time:', {err});
             }
         }, this.config.updateFrequencyMs) as unknown as number;
     }

@@ -89,7 +89,7 @@ export class SecureStorage {
                     return JSON.parse(decryptedData);
                 } catch (encryptedError: any) {
                     if (encryptedError.code !== 'ENOENT') {
-                        log.warn('Failed to load encrypted secrets, trying plaintext fallback:', encryptedError);
+                        log.warn('Failed to load encrypted secrets, trying plaintext fallback:', {encryptedError});
                     }
                 }
             }
@@ -102,12 +102,12 @@ export class SecureStorage {
                 if (plaintextError.code === 'ENOENT') {
                     log.debug('Secrets file does not exist, starting with empty storage');
                 } else {
-                    log.warn('Failed to load plaintext secrets:', plaintextError);
+                    log.warn('Failed to load plaintext secrets:', {plaintextError});
                 }
                 return {};
             }
         } catch (error) {
-            log.error('Failed to load secrets:', error);
+            log.error('Failed to load secrets:', {error});
             return {};
         }
     }
@@ -140,7 +140,7 @@ export class SecureStorage {
             // Update memory cache
             this.memoryCache = {...secrets};
         } catch (error) {
-            log.error('Failed to save secrets:', error);
+            log.error('Failed to save secrets:', {error});
             throw new Error('Failed to save secure data');
         }
     }
@@ -170,7 +170,7 @@ export class SecureStorage {
         try {
             const parsed = parseURL(url);
             if (!parsed) {
-                log.warn(`Failed to parse URL for secure storage: ${url}`);
+                log.warn('Failed to parse URL for secure storage');
                 return url;
             }
 
@@ -180,7 +180,7 @@ export class SecureStorage {
             const normalizedPath = getFormattedPathName(parsed.pathname);
             return `${parsed.origin}${normalizedPath}`;
         } catch (error) {
-            log.warn(`Failed to normalize URL for secure storage: ${url}`, error);
+            log.warn('Failed to normalize URL for secure storage', {error});
 
             // Fallback to the original URL if parsing fails
             return url;
@@ -236,7 +236,7 @@ export class SecureStorage {
         try {
             return await this.getSecret(serverUrl, keySuffix as any);
         } catch (error) {
-            log.error('Failed to get secure storage:', error);
+            log.error('Failed to get secure storage:', {error});
             return null;
         }
     }
@@ -250,7 +250,7 @@ ipcMain.on(UPDATE_PATHS, () => {
     secureStorage.userDataPath = secureStoragePath;
     if (secureStorage.memoryCache) {
         secureStorage.load().catch((error) => {
-            log.error('Failed to reload secure storage after path update:', error);
+            log.error('Failed to reload secure storage after path update:', {error});
         });
     }
 });

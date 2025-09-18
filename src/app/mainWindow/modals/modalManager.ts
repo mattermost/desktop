@@ -112,7 +112,7 @@ export class ModalManager {
     };
 
     handleModalFinished = (mode: 'resolve' | 'reject', event: IpcMainEvent, data: unknown) => {
-        log.debug('handleModalFinished', {mode, data});
+        log.debug('handleModalFinished', {mode});
 
         const requestModal = this.findModalByCaller(event);
         if (requestModal) {
@@ -145,7 +145,7 @@ export class ModalManager {
     };
 
     handleResizeModal = (bounds: Electron.Rectangle) => {
-        log.debug('handleResizeModal', {bounds, modalQueueLength: this.modalQueue.length});
+        log.debug('handleResizeModal', {modalQueueLength: this.modalQueue.length});
 
         if (this.modalQueue.length) {
             const currentModal = this.modalQueue[0];

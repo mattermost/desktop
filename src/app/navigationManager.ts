@@ -129,7 +129,7 @@ export class NavigationManager {
     };
 
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
-        log.debug('handleBrowserHistoryPush', e.sender.id, pathName);
+        log.debug('handleBrowserHistoryPush', {webContentsId: e.sender.id});
 
         const currentView = WebContentsManager.getViewByWebContentsId(e.sender.id);
         if (!currentView) {
@@ -156,7 +156,7 @@ export class NavigationManager {
     };
 
     private handleRequestBrowserHistoryStatus = (e: IpcMainInvokeEvent) => {
-        log.silly('handleRequestBrowserHistoryStatus', e.sender.id);
+        log.silly('handleRequestBrowserHistoryStatus', {webContentsId: e.sender.id});
         return WebContentsManager.getViewByWebContentsId(e.sender.id)?.getBrowserHistoryStatus();
     };
 
