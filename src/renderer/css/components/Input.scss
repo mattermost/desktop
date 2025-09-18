@@ -10,7 +10,11 @@
 }
 
 .warning {
-    color: var(--away-indicator);
+    color: var(--center-channel-color);
+
+    i {
+        color: var(--away-indicator);
+    }
 }
 
 .success {
