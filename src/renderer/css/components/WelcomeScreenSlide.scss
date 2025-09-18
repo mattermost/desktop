@@ -1,5 +1,5 @@
-@use "../_css_variables";
-@use "../typography";
+@use 'base/css_variables';
+@use 'base/typography';
 
 .WelcomeScreenSlide {
     display: flex;

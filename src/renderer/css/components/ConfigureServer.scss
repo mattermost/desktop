@@ -1,7 +1,6 @@
-@use "../_css_variables";
-@use "../typography";
-
-@use '../mixins';
+@use 'base/css_variables';
+@use 'base/typography';
+@use 'base/mixins';
 
 .alternate-link {
     margin-left: auto;

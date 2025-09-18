@@ -1,6 +1,6 @@
-@use '../css_variables';
-@use "../buttons";
-@use "../typography";
+@use 'base/css_variables';
+@use 'base/buttons';
+@use 'base/typography';
 
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
