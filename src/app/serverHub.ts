@@ -24,21 +24,18 @@ import {
     GET_CURRENT_SERVER,
 } from 'common/communication';
 import {ModalConstants} from 'common/constants';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
 import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
-import {savePreAuthSecret, saveOrDeletePreAuthSecret, extractPreAuthSecret} from 'main/preAuthSecret';
-import secureStorage from 'main/secureStorage';
 import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 
-import type {Server, UniqueServer, NewServer} from 'types/config';
+import type {Server, UniqueServer} from 'types/config';
 import type {Permissions, UniqueServerWithPermissions} from 'types/permissions';
-import type {ServerTestResult, URLValidationResult} from 'types/server';
+import type {ErrorReason, ServerTestResult, URLValidationResult} from 'types/server';
 
 const log = new Logger('App', 'ServerHub');
 
@@ -91,7 +88,7 @@ export class ServerHub {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<{prefillURL?: string}, NewServer>(
+        const modalPromise = ModalManager.addModal<{prefillURL?: string}, Server>(
             ModalConstants.NEW_SERVER_MODAL,
             'mattermost-desktop://renderer/newServer.html',
             getLocalPreload('internalAPI.js'),
@@ -108,10 +105,8 @@ export class ServerHub {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-            const newServer = ServerManager.addServer(data, initialLoadURL);
 
-            // Handle secure storage persistence separately
-            await savePreAuthSecret(data, newServer.url.toString());
+            ServerManager.addServer(data, initialLoadURL);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -134,7 +129,7 @@ export class ServerHub {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: NewServer; permissions: Permissions}>(
+        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
             ModalConstants.EDIT_SERVER_MODAL,
             'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
@@ -143,10 +138,7 @@ export class ServerHub {
 
         modalPromise.then(async (data) => {
             if (!server.isPredefined) {
-                ServerManager.editServer(id, data.server, extractPreAuthSecret(data.server));
-
-                // Handle secure storage persistence separately
-                await saveOrDeletePreAuthSecret(data.server, server.url.toString());
+                ServerManager.editServer(id, data.server);
             }
             PermissionsManager.setForServer(server, data.permissions);
         }).catch((e) => {
@@ -180,13 +172,6 @@ export class ServerHub {
         modalPromise.then(async (remove) => {
             if (remove) {
                 ServerManager.removeServer(server.id);
-
-                // Clean up associated secret
-                try {
-                    await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-                } catch (error) {
-                    log.warn('Failed to clean up secure secret for removed server:', error);
-                }
             }
         }).catch((e) => {
             // e is undefined for user cancellation
@@ -200,11 +185,16 @@ export class ServerHub {
      * IPC Handlers
      */
 
-    private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string, preAuthSecret?: string): Promise<URLValidationResult> => {
-        log.debug('handleServerURLValidation', url, currentId);
+    private handleServerURLValidation = async (
+        e: IpcMainInvokeEvent,
+        url?: string,
+        currentId?: string,
+    ): Promise<URLValidationResult> => {
+        log.verbose('handleServerURLValidation', currentId);
 
         // If the URL is missing or null, reject
         if (!url) {
+            log.debug('handleServerURLValidation: URL is missing');
             return {status: URLValidationStatus.Missing};
         }
 
@@ -212,9 +202,11 @@ export class ServerHub {
         if (!isValidURL(url)) {
             // If it already includes the protocol, force it to HTTPS
             if (isValidURI(url) && !url.toLowerCase().startsWith('http')) {
+                log.debug('handleServerURLValidation: URL is valid host but does not start with http');
                 httpUrl = url.replace(/^((.+):\/\/)?/, 'https://');
             } else if (!'https://'.startsWith(url.toLowerCase()) && !'http://'.startsWith(url.toLowerCase())) {
                 // Check if they're starting to type `http(s)`, otherwise add HTTPS for them
+                log.debug('handleServerURLValidation: Added HTTPS to URL');
                 httpUrl = `https://${url}`;
             }
         }
@@ -222,104 +214,210 @@ export class ServerHub {
         // Make sure the final URL is valid
         const parsedURL = parseURL(httpUrl);
         if (!parsedURL) {
+            log.debug('handleServerURLValidation: URL is invalid');
             return {status: URLValidationStatus.Invalid};
         }
 
         // Try and add HTTPS to see if we can get a more secure URL
         let secureURL = parsedURL;
         if (parsedURL.protocol === 'http:') {
+            log.verbose('handleServerURLValidation: Attempting to upgrade HTTP to HTTPS');
             secureURL = parseURL(parsedURL.toString().replace(/^http:/, 'https:')) ?? parsedURL;
         }
 
         // Tell the user if they already have a server for this URL
         const existingServer = ServerManager.lookupServerByURL(secureURL, true);
         if (existingServer && existingServer.id !== currentId) {
-            return {status: URLValidationStatus.URLExists, existingServerName: existingServer.name, validatedURL: existingServer.url.toString()};
+            log.verbose(`handleServerURLValidation: Server already exists for URL, current id: ${currentId})`);
+            return {
+                status: URLValidationStatus.URLExists,
+                existingServerName: existingServer.name,
+                validatedURL: existingServer.url.toString(),
+            };
         }
-
-        const effectivePreAuthSecret = preAuthSecret;
 
         // Try and get remote info from the most secure URL, otherwise use the insecure one
         let remoteURL = secureURL;
         const insecureURL = parseURL(secureURL.toString().replace(/^https:/, 'http:'));
         let remoteInfo;
         let preAuthRequired = false;
+        let basicAuthRequired = false;
+        let clientCertRequired = false;
 
-        const httpsResult = await this.testRemoteServer(secureURL, effectivePreAuthSecret);
+        const httpsResult = await this.testRemoteServer(secureURL);
         if ('data' in httpsResult) {
+            log.debug('handleServerURLValidation: HTTPS test successful');
             remoteInfo = httpsResult.data;
         } else {
+            log.debug('handleServerURLValidation: HTTPS test failed, error:', {...httpsResult.error});
+
             // Check if HTTPS returned 403
-            const httpsIs403 = httpsResult.error?.statusCode === 403;
+            const httpsNeedsPreAuth = httpsResult.error?.errorReason?.needsPreAuth;
+            const httpsNeedsBasicAuth = httpsResult.error?.errorReason?.needsBasicAuth;
+            const httpsNeedsClientCert = httpsResult.error?.errorReason?.needsClientCert;
 
             if (insecureURL) {
                 // Try to fall back to HTTP
-                const httpResult = await this.testRemoteServer(insecureURL, effectivePreAuthSecret);
+                const httpResult = await this.testRemoteServer(insecureURL);
                 if ('data' in httpResult) {
+                    log.debug('handleServerURLValidation: HTTP test successful');
                     remoteInfo = httpResult.data;
                     remoteURL = insecureURL;
                 } else {
+                    log.debug('handleServerURLValidation: HTTP test failed, error:', httpResult.error);
+
                     // Both HTTPS and HTTP failed
-                    const httpIs403 = httpResult.error?.statusCode === 403;
-                    if (httpsIs403 || httpIs403) {
+                    const httpNeedsPreAuth = httpResult.error?.errorReason?.needsPreAuth;
+                    const httpNeedsBasicAuth = httpResult.error?.errorReason?.needsBasicAuth;
+                    const httpNeedsClientCert = httpResult.error?.errorReason?.needsClientCert;
+                    if (httpsNeedsPreAuth || httpNeedsPreAuth) {
+                        log.debug('handleServerURLValidation: HTTP returned 403 error, pre-auth required');
+
                         preAuthRequired = true;
 
                         // Use the URL that returned 403, preferring HTTPS
-                        remoteURL = httpsIs403 ? secureURL : insecureURL;
+                        remoteURL = httpsNeedsPreAuth ? secureURL : insecureURL;
+                    }
+                    if (httpsNeedsBasicAuth || httpNeedsBasicAuth) {
+                        log.debug('handleServerURLValidation: HTTP returned 401 error, basic auth required');
+
+                        basicAuthRequired = true;
+
+                        // Use the URL that returned 401, preferring HTTPS
+                        remoteURL = httpsNeedsBasicAuth ? secureURL : insecureURL;
+                    }
+                    if (httpsNeedsClientCert || httpNeedsClientCert) {
+                        log.debug('handleServerURLValidation: HTTP returned SSL client cert error, client cert required');
+
+                        clientCertRequired = true;
+
+                        // Use the URL that returned 403, preferring HTTPS
+                        remoteURL = httpsNeedsClientCert ? secureURL : insecureURL;
                     }
                 }
-            } else if (httpsIs403) {
+            } else if (httpsNeedsPreAuth) {
                 // No HTTP fallback available, but HTTPS returned 403
+                log.debug('handleServerURLValidation: HTTPS returned 403, pre-auth required');
+
                 preAuthRequired = true;
+            } else if (httpsNeedsBasicAuth) {
+                log.debug('handleServerURLValidation: HTTPS returned 401 error, basic auth required');
+
+                basicAuthRequired = true;
+            } else if (httpsNeedsClientCert) {
+                log.debug('handleServerURLValidation: HTTPS returned SSL client cert error, client cert required');
+
+                clientCertRequired = true;
             }
         }
 
         // If we detected a 403 error, return PreAuthRequired status
         if (preAuthRequired) {
-            return {status: URLValidationStatus.PreAuthRequired, validatedURL: remoteURL.toString().replace(/\/$/, '')};
+            return {
+                status: URLValidationStatus.PreAuthRequired,
+                validatedURL: remoteURL.toString().replace(/\/$/, ''),
+            };
+        }
+
+        // If we detected a 401 error, return BasicAuthRequired status
+        if (basicAuthRequired) {
+            return {
+                status: URLValidationStatus.BasicAuthRequired,
+                validatedURL: remoteURL.toString().replace(/\/$/, ''),
+            };
+        }
+
+        // If we detected a client cert SSL error, return ClientCertRequired status
+        if (clientCertRequired) {
+            return {
+                status: URLValidationStatus.ClientCertRequired,
+                validatedURL: remoteURL.toString().replace(/\/$/, ''),
+            };
         }
 
         // If we can't get the remote info, warn the user that this might not be the right URL
         // If the original URL was invalid, don't replace that as they probably have a typo somewhere
         // Also strip the trailing slash if it's there so that the user can keep typing
         if (!remoteInfo) {
-            // If the URL provided has a path, try to validate the server with parts of the path removed, until we reach the root and then return a failure
+            log.debug('handleServerURLValidation: Remote info is missing');
+
+            // If the URL provided has a path, try to validate the server with parts of the path removed,
+            // until we reach the root and then return a failure
             if (parsedURL.pathname !== '/') {
-                return this.handleServerURLValidation(e, parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')), currentId, effectivePreAuthSecret);
+                log.debug('handleServerURLValidation: Trying to validate with path removed');
+                return this.handleServerURLValidation(
+                    e,
+                    parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')),
+                    currentId,
+                );
             }
 
-            return {status: URLValidationStatus.NotMattermost, validatedURL: parsedURL.toString().replace(/\/$/, '')};
+            log.debug('handleServerURLValidation: Remote info is missing, returning NotMattermost');
+            return {
+                status: URLValidationStatus.NotMattermost,
+                validatedURL: parsedURL.toString().replace(/\/$/, ''),
+            };
         }
 
         const remoteServerName = remoteInfo.siteName === 'Mattermost' ? remoteURL.host.split('.')[0] : remoteInfo.siteName;
 
         // If we were only able to connect via HTTP, warn the user that the connection is not secure
         if (remoteURL.protocol === 'http:') {
-            return {status: URLValidationStatus.Insecure, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
+            log.info('handleServerURLValidation: Remote URL is HTTP, returning Insecure');
+            return {
+                status: URLValidationStatus.Insecure,
+                serverVersion: remoteInfo.serverVersion,
+                serverName: remoteServerName,
+                validatedURL: remoteURL.toString(),
+            };
         }
 
         // If the URL doesn't match the Site URL, set the URL to the correct one
         if (remoteInfo.siteURL && remoteURL.toString() !== new URL(remoteInfo.siteURL).toString()) {
+            log.verbose('handleServerURLValidation: Remote URL does not match Site URL, checking Site URL');
             const parsedSiteURL = parseURL(remoteInfo.siteURL);
             if (parsedSiteURL) {
                 // Check the Site URL as well to see if it's already pre-configured
                 const existingServer = ServerManager.lookupServerByURL(parsedSiteURL, true);
                 if (existingServer && existingServer.id !== currentId) {
-                    return {status: URLValidationStatus.URLExists, existingServerName: existingServer.name, validatedURL: existingServer.url.toString()};
+                    log.info('handleServerURLValidation: Site URL already exists, returning URLExists');
+                    return {
+                        status: URLValidationStatus.URLExists,
+                        existingServerName: existingServer.name,
+                        validatedURL: existingServer.url.toString(),
+                    };
                 }
 
                 // If we can't reach the remote Site URL, there's probably a configuration issue
-                const remoteSiteURLResult = await this.testRemoteServer(parsedSiteURL, effectivePreAuthSecret);
+                const remoteSiteURLResult = await this.testRemoteServer(parsedSiteURL);
                 if ('error' in remoteSiteURLResult) {
-                    return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
+                    log.debug('handleServerURLValidation: Site URL not reachable, returning URLNotMatched');
+                    return {
+                        status: URLValidationStatus.URLNotMatched,
+                        serverVersion: remoteInfo.serverVersion,
+                        serverName: remoteServerName,
+                        validatedURL: remoteURL.toString(),
+                    };
                 }
             }
 
             // Otherwise fix it for them and return
-            return {status: URLValidationStatus.URLUpdated, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteInfo.siteURL};
+            log.debug('handleServerURLValidation: Remote URL matches Site URL, returning URLUpdated');
+            return {
+                status: URLValidationStatus.URLUpdated,
+                serverVersion: remoteInfo.serverVersion,
+                serverName: remoteServerName,
+                validatedURL: remoteInfo.siteURL,
+            };
         }
 
-        return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
+        log.debug('handleServerURLValidation: Remote URL matches Site URL, returning OK');
+        return {
+            status: URLValidationStatus.OK,
+            serverVersion: remoteInfo.serverVersion,
+            serverName: remoteServerName,
+            validatedURL: remoteURL.toString(),
+        };
     };
 
     private handleGetOrderedServers = () => ServerManager.getOrderedServers().map((srv) => srv.toUniqueServer());
@@ -328,9 +426,9 @@ export class ServerHub {
      * Helper functions
      */
 
-    private testRemoteServer = async (parsedURL: URL, preAuthSecret?: string): Promise<ServerTestResult> => {
-        const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false, undefined, preAuthSecret);
-        const serverInfo = new ServerInfo(server, preAuthSecret);
+    private testRemoteServer = async (parsedURL: URL): Promise<ServerTestResult> => {
+        const server = new MattermostServer({name: 'temp', url: parsedURL.toString()}, false, undefined);
+        const serverInfo = new ServerInfo(server);
         try {
             // Ping server first for pre-auth - config endpoint might be whitelisted
             await serverInfo.pingServer();
@@ -339,7 +437,7 @@ export class ServerHub {
             const remoteInfo = await serverInfo.fetchConfigData();
             return {data: remoteInfo};
         } catch (error) {
-            return {error: error as Error & { statusCode?: number }};
+            return {error: error as Error & { errorReason?: ErrorReason }};
         }
     };
 
@@ -351,13 +449,10 @@ export class ServerHub {
             }));
     };
 
-    private handleAddServer = async (event: IpcMainEvent, server: Server & {preAuthSecret?: string}) => {
+    private handleAddServer = async (event: IpcMainEvent, server: Server) => {
         log.debug('handleAddServer', server);
 
-        const newServer = ServerManager.addServer(server);
-
-        // Handle secure storage persistence separately
-        await savePreAuthSecret(server, newServer.url.toString());
+        ServerManager.addServer(server);
     };
 
     private handleEditServer = async (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
@@ -368,10 +463,7 @@ export class ServerHub {
         }
 
         if (!server.isPredefined) {
-            ServerManager.editServer(server.id, server, extractPreAuthSecret(server));
-
-            // Handle secure storage persistence separately
-            await saveOrDeletePreAuthSecret(server, server.url);
+            ServerManager.editServer(server.id, server);
         }
         if (permissions) {
             const mattermostServer = ServerManager.getServer(server.id);
@@ -384,20 +476,8 @@ export class ServerHub {
     private handleRemoveServer = async (event: IpcMainEvent, serverId: string) => {
         log.debug('handleRemoveServer', serverId);
 
-        const server = ServerManager.getServer(serverId);
-        if (!server) {
-            return;
-        }
-
         // Remove the server from ServerManager
         ServerManager.removeServer(serverId);
-
-        // Clean up associated secret
-        try {
-            await secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-        } catch (error) {
-            log.warn('Failed to clean up secure secret for removed server:', error);
-        }
     };
 
     private handleGetLastActive = () => {

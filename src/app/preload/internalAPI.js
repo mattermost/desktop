@@ -178,7 +178,7 @@ contextBridge.exposeInMainWorld('desktop', {
     onServerSwitched: (listener) => ipcRenderer.on(SERVER_SWITCHED, (_, serverId) => listener(serverId)),
     onTabAdded: (listener) => ipcRenderer.on(TAB_ADDED, (_, serverId, tabId) => listener(serverId, tabId)),
     onTabRemoved: (listener) => ipcRenderer.on(TAB_REMOVED, (_, serverId, tabId) => listener(serverId, tabId)),
-    validateServerURL: (url, currentId, preAuthSecret) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId, preAuthSecret),
+    validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
 
     getUniqueServersWithPermissions: () => ipcRenderer.invoke(GET_UNIQUE_SERVERS_WITH_PERMISSIONS),
     addServer: (server) => ipcRenderer.send(ADD_SERVER, server),

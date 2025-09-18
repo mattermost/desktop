@@ -152,8 +152,8 @@ export default class BaseWindow {
         this.sendToRendererWithRetry(3, channel, ...args);
     };
 
-    showLoadingScreen = (index?: number) => {
-        this.loadingScreen.show(index);
+    showLoadingScreen = (condition?: () => boolean) => {
+        this.loadingScreen.show(condition);
     };
 
     fadeLoadingScreen = () => {
