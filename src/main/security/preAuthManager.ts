@@ -77,7 +77,7 @@ export class PreAuthManager {
         log.debug('handlePreAuthSecret');
 
         if (!this.isTrustedURL(url)) {
-            log.info(`URL ${url} is not trusted. Skipping pre auth secret`);
+            log.info('URL is not trusted. Skipping pre auth secret');
             return;
         }
 
@@ -92,14 +92,14 @@ export class PreAuthManager {
             modalPromise.then((secret) => {
                 callback(secret.trim());
             }).catch((err) => {
-                log.error('Error processing login request', err);
+                log.error('Error processing login request', {err});
                 callback();
             });
         }
     };
 
     private handleServerRemoved = (serverId: string) => {
-        log.debug('handleServerRemoved', serverId);
+        log.debug('handleServerRemoved', {serverId});
 
         const server = ServerManager.getServer(serverId);
         if (!server) {
@@ -110,7 +110,7 @@ export class PreAuthManager {
         try {
             secureStorage.deleteSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
         } catch (error) {
-            log.warn('Failed to clean up secure secret for removed server:', error);
+            log.warn('Failed to clean up secure secret for removed server:', {error});
         }
     };
 
@@ -144,7 +144,7 @@ export class PreAuthManager {
         }
 
         if (!this.isTrustedURL(urlToCheck)) {
-            log.info(`URL ${url} is not trusted. Skipping certificate selection`);
+            log.info('URL is not trusted. Skipping certificate selection');
             return;
         }
 
@@ -160,7 +160,7 @@ export class PreAuthManager {
             modalPromise.then((data) => {
                 callback(data.cert);
             }).catch((err) => {
-                log.error('Error processing certificate selection', err);
+                log.error('Error processing certificate selection', {err});
                 callback();
             });
         }
@@ -177,7 +177,7 @@ export class PreAuthManager {
         event.preventDefault();
 
         if (!this.isTrustedURL(request.url)) {
-            log.info(`URL ${request.url} is not trusted. Skipping basic auth`);
+            log.info('URL is not trusted. Skipping basic auth');
             return;
         }
 
@@ -193,7 +193,7 @@ export class PreAuthManager {
                 const {username, password} = data;
                 callback(username, password);
             }).catch((err) => {
-                log.error('Error processing login request', err);
+                log.error('Error processing login request', {err});
                 callback();
             });
         }
