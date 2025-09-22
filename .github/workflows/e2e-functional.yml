@@ -28,61 +28,6 @@ on:
         description: "True if this is nightly build"
         required: false
         default: false
-  workflow_call:
-    inputs:
-      version_name:
-        type: string
-        description: "Desktop Version. It can be a branch name or a tag or a commit SHA"
-        required: true
-      instance_details:
-        type: string
-        description: "JSON array of platform details"
-        required: false
-      MM_TEST_USER_NAME:
-        description: "The admin username of the test instance"
-        required: false
-        type: string
-      MM_TEST_PASSWORD:
-        description: "The admin password of the test instance"
-        required: false
-        type: string
-      MM_SERVER_VERSION:
-        type: string
-        description: "The server version to test against"
-        required: true
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
-    outputs:
-      NEW_FAILURES_LINUX:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.NEW_FAILURES_LINUX }}
-      NEW_FAILURES_MACOS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.NEW_FAILURES_MACOS }}
-      NEW_FAILURES_WINDOWS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }}
-      STATUS_LINUX:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.STATUS_LINUX }}
-      STATUS_MACOS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.STATUS_MACOS }}
-      STATUS_WINDOWS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.STATUS_WINDOWS }}
-      REPORT_LINK_LINUX:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.REPORT_LINK_LINUX }}
-      REPORT_LINK_MACOS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.REPORT_LINK_MACOS }}
-      REPORT_LINK_WINDOWS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
 
 jobs:
   prepare-matrix:
