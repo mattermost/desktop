@@ -81,7 +81,7 @@ class NotificationManager {
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: server.url.toString(), isMainFrame: false})) {
-            log.verbose('permissions disallowed', webcontents.id, server.id);
+            log.verbose('permissions disallowed', {webcontentsId: webcontents.id, serverId: server.id});
             return {status: 'not_sent', reason: 'notifications_permission_disallowed'};
         }
 

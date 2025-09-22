@@ -249,7 +249,7 @@ export async function updateServerInfos(servers: MattermostServer[]) {
                 map.set(srv.id, data);
             }).
             catch((error) => {
-                log.warn('Could not get server info', srv.id, error);
+                log.warn('Could not get server info', {serverId: srv.id, error});
             });
     }));
     map.forEach((serverInfo, serverId) => {
