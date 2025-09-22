@@ -35,6 +35,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
@@ -368,8 +369,8 @@ export class MainWindow extends EventEmitter {
         this.win?.browserWindow.webContents.send(SERVER_ADDED, serverId, setAsCurrentServer);
     };
 
-    private handleServerRemoved = (serverId: string) => {
-        this.win?.browserWindow.webContents.send(SERVER_REMOVED, serverId);
+    private handleServerRemoved = (server: MattermostServer) => {
+        this.win?.browserWindow.webContents.send(SERVER_REMOVED, server.id);
     };
 
     private handleServerUrlChanged = (serverId: string) => {

@@ -406,13 +406,8 @@ export class ServerHub {
         }
     };
 
-    private handleServerCleanup = (serverId: string) => {
-        log.debug('handleServerCleanup', {serverId});
-
-        const server = ServerManager.getServer(serverId);
-        if (!server) {
-            return;
-        }
+    private handleServerCleanup = (server: MattermostServer) => {
+        log.debug('handleServerCleanup', {serverId: server.id});
 
         session.defaultSession.clearData({
             origins: [server.url.origin],
