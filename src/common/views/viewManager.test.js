@@ -216,7 +216,7 @@ describe('ViewManager', () => {
             const view2 = viewManager.createView(mockServer, ViewType.TAB);
             const removeViewSpy = jest.spyOn(viewManager, 'removeView');
 
-            ServerManager.mockServerManager.emit(SERVER_REMOVED, mockServer.id);
+            ServerManager.mockServerManager.emit(SERVER_REMOVED, mockServer);
 
             expect(removeViewSpy).toHaveBeenCalledWith(view1.id);
             expect(removeViewSpy).toHaveBeenCalledWith(view2.id);
@@ -234,7 +234,7 @@ describe('ViewManager', () => {
             const view2 = viewManager.createView(otherServer, ViewType.TAB);
             const removeViewSpy = jest.spyOn(viewManager, 'removeView');
 
-            ServerManager.mockServerManager.emit(SERVER_REMOVED, mockServer.id);
+            ServerManager.mockServerManager.emit(SERVER_REMOVED, mockServer);
 
             expect(removeViewSpy).toHaveBeenCalledWith(view1.id);
             expect(removeViewSpy).not.toHaveBeenCalledWith(view2.id);
