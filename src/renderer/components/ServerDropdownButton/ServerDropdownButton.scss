@@ -18,11 +18,21 @@
     }
 
     &:not(.disabled):hover, &:not(.disabled):focus {
-        background-color: rgba(var(--center-channel-bg-rgb), 0.32);
+        background-color: rgba(var(--center-channel-bg-rgb), 0.50);
+
+        .ServerDropdownButton__badge-unreads {
+            box-shadow: 0 0 0 2px rgba(var(--center-channel-bg-rgb), 0.50),
+                        0 0 0 2px rgba(var(--center-channel-color-rgb), 0.08), 
+                        0 0 0 2px var(--center-channel-bg);
+        }
     }
 
     &.isMenuOpen, &.isMenuOpen:hover, &.isMenuOpen:focus {
         background-color: var(--center-channel-bg);
+
+        .ServerDropdownButton__badge-unreads {
+            box-shadow: 0 0 0 2px var(--center-channel-bg);
+        }
     }
 
     > span {
@@ -65,13 +75,14 @@
 .ServerDropdownButton__badge-unreads {
     background: var(--sidebar-text-active-border);
     border-radius: 100px;
-    width: 9px;
-    height: 9px;
+    width: 5px;
+    height: 5px;
     position: absolute;
-    top: -12px;
-    right: 0px;
-    border: 2px solid var(--center-channel-bg);
+    top: -10px;
+    right: 2px;
     box-sizing: border-box;
+    box-shadow: 0 0 0 2px rgba(var(--center-channel-color-rgb), 0.08), 
+                0 0 0 2px var(--center-channel-bg);
 
     &.mentions {
         background: var(--error-text);
