@@ -1,8 +1,6 @@
 name: Electron Playwright Tests
 
 on:
-  pull_request:
-    types: [labeled]
   workflow_dispatch:
     inputs:
       version_name:
