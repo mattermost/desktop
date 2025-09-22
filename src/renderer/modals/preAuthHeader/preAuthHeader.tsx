@@ -21,7 +21,7 @@ const handleSubmit = (secret: string) => {
 };
 
 const getPreAuthInfo = () => {
-    return window.desktop.modals.getModalInfo<{url: string}>();
+    return window.desktop.modals.getModalInfo<{url: string; hasError: boolean}>();
 };
 
 const start = async () => {

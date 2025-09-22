@@ -46,7 +46,7 @@ export class PreAuthManager {
                         return;
                     }
                     callback({responseHeaders: details.responseHeaders});
-                });
+                }, Boolean(server.preAuthSecret));
 
                 return true;
             }
@@ -73,6 +73,7 @@ export class PreAuthManager {
     private handlePreAuthSecret = (
         url: string,
         callback: (preAuthSecret?: string) => void,
+        hasError: boolean,
     ) => {
         log.debug('handlePreAuthSecret');
 
@@ -86,8 +87,8 @@ export class PreAuthManager {
             return;
         }
         const modalKey = `${ModalConstants.PRE_AUTH_MODAL}-${url}`;
-        const modalPromise = ModalManager.addModal<{url: string}, string>(
-            modalKey, preAuthModalHtml, preload, {url}, mainWindow);
+        const modalPromise = ModalManager.addModal<{url: string; hasError: boolean}, string>(
+            modalKey, preAuthModalHtml, preload, {url, hasError}, mainWindow);
         if (modalPromise) {
             modalPromise.then((secret) => {
                 callback(secret.trim());

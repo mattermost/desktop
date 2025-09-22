@@ -11,7 +11,7 @@ import {Modal} from 'renderer/components/Modal';
 type Props = {
     onCancel: () => void;
     onSubmit: (secret: string) => void;
-    getPreAuthInfo: () => Promise<{url: string}>;
+    getPreAuthInfo: () => Promise<{url: string; hasError: boolean}>;
 };
 
 export default function PreAuthHeaderModal({onCancel, onSubmit, getPreAuthInfo}: Props) {
@@ -20,10 +20,12 @@ export default function PreAuthHeaderModal({onCancel, onSubmit, getPreAuthInfo}:
     const [secret, setSecret] = useState('');
     const [showSecret, setShowSecret] = useState(false);
     const [requestUrl, setRequestUrl] = useState('');
+    const [hasError, setHasError] = useState(false);
 
     const getPreAuthInfoData = useCallback(async () => {
-        const {url} = await getPreAuthInfo();
+        const {url, hasError} = await getPreAuthInfo();
         setRequestUrl(url);
+        setHasError(hasError);
     }, [getPreAuthInfo]);
 
     useEffect(() => {
@@ -39,6 +41,7 @@ export default function PreAuthHeaderModal({onCancel, onSubmit, getPreAuthInfo}:
     }, [onCancel]);
 
     const onChangeSecret = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setHasError(false);
         setSecret(e.target.value);
     }, []);
 
@@ -67,6 +70,7 @@ export default function PreAuthHeaderModal({onCancel, onSubmit, getPreAuthInfo}:
                     values={{url: requestUrl}}
                 />
             }
+            isConfirmDisabled={!secret}
         >
             <Input
                 id='preAuthHeaderModalSecret'
@@ -74,7 +78,13 @@ export default function PreAuthHeaderModal({onCancel, onSubmit, getPreAuthInfo}:
                 type={showSecret ? 'text' : 'password'}
                 inputSize={SIZE.LARGE}
                 onChange={onChangeSecret}
-                customMessage={({
+                customMessage={(hasError ? {
+                    type: STATUS.ERROR,
+                    value: intl.formatMessage({
+                        id: 'renderer.components.newServerModal.secureSecret.error',
+                        defaultMessage: 'The provided authentication secret is incorrect.',
+                    }),
+                } : {
                     type: STATUS.INFO,
                     value: intl.formatMessage({
                         id: 'renderer.components.newServerModal.secureSecret.info',
