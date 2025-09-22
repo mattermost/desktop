@@ -452,7 +452,7 @@ export class ServerHub {
     };
 
     private handleAddServer = async (event: IpcMainEvent, server: Server) => {
-        log.debug('handleAddServer'); 
+        log.debug('handleAddServer');
 
         ServerManager.addServer(server);
     };

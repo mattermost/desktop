@@ -35,7 +35,7 @@ export class PreAuthManager {
         details: Electron.OnHeadersReceivedListenerDetails,
         callback: (headersReceivedResponse: Electron.HeadersReceivedResponse) => void,
     ) => {
-        if (details.responseHeaders?.['X-Reject-Reason']?.includes('pre-auth')) {
+        if (details.responseHeaders?.['x-reject-reason']?.includes('pre-auth')) {
             const server = ServerManager.lookupServerByURL(details.url);
             if (server) {
                 this.handlePreAuthSecret(server.url.toString(), async (secret) => {
