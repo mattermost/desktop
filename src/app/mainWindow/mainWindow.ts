@@ -35,6 +35,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
@@ -81,7 +82,7 @@ export class MainWindow extends EventEmitter {
             title: app.name,
             fullscreen: this.shouldStartFullScreen(),
         });
-        log.debug('main window options', windowOptions);
+        log.debug('main window options', {windowOptions});
 
         this.win = new BaseWindow(windowOptions);
         if (!this.win) {
@@ -111,7 +112,7 @@ export class MainWindow extends EventEmitter {
         performanceMonitor.registerView('MainWindow', this.win.browserWindow.webContents);
         this.win.browserWindow.loadURL(localURL).catch(
             (reason) => {
-                log.error('failed to load', reason);
+                log.error('failed to load', {reason});
             });
 
         this.emit(MAIN_WINDOW_CREATED);
@@ -189,7 +190,7 @@ export class MainWindow extends EventEmitter {
                 throw new Error('Provided bounds info file does not validate, using defaults instead.');
             }
             const matchingScreen = screen.getDisplayMatching(savedWindowState);
-            log.debug('closest matching screen for main window', matchingScreen);
+            log.debug('closest matching screen for main window', {matchingScreen});
             if (!(isInsideRectangle(matchingScreen.bounds, savedWindowState) || savedWindowState.maximized)) {
                 throw new Error('Provided bounds info are outside the bounds of your screen, using defaults instead.');
             }
@@ -222,11 +223,11 @@ export class MainWindow extends EventEmitter {
             fullscreen: window.isFullScreen(),
         };
         try {
-            log.debug('saving window state', windowState);
+            log.debug('saving window state', {windowState});
             fs.writeFileSync(file, JSON.stringify(windowState));
         } catch (e) {
         // [Linux] error happens only when the window state is changed before the config dir is created.
-            log.error('failed to save window state', e);
+            log.error('failed to save window state', {e});
         }
     };
 
@@ -285,7 +286,7 @@ export class MainWindow extends EventEmitter {
         if (global.willAppQuit) { // when [Ctrl|Cmd]+Q
             this.saveWindowState(boundsInfoPath, this.win.browserWindow);
         } else { // Minimize or hide the window for close button.
-            log.info('onClose', event);
+            log.info('onClose', {event});
             event.preventDefault();
             function hideWindow(window?: BrowserWindow) {
                 window?.blur(); // To move focus to the next top-level window in Windows
@@ -368,8 +369,8 @@ export class MainWindow extends EventEmitter {
         this.win?.browserWindow.webContents.send(SERVER_ADDED, serverId, setAsCurrentServer);
     };
 
-    private handleServerRemoved = (serverId: string) => {
-        this.win?.browserWindow.webContents.send(SERVER_REMOVED, serverId);
+    private handleServerRemoved = (server: MattermostServer) => {
+        this.win?.browserWindow.webContents.send(SERVER_REMOVED, server.id);
     };
 
     private handleServerUrlChanged = (serverId: string) => {

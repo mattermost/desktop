@@ -86,7 +86,7 @@ export class DownloadsDropdownMenuView {
     };
 
     private updateItem = (event: IpcMainEvent, item: DownloadedItem) => {
-        log.debug('updateItem', {item});
+        log.debug('updateItem');
 
         this.item = item;
         this.updateDownloadsDropdownMenu();
@@ -105,15 +105,13 @@ export class DownloadsDropdownMenuView {
     };
 
     private handleOpen = (event: IpcMainEvent, payload: DownloadsMenuOpenEventPayload = {} as DownloadsMenuOpenEventPayload) => {
-        log.debug('handleOpen', {bounds: this.bounds, payload});
+        log.debug('handleOpen');
 
         if (!(this.bounds && this.view && this.windowBounds)) {
             return;
         }
 
         const {item, coordinates} = payload;
-
-        log.debug('handleOpen', {item, coordinates});
 
         this.open = true;
         this.coordinates = coordinates;

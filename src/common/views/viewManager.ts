@@ -14,7 +14,7 @@ import {
     VIEW_TYPE_ADDED,
 } from 'common/communication';
 import Config from 'common/config';
-import {Logger, getLevel} from 'common/log';
+import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
@@ -80,7 +80,7 @@ export class ViewManager extends EventEmitter {
     };
 
     createView = (server: MattermostServer, type: ViewType) => {
-        log.debug('createView', server.id, server.name, type);
+        log.debug('createView', {serverId: server.id, type});
 
         if (this.isViewLimitReached()) {
             log.warn(`createView: View limit reached for server ${server.id}`);
@@ -100,7 +100,7 @@ export class ViewManager extends EventEmitter {
     };
 
     updateViewTitle = (viewId: string, channelName?: string, teamName?: string) => {
-        log.debug('updateViewTitle', viewId, channelName, teamName);
+        log.debug('updateViewTitle', {viewId});
 
         const view = this.views.get(viewId);
         if (!view) {
@@ -115,7 +115,7 @@ export class ViewManager extends EventEmitter {
     };
 
     updateViewType = (viewId: string, type: ViewType) => {
-        log.debug('updateViewType', viewId, type);
+        log.debug('updateViewType', {viewId, type});
 
         const view = this.views.get(viewId);
         if (!view || view.type === type) {
@@ -128,7 +128,7 @@ export class ViewManager extends EventEmitter {
     };
 
     setPrimaryView = (viewId: string) => {
-        log.debug('setPrimaryView', viewId);
+        log.debug('setPrimaryView', {viewId});
 
         const view = this.views.get(viewId);
         if (!view) {
@@ -140,7 +140,7 @@ export class ViewManager extends EventEmitter {
     };
 
     removeView = (viewId: string) => {
-        log.debug('removeView', viewId);
+        log.debug('removeView', {viewId});
 
         const view = this.views.get(viewId);
         if (!view) {
@@ -169,21 +169,16 @@ export class ViewManager extends EventEmitter {
         }
         const server = ServerManager.getServer(view.serverId);
         if (!server) {
-            return new Logger(...additionalPrefixes, ...this.includeId(viewId));
+            return new Logger(...additionalPrefixes, viewId);
         }
-        return new Logger(...additionalPrefixes, ...this.includeId(viewId, server.name));
+        return new Logger(...additionalPrefixes, server.id, viewId);
     };
 
-    private includeId = (id: string, ...prefixes: string[]) => {
-        const shouldInclude = ['debug', 'silly'].includes(getLevel());
-        return shouldInclude ? [id, ...prefixes] : prefixes;
-    };
-
-    private handleServerWasRemoved = (serverId: string) => {
-        log.debug('handleServerWasRemoved', serverId);
+    private handleServerWasRemoved = (server: MattermostServer) => {
+        log.debug('handleServerWasRemoved', {serverId: server.id});
 
         this.views.forEach((view) => {
-            if (view.serverId === serverId) {
+            if (view.serverId === server.id) {
                 this.removeView(view.id);
             }
         });

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain} from 'electron';
+import {ipcMain, session} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -22,6 +22,7 @@ import {
     GET_LAST_ACTIVE,
     SERVER_SWITCHED,
     GET_CURRENT_SERVER,
+    SERVER_REMOVED,
 } from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
@@ -59,6 +60,7 @@ export class ServerHub {
         ipcMain.handle(GET_CURRENT_SERVER, this.handleGetCurrentServer);
 
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
+        ServerManager.on(SERVER_REMOVED, this.handleServerCleanup);
     }
 
     // TODO: Move me somewhere else later
@@ -84,7 +86,7 @@ export class ServerHub {
      */
 
     showNewServerModal = (prefillURL?: string) => {
-        log.debug('showNewServerModal', {prefillURL});
+        log.debug('showNewServerModal');
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -123,7 +125,7 @@ export class ServerHub {
     private handleShowNewServerModal = () => this.showNewServerModal();
 
     private showEditServerModal = (e: IpcMainEvent, id: string) => {
-        log.debug('showEditServerModal', id);
+        log.debug('showEditServerModal', {id});
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -158,7 +160,7 @@ export class ServerHub {
     };
 
     private showRemoveServerModal = (e: IpcMainEvent, id: string) => {
-        log.debug('handleRemoveServerModal', id);
+        log.debug('handleRemoveServerModal', {id});
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -201,7 +203,7 @@ export class ServerHub {
      */
 
     private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string, preAuthSecret?: string): Promise<URLValidationResult> => {
-        log.debug('handleServerURLValidation', url, currentId);
+        log.verbose('handleServerURLValidation', {currentId});
 
         // If the URL is missing or null, reject
         if (!url) {
@@ -249,6 +251,8 @@ export class ServerHub {
         if ('data' in httpsResult) {
             remoteInfo = httpsResult.data;
         } else {
+            log.debug('handleServerURLValidation: HTTPS test failed', {error: httpsResult.error});
+
             // Check if HTTPS returned 403
             const httpsIs403 = httpsResult.error?.statusCode === 403;
 
@@ -259,6 +263,8 @@ export class ServerHub {
                     remoteInfo = httpResult.data;
                     remoteURL = insecureURL;
                 } else {
+                    log.debug('handleServerURLValidation: HTTP test failed', {error: httpResult.error});
+
                     // Both HTTPS and HTTP failed
                     const httpIs403 = httpResult.error?.statusCode === 403;
                     if (httpsIs403 || httpIs403) {
@@ -352,7 +358,7 @@ export class ServerHub {
     };
 
     private handleAddServer = async (event: IpcMainEvent, server: Server & {preAuthSecret?: string}) => {
-        log.debug('handleAddServer', server);
+        log.debug('handleAddServer');
 
         const newServer = ServerManager.addServer(server);
 
@@ -361,7 +367,7 @@ export class ServerHub {
     };
 
     private handleEditServer = async (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
-        log.debug('handleEditServer', server, permissions);
+        log.debug('handleEditServer', {serverId: server.id});
 
         if (!server.id) {
             return;
@@ -382,7 +388,7 @@ export class ServerHub {
     };
 
     private handleRemoveServer = async (event: IpcMainEvent, serverId: string) => {
-        log.debug('handleRemoveServer', serverId);
+        log.debug('handleRemoveServer', {serverId});
 
         const server = ServerManager.getServer(serverId);
         if (!server) {
@@ -398,6 +404,14 @@ export class ServerHub {
         } catch (error) {
             log.warn('Failed to clean up secure secret for removed server:', error);
         }
+    };
+
+    private handleServerCleanup = (server: MattermostServer) => {
+        log.debug('handleServerCleanup', {serverId: server.id});
+
+        session.defaultSession.clearData({
+            origins: [server.url.origin],
+        });
     };
 
     private handleGetLastActive = () => {

@@ -45,7 +45,7 @@ class NotificationManager {
     }
 
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
-        log.debug('displayMention', {channelId, teamId, url, silent, soundName});
+        log.debug('displayMention', {silent, soundName});
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');
@@ -59,17 +59,17 @@ class NotificationManager {
 
         const view = WebContentsManager.getViewByWebContentsId(webcontents.id);
         if (!view) {
-            log.error('missing view', webcontents.id);
+            log.error('missing view', {webcontentsId: webcontents.id});
             return {status: 'error', reason: 'missing_view'};
         }
         const server = ServerManager.getServer(view.serverId);
         if (!server) {
-            log.error('missing server', view.serverId);
+            log.error('missing server', {serverId: view.serverId});
             return {status: 'error', reason: 'missing_server'};
         }
         const serverName = server.name;
         if (!viewManager.isPrimaryView(view.id)) {
-            log.debug('should not notify for this view', webcontents.id);
+            log.debug('should not notify for this view', {webcontentsId: webcontents.id});
             return {status: 'not_sent', reason: 'view_should_not_notify'};
         }
 
@@ -81,7 +81,7 @@ class NotificationManager {
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: server.url.toString(), isMainFrame: false})) {
-            log.verbose('permissions disallowed', webcontents.id, serverName, server.url.toString());
+            log.verbose('permissions disallowed', {webcontentsId: webcontents.id, serverId: server.id});
             return {status: 'not_sent', reason: 'notifications_permission_disallowed'};
         }
 
@@ -89,7 +89,7 @@ class NotificationManager {
         this.allActiveNotifications?.set(mention.uId, mention);
 
         mention.on('click', () => {
-            log.debug('notification click', serverName, mention.uId);
+            log.debug('notification click', server.id, mention.uId);
 
             this.allActiveNotifications?.delete(mention.uId);
 
@@ -111,7 +111,7 @@ class NotificationManager {
         return new Promise((resolve) => {
             // If mention never shows somehow, resolve the promise after 10s
             const timeout = setTimeout(() => {
-                log.debug('notification timeout', serverName, mention.uId);
+                log.debug('notification timeout', server.id, mention.uId);
                 resolve({status: 'error', reason: 'notification_timeout'});
             }, 10000);
             let failed = false;
@@ -120,13 +120,13 @@ class NotificationManager {
                 // Ensure the failed event isn't also called, if it is we should resolve using its method
                 setTimeout(() => {
                     if (!failed) {
-                        log.debug('displayMention.show', serverName, mention.uId);
+                        log.debug('displayMention.show', server.id, mention.uId);
 
                         // On Windows, manually dismiss notifications from the same channel and only show the latest one
                         if (process.platform === 'win32') {
                             const mentionKey = `${mention.teamId}:${mention.channelId}`;
                             if (this.mentionsPerChannel?.has(mentionKey)) {
-                                log.debug(`close ${mentionKey}`);
+                                log.debug('close');
                                 this.mentionsPerChannel?.get(mentionKey)?.close();
                                 this.mentionsPerChannel?.delete(mentionKey);
                             }
@@ -153,7 +153,7 @@ class NotificationManager {
                     log.warn('notifications disabled in Windows settings');
                     resolve({status: 'not_sent', reason: 'windows_permissions_denied'});
                 } else {
-                    log.error('notification failed to show', serverName, mention.uId, error);
+                    log.error('notification failed to show', server.id, mention.uId, error);
                     resolve({status: 'error', reason: 'electron_notification_failed', data: error});
                 }
             });
@@ -162,7 +162,7 @@ class NotificationManager {
     }
 
     public async displayDownloadCompleted(fileName: string, path: string, serverName: string) {
-        log.debug('displayDownloadCompleted', {fileName, path, serverName});
+        log.debug('displayDownloadCompleted');
 
         if (!Notification.isSupported()) {
             log.error('notification not supported');
@@ -255,7 +255,7 @@ export async function getDoNotDisturb() {
             const dnd = await getDarwinDoNotDisturb();
             return dnd;
         } catch (e) {
-            log.warn('macOS DND check threw an error', e);
+            log.warn('macOS DND check threw an error', {e});
             return false;
         }
     }
