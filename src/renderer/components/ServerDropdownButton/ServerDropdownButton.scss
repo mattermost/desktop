@@ -62,37 +62,13 @@
     position: relative;
 }
 
-.ServerDropdownButton__badge-count {
-    background: var(--error-text);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    color: white;
-    font-size: 9px;
-    padding: 0px 5px;
-    font-family: "Open Sans", sans-serif;
-    font-weight: bold;
-    letter-spacing: normal;
-    -webkit-font-smoothing: auto;
-
-    position: absolute;
-    top: -4px;
-    right: -2px;
-    border: 2px solid var(--center-channel-bg);
-    height: 12px;
-    line-height: 12px;
-    box-sizing: unset;
-}
-
 .ServerDropdownButton__badge-unreads {
     background: var(--sidebar-text-active-border);
     border-radius: 100px;
     width: 9px;
     height: 9px;
     position: absolute;
-    top: -2px;
+    top: -12px;
     right: 0px;
     border: 2px solid var(--center-channel-bg);
     box-sizing: border-box;

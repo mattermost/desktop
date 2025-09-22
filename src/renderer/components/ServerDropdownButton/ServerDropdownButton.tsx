@@ -74,8 +74,8 @@ const ServerDropdownButton: React.FC<Props> = (props: Props) => {
                 event.stopPropagation();
             }}
         >
+            <i className='icon-server-variant'/>
             <div className='ServerDropdownButton__badge'>
-                <i className='icon-server-variant'/>
                 {badgeDiv}
             </div>
             {activeServerName && <span>{activeServerName}</span>}
