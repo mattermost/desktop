@@ -174,11 +174,11 @@ export class ViewManager extends EventEmitter {
         return new Logger(...additionalPrefixes, server.id, viewId);
     };
 
-    private handleServerWasRemoved = (serverId: string) => {
-        log.debug('handleServerWasRemoved', {serverId});
+    private handleServerWasRemoved = (server: MattermostServer) => {
+        log.debug('handleServerWasRemoved', {serverId: server.id});
 
         this.views.forEach((view) => {
-            if (view.serverId === serverId) {
+            if (view.serverId === server.id) {
                 this.removeView(view.id);
             }
         });

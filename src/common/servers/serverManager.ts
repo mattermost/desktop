@@ -217,7 +217,10 @@ export class ServerManager extends EventEmitter {
     removeServer = (serverId: string) => {
         log.debug('removeServer', {serverId});
 
-        this.emit(SERVER_REMOVED, serverId);
+        const server = this.servers.get(serverId);
+        if (!server) {
+            return;
+        }
 
         const index = this.serverOrder.findIndex((id) => id === serverId);
         this.serverOrder.splice(index, 1);
@@ -230,6 +233,7 @@ export class ServerManager extends EventEmitter {
             this.updateCurrentServer(nextServer);
         }
 
+        this.emit(SERVER_REMOVED, server);
         this.persistServers();
     };
 
