@@ -6,6 +6,7 @@ import {ipcMain, shell} from 'electron';
 import isDev from 'electron-is-dev';
 
 import popoutMenu from 'app/popoutMenu';
+import WebContentsEventManager from 'app/views/webContentEvents';
 import type BaseWindow from 'app/windows/baseWindow';
 import AppState from 'common/appState';
 import {
@@ -101,6 +102,7 @@ export class WebContentsManager {
         webContentsView.load(view.getLoadingURL());
 
         this.addViewToMap(webContentsView);
+        WebContentsEventManager.addWebContentsEventListeners(webContentsView.getWebContentsView().webContents);
         return webContentsView;
     };
 
@@ -117,6 +119,8 @@ export class WebContentsManager {
     };
 
     private addViewToMap = (view: MattermostWebContentsView): void => {
+        log.debug('addViewToMap', {viewId: view.id, webContentsId: view.webContentsId});
+
         this.webContentsViews.set(view.id, view);
         this.webContentsIdToView.set(view.webContentsId, view);
 
@@ -152,7 +156,7 @@ export class WebContentsManager {
     };
 
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
-        log.debug('handleTabLoggedIn', event.sender.id);
+        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id});
         const view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return;
@@ -176,7 +180,7 @@ export class WebContentsManager {
     };
 
     private handleReactAppInitialized = (e: IpcMainEvent) => {
-        log.debug('handleReactAppInitialized', e.sender.id);
+        log.debug('handleReactAppInitialized', {webContentsId: e.sender.id});
 
         const view = this.getViewByWebContentsId(e.sender.id);
         if (view) {
@@ -255,7 +259,7 @@ export class WebContentsManager {
     };
 
     private handleOpenPopoutMenu = (_: IpcMainEvent, viewId: string) => {
-        log.debug('handleOpenPopoutMenu', viewId);
+        log.debug('handleOpenPopoutMenu', {viewId});
 
         popoutMenu(viewId);
     };

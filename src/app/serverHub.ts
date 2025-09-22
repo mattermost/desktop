@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain} from 'electron';
+import {ipcMain, session} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -22,6 +22,7 @@ import {
     GET_LAST_ACTIVE,
     SERVER_SWITCHED,
     GET_CURRENT_SERVER,
+    SERVER_REMOVED,
 } from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
@@ -56,6 +57,7 @@ export class ServerHub {
         ipcMain.handle(GET_CURRENT_SERVER, this.handleGetCurrentServer);
 
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
+        ServerManager.on(SERVER_REMOVED, this.handleServerCleanup);
     }
 
     // TODO: Move me somewhere else later
@@ -81,7 +83,7 @@ export class ServerHub {
      */
 
     showNewServerModal = (prefillURL?: string) => {
-        log.debug('showNewServerModal', {prefillURL});
+        log.debug('showNewServerModal');
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -118,7 +120,7 @@ export class ServerHub {
     private handleShowNewServerModal = () => this.showNewServerModal();
 
     private showEditServerModal = (e: IpcMainEvent, id: string) => {
-        log.debug('showEditServerModal', id);
+        log.debug('showEditServerModal', {id});
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -150,7 +152,7 @@ export class ServerHub {
     };
 
     private showRemoveServerModal = (e: IpcMainEvent, id: string) => {
-        log.debug('handleRemoveServerModal', id);
+        log.debug('handleRemoveServerModal', {id});
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -190,7 +192,7 @@ export class ServerHub {
         url?: string,
         currentId?: string,
     ): Promise<URLValidationResult> => {
-        log.verbose('handleServerURLValidation', currentId);
+        log.verbose('handleServerURLValidation', {currentId});
 
         // If the URL is missing or null, reject
         if (!url) {
@@ -249,7 +251,7 @@ export class ServerHub {
             log.debug('handleServerURLValidation: HTTPS test successful');
             remoteInfo = httpsResult.data;
         } else {
-            log.debug('handleServerURLValidation: HTTPS test failed, error:', {...httpsResult.error});
+            log.debug('handleServerURLValidation: HTTPS test failed', {error: httpsResult.error});
 
             // Check if HTTPS returned 403
             const httpsNeedsPreAuth = httpsResult.error?.errorReason?.needsPreAuth;
@@ -264,7 +266,7 @@ export class ServerHub {
                     remoteInfo = httpResult.data;
                     remoteURL = insecureURL;
                 } else {
-                    log.debug('handleServerURLValidation: HTTP test failed, error:', httpResult.error);
+                    log.debug('handleServerURLValidation: HTTP test failed', {error: httpResult.error});
 
                     // Both HTTPS and HTTP failed
                     const httpNeedsPreAuth = httpResult.error?.errorReason?.needsPreAuth;
@@ -450,13 +452,13 @@ export class ServerHub {
     };
 
     private handleAddServer = async (event: IpcMainEvent, server: Server) => {
-        log.debug('handleAddServer', server);
+        log.debug('handleAddServer'); 
 
         ServerManager.addServer(server);
     };
 
     private handleEditServer = async (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
-        log.debug('handleEditServer', server, permissions);
+        log.debug('handleEditServer', {serverId: server.id});
 
         if (!server.id) {
             return;
@@ -474,10 +476,23 @@ export class ServerHub {
     };
 
     private handleRemoveServer = async (event: IpcMainEvent, serverId: string) => {
-        log.debug('handleRemoveServer', serverId);
+        log.debug('handleRemoveServer', {serverId});
 
         // Remove the server from ServerManager
         ServerManager.removeServer(serverId);
+    };
+
+    private handleServerCleanup = (serverId: string) => {
+        log.debug('handleServerCleanup', {serverId});
+
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            return;
+        }
+
+        session.defaultSession.clearData({
+            origins: [server.url.origin],
+        });
     };
 
     private handleGetLastActive = () => {

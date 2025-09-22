@@ -33,7 +33,7 @@ export async function getServerAPI(
 
         if (!userId || !csrf || !authToken) {
             // Missing cookies needed for req
-            log.error(`Cannot authenticate, required cookies for ${url.origin} not found`);
+            log.error('Cannot authenticate, required cookies not found');
             return;
         }
     }
@@ -46,11 +46,11 @@ export async function getServerAPI(
 
     if (onSuccess) {
         req.on('response', (response: Electron.IncomingMessage) => {
-            log.silly('response', response);
+            log.silly('response');
             if (response.statusCode === 200) {
                 let raw = '';
                 response.on('data', (chunk: Buffer) => {
-                    log.silly('response.data', `${chunk}`);
+                    log.silly('response.data');
                     raw += `${chunk}`;
                 });
                 response.on('end', () => {

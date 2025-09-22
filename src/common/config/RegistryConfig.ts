@@ -44,7 +44,7 @@ export default class RegistryConfig extends EventEmitter {
                     this.data.servers!.push(...servers);
                 }
             } catch (error) {
-                log.warn('Nothing retrieved for \'DefaultServerList\'', error);
+                log.warn('Nothing retrieved for \'DefaultServerList\'', {error});
             }
 
             // extract EnableServerManagement from the registry
@@ -54,7 +54,7 @@ export default class RegistryConfig extends EventEmitter {
                     this.data.enableServerManagement = enableServerManagement;
                 }
             } catch (error) {
-                log.warn('Nothing retrieved for \'EnableServerManagement\'', error);
+                log.warn('Nothing retrieved for \'EnableServerManagement\'', {error});
             }
 
             // extract EnableAutoUpdater from the registry
@@ -64,7 +64,7 @@ export default class RegistryConfig extends EventEmitter {
                     this.data.enableAutoUpdater = enableAutoUpdater;
                 }
             } catch (error) {
-                log.warn('Nothing retrieved for \'EnableAutoUpdater\'', error);
+                log.warn('Nothing retrieved for \'EnableAutoUpdater\'', {error});
             }
         }
 

@@ -41,7 +41,7 @@ export function handleGetLocalConfiguration() {
 }
 
 export function updateConfiguration(event: Electron.IpcMainEvent, properties: Array<{key: keyof CurrentConfig; data: CurrentConfig[keyof CurrentConfig]}> = []) {
-    log.debug('updateConfiguration', properties);
+    log.debug('updateConfiguration');
 
     if (properties.length) {
         const newData = properties.reduce((obj, data) => {
@@ -64,7 +64,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
     }
 
     log.debug('handleConfigUpdate');
-    log.silly('handleConfigUpdate', newConfig);
 
     if (!newConfig) {
         return;
@@ -77,16 +76,16 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         try {
             app.setPath('downloads', newConfig.downloadLocation);
         } catch (e) {
-            log.error(`There was a problem trying to set the default download path: ${e}`);
+            log.error('There was a problem trying to set the default download path', {e});
         }
     }
 
     if (process.platform === 'win32' || process.platform === 'linux') {
         const autoStartTask = newConfig.autostart ? AutoLauncher.enable() : AutoLauncher.disable();
         autoStartTask.then(() => {
-            log.info('config.autostart has been configured:', newConfig.autostart);
+            log.info('config.autostart has been configured:', {autostart: newConfig.autostart});
         }).catch((err) => {
-            log.error('error:', err);
+            log.error('error:', {err});
         });
     }
 
@@ -103,14 +102,14 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
 }
 
 export function handleDarkModeChange(darkMode: boolean) {
-    log.debug('handleDarkModeChange', darkMode);
+    log.debug('handleDarkModeChange', {darkMode});
 
     Tray.refreshImages(Config.trayIconTheme);
     ipcMain.emit(EMIT_CONFIGURATION, true, Config.data);
 }
 
 export function handleDeveloperModeUpdated(json: DeveloperSettings) {
-    log.debug('handleDeveloperModeUpdated', json);
+    log.debug('handleDeveloperModeUpdated', {json});
 
     if (['browserOnly', 'disableContextMenu'].some((key) => Object.hasOwn(json, key))) {
         ServerManager.init();

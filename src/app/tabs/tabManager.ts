@@ -128,7 +128,7 @@ export class TabManager extends EventEmitter {
     };
 
     updateTabOrder = (serverId: string, viewIds: string[]) => {
-        log.debug('updateTabOrder', serverId, viewIds);
+        log.debug('updateTabOrder', {serverId, viewIds});
 
         if (viewIds.length === 0) {
             this.tabOrder.delete(serverId);
@@ -154,7 +154,7 @@ export class TabManager extends EventEmitter {
     };
 
     switchToTab = (viewId: string) => {
-        log.debug('switchToTab', viewId);
+        log.debug('switchToTab', {viewId});
 
         if (this.isActiveTab(viewId)) {
             log.silly(`switchToTab: Tab ${viewId} is already active, will not show`);
@@ -300,7 +300,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleViewUpdated = (viewId: string) => {
-        log.debug('handleViewUpdated', viewId);
+        log.debug('handleViewUpdated', {viewId});
 
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.TAB) {
@@ -309,7 +309,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleSetCurrentTabViewBounds = (newBounds: Electron.Rectangle) => {
-        log.silly('handleSetCurrentViewBounds', newBounds);
+        log.silly('handleSetCurrentViewBounds', {newBounds});
 
         const currentView = this.getCurrentActiveTabView();
         if (currentView && currentView.currentURL) {
@@ -319,7 +319,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleServerCurrentChanged = (serverId: string) => {
-        log.debug('handleServerCurrentChanged', serverId);
+        log.debug('handleServerCurrentChanged', {serverId});
 
         const tab = this.getCurrentTabForServer(serverId);
         if (tab) {
@@ -426,7 +426,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleCreateNewTab = (serverId: string) => {
-        log.debug('handleCreateNewTab', serverId);
+        log.debug('handleCreateNewTab', {serverId});
 
         const server = ServerManager.getServer(serverId);
         if (!server) {
@@ -440,7 +440,7 @@ export class TabManager extends EventEmitter {
         if (this.isActiveTab(viewId)) {
             const currentTabs = this.tabOrder.get(serverId);
             if (!currentTabs) {
-                log.error('handleCloseTab: No tabs found for server', serverId);
+                log.error('handleCloseTab: No tabs found for server', {serverId});
                 return;
             }
 
