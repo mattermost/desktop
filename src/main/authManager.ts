@@ -33,7 +33,7 @@ export class AuthManager {
     }
 
     handleAppLogin = (event: Event, webContents: WebContents, request: AuthenticationResponseDetails, authInfo: AuthInfo, callback?: (username?: string, password?: string) => void) => {
-        log.verbose('handleAppLogin', {request, authInfo});
+        log.verbose('handleAppLogin');
 
         event.preventDefault();
         const parsedURL = parseURL(request.url);
@@ -95,7 +95,7 @@ export class AuthManager {
     handleLoginCredentialsEvent = (request: AuthenticationResponseDetails, username?: string, password?: string) => {
         const callback = this.loginCallbackMap.get(request.url);
         if (typeof callback === 'undefined') {
-            log.error(`Failed to retrieve login callback for ${request.url}`);
+            log.error('Failed to retrieve login callback');
             return;
         }
         if (callback != null) {
@@ -105,7 +105,7 @@ export class AuthManager {
     };
 
     handleCancelLoginEvent = (request: AuthenticationResponseDetails) => {
-        log.info(`Cancelling request for ${request ? request.url : 'unknown'}`);
+        log.info('Cancelling request');
         this.handleLoginCredentialsEvent(request); // we use undefined to cancel the request
     };
 

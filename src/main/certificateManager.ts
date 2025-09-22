@@ -28,7 +28,7 @@ export class CertificateManager {
     }
 
     handleSelectCertificate = (event: Event, webContents: WebContents, url: string, list: Certificate[], callback: (certificate?: Certificate | undefined) => void) => {
-        log.verbose('handleSelectCertificate', url, list);
+        log.verbose('handleSelectCertificate');
 
         if (list.length > 1) {
             event.preventDefault(); // prevent the app from getting the first certificate available
@@ -63,7 +63,7 @@ export class CertificateManager {
     handleSelectedCertificate = (server: string, cert?: Certificate) => {
         const callback = this.certificateRequestCallbackMap.get(server);
         if (!callback) {
-            log.error(`there was no callback associated with: ${server}`);
+            log.error('there was no callback associated');
             return;
         }
         if (typeof cert === 'undefined') {
@@ -72,7 +72,7 @@ export class CertificateManager {
             try {
                 callback(cert);
             } catch (e) {
-                log.error(`There was a problem using the selected certificate: ${e}`);
+                log.error('There was a problem using the selected certificate');
             }
         }
         this.certificateRequestCallbackMap.delete(server);

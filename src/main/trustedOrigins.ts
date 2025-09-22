@@ -89,7 +89,7 @@ export class TrustedOriginsStore {
 
     checkPermission = (targetURL: URL, permission: PermissionType) => {
         if (!permission) {
-            log.error(`Missing permission request on ${targetURL}`);
+            log.error('Missing permission request');
             return null;
         }
 

@@ -395,7 +395,7 @@ export class ViewManager {
     };
 
     private showURLView = (url: URL | string) => {
-        log.silly('showURLView', url);
+        log.silly('showURLView');
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -426,7 +426,7 @@ export class ViewManager {
             };
 
             const adjustWidth = (event: IpcMainEvent, width: number) => {
-                log.silly('showURLView.adjustWidth', width);
+                log.silly('showURLView.adjustWidth', {width});
 
                 if (!boundaries) {
                     return;
@@ -539,7 +539,7 @@ export class ViewManager {
     };
 
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
-        log.debug('handleTabLoggedIn', event.sender.id);
+        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id});
         const view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return;
@@ -558,7 +558,7 @@ export class ViewManager {
     };
 
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
-        log.debug('handleBrowserHistoryPush', e.sender.id, pathName);
+        log.debug('handleBrowserHistoryPush', {webContentsId: e.sender.id});
 
         const currentView = this.getViewByWebContentsId(e.sender.id);
         if (!currentView) {
@@ -590,13 +590,13 @@ export class ViewManager {
     };
 
     private handleRequestBrowserHistoryStatus = (e: IpcMainInvokeEvent) => {
-        log.silly('handleRequestBrowserHistoryStatus', e.sender.id);
+        log.silly('handleRequestBrowserHistoryStatus', {webContentsId: e.sender.id});
 
         return this.getViewByWebContentsId(e.sender.id)?.getBrowserHistoryStatus();
     };
 
     private handleReactAppInitialized = (e: IpcMainEvent) => {
-        log.debug('handleReactAppInitialized', e.sender.id);
+        log.debug('handleReactAppInitialized', {webContentsId: e.sender.id});
 
         const view = this.getViewByWebContentsId(e.sender.id);
         if (view) {

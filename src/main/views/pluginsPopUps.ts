@@ -39,7 +39,7 @@ export class PluginsPopUpsManager {
     generateHandleCreateWindow = (parentId: number) => (win: BrowserWindow, details: Electron.DidCreateWindowDetails) => {
         const webContentsId = win.webContents.id;
 
-        log.debug('created popup window', details.url, webContentsId);
+        log.debug('created popup window', {webContentsId});
         this.popups[webContentsId] = {
             parentId,
             win,
@@ -50,7 +50,7 @@ export class PluginsPopUpsManager {
         // - Navigation
         // - Opening new windows
         win.webContents.on('will-redirect', (ev: Event<WebContentsWillRedirectEventParams>) => {
-            log.warn(`prevented popup window from redirecting to: ${ev.url}`);
+            log.warn('prevented popup window from redirecting');
             ev.preventDefault();
         });
         win.webContents.on('will-navigate', (ev: Event<WebContentsWillNavigateEventParams>) => {
@@ -58,7 +58,7 @@ export class PluginsPopUpsManager {
                 return;
             }
 
-            log.warn(`prevented popup window from navigating to: ${ev.url}`);
+            log.warn('prevented popup window from navigating');
             ev.preventDefault();
         });
         win.webContents.on('did-start-navigation', (ev: Event<WebContentsDidStartNavigationEventParams>) => {
@@ -66,13 +66,13 @@ export class PluginsPopUpsManager {
                 return;
             }
 
-            log.warn(`prevented popup window from navigating to: ${ev.url}`);
+            log.warn('prevented popup window from navigating');
             ev.preventDefault();
         });
         win.webContents.setWindowOpenHandler(({url}): {action: 'deny'} => {
             const parsedURL = parseURL(url);
             if (!parsedURL) {
-                log.warn(`Ignoring non-url ${url}`);
+                log.warn('Ignoring non-url');
                 return {action: 'deny'};
             }
 
@@ -94,7 +94,7 @@ export class PluginsPopUpsManager {
                 shell.openExternal(url);
             }
 
-            log.warn(`prevented popup window from opening window to ${url}`);
+            log.warn('prevented popup window from opening window');
 
             return {action: 'deny'};
         });
@@ -112,7 +112,7 @@ export class PluginsPopUpsManager {
 
         win.webContents.once('render-process-gone', (_, details) => {
             if (details.reason !== 'clean-exit') {
-                log.error('Renderer process for a webcontent is no longer available:', details.reason);
+                log.error('Renderer process for a webcontent is no longer available:', {reason: details.reason});
             }
             try {
                 win.webContents.removeAllListeners();
@@ -126,7 +126,7 @@ export class PluginsPopUpsManager {
         // Making extra explicit what we allow. This should already be enforced on
         // the calling side.
         if (details.url !== 'about:blank') {
-            log.warn(`prevented new window creation: ${details.url}`);
+            log.warn('prevented new window creation');
             return {action: 'deny'};
         }
 

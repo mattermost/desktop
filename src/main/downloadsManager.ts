@@ -69,7 +69,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private init = () => {
         // ensure data loaded from file is valid
         const validatedJSON = Validator.validateDownloads(this.json);
-        log.debug('init', {'this.json': this.json, validatedJSON});
+        log.debug('init');
         if (validatedJSON) {
             this.saveAll(validatedJSON);
         } else {
@@ -103,7 +103,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     };
 
     handleNewDownload = async (event: Event, item: DownloadItem, webContents: WebContents) => {
-        log.debug('handleNewDownload', {item, sourceURL: webContents.getURL()});
+        log.debug('handleNewDownload');
 
         const url = item.getURL();
 
@@ -182,7 +182,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                     }
                 }
             } catch (e) {
-                log.warn('could not load bookmark', file.filename, e);
+                log.warn('could not load bookmark', {e});
                 this.clearFile(file);
             }
         }
@@ -247,7 +247,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     };
 
     showFileInFolder = (item?: DownloadedItem) => {
-        log.debug('showFileInFolder', {item});
+        log.debug('showFileInFolder');
 
         if (!item) {
             log.debug('showFileInFolder', 'ITEM_UNDEFINED');
@@ -273,7 +273,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     };
 
     openFile = (item?: DownloadedItem) => {
-        log.debug('openFile', {item});
+        log.debug('openFile');
 
         if (!item) {
             log.debug('openFile', 'FILE_UNDEFINED');
@@ -303,7 +303,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     };
 
     clearFile = (item?: DownloadedItem) => {
-        log.debug('clearFile', {item});
+        log.debug('clearFile');
 
         if (!item || item.type === DownloadItemTypeEnum.UPDATE) {
             return;
@@ -320,7 +320,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     };
 
     cancelDownload = (item?: DownloadedItem) => {
-        log.debug('cancelDownload', {item});
+        log.debug('cancelDownload');
 
         if (!item) {
             return;
@@ -388,7 +388,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     };
 
     private selectDefaultDownloadDirectory = async (startFrom: string, message: string) => {
-        log.debug('handleSelectDownload', startFrom);
+        log.debug('handleSelectDownload', {startFrom});
 
         const result = await dialog.showOpenDialog({defaultPath: startFrom || Config.downloadLocation,
             message,
@@ -464,7 +464,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
      *  This function return true if "downloadLocation" is undefined
      */
     private shouldShowSaveDialog = (item: DownloadItem, downloadLocation?: string) => {
-        log.debug('shouldShowSaveDialog', {downloadLocation});
+        log.debug('shouldShowSaveDialog');
         return !item.hasUserGesture() || !downloadLocation;
     };
 
@@ -498,7 +498,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
     private upsertFileToDownloads = async (item: DownloadItem, state: DownloadItemState, overridePath?: string) => {
         const fileId = this.getFileId(item);
-        log.debug('upsertFileToDownloads', {fileId});
+        log.debug('upsertFileToDownloads');
         const formattedItem = await this.formatDownloadItem(item, state, overridePath);
         this.save(fileId, formattedItem);
         this.checkIfMaxFilesReached();
@@ -541,7 +541,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
      *  DownloadItem event handlers
      */
     private updatedEventController = async (updatedEvent: Event, state: DownloadItemUpdatedEventState, item: DownloadItem) => {
-        log.debug('updatedEventController', {state});
+        log.debug('updatedEventController');
 
         await this.upsertFileToDownloads(item, state);
 
@@ -553,7 +553,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     };
 
     private doneEventController = async (doneEvent: Event, state: DownloadItemDoneEventState, item: DownloadItem, webContents: WebContents) => {
-        log.debug('doneEventController', {state});
+        log.debug('doneEventController');
 
         if (state === 'completed' && !this.open) {
             NotificationManager.displayDownloadCompleted(path.basename(item.savePath), item.savePath, ViewManager.getViewByWebContentsId(webContents.id)?.view.server.name ?? '');
@@ -585,7 +585,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.openDownloadsDropdown();
     };
     private onUpdateDownloaded = (event: Event, info: UpdateInfo) => {
-        log.debug('onUpdateDownloaded', {info});
+        log.debug('onUpdateDownloaded');
 
         const {version} = info;
         const update = this.downloads[APP_UPDATE_KEY];
@@ -597,7 +597,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         this.openDownloadsDropdown();
     };
     private onUpdateProgress = (event: Event, progress: ProgressInfo) => {
-        log.debug('onUpdateProgress', {progress});
+        log.debug('onUpdateProgress');
         const {total, transferred, percent} = progress;
         const update = this.downloads[APP_UPDATE_KEY] || {...UPDATE_DOWNLOAD_ITEM};
         if (typeof update.addedAt !== 'number' || update.addedAt === 0) {

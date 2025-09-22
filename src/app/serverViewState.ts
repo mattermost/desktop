@@ -139,7 +139,7 @@ export class ServerViewState {
      */
 
     showNewServerModal = (prefillURL?: string) => {
-        log.debug('showNewServerModal', {prefillURL});
+        log.debug('showNewServerModal');
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -176,7 +176,7 @@ export class ServerViewState {
     private handleShowNewServerModal = () => this.showNewServerModal();
 
     private showEditServerModal = (e: IpcMainEvent, id: string) => {
-        log.debug('showEditServerModal', id);
+        log.debug('showEditServerModal', {id});
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -208,7 +208,7 @@ export class ServerViewState {
     };
 
     private showRemoveServerModal = (e: IpcMainEvent, id: string) => {
-        log.debug('handleRemoveServerModal', id);
+        log.debug('handleRemoveServerModal', {id});
 
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
@@ -253,7 +253,7 @@ export class ServerViewState {
      */
 
     private handleServerURLValidation = async (e: IpcMainInvokeEvent, url?: string, currentId?: string): Promise<URLValidationResult> => {
-        log.debug('handleServerURLValidation', url, currentId);
+        log.verbose('handleServerURLValidation', {currentId});
 
         // If the URL is missing or null, reject
         if (!url) {
@@ -427,13 +427,13 @@ export class ServerViewState {
     };
 
     private handleAddServer = (event: IpcMainEvent, server: Server) => {
-        log.debug('handleAddServer', server);
+        log.debug('handleAddServer');
 
         ServerManager.addServer(server);
     };
 
     private handleEditServer = (event: IpcMainEvent, server: UniqueServer, permissions?: Permissions) => {
-        log.debug('handleEditServer', server, permissions);
+        log.debug('handleEditServer', {serverId: server.id});
 
         if (!server.id) {
             return;
@@ -451,7 +451,7 @@ export class ServerViewState {
     };
 
     private handleRemoveServer = (event: IpcMainEvent, serverId: string) => {
-        log.debug('handleRemoveServer', serverId);
+        log.debug('handleRemoveServer', {serverId});
 
         const remainingServers = ServerManager.getOrderedServers().filter((orderedServer) => serverId !== orderedServer.id);
         if (this.currentServerId === serverId && remainingServers.length) {
