@@ -7,14 +7,13 @@ import {FormattedMessage} from 'react-intl';
 import ErrorView from 'renderer/components/ErrorView';
 
 type Props = {
-    darkMode: boolean;
     appName?: string;
     url?: string;
     handleLink: () => void;
     handleUpgradeLink: () => void;
 };
 
-export default function IncompatibleErrorView({darkMode, appName, url, handleLink, handleUpgradeLink}: Props) {
+export default function IncompatibleErrorView({appName, url, handleLink, handleUpgradeLink}: Props) {
     const header = (
         <FormattedMessage
             id='renderer.components.errorView.incompatibleServerVersion'
@@ -68,7 +67,6 @@ export default function IncompatibleErrorView({darkMode, appName, url, handleLin
 
     return (
         <ErrorView
-            darkMode={darkMode}
             header={header}
             subHeader={subHeader}
             bullets={bullets}

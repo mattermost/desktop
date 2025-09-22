@@ -9,7 +9,10 @@ import ReactDOM from 'react-dom';
 import BasePage, {ErrorState} from './components/BasePage';
 import {useConfig} from './hooks/useConfig';
 import IntlProvider from './intl_provider';
+import setupDarkMode from './modals/darkMode';
 import {printVersion} from './utils';
+
+setupDarkMode();
 
 function Popout() {
     const {config} = useConfig();
@@ -66,7 +69,6 @@ function Popout() {
             <BasePage
                 openMenu={openMenu}
                 openPopoutMenu={openPopoutMenu}
-                darkMode={config.darkMode}
                 title={title ?? config.appName}
                 appName={config.appName}
                 errorState={errorState}

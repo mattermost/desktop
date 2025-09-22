@@ -16,7 +16,6 @@ type Props = {
     activeTabId?: string;
     activeServerId?: string;
     id: string;
-    isDarkMode: boolean;
     onSelect: (id: string) => void;
     onCloseTab: (id: string) => void;
     onOpenPopoutMenu: (id: string) => void;
@@ -190,7 +189,6 @@ class TabBar extends React.PureComponent<Props, State> {
                         <div
                             ref={provided.innerRef}
                             className={classNames('TabBar', {
-                                darkMode: this.props.isDarkMode,
                                 disabled: this.props.tabsDisabled,
                             })}
                             id={this.props.id}
@@ -202,9 +200,7 @@ class TabBar extends React.PureComponent<Props, State> {
                                     <div className='TopBar-button--newTab_divider'/>
                                     <button
                                         id='newTabButton'
-                                        className={classNames('TopBar-button', 'TopBar-button--newTab', {
-                                            darkMode: this.props.isDarkMode,
-                                        })}
+                                        className='TopBar-button TopBar-button--newTab'
                                         onClick={this.props.onNewTab}
                                         disabled={this.props.tabsDisabled || this.props.isViewLimitReached}
                                         title={this.props.intl.formatMessage({

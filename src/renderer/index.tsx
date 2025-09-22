@@ -10,6 +10,7 @@ import ReactDOM from 'react-dom';
 import MainPage from './components/MainPage';
 import {useConfig} from './hooks/useConfig';
 import IntlProvider from './intl_provider';
+import setupDarkMode from './modals/darkMode';
 import {printVersion} from './utils';
 
 const openMenu = () => {
@@ -17,6 +18,8 @@ const openMenu = () => {
         window.desktop.openAppMenu();
     }
 };
+
+setupDarkMode();
 
 function Root() {
     const {config} = useConfig();
@@ -38,7 +41,6 @@ function Root() {
         <IntlProvider>
             <MainPage
                 openMenu={openMenu}
-                darkMode={config.darkMode}
                 appName={config.appName}
             />
         </IntlProvider>

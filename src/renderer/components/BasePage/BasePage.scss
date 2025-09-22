@@ -9,10 +9,5 @@
     justify-content: center;
     flex: 1;
     background-size: cover;
-    background-image: url('assets/svg/background-light.svg');
-
-    &.darkMode {
-      background-image: url('assets/svg/background-dark.svg');
-    }
   }
 }

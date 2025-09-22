@@ -26,12 +26,18 @@
         padding: 8px;
         border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
 
+
         i.icon-server-variant {
             font-size: 18px;
+            color: rgba(var(--center-channel-color-rgb), 0.64);
 
             &::before {
                 margin: 0;
             }
+        }
+
+        i.icon-pencil-outline {
+            color: rgba(var(--center-channel-color-rgb), 0.64);
         }
 
         .ServerSetting__serverName {

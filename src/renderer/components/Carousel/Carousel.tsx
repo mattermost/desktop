@@ -14,13 +14,11 @@ const AUTO_CHANGE_TIME = 5000;
 type CarouselProps = {
     slides: Array<{key: string; content: React.ReactNode}>;
     startIndex?: number;
-    darkMode?: boolean;
 };
 
 function Carousel({
     slides,
     startIndex = 0,
-    darkMode = false,
 }: CarouselProps) {
     const [slideIn, setSlideIn] = useState(startIndex);
     const [slideOut, setSlideOut] = useState(NaN);
@@ -119,7 +117,6 @@ function Carousel({
                     pages={slides.length}
                     activePage={slideIn}
                     disabled={disableNavigation}
-                    darkMode={darkMode}
                     onClick={handleOnPaginationIndicatorClick}
                 />
                 <CarouselButton

@@ -40,14 +40,4 @@
             font-size: 93px;
         }
     }
-
-    &.WelcomeScreenSlide--darkMode {
-        .WelcomeScreenSlide__title {
-            color: var(--button-color);
-        }
-
-        .WelcomeScreenSlide__subtitle {
-            color: rgba(var(--button-color-rgb), 0.72);
-        }
-    }
 }

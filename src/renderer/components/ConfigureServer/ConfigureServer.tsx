@@ -22,7 +22,6 @@ type ConfigureServerProps = {
     server?: UniqueServer;
     prefillURL?: string;
     mobileView?: boolean;
-    darkMode?: boolean;
     messageTitle?: string;
     messageSubtitle?: string;
     cardTitle?: string;
@@ -36,7 +35,6 @@ function ConfigureServer({
     server,
     prefillURL,
     mobileView,
-    darkMode,
     messageTitle,
     messageSubtitle,
     cardTitle,
@@ -387,19 +385,14 @@ function ConfigureServer({
                 </a>
             </div>
         );
-    }, [transition, darkMode, alternateLinkURL, alternateLinkMessage, alternateLinkText]);
+    }, [transition, alternateLinkURL, alternateLinkMessage, alternateLinkText]);
 
     return (
         <div
-            className={classNames(
-                'LoadingScreen',
-                darkMode,
-                'ConfigureServer',
-            )}
+            className='LoadingScreen ConfigureServer'
         >
             <LoadingBackground/>
             <Header
-                darkMode={darkMode}
                 alternateLink={mobileView ? getAlternateLink() : undefined}
             />
             {showContent && (

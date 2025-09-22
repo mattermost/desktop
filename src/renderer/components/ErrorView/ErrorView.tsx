@@ -3,7 +3,6 @@
 
 // ErrorCode: https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
 
-import classNames from 'classnames';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
@@ -12,7 +11,6 @@ import AlertImage from 'renderer/components/Images/alert';
 import './ErrorView.scss';
 
 type ErrorViewProps = {
-    darkMode: boolean;
     header: React.ReactNode;
     subHeader: React.ReactNode;
     bullets: React.ReactNode;
@@ -23,7 +21,6 @@ type ErrorViewProps = {
 };
 
 export default function ErrorView({
-    darkMode,
     header,
     subHeader,
     bullets,
@@ -33,7 +30,7 @@ export default function ErrorView({
     handleLink,
 }: ErrorViewProps) {
     return (
-        <div className={classNames('ErrorView', {darkMode})}>
+        <div className='ErrorView'>
             <AlertImage/>
             <span className='ErrorView-header'>
                 {header}

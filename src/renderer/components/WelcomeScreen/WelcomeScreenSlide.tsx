@@ -11,7 +11,6 @@ type WelcomeScreenSlideProps = {
     subtitle: string | React.ReactElement;
     image: React.ReactNode;
     isMain?: boolean;
-    darkMode?: boolean;
 };
 
 const WelcomeScreenSlide = ({
@@ -19,14 +18,12 @@ const WelcomeScreenSlide = ({
     subtitle,
     image,
     isMain,
-    darkMode,
 }: WelcomeScreenSlideProps) => (
     <div
         className={classNames(
             'WelcomeScreenSlide',
             {
                 'WelcomeScreenSlide--main': isMain,
-                'WelcomeScreenSlide--darkMode': darkMode,
             },
         )}
     >

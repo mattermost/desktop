@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import classNames from 'classnames';
 import React from 'react';
 
 import ConnectionErrorView from 'renderer/components/ConnectionErrorView';
@@ -9,10 +8,10 @@ import IncompatibleErrorView from 'renderer/components/IncompatibleErrorView';
 import TopBar from 'renderer/components/TopBar';
 
 import './BasePage.scss';
+import 'renderer/css/background.scss';
 
 type Props = {
     children?: React.ReactNode;
-    darkMode: boolean;
     appName: string;
     title?: string;
     errorUrl?: string;
@@ -29,7 +28,6 @@ export enum ErrorState {
 
 export default function BasePage({
     children,
-    darkMode,
     appName,
     errorUrl,
     openMenu,
@@ -42,7 +40,6 @@ export default function BasePage({
     if (errorState === ErrorState.FAILED) {
         errorComponent = (
             <ConnectionErrorView
-                darkMode={darkMode}
                 errorInfo={errorMessage}
                 url={errorUrl}
                 appName={appName}
@@ -52,7 +49,6 @@ export default function BasePage({
     } else if (errorState === ErrorState.INCOMPATIBLE) {
         errorComponent = (
             <IncompatibleErrorView
-                darkMode={darkMode}
                 url={errorUrl}
                 appName={appName}
                 handleLink={window.desktop.openServerExternally}
@@ -64,14 +60,13 @@ export default function BasePage({
     return (
         <div className='BasePage'>
             <TopBar
-                darkMode={darkMode}
                 title={title}
                 openMenu={openMenu}
                 openPopoutMenu={openPopoutMenu}
             >
                 {children}
             </TopBar>
-            <div className={classNames('BasePage__body', {darkMode})}>
+            <div className='BasePage__body background'>
                 {errorComponent}
             </div>
         </div>

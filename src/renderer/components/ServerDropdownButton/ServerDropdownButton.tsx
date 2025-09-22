@@ -15,11 +15,10 @@ type Props = {
     currentUnread: boolean;
     hasUnreads: boolean;
     isMenuOpen: boolean;
-    darkMode: boolean;
 }
 
 const ServerDropdownButton: React.FC<Props> = (props: Props) => {
-    const {isDisabled, activeServerName, totalMentionCount, currentMentions, currentUnread, hasUnreads, isMenuOpen, darkMode} = props;
+    const {isDisabled, activeServerName, totalMentionCount, currentMentions, currentUnread, hasUnreads, isMenuOpen} = props;
     const buttonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
     useEffect(() => {
@@ -69,7 +68,6 @@ const ServerDropdownButton: React.FC<Props> = (props: Props) => {
             className={classNames('ServerDropdownButton', {
                 disabled: isDisabled,
                 isMenuOpen,
-                darkMode,
             })}
             onClick={handleToggleButton}
             onDoubleClick={(event) => {

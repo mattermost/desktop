@@ -9,13 +9,12 @@ import './TopBar.scss';
 
 type Props = {
     children?: React.ReactNode;
-    darkMode: boolean;
     title?: string;
     openMenu: () => void;
     openPopoutMenu?: () => void;
 }
 
-const TopBar = ({children, darkMode, title, openMenu, openPopoutMenu}: Props) => {
+const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
     const intl = useIntl();
     const [fullScreen, setFullScreen] = useState(false);
     const [threeDotsIsFocused, setThreeDotsIsFocused] = useState(false);
@@ -52,7 +51,6 @@ const TopBar = ({children, darkMode, title, openMenu, openPopoutMenu}: Props) =>
 
     const topBarClassName = classNames('topBar', {
         macOS: window.process.platform === 'darwin',
-        darkMode,
         fullScreen,
     });
 
@@ -89,7 +87,7 @@ const TopBar = ({children, darkMode, title, openMenu, openPopoutMenu}: Props) =>
                 )}
                 {window.process.platform !== 'darwin' && fullScreen && (
                     <div
-                        className={`button full-screen-button${darkMode ? ' darkMode' : ''}`}
+                        className='button full-screen-button'
                         onClick={handleExitFullScreen}
                     >
                         <i className='icon icon-arrow-collapse'/>

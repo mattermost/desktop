@@ -27,7 +27,6 @@ body {
         width: 100%;
         height: 100%;
         background-size: cover;
-        background-image: url('assets/svg/background-light.svg');
     }
 
     &--loaded {
@@ -36,8 +35,4 @@ body {
         
         transition: opacity 150ms 0ms ease-in, visibility 150ms 0ms step-end;
     }
-}
-
-.darkMode .LoadingScreen .LoadingScreen__background {
-    background-image: url('assets/svg/background-dark.svg');
 }
