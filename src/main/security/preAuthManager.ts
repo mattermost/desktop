@@ -9,6 +9,7 @@ import {SERVER_REMOVED} from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {isTrustedURL as isTrustedURLHelper, parseURL} from 'common/utils/url';
 import secureStorage from 'main/secureStorage';
@@ -99,13 +100,8 @@ export class PreAuthManager {
         }
     };
 
-    private handleServerRemoved = (serverId: string) => {
-        log.debug('handleServerRemoved', {serverId});
-
-        const server = ServerManager.getServer(serverId);
-        if (!server) {
-            return;
-        }
+    private handleServerRemoved = (server: MattermostServer) => {
+        log.debug('handleServerRemoved', {serverId: server.id});
 
         // Clean up associated secret
         try {

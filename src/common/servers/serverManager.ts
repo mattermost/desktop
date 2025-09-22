@@ -224,8 +224,6 @@ export class ServerManager extends EventEmitter {
             return;
         }
 
-        this.emit(SERVER_REMOVED, serverId);
-
         const index = this.serverOrder.findIndex((id) => id === serverId);
         this.serverOrder.splice(index, 1);
         this.remoteInfo.delete(serverId);
