@@ -112,7 +112,7 @@ export class ModalManager {
     };
 
     handleModalFinished = (mode: 'resolve' | 'reject', event: IpcMainEvent, data: unknown) => {
-        log.debug('handleModalFinished', {mode, data});
+        log.debug('handleModalFinished', {mode});
 
         const requestModal = this.findModalByCaller(event);
         if (requestModal) {

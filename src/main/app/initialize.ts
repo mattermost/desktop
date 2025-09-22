@@ -337,7 +337,7 @@ async function initializeAfterAppReady() {
             }),
         );
     } catch (error) {
-        log.warn('Failed to initialize secure storage cache:', error);
+        log.warn('Failed to initialize secure storage cache:', {error});
     }
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
@@ -391,7 +391,7 @@ async function initializeAfterAppReady() {
                 }
             }
         } catch (error) {
-            log.debug('Error injecting preauth secret header:', error);
+            log.debug('Error injecting preauth secret header:', {error});
         }
 
         // If no secret found or error occurred, proceed with original headers
@@ -453,7 +453,7 @@ async function initializeAfterAppReady() {
             },
         }).
             then(([react, redux]) => log.info(`Added Extension:  ${react.name}, ${redux.name}`)).
-            catch((err) => log.error('An error occurred: ', err));
+            catch((err) => log.error('An error occurred: ', {err}));
     }
 
     let deeplinkingURL;
@@ -531,7 +531,7 @@ function onUserActivityStatus(status: {
     idleTime: number;
     isSystemEvent: boolean;
 }) {
-    log.debug('UserActivityMonitor.on(status)', status);
+    log.debug('UserActivityMonitor.on(status)', {status});
     WebContentsManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 

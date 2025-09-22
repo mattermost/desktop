@@ -64,7 +64,7 @@ export class PopoutManager {
     };
 
     private handleViewCreated = (viewId: string) => {
-        log.debug('handleViewCreated', viewId);
+        log.debug('handleViewCreated', {viewId});
 
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.WINDOW) {
@@ -103,7 +103,7 @@ export class PopoutManager {
         });
         window.browserWindow.loadURL('mattermost-desktop://renderer/popout.html').catch(
             (reason) => {
-                log.error('failed to load', reason);
+                log.error('failed to load', {reason});
             });
     };
 
@@ -165,7 +165,7 @@ export class PopoutManager {
     };
 
     private handleViewUpdated = (viewId: string) => {
-        log.debug('handleViewUpdated', viewId);
+        log.debug('handleViewUpdated', {viewId});
 
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.WINDOW) {
@@ -180,7 +180,7 @@ export class PopoutManager {
     };
 
     private handleViewRemoved = (viewId: string) => {
-        log.debug('handleViewRemoved', viewId);
+        log.debug('handleViewRemoved', {viewId});
 
         const window = this.popoutWindows.get(viewId);
         if (window) {
@@ -220,7 +220,7 @@ export class PopoutManager {
     };
 
     private handleCreateNewWindow = (serverId: string) => {
-        log.debug('handleCreateNewTab', serverId);
+        log.debug('handleCreateNewTab', {serverId});
 
         const server = ServerManager.getServer(serverId);
         if (!server) {

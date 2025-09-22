@@ -94,8 +94,6 @@ export class MattermostWebContentsView extends EventEmitter {
         this.webContentsView.webContents.on('did-navigate-in-page', () => this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle()));
         this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
 
-        WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
-
         if (!DeveloperMode.get('disableContextMenu')) {
             this.contextMenu = new ContextMenu(this.generateContextMenu(), this.webContentsView.webContents);
         }
@@ -170,13 +168,13 @@ export class MattermostWebContentsView extends EventEmitter {
             if (parsedURL) {
                 loadURL = parsedURL.toString();
             } else {
-                this.log.error('Cannot parse provided url, using current server url', someURL);
+                this.log.error('Cannot parse provided url, using current server url');
                 loadURL = this.view.getLoadingURL()?.toString() || '';
             }
         } else {
             loadURL = this.view.getLoadingURL()?.toString() || '';
         }
-        this.log.verbose(`Loading ${loadURL}`);
+        this.log.verbose('Loading URL');
         performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.serverId);
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
@@ -348,7 +346,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 } else {
                     this.parentWindow.webContents.send(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
-                    this.log.info(`Couldn't esviewlish a connection with ${loadURL}, will continue to retry in the background`, err);
+                    this.log.info('Could not establish a connection, will continue to retry in the background', {err});
                     this.status = Status.ERROR;
                     this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
                 }
@@ -388,14 +386,14 @@ export class MattermostWebContentsView extends EventEmitter {
     private loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         this.parentWindow.webContents.send(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
-        this.log.info(`failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
+        this.log.info(`failed loading URL: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     };
 
     private loadSuccess = (loadURL: string) => {
         return () => {
             const serverInfo = ServerManager.getRemoteInfo(this.view.serverId);
             if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
-                this.log.verbose(`finished loading ${loadURL}`);
+                this.log.verbose('finished loading URL');
                 this.parentWindow.webContents.send(LOAD_SUCCESS, this.id);
                 this.maxRetries = MAX_SERVER_RETRIES;
                 this.status = Status.WAITING_MM;
@@ -417,7 +415,7 @@ export class MattermostWebContentsView extends EventEmitter {
      */
 
     private handleUpdateTarget = (e: Event, url: string) => {
-        this.log.silly('handleUpdateTarget', e, url);
+        this.log.silly('handleUpdateTarget');
         const parsedURL = parseURL(url);
         if (parsedURL && isInternalURL(parsedURL, this.view.getLoadingURL())) {
             this.emit(UPDATE_TARGET_URL);
@@ -433,7 +431,7 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     private handlePageTitleUpdated = (newTitle: string) => {
-        this.log.silly('handlePageTitleUpdated', newTitle);
+        this.log.silly('handlePageTitleUpdated');
 
         if (!ServerManager.getServer(this.view.serverId)?.isLoggedIn) {
             return;

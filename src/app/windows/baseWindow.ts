@@ -58,7 +58,7 @@ export default class BaseWindow {
                 spellcheck: typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker,
             },
         }, options);
-        log.debug('main window options', windowOptions);
+        log.debug('main window options', {windowOptions});
 
         if (process.platform === 'linux') {
             windowOptions.icon = path.join(path.resolve(app.getAppPath(), 'assets'), 'linux', 'app_icon.png');
@@ -122,7 +122,7 @@ export default class BaseWindow {
     };
 
     handleAltKeyPressed = (_: Event, input: Input) => {
-        log.silly('handleInputEvents', input);
+        log.silly('handleInputEvents', {input});
 
         if (input.type === 'keyDown') {
             this.altPressStatus = input.key === 'Alt' &&
