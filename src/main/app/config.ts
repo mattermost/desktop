@@ -15,7 +15,7 @@ import type {CombinedConfig, CurrentConfig} from 'types/config';
 import type {DeveloperSettings} from 'types/settings';
 
 import {handleMainWindowIsShown} from './intercom';
-import {handleUpdateMenuEvent, updateSpellCheckerLocales} from './utils';
+import {updateSpellCheckerLocales} from './utils';
 
 const log = new Logger('App.Config');
 
@@ -93,7 +93,6 @@ export function handleConfigUpdate(newConfig: CombinedConfig) {
         handleMainWindowIsShown();
     }
 
-    handleUpdateMenuEvent();
     if (newConfig.trayIconTheme) {
         Tray.refreshImages(newConfig.trayIconTheme);
     }

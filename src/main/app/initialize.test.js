@@ -220,6 +220,9 @@ jest.mock('common/views/viewManager', () => ({
     handleDeepLink: jest.fn(),
     on: jest.fn(),
 }));
+jest.mock('app/menus', () => ({
+    refreshMenu: jest.fn(),
+}));
 const originalProcess = process;
 describe('main/app/initialize', () => {
     beforeAll(() => {
