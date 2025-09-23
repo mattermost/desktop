@@ -92,6 +92,7 @@ export class URLView {
     };
 
     destroy = () => {
+        ipcMain.off(EMIT_CONFIGURATION, this.handleEmitConfiguration);
         performanceMonitor.unregisterView(this.urlView.webContents.id);
         this.urlView.webContents.close();
     };
