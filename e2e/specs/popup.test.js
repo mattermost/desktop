@@ -9,7 +9,9 @@ const robot = require('robotjs');
 const env = require('../modules/environment');
 const {asyncSleep} = require('../modules/utils');
 
-describe('popup', function desc() {
+// The new servers created for running e2e will not have github plugin configured
+// So, these tests will fail if run with the other tests
+xdescribe('popup', function desc() {
     this.timeout(40000);
 
     const config = env.demoMattermostConfig;

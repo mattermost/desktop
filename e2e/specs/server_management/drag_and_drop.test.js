@@ -39,65 +39,6 @@ describe('server_management/drag_and_drop', function desc() {
 
     this.timeout(30000);
 
-    describe('MM-T2634 should be able to drag and drop servers in the dropdown menu', async () => {
-        let mainWindow;
-        let dropdownView;
-
-        before(async () => {
-            await beforeFunc();
-            mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
-            await mainWindow.click('.ServerDropdownButton');
-        });
-        after(afterFunc);
-
-        it('MM-T2634_1 should appear the original order', async () => {
-            const firstMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
-            const firstMenuItemText = await firstMenuItem.innerText();
-            firstMenuItemText.should.equal('example');
-            const secondMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(2) .ServerDropdown__draggable-handle');
-            const secondMenuItemText = await secondMenuItem.innerText();
-            secondMenuItemText.should.equal('github');
-            const thirdMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(3) .ServerDropdown__draggable-handle');
-            const thirdMenuItemText = await thirdMenuItem.innerText();
-            thirdMenuItemText.should.equal('google');
-        });
-
-        it('MM-T2634_2 after dragging the server down, should appear in the new order', async () => {
-            // Move the first server down, then re-open the dropdown
-            const initialMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
-            await initialMenuItem.focus();
-            await dropdownView.keyboard.down(' ');
-            await dropdownView.keyboard.down('ArrowDown');
-            await dropdownView.keyboard.down(' ');
-            await asyncSleep(1000);
-            await mainWindow.keyboard.press('Escape');
-            await mainWindow.click('.ServerDropdownButton');
-
-            // Verify that the new order persists
-            const firstMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
-            const firstMenuItemText = await firstMenuItem.innerText();
-            firstMenuItemText.should.equal('github');
-            const secondMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(2) .ServerDropdown__draggable-handle');
-            const secondMenuItemText = await secondMenuItem.innerText();
-            secondMenuItemText.should.equal('example');
-            const thirdMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(3) .ServerDropdown__draggable-handle');
-            const thirdMenuItemText = await thirdMenuItem.innerText();
-            thirdMenuItemText.should.equal('google');
-        });
-
-        it('MM-T2634_3 should update the config file', () => {
-            // Verify config is updated
-            const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-            const order0 = newConfig.servers.find((server) => server.name === 'github');
-            order0.order.should.equal(0);
-            const order1 = newConfig.servers.find((server) => server.name === 'example');
-            order1.order.should.equal(1);
-            const order2 = newConfig.servers.find((server) => server.name === 'google');
-            order2.order.should.equal(2);
-        });
-    });
-
     describe('MM-T2635 should be able to drag and drop tabs', async () => {
         let mainWindow;
         before(async () => {
@@ -157,6 +98,65 @@ describe('server_management/drag_and_drop', function desc() {
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
             const thirdTabText = await thirdTab.innerText();
             thirdTabText.should.contain('Town Square');
+        });
+    });
+
+    describe('MM-T2634 should be able to drag and drop servers in the dropdown menu', async () => {
+        let mainWindow;
+        let dropdownView;
+
+        before(async () => {
+            await beforeFunc();
+            mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+            await mainWindow.click('.ServerDropdownButton');
+        });
+        after(afterFunc);
+
+        it('MM-T2634_1 should appear the original order', async () => {
+            const firstMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
+            const firstMenuItemText = await firstMenuItem.innerText();
+            firstMenuItemText.should.equal('example');
+            const secondMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(2) .ServerDropdown__draggable-handle');
+            const secondMenuItemText = await secondMenuItem.innerText();
+            secondMenuItemText.should.equal('github');
+            const thirdMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(3) .ServerDropdown__draggable-handle');
+            const thirdMenuItemText = await thirdMenuItem.innerText();
+            thirdMenuItemText.should.equal('google');
+        });
+
+        it('MM-T2634_2 after dragging the server down, should appear in the new order', async () => {
+            // Move the first server down, then re-open the dropdown
+            const initialMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
+            await initialMenuItem.focus();
+            await dropdownView.keyboard.down(' ');
+            await dropdownView.keyboard.down('ArrowDown');
+            await dropdownView.keyboard.down(' ');
+            await asyncSleep(1000);
+            await mainWindow.keyboard.press('Escape');
+            await mainWindow.click('.ServerDropdownButton');
+
+            // Verify that the new order persists
+            const firstMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
+            const firstMenuItemText = await firstMenuItem.innerText();
+            firstMenuItemText.should.equal('github');
+            const secondMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(2) .ServerDropdown__draggable-handle');
+            const secondMenuItemText = await secondMenuItem.innerText();
+            secondMenuItemText.should.equal('example');
+            const thirdMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(3) .ServerDropdown__draggable-handle');
+            const thirdMenuItemText = await thirdMenuItem.innerText();
+            thirdMenuItemText.should.equal('google');
+        });
+
+        it('MM-T2634_3 should update the config file', () => {
+            // Verify config is updated
+            const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
+            const order0 = newConfig.servers.find((server) => server.name === 'github');
+            order0.order.should.equal(0);
+            const order1 = newConfig.servers.find((server) => server.name === 'example');
+            order1.order.should.equal(1);
+            const order2 = newConfig.servers.find((server) => server.name === 'google');
+            order2.order.should.equal(2);
         });
     });
 });
