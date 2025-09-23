@@ -135,6 +135,8 @@
   "main.menus.popoutMenu.closeWindow": "Lukk vindu",
   "main.menus.popoutMenu.copyLink": "Kopier lenke",
   "main.menus.popoutMenu.developerTools": "Verktøy for utviklere",
+  "main.menus.popoutMenu.developerToolsApplicationWrapper": "Utviklerverktøy for Application Wrapper",
+  "main.menus.popoutMenu.developerToolsCurrentView": "Utviklerverktøy for Current View",
   "main.menus.popoutMenu.moveToMainWindow": "Flytt til hovedvinduet",
   "main.menus.popoutMenu.moveToNewWindow": "Flytt til nytt vindu",
   "main.menus.tray.preferences": "Innstillinger...",
