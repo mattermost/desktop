@@ -138,14 +138,14 @@ describe('Add Server Modal', function desc() {
         });
 
         it('should show advanced section with pre-auth field', async () => {
-            await newServerView.click('button.ConfigureServer__advanced-toggle');
+            await newServerView.click('button.NewServerModal__advanced-toggle');
             await newServerView.waitForSelector('#input_preAuthSecret');
             const preAuthField = await newServerView.isVisible('#input_preAuthSecret');
             preAuthField.should.be.true;
         });
 
         it('should accept pre-auth secret input', async () => {
-            await newServerView.click('button.ConfigureServer__advanced-toggle');
+            await newServerView.click('button.NewServerModal__advanced-toggle');
             await newServerView.type('#input_preAuthSecret', 'test-secret-123');
             const value = await newServerView.inputValue('#input_preAuthSecret');
             value.should.equal('test-secret-123');
@@ -168,7 +168,7 @@ describe('Add Server Modal', function desc() {
                 }
             });
 
-            await newServerView.click('button.ConfigureServer__advanced-toggle');
+            await newServerView.click('button.NewServerModal__advanced-toggle');
             await newServerView.type('#input_preAuthSecret', 'valid-secret');
             await newServerView.waitForSelector('#customMessage_url.Input___success');
 
@@ -185,7 +185,7 @@ describe('Add Server Modal', function desc() {
                 });
             });
 
-            await newServerView.click('button.ConfigureServer__advanced-toggle');
+            await newServerView.click('button.NewServerModal__advanced-toggle');
             await newServerView.type('#input_preAuthSecret', 'invalid-secret');
             await newServerView.waitForSelector('#customMessage_url.Input___error');
 
@@ -202,7 +202,7 @@ describe('Add Server Modal', function desc() {
                 });
             });
 
-            await newServerView.click('button.ConfigureServer__advanced-toggle');
+            await newServerView.click('button.NewServerModal__advanced-toggle');
             await newServerView.type('#input_preAuthSecret', 'test-secret');
             await newServerView.waitForSelector('#customMessage_url.Input___success');
             await newServerView.click('#newServerModal_confirm');
