@@ -36,7 +36,14 @@ export class PreAuthManager {
         details: Electron.OnHeadersReceivedListenerDetails,
         callback: (headersReceivedResponse: Electron.HeadersReceivedResponse) => void,
     ) => {
-        if (details.responseHeaders?.['x-reject-reason']?.includes('pre-auth')) {
+        if (!details.responseHeaders) {
+            return false;
+        }
+
+        // We have to check for case insensitivity ourselves because the Electron API is case sensitive for some reason
+        // Relevant Electron issue: https://github.com/electron/electron/issues/48365
+        const headerName = Object.keys(details.responseHeaders).find((key) => key.toLowerCase() === 'x-reject-reason');
+        if (headerName && details.responseHeaders[headerName]?.includes('pre-auth')) {
             const server = ServerManager.lookupServerByURL(details.url);
             if (server) {
                 this.handlePreAuthSecret(server.url.toString(), async (secret) => {

@@ -6,6 +6,7 @@
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerManager from 'common/servers/serverManager';
+import secureStorage from 'main/secureStorage';
 import {PreAuthManager} from 'main/security/preAuthManager';
 
 jest.mock('common/utils/url', () => {
@@ -42,6 +43,8 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
 
 jest.mock('common/servers/serverManager', () => ({
     lookupServerByURL: jest.fn(),
+    updatePreAuthSecret: jest.fn(),
+    getServer: jest.fn(),
     on: jest.fn(),
 }));
 
@@ -63,6 +66,8 @@ jest.mock('main/utils', () => ({
 
 jest.mock('main/secureStorage', () => ({
     setSecret: jest.fn(),
+    getSecret: jest.fn(),
+    deleteSecret: jest.fn(),
 }));
 
 describe('main/preAuthManager', () => {
@@ -305,6 +310,230 @@ describe('main/preAuthManager', () => {
             // Wait for the promise to resolve/reject
             await expect(promise).rejects.toThrow(error);
             expect(callback).toBeCalledWith();
+        });
+    });
+
+    describe('preAuthHeaderOnHeadersReceivedHander', () => {
+        const preAuthManager = new PreAuthManager();
+
+        beforeEach(() => {
+            MainWindow.get.mockImplementation(() => ({}));
+            ServerManager.lookupServerByURL.mockClear();
+            ServerManager.updatePreAuthSecret.mockClear();
+            ModalManager.addModal.mockClear();
+            secureStorage.setSecret.mockClear();
+        });
+
+        it('should return false when no response headers', () => {
+            const callback = jest.fn();
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {url: 'http://test.com', responseHeaders: null},
+                callback,
+            );
+            expect(result).toBe(false);
+            expect(callback).not.toBeCalled();
+        });
+
+        it('should return false when no response headers (undefined)', () => {
+            const callback = jest.fn();
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {url: 'http://test.com'},
+                callback,
+            );
+            expect(result).toBe(false);
+            expect(callback).not.toBeCalled();
+        });
+
+        it('should return false when no x-reject-reason header', () => {
+            const callback = jest.fn();
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://test.com',
+                    responseHeaders: {
+                        'content-type': ['text/html'],
+                        'cache-control': ['no-cache'],
+                    },
+                },
+                callback,
+            );
+            expect(result).toBe(false);
+            expect(callback).not.toBeCalled();
+        });
+
+        it('should return false when x-reject-reason header does not contain pre-auth', () => {
+            const callback = jest.fn();
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://test.com',
+                    responseHeaders: {
+                        'x-reject-reason': ['invalid-credentials'],
+                    },
+                },
+                callback,
+            );
+            expect(result).toBe(false);
+            expect(callback).not.toBeCalled();
+        });
+
+        it('should return false when server is not found', () => {
+            ServerManager.lookupServerByURL.mockReturnValue(undefined);
+            const callback = jest.fn();
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://untrusted.com',
+                    responseHeaders: {
+                        'x-reject-reason': ['pre-auth'],
+                    },
+                },
+                callback,
+            );
+            expect(result).toBe(false);
+            expect(callback).not.toBeCalled();
+        });
+
+        it('should handle pre-auth header with case insensitive matching', () => {
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'test-server', url: new URL('http://trusted.com')});
+            const callback = jest.fn();
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://trusted.com',
+                    responseHeaders: {
+                        'X-REJECT-REASON': ['pre-auth'], // uppercase header name
+                    },
+                },
+                callback,
+            );
+            expect(result).toBe(true);
+            expect(ModalManager.addModal).toBeCalled();
+        });
+
+        it('should handle pre-auth header with mixed case', () => {
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'test-server', url: new URL('http://trusted.com')});
+            const callback = jest.fn();
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://trusted.com',
+                    responseHeaders: {
+                        'X-Reject-Reason': ['pre-auth'], // mixed case header name
+                    },
+                },
+                callback,
+            );
+            expect(result).toBe(true);
+            expect(ModalManager.addModal).toBeCalled();
+        });
+
+        it('should handle pre-auth header with pre-auth as exact value', () => {
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'test-server', url: new URL('http://trusted.com')});
+            const callback = jest.fn();
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://trusted.com',
+                    responseHeaders: {
+                        'x-reject-reason': ['pre-auth'],
+                    },
+                },
+                callback,
+            );
+            expect(result).toBe(true);
+            expect(ModalManager.addModal).toBeCalled();
+        });
+
+        it('should call handlePreAuthSecret when server is found and header contains pre-auth', () => {
+            const mockServer = {id: 'test-server', url: new URL('http://trusted.com')};
+            ServerManager.lookupServerByURL.mockReturnValue(mockServer);
+            const callback = jest.fn();
+
+            const result = preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://trusted.com',
+                    responseHeaders: {
+                        'x-reject-reason': ['pre-auth'],
+                    },
+                },
+                callback,
+            );
+
+            expect(result).toBe(true);
+            expect(ServerManager.lookupServerByURL).toBeCalledWith('http://trusted.com');
+            expect(ModalManager.addModal).toBeCalled();
+        });
+
+        it('should call callback with cancel: true when secret is provided', async () => {
+            const mockServer = {id: 'test-server', url: new URL('http://trusted.com')};
+            ServerManager.lookupServerByURL.mockReturnValue(mockServer);
+            const callback = jest.fn();
+
+            const promise = Promise.resolve('secret123');
+            ModalManager.addModal.mockImplementationOnce(() => promise);
+
+            preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://trusted.com',
+                    responseHeaders: {
+                        'x-reject-reason': ['pre-auth'],
+                    },
+                },
+                callback,
+            );
+
+            // Wait for the async operation to complete
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            await promise;
+
+            expect(callback).toBeCalledWith({cancel: true});
+            expect(ServerManager.updatePreAuthSecret).toBeCalledWith('test-server', 'secret123');
+            expect(secureStorage.setSecret).toBeCalledWith('http://trusted.com/', 'preauth', 'secret123');
+        });
+
+        it('should call callback with responseHeaders when no secret is provided', async () => {
+            const mockServer = {id: 'test-server', url: new URL('http://trusted.com')};
+            ServerManager.lookupServerByURL.mockReturnValue(mockServer);
+            const callback = jest.fn();
+
+            const promise = Promise.resolve('');
+            ModalManager.addModal.mockImplementationOnce(() => promise);
+
+            const responseHeaders = {
+                'x-reject-reason': ['pre-auth'],
+            };
+
+            preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://trusted.com',
+                    responseHeaders,
+                },
+                callback,
+            );
+
+            await promise;
+            expect(callback).toBeCalledWith({responseHeaders});
+        });
+
+        it('should call callback with responseHeaders when modal rejects', async () => {
+            const mockServer = {id: 'test-server', url: new URL('http://trusted.com')};
+            ServerManager.lookupServerByURL.mockReturnValue(mockServer);
+            const callback = jest.fn();
+
+            const error = new Error('Modal error');
+            const promise = Promise.reject(error);
+            ModalManager.addModal.mockImplementationOnce(() => promise);
+
+            const responseHeaders = {
+                'x-reject-reason': ['pre-auth'],
+            };
+
+            preAuthManager.preAuthHeaderOnHeadersReceivedHander(
+                {
+                    url: 'http://trusted.com',
+                    responseHeaders,
+                },
+                callback,
+            );
+
+            // Wait for the promise to resolve/reject
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            expect(callback).toBeCalledWith({responseHeaders});
         });
     });
 });
