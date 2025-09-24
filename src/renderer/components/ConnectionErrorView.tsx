@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useCallback} from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import ErrorView from './ErrorView';
@@ -15,6 +15,9 @@ type Props = {
 };
 
 export default function ConnectionErrorView({darkMode, appName, url, handleLink, errorInfo}: Props) {
+    const clearCacheAndReload = useCallback(() => {
+        window.desktop.clearCacheAndReload();
+    }, []);
     const header = (
         <FormattedMessage
             id='renderer.components.errorView.cannotConnectToThisServer'
@@ -41,6 +44,22 @@ export default function ConnectionErrorView({darkMode, appName, url, handleLink,
 
     const bullets = (
         <>
+            <li>
+                <FormattedMessage
+                    id='renderer.components.errorView.troubleshooting.clearCacheAndReload'
+                    defaultMessage='You can try to <link>clear the cache and reload</link>, which may fix the issue.'
+                    values={{
+                        link: (msg: React.ReactNode) => (
+                            <a
+                                onClick={clearCacheAndReload}
+                                href='#'
+                            >
+                                {msg}
+                            </a>
+                        ),
+                    }}
+                />
+            </li>
             <li>
                 <FormattedMessage
                     id='renderer.components.errorView.troubleshooting.computerIsConnected'

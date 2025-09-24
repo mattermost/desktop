@@ -25,6 +25,7 @@ import {
     UPDATE_TAB_ORDER,
     VIEW_TYPE_REMOVED,
     VIEW_TYPE_ADDED,
+    CLEAR_CACHE_AND_RELOAD,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
@@ -40,6 +41,9 @@ jest.mock('electron', () => {
     return {
         ipcMain: mockIpcMain,
         mockIpcMain,
+        BrowserWindow: {
+            getFocusedWindow: jest.fn(),
+        },
     };
 });
 
@@ -62,6 +66,7 @@ jest.mock('app/views/webContentsManager', () => ({
     createView: jest.fn(),
     getView: jest.fn(),
     removeView: jest.fn(),
+    clearCacheAndReloadView: jest.fn(),
 }));
 
 jest.mock('common/servers/serverManager', () => {
@@ -729,6 +734,15 @@ describe('TabManager', () => {
 
             expect(switchToTabSpy).toHaveBeenCalledWith('test-view-id');
         });
+
+        it('should register CLEAR_CACHE_AND_RELOAD handler', () => {
+            const tabManager = new TabManager();
+
+            // Verify that the IPC handler was registered by checking listeners
+            const listeners = ipcMain.listeners(CLEAR_CACHE_AND_RELOAD);
+            expect(listeners.length).toBeGreaterThan(0);
+            expect(tabManager).toBeDefined();
+        });
     });
 
     describe('Event emission', () => {
@@ -1134,6 +1148,82 @@ describe('TabManager', () => {
 
             // Verify switchToTab was called
             expect(switchToTabSpy).toHaveBeenCalledWith('new-tab-id');
+        });
+    });
+
+    describe('handleClearCacheAndReload', () => {
+        const tabManager = new TabManager();
+        const {BrowserWindow} = require('electron');
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should call clearCacheAndReloadView when main window is focused and has active tab', () => {
+            const mockFocusedWindow = {id: 'main-window-id'};
+            const mockMainWindow = {id: 'main-window-id'};
+
+            BrowserWindow.getFocusedWindow.mockReturnValue(mockFocusedWindow);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+            ViewManager.getView.mockReturnValue(mockView);
+
+            tabManager.handleClearCacheAndReload();
+
+            expect(WebContentsManager.clearCacheAndReloadView).toHaveBeenCalledWith('test-view-id');
+        });
+
+        it('should not call clearCacheAndReloadView when focused window is not main window', () => {
+            const mockFocusedWindow = {id: 'other-window-id'};
+            const mockMainWindow = {id: 'main-window-id'};
+
+            BrowserWindow.getFocusedWindow.mockReturnValue(mockFocusedWindow);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+            ViewManager.getView.mockReturnValue(mockView);
+
+            tabManager.handleClearCacheAndReload();
+
+            expect(WebContentsManager.clearCacheAndReloadView).not.toHaveBeenCalled();
+        });
+
+        it('should not call clearCacheAndReloadView when no focused window', () => {
+            const mockMainWindow = {id: 'main-window-id'};
+
+            BrowserWindow.getFocusedWindow.mockReturnValue(null);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+            ViewManager.getView.mockReturnValue(mockView);
+
+            tabManager.handleClearCacheAndReload();
+
+            expect(WebContentsManager.clearCacheAndReloadView).not.toHaveBeenCalled();
+        });
+
+        it('should not call clearCacheAndReloadView when no active tab', () => {
+            const mockFocusedWindow = {id: 'main-window-id'};
+            const mockMainWindow = {id: 'main-window-id'};
+
+            BrowserWindow.getFocusedWindow.mockReturnValue(mockFocusedWindow);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+
+            tabManager.activeTabs.clear();
+            tabManager.handleClearCacheAndReload();
+
+            expect(WebContentsManager.clearCacheAndReloadView).not.toHaveBeenCalled();
+        });
+
+        it('should not call clearCacheAndReloadView when main window is not available', () => {
+            const mockFocusedWindow = {id: 'main-window-id'};
+
+            BrowserWindow.getFocusedWindow.mockReturnValue(mockFocusedWindow);
+            MainWindow.get.mockReturnValue(null);
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+            ViewManager.getView.mockReturnValue(mockView);
+
+            tabManager.handleClearCacheAndReload();
+
+            expect(WebContentsManager.clearCacheAndReloadView).not.toHaveBeenCalled();
         });
     });
 });

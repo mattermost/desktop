@@ -7,6 +7,7 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import TabManager from 'app/tabs/tabManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
 import ViewManager from 'common/views/viewManager';
 import {localizeMessage} from 'main/i18nManager';
@@ -125,6 +126,7 @@ jest.mock('app/windows/popoutManager', () => ({
 jest.mock('app/views/webContentsManager', () => ({
     getViewByWebContentsId: jest.fn(),
     getFocusedView: jest.fn(),
+    clearCacheAndReloadView: jest.fn(),
 }));
 
 describe('main/menus/app', () => {
@@ -429,8 +431,7 @@ describe('main/menus/app', () => {
             reload: jest.fn(),
             currentURL: 'https://example.com/current-page',
         };
-        const {getFocusedView} = require('app/views/webContentsManager');
-        getFocusedView.mockReturnValue(mockView);
+        WebContentsManager.getFocusedView.mockReturnValue(mockView);
 
         const menu = createTemplate(config);
         const viewMenu = menu.find((item) => item.label === 'main.menus.app.view');
@@ -446,9 +447,9 @@ describe('main/menus/app', () => {
         const mockView = {
             reload: jest.fn(),
             currentURL: 'https://example.com/current-page',
+            id: 'test-view-id',
         };
-        const {getFocusedView} = require('app/views/webContentsManager');
-        getFocusedView.mockReturnValue(mockView);
+        WebContentsManager.getFocusedView.mockReturnValue(mockView);
 
         const menu = createTemplate(config);
         const viewMenu = menu.find((item) => item.label === 'main.menus.app.view');
@@ -457,12 +458,11 @@ describe('main/menus/app', () => {
         expect(clearCacheMenuItem).not.toBe(undefined);
         clearCacheMenuItem.click();
 
-        expect(mockView.reload).toHaveBeenCalledWith('https://example.com/current-page');
+        expect(WebContentsManager.clearCacheAndReloadView).toHaveBeenCalledWith('test-view-id');
     });
 
     it('should handle reload when no focused view is available', () => {
-        const {getFocusedView} = require('app/views/webContentsManager');
-        getFocusedView.mockReturnValue(null);
+        WebContentsManager.getFocusedView.mockReturnValue(null);
 
         const menu = createTemplate(config);
         const viewMenu = menu.find((item) => item.label === 'main.menus.app.view');

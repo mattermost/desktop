@@ -195,6 +195,7 @@
   "renderer.components.errorView.incompatibleServerVersion": "Incompatible server version",
   "renderer.components.errorView.refreshThenVerify": "If refreshing this page (Ctrl+R or Command+R) doesn't help, please check the following:",
   "renderer.components.errorView.serverVersionIsIncompatible": "The {appName} Server you are accessing is incompatible with this version of the {appName} Desktop App. To connect to this server, please try the following:",
+  "renderer.components.errorView.troubleshooting.clearCacheAndReload": "You can try to <link>clear the cache and reload</link>, which may fix the issue.",
   "renderer.components.errorView.troubleshooting.computerIsConnected": "Ensure your computer is connected to the internet.",
   "renderer.components.errorView.troubleshooting.downgradeApp": "<link>Downgrade your {appName} Desktop App</link> to version v5.10 or earlier.",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "Verify that the URL <link>{url}</link> is correct.",
