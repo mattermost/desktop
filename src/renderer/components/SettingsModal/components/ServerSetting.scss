@@ -8,7 +8,7 @@
         display: flex;
         padding-bottom: 20px;
         align-items: center;
-        border-bottom: 1px solid var(--center-channel-color-8, rgba(63, 67, 80, 0.08));
+        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
         
         h3 {
             margin-right: auto;
@@ -24,14 +24,20 @@
         display: flex;
         align-items: center;
         padding: 8px;
-        border-bottom: 1px solid var(--center-channel-color-8, rgba(63, 67, 80, 0.08));
+        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+
 
         i.icon-server-variant {
             font-size: 18px;
+            color: rgba(var(--center-channel-color-rgb), 0.64);
 
             &::before {
                 margin: 0;
             }
+        }
+
+        i.icon-pencil-outline {
+            color: rgba(var(--center-channel-color-rgb), 0.64);
         }
 
         .ServerSetting__serverName {

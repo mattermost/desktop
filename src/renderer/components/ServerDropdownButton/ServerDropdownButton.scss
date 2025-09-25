@@ -1,0 +1,91 @@
+@use 'base/css_variables';
+
+.ServerDropdownButton {
+    background-color: transparent;
+    border-width: 0 1px;
+    border-color: rgba(var(--center-channel-color-rgb), 0.08);
+    border-style: solid;
+    display: flex;
+    align-items: center;
+    font-family: Open Sans;
+    -webkit-font-smoothing: auto;
+    min-width: 72px;
+    max-width: 400px;
+    -webkit-app-region: no-drag;
+
+    &.disabled {
+        opacity: 0.5;
+    }
+
+    &:not(.disabled):hover, &:not(.disabled):focus {
+        background-color: rgba(var(--center-channel-bg-rgb), 0.50);
+
+        .ServerDropdownButton__badge-unreads {
+            box-shadow: 0 0 0 2px rgba(var(--center-channel-bg-rgb), 0.50),
+                        0 0 0 2px rgba(var(--center-channel-color-rgb), 0.08), 
+                        0 0 0 2px var(--center-channel-bg);
+        }
+    }
+
+    &.isMenuOpen, &.isMenuOpen:hover, &.isMenuOpen:focus {
+        background-color: var(--center-channel-bg);
+
+        .ServerDropdownButton__badge-unreads {
+            box-shadow: 0 0 0 2px var(--center-channel-bg);
+        }
+    }
+
+    > span {
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 16px;
+        margin-left: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        user-select: none;
+    }
+
+    i {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        font-size: 18px;
+        line-height: 21px;
+    }
+
+    &:has(.TabBar-dot) {
+        min-width: 108px;
+    }
+
+    &:has(.TabBar-badge) {
+        min-width: 120px;
+    }
+
+    .TabBar-dot, .TabBar-badge {
+        margin-left: 10px;
+        margin-right: 4px;
+        line-height: 18px;
+    }
+}
+
+.ServerDropdownButton__badge {
+    position: relative;
+}
+
+.ServerDropdownButton__badge-unreads {
+    background: var(--sidebar-text-active-border);
+    border-radius: 100px;
+    width: 5px;
+    height: 5px;
+    position: absolute;
+    top: -10px;
+    right: 2px;
+    box-sizing: border-box;
+    box-shadow: 0 0 0 2px rgba(var(--center-channel-color-rgb), 0.08), 
+                0 0 0 2px var(--center-channel-bg);
+
+    &.mentions {
+        background: var(--error-text);
+    }
+}
+
