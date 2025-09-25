@@ -1,0 +1,60 @@
+@use 'base/mixins';
+
+.Carousel {
+    display: flex;
+    flex: 1;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+
+    .Carousel__slides {
+        min-height: 380px;
+        width: 100%;
+        position: relative;
+        display: flex;
+        justify-content: center;
+
+        .Carousel__slide {
+            position: absolute;
+            bottom: 0;
+            opacity: 0;
+        }
+
+        .Carousel__slide-current {
+            opacity: 1;
+        }
+    }
+
+    .Carousel__pagination {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        margin-top: 40px;
+    }
+}
+
+.inFromRight {
+    @include mixins.inFromRight(30);
+
+    animation: inFromRight30 0.4s ease-in-out;
+}
+
+.inFromLeft {
+    @include mixins.inFromLeft(30);
+
+    animation: inFromLeft30 0.4s ease-in-out;
+}
+
+.outToRight {
+    @include mixins.outToRight(30);
+
+    animation: outToRight30 0.4s ease-in-out;
+}
+
+.outToLeft {
+    @include mixins.outToLeft(30);
+
+    animation: outToLeft30 0.4s ease-in-out;
+}

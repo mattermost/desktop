@@ -30,6 +30,7 @@
         
         .SelectSetting__select__menu {
             background: var(--center-channel-bg);
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
         }
 
         .SelectSetting__select__menu-portal {

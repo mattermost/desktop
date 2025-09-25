@@ -1,4 +1,4 @@
-@use '../../css/variables';
+@use 'base/variables';
 
 .tooltipContainer {
     z-index: variables.$z-index-tooltip;

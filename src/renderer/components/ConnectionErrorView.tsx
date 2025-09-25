@@ -4,20 +4,20 @@
 import React, {useCallback} from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import ErrorView from './ErrorView';
+import ErrorView from 'renderer/components/ErrorView';
 
 type Props = {
-    darkMode: boolean;
     appName?: string;
     url?: string;
     errorInfo?: string;
     handleLink: () => void;
 };
 
-export default function ConnectionErrorView({darkMode, appName, url, handleLink, errorInfo}: Props) {
+export default function ConnectionErrorView({appName, url, handleLink, errorInfo}: Props) {
     const clearCacheAndReload = useCallback(() => {
         window.desktop.clearCacheAndReload();
     }, []);
+
     const header = (
         <FormattedMessage
             id='renderer.components.errorView.cannotConnectToThisServer'
@@ -96,7 +96,6 @@ export default function ConnectionErrorView({darkMode, appName, url, handleLink,
 
     return (
         <ErrorView
-            darkMode={darkMode}
             header={header}
             subHeader={subHeader}
             bullets={bullets}

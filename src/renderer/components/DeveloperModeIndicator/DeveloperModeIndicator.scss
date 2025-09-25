@@ -1,0 +1,41 @@
+.DeveloperModeIndicator {
+    align-items: center;
+    background: transparent;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 4px;
+    position: relative;
+    width: 32px;
+    -webkit-app-region: no-drag;
+
+    i {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        cursor: pointer;
+        font-size: 21px;
+        line-height: 21px;
+    }
+
+    &:hover, &:focus {
+        i {
+            color: rgba(var(--center-channel-color-rgb), 0.78);
+        }
+    }
+
+    .DeveloperModeIndicator__badge {
+        background: var(--error-text);
+        border-radius: 10px;
+        width: 10px;
+        height: 10px;
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+}
+
+.DeveloperModeIndicator__tooltip.tooltipContainer {
+    max-width: none;
+}
