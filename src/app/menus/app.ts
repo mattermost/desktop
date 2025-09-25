@@ -3,7 +3,7 @@
 'use strict';
 
 import type {MenuItemConstructorOptions, BaseWindow, MenuItem} from 'electron';
-import {app, ipcMain, Menu, session, shell, clipboard, BrowserWindow} from 'electron';
+import {app, ipcMain, Menu, shell, clipboard, BrowserWindow} from 'electron';
 import log from 'electron-log';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
@@ -239,10 +239,9 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
         label: localizeMessage('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
-            session.defaultSession.clearCache();
             const view = WebContentsManager.getFocusedView();
             if (view) {
-                view.reload(view.currentURL);
+                WebContentsManager.clearCacheAndReloadView(view.id);
             }
         },
     }];

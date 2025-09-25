@@ -49,6 +49,7 @@ declare global {
             getNonce: () => Promise<string | undefined>;
             isDeveloperModeEnabled: () => Promise<boolean>;
             getSecret: (serverUrl: string, keySuffix?: string) => Promise<string | null>;
+            clearCacheAndReload: () => void;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;

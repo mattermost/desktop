@@ -27,6 +27,7 @@ import {PopoutManager} from './popoutManager';
 jest.mock('electron', () => ({
     ipcMain: {
         handle: jest.fn(),
+        on: jest.fn(),
     },
 }));
 
@@ -34,6 +35,7 @@ jest.mock('app/views/webContentsManager', () => ({
     createView: jest.fn(),
     removeView: jest.fn(),
     getView: jest.fn(),
+    clearCacheAndReloadView: jest.fn(),
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
@@ -709,6 +711,61 @@ describe('PopoutManager', () => {
 
             // Verify the view was registered with performance monitor
             expect(performanceMonitor.registerView).toHaveBeenCalledWith('PopoutWindow-new-window-id', mockBaseWindow.browserWindow.webContents);
+        });
+    });
+
+    describe('handleClearCacheAndReload', () => {
+        const popoutManager = new PopoutManager();
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should call clearCacheAndReloadView when viewId is found', () => {
+            const mockEvent = {
+                sender: {
+                    id: 123,
+                },
+            };
+
+            popoutManager.popoutWindows.set('test-view-id', mockBaseWindow);
+
+            const getViewIdSpy = jest.spyOn(popoutManager, 'getViewIdByWindowWebContentsId');
+            getViewIdSpy.mockReturnValue('test-view-id');
+
+            popoutManager.handleClearCacheAndReload(mockEvent);
+
+            expect(WebContentsManager.clearCacheAndReloadView).toHaveBeenCalledWith('test-view-id');
+        });
+
+        it('should not call clearCacheAndReloadView when viewId is not found', () => {
+            const mockEvent = {
+                sender: {
+                    id: 123,
+                },
+            };
+
+            const getViewIdSpy = jest.spyOn(popoutManager, 'getViewIdByWindowWebContentsId');
+            getViewIdSpy.mockReturnValue(undefined);
+
+            popoutManager.handleClearCacheAndReload(mockEvent);
+
+            expect(WebContentsManager.clearCacheAndReloadView).not.toHaveBeenCalled();
+        });
+
+        it('should not call clearCacheAndReloadView when viewId is null', () => {
+            const mockEvent = {
+                sender: {
+                    id: 123,
+                },
+            };
+
+            const getViewIdSpy = jest.spyOn(popoutManager, 'getViewIdByWindowWebContentsId');
+            getViewIdSpy.mockReturnValue(null);
+
+            popoutManager.handleClearCacheAndReload(mockEvent);
+
+            expect(WebContentsManager.clearCacheAndReloadView).not.toHaveBeenCalled();
         });
     });
 });

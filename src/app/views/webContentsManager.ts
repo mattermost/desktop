@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain, shell} from 'electron';
+import {ipcMain, session, shell} from 'electron';
 import isDev from 'electron-is-dev';
 
 import popoutMenu from 'app/popoutMenu';
@@ -116,6 +116,12 @@ export class WebContentsManager {
         view.destroy();
         this.webContentsViews.delete(viewId);
         this.webContentsIdToView.delete(view.webContentsId);
+    };
+
+    clearCacheAndReloadView = (viewId: string) => {
+        session.defaultSession.clearCache();
+        const view = this.getView(viewId);
+        view?.reload(view.currentURL);
     };
 
     private addViewToMap = (view: MattermostWebContentsView): void => {

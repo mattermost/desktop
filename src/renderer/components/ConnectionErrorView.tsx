@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useCallback} from 'react';
 import {FormattedMessage} from 'react-intl';
 
 import ErrorView from 'renderer/components/ErrorView';
@@ -14,6 +14,10 @@ type Props = {
 };
 
 export default function ConnectionErrorView({appName, url, handleLink, errorInfo}: Props) {
+    const clearCacheAndReload = useCallback(() => {
+        window.desktop.clearCacheAndReload();
+    }, []);
+
     const header = (
         <FormattedMessage
             id='renderer.components.errorView.cannotConnectToThisServer'
@@ -32,8 +36,8 @@ export default function ConnectionErrorView({appName, url, handleLink, errorInfo
             />
             <br/>
             <FormattedMessage
-                id='renderer.components.errorView.refreshThenVerify'
-                defaultMessage="If refreshing this page (Ctrl+R or Command+R) doesn't help, please check the following:"
+                id='renderer.components.errorView.tryTheseSteps'
+                defaultMessage='Please try the following steps if this issue persists:'
             />
         </>
     );
@@ -42,8 +46,24 @@ export default function ConnectionErrorView({appName, url, handleLink, errorInfo
         <>
             <li>
                 <FormattedMessage
-                    id='renderer.components.errorView.troubleshooting.computerIsConnected'
-                    defaultMessage='Ensure your computer is connected to the internet.'
+                    id='renderer.components.errorView.troubleshooting.clearCacheAndReload'
+                    defaultMessage='Try to <link>clear the cache and reload</link>. This may fix the issue.'
+                    values={{
+                        link: (msg: React.ReactNode) => (
+                            <a
+                                onClick={clearCacheAndReload}
+                                href='#'
+                            >
+                                {msg}
+                            </a>
+                        ),
+                    }}
+                />
+            </li>
+            <li>
+                <FormattedMessage
+                    id='renderer.components.errorView.troubleshooting.ensureComputerIsConnected'
+                    defaultMessage='Ensure your computer is connected to your network.'
                 />
             </li>
             <li>
@@ -70,7 +90,7 @@ export default function ConnectionErrorView({appName, url, handleLink, errorInfo
     const contactAdmin = (
         <FormattedMessage
             id='renderer.components.errorView.contactAdmin'
-            defaultMessage='If the issue persists, please contact your admin'
+            defaultMessage='If the issue persists, please contact your admin.'
         />
     );
 

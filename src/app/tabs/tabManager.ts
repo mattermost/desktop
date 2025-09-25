@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcMain} from 'electron';
+import {BrowserWindow, ipcMain} from 'electron';
 import EventEmitter from 'events';
 
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -33,6 +33,7 @@ import {
     UPDATE_TAB_ORDER,
     VIEW_TYPE_ADDED,
     VIEW_TYPE_REMOVED,
+    CLEAR_CACHE_AND_RELOAD,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -66,6 +67,7 @@ export class TabManager extends EventEmitter {
         ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => this.updateTabOrder(serverId, viewOrder));
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.switchToTab(viewId));
         ipcMain.on(CLOSE_TAB, (event, viewId) => ViewManager.removeView(viewId));
+        ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
 
         // Subscribe to ViewManager events
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
@@ -482,6 +484,16 @@ export class TabManager extends EventEmitter {
             MainWindow.window?.showLoadingScreen(1);
         } else {
             MainWindow.window?.showLoadingScreen();
+        }
+    };
+
+    private handleClearCacheAndReload = () => {
+        if (BrowserWindow.getFocusedWindow()?.id !== MainWindow.get()?.id) {
+            return;
+        }
+        const viewId = this.getCurrentActiveTab()?.id;
+        if (viewId) {
+            WebContentsManager.clearCacheAndReloadView(viewId);
         }
     };
 }
