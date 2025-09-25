@@ -232,6 +232,13 @@ export const CLOSE_TAB = 'close-tab';
 // Popout Manager Events
 export const CREATE_NEW_WINDOW = 'create-new-window';
 export const UPDATE_POPOUT_TITLE = 'update-popout-title';
+export const CAN_POPOUT = 'can-popout';
+export const OPEN_POPOUT = 'open-popout';
+export const CAN_USE_POPOUT_OPTION = 'can-use-popout-option';
+export const SEND_TO_PARENT = 'send-to-parent';
+export const MESSAGE_FROM_PARENT = 'message-from-parent';
+export const SEND_TO_POPOUT = 'send-to-popout';
+export const MESSAGE_FROM_POPOUT = 'message-from-popout';
 
 // View limit events
 export const VIEW_LIMIT_UPDATED = 'view-limit-updated';

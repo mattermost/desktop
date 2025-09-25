@@ -18,6 +18,7 @@ import {
     VIEW_TYPE_ADDED,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
+import {MINIMUM_WINDOW_WIDTH, TAB_BAR_HEIGHT, DEFAULT_WINDOW_HEIGHT} from 'common/utils/constants';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import performanceMonitor from 'main/performanceMonitor';
@@ -27,6 +28,7 @@ import {PopoutManager} from './popoutManager';
 jest.mock('electron', () => ({
     ipcMain: {
         handle: jest.fn(),
+        on: jest.fn(),
     },
 }));
 
@@ -34,6 +36,7 @@ jest.mock('app/views/webContentsManager', () => ({
     createView: jest.fn(),
     removeView: jest.fn(),
     getView: jest.fn(),
+    getViewByWebContentsId: jest.fn(),
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
@@ -92,6 +95,7 @@ jest.mock('common/views/viewManager', () => {
         getView: jest.fn(),
         createView: jest.fn(),
         getViewTitle: jest.fn(),
+        isViewLimitReached: jest.fn(),
         mockViewManager,
     };
 });
@@ -260,6 +264,34 @@ describe('PopoutManager', () => {
             expect(mockBaseWindow.browserWindow.show).toHaveBeenCalled();
         });
 
+        it('should create new window with correct size and position for RHS view', () => {
+            const mockWindowView = {
+                id: 'rhs-window-id',
+                serverId: 'test-server-id',
+                type: ViewType.WINDOW,
+                props: {isRHS: true},
+            };
+
+            // Main window position and size
+            MainWindow.get.mockReturnValue({
+                getPosition: jest.fn(() => [100, 200]),
+                getSize: jest.fn(() => [800, 600]),
+            });
+            ViewManager.getView.mockReturnValue(mockWindowView);
+
+            ViewManager.mockViewManager.emit(VIEW_CREATED, 'rhs-window-id');
+
+            // Trigger the did-finish-load event to call show()
+            mockBaseWindow.browserWindow.webContents.emit('did-finish-load');
+
+            expect(BaseWindow).toHaveBeenCalledWith({
+                x: (100 + 800) - MINIMUM_WINDOW_WIDTH,
+                y: 200 + TAB_BAR_HEIGHT,
+                width: MINIMUM_WINDOW_WIDTH,
+                height: DEFAULT_WINDOW_HEIGHT,
+            });
+        });
+
         it('should not create window for non-WINDOW type view', () => {
             const mockTabView = {
                 id: 'new-tab-id',
@@ -341,7 +373,7 @@ describe('PopoutManager', () => {
 
             popoutManager.popoutWindows.set('test-view-id', mockBaseWindow);
             ViewManager.getView.mockReturnValue(mockWindowView);
-            ViewManager.getViewTitle.mockReturnValue('Updated Title');
+            ViewManager.getViewTitle.mockReturnValue('Test Server - Updated Title');
 
             ViewManager.mockViewManager.emit(VIEW_TITLE_UPDATED, 'test-view-id');
 
@@ -709,6 +741,171 @@ describe('PopoutManager', () => {
 
             // Verify the view was registered with performance monitor
             expect(performanceMonitor.registerView).toHaveBeenCalledWith('PopoutWindow-new-window-id', mockBaseWindow.browserWindow.webContents);
+        });
+    });
+
+    describe('handleCanPopout', () => {
+        const popoutManager = new PopoutManager();
+
+        it('should return true when view limit is not reached', () => {
+            ViewManager.isViewLimitReached.mockReturnValue(false);
+            const result = popoutManager.handleCanPopout();
+            expect(result).toBe(true);
+        });
+
+        it('should return false when view limit is reached', () => {
+            ViewManager.isViewLimitReached.mockReturnValue(true);
+            const result = popoutManager.handleCanPopout();
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('handleOpenPopout', () => {
+        const popoutManager = new PopoutManager();
+        const mockEvent = {
+            sender: {
+                id: 123,
+            },
+        };
+        const mockView = {
+            id: 'test-view-id',
+            serverId: 'test-server-id',
+        };
+        const mockServer = {
+            id: 'test-server-id',
+            name: 'Test Server',
+        };
+        const mockNewView = {
+            id: 'new-popout-id',
+            serverId: 'test-server-id',
+            type: ViewType.WINDOW,
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should create new popout view with path and props', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockView);
+            ServerManager.getServer.mockReturnValue(mockServer);
+            ViewManager.createView.mockReturnValue(mockNewView);
+            const result = popoutManager.handleOpenPopout(mockEvent, '/test/path', {isRHS: true});
+            expect(WebContentsManager.getViewByWebContentsId).toHaveBeenCalledWith(123);
+            expect(ServerManager.getServer).toHaveBeenCalledWith('test-server-id');
+            expect(ViewManager.createView).toHaveBeenCalledWith(mockServer, ViewType.WINDOW, '/test/path', 'test-view-id', {isRHS: true});
+            expect(result).toBe('new-popout-id');
+        });
+
+        it('should return undefined when view not found', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+            const result = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
+            expect(result).toBeUndefined();
+            expect(ViewManager.createView).not.toHaveBeenCalled();
+        });
+
+        it('should return undefined when server not found', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockView);
+            ServerManager.getServer.mockReturnValue(null);
+            const result = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
+            expect(result).toBeUndefined();
+            expect(ViewManager.createView).not.toHaveBeenCalled();
+        });
+
+        it('should return undefined when createView returns undefined', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockView);
+            ServerManager.getServer.mockReturnValue(mockServer);
+            ViewManager.createView.mockReturnValue(undefined);
+            const result = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
+            expect(result).toBeUndefined();
+        });
+    });
+
+    describe('handleSendToParent', () => {
+        const popoutManager = new PopoutManager();
+        const mockEvent = {
+            sender: {
+                id: 123,
+            },
+        };
+        const mockWebContentsView = {
+            id: 'test-view-id',
+            serverId: 'test-server-id',
+        };
+        const mockView = {
+            id: 'test-view-id',
+            parentViewId: 'parent-view-id',
+        };
+        const mockParentView = {
+            id: 'parent-view-id',
+            sendToRenderer: jest.fn(),
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should send message to parent view', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockWebContentsView);
+            ViewManager.getView.mockReturnValue(mockView);
+            WebContentsManager.getView.mockReturnValue(mockParentView);
+            popoutManager.handleSendToParent(mockEvent, 'test-channel', 'arg1', 'arg2');
+            expect(WebContentsManager.getViewByWebContentsId).toHaveBeenCalledWith(123);
+            expect(ViewManager.getView).toHaveBeenCalledWith('test-view-id');
+            expect(WebContentsManager.getView).toHaveBeenCalledWith('parent-view-id');
+            expect(mockParentView.sendToRenderer).toHaveBeenCalledWith('message-from-popout', 'test-view-id', 'test-channel', 'arg1', 'arg2');
+        });
+
+        it('should not send message when webContentsView not found', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+            popoutManager.handleSendToParent(mockEvent, 'test-channel', 'arg1');
+            expect(ViewManager.getView).not.toHaveBeenCalled();
+            expect(WebContentsManager.getView).not.toHaveBeenCalled();
+        });
+
+        it('should not send message when view has no parentViewId', () => {
+            const mockViewWithoutParent = {
+                ...mockView,
+                parentViewId: undefined,
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockWebContentsView);
+            ViewManager.getView.mockReturnValue(mockViewWithoutParent);
+            popoutManager.handleSendToParent(mockEvent, 'test-channel', 'arg1');
+            expect(WebContentsManager.getView).not.toHaveBeenCalled();
+        });
+
+        it('should not send message when parent view not found', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockWebContentsView);
+            ViewManager.getView.mockReturnValue(mockView);
+            WebContentsManager.getView.mockReturnValue(null);
+            popoutManager.handleSendToParent(mockEvent, 'test-channel', 'arg1');
+            expect(mockParentView.sendToRenderer).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleSendToPopout', () => {
+        const popoutManager = new PopoutManager();
+        const mockEvent = {};
+        const mockView = {
+            id: 'popout-view-id',
+            sendToRenderer: jest.fn(),
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should send message to popout view', () => {
+            WebContentsManager.getView.mockReturnValue(mockView);
+            popoutManager.handleSendToPopout(mockEvent, 'popout-view-id', 'test-channel', 'arg1', 'arg2');
+            expect(WebContentsManager.getView).toHaveBeenCalledWith('popout-view-id');
+            expect(mockView.sendToRenderer).toHaveBeenCalledWith('message-from-parent', 'test-channel', 'arg1', 'arg2');
+        });
+
+        it('should not send message when view not found', () => {
+            WebContentsManager.getView.mockReturnValue(null);
+            popoutManager.handleSendToPopout(mockEvent, 'non-existent-id', 'test-channel', 'arg1');
+            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
         });
     });
 });

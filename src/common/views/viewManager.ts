@@ -3,6 +3,8 @@
 
 import EventEmitter from 'events';
 
+import type {PopoutViewProps} from '@mattermost/desktop-api';
+
 import {
     VIEW_CREATED,
     VIEW_TITLE_UPDATED,
@@ -45,14 +47,30 @@ export class ViewManager extends EventEmitter {
             return '';
         }
         const {channelName, teamName, serverName} = view.title;
-        if (channelName) {
-            if (teamName && [...this.views.values()].some((v) => v.id !== view.id && v.title.channelName === channelName)) {
-                return `${channelName} - ${teamName}`;
-            }
-            return channelName;
+
+        if (view.props?.titleTemplate) {
+            return view.props.titleTemplate.
+                replace('{channelName}', channelName ?? '').
+                replace('{teamName}', teamName ?? '').
+                replace('{serverName}', serverName ?? '');
         }
 
-        return teamName ?? serverName;
+        let title = '';
+        if (channelName) {
+            if (teamName && [...this.views.values()].some((v) => v.id !== view.id && v.title.channelName === channelName)) {
+                title = `${channelName} - ${teamName}`;
+            } else {
+                title = channelName;
+            }
+        } else {
+            title = teamName ?? serverName;
+        }
+
+        if (view.type === ViewType.WINDOW) {
+            title = `${serverName} - ${title}`;
+        }
+
+        return title;
     };
 
     getViewsByServerId = (serverId: string) => {
@@ -79,15 +97,15 @@ export class ViewManager extends EventEmitter {
         return Boolean(Config.viewLimit && this.views.size >= Config.viewLimit);
     };
 
-    createView = (server: MattermostServer, type: ViewType) => {
-        log.debug('createView', {serverId: server.id, type});
+    createView = (server: MattermostServer, type: ViewType, initialPath?: string, parentViewId?: string, props?: PopoutViewProps) => {
+        log.debug('createView', {serverId: server.id, parentViewId, type});
 
         if (this.isViewLimitReached()) {
             log.warn(`createView: View limit reached for server ${server.id}`);
             return undefined;
         }
 
-        const newView = new MattermostView(server, type);
+        const newView = new MattermostView(server, type, initialPath, parentViewId, props);
         this.views.set(newView.id, newView);
 
         if (type === ViewType.TAB && !this.serverPrimaryViews.has(server.id)) {
@@ -148,6 +166,11 @@ export class ViewManager extends EventEmitter {
         }
 
         this.setNewPrimaryViewIfNeeded(view);
+        this.views.forEach((v) => {
+            if (v.parentViewId === viewId) {
+                v.parentViewId = this.serverPrimaryViews.get(v.serverId);
+            }
+        });
 
         this.views.delete(viewId);
         this.emit(VIEW_REMOVED, viewId, view.serverId);

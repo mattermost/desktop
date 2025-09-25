@@ -38,6 +38,13 @@ import {
     METRICS_SEND,
     METRICS_REQUEST,
     METRICS_RECEIVE,
+    CAN_POPOUT,
+    OPEN_POPOUT,
+    CAN_USE_POPOUT_OPTION,
+    SEND_TO_PARENT,
+    SEND_TO_POPOUT,
+    MESSAGE_FROM_PARENT,
+    MESSAGE_FROM_POPOUT,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
@@ -114,6 +121,15 @@ const desktopAPI: DesktopAPI = {
 
     // Utility
     unregister: (channel) => ipcRenderer.removeAllListeners(channel),
+
+    // Popouts
+    canPopout: () => ipcRenderer.invoke(CAN_POPOUT),
+    openPopout: (path, props) => ipcRenderer.invoke(OPEN_POPOUT, path, props),
+    canUsePopoutOption: (optionName) => ipcRenderer.invoke(CAN_USE_POPOUT_OPTION, optionName),
+    sendToParent: (channel, ...args) => ipcRenderer.send(SEND_TO_PARENT, channel, ...args),
+    onMessageFromParent: (listener) => createListener(MESSAGE_FROM_PARENT, listener),
+    sendToPopout: (id, channel, ...args) => ipcRenderer.send(SEND_TO_POPOUT, id, channel, ...args),
+    onMessageFromPopout: (listener) => createListener(MESSAGE_FROM_POPOUT, listener),
 };
 contextBridge.exposeInMainWorld('desktopAPI', desktopAPI);
 
