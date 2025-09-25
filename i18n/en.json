@@ -114,7 +114,6 @@
   "main.menus.app.view.zoomOut": "Zoom Out",
   "main.menus.app.window": "&Window",
   "main.menus.app.window.bringAllToFront": "Bring All to Front",
-  "main.menus.app.window.closeMainWindow": "Close Main Window",
   "main.menus.app.window.closeTab": "Close Tab",
   "main.menus.app.window.closeWindow": "Close Window",
   "main.menus.app.window.minimize": "Minimize",

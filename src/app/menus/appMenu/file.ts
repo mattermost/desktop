@@ -98,8 +98,8 @@ function getBaseFileMenu(): MenuItemConstructorOptions[] {
 
     baseFileMenu.push({
         role: 'close',
-        label: (BrowserWindow.getFocusedWindow() === MainWindow.get()) ? localizeMessage('main.menus.app.window.closeMainWindow', 'Close Window') : localizeMessage('main.menus.app.window.closeWindow', 'Close Window'),
-        accelerator: 'CmdOrCtrl+Shift+W',
+        label: localizeMessage('main.menus.app.window.closeWindow', 'Close Window'),
+        accelerator: (BrowserWindow.getFocusedWindow() === MainWindow.get()) ? 'CmdOrCtrl+Shift+W' : 'CmdOrCtrl+W',
     });
 
     if (currentServerId && BrowserWindow.getFocusedWindow() === MainWindow.get()) {
