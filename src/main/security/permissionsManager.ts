@@ -174,6 +174,12 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
 
         // For certain permission types, we need to confirm with the user
         if (authorizablePermissionTypes.includes(permission) || isExternalFullscreen) {
+            // In test mode, do not show dialog, always allow
+            if (process.env.NODE_ENV === 'test') {
+                log.debug('Test mode: authorizable permission, auto-allow');
+                return true;
+            }
+
             const currentPermission = this.json[parsedURL.origin]?.[permission];
 
             // If previously allowed, just allow
@@ -197,11 +203,6 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
             }
 
             const promise = new Promise<boolean>((resolve) => {
-                if (process.env.NODE_ENV === 'test') {
-                    resolve(false);
-                    return;
-                }
-
                 // Show the dialog to ask the user
                 dialog.showMessageBox(mainWindow, {
                     title: localizeMessage('main.permissionsManager.checkPermission.dialog.title', 'Permission Requested'),
