@@ -36,8 +36,8 @@ export default function ConnectionErrorView({darkMode, appName, url, handleLink,
             />
             <br/>
             <FormattedMessage
-                id='renderer.components.errorView.refreshThenVerify'
-                defaultMessage="If refreshing this page (Ctrl+R or Command+R) doesn't help, please check the following:"
+                id='renderer.components.errorView.tryTheseSteps'
+                defaultMessage='Please try the following steps if this issue persists:'
             />
         </>
     );
@@ -47,7 +47,7 @@ export default function ConnectionErrorView({darkMode, appName, url, handleLink,
             <li>
                 <FormattedMessage
                     id='renderer.components.errorView.troubleshooting.clearCacheAndReload'
-                    defaultMessage='You can try to <link>clear the cache and reload</link>, which may fix the issue.'
+                    defaultMessage='Try to <link>clear the cache and reload</link>. This may fix the issue.'
                     values={{
                         link: (msg: React.ReactNode) => (
                             <a
@@ -62,8 +62,8 @@ export default function ConnectionErrorView({darkMode, appName, url, handleLink,
             </li>
             <li>
                 <FormattedMessage
-                    id='renderer.components.errorView.troubleshooting.computerIsConnected'
-                    defaultMessage='Ensure your computer is connected to the internet.'
+                    id='renderer.components.errorView.troubleshooting.ensureComputerIsConnected'
+                    defaultMessage='Ensure your computer is connected to your network.'
                 />
             </li>
             <li>
@@ -90,7 +90,7 @@ export default function ConnectionErrorView({darkMode, appName, url, handleLink,
     const contactAdmin = (
         <FormattedMessage
             id='renderer.components.errorView.contactAdmin'
-            defaultMessage='If the issue persists, please contact your admin'
+            defaultMessage='If the issue persists, please contact your admin.'
         />
     );
 
