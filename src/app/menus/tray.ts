@@ -12,7 +12,7 @@ import ServerManager from 'common/servers/serverManager';
 import {localizeMessage} from 'main/i18nManager';
 import {getLocalPreload} from 'main/utils';
 
-export function createTemplate() {
+export default function createTrayMenu() {
     const servers = ServerManager.getOrderedServers();
     const template: MenuItemConstructorOptions[] = [
         ...servers.slice(0, 9).map((server) => {
@@ -46,10 +46,6 @@ export function createTemplate() {
             role: 'quit',
         },
     ];
-    return template;
-}
 
-export function createMenu() {
-    // Electron is enforcing certain variables that it doesn't need
-    return Menu.buildFromTemplate(createTemplate());
+    return Menu.buildFromTemplate(template);
 }

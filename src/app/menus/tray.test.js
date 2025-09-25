@@ -1,11 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-'use strict';
+import {Menu} from 'electron';
 
 import ServerManager from 'common/servers/serverManager';
 
-import {createTemplate} from './tray';
+import createTrayMenu from './tray';
+
+jest.mock('electron', () => ({
+    Menu: {
+        buildFromTemplate: jest.fn(),
+    },
+}));
 
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
@@ -33,14 +39,17 @@ describe('main/menus/tray', () => {
             url: `http://server-${key}.com`,
         }));
         ServerManager.getOrderedServers.mockReturnValue(servers);
-        const menu = createTemplate();
-        for (let i = 0; i < 9; i++) {
-            const menuItem = menu.find((item) => item.label === `server-${i}`);
-            expect(menuItem).not.toBe(undefined);
-        }
-        for (let i = 9; i < 15; i++) {
-            const menuItem = menu.find((item) => item.label === `server-${i}`);
-            expect(menuItem).toBe(undefined);
-        }
+        createTrayMenu();
+        expect(Menu.buildFromTemplate).toHaveBeenCalledWith(expect.arrayContaining([
+            expect.objectContaining({label: 'server-0'}),
+            expect.objectContaining({label: 'server-1'}),
+            expect.objectContaining({label: 'server-2'}),
+            expect.objectContaining({label: 'server-3'}),
+            expect.objectContaining({label: 'server-4'}),
+            expect.objectContaining({label: 'server-5'}),
+            expect.objectContaining({label: 'server-6'}),
+            expect.objectContaining({label: 'server-7'}),
+            expect.objectContaining({label: 'server-8'}),
+        ]));
     });
 });
