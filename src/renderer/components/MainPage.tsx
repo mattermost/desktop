@@ -16,10 +16,6 @@ import TabBar from './TabBar';
 
 import {playSound} from '../notificationSounds';
 
-import '../css/components/UpgradeButton.scss';
-import '../css/components/BasePage.css';
-import '../css/components/TopBar.scss';
-
 enum Status {
     LOADING = 1,
     DONE = 2,
@@ -31,7 +27,6 @@ enum Status {
 
 type Props = {
     openMenu: () => void;
-    darkMode: boolean;
     appName: string;
 };
 
@@ -440,7 +435,6 @@ class MainPage extends React.PureComponent<Props, State> {
         const tabsRow = (
             <TabBar
                 id='tabBar'
-                isDarkMode={this.props.darkMode}
                 tabs={currentTabs}
                 sessionsExpired={this.state.sessionsExpired}
                 unreadCounts={this.state.unreadCounts}
@@ -460,7 +454,6 @@ class MainPage extends React.PureComponent<Props, State> {
 
         const downloadsDropdownButton = this.state.hasDownloads ? (
             <DownloadsDropdownButton
-                darkMode={this.props.darkMode}
                 isDownloadsDropdownOpen={this.state.isDownloadsDropdownOpen}
                 showDownloadsBadge={this.state.showDownloadsBadge}
                 closeDownloadsDropdown={this.closeDownloadsDropdown}
@@ -498,7 +491,6 @@ class MainPage extends React.PureComponent<Props, State> {
 
         return (
             <BasePage
-                darkMode={this.props.darkMode}
                 appName={this.props.appName}
                 openMenu={this.props.openMenu}
                 title={window.process.platform !== 'linux' && this.state.servers.length === 0 ? this.props.appName : undefined}
@@ -516,13 +508,11 @@ class MainPage extends React.PureComponent<Props, State> {
                             currentUnread={this.state.unreadsPerServer[this.state.activeServerId!]}
                             hasUnreads={hasAnyUnreads}
                             isMenuOpen={this.state.isMenuOpen}
-                            darkMode={this.props.darkMode}
                         />
                     </>
                 )}
                 {tabsRow}
                 <DeveloperModeIndicator
-                    darkMode={this.props.darkMode}
                     developerMode={this.state.developerMode}
                 />
                 {downloadsDropdownButton}

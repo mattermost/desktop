@@ -1,0 +1,13 @@
+.BasePage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    background-size: cover;
+  }
+}

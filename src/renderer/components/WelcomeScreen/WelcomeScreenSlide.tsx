@@ -4,14 +4,13 @@
 import classNames from 'classnames';
 import React from 'react';
 
-import 'renderer/css/components/WelcomeScreenSlide.scss';
+import './WelcomeScreenSlide.scss';
 
 type WelcomeScreenSlideProps = {
     title: string;
     subtitle: string | React.ReactElement;
     image: React.ReactNode;
     isMain?: boolean;
-    darkMode?: boolean;
 };
 
 const WelcomeScreenSlide = ({
@@ -19,14 +18,12 @@ const WelcomeScreenSlide = ({
     subtitle,
     image,
     isMain,
-    darkMode,
 }: WelcomeScreenSlideProps) => (
     <div
         className={classNames(
             'WelcomeScreenSlide',
             {
                 'WelcomeScreenSlide--main': isMain,
-                'WelcomeScreenSlide--darkMode': darkMode,
             },
         )}
     >

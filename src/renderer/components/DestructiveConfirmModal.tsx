@@ -4,7 +4,7 @@
 
 import React from 'react';
 
-import {Modal} from './Modal';
+import {Modal} from 'renderer/components/Modal';
 
 type Props = {
     id: string;

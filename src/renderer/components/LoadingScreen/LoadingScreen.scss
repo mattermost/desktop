@@ -1,0 +1,38 @@
+body {
+    background-color: transparent;
+    margin: 0;
+}
+
+.LoadingScreen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    width: 100vw;
+    height: 100vh;
+    vertical-align: middle;
+    opacity: 1;
+    visibility: visible;
+    z-index: 10;
+    overflow: hidden;
+    
+    transition: opacity 150ms 0ms ease-out, visibility 150ms 0ms step-start;
+
+    &__background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+    }
+
+    &--loaded {
+        opacity: 0;
+        visibility: hidden;
+        
+        transition: opacity 150ms 0ms ease-in, visibility 150ms 0ms step-end;
+    }
+}
