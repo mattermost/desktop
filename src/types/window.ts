@@ -69,7 +69,7 @@ declare global {
             onServerSwitched: (listener: (serverId: string) => void) => void;
             onTabAdded: (listener: (serverId: string, tabId: string) => void) => void;
             onTabRemoved: (listener: (serverId: string, tabId: string) => void) => void;
-            validateServerURL: (url: string, currentId?: string, preAuthSecret?: string) => Promise<URLValidationResult>;
+            validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
             editServer: (server: UniqueServer, permissions?: Permissions) => void;

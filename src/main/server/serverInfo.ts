@@ -11,12 +11,10 @@ import {getServerAPI} from './serverAPI';
 export class ServerInfo {
     private server: MattermostServer;
     private remoteInfo: RemoteInfo;
-    private preAuthSecret?: string;
 
-    constructor(server: MattermostServer, preAuthSecret?: string) {
+    constructor(server: MattermostServer) {
         this.server = server;
         this.remoteInfo = {};
-        this.preAuthSecret = preAuthSecret;
     }
 
     pingServer = async () => {
@@ -70,12 +68,11 @@ export class ServerInfo {
                     }
                 },
                 () => reject(new Error('Aborted')),
-                (error: Error, statusCode?: number) => {
-                    const enhancedError = error as Error & { statusCode?: number };
-                    enhancedError.statusCode = statusCode;
+                (error: Error, errorReason?: {needsBasicAuth?: boolean; needsPreAuth?: boolean}) => {
+                    const enhancedError = error as Error & { errorReason?: {needsBasicAuth?: boolean; needsPreAuth?: boolean} };
+                    enhancedError.errorReason = errorReason;
                     reject(enhancedError);
-                },
-                this.preAuthSecret);
+                });
         });
     };
 

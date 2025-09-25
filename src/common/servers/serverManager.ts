@@ -18,7 +18,7 @@ import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
 
-import type {NewServer, Server} from 'types/config';
+import type {Server} from 'types/config';
 import type {RemoteInfo} from 'types/server';
 
 const log = new Logger('ServerManager');
@@ -85,7 +85,7 @@ export class ServerManager extends EventEmitter {
         });
     };
 
-    addServer = (server: NewServer, initialLoadURL?: URL) => {
+    addServer = (server: Server, initialLoadURL?: URL) => {
         log.debug('addServer');
 
         const mattermostServer = this.createServer(server, false, initialLoadURL);
@@ -103,7 +103,7 @@ export class ServerManager extends EventEmitter {
         this.emit(SERVER_LOGGED_IN_CHANGED, serverId, loggedIn);
     };
 
-    private createServer = (server: NewServer, isPredefined: boolean, initialLoadURL?: URL) => {
+    private createServer = (server: Server, isPredefined: boolean, initialLoadURL?: URL) => {
         let newServer = new MattermostServer(server, isPredefined, initialLoadURL);
         while (this.servers.has(newServer.id)) {
             newServer = new MattermostServer(server, isPredefined, initialLoadURL);
@@ -131,7 +131,7 @@ export class ServerManager extends EventEmitter {
         return newServer;
     };
 
-    editServer = (serverId: string, server: Server, preAuthSecret?: string) => {
+    editServer = (serverId: string, server: Server) => {
         log.debug('editServer', {serverId});
 
         const existingServer = this.servers.get(serverId);
@@ -152,15 +152,6 @@ export class ServerManager extends EventEmitter {
         }
         if (existingServer.name !== server.name) {
             events.push(SERVER_NAME_CHANGED);
-        }
-
-        // Handle pre-auth secret changes in memory
-        if (preAuthSecret !== undefined) {
-            existingServer.preAuthSecret = preAuthSecret;
-            events.push(SERVER_PRE_AUTH_SECRET_CHANGED);
-        } else if ('preAuthSecret' in server) {
-            existingServer.preAuthSecret = undefined;
-            events.push(SERVER_PRE_AUTH_SECRET_CHANGED);
         }
 
         existingServer.name = server.name;
@@ -188,6 +179,17 @@ export class ServerManager extends EventEmitter {
             this.emit(SERVER_URL_CHANGED, serverId);
             this.persistServers();
         }
+    };
+
+    updatePreAuthSecret = (serverId: string, preAuthSecret: string) => {
+        log.debug('updatePreAuthSecret', {serverId});
+        const server = this.servers.get(serverId);
+        if (!server) {
+            return;
+        }
+        server.preAuthSecret = preAuthSecret;
+        this.servers.set(serverId, server);
+        this.emit(SERVER_PRE_AUTH_SECRET_CHANGED, serverId);
     };
 
     updateServerOrder = (serverOrder: string[]) => {

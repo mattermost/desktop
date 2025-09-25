@@ -3,11 +3,9 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 
 import type {AuthenticationResponseDetails, AuthInfo} from 'electron/renderer';
-import React from 'react';
-import type {IntlShape} from 'react-intl';
-import {FormattedMessage, injectIntl} from 'react-intl';
+import React, {useState, useEffect, useCallback} from 'react';
+import {FormattedMessage, useIntl} from 'react-intl';
 
-import {parseURL} from 'common/utils/url';
 import Input, {SIZE} from 'renderer/components/Input';
 import {Modal} from 'renderer/components/Modal';
 
@@ -17,131 +15,116 @@ type Props = {
     onCancel: (request: AuthenticationResponseDetails) => void;
     onLogin: (request: AuthenticationResponseDetails, username: string, password: string) => void;
     getAuthInfo: () => Promise<LoginModalInfo>;
-    intl: IntlShape;
 };
 
-type State = {
-    username: string;
-    password: string;
-    request?: AuthenticationResponseDetails;
-    authInfo?: AuthInfo;
-};
+export default function LoginModal({onCancel, onLogin, getAuthInfo}: Props) {
+    const intl = useIntl();
 
-class LoginModal extends React.PureComponent<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = {
-            username: '',
-            password: '',
-        };
-    }
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [request, setRequest] = useState<AuthenticationResponseDetails | undefined>();
+    const [authInfo, setAuthInfo] = useState<AuthInfo | undefined>();
 
-    async componentDidMount() {
-        await this.getAuthInfo();
-    }
+    const getAuthInfoData = useCallback(async () => {
+        const {request: authRequest, authInfo: authInfoData} = await getAuthInfo();
+        setRequest(authRequest);
+        setAuthInfo(authInfoData);
+    }, [getAuthInfo]);
 
-    getAuthInfo = async () => {
-        const {request, authInfo} = await this.props.getAuthInfo();
-        this.setState({request, authInfo});
-    };
+    useEffect(() => {
+        getAuthInfoData();
+    }, []);
 
-    handleSubmit = () => {
-        this.props.onLogin(this.state.request!, this.state.username, this.state.password);
-        this.setState({
-            username: '',
-            password: '',
-            request: undefined,
-            authInfo: undefined,
-        });
-    };
-
-    handleCancel = () => {
-        this.props.onCancel(this.state.request!);
-        this.setState({
-            username: '',
-            password: '',
-            request: undefined,
-            authInfo: undefined,
-        });
-    };
-
-    setUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({username: e.target.value});
-    };
-
-    setPassword = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({password: e.target.value});
-    };
-
-    renderLoginModalMessage = () => {
-        if (!(this.state.request && this.state.authInfo)) {
-            return null;
-        } else if (this.state.authInfo.isProxy) {
-            return (
-                <FormattedMessage
-                    id='renderer.modals.login.loginModal.message.proxy'
-                    defaultMessage='The proxy {host}:{port} requires a username and password.'
-                    values={{host: this.state.authInfo.host, port: this.state.authInfo.port}}
-                />
-            );
+    const handleSubmit = useCallback(() => {
+        if (request) {
+            onLogin(request, username, password);
         }
-        const tmpURL = parseURL(this.state.request.url);
-        return (
-            <FormattedMessage
-                id='renderer.modals.login.loginModal.message.server'
-                defaultMessage='The server {url} requires a username and password.'
-                values={{url: `${tmpURL?.protocol}//${tmpURL?.host}`}}
-            />
-        );
-    };
+    }, [onLogin, request, username, password]);
 
-    render() {
-        const {intl} = this.props;
+    const handleCancel = useCallback(() => {
+        if (request) {
+            onCancel(request);
+        }
+    }, [onCancel, request]);
 
-        return (
-            <Modal
-                id='loginModal'
-                show={Boolean(this.state.request && this.state.authInfo)}
-                onExited={this.handleCancel}
-                modalHeaderText={
-                    <FormattedMessage
-                        id='renderer.modals.login.loginModal.title'
-                        defaultMessage='Authentication Required'
-                    />
-                }
-                handleConfirm={this.handleSubmit}
-                handleEnterKeyPress={this.handleSubmit}
-                confirmButtonText={
-                    <FormattedMessage
-                        id='label.login'
-                        defaultMessage='Login'
-                    />
-                }
-                handleCancel={this.handleCancel}
-                modalSubheaderText={this.renderLoginModalMessage()}
-            >
-                <Input
-                    autoFocus={true}
-                    id='loginModalUsername'
-                    name='username'
-                    type='text'
-                    inputSize={SIZE.LARGE}
-                    value={this.state.username}
-                    onChange={this.setUsername}
-                    placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.username', defaultMessage: 'User Name'})}
-                />
-                <Input
-                    id='loginModalPassword'
-                    name='password'
-                    type='password'
-                    inputSize={SIZE.LARGE}
-                    onChange={this.setPassword}
-                    value={this.state.password}
-                    placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.password', defaultMessage: 'Password'})}
-                />
-            </Modal>
-        );
+    const onUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setUsername(e.target.value);
+    }, []);
+
+    const onPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setPassword(e.target.value);
+    }, []);
+
+    const handleTogglePassword = useCallback(() => {
+        setShowPassword(!showPassword);
+    }, [showPassword]);
+
+    if (!request) {
+        return null;
     }
-}
 
-export default injectIntl(LoginModal);
+    return (
+        <Modal
+            id='preAuthModal'
+            show={Boolean(request && authInfo)}
+            onExited={handleCancel}
+            modalHeaderText={authInfo?.isProxy ? (
+                <FormattedMessage
+                    id='renderer.modals.preAuth.proxyTitle'
+                    defaultMessage='Proxy authentication required'
+                />
+            ) : (
+                <FormattedMessage
+                    id='renderer.modals.preAuth.serverTitle'
+                    defaultMessage='Server authentication required'
+                />
+            )}
+            handleConfirm={handleSubmit}
+            handleEnterKeyPress={handleSubmit}
+            handleCancel={handleCancel}
+            modalSubheaderText={authInfo?.isProxy ? (
+                <FormattedMessage
+                    id='renderer.modals.preAuth.proxyMessage'
+                    defaultMessage='The proxy at {url} requires additional authentication before you can proceed.'
+                    values={{url: request.url}}
+                />
+            ) : (
+                <FormattedMessage
+                    id='renderer.modals.preAuth.serverMessage'
+                    defaultMessage='The server at {url} requires additional authentication before you can proceed.'
+                    values={{url: request.url}}
+                />
+            )}
+        >
+            <Input
+                autoFocus={true}
+                id='loginModalUsername'
+                name='username'
+                type='text'
+                inputSize={SIZE.LARGE}
+                value={username}
+                onChange={onUsernameChange}
+                placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.username', defaultMessage: 'User Name'})}
+            />
+            <Input
+                id='loginModalPassword'
+                name='password'
+                type={showPassword ? 'text' : 'password'}
+                inputSize={SIZE.LARGE}
+                onChange={onPasswordChange}
+                value={password}
+                placeholder={intl.formatMessage({id: 'renderer.modals.login.loginModal.password', defaultMessage: 'Password'})}
+                inputSuffix={
+                    <button
+                        type='button'
+                        className='Input__toggle-password'
+                        onClick={handleTogglePassword}
+                    >
+                        <i className={showPassword ? 'icon icon-eye-off-outline' : 'icon icon-eye-outline'}/>
+                    </button>
+                }
+            />
+        </Modal>
+    );
+}

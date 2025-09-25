@@ -60,7 +60,15 @@ export default class SelectCertificateModal extends React.PureComponent<Props, S
             >
                 <td
                     title={subject}
-                >{subject}</td>
+                >
+                    <div
+                        className={classNames('CertificateModal_radio', {
+                            selected: this.state.selectedIndex === index,
+                        })}
+                    >
+                        <span>{subject}</span>
+                    </div>
+                </td>
                 <td
                     title={issuer}
                 >{issuer}</td>

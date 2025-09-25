@@ -14,11 +14,6 @@ export type UniqueServer = Server & {
     id?: string;
     isPredefined?: boolean;
     isLoggedIn?: boolean;
-    preAuthSecret?: string;
-}
-
-export type NewServer = Server & {
-    preAuthSecret?: string;
 }
 
 export type UniqueView = {
