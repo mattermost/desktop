@@ -1,4 +1,10 @@
 {
+  "app.menus.contextMenu.openInNewTab": "Åbn i ny fane",
+  "app.menus.contextMenu.openInNewWindow": "Åbn i nyt vindue",
+  "app.navigationManager.viewLimitReached": "Visningsgrænsen er nået",
+  "app.navigationManager.viewLimitReached.description": "Du har nået det maksimale antal åbne vinduer og faner for denne server. Luk venligst et eksisterende vindue eller en eksisterende fane, eller juster visningsgrænsen i Indstillinger-vinduet.",
+  "callsWidgetWindow.cannotStartCall.message": "Der er et igangværende opkald på en anden server, som skal afsluttes, før man kan deltage i et nyt opkald.",
+  "callsWidgetWindow.cannotStartCall.title": "Kan ikke starte opkald",
   "common.permissions.canBasicAuth": "Webautentificering",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
