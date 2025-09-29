@@ -30,6 +30,7 @@ import {
     SEND_TO_POPOUT,
     MESSAGE_FROM_POPOUT,
 } from 'common/communication';
+import {POPOUT_RATE_LIMIT} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {DEFAULT_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
@@ -46,9 +47,12 @@ export class PopoutManager {
     private popoutWindows: Map<string, BaseWindow>;
     private popoutListeners: Map<string, () => void>;
 
+    private debouncePopout: boolean;
+
     constructor() {
         this.popoutWindows = new Map();
         this.popoutListeners = new Map();
+        this.debouncePopout = false;
 
         ipcMain.handle(CREATE_NEW_WINDOW, (event, serverId) => this.handleCreateNewWindow(serverId));
         ipcMain.handle(CAN_POPOUT, this.handleCanPopout);
@@ -270,6 +274,10 @@ export class PopoutManager {
     private handleOpenPopout = (event: IpcMainInvokeEvent, path: string, props: PopoutViewProps) => {
         log.debug('handleOpenPopout', path);
 
+        if (this.debouncePopout) {
+            return undefined;
+        }
+
         const view = WebContentsManager.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return undefined;
@@ -279,6 +287,11 @@ export class PopoutManager {
         if (!server) {
             return undefined;
         }
+
+        this.debouncePopout = true;
+        setTimeout(() => {
+            this.debouncePopout = false;
+        }, POPOUT_RATE_LIMIT);
 
         return ViewManager.createView(server, ViewType.WINDOW, path, view.id, props)?.id;
     };

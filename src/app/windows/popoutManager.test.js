@@ -782,7 +782,12 @@ describe('PopoutManager', () => {
         };
 
         beforeEach(() => {
+            popoutManager.debouncePopout = false;
             jest.clearAllMocks();
+        });
+
+        afterAll(() => {
+            jest.useRealTimers();
         });
 
         it('should create new popout view with path and props', () => {
@@ -817,6 +822,32 @@ describe('PopoutManager', () => {
             ViewManager.createView.mockReturnValue(undefined);
             const result = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
             expect(result).toBeUndefined();
+        });
+
+        it('should debounce rapid popout requests using timeout', () => {
+            jest.useFakeTimers();
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockView);
+            ServerManager.getServer.mockReturnValue(mockServer);
+            ViewManager.createView.mockReturnValue(mockNewView);
+
+            // First call should succeed
+            const firstResult = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
+            expect(firstResult).toBe('new-popout-id');
+            expect(ViewManager.createView).toHaveBeenCalledTimes(1);
+
+            // Second call immediately after should be debounced
+            const secondResult = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
+            expect(secondResult).toBeUndefined();
+            expect(ViewManager.createView).toHaveBeenCalledTimes(1);
+
+            // Fast-forward past the timeout
+            jest.advanceTimersByTime(1000);
+
+            // Third call after timeout should succeed
+            const thirdResult = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
+            expect(thirdResult).toBe('new-popout-id');
+            expect(ViewManager.createView).toHaveBeenCalledTimes(2);
         });
     });
 
