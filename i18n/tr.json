@@ -329,7 +329,7 @@
   "renderer.components.settingsPage.showUnreadBadge.description.dock": "Bu ayardan bağımsız olarak, anmalar her zaman Dock simgesi üzerinde kırmızı bir etiket ve öge sayısı ile görüntülenir.",
   "renderer.components.settingsPage.showUnreadBadge.description.taskbar": "Bu ayardan bağımsız olarak, anmalar her zaman görev çubuğu simgesinde kırmızı bir etiket ve öge sayısı ile görüntülenir.",
   "renderer.components.settingsPage.showUnreadBadge.dock": "Okunmamış iletiler Dock simgesinde kırmızı etiket ile görüntülensin",
-  "renderer.components.settingsPage.showUnreadBadge.heading": "Okunmamış simgesi",
+  "renderer.components.settingsPage.showUnreadBadge.heading": "Okunmamış etiketi",
   "renderer.components.settingsPage.showUnreadBadge.taskbar": "Okunmamış iletiler görev çubuğu simgesinde kırmızı etiket ile görüntülensin",
   "renderer.components.settingsPage.spellChecker": "Yazım denetleyici",
   "renderer.components.settingsPage.spellCheckerSetting.language": "Yazım denetleyici dilleri",
