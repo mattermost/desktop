@@ -1,4 +1,8 @@
 {
+  "app.menus.contextMenu.openInNewTab": "فتح في تبويب جديد",
+  "app.menus.contextMenu.openInNewWindow": "فتح في نافذة جديدة",
+  "app.navigationManager.viewLimitReached": "وصلت للحد الاقصى للاطلاع",
+  "app.navigationManager.viewLimitReached.description": "وصلت للحد الاعلى للنوافذ والتبويبات المفتوحة على هذا الخادم. قم باغلاق احد النوافذ او التبويبات المفتوحة, او قم بتعديل الحد الاعلى في اعدادات الخادم.",
   "common.permissions.canBasicAuth": "مصادقه الويب",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
