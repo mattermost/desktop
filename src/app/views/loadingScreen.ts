@@ -1,12 +1,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
+import {type IpcMainEvent, type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
 
-import {EMIT_CONFIGURATION, LOADING_SCREEN_ANIMATION_FINISHED, RELOAD_CONFIGURATION, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
+import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, LOADING_SCREEN_ANIMATION_FINISHED, TOGGLE_LOADING_SCREEN_VISIBILITY} from 'common/communication';
 import {Logger} from 'common/log';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload, getWindowBoundaries} from 'main/utils';
+
+import type {CombinedConfig} from 'types/config';
 
 enum LoadingScreenState {
     VISIBLE = 1,
@@ -47,7 +49,7 @@ export class LoadingScreen {
      * Loading Screen
      */
 
-    show = (index?: number) => {
+    show = (condition?: () => boolean) => {
         this.state = LoadingScreenState.VISIBLE;
 
         if (this.view.webContents.isLoading()) {
@@ -55,16 +57,16 @@ export class LoadingScreen {
                 this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
 
                 // Electron does a weird thing where even if the index is undefined, it will not add the view on top properly
-                if (index) {
-                    this.parent.contentView.addChildView(this.view, index);
+                if (condition?.()) {
+                    this.parent.contentView.addChildView(this.view, 1);
                 } else {
                     this.parent.contentView.addChildView(this.view);
                 }
             });
         } else {
             this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
-            if (index) {
-                this.parent.contentView.addChildView(this.view, index);
+            if (condition?.()) {
+                this.parent.contentView.addChildView(this.view, 1);
             } else {
                 this.parent.contentView.addChildView(this.view);
             }
@@ -105,7 +107,7 @@ export class LoadingScreen {
         this.view.setBounds(getWindowBoundaries(this.parent));
     };
 
-    private onEmitConfiguration = () => {
-        this.view.webContents.send(RELOAD_CONFIGURATION);
+    private onEmitConfiguration = (event: IpcMainEvent, config: CombinedConfig) => {
+        this.view.webContents.send(DARK_MODE_CHANGE, config.darkMode);
     };
 }

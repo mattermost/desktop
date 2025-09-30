@@ -36,6 +36,7 @@ jest.mock('electron', () => ({
                 goToOffset: jest.fn(),
                 canGoToOffset: jest.fn(),
             },
+            isDestroyed: jest.fn(),
         },
     })),
     ipcMain: {

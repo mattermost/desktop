@@ -146,7 +146,6 @@ jest.mock('common/appState', () => ({
     on: jest.fn(),
 }));
 jest.mock('main/AppVersionManager', () => ({}));
-jest.mock('main/security/authManager', () => ({}));
 jest.mock('main/AutoLauncher', () => ({
     upgradeAutoLaunch: jest.fn(),
 }));
@@ -154,7 +153,6 @@ jest.mock('main/autoUpdater', () => ({}));
 jest.mock('app/system/badge', () => ({
     setupBadge: jest.fn(),
 }));
-jest.mock('main/security/certificateManager', () => ({}));
 jest.mock('main/CriticalErrorHandler', () => ({
     init: jest.fn(),
 }));
@@ -171,9 +169,6 @@ jest.mock('common/servers/serverManager', () => ({
 jest.mock('app/system/tray/tray', () => ({
     refreshImages: jest.fn(),
     setup: jest.fn(),
-}));
-jest.mock('main/security/trustedOrigins', () => ({
-    load: jest.fn(),
 }));
 jest.mock('main/UserActivityMonitor', () => ({
     on: jest.fn(),
@@ -214,15 +209,22 @@ jest.mock('main/developerMode', () => ({
 jest.mock('common/servers/serverManager', () => ({
     init: jest.fn(),
     on: jest.fn(),
+    off: jest.fn(),
 }));
 
 jest.mock('common/views/viewManager', () => ({
     handleDeepLink: jest.fn(),
     on: jest.fn(),
 }));
+
 jest.mock('app/menus', () => ({
     refreshMenu: jest.fn(),
 }));
+
+jest.mock('main/security/preAuthManager', () => ({
+    handlePreAuthSecret: jest.fn(),
+}));
+
 const originalProcess = process;
 describe('main/app/initialize', () => {
     beforeAll(() => {

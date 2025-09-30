@@ -1,6 +1,7 @@
 {
   "app.menus.contextMenu.openInNewTab": "Öppna i ny flik",
   "app.menus.contextMenu.openInNewWindow": "Öppna i nytt fönster",
+  "app.navigationManager.viewLimitReached": "Visningsgränsen nådd",
   "callsWidgetWindow.cannotStartCall.message": "Det finns ett pågående samtal på en annan server som måste avslutas innan det går att ansluta till ett nytt samtal.",
   "callsWidgetWindow.cannotStartCall.title": "Kan inte starta samtal",
   "common.permissions.canBasicAuth": "Webbautentisering",
