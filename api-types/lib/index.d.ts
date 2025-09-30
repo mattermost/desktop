@@ -81,4 +81,5 @@ export type DesktopAPI = {
     onMessageFromParent: (listener: (channel: string, ...args: unknown[]) => void) => () => void;
     sendToPopout: (id: string, channel: string, ...args: unknown[]) => void;
     onMessageFromPopout: (listener: (id: string, channel: string, ...args: unknown[]) => void) => () => void;
+    onPopoutClosed: (listener: (id: string) => void) => () => void;
 };

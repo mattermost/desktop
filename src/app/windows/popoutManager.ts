@@ -29,6 +29,7 @@ import {
     MESSAGE_FROM_PARENT,
     SEND_TO_POPOUT,
     MESSAGE_FROM_POPOUT,
+    POPOUT_CLOSED,
 } from 'common/communication';
 import {POPOUT_RATE_LIMIT} from 'common/constants';
 import {Logger} from 'common/log';
@@ -142,7 +143,7 @@ export class PopoutManager {
             handleUpdateMenuEvent();
         };
         const setBounds = this.setBounds(window, webContentsView);
-        const close = () => ViewManager.removeView(viewId);
+        const close = this.onClosePopout(viewId);
 
         mattermostWebContentsView.on(LOADSCREEN_END, loadScreenEnd);
         mattermostWebContentsView.on(LOAD_FAILED, loadFailed);
@@ -171,6 +172,19 @@ export class PopoutManager {
         });
 
         window.browserWindow.contentView.addChildView(mattermostWebContentsView.getWebContentsView());
+    };
+
+    private onClosePopout = (viewId: string) => {
+        return () => {
+            const view = ViewManager.getView(viewId);
+            if (view?.parentViewId) {
+                const parentView = WebContentsManager.getView(view.parentViewId);
+                if (parentView) {
+                    parentView.sendToRenderer(POPOUT_CLOSED, view.id);
+                }
+            }
+            ViewManager.removeView(viewId);
+        };
     };
 
     private onPopoutLoadFailed = (window: BaseWindow, webContentsView: WebContentsView) => {

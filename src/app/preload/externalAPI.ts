@@ -45,6 +45,7 @@ import {
     SEND_TO_POPOUT,
     MESSAGE_FROM_PARENT,
     MESSAGE_FROM_POPOUT,
+    POPOUT_CLOSED,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
@@ -130,6 +131,7 @@ const desktopAPI: DesktopAPI = {
     onMessageFromParent: (listener) => createListener(MESSAGE_FROM_PARENT, listener),
     sendToPopout: (id, channel, ...args) => ipcRenderer.send(SEND_TO_POPOUT, id, channel, ...args),
     onMessageFromPopout: (listener) => createListener(MESSAGE_FROM_POPOUT, listener),
+    onPopoutClosed: (listener) => createListener(POPOUT_CLOSED, listener),
 };
 contextBridge.exposeInMainWorld('desktopAPI', desktopAPI);
 
