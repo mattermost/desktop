@@ -187,7 +187,7 @@ export default class BaseWindow {
     private getTitleBarOverlay = () => {
         return {
             color: Config.darkMode ? 'rgba(25, 27, 31, 0)' : 'rgba(255, 255, 255, 0)',
-            symbolColor: Config.darkMode ? 'rgba(227, 228, 232, 0.75)' : 'rgba(63, 67, 80, 0.75)',
+            symbolColor: Config.darkMode ? 'rgba(227, 228, 232, 0.64)' : 'rgba(63, 67, 80, 0.64)',
             height: TAB_BAR_HEIGHT,
         };
     };
