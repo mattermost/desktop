@@ -192,6 +192,11 @@ export class MattermostWebContentsView extends EventEmitter {
                 // If the loading was aborted, we shouldn't be retrying
                 return;
             }
+            if (err.code && err.code.startsWith('ERR_BLOCKED_BY_CLIENT')) {
+                // If the loading was blocked by the client, we should immediately retry
+                this.load(loadURL);
+                return;
+            }
             this.loadRetry(loadURL, err);
         });
     };
@@ -339,7 +344,7 @@ export class MattermostWebContentsView extends EventEmitter {
     private retry = (loadURL: string) => {
         return () => {
             // window was closed while retrying
-            if (!this.webContentsView || !this.webContentsView.webContents) {
+            if (!this.webContentsView || !this.webContentsView.webContents || this.isDestroyed()) {
                 return;
             }
             const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
@@ -387,6 +392,9 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     private loadRetry = (loadURL: string, err: Error) => {
+        if (this.isDestroyed()) {
+            return;
+        }
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         this.parentWindow.webContents.send(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
         this.log.info(`failed loading URL: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);

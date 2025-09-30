@@ -383,11 +383,7 @@ export class TabManager extends EventEmitter {
         this.currentVisibleTab = viewId;
 
         if (view.needsLoadingScreen()) {
-            if (ModalManager.isModalDisplayed()) {
-                MainWindow.window?.showLoadingScreen(1);
-            } else {
-                MainWindow.window?.showLoadingScreen();
-            }
+            MainWindow.window?.showLoadingScreen(() => ModalManager.isModalDisplayed());
         }
     };
 
@@ -478,11 +474,7 @@ export class TabManager extends EventEmitter {
             return;
         }
 
-        if (ModalManager.isModalDisplayed()) {
-            MainWindow.window?.showLoadingScreen(1);
-        } else {
-            MainWindow.window?.showLoadingScreen();
-        }
+        MainWindow.window?.showLoadingScreen(() => ModalManager.isModalDisplayed());
     };
 }
 

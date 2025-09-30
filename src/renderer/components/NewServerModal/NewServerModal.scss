@@ -29,38 +29,6 @@
     max-width: 400px;
 }
 
-.NewServerModal__advanced-section {
-    margin-top: 24px;
-
-    .NewServerModal__advanced-toggle {
-        display: flex;
-        align-items: center;
-        background: none;
-        border: none;
-        color: var(--button-bg);
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 12px;
-        line-height: 16px;
-        font-weight: 600;
-        padding: 0;
-
-        &:hover {
-            text-decoration: underline;
-        }
-
-        .icon {
-            margin-right: 2px;
-            font-size: 12px;
-        }
-    }
-
-    .NewServerModal__advanced-content {
-        margin-top: 24px;
-        border-left: 2px solid rgba(var(--center-channel-color-rgb), 0.16);
-    }
-}
-
 .NewServerModal__permissions__title {
     margin-top: 24px;
     margin-bottom: 12px;

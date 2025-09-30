@@ -61,5 +61,5 @@ export const ModalConstants = {
     CERTIFICATE_MODAL: 'certificateModal',
     LOGIN_MODAL: 'loginModal',
     PROXY_LOGIN_MODAL: 'proxyLoginModal',
-    PERMISSION_MODAL: 'permissionModal',
+    PRE_AUTH_MODAL: 'preAuthModal',
 };
