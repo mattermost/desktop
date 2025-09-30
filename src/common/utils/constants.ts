@@ -53,6 +53,8 @@ export const URLValidationStatus = {
     URLNotMatched: 'URL_NOT_MATCHED',
     URLUpdated: 'URL_UPDATED',
     PreAuthRequired: 'PREAUTH_REQUIRED',
+    BasicAuthRequired: 'BASICAUTH_REQUIRED',
+    ClientCertRequired: 'CLIENTCERT_REQUIRED',
 };
 
 export const nonTeamUrlPaths = [

@@ -12,7 +12,7 @@ import Input, {STATUS, SIZE} from 'renderer/components/Input';
 import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
 
-import type {UniqueServer, NewServer} from 'types/config';
+import type {UniqueServer} from 'types/config';
 
 import 'renderer/css/components/Button.scss';
 import './ConfigureServer.scss';
@@ -28,7 +28,7 @@ type ConfigureServerProps = {
     alternateLinkMessage?: string;
     alternateLinkText?: string;
     alternateLinkURL?: string;
-    onConnect: (data: NewServer) => void;
+    onConnect: (data: UniqueServer) => void;
 };
 
 function ConfigureServer({
@@ -65,36 +65,7 @@ function ConfigureServer({
     const validationTimeout = useRef<NodeJS.Timeout>();
     const editing = useRef(false);
 
-    const [showAdvanced, setShowAdvanced] = useState(false);
-    const [preAuthSecret, setPreAuthSecret] = useState('');
-    const [preAuthSecretError, setPreAuthSecretError] = useState<{type: STATUS; value: string}>();
-    const [showPassword, setShowPassword] = useState(false);
-    const [currentValidationStatus, setCurrentValidationStatus] = useState<string>();
-
-    // Basic form requirements
-    const hasBasicRequirements = name && url && !nameError && !validating;
-
-    // Determine if we can save based on validation status
-    const canSaveBasedOnValidation = () => {
-        if (!currentValidationStatus) {
-            return false; // No validation result yet
-        }
-
-        // PreAuthRequired (403) is always allowed - user can connect and provide auth later
-        if (currentValidationStatus === URLValidationStatus.PreAuthRequired) {
-            return true;
-        }
-
-        // Other statuses: allow if URL error is not blocking
-        if (urlError) {
-            return urlError.type !== STATUS.ERROR;
-        }
-
-        // No URL error: allow if validation was successful
-        return currentValidationStatus === URLValidationStatus.OK;
-    };
-
-    const canSave = hasBasicRequirements && canSaveBasedOnValidation();
+    const canSave = name && url && !nameError && !validating && urlError && urlError.type !== STATUS.ERROR;
 
     useEffect(() => {
         setTransition('inFromRight');
@@ -102,7 +73,7 @@ function ConfigureServer({
         mounted.current = true;
 
         if (url) {
-            fetchValidationResult(url, preAuthSecret);
+            fetchValidationResult(url);
         }
 
         return () => {
@@ -110,7 +81,7 @@ function ConfigureServer({
         };
     }, []);
 
-    const fetchValidationResult = (urlToValidate: string, preAuthSecret?: string) => {
+    const fetchValidationResult = (urlToValidate: string) => {
         setValidating(true);
         setURLError({
             type: STATUS.INFO,
@@ -118,11 +89,10 @@ function ConfigureServer({
         });
         const requestTime = Date.now();
         validationTimestamp.current = requestTime;
-        validateURL(urlToValidate, preAuthSecret).then(({validatedURL, serverName, message, status}) => {
+        validateURL(urlToValidate).then(({validatedURL, serverName, message}) => {
             if (editing.current) {
                 setValidating(false);
                 setURLError(undefined);
-                setPreAuthSecretError(undefined);
                 return;
             }
             if (!validationTimestamp.current || requestTime < validationTimestamp.current) {
@@ -136,17 +106,10 @@ function ConfigureServer({
                     return prev.length ? prev : serverName;
                 });
             }
-            setCurrentValidationStatus(status);
             if (message) {
                 setTransition(undefined);
                 setURLError(message);
-            } else {
-                setURLError(undefined);
             }
-
-            // Handle pre-auth validation messaging
-            handlePreAuthValidation(status, preAuthSecret);
-
             setValidating(false);
         });
     };
@@ -164,9 +127,9 @@ function ConfigureServer({
         return '';
     };
 
-    const validateURL = async (url: string, preAuthSecret?: string) => {
+    const validateURL = async (url: string) => {
         let message;
-        const validationResult = await window.desktop.validateServerURL(url, undefined, preAuthSecret);
+        const validationResult = await window.desktop.validateServerURL(url);
 
         if (validationResult?.status === URLValidationStatus.Missing) {
             message = {
@@ -216,9 +179,25 @@ function ConfigureServer({
             };
         }
 
+        if (validationResult?.status === URLValidationStatus.BasicAuthRequired) {
+            message = {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.error.basicAuthRequired', defaultMessage: 'This server requires basic authentication. You will be prompted to enter your username and password when you connect to the server.'}),
+            };
+        }
+
         if (validationResult?.status === URLValidationStatus.PreAuthRequired) {
-            // Don't show server URL error for 403 - let the pre-auth field handle it
-            message = null;
+            message = {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.error.preAuthRequired', defaultMessage: 'This secret requires an authentication secret. You will be prompted to enter it when you connect to the server.'}),
+            };
+        }
+
+        if (validationResult?.status === URLValidationStatus.ClientCertRequired) {
+            message = {
+                type: STATUS.WARNING,
+                value: formatMessage({id: 'renderer.components.configureServer.error.clientCertRequired', defaultMessage: 'This server requires that you select a certificate. You will be prompted to select a certificate when you connect to the server.'}),
+            };
         }
 
         if (validationResult?.status === URLValidationStatus.OK) {
@@ -232,42 +211,7 @@ function ConfigureServer({
             validatedURL: validationResult.validatedURL,
             serverName: validationResult.serverName,
             message,
-            status: validationResult.status,
         };
-    };
-
-    const handlePreAuthValidation = (status: string, preAuthSecret?: string) => {
-        if (status === URLValidationStatus.PreAuthRequired) {
-            if (preAuthSecret) {
-                setPreAuthSecretError({
-                    type: STATUS.ERROR,
-                    value: formatMessage({
-                        id: 'renderer.components.configureServer.error.preAuthInvalid',
-                        defaultMessage: 'Authentication secret is invalid. Try again or contact your admin.',
-                    }),
-                });
-            } else {
-                setURLError({
-                    type: STATUS.ERROR,
-                    value: formatMessage({
-                        id: 'renderer.components.configureServer.error.preAuthRequired',
-                        defaultMessage: 'Cannot connect to this server. It may require an authentication secret.',
-                    }),
-                });
-                setShowAdvanced(true); // Automatically expand advanced section
-            }
-        } else if (status === URLValidationStatus.OK && preAuthSecret) {
-            // Show success message if validation passed and we have a pre-auth secret
-            setPreAuthSecretError({
-                type: STATUS.SUCCESS,
-                value: formatMessage({
-                    id: 'renderer.components.configureServer.success.preAuthValid',
-                    defaultMessage: 'Authentication secret is valid.',
-                }),
-            });
-        } else {
-            setPreAuthSecretError(undefined);
-        }
     };
 
     const handleNameOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
@@ -292,33 +236,8 @@ function ConfigureServer({
                 return;
             }
             editing.current = false;
-            fetchValidationResult(value, preAuthSecret);
+            fetchValidationResult(value);
         }, 1000);
-    };
-
-    const handlePreAuthSecretOnChange = ({target: {value}}: React.ChangeEvent<HTMLInputElement>) => {
-        setPreAuthSecret(value);
-
-        // Clear any existing pre-auth error and transition animation when user starts typing
-        setPreAuthSecretError(undefined);
-        setTransition(undefined);
-
-        // Trigger validation when pre-auth secret is entered and URL exists
-        if (url && !validating) {
-            editing.current = true;
-            clearTimeout(validationTimeout.current as unknown as number);
-            validationTimeout.current = setTimeout(() => {
-                if (!mounted.current) {
-                    return;
-                }
-                editing.current = false;
-                fetchValidationResult(url, value);
-            }, 1000);
-        }
-    };
-
-    const toggleAdvanced = () => {
-        setShowAdvanced(!showAdvanced);
     };
 
     const handleOnSaveButtonClick = (e: React.MouseEvent) => {
@@ -352,14 +271,11 @@ function ConfigureServer({
         setTransition('outToLeft');
 
         setTimeout(() => {
-            const serverData = {
+            onConnect({
                 url,
                 name,
                 id,
-                preAuthSecret: preAuthSecret && preAuthSecret.trim() ? preAuthSecret.trim() : undefined,
-            };
-
-            onConnect(serverData);
+            });
         }, MODAL_TRANSITION_TIMEOUT);
     };
 
@@ -460,54 +376,12 @@ function ConfigureServer({
                                         placeholder={formatMessage({id: 'renderer.components.configureServer.name.placeholder', defaultMessage: 'Server display name'})}
                                         disabled={waiting}
                                     />
-                                    <div className='ConfigureServer__advanced-section'>
-                                        <button
-                                            type='button'
-                                            className='ConfigureServer__advanced-toggle'
-                                            onClick={toggleAdvanced}
-                                            disabled={waiting}
-                                        >
-                                            <i className={`icon ${showAdvanced ? 'icon-chevron-down' : 'icon-chevron-right'}`}/>
-                                            <span>{formatMessage({id: 'renderer.components.configureServer.advanced', defaultMessage: 'Advanced options'})}</span>
-                                        </button>
-
-                                        {showAdvanced && (
-                                            <div className='ConfigureServer__advanced-content'>
-                                                <Input
-                                                    name='preAuthSecret'
-                                                    className='ConfigureServer__card-form-input'
-                                                    containerClassName='ConfigureServer__card-form-input-container'
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    inputSize={SIZE.LARGE}
-                                                    value={preAuthSecret || ''}
-                                                    onChange={handlePreAuthSecretOnChange}
-                                                    customMessage={preAuthSecretError ?? ({
-                                                        type: STATUS.INFO,
-                                                        value: formatMessage({id: 'renderer.components.configureServer.secureSecret.info', defaultMessage: 'The authentication secret shared by the administrator.'}),
-                                                    })}
-                                                    placeholder={formatMessage({id: 'renderer.components.configureServer.secureSecret.placeholder', defaultMessage: 'Authentication secret'})}
-                                                    disabled={waiting}
-                                                    inputSuffix={
-                                                        <button
-                                                            type='button'
-                                                            className='Input__toggle-password'
-                                                            onClick={() => setShowPassword(!showPassword)}
-                                                            disabled={waiting}
-                                                        >
-                                                            <i className={showPassword ? 'icon icon-eye-off-outline' : 'icon icon-eye-outline'}/>
-                                                        </button>
-                                                    }
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
                                     <SaveButton
                                         id='connectConfigureServer'
                                         extraClasses='ConfigureServer__card-form-button'
                                         saving={waiting}
                                         onClick={handleOnSaveButtonClick}
-                                        defaultMessage={urlError?.type === STATUS.WARNING ? formatMessage({id: 'renderer.components.configureServer.connect.override', defaultMessage: 'Connect anyway'}) : formatMessage({id: 'renderer.components.configureServer.connect.default', defaultMessage: 'Connect'})
-                                        }
+                                        defaultMessage={formatMessage({id: 'renderer.components.configureServer.connect.default', defaultMessage: 'Connect'})}
                                         savingMessage={formatMessage({id: 'renderer.components.configureServer.connect.saving', defaultMessage: 'Connecting…'})}
                                         disabled={!canSave}
                                     />

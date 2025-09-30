@@ -30,10 +30,16 @@ export type URLValidationResult = {
     serverName?: string;
 }
 
+export type ErrorReason = {
+    needsBasicAuth?: boolean;
+    needsPreAuth?: boolean;
+    needsClientCert?: boolean;
+};
+
 export type ServerTestResult = {
     data: RemoteInfo;
 } | {
     error: Error & {
-        statusCode?: number;
+        errorReason?: ErrorReason;
     };
 };

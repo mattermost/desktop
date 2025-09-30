@@ -46,7 +46,6 @@ import {
     SERVER_URL_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
@@ -65,10 +64,8 @@ import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
-import AuthManager from 'main/security/authManager';
-import CertificateManager from 'main/security/certificateManager';
 import PermissionsManager from 'main/security/permissionsManager';
-import TrustedOriginsStore from 'main/security/trustedOrigins';
+import PreAuthManager from 'main/security/preAuthManager';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
@@ -210,9 +207,7 @@ function initializeAppEventListeners() {
     app.on('activate', () => MainWindow.show());
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
-    app.on('select-client-certificate', CertificateManager.handleSelectCertificate);
     app.on('child-process-gone', handleChildProcessGone);
-    app.on('login', AuthManager.handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
 }
 
@@ -224,7 +219,6 @@ function initializeBeforeAppReady() {
     if (process.env.NODE_ENV !== 'test') {
         app.enableSandbox();
     }
-    TrustedOriginsStore.load();
 
     // prevent using a different working directory, which happens on windows running after installation.
     const expectedPath = path.dirname(process.execPath);
@@ -320,22 +314,6 @@ async function initializeAfterAppReady() {
     // Initialize secure storage after app is ready
     try {
         await secureStorage.init();
-
-        // Load pre-auth secrets from secure storage into memory
-        const servers = ServerManager.getAllServers();
-        await Promise.allSettled(
-            servers.map(async (server) => {
-                try {
-                    const secret = await secureStorage.getSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-                    if (secret) {
-                        server.preAuthSecret = secret;
-                        log.debug('Loaded pre-auth secret for server:', {serverId: server.id});
-                    }
-                } catch (error) {
-                    log.warn('Failed to load pre-auth secret for server:', {serverId: server.id, error});
-                }
-            }),
-        );
     } catch (error) {
         log.warn('Failed to initialize secure storage cache:', {error});
     }
@@ -345,6 +323,7 @@ async function initializeAfterAppReady() {
     }
 
     MainWindow.show();
+
     const updateServerInfo = (serverId: string) => {
         if (serverId) {
             updateServerInfos([ServerManager.getServer(serverId)!]);
@@ -353,7 +332,10 @@ async function initializeAfterAppReady() {
     ServerManager.on(SERVER_ADDED, updateServerInfo);
     ServerManager.on(SERVER_URL_CHANGED, updateServerInfo);
     ServerManager.on(SERVER_PRE_AUTH_SECRET_CHANGED, updateServerInfo);
+
+    ServerManager.on(SERVER_ADDED, PreAuthManager.loadPreAuthSecretForServer);
     ServerManager.init();
+    ServerManager.off(SERVER_ADDED, PreAuthManager.loadPreAuthSecretForServer);
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
@@ -366,6 +348,11 @@ async function initializeAfterAppReady() {
                     'Content-Security-Policy': [`default-src 'self'; style-src 'self' 'nonce-${NonceManager.create(details.url)}'; media-src data:; img-src 'self' data:`],
                 },
             });
+            return;
+        }
+
+        // You can't call the callback more than once, so return if the preAuthManager handled it
+        if (PreAuthManager.preAuthHeaderOnHeadersReceivedHander(details, callback)) {
             return;
         }
 
