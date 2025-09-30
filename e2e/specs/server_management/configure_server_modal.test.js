@@ -89,9 +89,9 @@ describe('Configure Server Modal', function desc() {
 
     describe('Pre-Auth Header in Welcome Flow', () => {
         it('should show advanced section with pre-auth field', async () => {
-            await configureServerModal.click('.AdvancedSection button');
-            await configureServerModal.waitForSelector('#preAuthSecretInput');
-            const preAuthField = await configureServerModal.isVisible('#preAuthSecretInput');
+            await configureServerModal.click('button.ConfigureServer__advanced-toggle');
+            await configureServerModal.waitForSelector('#input_preAuthSecret');
+            const preAuthField = await configureServerModal.isVisible('#input_preAuthSecret');
             preAuthField.should.be.true;
         });
 
@@ -109,8 +109,8 @@ describe('Configure Server Modal', function desc() {
             await configureServerModal.type('#input_url', 'http://preauth-required.example.org');
 
             // Wait for validation to trigger and advanced section to auto-expand
-            await configureServerModal.waitForSelector('#preAuthSecretInput', {timeout: 5000});
-            const preAuthField = await configureServerModal.isVisible('#preAuthSecretInput');
+            await configureServerModal.waitForSelector('#input_preAuthSecret', {timeout: 5000});
+            const preAuthField = await configureServerModal.isVisible('#input_preAuthSecret');
             preAuthField.should.be.true;
         });
 
@@ -135,8 +135,8 @@ describe('Configure Server Modal', function desc() {
 
             await configureServerModal.type('#input_name', 'TestServer');
             await configureServerModal.type('#input_url', 'http://example.org');
-            await configureServerModal.click('.AdvancedSection button');
-            await configureServerModal.type('#preAuthSecretInput', 'valid-secret');
+            await configureServerModal.click('button.ConfigureServer__advanced-toggle');
+            await configureServerModal.type('#input_preAuthSecret', 'valid-secret');
 
             await configureServerModal.waitForSelector('#customMessage_url.Input___success');
             const successMessage = await configureServerModal.isVisible('#customMessage_url.Input___success');
@@ -155,8 +155,8 @@ describe('Configure Server Modal', function desc() {
 
             await configureServerModal.type('#input_name', 'TestServer');
             await configureServerModal.type('#input_url', 'http://example.org');
-            await configureServerModal.click('.AdvancedSection button');
-            await configureServerModal.type('#preAuthSecretInput', 'invalid-secret');
+            await configureServerModal.click('button.ConfigureServer__advanced-toggle');
+            await configureServerModal.type('#input_preAuthSecret', 'invalid-secret');
 
             await configureServerModal.waitForSelector('#customMessage_url.Input___error');
             const errorMessage = await configureServerModal.isVisible('#customMessage_url.Input___error');
@@ -175,8 +175,8 @@ describe('Configure Server Modal', function desc() {
 
             await configureServerModal.type('#input_name', 'TestServer');
             await configureServerModal.type('#input_url', 'http://example.org');
-            await configureServerModal.click('.AdvancedSection button');
-            await configureServerModal.type('#preAuthSecretInput', 'test-secret');
+            await configureServerModal.click('button.ConfigureServer__advanced-toggle');
+            await configureServerModal.type('#input_preAuthSecret', 'test-secret');
             await configureServerModal.waitForSelector('#customMessage_url.Input___success');
             await configureServerModal.click('#connectConfigureServer');
 

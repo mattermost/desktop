@@ -162,9 +162,9 @@ describe('Welcome Screen Modal', function desc() {
             modalCardTitle.should.equal('Enter your server details');
 
             // Check that advanced section with pre-auth is available
-            await welcomeScreenModal.click('.AdvancedSection button');
-            await welcomeScreenModal.waitForSelector('#preAuthSecretInput');
-            const preAuthField = await welcomeScreenModal.isVisible('#preAuthSecretInput');
+            await welcomeScreenModal.click('button.ConfigureServer__advanced-toggle');
+            await welcomeScreenModal.waitForSelector('#input_preAuthSecret');
+            const preAuthField = await welcomeScreenModal.isVisible('#input_preAuthSecret');
             preAuthField.should.be.true;
         });
 
@@ -195,8 +195,8 @@ describe('Welcome Screen Modal', function desc() {
             await welcomeScreenModal.type('#input_url', 'http://welcome-example.org');
 
             // Expand advanced section and add pre-auth
-            await welcomeScreenModal.click('.AdvancedSection button');
-            await welcomeScreenModal.type('#preAuthSecretInput', 'welcome-flow-secret');
+            await welcomeScreenModal.click('button.ConfigureServer__advanced-toggle');
+            await welcomeScreenModal.type('#input_preAuthSecret', 'welcome-flow-secret');
 
             // Wait for successful validation
             await welcomeScreenModal.waitForSelector('#customMessage_url.Input___success');
@@ -230,8 +230,8 @@ describe('Welcome Screen Modal', function desc() {
             await welcomeScreenModal.type('#input_url', 'http://preauth-server.org');
 
             // Advanced section should auto-expand and show pre-auth field
-            await welcomeScreenModal.waitForSelector('#preAuthSecretInput', {timeout: 5000});
-            const preAuthField = await welcomeScreenModal.isVisible('#preAuthSecretInput');
+            await welcomeScreenModal.waitForSelector('#input_preAuthSecret', {timeout: 5000});
+            const preAuthField = await welcomeScreenModal.isVisible('#input_preAuthSecret');
             preAuthField.should.be.true;
 
             // Advanced section should be expanded
