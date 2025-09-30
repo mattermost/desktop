@@ -72,6 +72,7 @@ describe('main/app/popoutMenu', () => {
 
     const mockMenu = {
         popup: jest.fn(),
+        once: jest.fn(),
     };
 
     beforeEach(() => {
