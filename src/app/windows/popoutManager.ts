@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {WebContentsView} from 'electron';
+import type {IpcMainEvent, WebContentsView} from 'electron';
 import {ipcMain} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -9,6 +9,7 @@ import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsVie
 import WebContentsManager from 'app/views/webContentsManager';
 import BaseWindow from 'app/windows/baseWindow';
 import {
+    CLEAR_CACHE_AND_RELOAD,
     CREATE_NEW_WINDOW,
     LOAD_FAILED,
     LOADSCREEN_END,
@@ -41,6 +42,7 @@ export class PopoutManager {
         this.popoutListeners = new Map();
 
         ipcMain.handle(CREATE_NEW_WINDOW, (event, serverId) => this.handleCreateNewWindow(serverId));
+        ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
 
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
         ViewManager.on(VIEW_REMOVED, this.handleViewRemoved);
@@ -112,7 +114,10 @@ export class PopoutManager {
 
         const loadScreenEnd = () => window.fadeLoadingScreen();
         const loadFailed = this.onPopoutLoadFailed(window, webContentsView);
-        const reloadView = () => window.showLoadingScreen();
+        const reloadView = () => {
+            window.browserWindow.contentView.addChildView(mattermostWebContentsView.getWebContentsView());
+            window.showLoadingScreen();
+        };
         const focus = () => {
             mattermostWebContentsView.focus();
             handleUpdateMenuEvent();
@@ -242,6 +247,14 @@ export class PopoutManager {
                 }
             });
         }
+    };
+
+    private handleClearCacheAndReload = (event: IpcMainEvent) => {
+        const viewId = this.getViewIdByWindowWebContentsId(event.sender.id);
+        if (!viewId) {
+            return;
+        }
+        WebContentsManager.clearCacheAndReloadView(viewId);
     };
 }
 
