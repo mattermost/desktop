@@ -10,6 +10,7 @@ import {app, BrowserWindow, dialog, globalShortcut, ipcMain} from 'electron';
 import {LoadingScreen} from 'app/views/loadingScreen';
 import {URLView} from 'app/views/urlView';
 import {
+    DARK_MODE_CHANGE,
     EMIT_CONFIGURATION,
     FOCUS_THREE_DOT_MENU,
     RELOAD_CONFIGURATION,
@@ -185,8 +186,8 @@ export default class BaseWindow {
 
     private getTitleBarOverlay = () => {
         return {
-            color: Config.darkMode ? '#2e2e2e' : '#efefef',
-            symbolColor: Config.darkMode ? '#c1c1c1' : '#474747',
+            color: Config.darkMode ? 'rgba(25, 27, 31, 0)' : 'rgba(255, 255, 255, 0)',
+            symbolColor: Config.darkMode ? '#e3e4e8' : '#3f4350',
             height: TAB_BAR_HEIGHT,
         };
     };
@@ -244,5 +245,7 @@ export default class BaseWindow {
 
     private onEmitConfiguration = () => {
         this.win.webContents.send(RELOAD_CONFIGURATION);
+        this.win.webContents.send(DARK_MODE_CHANGE, Config.darkMode);
+        this.win.setTitleBarOverlay(this.getTitleBarOverlay());
     };
 }
