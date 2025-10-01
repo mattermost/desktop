@@ -118,6 +118,7 @@ import {
     GET_IS_VIEW_LIMIT_REACHED,
     UPDATE_MENTIONS_FOR_SERVER,
     SECURE_STORAGE_GET,
+    CLEAR_CACHE_AND_RELOAD,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -155,6 +156,7 @@ contextBridge.exposeInMainWorld('desktop', {
     getNonce: () => ipcRenderer.invoke(GET_NONCE),
     isDeveloperModeEnabled: () => ipcRenderer.invoke(IS_DEVELOPER_MODE_ENABLED),
     getSecret: (serverUrl, keySuffix) => ipcRenderer.invoke(SECURE_STORAGE_GET, serverUrl, keySuffix),
+    clearCacheAndReload: () => ipcRenderer.send(CLEAR_CACHE_AND_RELOAD),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),

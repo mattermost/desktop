@@ -197,6 +197,7 @@ export const REMOVE_SERVER = 'remove-server';
 
 // WebContents Manager Events
 export const OPEN_POPOUT_MENU = 'open-popout-menu';
+export const CLEAR_CACHE_AND_RELOAD = 'clear-cache-and-reload';
 
 // Server Manager Events
 export const SERVER_ADDED = 'server-added';
