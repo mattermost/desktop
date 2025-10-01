@@ -358,7 +358,6 @@ export class PopoutManager {
             return;
         }
         WebContentsManager.clearCacheAndReloadView(viewId);
-
     };
 }
 
