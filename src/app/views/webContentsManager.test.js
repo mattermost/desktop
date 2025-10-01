@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {session} from 'electron';
+
 import ServerManager from 'common/servers/serverManager';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
@@ -21,6 +23,11 @@ jest.mock('electron', () => {
             on: jest.fn((event, handler) => mockIpcMain.on(event, handler)),
             handle: jest.fn(),
             mockIpcMain,
+        },
+        session: {
+            defaultSession: {
+                clearCache: jest.fn(),
+            },
         },
     };
 });
@@ -381,6 +388,37 @@ describe('app/views/webContentsManager', () => {
 
             expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
             expect(flushCookiesStore).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('clearCacheAndReloadView', () => {
+        const webContentsManager = new WebContentsManager();
+        const mockView = {
+            id: 'test-view-id',
+            reload: jest.fn(),
+            currentURL: 'https://example.com/test',
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should clear cache and reload view when view exists', () => {
+            webContentsManager.webContentsViews.set('test-view-id', mockView);
+            webContentsManager.clearCacheAndReloadView('test-view-id');
+
+            expect(session.defaultSession.clearCache).toHaveBeenCalled();
+            expect(mockView.reload).toHaveBeenCalledWith('https://example.com/test');
+        });
+
+        it('should clear cache but not reload when view does not exist', () => {
+            webContentsManager.clearCacheAndReloadView('non-existent-view');
+            expect(session.defaultSession.clearCache).toHaveBeenCalled();
+        });
+
+        it('should clear cache but not reload when view is null', () => {
+            webContentsManager.clearCacheAndReloadView(null);
+            expect(session.defaultSession.clearCache).toHaveBeenCalled();
         });
     });
 });

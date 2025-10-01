@@ -249,6 +249,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
     resetLoadingStatus = () => {
         if (this.status !== Status.LOADING) { // if it's already loading, don't touch anything
+            clearTimeout(this.retryLoad);
             delete this.retryLoad;
             this.status = Status.LOADING;
             this.maxRetries = MAX_SERVER_RETRIES;

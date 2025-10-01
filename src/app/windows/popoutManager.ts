@@ -11,6 +11,7 @@ import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsVie
 import WebContentsManager from 'app/views/webContentsManager';
 import BaseWindow from 'app/windows/baseWindow';
 import {
+    CLEAR_CACHE_AND_RELOAD,
     CREATE_NEW_WINDOW,
     LOAD_FAILED,
     LOADSCREEN_END,
@@ -61,6 +62,7 @@ export class PopoutManager {
         ipcMain.handle(CAN_USE_POPOUT_OPTION, this.handleCanUsePopoutOption);
         ipcMain.on(SEND_TO_PARENT, this.handleSendToParent);
         ipcMain.on(SEND_TO_POPOUT, this.handleSendToPopout);
+        ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
 
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
         ViewManager.on(VIEW_REMOVED, this.handleViewRemoved);
@@ -137,7 +139,10 @@ export class PopoutManager {
 
         const loadScreenEnd = () => window.fadeLoadingScreen();
         const loadFailed = this.onPopoutLoadFailed(window, webContentsView);
-        const reloadView = () => window.showLoadingScreen();
+        const reloadView = () => {
+            window.browserWindow.contentView.addChildView(mattermostWebContentsView.getWebContentsView());
+            window.showLoadingScreen();
+        };
         const focus = () => {
             mattermostWebContentsView.focus();
             handleUpdateMenuEvent();
@@ -345,6 +350,15 @@ export class PopoutManager {
             return;
         }
         view.sendToRenderer(MESSAGE_FROM_PARENT, channel, ...args);
+    };
+
+    private handleClearCacheAndReload = (event: IpcMainEvent) => {
+        const viewId = this.getViewIdByWindowWebContentsId(event.sender.id);
+        if (!viewId) {
+            return;
+        }
+        WebContentsManager.clearCacheAndReloadView(viewId);
+
     };
 }
 
