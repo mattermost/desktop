@@ -33,6 +33,9 @@ import {
     UPDATE_TAB_ORDER,
     VIEW_TYPE_ADDED,
     VIEW_TYPE_REMOVED,
+    OPEN_APP_MENU,
+    CLOSE_SERVERS_DROPDOWN,
+    CLOSE_DOWNLOADS_DROPDOWN,
     CLEAR_CACHE_AND_RELOAD,
 } from 'common/communication';
 import {Logger} from 'common/log';
@@ -60,6 +63,10 @@ export class TabManager extends EventEmitter {
 
         MainWindow.on(MAIN_WINDOW_RESIZED, this.handleSetCurrentTabViewBounds);
         MainWindow.on(MAIN_WINDOW_FOCUSED, this.focusCurrentTab);
+
+        ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.focusCurrentTab);
+        ipcMain.on(CLOSE_SERVERS_DROPDOWN, this.focusCurrentTab);
+        ipcMain.on(OPEN_APP_MENU, this.focusCurrentTab);
 
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, (event, serverId) => this.getOrderedTabsForServer(serverId));
         ipcMain.handle(GET_ACTIVE_TAB_FOR_SERVER, (event, serverId) => this.getCurrentTabForServer(serverId)?.toUniqueView());
