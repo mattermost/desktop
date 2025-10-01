@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {session, type MenuItemConstructorOptions} from 'electron';
+import {type MenuItemConstructorOptions} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -111,10 +111,9 @@ export default function createViewMenu() {
         label: localizeMessage('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
-            session.defaultSession.clearCache();
             const view = WebContentsManager.getFocusedView();
             if (view) {
-                view.reload(view.currentURL);
+                WebContentsManager.clearCacheAndReloadView(view.id);
             }
         },
     }];

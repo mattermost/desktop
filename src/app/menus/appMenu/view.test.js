@@ -1,8 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {session} from 'electron';
-
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
@@ -15,14 +13,6 @@ import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
 
 import createViewMenu from './view';
-
-jest.mock('electron', () => ({
-    session: {
-        defaultSession: {
-            clearCache: jest.fn(),
-        },
-    },
-}));
 
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
@@ -45,6 +35,7 @@ jest.mock('app/tabs/tabManager', () => ({
 
 jest.mock('app/views/webContentsManager', () => ({
     getFocusedView: jest.fn(),
+    clearCacheAndReloadView: jest.fn(),
 }));
 
 jest.mock('common/config', () => ({
@@ -284,8 +275,7 @@ describe('app/menus/appMenu/view', () => {
             const clearCacheMenuItem = menu.submenu.find((item) => item.label === 'Clear Cache and Reload');
             expect(clearCacheMenuItem).not.toBe(undefined);
             clearCacheMenuItem.click();
-            expect(session.defaultSession.clearCache).toHaveBeenCalled();
-            expect(mockView.reload).toHaveBeenCalledWith('https://example.com/current-page');
+            expect(WebContentsManager.clearCacheAndReloadView).toHaveBeenCalledWith(mockView.id);
         });
 
         it('should handle reload when no focused view is available', () => {
