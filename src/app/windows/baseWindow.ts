@@ -246,6 +246,8 @@ export default class BaseWindow {
     private onEmitConfiguration = () => {
         this.win.webContents.send(RELOAD_CONFIGURATION);
         this.win.webContents.send(DARK_MODE_CHANGE, Config.darkMode);
-        this.win.setTitleBarOverlay(this.getTitleBarOverlay());
+        if (process.platform !== 'darwin') {
+            this.win.setTitleBarOverlay(this.getTitleBarOverlay());
+        }
     };
 }
