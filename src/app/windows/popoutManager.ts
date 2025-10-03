@@ -7,6 +7,7 @@ import {ipcMain} from 'electron';
 import type {PopoutViewProps} from '@mattermost/desktop-api';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MenuManager from 'app/menus';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import WebContentsManager from 'app/views/webContentsManager';
 import BaseWindow from 'app/windows/baseWindow';
@@ -39,7 +40,6 @@ import {DEFAULT_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'commo
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
-import {handleUpdateMenuEvent} from 'main/app/utils';
 import performanceMonitor from 'main/performanceMonitor';
 import {getWindowBoundaries} from 'main/utils';
 
@@ -145,7 +145,9 @@ export class PopoutManager {
         };
         const focus = () => {
             mattermostWebContentsView.focus();
-            handleUpdateMenuEvent();
+
+            // TODO: Would be better encapsulated in the MenuManager
+            MenuManager.refreshMenu();
         };
         const setBounds = this.setBounds(window, webContentsView);
         const close = this.onClosePopout(viewId);
