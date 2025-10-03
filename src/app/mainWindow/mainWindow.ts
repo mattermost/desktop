@@ -403,7 +403,7 @@ export class MainWindow extends EventEmitter {
 
     private handleEmitConfiguration = () => {
         this.sendViewLimitUpdated();
-        if (process.platform === 'linux') {
+        if (process.platform !== 'darwin') {
             this.win?.browserWindow.setTitleBarOverlay?.(this.getTitleBarOverlay());
         }
     };

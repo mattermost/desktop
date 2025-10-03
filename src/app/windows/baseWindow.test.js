@@ -9,6 +9,7 @@ import path from 'path';
 import {BrowserWindow, app, globalShortcut, ipcMain, dialog} from 'electron';
 
 import {
+    DARK_MODE_CHANGE,
     EMIT_CONFIGURATION,
     FOCUS_THREE_DOT_MENU,
     RELOAD_CONFIGURATION,
@@ -536,6 +537,30 @@ describe('BaseWindow', () => {
             ipcMain.emit(EMIT_CONFIGURATION);
 
             expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
+        });
+
+        it('should not call setTitleBarOverlay when platform is darwin', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            const baseWindow = new BaseWindow({});
+            baseWindow.getTitleBarOverlay = jest.fn().mockReturnValue({
+                color: 'rgba(255, 255, 255, 0)',
+                symbolColor: 'rgba(63, 67, 80, 0.64)',
+                height: 40,
+            });
+
+            ipcMain.emit(EMIT_CONFIGURATION);
+
+            expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
+            expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(DARK_MODE_CHANGE, Config.darkMode);
+            expect(baseWindow.browserWindow.setTitleBarOverlay).not.toHaveBeenCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
     });
 });
