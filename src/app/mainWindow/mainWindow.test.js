@@ -656,4 +656,47 @@ describe('main/windows/mainWindow', () => {
             expect(mainWindow.init).toHaveBeenCalled();
         });
     });
+
+    describe('handleEmitConfiguration', () => {
+        let mainWindow;
+        const mockBrowserWindow = {
+            setTitleBarOverlay: jest.fn(),
+            webContents: {
+                send: jest.fn(),
+            },
+        };
+
+        beforeEach(() => {
+            mainWindow = new MainWindow();
+            mainWindow.win = {
+                browserWindow: mockBrowserWindow,
+            };
+            mainWindow.getTitleBarOverlay = jest.fn().mockReturnValue({
+                color: 'rgba(255, 255, 255, 0)',
+                symbolColor: 'rgba(63, 67, 80, 0.64)',
+                height: 40,
+            });
+            mainWindow.sendViewLimitUpdated = jest.fn();
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should not call setTitleBarOverlay when platform is darwin', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            mainWindow.handleEmitConfiguration();
+
+            expect(mainWindow.sendViewLimitUpdated).toHaveBeenCalled();
+            expect(mockBrowserWindow.setTitleBarOverlay).not.toHaveBeenCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+    });
 });
