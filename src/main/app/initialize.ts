@@ -10,15 +10,14 @@ import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-
 import isDev from 'electron-is-dev';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
-import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     QUIT,
     NOTIFY_MENTION,
-    UPDATE_SHORTCUT_MENU,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
     START_UPGRADE,
@@ -36,12 +35,7 @@ import {
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
     SERVER_ADDED,
-    VIEW_TITLE_UPDATED,
-    TAB_ADDED,
-    TAB_REMOVED,
-    TAB_ORDER_UPDATED,
     GET_FULL_SCREEN_STATUS,
-    MAIN_WINDOW_FOCUSED,
     SERVER_PRE_AUTH_SECRET_CHANGED,
     SERVER_URL_CHANGED,
 } from 'common/communication';
@@ -49,7 +43,6 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
-import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import updateManager from 'main/autoUpdater';
@@ -99,7 +92,6 @@ import {
 import {
     clearAppCache,
     getDeeplinkingURL,
-    handleUpdateMenuEvent,
     shouldShowTrayIcon,
     updateSpellCheckerLocales,
     wasUpdated,
@@ -261,7 +253,6 @@ function initializeBeforeAppReady() {
 function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
-    ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
 
     if (process.platform !== 'darwin') {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
@@ -487,13 +478,7 @@ async function initializeAfterAppReady() {
         i18nManager.setLocale(app.getLocaleCountryCode());
     }
 
-    handleUpdateMenuEvent();
-    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleUpdateMenuEvent);
-    TabManager.on(TAB_ADDED, handleUpdateMenuEvent);
-    TabManager.on(TAB_REMOVED, handleUpdateMenuEvent);
-    TabManager.on(TAB_ORDER_UPDATED, handleUpdateMenuEvent);
-    ViewManager.on(VIEW_TITLE_UPDATED, handleUpdateMenuEvent);
-    MainWindow.on(MAIN_WINDOW_FOCUSED, handleUpdateMenuEvent);
+    MenuManager.refreshMenu();
 
     ipcMain.emit('update-dict');
 

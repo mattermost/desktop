@@ -109,6 +109,10 @@ jest.mock('main/app/utils', () => ({
     handleUpdateMenuEvent: jest.fn(),
 }));
 
+jest.mock('app/menus', () => ({
+    refreshMenu: jest.fn(),
+}));
+
 describe('PopoutManager', () => {
     const {EventEmitter} = jest.requireActual('events');
     const mockWebContents = new EventEmitter();

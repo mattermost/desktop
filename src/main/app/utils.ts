@@ -5,14 +5,12 @@ import fs from 'fs';
 import path from 'path';
 
 import type {BrowserWindow, Rectangle} from 'electron';
-import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
+import {app, session, dialog, nativeImage, screen} from 'electron';
 import isDev from 'electron-is-dev';
 
 import MainWindow from 'app/mainWindow/mainWindow';
-import {createMenu as createAppMenu} from 'app/menus/app';
-import {createMenu as createTrayMenu} from 'app/menus/tray';
+import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
-import Tray from 'app/system/tray/tray';
 import {MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
@@ -20,7 +18,6 @@ import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {isValidURI} from 'common/utils/url';
-import updateManager from 'main/autoUpdater';
 import {migrationInfoPath, updatePaths} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
@@ -52,19 +49,6 @@ export function openDeepLink(deeplinkingUrl: string) {
 export function updateSpellCheckerLocales() {
     if (Config.spellCheckerLocales.length && app.isReady()) {
         session.defaultSession.setSpellCheckerLanguages(Config.spellCheckerLocales);
-    }
-}
-
-export function handleUpdateMenuEvent() {
-    log.debug('handleUpdateMenuEvent');
-
-    const aMenu = createAppMenu(Config, updateManager);
-    Menu.setApplicationMenu(aMenu);
-
-    // set up context menu for tray icon
-    if (shouldShowTrayIcon()) {
-        const tMenu = createTrayMenu();
-        Tray.setMenu(tMenu);
     }
 }
 
@@ -255,6 +239,9 @@ export async function updateServerInfos(servers: MattermostServer[]) {
     map.forEach((serverInfo, serverId) => {
         ServerManager.updateRemoteInfo(serverId, serverInfo);
     });
+
+    // TODO: Would be better encapsulated in the MenuManager
+    MenuManager.refreshMenu();
 }
 
 export async function clearDataForServer(server: MattermostServer) {
