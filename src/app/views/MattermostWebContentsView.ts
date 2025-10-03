@@ -112,6 +112,9 @@ export class MattermostWebContentsView extends EventEmitter {
     get serverId() {
         return this.view.serverId;
     }
+    get parentViewId() {
+        return this.view.parentViewId;
+    }
     get isAtRoot() {
         return this.atRoot;
     }
