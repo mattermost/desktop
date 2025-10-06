@@ -1,4 +1,6 @@
 {
+  "callsWidgetWindow.cannotStartCall.message": "На іншому сервері триває дзвінок, який необхідно завершити перед тим, як приєднатися до нового дзвінка.",
+  "callsWidgetWindow.cannotStartCall.title": "Неможливо розпочати дзвінок",
   "common.permissions.canBasicAuth": "Веб-автентифікація",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",
@@ -22,7 +24,7 @@
   "main.CriticalErrorHandler.uncaughtException.dialog.message": "Застосунок {appName} неочікувано завершено. Натисніть \"{showDetails}\" щоб дізнатись більше або \"{reopen}\" щоб відкрити застосунок знову.\n\nВнутрішня помилка: {err}",
   "main.CriticalErrorHandler.unresponsive.dialog.message": "Вікно більше не реагує. \nЧи хочете ви дочекатися, поки вікно знову стане активним?",
   "main.allowProtocolDialog.button.saveProtocolAsAllowed": "Так (Зберегти {protocol} як дозволений)",
-  "main.allowProtocolDialog.detail": "Запитане посилання це {URL}. Бажаєте продовжити?",
+  "main.allowProtocolDialog.detail": "Запитане посилання: {URL}. Чи хочете ви продовжити?",
   "main.allowProtocolDialog.message": "{protocol} посилання вимагає зовнішнього додатку.",
   "main.allowProtocolDialog.title": "Не протокол http(s)",
   "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "Перервати з'єднання",
