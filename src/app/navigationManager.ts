@@ -152,6 +152,7 @@ export class NavigationManager {
         }
 
         if (currentView.parentViewId) {
+            TabManager.switchToTab(currentView.parentViewId);
             currentView = WebContentsManager.getView(currentView.parentViewId);
         }
 
