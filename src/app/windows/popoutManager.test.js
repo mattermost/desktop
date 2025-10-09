@@ -18,7 +18,7 @@ import {
     VIEW_TYPE_ADDED,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
-import {MINIMUM_WINDOW_WIDTH, TAB_BAR_HEIGHT, DEFAULT_WINDOW_HEIGHT} from 'common/utils/constants';
+import {TAB_BAR_HEIGHT, DEFAULT_RHS_WINDOW_WIDTH} from 'common/utils/constants';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import performanceMonitor from 'main/performanceMonitor';
@@ -290,10 +290,10 @@ describe('PopoutManager', () => {
             mockBaseWindow.browserWindow.webContents.emit('did-finish-load');
 
             expect(BaseWindow).toHaveBeenCalledWith({
-                x: (100 + 800) - MINIMUM_WINDOW_WIDTH,
+                x: (100 + 800) - DEFAULT_RHS_WINDOW_WIDTH,
                 y: 200 + TAB_BAR_HEIGHT,
-                width: MINIMUM_WINDOW_WIDTH,
-                height: DEFAULT_WINDOW_HEIGHT,
+                width: DEFAULT_RHS_WINDOW_WIDTH,
+                height: 600 - TAB_BAR_HEIGHT,
             });
         });
 
