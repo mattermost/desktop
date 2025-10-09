@@ -21,6 +21,7 @@ export const MENU_SHADOW_WIDTH = 24;
 
 export const DEFAULT_WINDOW_WIDTH = 1280;
 export const DEFAULT_WINDOW_HEIGHT = 800;
+export const DEFAULT_RHS_WINDOW_WIDTH = 800;
 export const MINIMUM_WINDOW_WIDTH = 600;
 export const MINIMUM_WINDOW_HEIGHT = 240;
 

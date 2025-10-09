@@ -36,7 +36,7 @@ import {
 import {POPOUT_RATE_LIMIT} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {DEFAULT_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {DEFAULT_RHS_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
@@ -111,9 +111,9 @@ export class PopoutManager {
                 y: mainWindow.getPosition()[1] + TAB_BAR_HEIGHT,
             };
             if (view.props?.isRHS) {
-                options.x = (mainWindow.getPosition()[0] + mainWindow.getSize()[0]) - MINIMUM_WINDOW_WIDTH;
-                options.width = MINIMUM_WINDOW_WIDTH;
-                options.height = DEFAULT_WINDOW_HEIGHT;
+                options.x = (mainWindow.getPosition()[0] + mainWindow.getSize()[0]) - DEFAULT_RHS_WINDOW_WIDTH;
+                options.width = DEFAULT_RHS_WINDOW_WIDTH;
+                options.height = mainWindow.getSize()[1] - TAB_BAR_HEIGHT;
             }
         }
         const window = new BaseWindow(options);
