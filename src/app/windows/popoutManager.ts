@@ -309,6 +309,16 @@ export class PopoutManager {
             return undefined;
         }
 
+        const existingView = ViewManager.getViewsByServerId(view.serverId).
+            find((v) => v.type === ViewType.WINDOW && v.initialPath === path);
+        if (existingView) {
+            const window = this.popoutWindows.get(existingView.id);
+            if (window) {
+                window.browserWindow.show();
+            }
+            return existingView.id;
+        }
+
         this.debouncePopout = true;
         setTimeout(() => {
             this.debouncePopout = false;

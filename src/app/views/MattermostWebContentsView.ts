@@ -429,7 +429,7 @@ export class MattermostWebContentsView extends EventEmitter {
     private handleUpdateTarget = (e: Event, url: string) => {
         this.log.silly('handleUpdateTarget');
         const parsedURL = parseURL(url);
-        if (parsedURL && isInternalURL(parsedURL, this.view.getLoadingURL())) {
+        if (parsedURL && isInternalURL(parsedURL, ServerManager.getServer(this.view.serverId)?.url ?? this.view.getLoadingURL())) {
             this.emit(UPDATE_TARGET_URL);
         } else {
             this.emit(UPDATE_TARGET_URL, url);

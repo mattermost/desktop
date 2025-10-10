@@ -97,6 +97,7 @@ jest.mock('common/views/viewManager', () => {
         createView: jest.fn(),
         getViewTitle: jest.fn(),
         isViewLimitReached: jest.fn(),
+        getViewsByServerId: jest.fn(),
         mockViewManager,
     };
 });
@@ -175,6 +176,7 @@ describe('PopoutManager', () => {
         BaseWindow.mockImplementation(() => mockBaseWindow);
         WebContentsManager.createView.mockReturnValue(mockWebContentsView);
         ViewManager.getView.mockReturnValue(mockView);
+        ViewManager.getViewsByServerId.mockReturnValue([mockView]);
         ServerManager.getServer.mockReturnValue(mockServer);
     });
 
@@ -782,6 +784,7 @@ describe('PopoutManager', () => {
         };
         const mockNewView = {
             id: 'new-popout-id',
+            initialPath: '/test/path',
             serverId: 'test-server-id',
             type: ViewType.WINDOW,
         };
@@ -827,6 +830,14 @@ describe('PopoutManager', () => {
             ViewManager.createView.mockReturnValue(undefined);
             const result = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
             expect(result).toBeUndefined();
+        });
+
+        it('should return existing view id when view already exists', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockView);
+            ServerManager.getServer.mockReturnValue(mockServer);
+            ViewManager.getViewsByServerId.mockReturnValue([mockNewView]);
+            const result = popoutManager.handleOpenPopout(mockEvent, '/test/path', {});
+            expect(result).toBe('new-popout-id');
         });
 
         it('should debounce rapid popout requests using timeout', () => {
