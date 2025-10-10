@@ -22,11 +22,18 @@ jest.mock('electron', () => {
     return {
         ipcMain: mockIpcMain,
         mockIpcMain,
+        nativeTheme: {
+            themeSource: 'light',
+        },
     };
 });
 
 jest.mock('common/config', () => ({
     themeSyncing: true,
+}));
+
+jest.mock('main/utils', () => ({
+    isLightColor: jest.fn(),
 }));
 
 jest.mock('common/servers/serverManager', () => {

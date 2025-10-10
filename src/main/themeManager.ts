@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent, WebContents} from 'electron';
-import {ipcMain} from 'electron';
+import {ipcMain, nativeTheme} from 'electron';
 
 import {
     DARK_MODE_CHANGE,
@@ -15,6 +15,7 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
+import {isLightColor} from 'main/utils';
 
 import type {CombinedConfig} from 'types/config';
 
@@ -101,6 +102,7 @@ export class ThemeManager {
     private updateMainViews = () => {
         const serverId = ServerManager.getCurrentServerId();
         if (!serverId) {
+            nativeTheme.themeSource = 'system';
             this.mainWindowViews.forEach((view) => {
                 view.send(RESET_THEME);
             });
@@ -108,11 +110,13 @@ export class ThemeManager {
         }
         const server = ServerManager.getServer(serverId);
         if (!server || !server.theme) {
+            nativeTheme.themeSource = 'system';
             this.mainWindowViews.forEach((view) => {
                 view.send(RESET_THEME);
             });
             return;
         }
+        nativeTheme.themeSource = isLightColor(server.theme.centerChannelBg) ? 'light' : 'dark';
         this.mainWindowViews.forEach((view) => {
             view.send(UPDATE_THEME, server.theme);
         });
