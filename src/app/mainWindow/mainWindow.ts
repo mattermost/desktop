@@ -43,6 +43,7 @@ import ViewManager from 'common/views/viewManager';
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
+import ThemeManager from 'main/themeManager';
 import {isInsideRectangle, isKDE} from 'main/utils';
 
 import type {SavedWindowState} from 'types/mainWindow';
@@ -110,6 +111,7 @@ export class MainWindow extends EventEmitter {
 
         const localURL = 'mattermost-desktop://renderer/index.html';
         performanceMonitor.registerView('MainWindow', this.win.browserWindow.webContents);
+        this.win.registerThemeManager(ThemeManager.registerMainWindowView);
         this.win.browserWindow.loadURL(localURL).catch(
             (reason) => {
                 log.error('failed to load', {reason});

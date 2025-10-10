@@ -29,6 +29,7 @@ import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import performanceMonitor from 'main/performanceMonitor';
+import ThemeManager from 'main/themeManager';
 import {getWindowBoundaries} from 'main/utils';
 
 const log = new Logger('PopoutManager');
@@ -93,6 +94,10 @@ export class PopoutManager {
         }
         const window = new BaseWindow(options);
         performanceMonitor.registerView(`PopoutWindow-${viewId}`, window.browserWindow.webContents);
+        const serverId = ViewManager.getView(viewId)?.serverId;
+        if (serverId) {
+            window.registerThemeManager((webContents) => ThemeManager.registerPopoutView(webContents, serverId));
+        }
         this.popoutWindows.set(viewId, window);
 
         return window;

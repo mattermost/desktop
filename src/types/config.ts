@@ -56,6 +56,7 @@ export type ConfigV4 = {
     appLanguage?: string;
     enableMetrics?: boolean;
     viewLimit?: number;
+    themeSyncing?: boolean;
 }
 
 export type ConfigV3 = Omit<ConfigV4,

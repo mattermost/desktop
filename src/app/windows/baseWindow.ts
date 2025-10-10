@@ -4,13 +4,12 @@
 import os from 'os';
 import path from 'path';
 
-import type {BrowserWindowConstructorOptions, Input} from 'electron';
+import type {BrowserWindowConstructorOptions, Input, WebContents} from 'electron';
 import {app, BrowserWindow, dialog, globalShortcut, ipcMain} from 'electron';
 
 import {LoadingScreen} from 'app/views/loadingScreen';
 import {URLView} from 'app/views/urlView';
 import {
-    DARK_MODE_CHANGE,
     EMIT_CONFIGURATION,
     FOCUS_THREE_DOT_MENU,
     RELOAD_CONFIGURATION,
@@ -161,6 +160,12 @@ export default class BaseWindow {
         this.loadingScreen.fade();
     };
 
+    registerThemeManager = (register: (webContents: WebContents) => void) => {
+        register(this.win.webContents);
+        this.loadingScreen.registerThemeManager(register);
+        this.urlView.registerThemeManager(register);
+    };
+
     showURLView = (url: string) => {
         this.urlView.show(url);
     };
@@ -245,7 +250,6 @@ export default class BaseWindow {
 
     private onEmitConfiguration = () => {
         this.win.webContents.send(RELOAD_CONFIGURATION);
-        this.win.webContents.send(DARK_MODE_CHANGE, Config.darkMode);
         if (process.platform !== 'darwin') {
             this.win.setTitleBarOverlay(this.getTitleBarOverlay());
         }

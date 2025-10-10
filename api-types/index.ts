@@ -12,6 +12,34 @@ export type DesktopCaptureSource = {
     thumbnailURL: string;
 };
 
+export type Theme = {
+    sidebarBg: string;
+    sidebarText: string;
+    sidebarUnreadText: string;
+    sidebarTextHoverBg: string;
+    sidebarTextActiveBorder: string;
+    sidebarTextActiveColor: string;
+    sidebarHeaderBg: string;
+    sidebarTeamBarBg: string;
+    sidebarHeaderTextColor: string;
+    onlineIndicator: string;
+    awayIndicator: string;
+    dndIndicator: string;
+    mentionBg: string;
+    mentionBj: string;
+    mentionColor: string;
+    centerChannelBg: string;
+    centerChannelColor: string;
+    newMessageSeparator: string;
+    linkColor: string;
+    buttonBg: string;
+    buttonColor: string;
+    errorTextColor: string;
+    mentionHighlightBg: string;
+    mentionHighlightLink: string;
+    codeTheme: string;
+}
+
 export type DesktopAPI = {
 
     // Initialization
@@ -39,6 +67,8 @@ export type DesktopAPI = {
     onBrowserHistoryStatusUpdated: (listener: (canGoBack: boolean, canGoForward: boolean) => void) => () => void;
     onBrowserHistoryPush: (listener: (pathName: string) => void) => () => void;
     sendBrowserHistoryPush: (path: string) => void;
+
+    updateTheme: (theme: Theme) => void;
 
     // Calls
     joinCall: (opts: {

@@ -9,16 +9,17 @@ import {FormattedMessage} from 'react-intl';
 import type {DownloadedItem} from 'types/downloads';
 
 import IntlProvider from './intl_provider';
+import setupDarkMode from './modals/darkMode';
 
 import './css/downloadsDropdownMenu.scss';
 
+setupDarkMode();
+
 const DownloadsDropdownMenu = () => {
     const [item, setItem] = useState<DownloadedItem | null>(null);
-    const [darkMode, setDarkMode] = useState(false);
 
-    const handleUpdate = (item: DownloadedItem, darkMode: boolean) => {
+    const handleUpdate = (item: DownloadedItem) => {
         setItem(item);
-        setDarkMode(darkMode);
     };
 
     useEffect(() => {
@@ -104,9 +105,7 @@ const DownloadsDropdownMenu = () => {
         <IntlProvider>
             <div
                 onClick={preventPropagation}
-                className={classNames('DownloadsDropdownMenu', {
-                    darkMode,
-                })}
+                className='DownloadsDropdownMenu'
             >
                 <div
                     className={classNames('DownloadsDropdownMenu__MenuItem', {

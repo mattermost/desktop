@@ -119,6 +119,9 @@ import {
     UPDATE_MENTIONS_FOR_SERVER,
     SECURE_STORAGE_GET,
     CLEAR_CACHE_AND_RELOAD,
+    UPDATE_THEME,
+    GET_THEME,
+    RESET_THEME,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -200,12 +203,15 @@ contextBridge.exposeInMainWorld('desktop', {
     getLocalConfiguration: () => ipcRenderer.invoke(GET_LOCAL_CONFIGURATION),
     getDownloadLocation: (downloadLocation) => ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, downloadLocation),
     getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
+    getTheme: () => ipcRenderer.invoke(GET_THEME),
 
     onReloadConfiguration: (listener) => {
         ipcRenderer.on(RELOAD_CONFIGURATION, () => listener());
         return () => ipcRenderer.off(RELOAD_CONFIGURATION, listener);
     },
     onDarkModeChange: (listener) => ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => listener(darkMode)),
+    onThemeChange: (listener) => ipcRenderer.on(UPDATE_THEME, (_, theme) => listener(theme)),
+    onResetTheme: (listener) => ipcRenderer.on(RESET_THEME, () => listener()),
     onLoadRetry: (listener) => ipcRenderer.on(LOAD_RETRY, (_, viewId, retry, err, loadUrl) => listener(viewId, retry, err, loadUrl)),
     onLoadSuccess: (listener) => ipcRenderer.on(LOAD_SUCCESS, (_, viewId) => listener(viewId)),
     onLoadFailed: (listener) => ipcRenderer.on(LOAD_FAILED, (_, viewId, err, loadUrl) => listener(viewId, err, loadUrl)),

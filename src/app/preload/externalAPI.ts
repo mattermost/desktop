@@ -38,6 +38,7 @@ import {
     METRICS_SEND,
     METRICS_REQUEST,
     METRICS_RECEIVE,
+    UPDATE_THEME,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
@@ -56,7 +57,10 @@ const desktopAPI: DesktopAPI = {
     // Initialization
     isDev: () => ipcRenderer.invoke(GET_IS_DEV_MODE),
     getAppInfo: () => ipcRenderer.invoke(GET_APP_INFO),
-    reactAppInitialized: () => ipcRenderer.send(REACT_APP_INITIALIZED),
+    reactAppInitialized: () => {
+        getThemeValues();
+        ipcRenderer.send(REACT_APP_INITIALIZED);
+    },
 
     // Session
     setSessionExpired: (isExpired) => ipcRenderer.send(SESSION_EXPIRED, isExpired),
@@ -76,6 +80,8 @@ const desktopAPI: DesktopAPI = {
     onBrowserHistoryStatusUpdated: (listener) => createListener(BROWSER_HISTORY_STATUS_UPDATED, listener),
     onBrowserHistoryPush: (listener) => createListener(BROWSER_HISTORY_PUSH, listener),
     sendBrowserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
+
+    updateTheme: (theme) => ipcRenderer.send(UPDATE_THEME, theme),
 
     // Calls
     joinCall: (opts) => ipcRenderer.invoke(CALLS_JOIN_CALL, opts),
@@ -172,3 +178,33 @@ const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 setInterval(() => {
     webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
+
+function getThemeValues() {
+    const style = window.getComputedStyle(document.body);
+    ipcRenderer.send(UPDATE_THEME, {
+        sidebarBg: style.getPropertyValue('--sidebar-bg'),
+        sidebarText: style.getPropertyValue('--sidebar-text'),
+        sidebarUnreadText: style.getPropertyValue('--sidebar-unread-text'),
+        sidebarTextHoverBg: style.getPropertyValue('--sidebar-text-hover-bg'),
+        sidebarTextActiveBorder: style.getPropertyValue('--sidebar-text-active-border'),
+        sidebarTextActiveColor: style.getPropertyValue('--sidebar-text-active-color'),
+        sidebarHeaderBg: style.getPropertyValue('--sidebar-header-bg'),
+        sidebarTeamBarBg: style.getPropertyValue('--sidebar-team-bar-bg'),
+        sidebarHeaderTextColor: style.getPropertyValue('--sidebar-header-text-color'),
+        onlineIndicator: style.getPropertyValue('--online-indicator'),
+        awayIndicator: style.getPropertyValue('--away-indicator'),
+        dndIndicator: style.getPropertyValue('--dnd-indicator'),
+        mentionBg: style.getPropertyValue('--mention-bg'),
+        mentionColor: style.getPropertyValue('--mention-color'),
+        centerChannelBg: style.getPropertyValue('--center-channel-bg'),
+        centerChannelColor: style.getPropertyValue('--center-channel-color'),
+        newMessageSeparator: style.getPropertyValue('--new-message-separator'),
+        linkColor: style.getPropertyValue('--link-color'),
+        buttonBg: style.getPropertyValue('--button-bg'),
+        buttonColor: style.getPropertyValue('--button-color'),
+        errorTextColor: style.getPropertyValue('--error-text-color'),
+        mentionHighlightBg: style.getPropertyValue('--mention-highlight-bg'),
+        mentionHighlightLink: style.getPropertyValue('--mention-highlight-link'),
+        codeTheme: style.getPropertyValue('--code-theme'),
+    });
+}

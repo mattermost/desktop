@@ -213,6 +213,7 @@ describe('common/Validator', () => {
             useSpellChecker: true,
             version: 4,
             viewLimit: 15,
+            themeSyncing: true,
         };
 
         it('should validate v4 config data', () => {

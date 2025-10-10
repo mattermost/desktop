@@ -5,6 +5,8 @@ import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {ipcMain, session, shell} from 'electron';
 import isDev from 'electron-is-dev';
 
+import type {Theme} from '@mattermost/desktop-api';
+
 import popoutMenu from 'app/popoutMenu';
 import WebContentsEventManager from 'app/views/webContentEvents';
 import type BaseWindow from 'app/windows/baseWindow';
@@ -22,6 +24,7 @@ import {
     SERVER_URL_CHANGED,
     OPEN_SERVER_EXTERNALLY,
     OPEN_POPOUT_MENU,
+    UPDATE_THEME,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
@@ -56,6 +59,7 @@ export class WebContentsManager {
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
         ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
+        ipcMain.on(UPDATE_THEME, this.handleUpdateTheme);
 
         ServerManager.on(SERVER_URL_CHANGED, this.handleServerURLChanged);
     }
@@ -268,6 +272,14 @@ export class WebContentsManager {
         log.debug('handleOpenPopoutMenu', {viewId});
 
         popoutMenu(viewId);
+    };
+
+    private handleUpdateTheme = (event: IpcMainEvent, theme: Theme) => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+        ServerManager.updateTheme(view.serverId, theme);
     };
 }
 
