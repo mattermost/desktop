@@ -3,6 +3,8 @@
 
 import EventEmitter from 'events';
 
+import type {Theme} from '@mattermost/desktop-api';
+
 import {
     SERVER_ADDED,
     SERVER_REMOVED,
@@ -12,6 +14,7 @@ import {
     SERVER_LOGGED_IN_CHANGED,
     SERVER_ORDER_UPDATED,
     SERVER_PRE_AUTH_SECRET_CHANGED,
+    SERVER_THEME_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -190,6 +193,17 @@ export class ServerManager extends EventEmitter {
         server.preAuthSecret = preAuthSecret;
         this.servers.set(serverId, server);
         this.emit(SERVER_PRE_AUTH_SECRET_CHANGED, serverId);
+    };
+
+    updateTheme = (serverId: string, theme: Theme) => {
+        log.debug('updateTheme', {theme});
+        const server = this.servers.get(serverId);
+        if (!server) {
+            return;
+        }
+        server.theme = theme;
+        this.servers.set(serverId, server);
+        this.emit(SERVER_THEME_CHANGED, serverId);
     };
 
     updateServerOrder = (serverOrder: string[]) => {

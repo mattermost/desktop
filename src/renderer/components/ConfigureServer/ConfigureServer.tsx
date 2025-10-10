@@ -7,9 +7,9 @@ import {useIntl, FormattedMessage} from 'react-intl';
 
 import {MODAL_TRANSITION_TIMEOUT, URLValidationStatus} from 'common/utils/constants';
 import Header from 'renderer/components/Header';
+import BackgroundImage from 'renderer/components/Images/background';
 import ServerImage from 'renderer/components/Images/server';
 import Input, {STATUS, SIZE} from 'renderer/components/Input';
-import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import SaveButton from 'renderer/components/SaveButton/SaveButton';
 
 import type {UniqueServer} from 'types/config';
@@ -307,7 +307,7 @@ function ConfigureServer({
         <div
             className='LoadingScreen ConfigureServer'
         >
-            <LoadingBackground/>
+            <BackgroundImage/>
             <Header
                 alternateLink={mobileView ? getAlternateLink() : undefined}
             />

@@ -184,6 +184,7 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     appLanguage: Joi.string().allow(''),
     enableMetrics: Joi.boolean(),
     viewLimit: Joi.number().integer().min(1),
+    themeSyncing: Joi.boolean().default(true),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};

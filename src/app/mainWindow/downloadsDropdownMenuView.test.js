@@ -62,6 +62,9 @@ jest.mock('app/mainWindow/mainWindow', () => ({
     getBounds: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
+jest.mock('main/themeManager', () => ({
+    registerMainWindowView: jest.fn(),
+}));
 jest.mock('fs', () => ({
     existsSync: jest.fn().mockReturnValue(false),
     readFileSync: jest.fn().mockImplementation((text) => text),

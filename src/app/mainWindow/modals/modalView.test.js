@@ -32,6 +32,9 @@ jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     unregisterView: jest.fn(),
 }));
+jest.mock('main/themeManager', () => ({
+    registerMainWindowView: jest.fn(),
+}));
 
 describe('main/views/modalView', () => {
     describe('show', () => {

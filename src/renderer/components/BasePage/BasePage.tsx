@@ -4,11 +4,11 @@
 import React from 'react';
 
 import ConnectionErrorView from 'renderer/components/ConnectionErrorView';
+import BackgroundImage from 'renderer/components/Images/background';
 import IncompatibleErrorView from 'renderer/components/IncompatibleErrorView';
 import TopBar from 'renderer/components/TopBar';
 
 import './BasePage.scss';
-import 'renderer/css/background.scss';
 
 type Props = {
     children?: React.ReactNode;
@@ -58,17 +58,20 @@ export default function BasePage({
     }
 
     return (
-        <div className='BasePage'>
-            <TopBar
-                title={title}
-                openMenu={openMenu}
-                openPopoutMenu={openPopoutMenu}
-            >
-                {children}
-            </TopBar>
-            <div className='BasePage__body background'>
-                {errorComponent}
+        <>
+            <BackgroundImage/>
+            <div className='BasePage'>
+                <TopBar
+                    title={title}
+                    openMenu={openMenu}
+                    openPopoutMenu={openPopoutMenu}
+                >
+                    {children}
+                </TopBar>
+                <div className='BasePage__body'>
+                    {errorComponent}
+                </div>
             </div>
-        </div>
+        </>
     );
 }

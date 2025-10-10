@@ -75,6 +75,9 @@ jest.mock('app/mainWindow/mainWindow', () => ({
     getBounds: jest.fn(),
     sendToRenderer: jest.fn(),
 }));
+jest.mock('main/themeManager', () => ({
+    registerMainWindowView: jest.fn(),
+}));
 
 describe('main/views/DownloadsDropdownView', () => {
     beforeEach(() => {

@@ -83,6 +83,7 @@ jest.mock('app/views/loadingScreen', () => ({
         show: jest.fn(),
         fade: jest.fn(),
         destroy: jest.fn(),
+        registerThemeManager: jest.fn(),
     })),
 }));
 
@@ -90,6 +91,7 @@ jest.mock('app/views/urlView', () => ({
     URLView: jest.fn().mockImplementation(() => ({
         show: jest.fn(),
         destroy: jest.fn(),
+        registerThemeManager: jest.fn(),
     })),
 }));
 
@@ -140,7 +142,7 @@ describe('main/windows/mainWindow', () => {
         });
 
         afterEach(() => {
-            jest.resetAllMocks();
+            jest.clearAllMocks();
         });
 
         it('should set window size using bounds read from file', () => {

@@ -10,12 +10,14 @@ import type {DownloadedItem, DownloadedItems} from 'types/downloads';
 
 import DownloadsDropdownItem from './components/DownloadsDropdown/DownloadsDropdownItem';
 import IntlProvider from './intl_provider';
+import setupDarkMode from './modals/darkMode';
 
 import './css/downloadsDropdown.scss';
 
+setupDarkMode();
+
 type State = {
     downloads: DownloadedItem[];
-    darkMode?: boolean;
     windowBounds?: Electron.Rectangle;
     item?: DownloadedItem;
     appName?: string;
@@ -51,7 +53,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
         window.desktop.downloadsDropdown.sendSize(document.body.scrollWidth, document.body.scrollHeight);
     }
 
-    handleUpdate = (downloads: DownloadedItems, darkMode: boolean, windowBounds: Electron.Rectangle, item?: DownloadedItem) => {
+    handleUpdate = (downloads: DownloadedItems, windowBounds: Electron.Rectangle, item?: DownloadedItem) => {
         const newDownloads = Object.values<DownloadedItem>(downloads);
         newDownloads.sort((a, b) => {
             // Show App update first
@@ -64,7 +66,6 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
         });
         this.setState({
             downloads: newDownloads,
-            darkMode,
             windowBounds,
             item,
         });
@@ -91,11 +92,7 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
 
         return (
             <IntlProvider>
-                <div
-                    className={classNames('DownloadsDropdown', {
-                        darkMode: this.state.darkMode,
-                    })}
-                >
+                <div className='DownloadsDropdown'>
                     <div className='DownloadsDropdown__header'>
                         <div className='DownloadsDropdown__Downloads'>
                             <FormattedMessage

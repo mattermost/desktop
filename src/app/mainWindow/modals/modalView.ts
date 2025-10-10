@@ -7,6 +7,7 @@ import {WebContentsView} from 'electron';
 import {Logger} from 'common/log';
 import ContextMenu from 'main/contextMenu';
 import performanceMonitor from 'main/performanceMonitor';
+import ThemeManager from 'main/themeManager';
 import {getWindowBoundaries} from 'main/utils';
 
 enum Status {
@@ -45,6 +46,7 @@ export class ModalView<T, T2> {
         this.status = Status.ACTIVE;
         try {
             performanceMonitor.registerView(`Modal-${key}`, this.view.webContents);
+            ThemeManager.registerMainWindowView(this.view.webContents);
             this.view.webContents.loadURL(this.html);
         } catch (e) {
             this.log.error('there was an error loading the modal:');

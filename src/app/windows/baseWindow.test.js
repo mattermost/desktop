@@ -9,7 +9,6 @@ import path from 'path';
 import {BrowserWindow, app, globalShortcut, ipcMain, dialog} from 'electron';
 
 import {
-    DARK_MODE_CHANGE,
     EMIT_CONFIGURATION,
     FOCUS_THREE_DOT_MENU,
     RELOAD_CONFIGURATION,
@@ -555,7 +554,6 @@ describe('BaseWindow', () => {
             ipcMain.emit(EMIT_CONFIGURATION);
 
             expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
-            expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(DARK_MODE_CHANGE, Config.darkMode);
             expect(baseWindow.browserWindow.setTitleBarOverlay).not.toHaveBeenCalled();
 
             Object.defineProperty(process, 'platform', {

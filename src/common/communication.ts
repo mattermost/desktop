@@ -240,3 +240,9 @@ export const GET_IS_VIEW_LIMIT_REACHED = 'get-is-view-limit-reached';
 
 // Secure storage
 export const SECURE_STORAGE_GET = 'secure-storage-get';
+
+// Theme events
+export const GET_THEME = 'get-theme';
+export const UPDATE_THEME = 'update-theme';
+export const SERVER_THEME_CHANGED = 'server-theme-changed';
+export const RESET_THEME = 'reset-theme';

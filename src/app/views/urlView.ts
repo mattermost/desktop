@@ -1,16 +1,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {BrowserWindow, IpcMainEvent} from 'electron';
+import type {BrowserWindow, IpcMainEvent, WebContents} from 'electron';
 import {ipcMain, WebContentsView} from 'electron';
 
-import {DARK_MODE_CHANGE, EMIT_CONFIGURATION, SET_URL_FOR_URL_VIEW, UPDATE_URL_VIEW_WIDTH} from 'common/communication';
+import {SET_URL_FOR_URL_VIEW, UPDATE_URL_VIEW_WIDTH} from 'common/communication';
 import {Logger} from 'common/log';
 import {SECOND} from 'common/utils/constants';
 import performanceMonitor from 'main/performanceMonitor';
 import {getLocalPreload} from 'main/utils';
-
-import type {CombinedConfig} from 'types/config';
 
 const log = new Logger('URLView');
 
@@ -31,8 +29,6 @@ export class URLView {
 
         parent.contentView.addChildView(this.urlView);
         performanceMonitor.registerView(`URLView-${parent.webContents.id}`, this.urlView.webContents);
-
-        ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
     }
 
     show = (url: URL | string) => {
@@ -92,18 +88,17 @@ export class URLView {
     };
 
     destroy = () => {
-        ipcMain.off(EMIT_CONFIGURATION, this.handleEmitConfiguration);
         performanceMonitor.unregisterView(this.urlView.webContents.id);
         this.urlView.webContents.close();
+    };
+
+    registerThemeManager = (register: (webContents: WebContents) => void) => {
+        register(this.urlView.webContents);
     };
 
     private isViewInFront = (view: WebContentsView) => {
         const index = this.parent.contentView.children.indexOf(view);
         const front = this.parent.contentView.children.length - 1;
         return index === front;
-    };
-
-    handleEmitConfiguration = (event: IpcMainEvent, config: CombinedConfig) => {
-        this.urlView.webContents.send(DARK_MODE_CHANGE, config.darkMode);
     };
 }

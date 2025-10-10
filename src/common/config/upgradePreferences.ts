@@ -64,6 +64,7 @@ export function upgradeV3toV4(configV3: ConfigV3) {
     });
     config.lastActiveServer = configV3.lastActiveTeam;
     config.viewLimit = 15;
+    config.themeSyncing = true;
     return config;
 }
 

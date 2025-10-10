@@ -8,11 +8,11 @@ import {useIntl, FormattedMessage} from 'react-intl';
 import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 import Carousel from 'renderer/components/Carousel';
 import Header from 'renderer/components/Header';
+import BackgroundImage from 'renderer/components/Images/background';
 import CallsImage from 'renderer/components/Images/calls';
 import CollaborateImage from 'renderer/components/Images/collaborate';
 import ThreadsEmptyImage from 'renderer/components/Images/threads-empty';
 import ToolsImage from 'renderer/components/Images/tools';
-import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
 import WelcomeScreenSlide from 'renderer/components/WelcomeScreen/WelcomeScreenSlide';
 
 import 'renderer/css/components/Button.scss';
@@ -100,7 +100,7 @@ function WelcomeScreen({
         <div
             className='LoadingScreen WelcomeScreen'
         >
-            <LoadingBackground/>
+            <BackgroundImage/>
             <Header/>
             {showContent && (
                 <div className={classNames('WelcomeScreen__body', transition)}>

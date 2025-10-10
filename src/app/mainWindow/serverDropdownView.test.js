@@ -32,6 +32,9 @@ jest.mock('electron', () => ({
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
 }));
+jest.mock('main/themeManager', () => ({
+    registerMainWindowView: jest.fn(),
+}));
 jest.mock('app/mainWindow/mainWindow', () => ({
     on: jest.fn(),
     get: jest.fn(),
