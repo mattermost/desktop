@@ -113,6 +113,7 @@
   "main.menus.app.view.devToolsCurrentCallWidgetPopout": "Call Widget用のデベロッパーツール",
   "main.menus.app.view.devToolsCurrentServer": "現在のサーバー用デベロッパーツール",
   "main.menus.app.view.devToolsCurrentTab": "現在のタブへのディベロッパーツール",
+  "main.menus.app.view.devToolsMainWindow": "メインウィンドウへのディベロッパーツール",
   "main.menus.app.view.devToolsSubMenu": "デベロッパーツール",
   "main.menus.app.view.developerModeBrowserOnly": "ブラウザ専用モード",
   "main.menus.app.view.developerModeDisableContextMenu": "コンテキストメニューの無効化",
