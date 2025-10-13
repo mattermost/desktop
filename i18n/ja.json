@@ -1,4 +1,7 @@
 {
+  "app.menus.contextMenu.openInNewWindow": "新しいウィンドウで開く",
+  "app.navigationManager.viewLimitReached": "閲覧できる限界に達しました",
+  "app.navigationManager.viewLimitReached.description": "このサーバーで開くことのできる限界のウィンドウとタブの数に達しました。既存のウィンドウとタブを閉じるか、モーダルで閲覧限界を調整して下さい",
   "callsWidgetWindow.cannotStartCall.message": "新しい通話に参加する前に別のサーバーで実行中の通話を終了する必要があります。",
   "callsWidgetWindow.cannotStartCall.title": "通話を開始できません",
   "common.permissions.canBasicAuth": "Web認証",
