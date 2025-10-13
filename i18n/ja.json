@@ -132,6 +132,7 @@
   "main.menus.app.window": "&Window",
   "main.menus.app.window.bringAllToFront": "すべてを手前に移動",
   "main.menus.app.window.close": "閉じる",
+  "main.menus.app.window.closeTab": "タブを閉じる",
   "main.menus.app.window.closeWindow": "ウィンドウを閉じる",
   "main.menus.app.window.minimize": "最小化",
   "main.menus.app.window.newTab": "新しいタブ",
