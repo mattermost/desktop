@@ -99,6 +99,7 @@
   "main.menus.app.help.versionString": "Version {version}{commit}",
   "main.menus.app.help.versionString.desktop": "デスクトップアプリバージョン{バージョン}{コミット}",
   "main.menus.app.help.versionString.server": "サーバーバージョン {バージョン}",
+  "main.menus.app.help.versionString.server.unavailable": "利用できません",
   "main.menus.app.history": "&History",
   "main.menus.app.history.back": "戻る",
   "main.menus.app.history.forward": "進む",
