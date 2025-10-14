@@ -224,7 +224,7 @@ function getThemeValues() {
         linkColor: style.getPropertyValue('--link-color'),
         buttonBg: style.getPropertyValue('--button-bg'),
         buttonColor: style.getPropertyValue('--button-color'),
-        errorTextColor: style.getPropertyValue('--error-text-color'),
+        errorTextColor: style.getPropertyValue('--error-text'),
         mentionHighlightBg: style.getPropertyValue('--mention-highlight-bg'),
         mentionHighlightLink: style.getPropertyValue('--mention-highlight-link'),
         codeTheme: style.getPropertyValue('--code-theme'),

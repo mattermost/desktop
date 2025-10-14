@@ -189,7 +189,6 @@ const resetTheme = () => {
     document.body.style.removeProperty('--button-color');
     document.body.style.removeProperty('--button-color-rgb');
     document.body.style.removeProperty('--error-text');
-    document.body.style.removeProperty('--error-text-color');
     document.body.style.removeProperty('--error-text-color-rgb');
     document.body.style.removeProperty('--mention-highlight-bg');
     document.body.style.removeProperty('--mention-highlight-bg-rgb');
