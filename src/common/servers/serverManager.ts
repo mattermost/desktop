@@ -201,7 +201,10 @@ export class ServerManager extends EventEmitter {
         if (!server) {
             return;
         }
-        server.theme = theme;
+        server.theme = {
+            ...theme,
+            isUsingSystemTheme: theme.isUsingSystemTheme ?? server.theme?.isUsingSystemTheme,
+        };
         this.servers.set(serverId, server);
         this.emit(SERVER_THEME_CHANGED, serverId);
     };

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain, session, shell} from 'electron';
+import {ipcMain, nativeTheme, session, shell} from 'electron';
 import isDev from 'electron-is-dev';
 
 import type {Theme} from '@mattermost/desktop-api';
@@ -25,6 +25,7 @@ import {
     OPEN_SERVER_EXTERNALLY,
     OPEN_POPOUT_MENU,
     UPDATE_THEME,
+    DARK_MODE_CHANGE,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
@@ -60,6 +61,10 @@ export class WebContentsManager {
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
         ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
         ipcMain.on(UPDATE_THEME, this.handleUpdateTheme);
+
+        if (process.platform !== 'linux') {
+            nativeTheme.on('updated', this.handleDarkModeChanged);
+        }
 
         ServerManager.on(SERVER_URL_CHANGED, this.handleServerURLChanged);
     }
@@ -280,6 +285,10 @@ export class WebContentsManager {
             return;
         }
         ServerManager.updateTheme(view.serverId, theme);
+    };
+
+    private handleDarkModeChanged = () => {
+        this.sendToAllViews(DARK_MODE_CHANGE, nativeTheme.shouldUseDarkColors);
     };
 }
 

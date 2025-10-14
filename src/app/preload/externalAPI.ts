@@ -39,6 +39,8 @@ import {
     METRICS_REQUEST,
     METRICS_RECEIVE,
     UPDATE_THEME,
+    DARK_MODE_CHANGE,
+    GET_DARK_MODE,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
@@ -82,6 +84,8 @@ const desktopAPI: DesktopAPI = {
     sendBrowserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
 
     updateTheme: (theme) => ipcRenderer.send(UPDATE_THEME, theme),
+    getDarkMode: () => ipcRenderer.invoke(GET_DARK_MODE),
+    onDarkModeChanged: (listener) => createListener(DARK_MODE_CHANGE, listener),
 
     // Calls
     joinCall: (opts) => ipcRenderer.invoke(CALLS_JOIN_CALL, opts),

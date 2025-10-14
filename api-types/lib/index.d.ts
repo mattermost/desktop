@@ -37,6 +37,7 @@ export type Theme = {
     mentionHighlightBg: string;
     mentionHighlightLink: string;
     codeTheme: string;
+    isUsingSystemTheme: boolean;
 };
 export type DesktopAPI = {
     isDev: () => Promise<boolean>;
@@ -64,6 +65,8 @@ export type DesktopAPI = {
     onBrowserHistoryPush: (listener: (pathName: string) => void) => () => void;
     sendBrowserHistoryPush: (path: string) => void;
     updateTheme: (theme: Theme) => void;
+    getDarkMode: () => Promise<boolean>;
+    onDarkModeChanged: (listener: (darkMode: boolean) => void) => () => void;
     joinCall: (opts: {
         callID: string;
         title: string;

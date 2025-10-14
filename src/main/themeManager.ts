@@ -57,6 +57,9 @@ export class ThemeManager {
                 this.handleServerThemeChanged(server.id);
             });
         } else {
+            if (nativeTheme.themeSource !== 'system') {
+                nativeTheme.themeSource = 'system';
+            }
             this.mainWindowViews.forEach((view) => {
                 view.send(RESET_THEME);
             });
@@ -116,7 +119,9 @@ export class ThemeManager {
             });
             return;
         }
-        nativeTheme.themeSource = isLightColor(server.theme.centerChannelBg) ? 'light' : 'dark';
+        if (!server.theme.isUsingSystemTheme) {
+            nativeTheme.themeSource = isLightColor(server.theme.centerChannelBg) ? 'light' : 'dark';
+        }
         this.mainWindowViews.forEach((view) => {
             view.send(UPDATE_THEME, server.theme);
         });

@@ -29,6 +29,9 @@ jest.mock('electron', () => {
                 clearCache: jest.fn(),
             },
         },
+        nativeTheme: {
+            on: jest.fn(),
+        },
     };
 });
 jest.mock('app/serverHub', () => ({
