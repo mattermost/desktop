@@ -21,8 +21,9 @@ export const MENU_SHADOW_WIDTH = 24;
 
 export const DEFAULT_WINDOW_WIDTH = 1280;
 export const DEFAULT_WINDOW_HEIGHT = 800;
+export const DEFAULT_RHS_WINDOW_WIDTH = 800;
 export const MINIMUM_WINDOW_WIDTH = 600;
-export const MINIMUM_WINDOW_HEIGHT = 240;
+export const MINIMUM_WINDOW_HEIGHT = 500;
 
 // Calls
 export const MINIMUM_CALLS_WIDGET_WIDTH = 284;
