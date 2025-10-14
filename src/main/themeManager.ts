@@ -57,9 +57,7 @@ export class ThemeManager {
                 this.handleServerThemeChanged(server.id);
             });
         } else {
-            if (nativeTheme.themeSource !== 'system') {
-                nativeTheme.themeSource = 'system';
-            }
+            this.resetThemeSource();
             this.mainWindowViews.forEach((view) => {
                 view.send(RESET_THEME);
             });
@@ -105,7 +103,7 @@ export class ThemeManager {
     private updateMainViews = () => {
         const serverId = ServerManager.getCurrentServerId();
         if (!serverId) {
-            nativeTheme.themeSource = 'system';
+            this.resetThemeSource();
             this.mainWindowViews.forEach((view) => {
                 view.send(RESET_THEME);
             });
@@ -113,14 +111,17 @@ export class ThemeManager {
         }
         const server = ServerManager.getServer(serverId);
         if (!server || !server.theme) {
-            nativeTheme.themeSource = 'system';
+            this.resetThemeSource();
             this.mainWindowViews.forEach((view) => {
                 view.send(RESET_THEME);
             });
             return;
         }
         if (!server.theme.isUsingSystemTheme) {
-            nativeTheme.themeSource = isLightColor(server.theme.centerChannelBg) ? 'light' : 'dark';
+            const themeSource = isLightColor(server.theme.centerChannelBg) ? 'light' : 'dark';
+            if (nativeTheme.themeSource !== themeSource) {
+                nativeTheme.themeSource = themeSource;
+            }
         }
         this.mainWindowViews.forEach((view) => {
             view.send(UPDATE_THEME, server.theme);
@@ -155,6 +156,12 @@ export class ThemeManager {
             return undefined;
         }
         return server.theme;
+    };
+
+    private resetThemeSource = () => {
+        if (nativeTheme.themeSource !== 'system') {
+            nativeTheme.themeSource = 'system';
+        }
     };
 }
 
