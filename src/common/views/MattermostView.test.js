@@ -4,7 +4,7 @@
 'use strict';
 
 import ServerManager from 'common/servers/serverManager';
-import {parseURL} from 'common/utils/url';
+import {isInternalURL, parseURL} from 'common/utils/url';
 
 import {MattermostView, ViewType} from './MattermostView';
 
@@ -14,6 +14,7 @@ jest.mock('common/servers/serverManager', () => ({
 
 jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
+    isInternalURL: jest.fn(),
 }));
 
 describe('MattermostView', () => {
@@ -36,6 +37,7 @@ describe('MattermostView', () => {
                     return null;
                 }
             });
+            isInternalURL.mockReturnValue(true);
         });
 
         it('should throw error when server not found', () => {

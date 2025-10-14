@@ -39,6 +39,10 @@ export type Theme = {
     codeTheme: string;
     isUsingSystemTheme: boolean;
 };
+export type PopoutViewProps = {
+    titleTemplate?: string;
+    isRHS?: boolean;
+};
 export type DesktopAPI = {
     isDev: () => Promise<boolean>;
     getAppInfo: () => Promise<{
@@ -101,4 +105,12 @@ export type DesktopAPI = {
         memory?: number;
     }>) => void) => () => void;
     unregister: (channel: string) => void;
+    canPopout: () => Promise<boolean>;
+    openPopout: (path: string, props: PopoutViewProps) => Promise<string>;
+    canUsePopoutOption: (optionName: string) => Promise<boolean>;
+    sendToParent: (channel: string, ...args: unknown[]) => void;
+    onMessageFromParent: (listener: (channel: string, ...args: unknown[]) => void) => () => void;
+    sendToPopout: (id: string, channel: string, ...args: unknown[]) => void;
+    onMessageFromPopout: (listener: (id: string, channel: string, ...args: unknown[]) => void) => () => void;
+    onPopoutClosed: (listener: (id: string) => void) => () => void;
 };

@@ -11,7 +11,6 @@ export type DesktopCaptureSource = {
     name: string;
     thumbnailURL: string;
 };
-
 export type Theme = {
     sidebarBg: string;
     sidebarText: string;
@@ -41,6 +40,10 @@ export type Theme = {
 
     isUsingSystemTheme: boolean;
 }
+export type PopoutViewProps = {
+    titleTemplate?: string;
+    isRHS?: boolean;
+};
 
 export type DesktopAPI = {
 
@@ -117,4 +120,14 @@ export type DesktopAPI = {
 
     // Utility
     unregister: (channel: string) => void;
+
+    // Popouts
+    canPopout: () => Promise<boolean>;
+    openPopout: (path: string, props: PopoutViewProps) => Promise<string>;
+    canUsePopoutOption: (optionName: string) => Promise<boolean>;
+    sendToParent: (channel: string, ...args: unknown[]) => void;
+    onMessageFromParent: (listener: (channel: string, ...args: unknown[]) => void) => () => void;
+    sendToPopout: (id: string, channel: string, ...args: unknown[]) => void;
+    onMessageFromPopout: (listener: (id: string, channel: string, ...args: unknown[]) => void) => () => void;
+    onPopoutClosed: (listener: (id: string) => void) => () => void;
 }

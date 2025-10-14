@@ -252,4 +252,145 @@ describe('ViewManager', () => {
             expect(createViewSpy).toHaveBeenCalledWith(mockServer, ViewType.TAB);
         });
     });
+
+    describe('getViewTitle', () => {
+        let viewManager;
+        let otherServer;
+
+        beforeEach(() => {
+            viewManager = new ViewManager();
+            otherServer = {
+                id: 'other-server-id',
+                name: 'Other Server',
+                url: new URL('https://other.com'),
+                initialLoadURL: new URL('https://other.com'),
+            };
+        });
+
+        it('should return empty string for non-existent view', () => {
+            const result = viewManager.getViewTitle('non-existent-id');
+            expect(result).toBe('');
+        });
+
+        it('should use titleTemplate when available', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            view.props = {
+                titleTemplate: '{channelName} - {teamName} - {serverName}',
+            };
+            viewManager.updateViewTitle(view.id, 'Test Channel', 'Test Team');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Channel - Test Team - Test Server');
+        });
+
+        it('should handle titleTemplate with missing values', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            view.props = {
+                titleTemplate: '{channelName} - {teamName} - {serverName}',
+            };
+
+            // Only set channelName, leave teamName undefined
+            viewManager.updateViewTitle(view.id, 'Test Channel');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Channel -  - Test Server');
+        });
+
+        it('should return channelName when only channelName is set', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            viewManager.updateViewTitle(view.id, 'Test Channel');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Channel');
+        });
+
+        it('should return teamName when only teamName is set', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            viewManager.updateViewTitle(view.id, undefined, 'Test Team');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Team');
+        });
+
+        it('should return serverName when neither channelName nor teamName is set', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Server');
+        });
+
+        it('should return channelName when channelName and teamName are set but no duplicates exist', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            viewManager.updateViewTitle(view.id, 'Test Channel', 'Test Team');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Channel');
+        });
+
+        it('should return channelName - teamName when duplicate channelNames exist across views (intended behavior)', () => {
+            const view1 = viewManager.createView(mockServer, ViewType.TAB);
+            const view2 = viewManager.createView(otherServer, ViewType.TAB);
+
+            viewManager.updateViewTitle(view1.id, 'Test Channel', 'Team A');
+            viewManager.updateViewTitle(view2.id, 'Test Channel', 'Team B');
+
+            const result1 = viewManager.getViewTitle(view1.id);
+            const result2 = viewManager.getViewTitle(view2.id);
+            expect(result1).toBe('Test Channel - Team A');
+            expect(result2).toBe('Test Channel - Team B');
+        });
+
+        it('should not consider duplicate channelNames within the same view', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            viewManager.updateViewTitle(view.id, 'Test Channel', 'Test Team');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Channel');
+        });
+
+        it('should prefix server name for window type views', () => {
+            const view = viewManager.createView(mockServer, ViewType.WINDOW);
+            viewManager.updateViewTitle(view.id, 'Test Channel', 'Test Team');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Server - Test Channel');
+        });
+
+        it('should prefix server name for window type views with only teamName', () => {
+            const view = viewManager.createView(mockServer, ViewType.WINDOW);
+            viewManager.updateViewTitle(view.id, undefined, 'Test Team');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Server - Test Team');
+        });
+
+        it('should prefix server name for window type views with only serverName', () => {
+            const view = viewManager.createView(mockServer, ViewType.WINDOW);
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Test Server - Test Server');
+        });
+
+        it('should handle complex titleTemplate with all placeholders', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            view.props = {
+                titleTemplate: '[{serverName}] {teamName} > {channelName}',
+            };
+            viewManager.updateViewTitle(view.id, 'General', 'Engineering');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('[Test Server] Engineering > General');
+        });
+
+        it('should handle titleTemplate with no placeholders', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            view.props = {
+                titleTemplate: 'Static Title',
+            };
+            viewManager.updateViewTitle(view.id, 'Test Channel', 'Test Team');
+
+            const result = viewManager.getViewTitle(view.id);
+            expect(result).toBe('Static Title');
+        });
+    });
 });
