@@ -252,5 +252,6 @@ export const SECURE_STORAGE_GET = 'secure-storage-get';
 // Theme events
 export const GET_THEME = 'get-theme';
 export const UPDATE_THEME = 'update-theme';
+export const UPDATE_SERVER_THEME = 'update-server-theme';
 export const SERVER_THEME_CHANGED = 'server-theme-changed';
 export const RESET_THEME = 'reset-theme';

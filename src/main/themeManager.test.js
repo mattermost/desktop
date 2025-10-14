@@ -11,6 +11,7 @@ import {
     UPDATE_THEME,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
+import ViewManager from 'common/views/viewManager';
 
 import {ThemeManager} from './themeManager';
 
@@ -50,6 +51,18 @@ jest.mock('common/servers/serverManager', () => {
     };
 });
 
+jest.mock('common/views/viewManager', () => {
+    const EventEmitter = jest.requireActual('events');
+    const mockViewManager = new EventEmitter();
+
+    return {
+        on: jest.fn((event, handler) => mockViewManager.on(event, handler)),
+        emit: jest.fn((event, ...args) => mockViewManager.emit(event, ...args)),
+        getViewsByServerId: jest.fn(),
+        mockViewManager,
+    };
+});
+
 describe('ThemeManager', () => {
     let themeManager;
     let mockWebContents;
@@ -71,6 +84,9 @@ describe('ThemeManager', () => {
         // Mock getAllServers to return empty array by default
         ServerManager.getAllServers.mockReturnValue([]);
 
+        // Mock ViewManager.getViewsByServerId to return empty array by default
+        ViewManager.getViewsByServerId.mockReturnValue([]);
+
         themeManager = new ThemeManager();
     });
 
@@ -78,6 +94,7 @@ describe('ThemeManager', () => {
         // Clean up event listeners to avoid memory leaks
         ipcMain.removeAllListeners();
         ServerManager.mockServerManager.removeAllListeners();
+        ViewManager.mockViewManager.removeAllListeners();
         jest.resetAllMocks();
     });
 
@@ -99,22 +116,22 @@ describe('ThemeManager', () => {
     });
 
     describe('registerPopoutView', () => {
-        it('should add webContents to popoutViews for serverId', () => {
-            const serverId = 'test-server-id';
-            themeManager.registerPopoutView(mockWebContents, serverId);
+        it('should add webContents to popoutViews for viewId', () => {
+            const viewId = 'test-view-id';
+            themeManager.registerPopoutView(mockWebContents, viewId);
 
-            expect(themeManager.popoutViews.has(serverId)).toBe(true);
-            expect(themeManager.popoutViews.get(serverId).has(mockWebContents)).toBe(true);
+            expect(themeManager.popoutViews.has(viewId)).toBe(true);
+            expect(themeManager.popoutViews.get(viewId).has(mockWebContents)).toBe(true);
         });
 
         it('should remove webContents from popoutViews when destroyed', () => {
-            const serverId = 'test-server-id';
-            themeManager.registerPopoutView(mockWebContents, serverId);
+            const viewId = 'test-view-id';
+            themeManager.registerPopoutView(mockWebContents, viewId);
 
             // Emit the destroyed event
             mockWebContents.emit('destroyed');
 
-            expect(themeManager.popoutViews.get(serverId).has(mockWebContents)).toBe(false);
+            expect(themeManager.popoutViews.get(viewId).has(mockWebContents)).toBe(false);
         });
     });
 
@@ -131,9 +148,9 @@ describe('ThemeManager', () => {
         });
 
         it('should send DARK_MODE_CHANGE to all popout views', () => {
-            const serverId = 'test-server-id';
-            themeManager.registerPopoutView(mockWebContents, serverId);
-            themeManager.registerPopoutView(mockWebContents2, serverId);
+            const viewId = 'test-view-id';
+            themeManager.registerPopoutView(mockWebContents, viewId);
+            themeManager.registerPopoutView(mockWebContents2, viewId);
 
             const config = {darkMode: false};
             themeManager.handleEmitConfiguration({}, config);
@@ -165,7 +182,7 @@ describe('ThemeManager', () => {
 
             try {
                 themeManager.registerMainWindowView(mockWebContents);
-                themeManager.registerPopoutView(mockWebContents2, 'test-server-id');
+                themeManager.registerPopoutView(mockWebContents2, 'test-view-id');
 
                 const config = {darkMode: true};
                 themeManager.handleEmitConfiguration({}, config);
@@ -186,7 +203,7 @@ describe('ThemeManager', () => {
 
             try {
                 themeManager.registerMainWindowView(mockWebContents);
-                themeManager.registerPopoutView(mockWebContents2, 'test-server-id');
+                themeManager.registerPopoutView(mockWebContents2, 'test-view-id');
 
                 const config = {darkMode: false};
                 themeManager.handleEmitConfiguration({}, config);
@@ -203,11 +220,13 @@ describe('ThemeManager', () => {
     describe('handleServerThemeChanged', () => {
         beforeEach(() => {
             themeManager.registerMainWindowView(mockWebContents);
-            themeManager.registerPopoutView(mockWebContents2, 'test-server-id');
+            themeManager.registerPopoutView(mockWebContents2, 'test-view-id');
         });
 
         it('should update main views when server theme changes', () => {
             const updateMainViewsSpy = jest.spyOn(themeManager, 'updateMainViews');
+            const mockViews = [{id: 'test-view-id', type: 'window'}];
+            ViewManager.getViewsByServerId.mockReturnValue(mockViews);
 
             themeManager.handleServerThemeChanged('test-server-id');
 
@@ -217,6 +236,8 @@ describe('ThemeManager', () => {
         it('should send UPDATE_THEME to popout views when server has theme', () => {
             const mockServer = {theme: {primary: '#123456'}};
             ServerManager.getServer.mockReturnValue(mockServer);
+            const mockViews = [{id: 'test-view-id', type: 'window'}];
+            ViewManager.getViewsByServerId.mockReturnValue(mockViews);
 
             themeManager.handleServerThemeChanged('test-server-id');
 
@@ -225,6 +246,8 @@ describe('ThemeManager', () => {
 
         it('should send RESET_THEME to popout views when server has no theme', () => {
             ServerManager.getServer.mockReturnValue({theme: null});
+            const mockViews = [{id: 'test-view-id', type: 'window'}];
+            ViewManager.getViewsByServerId.mockReturnValue(mockViews);
 
             themeManager.handleServerThemeChanged('test-server-id');
 
@@ -233,6 +256,8 @@ describe('ThemeManager', () => {
 
         it('should send RESET_THEME to popout views when server does not exist', () => {
             ServerManager.getServer.mockReturnValue(null);
+            const mockViews = [{id: 'test-view-id', type: 'window'}];
+            ViewManager.getViewsByServerId.mockReturnValue(mockViews);
 
             themeManager.handleServerThemeChanged('test-server-id');
 
@@ -242,6 +267,7 @@ describe('ThemeManager', () => {
         it('should not send to popout views for different server', () => {
             const mockServer = {theme: {primary: '#123456'}};
             ServerManager.getServer.mockReturnValue(mockServer);
+            ViewManager.getViewsByServerId.mockReturnValue([]);
 
             themeManager.handleServerThemeChanged('different-server-id');
 
@@ -298,11 +324,11 @@ describe('ThemeManager', () => {
 
     describe('handleGetTheme', () => {
         it('should return theme for popout view', () => {
-            const serverId = 'test-server-id';
+            const viewId = 'test-view-id';
             const mockTheme = {primary: '#123456'};
             const mockServer = {theme: mockTheme};
 
-            themeManager.registerPopoutView(mockWebContents, serverId);
+            themeManager.registerPopoutView(mockWebContents, viewId);
             ServerManager.getServer.mockReturnValue(mockServer);
 
             const event = {sender: mockWebContents};
@@ -312,9 +338,9 @@ describe('ThemeManager', () => {
         });
 
         it('should return undefined for popout view when server does not exist', () => {
-            const serverId = 'test-server-id';
+            const viewId = 'test-view-id';
 
-            themeManager.registerPopoutView(mockWebContents, serverId);
+            themeManager.registerPopoutView(mockWebContents, viewId);
             ServerManager.getServer.mockReturnValue(null);
 
             const event = {sender: mockWebContents};

@@ -38,6 +38,7 @@ import {
     METRICS_SEND,
     METRICS_REQUEST,
     METRICS_RECEIVE,
+    UPDATE_SERVER_THEME,
     UPDATE_THEME,
     DARK_MODE_CHANGE,
     GET_DARK_MODE,
@@ -203,7 +204,7 @@ setInterval(() => {
 
 function getThemeValues() {
     const style = window.getComputedStyle(document.body);
-    ipcRenderer.send(UPDATE_THEME, {
+    ipcRenderer.send(UPDATE_SERVER_THEME, {
         sidebarBg: style.getPropertyValue('--sidebar-bg'),
         sidebarText: style.getPropertyValue('--sidebar-text'),
         sidebarUnreadText: style.getPropertyValue('--sidebar-unread-text'),

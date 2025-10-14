@@ -119,10 +119,7 @@ export class PopoutManager {
         }
         const window = new BaseWindow(options);
         performanceMonitor.registerView(`PopoutWindow-${view.id}`, window.browserWindow.webContents);
-        const serverId = ViewManager.getView(view.id)?.serverId;
-        if (serverId) {
-            window.registerThemeManager((webContents) => ThemeManager.registerPopoutView(webContents, serverId));
-        }
+        window.registerThemeManager((webContents) => ThemeManager.registerPopoutView(webContents, view.id));
         this.popoutWindows.set(view.id, window);
 
         return window;

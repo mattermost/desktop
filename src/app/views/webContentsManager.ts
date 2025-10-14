@@ -24,17 +24,19 @@ import {
     SERVER_URL_CHANGED,
     OPEN_SERVER_EXTERNALLY,
     OPEN_POPOUT_MENU,
-    UPDATE_THEME,
+    UPDATE_SERVER_THEME,
     DARK_MODE_CHANGE,
+    UPDATE_THEME,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import type {MattermostView} from 'common/views/MattermostView';
+import {ViewType, type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
 import PermissionsManager from 'main/security/permissionsManager';
+import ThemeManager from 'main/themeManager';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
@@ -60,6 +62,7 @@ export class WebContentsManager {
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
         ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
+        ipcMain.on(UPDATE_SERVER_THEME, this.handleUpdateServerTheme);
         ipcMain.on(UPDATE_THEME, this.handleUpdateTheme);
 
         if (process.platform !== 'linux') {
@@ -279,12 +282,25 @@ export class WebContentsManager {
         popoutMenu(viewId);
     };
 
-    private handleUpdateTheme = (event: IpcMainEvent, theme: Theme) => {
+    private handleUpdateServerTheme = (event: IpcMainEvent, theme: Theme) => {
         const view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return;
         }
         ServerManager.updateTheme(view.serverId, theme);
+    };
+
+    private handleUpdateTheme = (event: IpcMainEvent, theme: Theme) => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+        const viewType = ViewManager.getView(view.id)?.type;
+        if (viewType === ViewType.WINDOW) {
+            ThemeManager.updatePopoutTheme(view.id, theme);
+        } else {
+            ServerManager.updateTheme(view.serverId, theme);
+        }
     };
 
     private handleDarkModeChanged = () => {
