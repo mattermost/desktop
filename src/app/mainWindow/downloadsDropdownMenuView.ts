@@ -19,7 +19,6 @@ import {
     UPDATE_DOWNLOADS_DROPDOWN_MENU,
     UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM,
 } from 'common/communication';
-import Config from 'common/config';
 import {Logger} from 'common/log';
 import {
     DOWNLOADS_DROPDOWN_FULL_WIDTH,
@@ -29,6 +28,7 @@ import {
 } from 'common/utils/constants';
 import downloadsManager from 'main/downloadsManager';
 import performanceMonitor from 'main/performanceMonitor';
+import ThemeManager from 'main/themeManager';
 import {getLocalPreload} from 'main/utils';
 
 import type {CoordinatesToJsonType, DownloadedItem, DownloadsMenuOpenEventPayload} from 'types/downloads';
@@ -69,6 +69,7 @@ export class DownloadsDropdownMenuView {
         this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
         this.view.setBackgroundColor('#00000000');
         performanceMonitor.registerView('DownloadsDropdownMenuView', this.view.webContents);
+        ThemeManager.registerMainWindowView(this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdownMenu.html');
         MainWindow.get()?.contentView.addChildView(this.view);
     };
@@ -98,7 +99,6 @@ export class DownloadsDropdownMenuView {
         this.view?.webContents.send(
             UPDATE_DOWNLOADS_DROPDOWN_MENU,
             this.item,
-            Config.darkMode,
         );
         ipcMain.emit(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, true, this.item);
         this.repositionDownloadsDropdownMenu();

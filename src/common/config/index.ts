@@ -258,6 +258,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.viewLimit ?? 15;
     }
 
+    get themeSyncing() {
+        return this.combinedData?.themeSyncing ?? true;
+    }
+
     /**
      * Gets the servers from registry into the config object and reload
      *

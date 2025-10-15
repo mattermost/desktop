@@ -37,12 +37,13 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
-import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
 import ViewManager from 'common/views/viewManager';
 import {boundsInfoPath} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
+import ThemeManager from 'main/themeManager';
 import {isInsideRectangle, isKDE} from 'main/utils';
 
 import type {SavedWindowState} from 'types/mainWindow';
@@ -110,6 +111,7 @@ export class MainWindow extends EventEmitter {
 
         const localURL = 'mattermost-desktop://renderer/index.html';
         performanceMonitor.registerView('MainWindow', this.win.browserWindow.webContents);
+        this.win.registerThemeManager(ThemeManager.registerMainWindowView);
         this.win.browserWindow.loadURL(localURL).catch(
             (reason) => {
                 log.error('failed to load', {reason});
@@ -172,14 +174,6 @@ export class MainWindow extends EventEmitter {
             return Config.startInFullscreen;
         }
         return this.savedWindowState?.fullscreen || false;
-    };
-
-    private getTitleBarOverlay = () => {
-        return {
-            color: Config.darkMode ? '#2e2e2e' : '#efefef',
-            symbolColor: Config.darkMode ? '#c1c1c1' : '#474747',
-            height: TAB_BAR_HEIGHT,
-        };
     };
 
     private getSavedWindowState = (): Partial<SavedWindowState> => {
@@ -403,9 +397,6 @@ export class MainWindow extends EventEmitter {
 
     private handleEmitConfiguration = () => {
         this.sendViewLimitUpdated();
-        if (process.platform !== 'darwin') {
-            this.win?.browserWindow.setTitleBarOverlay?.(this.getTitleBarOverlay());
-        }
     };
 
     private sendViewLimitUpdated = () => {

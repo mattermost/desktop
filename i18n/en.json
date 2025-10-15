@@ -286,6 +286,8 @@
   "renderer.components.settingsPage.spellCheckerSetting.language": "Spell Checker Languages",
   "renderer.components.settingsPage.startAppOnLogin": "Start app on login",
   "renderer.components.settingsPage.startAppOnLogin.description": "If enabled, the app starts automatically when you log in to your machine.",
+  "renderer.components.settingsPage.themeSyncing": "Synchronize Desktop App theme with server",
+  "renderer.components.settingsPage.themeSyncing.description": "If enabled, the Desktop App theme will be synchronized with the server theme. For older server versions, a refresh of the server may be required to update the theme.",
   "renderer.components.settingsPage.trayIcon.color": "Icon color: ",
   "renderer.components.settingsPage.trayIcon.show": "Show icon in the notification area",
   "renderer.components.settingsPage.trayIcon.theme.dark": "Dark",

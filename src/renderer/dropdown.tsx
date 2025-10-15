@@ -15,13 +15,15 @@ import type {UniqueServer} from 'types/config';
 import './css/dropdown.scss';
 
 import IntlProvider from './intl_provider';
+import setupDarkMode from './modals/darkMode';
+
+setupDarkMode();
 
 type State = {
     servers?: UniqueServer[];
     serverOrder?: string[];
     orderedServers?: UniqueServer[];
     activeServer?: string;
-    darkMode?: boolean;
     enableServerManagement?: boolean;
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
@@ -62,7 +64,6 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
 
     handleUpdate = (
         servers: UniqueServer[],
-        darkMode: boolean,
         windowBounds: Electron.Rectangle,
         activeServer?: string,
         enableServerManagement?: boolean,
@@ -74,7 +75,6 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
         this.setState({
             servers,
             activeServer,
-            darkMode,
             enableServerManagement,
             hasGPOServers,
             unreads,
@@ -241,9 +241,7 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
             <IntlProvider>
                 <div
                     onClick={this.preventPropagation}
-                    className={classNames('ServerDropdown', {
-                        darkMode: this.state.darkMode,
-                    })}
+                    className='ServerDropdown'
                     style={{
                         maxHeight: this.state.windowBounds ? (this.state.windowBounds.height - TAB_BAR_HEIGHT - 16) : undefined,
                         maxWidth: this.state.windowBounds ? (this.state.windowBounds.width - THREE_DOT_MENU_WIDTH_MAC) : undefined,

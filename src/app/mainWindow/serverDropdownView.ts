@@ -27,6 +27,7 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
 import performanceMonitor from 'main/performanceMonitor';
+import ThemeManager from 'main/themeManager';
 import {getLocalPreload} from 'main/utils';
 
 import type {UniqueServer} from 'types/config';
@@ -83,6 +84,7 @@ export class ServerDropdownView {
         this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
         this.view.setBackgroundColor('#00000000');
         performanceMonitor.registerView('ServerDropdownView', this.view.webContents);
+        ThemeManager.registerMainWindowView(this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/dropdown.html');
 
         this.setOrderedServers();
@@ -97,7 +99,6 @@ export class ServerDropdownView {
         this.view?.webContents.send(
             UPDATE_SERVERS_DROPDOWN,
             this.servers,
-            Config.darkMode,
             this.windowBounds,
             ServerManager.hasServers() ? ServerManager.getCurrentServerId() : undefined,
             Config.enableServerManagement,

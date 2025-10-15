@@ -106,6 +106,10 @@ jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
 }));
 
+jest.mock('main/themeManager', () => ({
+    registerPopoutView: jest.fn(),
+}));
+
 jest.mock('main/utils', () => ({
     getWindowBoundaries: jest.fn(() => ({x: 0, y: 0, width: 800, height: 600})),
 }));
@@ -143,6 +147,7 @@ describe('PopoutManager', () => {
         },
         showLoadingScreen: jest.fn(),
         fadeLoadingScreen: jest.fn(),
+        registerThemeManager: jest.fn(),
     };
 
     const mockWebContentsView = {

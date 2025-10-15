@@ -41,6 +41,7 @@ import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import performanceMonitor from 'main/performanceMonitor';
+import ThemeManager from 'main/themeManager';
 import {getWindowBoundaries} from 'main/utils';
 
 const log = new Logger('PopoutManager');
@@ -118,6 +119,7 @@ export class PopoutManager {
         }
         const window = new BaseWindow(options);
         performanceMonitor.registerView(`PopoutWindow-${view.id}`, window.browserWindow.webContents);
+        window.registerThemeManager((webContents) => ThemeManager.registerPopoutView(webContents, view.id));
         this.popoutWindows.set(view.id, window);
 
         return window;
