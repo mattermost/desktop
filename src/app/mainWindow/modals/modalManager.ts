@@ -151,7 +151,7 @@ export class ModalManager {
     };
 
     focusCurrentModal = () => {
-        if (this.isModalDisplayed()) {
+        if (this.isModalDisplayed() && MainWindow.get()?.isFocused()) {
             this.modalQueue[0].view.webContents.focus();
         }
     };

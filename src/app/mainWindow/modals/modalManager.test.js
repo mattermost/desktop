@@ -3,6 +3,7 @@
 
 'use strict';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
 
 import {ModalManager} from './modalManager';
@@ -37,6 +38,7 @@ jest.mock('common/views/viewManager', () => ({
 jest.mock('app/mainWindow/mainWindow', () => ({
     on: jest.fn(),
     sendToRenderer: jest.fn(),
+    get: jest.fn(),
 }));
 jest.mock('process', () => ({
     env: {},
@@ -170,6 +172,41 @@ describe('main/views/modalManager', () => {
             modalManager.modalPromises.delete('test2');
             modalManager.handleModalFinished('resolve', {sender: {id: 1}}, 'something');
             expect(TabManager.focusCurrentTab).toBeCalled();
+        });
+    });
+
+    describe('focusCurrentModal', () => {
+        const modalManager = new ModalManager();
+        const mockWebContents = {focus: jest.fn()};
+        const mockMainWindow = {isFocused: jest.fn()};
+        const modalView = {
+            key: 'test',
+            view: {webContents: mockWebContents},
+            isActive: jest.fn(() => true),
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            modalManager.modalQueue = [];
+            MainWindow.get.mockReturnValue(mockMainWindow);
+        });
+
+        it('should focus modal webContents when main window is focused and modal is displayed', () => {
+            modalManager.modalQueue = [modalView];
+            mockMainWindow.isFocused.mockReturnValue(true);
+
+            modalManager.focusCurrentModal();
+
+            expect(mockWebContents.focus).toBeCalled();
+        });
+
+        it('should not focus modal webContents when main window is not focused', () => {
+            modalManager.modalQueue = [modalView];
+            mockMainWindow.isFocused.mockReturnValue(false);
+
+            modalManager.focusCurrentModal();
+
+            expect(mockWebContents.focus).not.toBeCalled();
         });
     });
 });
