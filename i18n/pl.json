@@ -346,6 +346,8 @@
   "renderer.components.settingsPage.spellCheckerSetting.language": "Języki sprawdzania pisowni",
   "renderer.components.settingsPage.startAppOnLogin": "Uruchomienie aplikacji po zalogowaniu",
   "renderer.components.settingsPage.startAppOnLogin.description": "Jeśli jest włączona, aplikacja uruchamia się automatycznie po zalogowaniu się do urządzenia.",
+  "renderer.components.settingsPage.themeSyncing": "Synchronizuj motyw aplikacji desktopowej z serwerem",
+  "renderer.components.settingsPage.themeSyncing.description": "Jeśli opcja ta jest włączona, motyw aplikacji desktopowej będzie synchronizowany z motywem serwera. W przypadku starszych wersji serwera może być wymagane odświeżenie serwera w celu aktualizacji motywu.",
   "renderer.components.settingsPage.trayIcon.color": "Kolor ikony: ",
   "renderer.components.settingsPage.trayIcon.show": "Pokaż ikonę w obszarze powiadomień",
   "renderer.components.settingsPage.trayIcon.show.darwin": "Pokaż ikonę {appName} na pasku menu",
