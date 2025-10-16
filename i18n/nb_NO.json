@@ -333,6 +333,8 @@
   "renderer.components.settingsPage.spellCheckerSetting.language": "Språk for stavekontroll",
   "renderer.components.settingsPage.startAppOnLogin": "Start appen ved pålogging",
   "renderer.components.settingsPage.startAppOnLogin.description": "Hvis den er aktivert, starter appen automatisk når du logger på maskinen.",
+  "renderer.components.settingsPage.themeSyncing": "Synkroniser skrivebordsapp-temaet med server",
+  "renderer.components.settingsPage.themeSyncing.description": "Hvis denne funksjonen er aktivert, synkroniseres temaet for skrivebordsappen med server-temaet. For eldre versjoner av serveren kan det være nødvendig å oppdatere temaet ved en oppdatering av serveren.",
   "renderer.components.settingsPage.trayIcon.color": "Ikon farge: ",
   "renderer.components.settingsPage.trayIcon.show": "Vis ikon i varslingsområdet",
   "renderer.components.settingsPage.trayIcon.show.darwin": "Vis {appName}-ikonet i menylinjen",
