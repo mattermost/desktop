@@ -17,9 +17,9 @@ function startElectron() {
         electronProcess.removeAllListeners();
     }
     electronProcess = spawn(
-        process.platform === 'win32' ? 'electron.cmd' : 'electron',
+        'electron',
         [path.resolve('dist/')],
-        {stdio: 'inherit'},
+        {stdio: 'inherit', shell: process.platform === 'win32'},
     );
 }
 
