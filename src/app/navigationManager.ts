@@ -4,6 +4,7 @@
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {dialog, ipcMain} from 'electron';
 
+import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
@@ -152,6 +153,9 @@ export class NavigationManager {
         }
 
         if (currentView.parentViewId) {
+            if (!MainWindow.get()?.isFocused()) {
+                MainWindow.get()?.focus();
+            }
             TabManager.switchToTab(currentView.parentViewId);
             currentView = WebContentsManager.getView(currentView.parentViewId);
         }
