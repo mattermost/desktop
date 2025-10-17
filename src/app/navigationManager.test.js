@@ -59,6 +59,10 @@ jest.mock('common/servers/serverManager', () => ({
     getServer: jest.fn(),
 }));
 
+jest.mock('app/mainWindow/mainWindow', () => ({
+    get: jest.fn(),
+}));
+
 jest.mock('common/utils/url', () => ({
     parseURL: (url) => {
         try {
