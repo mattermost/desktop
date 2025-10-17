@@ -287,6 +287,9 @@ export class WebContentsManager {
         if (!view) {
             return;
         }
+        if (ViewManager.getView(view.id)?.type === ViewType.WINDOW) {
+            return;
+        }
         ServerManager.updateTheme(view.serverId, theme);
     };
 
