@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-const {spawn} = require('child_process');
+const {spawn, exec} = require('child_process');
 const path = require('path');
 
 const webpack = require('webpack');
@@ -23,11 +23,33 @@ function startElectron() {
     );
 }
 
+function killProcessTree(pid) {
+    return new Promise((resolve) => {
+        // On Windows, use taskkill to terminate the process tree
+        exec(`taskkill /pid ${pid} /t /f`, (error) => {
+            if (error && !error.message.includes('not found')) {
+                console.error('Error killing process tree:', error.message);
+            }
+            resolve();
+        });
+    });
+}
+
 function restartElectron() {
     if (electronProcess) {
-        electronProcess.kill();
+        if (process.platform === 'win32') {
+            // On Windows, use taskkill to properly terminate the process tree
+            killProcessTree(electronProcess.pid).then(() => {
+                startElectron();
+            });
+        } else {
+            // On Unix-like systems, use the standard kill method
+            electronProcess.kill();
+            startElectron();
+        }
+    } else {
+        startElectron();
     }
-    startElectron();
 }
 
 let hasStarted = false;
