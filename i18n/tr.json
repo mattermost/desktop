@@ -346,6 +346,8 @@
   "renderer.components.settingsPage.spellCheckerSetting.language": "Yazım denetleyici dilleri",
   "renderer.components.settingsPage.startAppOnLogin": "Oturum açıldığında uygulama başlatılsın",
   "renderer.components.settingsPage.startAppOnLogin.description": "Açıldığında, bilgisayarınızda oturum açtığınızda uygulama otomatik olarak başlatılır.",
+  "renderer.components.settingsPage.themeSyncing": "Bilgisayar uygulaması teması sunucu ile eşitlensin",
+  "renderer.components.settingsPage.themeSyncing.description": "Açıldığında, bilgisayar uygulaması teması sunucu teması ile eşitlenir. Eski sunucu sürümlerinde, temayı güncellemek için sunucunun yenilenmesi gerekebilir.",
   "renderer.components.settingsPage.trayIcon.color": "Simge rengi: ",
   "renderer.components.settingsPage.trayIcon.show": "Bildirim alanında simge görüntülensin",
   "renderer.components.settingsPage.trayIcon.show.darwin": "Menü çubuğunda {appName} simgesi görüntülensin",
