@@ -346,6 +346,8 @@
   "renderer.components.settingsPage.spellCheckerSetting.language": "Talen voor spellingcontrole",
   "renderer.components.settingsPage.startAppOnLogin": "App starten bij opstarten",
   "renderer.components.settingsPage.startAppOnLogin.description": "Indien ingeschakeld, start de app automatisch wanneer je je aanmeldt op jouw toestel.",
+  "renderer.components.settingsPage.themeSyncing": "Thema Desktop App synchroniseren met server",
+  "renderer.components.settingsPage.themeSyncing.description": "Als dit is ingeschakeld, wordt het thema van de Desktop App gesynchroniseerd met het thema van de server. Voor oudere serverversies kan een verversing van de server nodig zijn om het thema bij te werken.",
   "renderer.components.settingsPage.trayIcon.color": "Icoonkleur: ",
   "renderer.components.settingsPage.trayIcon.show": "Pictogram tonen in het meldingsvenster",
   "renderer.components.settingsPage.trayIcon.show.darwin": "Toon {appNaam} pictogram in de menubalk",
