@@ -42,6 +42,12 @@ export class NavigationManager {
 
         const parsedURL = parseURL(url)!;
         const server = ServerManager.lookupServerByURL(parsedURL, true);
+
+        let trimmedPathname = getFormattedPathName(parsedURL.pathname);
+        if (trimmedPathname.length > 1 && trimmedPathname.endsWith('/')) {
+            trimmedPathname = trimmedPathname.slice(0, -1);
+        }
+
         if (server) {
             const view = getView(server);
             if (!view) {
@@ -54,7 +60,7 @@ export class NavigationManager {
                 return;
             }
 
-            const urlWithSchema = `${server.url.origin}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`;
+            const urlWithSchema = `${server.url.origin}${trimmedPathname}${parsedURL.search}`;
             if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
                 const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
                 const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
@@ -67,10 +73,11 @@ export class NavigationManager {
                 webContentsView.load(urlWithSchema);
             }
         } else if (ServerManager.hasServers()) {
-            ServerHub.showNewServerModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
+            ServerHub.showNewServerModal(`${parsedURL.host}${trimmedPathname}${parsedURL.search}`);
         } else {
             ModalManager.removeModal('welcomeScreen');
-            handleWelcomeScreenModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
+            const prefillURL = `${parsedURL.host}${trimmedPathname}${parsedURL.search}`;
+            handleWelcomeScreenModal(prefillURL);
         }
     };
 

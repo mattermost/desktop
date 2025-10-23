@@ -113,3 +113,25 @@ const equalUrlsIgnoringSubpath = (url1: URL, url2: URL, ignoreScheme?: boolean) 
 const escapeRegExp = (s: string) => {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 };
+
+export const isEasySSOLoginURL = (url: string): boolean => {
+    try {
+        let urlToTest = url;
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            urlToTest = `https://${url}`;
+        }
+        const parsed = parseURL(urlToTest);
+
+        // Check pathname and search params
+        if (parsed?.pathname === '/login/sso/easy') {
+            const t = parsed.searchParams.get('t');
+            return Boolean(t && (/^[A-Za-z0-9]{64}$/).test(t));
+        }
+
+        // Also allow for URLs where /login/sso/easy is not at root (e.g., subpath)
+        const match = url.match(/\/login\/sso\/easy\?t=([A-Za-z0-9]{64})/);
+        return Boolean(match);
+    } catch (e) {
+        return false;
+    }
+};
