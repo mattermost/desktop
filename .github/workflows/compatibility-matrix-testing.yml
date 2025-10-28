@@ -20,7 +20,7 @@ jobs:
         run: echo '${{ inputs.CMT_MATRIX }}' > instance-details.json
 
       - name: cmt/upload-instance-details
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: instance-details.json
           path: instance-details.json
@@ -45,7 +45,7 @@ jobs:
     needs:
       - calculate-commit-hash
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@fdf258d67ac39d536fb412f6c7fb0a15eb017858
+      - uses: mattermost/actions/delivery/update-commit-status@003fac68730de6e3e2dc31939e7f2c460f2a8ba0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -108,7 +108,7 @@ jobs:
       - calculate-commit-hash
       - e2e
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@fdf258d67ac39d536fb412f6c7fb0a15eb017858
+      - uses: mattermost/actions/delivery/update-commit-status@003fac68730de6e3e2dc31939e7f2c460f2a8ba0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -126,7 +126,7 @@ jobs:
       - calculate-commit-hash
       - e2e
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@fdf258d67ac39d536fb412f6c7fb0a15eb017858
+      - uses: mattermost/actions/delivery/update-commit-status@003fac68730de6e3e2dc31939e7f2c460f2a8ba0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
