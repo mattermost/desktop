@@ -15,8 +15,11 @@
             border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
             border-radius: var(--radius-xs);
             width: 16px;
+            max-width: 16px;
+            min-width: 16px;
             height: 16px;
             margin-top: 2px;
+            flex-shrink: 0;
 
             input {
                 appearance: none;

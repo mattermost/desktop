@@ -53,6 +53,7 @@ export default function CheckSetting({
                 <label
                     htmlFor={`checkSetting-${id}`}
                     className='CheckSetting__label'
+                    onClick={save}
                 >
                     {label}
                     {subLabel && <div className='CheckSetting__sublabel'>{subLabel}</div>}
