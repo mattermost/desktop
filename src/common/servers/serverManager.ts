@@ -101,9 +101,15 @@ export class ServerManager extends EventEmitter {
         if (!server) {
             return;
         }
+        if (!loggedIn) {
+            server.theme = undefined;
+        }
         server.isLoggedIn = loggedIn;
         this.servers.set(serverId, server);
         this.emit(SERVER_LOGGED_IN_CHANGED, serverId, loggedIn);
+        if (!loggedIn) {
+            this.emit(SERVER_THEME_CHANGED, serverId);
+        }
     };
 
     private createServer = (server: Server, isPredefined: boolean, initialLoadURL?: URL) => {
@@ -199,6 +205,9 @@ export class ServerManager extends EventEmitter {
         log.debug('updateTheme', {theme});
         const server = this.servers.get(serverId);
         if (!server) {
+            return;
+        }
+        if (!server.isLoggedIn) {
             return;
         }
         server.theme = {
