@@ -292,7 +292,7 @@ export class Config extends EventEmitter {
      * @emits {synchronize} emitted once all data has been saved; used to notify other config instances of changes
      * @emits {error} emitted if saving local config data to file fails
      */
-    private saveLocalConfigData = (): void => {
+    private saveLocalConfigData = (isRetry = false): void => {
         if (!(this.json && this.localConfigData)) {
             return;
         }
@@ -312,8 +312,8 @@ export class Config extends EventEmitter {
         this.json.writeToFile().then(() => {
             this.emit('update', this.combinedData);
         }).catch((error: NodeJS.ErrnoException) => {
-            if (error.code === 'EBUSY') {
-                this.saveLocalConfigData();
+            if (error.code === 'EBUSY' && !isRetry) {
+                this.saveLocalConfigData(true);
             } else {
                 this.emit('error', error);
             }

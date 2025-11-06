@@ -200,7 +200,7 @@ describe('common/config', () => {
             expect(errorListener).toHaveBeenCalledWith(error);
         });
 
-        it('should retry when file is locked', async () => {
+        it('should retry once when file is locked', async () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
@@ -209,7 +209,8 @@ describe('common/config', () => {
             config.combinedData = {...config.localConfigData};
             config.defaultConfigData = {version: 3};
             const error = {code: 'EBUSY'};
-            config.on('error', () => {});
+            const errorListener = jest.fn();
+            config.on('error', errorListener);
 
             let callCount = 0;
             mockJsonFileManager.writeToFile.mockImplementation(() => {
@@ -224,6 +225,28 @@ describe('common/config', () => {
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             expect(mockJsonFileManager.writeToFile).toHaveBeenCalledTimes(2);
+            expect(errorListener).not.toHaveBeenCalled();
+        });
+
+        it('should emit error if retry also fails with EBUSY', async () => {
+            const config = new Config();
+            config.reload = jest.fn();
+            config.init(configPath, appName, appPath);
+            config.json = mockJsonFileManager;
+            config.localConfigData = {test: 'test', version: 3};
+            config.combinedData = {...config.localConfigData};
+            config.defaultConfigData = {version: 3};
+            const error = {code: 'EBUSY'};
+            const errorListener = jest.fn();
+            config.on('error', errorListener);
+
+            mockJsonFileManager.writeToFile.mockRejectedValue(error);
+
+            config.saveLocalConfigData();
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            expect(mockJsonFileManager.writeToFile).toHaveBeenCalledTimes(2);
+            expect(errorListener).toHaveBeenCalledWith(error);
         });
     });
 
