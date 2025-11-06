@@ -1,20 +1,21 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import fs from 'fs';
-
 import {Config} from 'common/config';
 
 const configPath = '/fake/config/path';
 const appName = 'app-name';
 const appPath = '/my/app/path';
 
-jest.mock('fs', () => ({
-    readFileSync: jest.fn(),
-    writeFileSync: jest.fn(),
-    existsSync: jest.fn(),
-    mkdirSync: jest.fn(),
-}));
+const mockJsonFileManager = {
+    json: {},
+    setJson: jest.fn(),
+    writeToFile: jest.fn().mockResolvedValue(undefined),
+};
+
+jest.mock('common/JsonFileManager', () => {
+    return jest.fn().mockImplementation(() => mockJsonFileManager);
+});
 
 jest.mock('common/Validator', () => ({
     validateV0ConfigData: (configData) => (configData.version === 0 ? configData : null),
@@ -97,7 +98,6 @@ describe('common/config', () => {
                 config.combinedData = {test: 'test'};
             });
             config.emit = jest.fn();
-            fs.existsSync.mockReturnValue(true);
 
             config.reload();
             expect(config.emit).toHaveBeenNthCalledWith(1, 'update', {test: 'test'});
@@ -157,106 +157,113 @@ describe('common/config', () => {
     });
 
     describe('saveLocalConfigData', () => {
-        it('should emit update event on save', () => {
-            const config = new Config();
-            config.reload = jest.fn();
-            config.init(configPath, appName, appPath);
-            config.localConfigData = {test: 'test'};
-            config.combinedData = {...config.localConfigData};
-            config.writeFile = jest.fn().mockImplementation((configFilePath, data, callback) => {
-                callback();
-            });
-            config.emit = jest.fn();
-
-            config.saveLocalConfigData();
-            expect(config.emit).toHaveBeenNthCalledWith(1, 'update', {test: 'test'});
+        beforeEach(() => {
+            mockJsonFileManager.setJson.mockClear();
+            mockJsonFileManager.writeToFile.mockClear();
+            mockJsonFileManager.writeToFile.mockResolvedValue(undefined);
         });
 
-        it('should emit error when fs.writeSync throws an error', () => {
+        it('should emit update event on save', async () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.localConfigData = {test: 'test'};
+            config.json = mockJsonFileManager;
+            config.localConfigData = {test: 'test', version: 3};
             config.combinedData = {...config.localConfigData};
-            config.writeFile = jest.fn().mockImplementation((configFilePath, data, callback) => {
-                callback({message: 'Error message'});
-            });
-            config.emit = jest.fn();
+            config.defaultConfigData = {version: 3};
+            const updateListener = jest.fn();
+            config.on('update', updateListener);
 
             config.saveLocalConfigData();
-            expect(config.emit).toHaveBeenNthCalledWith(1, 'error', {message: 'Error message'});
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            expect(mockJsonFileManager.setJson).toHaveBeenCalledWith({test: 'test', version: 3});
+            expect(updateListener).toHaveBeenCalledWith({test: 'test', version: 3});
         });
 
-        it('should emit error when writeFile throws an error', () => {
+        it('should emit error when writeToFile throws an error', async () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.localConfigData = {test: 'test'};
+            config.json = mockJsonFileManager;
+            config.localConfigData = {test: 'test', version: 3};
             config.combinedData = {...config.localConfigData};
-            config.writeFile = jest.fn().mockImplementation(() => {
-                throw new Error('Error message');
-            });
-            config.emit = jest.fn();
+            config.defaultConfigData = {version: 3};
+            const error = {message: 'Error message'};
+            mockJsonFileManager.writeToFile.mockRejectedValue(error);
+            const errorListener = jest.fn();
+            config.on('error', errorListener);
 
             config.saveLocalConfigData();
-            expect(config.emit).toHaveBeenNthCalledWith(1, 'error', new Error('Error message'));
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            expect(errorListener).toHaveBeenCalledWith(error);
         });
 
-        it('should retry when file is locked', () => {
-            const testFunc = jest.fn();
+        it('should retry when file is locked', async () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.localConfigData = {test: 'test'};
+            config.json = mockJsonFileManager;
+            config.localConfigData = {test: 'test', version: 3};
             config.combinedData = {...config.localConfigData};
-            config.writeFile = jest.fn().mockImplementation((configFilePath, data, callback) => {
-                config.saveLocalConfigData = testFunc;
-                callback({code: 'EBUSY'});
+            config.defaultConfigData = {version: 3};
+            const error = {code: 'EBUSY'};
+            config.on('error', () => {});
+
+            let callCount = 0;
+            mockJsonFileManager.writeToFile.mockImplementation(() => {
+                callCount++;
+                if (callCount === 1) {
+                    return Promise.reject(error);
+                }
+                return Promise.resolve(undefined);
             });
-            config.emit = jest.fn();
 
             config.saveLocalConfigData();
-            expect(testFunc).toHaveBeenCalled();
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            expect(mockJsonFileManager.writeToFile).toHaveBeenCalledTimes(2);
         });
     });
 
     describe('loadLocalConfigFile', () => {
+        beforeEach(() => {
+            mockJsonFileManager.setJson.mockClear();
+            mockJsonFileManager.writeToFile.mockClear();
+            mockJsonFileManager.writeToFile.mockResolvedValue(undefined);
+        });
+
         it('should use defaults if readFileSync fails', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.defaultConfigData = {test: 'test'};
+            config.defaultConfigData = {test: 'test', version: 3};
             config.combinedData = {...config.localConfigData};
-            fs.existsSync.mockReturnValue(true);
-            fs.readFileSync.mockImplementation(() => {
-                throw new Error('Error message');
-            });
-            config.writeFile = jest.fn();
+            mockJsonFileManager.json = {};
 
             const configData = config.loadLocalConfigFile();
-            expect(configData).toStrictEqual({test: 'test'});
+            expect(configData).toStrictEqual({test: 'test', version: 3});
+            expect(mockJsonFileManager.setJson).toHaveBeenCalledWith({test: 'test', version: 3});
         });
 
         it('should use defaults if validation fails', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
-            config.defaultConfigData = {test: 'test'};
+            config.defaultConfigData = {test: 'test', version: 3};
             config.combinedData = {...config.localConfigData};
-            fs.existsSync.mockReturnValue(true);
-            fs.readFileSync.mockReturnValue('{"version": -1}');
-            config.writeFile = jest.fn();
+            mockJsonFileManager.json = {version: -1};
 
             const configData = config.loadLocalConfigFile();
-            expect(configData).toStrictEqual({test: 'test'});
+            expect(configData).toStrictEqual({test: 'test', version: 3});
+            expect(mockJsonFileManager.setJson).toHaveBeenCalledWith({test: 'test', version: 3});
         });
 
         it('should return config data if valid', () => {
             const config = new Config();
             config.init(configPath, appName, appPath);
-            fs.existsSync.mockReturnValue(true);
-            fs.readFileSync.mockReturnValue('{"version": 3}');
-            config.writeFile = jest.fn();
+            mockJsonFileManager.json = {version: 3};
 
             const configData = config.loadLocalConfigFile();
             expect(configData).toStrictEqual({version: 3});
@@ -264,15 +271,22 @@ describe('common/config', () => {
     });
 
     describe('checkForConfigUpdates', () => {
+        beforeEach(() => {
+            mockJsonFileManager.setJson.mockClear();
+            mockJsonFileManager.writeToFile.mockClear();
+            mockJsonFileManager.writeToFile.mockResolvedValue(undefined);
+        });
+
         it('should upgrade to latest version', () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
             config.defaultConfigData = {version: 10};
-            config.writeFileSync = jest.fn();
+            config.json = mockJsonFileManager;
 
             const configData = config.checkForConfigUpdates({version: 5, setting: 'true'});
             expect(configData).toStrictEqual({version: 10, setting: 'true'});
+            expect(mockJsonFileManager.setJson).toHaveBeenCalledWith({version: 10, setting: 'true'});
         });
     });
 
