@@ -46,15 +46,27 @@ describe('common/servers/serverManager', () => {
             expect(serverManager.persistServers).not.toHaveBeenCalled();
         });
 
-        it('should update server URL using site URL', async () => {
+        it('should update server URL using site URL when validated', async () => {
             serverManager.updateRemoteInfo('server-1', {
                 siteURL: 'http://server-2.com',
                 serverVersion: '6.0.0',
                 hasPlaybooks: true,
                 hasFocalboard: true,
-            });
+            }, true);
 
             expect(serverManager.servers.get('server-1').url.toString()).toBe('http://server-2.com/');
+        });
+
+        it('should not update server URL when site URL is not validated', async () => {
+            serverManager.updateRemoteInfo('server-1', {
+                siteURL: 'http://server-2.com',
+                serverVersion: '6.0.0',
+                hasPlaybooks: true,
+                hasFocalboard: true,
+            }, false);
+
+            expect(serverManager.servers.get('server-1').url.toString()).toBe('http://server-1.com/');
+            expect(serverManager.persistServers).not.toHaveBeenCalled();
         });
     });
 

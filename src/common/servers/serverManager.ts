@@ -172,7 +172,7 @@ export class ServerManager extends EventEmitter {
         return existingServer;
     };
 
-    updateRemoteInfo = (serverId: string, remoteInfo: RemoteInfo) => {
+    updateRemoteInfo = (serverId: string, remoteInfo: RemoteInfo, isSiteURLValidated?: boolean) => {
         log.debug('updateRemoteInfo', {serverId});
 
         const server = this.servers.get(serverId);
@@ -182,7 +182,7 @@ export class ServerManager extends EventEmitter {
 
         this.remoteInfo.set(serverId, remoteInfo);
 
-        if (remoteInfo.siteURL && server.url.toString() !== new URL(remoteInfo.siteURL).toString()) {
+        if (remoteInfo.siteURL && server.url.toString() !== new URL(remoteInfo.siteURL).toString() && isSiteURLValidated) {
             server.updateURL(remoteInfo.siteURL);
             this.servers.set(serverId, server);
             this.emit(SERVER_URL_CHANGED, serverId);
