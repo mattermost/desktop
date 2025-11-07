@@ -15,7 +15,7 @@ import {MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
-import type {MattermostServer} from 'common/servers/MattermostServer';
+import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {isValidURI} from 'common/utils/url';
 import {migrationInfoPath, updatePaths} from 'main/constants';
@@ -23,7 +23,6 @@ import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
 
 import type {MigrationInfo} from 'types/config';
-import type {RemoteInfo} from 'types/server';
 import type {Boundaries} from 'types/utils';
 
 import {mainProtocol} from './initialize';
@@ -225,20 +224,28 @@ export function migrateMacAppStore() {
 }
 
 export async function updateServerInfos(servers: MattermostServer[]) {
-    const map: Map<string, RemoteInfo> = new Map();
-    await Promise.all(servers.map((srv) => {
+    await Promise.all(servers.map(async (srv) => {
         const serverInfo = new ServerInfo(srv);
-        return serverInfo.fetchRemoteInfo().
-            then((data) => {
-                map.set(srv.id, data);
-            }).
-            catch((error) => {
-                log.warn('Could not get server info', {serverId: srv.id, error});
-            });
+        const data = await serverInfo.fetchRemoteInfo();
+
+        if (data.siteURL) {
+            // We need to validate the site URL is reachable by pinging the server
+            const tempServer = new MattermostServer({name: 'temp', url: data.siteURL}, false);
+            const tempServerInfo = new ServerInfo(tempServer);
+            try {
+                const tempRemoteInfo = await tempServerInfo.fetchConfigData();
+                if (tempRemoteInfo.siteURL === data.siteURL) {
+                    ServerManager.updateRemoteInfo(srv.id, data, true);
+                    return;
+                }
+            } catch (error) {
+                ServerManager.updateRemoteInfo(srv.id, data, false);
+                return;
+            }
+        }
+
+        ServerManager.updateRemoteInfo(srv.id, data, false);
     }));
-    map.forEach((serverInfo, serverId) => {
-        ServerManager.updateRemoteInfo(serverId, serverInfo);
-    });
 
     // TODO: Would be better encapsulated in the MenuManager
     MenuManager.refreshMenu();
