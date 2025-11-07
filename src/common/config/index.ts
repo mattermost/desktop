@@ -6,6 +6,7 @@ import path from 'path';
 
 import {EventEmitter} from 'events';
 
+import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
 import {copy} from 'common/utils/util';
 import * as Validator from 'common/Validator';
@@ -34,6 +35,7 @@ export class Config extends EventEmitter {
 
     private registryConfig: RegistryConfig;
     private _predefinedServers: ConfigServer[];
+    private json?: JsonFileManager<CurrentConfig>;
 
     private combinedData?: CombinedConfig;
     private localConfigData?: CurrentConfig;
@@ -109,6 +111,7 @@ export class Config extends EventEmitter {
 
     setConfigPath = (configPath: string) => {
         this.configFilePath = configPath;
+        this.json = undefined;
     };
 
     /**
@@ -289,27 +292,32 @@ export class Config extends EventEmitter {
      * @emits {synchronize} emitted once all data has been saved; used to notify other config instances of changes
      * @emits {error} emitted if saving local config data to file fails
      */
-    private saveLocalConfigData = (): void => {
-        if (!(this.configFilePath && this.localConfigData)) {
+    private saveLocalConfigData = (isRetry = false): void => {
+        if (!(this.json && this.localConfigData)) {
+            return;
+        }
+
+        if (!this.defaultConfigData) {
+            return;
+        }
+
+        if (this.localConfigData.version !== this.defaultConfigData.version) {
+            this.emit('error', new Error('version ' + this.localConfigData.version + ' is not equal to ' + this.defaultConfigData.version));
             return;
         }
 
         log.verbose('Saving config data to file...');
 
-        try {
-            this.writeFile(this.configFilePath, this.localConfigData, (error: NodeJS.ErrnoException | null) => {
-                if (error) {
-                    if (error.code === 'EBUSY') {
-                        this.saveLocalConfigData();
-                    } else {
-                        this.emit('error', error);
-                    }
-                }
-                this.emit('update', this.combinedData);
-            });
-        } catch (error) {
-            this.emit('error', error);
-        }
+        this.json.setJson(this.localConfigData);
+        this.json.writeToFile().then(() => {
+            this.emit('update', this.combinedData);
+        }).catch((error: NodeJS.ErrnoException) => {
+            if (error.code === 'EBUSY' && !isRetry) {
+                this.saveLocalConfigData(true);
+            } else {
+                this.emit('error', error);
+            }
+        });
     };
 
     /**
@@ -322,10 +330,10 @@ export class Config extends EventEmitter {
 
         let configData: AnyConfig;
         try {
-            configData = JSON.parse(fs.readFileSync(this.configFilePath, 'utf8'));
+            this.json = new JsonFileManager<CurrentConfig>(this.configFilePath);
 
             // validate based on config file version
-            configData = Validator.validateConfigData(configData);
+            configData = Validator.validateConfigData(this.json.json);
 
             if (!configData) {
                 throw new Error('Provided configuration file does not validate, using defaults instead.');
@@ -334,7 +342,10 @@ export class Config extends EventEmitter {
             log.warn('Failed to load configuration file from the filesystem. Using defaults.');
             configData = copy(this.defaultConfigData);
 
-            this.writeFile(this.configFilePath, configData);
+            this.json?.setJson(configData as CurrentConfig);
+            this.json?.writeToFile().catch((error) => {
+                this.emit('error', error);
+            });
         }
         return configData;
     };
@@ -345,7 +356,7 @@ export class Config extends EventEmitter {
      * @param {*} data locally stored data
      */
     private checkForConfigUpdates = (data: AnyConfig): CurrentConfig => {
-        if (!this.configFilePath) {
+        if (!this.json) {
             throw new Error('Config not initialized');
         }
 
@@ -354,12 +365,18 @@ export class Config extends EventEmitter {
             try {
                 if (configData.version !== this.defaultConfigData.version) {
                     configData = upgradeConfigData(configData);
-                    this.writeFile(this.configFilePath, configData);
+                    this.json.setJson(configData as CurrentConfig);
+                    this.json.writeToFile().catch((error) => {
+                        this.emit('error', error);
+                    });
                     log.info(`Configuration updated to version ${this.defaultConfigData.version} successfully.`);
                 }
                 const didMigrate = migrateConfigItems(configData);
                 if (didMigrate) {
-                    this.writeFile(this.configFilePath, configData);
+                    this.json.setJson(configData as CurrentConfig);
+                    this.json.writeToFile().catch((error) => {
+                        this.emit('error', error);
+                    });
                     log.info('Migrating config items successfully.');
                 }
             } catch (error) {
@@ -392,29 +409,6 @@ export class Config extends EventEmitter {
 
         if (this.combinedData) {
             this.combinedData.appName = this.appName;
-        }
-    };
-
-    // helper functions
-    private writeFile = (filePath: string, configData: Partial<CurrentConfig>, callback?: fs.NoParamCallback) => {
-        if (!this.defaultConfigData) {
-            return;
-        }
-
-        if (configData.version !== this.defaultConfigData.version) {
-            throw new Error('version ' + configData.version + ' is not equal to ' + this.defaultConfigData.version);
-        }
-        const json = JSON.stringify(configData, null, '  ');
-
-        if (callback) {
-            fs.writeFile(filePath, json, 'utf8', callback);
-        } else {
-            const dir = path.dirname(filePath);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir);
-            }
-
-            fs.writeFileSync(filePath, json, 'utf8');
         }
     };
 
