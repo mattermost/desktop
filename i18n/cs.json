@@ -345,6 +345,8 @@
   "renderer.components.settingsPage.spellCheckerSetting.language": "Jazyk kontroly pravopisu",
   "renderer.components.settingsPage.startAppOnLogin": "Spustit aplikaci při přihlášení",
   "renderer.components.settingsPage.startAppOnLogin.description": "Pokud je povoleno, aplikace se automaticky spustí, když se přihlásíte ke svému počítači.",
+  "renderer.components.settingsPage.themeSyncing": "Synchronizovat motiv aplikace Desktop s serverem",
+  "renderer.components.settingsPage.themeSyncing.description": "Pokud je tato možnost povolena, motiv aplikace Desktop bude synchronizován s motivem serveru. U starších verzí serveru může být pro aktualizaci motivu nutné obnovit server.",
   "renderer.components.settingsPage.trayIcon.color": "Barva ikony: ",
   "renderer.components.settingsPage.trayIcon.show": "Zobrazení ikony v oznamovací oblasti",
   "renderer.components.settingsPage.trayIcon.show.darwin": "Zobrazení ikony {appName} na panelu nabídek",
