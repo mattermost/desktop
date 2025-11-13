@@ -12,7 +12,6 @@ import WebContentsEventManager from 'app/views/webContentEvents';
 import type BaseWindow from 'app/windows/baseWindow';
 import AppState from 'common/appState';
 import {
-    UPDATE_TARGET_URL,
     REACT_APP_INITIALIZED,
     OPEN_SERVER_UPGRADE_LINK,
     OPEN_CHANGELOG_LINK,
@@ -104,7 +103,6 @@ export class WebContentsManager {
 
     createView = (view: MattermostView, parentWindow: BaseWindow): MattermostWebContentsView => {
         const webContentsView = new MattermostWebContentsView(view, {webPreferences: {spellcheck: Config.useSpellChecker}}, parentWindow.browserWindow);
-        webContentsView.on(UPDATE_TARGET_URL, (url) => parentWindow.showURLView(url));
         webContentsView.getWebContentsView().webContents.on('focus', () => {
             this.focusedWebContentsView = view.id;
         });

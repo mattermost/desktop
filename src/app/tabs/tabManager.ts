@@ -37,6 +37,7 @@ import {
     CLOSE_SERVERS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN,
     CLEAR_CACHE_AND_RELOAD,
+    UPDATE_TARGET_URL,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -241,6 +242,7 @@ export class TabManager extends EventEmitter {
         webContentsView.on(LOADSCREEN_END, this.finishLoading);
         webContentsView.on(LOAD_FAILED, this.failLoading);
         webContentsView.on(RELOAD_VIEW, this.onReloadView);
+        webContentsView.on(UPDATE_TARGET_URL, this.onUpdateTargetURL);
         if (process.platform !== 'darwin') {
             // @ts-expect-error: The type is wrong on Electrons side
             webContentsView.getWebContentsView().webContents.on('before-input-event', mainWindow.handleAltKeyPressed);
@@ -250,6 +252,7 @@ export class TabManager extends EventEmitter {
             webContentsView.off(LOADSCREEN_END, this.finishLoading);
             webContentsView.off(LOAD_FAILED, this.failLoading);
             webContentsView.off(RELOAD_VIEW, this.onReloadView);
+            webContentsView.off(UPDATE_TARGET_URL, this.onUpdateTargetURL);
 
             // @ts-expect-error: The type is wrong on Electrons side
             webContentsView.getWebContentsView().webContents.off('before-input-event', mainWindow.handleAltKeyPressed);
@@ -484,6 +487,10 @@ export class TabManager extends EventEmitter {
         }
 
         MainWindow.window?.showLoadingScreen(() => ModalManager.isModalDisplayed());
+    };
+
+    private onUpdateTargetURL = (url: string) => {
+        MainWindow.window?.showURLView(url);
     };
 
     private handleClearCacheAndReload = () => {
