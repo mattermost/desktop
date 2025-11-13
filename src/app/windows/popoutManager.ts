@@ -32,6 +32,7 @@ import {
     SEND_TO_POPOUT,
     MESSAGE_FROM_POPOUT,
     POPOUT_CLOSED,
+    UPDATE_TARGET_URL,
 } from 'common/communication';
 import {POPOUT_RATE_LIMIT} from 'common/constants';
 import {Logger} from 'common/log';
@@ -151,12 +152,14 @@ export class PopoutManager {
             // TODO: Would be better encapsulated in the MenuManager
             MenuManager.refreshMenu();
         };
+        const updateTargetURL = (url: string) => window.showURLView(url);
         const setBounds = this.setBounds(window, webContentsView);
         const close = this.onClosePopout(viewId);
 
         mattermostWebContentsView.on(LOADSCREEN_END, loadScreenEnd);
         mattermostWebContentsView.on(LOAD_FAILED, loadFailed);
         mattermostWebContentsView.on(RELOAD_VIEW, reloadView);
+        mattermostWebContentsView.on(UPDATE_TARGET_URL, updateTargetURL);
         window.browserWindow.on('focus', focus);
         window.browserWindow.contentView.on('bounds-changed', setBounds);
         window.browserWindow.once('show', setBounds);
@@ -171,6 +174,7 @@ export class PopoutManager {
             mattermostWebContentsView.off(LOADSCREEN_END, loadScreenEnd);
             mattermostWebContentsView.off(LOAD_FAILED, loadFailed);
             mattermostWebContentsView.off(RELOAD_VIEW, reloadView);
+            mattermostWebContentsView.off(UPDATE_TARGET_URL, updateTargetURL);
             window.browserWindow.off('focus', focus);
             window.browserWindow.contentView.off('bounds-changed', setBounds);
             window.browserWindow.off('show', setBounds);
