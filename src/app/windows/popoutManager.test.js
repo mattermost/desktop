@@ -11,6 +11,7 @@ import {
     LOADSCREEN_END,
     RELOAD_VIEW,
     UPDATE_POPOUT_TITLE,
+    UPDATE_TARGET_URL,
     VIEW_CREATED,
     VIEW_TITLE_UPDATED,
     VIEW_REMOVED,
@@ -58,8 +59,10 @@ jest.mock('app/windows/baseWindow', () => {
             addChildView: jest.fn(),
             removeChildView: jest.fn(),
             on: jest.fn(),
+            off: jest.fn(),
         },
         on: jest.fn(),
+        off: jest.fn(),
         once: jest.fn(),
         show: jest.fn(),
         close: jest.fn(),
@@ -137,8 +140,10 @@ describe('PopoutManager', () => {
                 addChildView: jest.fn(),
                 removeChildView: jest.fn(),
                 on: jest.fn(),
+                off: jest.fn(),
             },
             on: jest.fn(),
+            off: jest.fn(),
             once: jest.fn(),
             show: jest.fn(),
             close: jest.fn(),
@@ -148,6 +153,7 @@ describe('PopoutManager', () => {
         showLoadingScreen: jest.fn(),
         fadeLoadingScreen: jest.fn(),
         registerThemeManager: jest.fn(),
+        showURLView: jest.fn(),
     };
 
     const mockWebContentsView = {
@@ -566,6 +572,55 @@ describe('PopoutManager', () => {
 
             // Verify the window was removed from popoutWindows
             expect(popoutManager.popoutWindows.has('test-window-id')).toBe(false);
+        });
+
+        it('should not call showURLView when UPDATE_TARGET_URL is emitted after view removal', () => {
+            const {EventEmitter} = jest.requireActual('events');
+            const mockWindowView = {
+                id: 'test-window-id',
+                serverId: 'test-server-id',
+                type: ViewType.WINDOW,
+            };
+            const mockWebContentsView = Object.assign(new EventEmitter(), {
+                id: 'test-window-id',
+                getWebContentsView: jest.fn(() => ({
+                    webContents: {
+                        focus: jest.fn(),
+                        on: jest.fn(),
+                        off: jest.fn(),
+                    },
+                    setBounds: jest.fn(),
+                })),
+                needsLoadingScreen: jest.fn(() => false),
+            });
+
+            // Set up initial state
+            popoutManager.popoutWindows.set('test-window-id', mockBaseWindow);
+
+            ViewManager.getView.mockReturnValue(mockWindowView);
+            WebContentsManager.createView.mockReturnValue(mockWebContentsView);
+
+            // Create the view to set up listeners
+            ViewManager.mockViewManager.emit(VIEW_CREATED, 'test-window-id');
+            mockBaseWindow.browserWindow.webContents.emit('did-finish-load');
+
+            // Emit UPDATE_TARGET_URL - should call showURLView
+            mockWebContentsView.emit(UPDATE_TARGET_URL, 'https://example.com');
+
+            // Verify showURLView was called
+            expect(mockBaseWindow.showURLView).toHaveBeenCalledWith('https://example.com');
+
+            // Remove the view
+            ViewManager.mockViewManager.emit(VIEW_TYPE_REMOVED, 'test-window-id', ViewType.WINDOW);
+
+            // Clear the mock call history
+            mockBaseWindow.showURLView.mockClear();
+
+            // Emit UPDATE_TARGET_URL after removal - should NOT call showURLView
+            mockWebContentsView.emit(UPDATE_TARGET_URL, 'https://example.com');
+
+            // Verify showURLView was NOT called
+            expect(mockBaseWindow.showURLView).not.toHaveBeenCalled();
         });
     });
 
