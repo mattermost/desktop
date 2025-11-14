@@ -15,7 +15,6 @@ describe('Welcome Screen Modal', function desc() {
         await asyncSleep(1000);
 
         this.app = await env.getApp();
-        await asyncSleep(1000);
 
         welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
     });

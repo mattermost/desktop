@@ -6,7 +6,6 @@
 const fs = require('fs');
 
 const env = require('../../modules/environment');
-const {asyncSleep} = require('../../modules/utils');
 
 describe('window', function desc() {
     this.timeout(30000);
@@ -14,7 +13,6 @@ describe('window', function desc() {
     beforeEach(async () => {
         env.createTestUserDataDir();
         env.cleanTestConfig();
-        fs.writeFileSync(env.configFilePath, JSON.stringify(env.demoMattermostConfig));
     });
 
     afterEach(async () => {
@@ -33,8 +31,7 @@ describe('window', function desc() {
             const expectedBounds = {x: 100, y: 200, width: 800, height: 400};
             fs.writeFileSync(env.boundsInfoPath, JSON.stringify(expectedBounds));
             this.app = await env.getApp();
-            await asyncSleep(1000);
-            const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            const mainWindow = await this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
             const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
             bounds.should.deep.equal(expectedBounds);
@@ -45,8 +42,7 @@ describe('window', function desc() {
     it('MM-T4403_2 should NOT restore window bounds if x is located on outside of viewarea', async () => {
         fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: -100000, y: 200, width: 800, height: 400}));
         this.app = await env.getApp();
-        await asyncSleep(1000);
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const mainWindow = await this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
         bounds.x.should.satisfy((x) => (x > -100000));
@@ -56,8 +52,7 @@ describe('window', function desc() {
     it('MM-T4403_3 should NOT restore window bounds if y is located on outside of viewarea', async () => {
         fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 100, y: 200000, width: 800, height: 400}));
         this.app = await env.getApp();
-        await asyncSleep(1000);
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const mainWindow = await this.app.windows().find((window) => window.url().includes('index'));
         const browserWindow = await this.app.browserWindow(mainWindow);
         const bounds = await browserWindow.evaluate((window) => window.getContentBounds());
         bounds.y.should.satisfy((y) => (y < 200000));

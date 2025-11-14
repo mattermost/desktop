@@ -181,56 +181,24 @@ module.exports = {
             downloadsPath: downloadsLocation,
             env: {
                 ...process.env,
-                RESOURCES_PATH: path.join(sourceRootDir, 'e2e/dist'),
+                RESOURCES_PATH: userDataDir,
             },
             executablePath: electronBinaryPath,
-            args: [
-                path.join(sourceRootDir, 'e2e/dist'),
-                `--user-data-dir=${userDataDir}`,
-                '--disable-dev-shm-usage',
-                '--disable-dev-mode',
-                '--disable-gpu',
-                ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
-                ...args,
-            ],
+            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-shm-usage', '--disable-dev-mode', '--disable-gpu', '--no-sandbox', ...args],
         };
 
-        const eapp = await electron.launch(options);
-        await eapp.waitForEvent('window', {timeout: 15000});
-        return eapp;
+        return electron.launch(options).then(async (eapp) => {
+            await eapp.evaluate(async ({app}) => {
+                const promise = new Promise((resolve) => {
+                    app.on('e2e-app-loaded', () => {
+                        resolve();
+                    });
+                });
+                return promise;
+            });
+            return eapp;
+        });
     },
-
-    // async getApp(args = []) {
-    //     const options = {
-    //         downloadsPath: downloadsLocation,
-    //         env: {
-    //             ...process.env,
-    //             RESOURCES_PATH: userDataDir,
-    //         },
-    //         executablePath: electronBinaryPath,
-    //         args: [
-    //             `${path.join(sourceRootDir, 'e2e/dist')}`,
-    //             `--user-data-dir=${userDataDir}`,
-    //             '--disable-dev-shm-usage',
-    //             '--disable-dev-mode',
-    //             '--disable-gpu',
-    //             ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
-    //             ...args,
-    //         ],
-    //     };
-
-    //     return electron.launch(options).then(async (eapp) => {
-    //         await eapp.evaluate(async ({app}) => {
-    //             const promise = new Promise((resolve) => {
-    //                 app.on('e2e-app-loaded', () => {
-    //                     resolve();
-    //                 });
-    //             });
-    //             return promise;
-    //         });
-    //         return eapp;
-    //     });
-    // },
 
     async getServerMap(app) {
         const map = {};
