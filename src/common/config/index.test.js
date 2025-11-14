@@ -9,8 +9,7 @@ const appPath = '/my/app/path';
 
 const mockJsonFileManager = {
     json: {},
-    setJson: jest.fn(),
-    writeToFile: jest.fn().mockResolvedValue(undefined),
+    setJson: jest.fn().mockResolvedValue(undefined),
 };
 
 jest.mock('common/JsonFileManager', () => {
@@ -157,12 +156,6 @@ describe('common/config', () => {
     });
 
     describe('saveLocalConfigData', () => {
-        beforeEach(() => {
-            mockJsonFileManager.setJson.mockClear();
-            mockJsonFileManager.writeToFile.mockClear();
-            mockJsonFileManager.writeToFile.mockResolvedValue(undefined);
-        });
-
         it('should emit update event on save', async () => {
             const config = new Config();
             config.reload = jest.fn();
@@ -181,7 +174,7 @@ describe('common/config', () => {
             expect(updateListener).toHaveBeenCalledWith({test: 'test', version: 3});
         });
 
-        it('should emit error when writeToFile throws an error', async () => {
+        it('should emit error when setJson throws an error', async () => {
             const config = new Config();
             config.reload = jest.fn();
             config.init(configPath, appName, appPath);
@@ -190,7 +183,7 @@ describe('common/config', () => {
             config.combinedData = {...config.localConfigData};
             config.defaultConfigData = {version: 3};
             const error = {message: 'Error message'};
-            mockJsonFileManager.writeToFile.mockRejectedValue(error);
+            mockJsonFileManager.setJson.mockRejectedValue(error);
             const errorListener = jest.fn();
             config.on('error', errorListener);
 
@@ -213,7 +206,7 @@ describe('common/config', () => {
             config.on('error', errorListener);
 
             let callCount = 0;
-            mockJsonFileManager.writeToFile.mockImplementation(() => {
+            mockJsonFileManager.setJson.mockImplementation(() => {
                 callCount++;
                 if (callCount === 1) {
                     return Promise.reject(error);
@@ -224,7 +217,7 @@ describe('common/config', () => {
             config.saveLocalConfigData();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
-            expect(mockJsonFileManager.writeToFile).toHaveBeenCalledTimes(2);
+            expect(mockJsonFileManager.setJson).toHaveBeenCalledTimes(2);
             expect(errorListener).not.toHaveBeenCalled();
         });
 
@@ -240,23 +233,17 @@ describe('common/config', () => {
             const errorListener = jest.fn();
             config.on('error', errorListener);
 
-            mockJsonFileManager.writeToFile.mockRejectedValue(error);
+            mockJsonFileManager.setJson.mockRejectedValue(error);
 
             config.saveLocalConfigData();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
-            expect(mockJsonFileManager.writeToFile).toHaveBeenCalledTimes(2);
+            expect(mockJsonFileManager.setJson).toHaveBeenCalledTimes(2);
             expect(errorListener).toHaveBeenCalledWith(error);
         });
     });
 
     describe('loadLocalConfigFile', () => {
-        beforeEach(() => {
-            mockJsonFileManager.setJson.mockClear();
-            mockJsonFileManager.writeToFile.mockClear();
-            mockJsonFileManager.writeToFile.mockResolvedValue(undefined);
-        });
-
         it('should use defaults if readFileSync fails', () => {
             const config = new Config();
             config.reload = jest.fn();
@@ -294,12 +281,6 @@ describe('common/config', () => {
     });
 
     describe('checkForConfigUpdates', () => {
-        beforeEach(() => {
-            mockJsonFileManager.setJson.mockClear();
-            mockJsonFileManager.writeToFile.mockClear();
-            mockJsonFileManager.writeToFile.mockResolvedValue(undefined);
-        });
-
         it('should upgrade to latest version', () => {
             const config = new Config();
             config.reload = jest.fn();
