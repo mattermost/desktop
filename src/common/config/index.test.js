@@ -67,6 +67,11 @@ jest.mock('electron', () => ({
 }));
 
 describe('common/config', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockJsonFileManager.setJson.mockResolvedValue(undefined);
+    });
+
     it('should load buildConfig', () => {
         const config = new Config();
         config.reload = jest.fn();
@@ -230,16 +235,19 @@ describe('common/config', () => {
             config.combinedData = {...config.localConfigData};
             config.defaultConfigData = {version: 3};
             const error = {code: 'EBUSY'};
-            const errorListener = jest.fn();
-            config.on('error', errorListener);
+
+            const errorPromise = new Promise((resolve) => {
+                config.once('error', resolve);
+            });
 
             mockJsonFileManager.setJson.mockRejectedValue(error);
 
             config.saveLocalConfigData();
-            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            const errorReceived = await errorPromise;
 
             expect(mockJsonFileManager.setJson).toHaveBeenCalledTimes(2);
-            expect(errorListener).toHaveBeenCalledWith(error);
+            expect(errorReceived).toEqual(error);
         });
     });
 
