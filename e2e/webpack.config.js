@@ -48,6 +48,8 @@ module.exports = {
         modules: [
             'node_modules',
             '../src',
+            path.resolve(__dirname),
+            path.resolve(__dirname, 'specs'),
         ],
         alias: {
             src: path.resolve(__dirname, '../src'),
