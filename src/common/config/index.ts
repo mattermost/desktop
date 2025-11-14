@@ -278,7 +278,9 @@ export class Config extends EventEmitter {
         if (this.registryConfigData.servers) {
             this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => ({...server, order: index})));
         }
-        this.reload();
+
+        this.regenerateCombinedConfigData();
+        this.emit('update', this.combinedData);
     };
 
     /**
@@ -308,8 +310,7 @@ export class Config extends EventEmitter {
 
         log.verbose('Saving config data to file...');
 
-        this.json.setJson(this.localConfigData);
-        this.json.writeToFile().then(() => {
+        this.json.setJson(this.localConfigData).then(() => {
             this.emit('update', this.combinedData);
         }).catch((error: NodeJS.ErrnoException) => {
             if (error.code === 'EBUSY' && !isRetry) {
@@ -342,8 +343,7 @@ export class Config extends EventEmitter {
             log.warn('Failed to load configuration file from the filesystem. Using defaults.');
             configData = copy(this.defaultConfigData);
 
-            this.json?.setJson(configData as CurrentConfig);
-            this.json?.writeToFile().catch((error) => {
+            this.json?.setJson(configData as CurrentConfig).catch((error) => {
                 this.emit('error', error);
             });
         }
@@ -365,16 +365,14 @@ export class Config extends EventEmitter {
             try {
                 if (configData.version !== this.defaultConfigData.version) {
                     configData = upgradeConfigData(configData);
-                    this.json.setJson(configData as CurrentConfig);
-                    this.json.writeToFile().catch((error) => {
+                    this.json.setJson(configData as CurrentConfig).catch((error) => {
                         this.emit('error', error);
                     });
                     log.info(`Configuration updated to version ${this.defaultConfigData.version} successfully.`);
                 }
                 const didMigrate = migrateConfigItems(configData);
                 if (didMigrate) {
-                    this.json.setJson(configData as CurrentConfig);
-                    this.json.writeToFile().catch((error) => {
+                    this.json.setJson(configData as CurrentConfig).catch((error) => {
                         this.emit('error', error);
                     });
                     log.info('Migrating config items successfully.');
