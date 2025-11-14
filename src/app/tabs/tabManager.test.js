@@ -26,6 +26,7 @@ import {
     VIEW_TYPE_REMOVED,
     VIEW_TYPE_ADDED,
     CLEAR_CACHE_AND_RELOAD,
+    UPDATE_TARGET_URL,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
@@ -54,6 +55,7 @@ jest.mock('app/mainWindow/mainWindow', () => ({
         showLoadingScreen: jest.fn(),
         fadeLoadingScreen: jest.fn(),
         sendToRenderer: jest.fn(),
+        showURLView: jest.fn(),
     },
 }));
 
@@ -949,6 +951,78 @@ describe('TabManager', () => {
 
             // Verify switchToNextTabIfNecessary was called
             expect(switchToNextTabSpy).toHaveBeenCalledWith('test-tab-id', 'test-server-id');
+        });
+
+        it('should not call showURLView when UPDATE_TARGET_URL is emitted after view removal', () => {
+            const {EventEmitter} = jest.requireActual('events');
+            const tabManager = new TabManager();
+            const mockWebContentsView = Object.assign(new EventEmitter(), {
+                id: 'test-tab-id',
+                isErrored: jest.fn(() => false),
+                focus: jest.fn(),
+                needsLoadingScreen: jest.fn(() => false),
+                getWebContentsView: jest.fn(() => ({
+                    webContents: {
+                        focus: jest.fn(),
+                        on: jest.fn(),
+                        off: jest.fn(),
+                    },
+                    setBounds: jest.fn(),
+                })),
+            });
+
+            // Set up initial state - don't include test-tab-id in tabOrder yet
+            const tabIds = ['tab1', 'tab3'];
+            tabManager.tabOrder.set('test-server-id', tabIds);
+            tabManager.activeTabs.set('test-server-id', 'tab1');
+
+            // Clear the global mock and set up test-specific mock
+            ViewManager.getView.mockReset();
+            ViewManager.getView.mockImplementation((id) => {
+                if (id === null || id === undefined) {
+                    return null;
+                }
+                return {
+                    id,
+                    serverId: 'test-server-id',
+                    type: ViewType.TAB,
+                    isErrored: jest.fn(() => false),
+                    toUniqueView: jest.fn(() => ({
+                        id,
+                        serverId: 'test-server-id',
+                        type: ViewType.TAB,
+                    })),
+                };
+            });
+            WebContentsManager.getView.mockReturnValue(mockWebContentsView);
+            WebContentsManager.createView.mockReturnValue(mockWebContentsView);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+            MainWindow.window = {
+                ...mockMainWindow,
+                showURLView: jest.fn(),
+            };
+
+            // Create the view to set up listeners
+            ViewManager.mockViewManager.emit(VIEW_CREATED, 'test-tab-id');
+
+            // Emit UPDATE_TARGET_URL - should call showURLView
+            // Note: The listener should be set up by setupTab when the view is created
+            mockWebContentsView.emit(UPDATE_TARGET_URL, 'https://example.com');
+
+            // Verify showURLView was called
+            expect(MainWindow.window.showURLView).toHaveBeenCalledWith('https://example.com');
+
+            // Remove the view
+            ViewManager.mockViewManager.emit(VIEW_TYPE_REMOVED, 'test-tab-id', ViewType.TAB);
+
+            // Clear the mock call history
+            MainWindow.window.showURLView.mockClear();
+
+            // Emit UPDATE_TARGET_URL after removal - should NOT call showURLView
+            mockWebContentsView.emit(UPDATE_TARGET_URL, 'https://example.com');
+
+            // Verify showURLView was NOT called
+            expect(MainWindow.window.showURLView).not.toHaveBeenCalled();
         });
     });
 
