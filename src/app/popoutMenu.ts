@@ -87,5 +87,8 @@ function createMenu(viewId: string) {
 
 export default function PopoutMenu(viewId: string) {
     const menu = createMenu(viewId);
+    menu.once('menu-will-close', () => {
+        WebContentsManager.getView(viewId)?.focus();
+    });
     menu.popup();
 }

@@ -4,7 +4,7 @@
 import os from 'os';
 import path from 'path';
 
-import type {BrowserWindowConstructorOptions, Input} from 'electron';
+import type {BrowserWindowConstructorOptions, Input, WebContents} from 'electron';
 import {app, BrowserWindow, dialog, globalShortcut, ipcMain} from 'electron';
 
 import {LoadingScreen} from 'app/views/loadingScreen';
@@ -58,7 +58,7 @@ export default class BaseWindow {
                 spellcheck: typeof Config.useSpellChecker === 'undefined' ? true : Config.useSpellChecker,
             },
         }, options);
-        log.debug('main window options', windowOptions);
+        log.debug('main window options', {windowOptions});
 
         if (process.platform === 'linux') {
             windowOptions.icon = path.join(path.resolve(app.getAppPath(), 'assets'), 'linux', 'app_icon.png');
@@ -122,7 +122,7 @@ export default class BaseWindow {
     };
 
     handleAltKeyPressed = (_: Event, input: Input) => {
-        log.silly('handleInputEvents', input);
+        log.silly('handleInputEvents', {input});
 
         if (input.type === 'keyDown') {
             this.altPressStatus = input.key === 'Alt' &&
@@ -152,12 +152,18 @@ export default class BaseWindow {
         this.sendToRendererWithRetry(3, channel, ...args);
     };
 
-    showLoadingScreen = (index?: number) => {
-        this.loadingScreen.show(index);
+    showLoadingScreen = (condition?: () => boolean) => {
+        this.loadingScreen.show(condition);
     };
 
     fadeLoadingScreen = () => {
         this.loadingScreen.fade();
+    };
+
+    registerThemeManager = (register: (webContents: WebContents) => void) => {
+        register(this.win.webContents);
+        this.loadingScreen.registerThemeManager(register);
+        this.urlView.registerThemeManager(register);
     };
 
     showURLView = (url: string) => {
@@ -185,8 +191,8 @@ export default class BaseWindow {
 
     private getTitleBarOverlay = () => {
         return {
-            color: Config.darkMode ? '#2e2e2e' : '#efefef',
-            symbolColor: Config.darkMode ? '#c1c1c1' : '#474747',
+            color: Config.darkMode ? 'rgba(25, 27, 31, 0)' : 'rgba(255, 255, 255, 0)',
+            symbolColor: Config.darkMode ? 'rgba(227, 228, 232, 0.64)' : 'rgba(63, 67, 80, 0.64)',
             height: TAB_BAR_HEIGHT,
         };
     };
@@ -244,5 +250,8 @@ export default class BaseWindow {
 
     private onEmitConfiguration = () => {
         this.win.webContents.send(RELOAD_CONFIGURATION);
+        if (process.platform !== 'darwin') {
+            this.win.setTitleBarOverlay(this.getTitleBarOverlay());
+        }
     };
 }

@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import ReactDOM from 'react-dom';
 
 import IntlProvider from 'renderer/intl_provider';
+import setupDarkMode from 'renderer/modals/darkMode';
 
 import type {UniqueServer} from 'types/config';
 
@@ -17,9 +18,10 @@ const onConnect = (data: UniqueServer) => {
     window.desktop.modals.finishModal(data);
 };
 
+setupDarkMode();
+
 const WelcomeScreenModalWrapper = () => {
     const [data, setData] = useState<{prefillURL?: string}>();
-    const [darkMode, setDarkMode] = useState(false);
     const [getStarted, setGetStarted] = useState(false);
     const [mobileView, setMobileView] = useState(false);
 
@@ -28,14 +30,6 @@ const WelcomeScreenModalWrapper = () => {
     };
 
     useEffect(() => {
-        window.desktop.getDarkMode().then((result) => {
-            setDarkMode(result);
-        });
-
-        window.desktop.onDarkModeChange((result) => {
-            setDarkMode(result);
-        });
-
         window.desktop.modals.getModalInfo<{prefillURL?: string}>().
             then((data) => {
                 setData(data);
@@ -61,13 +55,11 @@ const WelcomeScreenModalWrapper = () => {
             {getStarted ? (
                 <ConfigureServer
                     mobileView={mobileView}
-                    darkMode={darkMode}
                     onConnect={onConnect}
                     prefillURL={data?.prefillURL}
                 />
             ) : (
                 <WelcomeScreen
-                    darkMode={darkMode}
                     onGetStarted={onGetStarted}
                 />
             )}

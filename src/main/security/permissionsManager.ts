@@ -119,7 +119,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         permission: string,
         details: PermissionRequestHandlerHandlerDetails,
     ) => {
-        log.debug('doPermissionRequest', permission, details);
+        log.debug('doPermissionRequest', {webContentsId, permission});
 
         // is the requested permission type supported?
         if (!supportedPermissionTypes.includes(permission)) {

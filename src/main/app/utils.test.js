@@ -7,9 +7,12 @@ import {dialog, screen} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import JsonFileManager from 'common/JsonFileManager';
+import {MattermostServer} from 'common/servers/MattermostServer';
+import ServerManager from 'common/servers/serverManager';
 import {updatePaths} from 'main/constants';
+import {ServerInfo} from 'main/server/serverInfo';
 
-import {getDeeplinkingURL, resizeScreen, migrateMacAppStore} from './utils';
+import {getDeeplinkingURL, resizeScreen, migrateMacAppStore, updateServerInfos} from './utils';
 
 jest.mock('fs', () => ({
     readFileSync: jest.fn(),
@@ -50,9 +53,9 @@ jest.mock('main/constants', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-jest.mock('app/menus/app', () => ({}));
-jest.mock('app/menus/tray', () => ({}));
-jest.mock('app/system/tray/tray', () => ({}));
+jest.mock('app/menus', () => ({
+    refreshMenu: jest.fn(),
+}));
 jest.mock('app/views/webContentsManager', () => ({
     on: jest.fn(),
 }));
@@ -72,6 +75,22 @@ jest.mock('app/navigationManager', () => ({
 
 jest.mock('./initialize', () => ({
     mainProtocol: 'mattermost',
+}));
+
+jest.mock('common/servers/MattermostServer', () => ({
+    MattermostServer: jest.fn().mockImplementation((config) => ({
+        id: config.id || 'server-1',
+        name: config.name || 'Test Server',
+        url: config.url || 'http://localhost:8065',
+    })),
+}));
+
+jest.mock('common/servers/serverManager', () => ({
+    updateRemoteInfo: jest.fn(),
+}));
+
+jest.mock('main/server/serverInfo', () => ({
+    ServerInfo: jest.fn(),
 }));
 
 describe('main/app/utils', () => {
@@ -258,5 +277,25 @@ describe('main/app/utils', () => {
                 expect(migrationPrefs.setValue).toHaveBeenCalledWith('masConfigs', true);
             });
         }
+    });
+
+    describe('updateServerInfos', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should catch error when ServerInfo.fetchRemoteInfo throws', async () => {
+            const mockServer = new MattermostServer({id: 'server-1', name: 'Test Server', url: 'http://localhost:8065'});
+            const mockError = new Error('Network error');
+            const mockServerInfoInstance = {
+                fetchRemoteInfo: jest.fn().mockRejectedValue(mockError),
+            };
+            ServerInfo.mockImplementation(() => mockServerInfoInstance);
+
+            await updateServerInfos([mockServer]);
+
+            expect(mockServerInfoInstance.fetchRemoteInfo).toHaveBeenCalled();
+            expect(ServerManager.updateRemoteInfo).not.toHaveBeenCalled();
+        });
     });
 });

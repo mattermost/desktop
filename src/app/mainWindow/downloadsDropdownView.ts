@@ -18,11 +18,11 @@ import {
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
 } from 'common/communication';
-import Config from 'common/config';
 import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT, DOWNLOADS_DROPDOWN_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, DOWNLOADS_DROPDOWN_FULL_WIDTH} from 'common/utils/constants';
 import downloadsManager from 'main/downloadsManager';
 import performanceMonitor from 'main/performanceMonitor';
+import ThemeManager from 'main/themeManager';
 import {getLocalPreload} from 'main/utils';
 
 import type {DownloadedItem} from 'types/downloads';
@@ -58,6 +58,7 @@ export class DownloadsDropdownView {
         this.view = new WebContentsView({webPreferences: {preload: getLocalPreload('internalAPI.js')}});
         this.view.setBackgroundColor('#00000000');
         performanceMonitor.registerView('DownloadsDropdownView', this.view.webContents);
+        ThemeManager.registerMainWindowView(this.view.webContents);
         this.view.webContents.loadURL('mattermost-desktop://renderer/downloadsDropdown.html');
         MainWindow.get()?.contentView.addChildView(this.view);
     };
@@ -75,7 +76,7 @@ export class DownloadsDropdownView {
     };
 
     private updateDownloadsDropdownMenuItem = (event: IpcMainEvent, item?: DownloadedItem) => {
-        log.silly('updateDownloadsDropdownMenuItem', {item});
+        log.silly('updateDownloadsDropdownMenuItem');
         this.item = item;
         this.updateDownloadsDropdown();
     };
@@ -86,7 +87,6 @@ export class DownloadsDropdownView {
         this.view?.webContents.send(
             UPDATE_DOWNLOADS_DROPDOWN,
             downloadsManager.getDownloads(),
-            Config.darkMode,
             MainWindow.getBounds(),
             this.item,
         );
@@ -120,7 +120,7 @@ export class DownloadsDropdownView {
     };
 
     private openFile = (e: IpcMainEvent, item: DownloadedItem) => {
-        log.debug('openFile', {item});
+        log.debug('openFile');
 
         downloadsManager.openFile(item);
     };

@@ -3,6 +3,8 @@
 
 import EventEmitter from 'events';
 
+import type {PopoutViewProps} from '@mattermost/desktop-api';
+
 import {
     VIEW_CREATED,
     VIEW_TITLE_UPDATED,
@@ -14,7 +16,7 @@ import {
     VIEW_TYPE_ADDED,
 } from 'common/communication';
 import Config from 'common/config';
-import {Logger, getLevel} from 'common/log';
+import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
@@ -45,14 +47,30 @@ export class ViewManager extends EventEmitter {
             return '';
         }
         const {channelName, teamName, serverName} = view.title;
-        if (channelName) {
-            if (teamName && [...this.views.values()].some((v) => v.id !== view.id && v.title.channelName === channelName)) {
-                return `${channelName} - ${teamName}`;
-            }
-            return channelName;
+
+        if (view.props?.titleTemplate) {
+            return view.props.titleTemplate.
+                replace('{channelName}', channelName ?? '').
+                replace('{teamName}', teamName ?? '').
+                replace('{serverName}', serverName ?? '');
         }
 
-        return teamName ?? serverName;
+        let title = '';
+        if (channelName) {
+            if (teamName && [...this.views.values()].some((v) => v.id !== view.id && v.title.channelName === channelName)) {
+                title = `${channelName} - ${teamName}`;
+            } else {
+                title = channelName;
+            }
+        } else {
+            title = teamName ?? serverName;
+        }
+
+        if (view.type === ViewType.WINDOW) {
+            title = `${serverName} - ${title}`;
+        }
+
+        return title;
     };
 
     getViewsByServerId = (serverId: string) => {
@@ -79,15 +97,15 @@ export class ViewManager extends EventEmitter {
         return Boolean(Config.viewLimit && this.views.size >= Config.viewLimit);
     };
 
-    createView = (server: MattermostServer, type: ViewType) => {
-        log.debug('createView', server.id, server.name, type);
+    createView = (server: MattermostServer, type: ViewType, initialPath?: string, parentViewId?: string, props?: PopoutViewProps) => {
+        log.debug('createView', {serverId: server.id, parentViewId, type});
 
         if (this.isViewLimitReached()) {
             log.warn(`createView: View limit reached for server ${server.id}`);
             return undefined;
         }
 
-        const newView = new MattermostView(server, type);
+        const newView = new MattermostView(server, type, initialPath, parentViewId, props);
         this.views.set(newView.id, newView);
 
         if (type === ViewType.TAB && !this.serverPrimaryViews.has(server.id)) {
@@ -100,7 +118,7 @@ export class ViewManager extends EventEmitter {
     };
 
     updateViewTitle = (viewId: string, channelName?: string, teamName?: string) => {
-        log.debug('updateViewTitle', viewId, channelName, teamName);
+        log.debug('updateViewTitle', {viewId});
 
         const view = this.views.get(viewId);
         if (!view) {
@@ -115,7 +133,7 @@ export class ViewManager extends EventEmitter {
     };
 
     updateViewType = (viewId: string, type: ViewType) => {
-        log.debug('updateViewType', viewId, type);
+        log.debug('updateViewType', {viewId, type});
 
         const view = this.views.get(viewId);
         if (!view || view.type === type) {
@@ -128,7 +146,7 @@ export class ViewManager extends EventEmitter {
     };
 
     setPrimaryView = (viewId: string) => {
-        log.debug('setPrimaryView', viewId);
+        log.debug('setPrimaryView', {viewId});
 
         const view = this.views.get(viewId);
         if (!view) {
@@ -140,7 +158,7 @@ export class ViewManager extends EventEmitter {
     };
 
     removeView = (viewId: string) => {
-        log.debug('removeView', viewId);
+        log.debug('removeView', {viewId});
 
         const view = this.views.get(viewId);
         if (!view) {
@@ -148,6 +166,11 @@ export class ViewManager extends EventEmitter {
         }
 
         this.setNewPrimaryViewIfNeeded(view);
+        this.views.forEach((v) => {
+            if (v.parentViewId === viewId) {
+                v.parentViewId = this.serverPrimaryViews.get(v.serverId);
+            }
+        });
 
         this.views.delete(viewId);
         this.emit(VIEW_REMOVED, viewId, view.serverId);
@@ -169,21 +192,16 @@ export class ViewManager extends EventEmitter {
         }
         const server = ServerManager.getServer(view.serverId);
         if (!server) {
-            return new Logger(...additionalPrefixes, ...this.includeId(viewId));
+            return new Logger(...additionalPrefixes, viewId);
         }
-        return new Logger(...additionalPrefixes, ...this.includeId(viewId, server.name));
+        return new Logger(...additionalPrefixes, server.id, viewId);
     };
 
-    private includeId = (id: string, ...prefixes: string[]) => {
-        const shouldInclude = ['debug', 'silly'].includes(getLevel());
-        return shouldInclude ? [id, ...prefixes] : prefixes;
-    };
-
-    private handleServerWasRemoved = (serverId: string) => {
-        log.debug('handleServerWasRemoved', serverId);
+    private handleServerWasRemoved = (server: MattermostServer) => {
+        log.debug('handleServerWasRemoved', {serverId: server.id});
 
         this.views.forEach((view) => {
-            if (view.serverId === serverId) {
+            if (view.serverId === server.id) {
                 this.removeView(view.id);
             }
         });

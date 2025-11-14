@@ -1,4 +1,6 @@
-@import url("fonts.css");
+@use 'base/css_variables';
+@use 'base/typography';
+
 @import '~@mattermost/compass-icons/css/compass-icons.css';
 
 body {
@@ -19,8 +21,8 @@ body {
     flex-direction: column;
     align-items: flex-start;
     padding: 8px 0px;
-    background: #FFFFFF;
-    border: 1px solid rgba(61, 60, 64, 0.16);
+    background: var(--center-channel-bg);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
     border-radius: 4px;
     min-width: 180px;
@@ -51,21 +53,23 @@ body {
         font-weight: 600;
         font-size: 14px;
         line-height: 20px;
-        color: #3D3C40;
+        color: var(--center-channel-color);
     }
 
     .ServerDropdown__keyboardShortcut {
         font-weight: 400;
         font-size: 12px;
         line-height: 16px;
-        color: rgba(61, 60, 64, 0.56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
         margin-left: auto;
     }
 }
 
 .ServerDropdown__divider {
-    border-top: 1px solid rgba(61, 60, 64, 0.08);
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-bottom: 0;
+    border-left: 0;
+    border-right: 0;
     width: 100%;
     margin: 8px 0;
 }
@@ -81,7 +85,7 @@ body {
     cursor: pointer;
 
     &:not(.anyDragging):hover {
-        background-color: rgba(61, 60, 64, 0.08);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
 
         .ServerDropdown__button-edit, .ServerDropdown__button-remove {
             opacity: 1;
@@ -94,7 +98,7 @@ body {
     }
 
     &:focus, &:focus-within {
-        background-color: rgba(22, 109, 224, 0.08);
+        background-color: rgba(var(--button-bg-rgb), 0.08);
         outline: none;
 
         .ServerDropdown__button-edit, .ServerDropdown__button-remove {
@@ -115,7 +119,7 @@ body {
     i {
         font-size: 18px;
         line-height: 20px;
-        color: rgba(61, 60, 64, 0.56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 
     i.icon-server-variant, i.icon-check {
@@ -123,13 +127,13 @@ body {
     }
 
     &.active i.icon-check {
-        color: #166de0;
+        color: var(--button-bg);
     }
 
     > .ServerDropdown__draggable-handle > span, &.addServer > span {
         font-size: 14px;
         line-height: 20px;
-        color: #3D3C40;
+        color: var(--center-channel-color);
         margin-left: 12px;
         white-space: nowrap;
     }
@@ -163,7 +167,7 @@ body {
 
         &::before {
             margin: 0;
-            color: rgba(61, 60, 64, 0.32);
+            color: rgba(var(--center-channel-color-rgb), 0.32);
             font-size: 14px;
         }
     }
@@ -183,7 +187,7 @@ body {
 }
 
 .ServerDropdown__badge-dot {
-    background: #579EFF;
+    background: var(--sidebar-text-active-border);
     height: 8px;
     width: 8px;
     border-radius: 8px;
@@ -191,7 +195,7 @@ body {
 }
 
 .ServerDropdown__badge-count {
-    background: #F74343;
+    background: var(--error-text);
     text-align: center;
     border-radius: 8px;
     padding: 0 4px;
@@ -224,14 +228,14 @@ body {
         cursor: pointer;
 
         &:hover, &:focus {
-            background: rgba(61, 60, 64, 0.08);
-            box-shadow: 0px 0px 0px 4px rgba(61, 60, 64, 0.08);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            box-shadow: 0px 0px 0px 4px rgba(var(--center-channel-color-rgb), 0.08);
             outline: none;
         }
 
         &.ServerDropdown__button-remove:hover, &.ServerDropdown__button-remove:focus {
-            background: rgba(247, 67, 67, 0.16);
-            box-shadow: 0px 0px 0px 4px rgba(247, 67, 67, 0.16);
+            background: rgba(var(--error-text-color-rgb), 0.16);
+            box-shadow: 0px 0px 0px 4px rgba(var(--error-text-color-rgb), 0.16);
         }
 
         > i::before {
@@ -258,69 +262,6 @@ body {
     }
 
     i {
-        color: #F74343;
-    }
-}
-
-.ServerDropdown.darkMode {
-    background: #1f1f1f;
-
-    .ServerDropdown__header > span {
-        color: #DDD;
-
-        &.ServerDropdown__keyboardShortcut {
-            color: rgba(221, 221, 221, 0.56);
-        }
-    }
-
-    .ServerDropdown__divider {
-        border-color: rgba(221, 221, 221, 0.08);
-    }
-
-    .ServerDropdown__button {
-        &:not(.anyDragging):hover {
-            background-color: rgba(221, 221, 221, 0.08);
-        }
-
-        &:focus {
-            background-color: rgba(1, 119, 231, 0.08);
-        }
-
-        &:not(.active) i, i.icon-drag-vertical {
-            color: rgba(221, 221, 221, 0.56);
-        }
-
-        > .ServerDropdown__draggable-handle > span, &.addServer > span {
-            color: #DDD;
-        }
-
-        .ServerDropdown__button-remove i {
-            color: #F74343;
-        }
-
-        .ServerDropdown__button-edit:hover, .ServerDropdown__button-edit:focus {
-            background: rgba(221, 223, 228, 0.08);
-            box-shadow: 0px 0px 0px 4px rgba(221, 223, 228, 0.08);
-        }
-    }
-
-    .ServerDropdown__badge-expired i {
-        color: rgba(221, 221, 221, 0.56);
-    }
-
-    .ServerDropdown__button-edit > i {
-        color: rgba(221, 221, 221, 0.56);
-    }
-
-    .ServerDropdown__draggable-handle > i.icon-drag-vertical::before {
-        color:rgba(221, 221, 221, 0.32);
-    }
-
-    .ServerDropdown__badge-count i {
-        color: #e81023;
-    }
-
-    .ServerDropdown__badge-dot {
-        background: #196CAF;
+        color: var(--error-text);
     }
 }

@@ -51,6 +51,7 @@ jest.mock('electron', () => {
             mockBrowserWindow.on = jest.fn(mockBrowserWindow.on);
             mockBrowserWindow.once = jest.fn(mockBrowserWindow.once);
             mockBrowserWindow.setMenuBarVisibility = jest.fn();
+            mockBrowserWindow.setTitleBarOverlay = jest.fn();
             const mockWebContents = new EventEmitter();
             mockWebContents.zoomLevel = 0;
             mockWebContents.setWindowOpenHandler = jest.fn();
@@ -241,8 +242,8 @@ describe('BaseWindow', () => {
             expect(baseWindow).toBeDefined();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 titleBarOverlay: {
-                    color: '#efefef',
-                    symbolColor: '#474747',
+                    color: 'rgba(255, 255, 255, 0)',
+                    symbolColor: 'rgba(63, 67, 80, 0.64)',
                     height: TAB_BAR_HEIGHT,
                 },
             }));
@@ -256,8 +257,8 @@ describe('BaseWindow', () => {
             expect(baseWindow).toBeDefined();
             expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
                 titleBarOverlay: {
-                    color: '#2e2e2e',
-                    symbolColor: '#c1c1c1',
+                    color: 'rgba(25, 27, 31, 0)',
+                    symbolColor: 'rgba(227, 228, 232, 0.64)',
                     height: TAB_BAR_HEIGHT,
                 },
             }));
@@ -535,6 +536,29 @@ describe('BaseWindow', () => {
             ipcMain.emit(EMIT_CONFIGURATION);
 
             expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
+        });
+
+        it('should not call setTitleBarOverlay when platform is darwin', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            const baseWindow = new BaseWindow({});
+            baseWindow.getTitleBarOverlay = jest.fn().mockReturnValue({
+                color: 'rgba(255, 255, 255, 0)',
+                symbolColor: 'rgba(63, 67, 80, 0.64)',
+                height: 40,
+            });
+
+            ipcMain.emit(EMIT_CONFIGURATION);
+
+            expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
+            expect(baseWindow.browserWindow.setTitleBarOverlay).not.toHaveBeenCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
         });
     });
 });

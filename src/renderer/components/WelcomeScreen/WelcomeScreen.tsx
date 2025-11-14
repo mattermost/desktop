@@ -8,25 +8,22 @@ import {useIntl, FormattedMessage} from 'react-intl';
 import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 import Carousel from 'renderer/components/Carousel';
 import Header from 'renderer/components/Header';
+import BackgroundImage from 'renderer/components/Images/background';
 import CallsImage from 'renderer/components/Images/calls';
 import CollaborateImage from 'renderer/components/Images/collaborate';
 import ThreadsEmptyImage from 'renderer/components/Images/threads-empty';
 import ToolsImage from 'renderer/components/Images/tools';
-import LoadingBackground from 'renderer/components/LoadingScreen/LoadingBackground';
-
-import WelcomeScreenSlide from './WelcomeScreenSlide';
+import WelcomeScreenSlide from 'renderer/components/WelcomeScreen/WelcomeScreenSlide';
 
 import 'renderer/css/components/Button.scss';
-import 'renderer/css/components/WelcomeScreen.scss';
-import 'renderer/css/components/LoadingScreen.css';
+import './WelcomeScreen.scss';
+import 'renderer/components/LoadingScreen/LoadingScreen.scss';
 
 type WelcomeScreenProps = {
-    darkMode?: boolean;
     onGetStarted?: () => void;
 };
 
 function WelcomeScreen({
-    darkMode = false,
     onGetStarted = () => null,
 }: WelcomeScreenProps) {
     const {formatMessage} = useIntl();
@@ -101,14 +98,10 @@ function WelcomeScreen({
 
     return (
         <div
-            className={classNames(
-                'LoadingScreen',
-                {'LoadingScreen--darkMode': darkMode},
-                'WelcomeScreen',
-            )}
+            className='LoadingScreen WelcomeScreen'
         >
-            <LoadingBackground/>
-            <Header darkMode={darkMode}/>
+            <BackgroundImage/>
+            <Header/>
             {showContent && (
                 <div className={classNames('WelcomeScreen__body', transition)}>
                     <div className='WelcomeScreen__content'>
@@ -122,11 +115,9 @@ function WelcomeScreen({
                                         subtitle={subtitle}
                                         image={image}
                                         isMain={main}
-                                        darkMode={darkMode}
                                     />
                                 ),
                             }))}
-                            darkMode={darkMode}
                         />
                         <button
                             id='getStartedWelcomeScreen'

@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcMain} from 'electron';
+import {BrowserWindow, ipcMain} from 'electron';
 import EventEmitter from 'events';
 
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -33,6 +33,11 @@ import {
     UPDATE_TAB_ORDER,
     VIEW_TYPE_ADDED,
     VIEW_TYPE_REMOVED,
+    OPEN_APP_MENU,
+    CLOSE_SERVERS_DROPDOWN,
+    CLOSE_DOWNLOADS_DROPDOWN,
+    CLEAR_CACHE_AND_RELOAD,
+    UPDATE_TARGET_URL,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -60,12 +65,17 @@ export class TabManager extends EventEmitter {
         MainWindow.on(MAIN_WINDOW_RESIZED, this.handleSetCurrentTabViewBounds);
         MainWindow.on(MAIN_WINDOW_FOCUSED, this.focusCurrentTab);
 
+        ipcMain.on(CLOSE_DOWNLOADS_DROPDOWN, this.focusCurrentTab);
+        ipcMain.on(CLOSE_SERVERS_DROPDOWN, this.focusCurrentTab);
+        ipcMain.on(OPEN_APP_MENU, this.focusCurrentTab);
+
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, (event, serverId) => this.getOrderedTabsForServer(serverId));
         ipcMain.handle(GET_ACTIVE_TAB_FOR_SERVER, (event, serverId) => this.getCurrentTabForServer(serverId)?.toUniqueView());
         ipcMain.handle(CREATE_NEW_TAB, (event, serverId) => this.handleCreateNewTab(serverId));
         ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => this.updateTabOrder(serverId, viewOrder));
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.switchToTab(viewId));
         ipcMain.on(CLOSE_TAB, (event, viewId) => ViewManager.removeView(viewId));
+        ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
 
         // Subscribe to ViewManager events
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
@@ -128,7 +138,7 @@ export class TabManager extends EventEmitter {
     };
 
     updateTabOrder = (serverId: string, viewIds: string[]) => {
-        log.debug('updateTabOrder', serverId, viewIds);
+        log.debug('updateTabOrder', {serverId, viewIds});
 
         if (viewIds.length === 0) {
             this.tabOrder.delete(serverId);
@@ -154,7 +164,7 @@ export class TabManager extends EventEmitter {
     };
 
     switchToTab = (viewId: string) => {
-        log.debug('switchToTab', viewId);
+        log.debug('switchToTab', {viewId});
 
         if (this.isActiveTab(viewId)) {
             log.silly(`switchToTab: Tab ${viewId} is already active, will not show`);
@@ -232,6 +242,7 @@ export class TabManager extends EventEmitter {
         webContentsView.on(LOADSCREEN_END, this.finishLoading);
         webContentsView.on(LOAD_FAILED, this.failLoading);
         webContentsView.on(RELOAD_VIEW, this.onReloadView);
+        webContentsView.on(UPDATE_TARGET_URL, this.onUpdateTargetURL);
         if (process.platform !== 'darwin') {
             // @ts-expect-error: The type is wrong on Electrons side
             webContentsView.getWebContentsView().webContents.on('before-input-event', mainWindow.handleAltKeyPressed);
@@ -241,6 +252,7 @@ export class TabManager extends EventEmitter {
             webContentsView.off(LOADSCREEN_END, this.finishLoading);
             webContentsView.off(LOAD_FAILED, this.failLoading);
             webContentsView.off(RELOAD_VIEW, this.onReloadView);
+            webContentsView.off(UPDATE_TARGET_URL, this.onUpdateTargetURL);
 
             // @ts-expect-error: The type is wrong on Electrons side
             webContentsView.getWebContentsView().webContents.off('before-input-event', mainWindow.handleAltKeyPressed);
@@ -300,7 +312,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleViewUpdated = (viewId: string) => {
-        log.debug('handleViewUpdated', viewId);
+        log.debug('handleViewUpdated', {viewId});
 
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.TAB) {
@@ -309,7 +321,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleSetCurrentTabViewBounds = (newBounds: Electron.Rectangle) => {
-        log.silly('handleSetCurrentViewBounds', newBounds);
+        log.silly('handleSetCurrentViewBounds', {newBounds});
 
         const currentView = this.getCurrentActiveTabView();
         if (currentView && currentView.currentURL) {
@@ -319,7 +331,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleServerCurrentChanged = (serverId: string) => {
-        log.debug('handleServerCurrentChanged', serverId);
+        log.debug('handleServerCurrentChanged', {serverId});
 
         const tab = this.getCurrentTabForServer(serverId);
         if (tab) {
@@ -383,11 +395,7 @@ export class TabManager extends EventEmitter {
         this.currentVisibleTab = viewId;
 
         if (view.needsLoadingScreen()) {
-            if (ModalManager.isModalDisplayed()) {
-                MainWindow.window?.showLoadingScreen(1);
-            } else {
-                MainWindow.window?.showLoadingScreen();
-            }
+            MainWindow.window?.showLoadingScreen(() => ModalManager.isModalDisplayed());
         }
     };
 
@@ -430,7 +438,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleCreateNewTab = (serverId: string) => {
-        log.debug('handleCreateNewTab', serverId);
+        log.debug('handleCreateNewTab', {serverId});
 
         const server = ServerManager.getServer(serverId);
         if (!server) {
@@ -444,7 +452,7 @@ export class TabManager extends EventEmitter {
         if (this.isActiveTab(viewId)) {
             const currentTabs = this.tabOrder.get(serverId);
             if (!currentTabs) {
-                log.error('handleCloseTab: No tabs found for server', serverId);
+                log.error('handleCloseTab: No tabs found for server', {serverId});
                 return;
             }
 
@@ -478,10 +486,20 @@ export class TabManager extends EventEmitter {
             return;
         }
 
-        if (ModalManager.isModalDisplayed()) {
-            MainWindow.window?.showLoadingScreen(1);
-        } else {
-            MainWindow.window?.showLoadingScreen();
+        MainWindow.window?.showLoadingScreen(() => ModalManager.isModalDisplayed());
+    };
+
+    private onUpdateTargetURL = (url: string) => {
+        MainWindow.window?.showURLView(url);
+    };
+
+    private handleClearCacheAndReload = () => {
+        if (BrowserWindow.getFocusedWindow()?.id !== MainWindow.get()?.id) {
+            return;
+        }
+        const viewId = this.getCurrentActiveTab()?.id;
+        if (viewId) {
+            WebContentsManager.clearCacheAndReloadView(viewId);
         }
     };
 }

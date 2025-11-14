@@ -42,7 +42,7 @@ jobs:
       - name: release/checkout-repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: release/setup-node
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
           node-version-file: "package.json"
           cache: "npm"
@@ -64,7 +64,7 @@ jobs:
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: release/upload-build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: build-${{ runner.os }}
           path: ./build
@@ -79,7 +79,7 @@ jobs:
       - name: release/checkout-repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: release/setup-node
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
           node-version-file: "package.json"
           cache: "npm"
@@ -111,7 +111,7 @@ jobs:
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: release/upload-build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: build-${{ runner.os }}
           path: ./build
@@ -128,7 +128,7 @@ jobs:
       - name: release/checkout-repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: release/setup-node
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
           node-version-file: "package.json"
           cache: "npm"
@@ -162,7 +162,7 @@ jobs:
       - name: release/rename-arm64-to-m1
         run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
       - name: release/upload-build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: build-${{ runner.os }}
           path: ./build
@@ -177,14 +177,14 @@ jobs:
       - build-linux
     steps:
       - name: release/setup-aws-credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
         with:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.MM_DESKTOP_RELEASE_AWS_SECRET_ACCESS_KEY }}
 
       - name: release/download-builds
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           path: build
           pattern: build-*
@@ -206,7 +206,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: release/download-builds
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           path: build
           pattern: build-*

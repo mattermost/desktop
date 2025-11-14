@@ -2,14 +2,16 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain, shell} from 'electron';
+import {ipcMain, nativeTheme, session, shell} from 'electron';
 import isDev from 'electron-is-dev';
 
+import type {Theme} from '@mattermost/desktop-api';
+
 import popoutMenu from 'app/popoutMenu';
+import WebContentsEventManager from 'app/views/webContentEvents';
 import type BaseWindow from 'app/windows/baseWindow';
 import AppState from 'common/appState';
 import {
-    UPDATE_TARGET_URL,
     REACT_APP_INITIALIZED,
     OPEN_SERVER_UPGRADE_LINK,
     OPEN_CHANGELOG_LINK,
@@ -21,15 +23,19 @@ import {
     SERVER_URL_CHANGED,
     OPEN_SERVER_EXTERNALLY,
     OPEN_POPOUT_MENU,
+    UPDATE_SERVER_THEME,
+    DARK_MODE_CHANGE,
+    UPDATE_THEME,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import type {MattermostView} from 'common/views/MattermostView';
+import {ViewType, type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
 import PermissionsManager from 'main/security/permissionsManager';
+import ThemeManager from 'main/themeManager';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
@@ -55,6 +61,12 @@ export class WebContentsManager {
         ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
         ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
         ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
+        ipcMain.on(UPDATE_SERVER_THEME, this.handleUpdateServerTheme);
+        ipcMain.on(UPDATE_THEME, this.handleUpdateTheme);
+
+        if (process.platform !== 'linux') {
+            nativeTheme.on('updated', this.handleDarkModeChanged);
+        }
 
         ServerManager.on(SERVER_URL_CHANGED, this.handleServerURLChanged);
     }
@@ -91,7 +103,6 @@ export class WebContentsManager {
 
     createView = (view: MattermostView, parentWindow: BaseWindow): MattermostWebContentsView => {
         const webContentsView = new MattermostWebContentsView(view, {webPreferences: {spellcheck: Config.useSpellChecker}}, parentWindow.browserWindow);
-        webContentsView.on(UPDATE_TARGET_URL, (url) => parentWindow.showURLView(url));
         webContentsView.getWebContentsView().webContents.on('focus', () => {
             this.focusedWebContentsView = view.id;
         });
@@ -101,6 +112,7 @@ export class WebContentsManager {
         webContentsView.load(view.getLoadingURL());
 
         this.addViewToMap(webContentsView);
+        WebContentsEventManager.addWebContentsEventListeners(webContentsView.getWebContentsView().webContents);
         return webContentsView;
     };
 
@@ -116,7 +128,15 @@ export class WebContentsManager {
         this.webContentsIdToView.delete(view.webContentsId);
     };
 
+    clearCacheAndReloadView = (viewId: string) => {
+        session.defaultSession.clearCache();
+        const view = this.getView(viewId);
+        view?.reload(view.currentURL);
+    };
+
     private addViewToMap = (view: MattermostWebContentsView): void => {
+        log.debug('addViewToMap', {viewId: view.id, webContentsId: view.webContentsId});
+
         this.webContentsViews.set(view.id, view);
         this.webContentsIdToView.set(view.webContentsId, view);
 
@@ -152,7 +172,7 @@ export class WebContentsManager {
     };
 
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
-        log.debug('handleTabLoggedIn', event.sender.id);
+        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id});
         const view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return;
@@ -176,7 +196,7 @@ export class WebContentsManager {
     };
 
     private handleReactAppInitialized = (e: IpcMainEvent) => {
-        log.debug('handleReactAppInitialized', e.sender.id);
+        log.debug('handleReactAppInitialized', {webContentsId: e.sender.id});
 
         const view = this.getViewByWebContentsId(e.sender.id);
         if (view) {
@@ -255,9 +275,37 @@ export class WebContentsManager {
     };
 
     private handleOpenPopoutMenu = (_: IpcMainEvent, viewId: string) => {
-        log.debug('handleOpenPopoutMenu', viewId);
+        log.debug('handleOpenPopoutMenu', {viewId});
 
         popoutMenu(viewId);
+    };
+
+    private handleUpdateServerTheme = (event: IpcMainEvent, theme: Theme) => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+        if (ViewManager.getView(view.id)?.type === ViewType.WINDOW) {
+            return;
+        }
+        ServerManager.updateTheme(view.serverId, theme);
+    };
+
+    private handleUpdateTheme = (event: IpcMainEvent, theme: Theme) => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view) {
+            return;
+        }
+        const viewType = ViewManager.getView(view.id)?.type;
+        if (viewType === ViewType.WINDOW) {
+            ThemeManager.updatePopoutTheme(view.id, theme);
+        } else {
+            ServerManager.updateTheme(view.serverId, theme);
+        }
+    };
+
+    private handleDarkModeChanged = () => {
+        this.sendToAllViews(DARK_MODE_CHANGE, nativeTheme.shouldUseDarkColors);
     };
 }
 

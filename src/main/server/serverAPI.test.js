@@ -27,6 +27,7 @@ jest.mock('electron', () => ({
                         }
                     }),
                     statusCode: url === validURL ? 200 : 404,
+                    message: url === validURL ? 'OK' : 'Not Found',
                 });
             }),
             end: jest.fn(),
@@ -76,6 +77,7 @@ describe('main/server/serverAPI', () => {
                         }
                     }),
                     statusCode: url === validURL ? 200 : 404,
+                    message: url === validURL ? 'OK' : 'Not Found',
                 });
             }),
             end: jest.fn(),
@@ -119,7 +121,7 @@ describe('main/server/serverAPI', () => {
         net.request.mockImplementation(() => ({
             on: jest.fn().mockImplementation((event, requestCallback) => {
                 if (event === 'error') {
-                    requestCallback();
+                    requestCallback({message: 'Error'});
                 }
             }),
             end: jest.fn(),

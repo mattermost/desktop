@@ -136,3 +136,22 @@ export function isKDE() {
     (process.env.DESKTOP_SESSION ?? '').toLowerCase() === 'plasma' ||
     (process.env.KDE_FULL_SESSION ?? '').toLowerCase() === 'true';
 }
+
+export function isLightColor(color: string) {
+    const hexColor = Number('0x' + color.slice(1));
+
+    const r = hexColor >> 16;
+    const g = (hexColor >> 8) & 255;
+    const b = hexColor & 255;
+
+    // HSP equation from http://alienryderflex.com/hsp.html
+    const hsp = Math.sqrt(
+        (0.299 * (r * r)) +
+        (0.587 * (g * g)) +
+        (0.114 * (b * b)),
+    );
+
+    // Using the HSP value, determine whether the color is light or dark
+    // > 127.5 is 'light', <= 127.5 is 'dark'
+    return hsp > 127.5;
+}

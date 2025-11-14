@@ -59,6 +59,10 @@ jest.mock('common/servers/serverManager', () => ({
     getServer: jest.fn(),
 }));
 
+jest.mock('app/mainWindow/mainWindow', () => ({
+    get: jest.fn(),
+}));
+
 jest.mock('common/utils/url', () => ({
     parseURL: (url) => {
         try {
@@ -304,7 +308,10 @@ describe('app/navigationManager', () => {
         });
 
         it('should process browser history push for primary view even when not logged in', () => {
-            mockServer.isLoggedIn = false;
+            ServerManager.getServer.mockReturnValue({
+                ...mockServer,
+                isLoggedIn: false,
+            });
             ViewManager.isPrimaryView.mockReturnValue(true);
 
             navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
@@ -323,7 +330,10 @@ describe('app/navigationManager', () => {
         });
 
         it('should not process browser history push when not logged in and not primary view', () => {
-            mockServer.isLoggedIn = false;
+            ServerManager.getServer.mockReturnValue({
+                ...mockServer,
+                isLoggedIn: false,
+            });
             ViewManager.isPrimaryView.mockReturnValue(false);
 
             navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
@@ -352,6 +362,49 @@ describe('app/navigationManager', () => {
 
             expect(mockView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
             expect(mockView.updateHistoryButton).toHaveBeenCalled();
+        });
+
+        it('should use parent view when current view has parentViewId', () => {
+            const mockParentView = {
+                id: 'parent-view',
+                webContentsId: 2,
+                serverId: 'server-1',
+                sendToRenderer: jest.fn(),
+                updateHistoryButton: jest.fn(),
+            };
+            const mockViewWithParent = {
+                ...mockView,
+                parentViewId: 'parent-view',
+            };
+
+            // Override the beforeEach mocks by setting up after they run
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockViewWithParent);
+            WebContentsManager.getView.mockReturnValue(mockParentView);
+
+            // Call the method
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            expect(mockParentView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
+            expect(mockParentView.updateHistoryButton).toHaveBeenCalled();
+            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+            expect(mockView.updateHistoryButton).not.toHaveBeenCalled();
+        });
+
+        it('should handle case when parent view does not exist', () => {
+            const mockViewWithParent = {
+                ...mockView,
+                parentViewId: 'non-existent-parent',
+            };
+
+            // Override the beforeEach mocks by setting up after they run
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockViewWithParent);
+            WebContentsManager.getView.mockReturnValue(null);
+
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            // Should not call any sendToRenderer or updateHistoryButton
+            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+            expect(mockView.updateHistoryButton).not.toHaveBeenCalled();
         });
     });
 });

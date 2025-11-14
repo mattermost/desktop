@@ -16,7 +16,7 @@ export const GET_LOCAL_CONFIGURATION = 'get-local-configuration';
 export const RELOAD_CONFIGURATION = 'reload-config';
 export const EMIT_CONFIGURATION = 'emit-configuration';
 
-export const DARK_MODE_CHANGE = 'dark_mode_change';
+export const DARK_MODE_CHANGE = 'dark-mode-change';
 export const GET_DARK_MODE = 'get-dark-mode';
 export const USER_ACTIVITY_UPDATE = 'user-activity-update';
 export const UPDATE_SHORTCUT_MENU = 'update-shortcut-menu';
@@ -197,6 +197,7 @@ export const REMOVE_SERVER = 'remove-server';
 
 // WebContents Manager Events
 export const OPEN_POPOUT_MENU = 'open-popout-menu';
+export const CLEAR_CACHE_AND_RELOAD = 'clear-cache-and-reload';
 
 // Server Manager Events
 export const SERVER_ADDED = 'server-added';
@@ -232,6 +233,14 @@ export const CLOSE_TAB = 'close-tab';
 // Popout Manager Events
 export const CREATE_NEW_WINDOW = 'create-new-window';
 export const UPDATE_POPOUT_TITLE = 'update-popout-title';
+export const CAN_POPOUT = 'can-popout';
+export const OPEN_POPOUT = 'open-popout';
+export const CAN_USE_POPOUT_OPTION = 'can-use-popout-option';
+export const SEND_TO_PARENT = 'send-to-parent';
+export const MESSAGE_FROM_PARENT = 'message-from-parent';
+export const SEND_TO_POPOUT = 'send-to-popout';
+export const MESSAGE_FROM_POPOUT = 'message-from-popout';
+export const POPOUT_CLOSED = 'popout-closed';
 
 // View limit events
 export const VIEW_LIMIT_UPDATED = 'view-limit-updated';
@@ -239,3 +248,10 @@ export const GET_IS_VIEW_LIMIT_REACHED = 'get-is-view-limit-reached';
 
 // Secure storage
 export const SECURE_STORAGE_GET = 'secure-storage-get';
+
+// Theme events
+export const GET_THEME = 'get-theme';
+export const UPDATE_THEME = 'update-theme';
+export const UPDATE_SERVER_THEME = 'update-server-theme';
+export const SERVER_THEME_CHANGED = 'server-theme-changed';
+export const RESET_THEME = 'reset-theme';

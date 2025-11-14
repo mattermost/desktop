@@ -5,22 +5,19 @@ import fs from 'fs';
 import path from 'path';
 
 import type {BrowserWindow, Rectangle} from 'electron';
-import {app, Menu, session, dialog, nativeImage, screen} from 'electron';
+import {app, session, dialog, nativeImage, screen} from 'electron';
 import isDev from 'electron-is-dev';
 
 import MainWindow from 'app/mainWindow/mainWindow';
-import {createMenu as createAppMenu} from 'app/menus/app';
-import {createMenu as createTrayMenu} from 'app/menus/tray';
+import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
-import Tray from 'app/system/tray/tray';
 import {MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
-import type {MattermostServer} from 'common/servers/MattermostServer';
+import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {isValidURI} from 'common/utils/url';
-import updateManager from 'main/autoUpdater';
 import {migrationInfoPath, updatePaths} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
@@ -55,19 +52,6 @@ export function updateSpellCheckerLocales() {
     }
 }
 
-export function handleUpdateMenuEvent() {
-    log.debug('handleUpdateMenuEvent');
-
-    const aMenu = createAppMenu(Config, updateManager);
-    Menu.setApplicationMenu(aMenu);
-
-    // set up context menu for tray icon
-    if (shouldShowTrayIcon()) {
-        const tMenu = createTrayMenu();
-        Tray.setMenu(tMenu);
-    }
-}
-
 export function getDeeplinkingURL(args: string[]) {
     if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
@@ -95,7 +79,7 @@ export function clearAppCache() {
         mainWindow.webContents.session.clearCache().
             then(mainWindow.webContents.reload).
             catch((err) => {
-                log.error('clearAppCache', err);
+                log.error('clearAppCache', {err});
             });
     } else {
     //Wait for mainWindow
@@ -200,7 +184,7 @@ export function migrateMacAppStore() {
             return;
         }
     } catch (e) {
-        log.error('MAS: Failed to check for existing Mattermost Desktop install, skipping', e);
+        log.error('MAS: Failed to check for existing Mattermost Desktop install, skipping', {e});
         return;
     }
 
@@ -236,25 +220,43 @@ export function migrateMacAppStore() {
         updatePaths(true);
         migrationPrefs.setValue('masConfigs', true);
     } catch (e) {
-        log.error('MAS: An error occurred importing the existing configuration', e);
+        log.error('MAS: An error occurred importing the existing configuration', {e});
     }
 }
 
 export async function updateServerInfos(servers: MattermostServer[]) {
-    const map: Map<string, RemoteInfo> = new Map();
-    await Promise.all(servers.map((srv) => {
+    await Promise.all(servers.map(async (srv) => {
         const serverInfo = new ServerInfo(srv);
-        return serverInfo.fetchRemoteInfo().
-            then((data) => {
-                map.set(srv.id, data);
-            }).
-            catch((error) => {
-                log.warn('Could not get server info for', srv.name, error);
-            });
+        let data: RemoteInfo;
+        try {
+            data = await serverInfo.fetchRemoteInfo();
+        } catch (error) {
+            log.error('updateServerInfos: Failed to fetch remote info', {error});
+            return;
+        }
+
+        if (data.siteURL) {
+            // We need to validate the site URL is reachable by pinging the server
+            const tempServer = new MattermostServer({name: 'temp', url: data.siteURL}, false);
+            const tempServerInfo = new ServerInfo(tempServer);
+            try {
+                const tempRemoteInfo = await tempServerInfo.fetchConfigData();
+                if (tempRemoteInfo.siteURL === data.siteURL) {
+                    ServerManager.updateRemoteInfo(srv.id, data, true);
+                    return;
+                }
+            } catch (error) {
+                log.error('updateServerInfos: Failed to fetch temp remote info', {error});
+                ServerManager.updateRemoteInfo(srv.id, data, false);
+                return;
+            }
+        }
+
+        ServerManager.updateRemoteInfo(srv.id, data, false);
     }));
-    map.forEach((serverInfo, serverId) => {
-        ServerManager.updateRemoteInfo(serverId, serverInfo);
-    });
+
+    // TODO: Would be better encapsulated in the MenuManager
+    MenuManager.refreshMenu();
 }
 
 export async function clearDataForServer(server: MattermostServer) {

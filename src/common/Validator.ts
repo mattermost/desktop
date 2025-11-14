@@ -12,7 +12,6 @@ import type {ComparableCertificate} from 'types/certificate';
 import type {AnyConfig, ConfigV0, ConfigV1, ConfigV2, ConfigV3, ConfigV4, Server} from 'types/config';
 import type {DownloadedItems} from 'types/downloads';
 import type {SavedWindowState} from 'types/mainWindow';
-import type {PermissionType, TrustedOrigin} from 'types/trustedOrigin';
 
 const log = new Logger('Validator');
 const defaultOptions = {
@@ -185,6 +184,7 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     appLanguage: Joi.string().allow(''),
     enableMetrics: Joi.boolean(),
     viewLimit: Joi.number().integer().min(1),
+    themeSyncing: Joi.boolean().default(true),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
@@ -193,17 +193,6 @@ const certificateStoreSchema = Joi.object().pattern(
     Joi.object<ComparableCertificate>({
         data: Joi.string(),
         issuerName: Joi.string(),
-    }),
-);
-
-const originPermissionsSchema = Joi.object<TrustedOrigin>().keys({
-    canBasicAuth: Joi.boolean().default(false), // we can add more permissions later if we want
-});
-
-const trustedOriginsSchema = Joi.object({}).pattern(
-    Joi.string().uri(),
-    Joi.object().keys({
-        canBasicAuth: Joi.boolean().default(false), // we can add more permissions later if we want
     }),
 );
 
@@ -341,16 +330,6 @@ export function validateCertificateStore(data: string | Record<string, Comparabl
 // validate allowedProtocols.json
 export function validateAllowedProtocols(data: string[]) {
     return validateAgainstSchema(data, allowedProtocolsSchema);
-}
-
-export function validateTrustedOriginsStore(data: string | Record<PermissionType, TrustedOrigin>) {
-    const jsonData: Record<PermissionType, TrustedOrigin> = (typeof data === 'object' ? data : JSON.parse(data));
-    return validateAgainstSchema(jsonData, trustedOriginsSchema);
-}
-
-export function validateOriginPermissions(data: string | TrustedOrigin) {
-    const jsonData: TrustedOrigin = (typeof data === 'object' ? data : JSON.parse(data));
-    return validateAgainstSchema(jsonData, originPermissionsSchema);
 }
 
 function validateAgainstSchema<T>(data: T, schema: Joi.ObjectSchema<T> | Joi.ArraySchema): T | null {

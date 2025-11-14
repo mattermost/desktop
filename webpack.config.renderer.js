@@ -22,8 +22,8 @@ module.exports = merge(base, {
         editServer: './src/renderer/modals/editServer/editServer.tsx',
         removeServer: './src/renderer/modals/removeServer/removeServer.tsx',
         loginModal: './src/renderer/modals/login/login.tsx',
-        permissionModal: './src/renderer/modals/permission/permission.tsx',
         certificateModal: './src/renderer/modals/certificate/certificate.tsx',
+        preAuthHeaderModal: './src/renderer/modals/preAuthHeader/preAuthHeader.tsx',
         loadingScreen: './src/renderer/modals/loadingScreen/index.tsx',
         welcomeScreen: './src/renderer/modals/welcomeScreen/welcomeScreen.tsx',
         popout: './src/renderer/popout.tsx',
@@ -102,14 +102,14 @@ module.exports = merge(base, {
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',
             template: 'src/renderer/index.html',
-            chunks: ['permissionModal'],
-            filename: 'permissionModal.html',
+            chunks: ['certificateModal'],
+            filename: 'certificateModal.html',
         }),
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',
             template: 'src/renderer/index.html',
-            chunks: ['certificateModal'],
-            filename: 'certificateModal.html',
+            chunks: ['preAuthHeaderModal'],
+            filename: 'preAuthHeaderModal.html',
         }),
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',
@@ -163,7 +163,7 @@ module.exports = merge(base, {
                     loader: 'sass-loader',
                     options: {
                         sassOptions: {
-                            includePaths: [path.resolve(__dirname, 'node_modules')],
+                            loadPaths: ['src/renderer/css'],
                         },
                     },
                 },

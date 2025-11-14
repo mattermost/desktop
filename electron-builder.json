@@ -117,7 +117,6 @@
     }
   },
   "mas": {
-    "hardenedRuntime": false,
     "entitlements": "./resources/mac/entitlements.mas.plist",
     "entitlementsInherit": "./resources/mac/entitlements.mas.inherit.plist",
     "entitlementsLoginHelper": "./resources/mac/entitlements.mas.inherit.plist",

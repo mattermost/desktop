@@ -15,15 +15,12 @@ import {
     MODAL_OPEN,
     MODAL_CLOSE,
     EMIT_CONFIGURATION,
-    DARK_MODE_CHANGE,
     GET_MODAL_UNCLOSEABLE,
     MAIN_WINDOW_RESIZED,
     RELOAD_CONFIGURATION,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import {getAdjustedWindowBoundaries} from 'main/utils';
-
-import type {CombinedConfig} from 'types/config';
 
 import {ModalView} from './modalView';
 
@@ -112,7 +109,7 @@ export class ModalManager {
     };
 
     handleModalFinished = (mode: 'resolve' | 'reject', event: IpcMainEvent, data: unknown) => {
-        log.debug('handleModalFinished', {mode, data});
+        log.debug('handleModalFinished', {mode});
 
         const requestModal = this.findModalByCaller(event);
         if (requestModal) {
@@ -154,19 +151,18 @@ export class ModalManager {
     };
 
     focusCurrentModal = () => {
-        if (this.isModalDisplayed()) {
+        if (this.isModalDisplayed() && MainWindow.get()?.isFocused()) {
             this.modalQueue[0].view.webContents.focus();
         }
     };
 
-    handleEmitConfiguration = (event: IpcMainEvent, config: CombinedConfig) => {
+    handleEmitConfiguration = () => {
         if (this.modalQueue.length) {
             log.debug('handleEmitConfiguration');
         }
 
         this.modalQueue.forEach((modal) => {
             modal.view.webContents.send(RELOAD_CONFIGURATION);
-            modal.view.webContents.send(DARK_MODE_CHANGE, config.darkMode);
         });
     };
 

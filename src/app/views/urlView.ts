@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {BrowserWindow, IpcMainEvent} from 'electron';
+import type {BrowserWindow, IpcMainEvent, WebContents} from 'electron';
 import {ipcMain, WebContentsView} from 'electron';
 
 import {SET_URL_FOR_URL_VIEW, UPDATE_URL_VIEW_WIDTH} from 'common/communication';
@@ -32,7 +32,7 @@ export class URLView {
     }
 
     show = (url: URL | string) => {
-        log.silly('showURLView', url);
+        log.silly('showURLView');
 
         if (this.urlViewCancel) {
             this.urlViewCancel();
@@ -57,7 +57,7 @@ export class URLView {
             };
 
             const adjustWidth = (event: IpcMainEvent, width: number) => {
-                log.silly('showURLView.adjustWidth', width);
+                log.silly('showURLView.adjustWidth', {width});
 
                 if (!boundaries) {
                     return;
@@ -90,6 +90,10 @@ export class URLView {
     destroy = () => {
         performanceMonitor.unregisterView(this.urlView.webContents.id);
         this.urlView.webContents.close();
+    };
+
+    registerThemeManager = (register: (webContents: WebContents) => void) => {
+        register(this.urlView.webContents);
     };
 
     private isViewInFront = (view: WebContentsView) => {

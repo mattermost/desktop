@@ -7,8 +7,6 @@ import type {
     Certificate,
 } from 'electron/common';
 
-import type {PermissionType} from './trustedOrigin';
-
 export type CertificateModalInfo = {
     url: string;
     list: Certificate[];
@@ -17,9 +15,4 @@ export type CertificateModalInfo = {
 export type LoginModalInfo = {
     request: AuthenticationResponseDetails;
     authInfo: AuthInfo;
-}
-
-export type PermissionModalInfo = {
-    url: string;
-    permission: PermissionType;
 }

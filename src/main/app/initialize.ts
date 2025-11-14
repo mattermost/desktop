@@ -10,15 +10,14 @@ import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-
 import isDev from 'electron-is-dev';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
-import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     QUIT,
     NOTIFY_MENTION,
-    UPDATE_SHORTCUT_MENU,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
     START_UPGRADE,
@@ -36,21 +35,14 @@ import {
     SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
     SERVER_ADDED,
-    VIEW_TITLE_UPDATED,
-    TAB_ADDED,
-    TAB_REMOVED,
-    TAB_ORDER_UPDATED,
     GET_FULL_SCREEN_STATUS,
-    MAIN_WINDOW_FOCUSED,
     SERVER_PRE_AUTH_SECRET_CHANGED,
     SERVER_URL_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
-import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import updateManager from 'main/autoUpdater';
@@ -65,10 +57,8 @@ import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
-import AuthManager from 'main/security/authManager';
-import CertificateManager from 'main/security/certificateManager';
 import PermissionsManager from 'main/security/permissionsManager';
-import TrustedOriginsStore from 'main/security/trustedOrigins';
+import PreAuthManager from 'main/security/preAuthManager';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
@@ -102,7 +92,6 @@ import {
 import {
     clearAppCache,
     getDeeplinkingURL,
-    handleUpdateMenuEvent,
     shouldShowTrayIcon,
     updateSpellCheckerLocales,
     wasUpdated,
@@ -210,9 +199,7 @@ function initializeAppEventListeners() {
     app.on('activate', () => MainWindow.show());
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
-    app.on('select-client-certificate', CertificateManager.handleSelectCertificate);
     app.on('child-process-gone', handleChildProcessGone);
-    app.on('login', AuthManager.handleAppLogin);
     app.on('will-finish-launching', handleAppWillFinishLaunching);
 }
 
@@ -224,7 +211,6 @@ function initializeBeforeAppReady() {
     if (process.env.NODE_ENV !== 'test') {
         app.enableSandbox();
     }
-    TrustedOriginsStore.load();
 
     // prevent using a different working directory, which happens on windows running after installation.
     const expectedPath = path.dirname(process.execPath);
@@ -267,7 +253,6 @@ function initializeBeforeAppReady() {
 function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
-    ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
 
     if (process.platform !== 'darwin') {
         ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
@@ -320,24 +305,8 @@ async function initializeAfterAppReady() {
     // Initialize secure storage after app is ready
     try {
         await secureStorage.init();
-
-        // Load pre-auth secrets from secure storage into memory
-        const servers = ServerManager.getAllServers();
-        await Promise.allSettled(
-            servers.map(async (server) => {
-                try {
-                    const secret = await secureStorage.getSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH);
-                    if (secret) {
-                        server.preAuthSecret = secret;
-                        log.debug('Loaded pre-auth secret for server:', {serverId: server.id});
-                    }
-                } catch (error) {
-                    log.warn('Failed to load pre-auth secret for server:', {serverId: server.id, error});
-                }
-            }),
-        );
     } catch (error) {
-        log.warn('Failed to initialize secure storage cache:', error);
+        log.warn('Failed to initialize secure storage cache:', {error});
     }
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
@@ -345,6 +314,7 @@ async function initializeAfterAppReady() {
     }
 
     MainWindow.show();
+
     const updateServerInfo = (serverId: string) => {
         if (serverId) {
             updateServerInfos([ServerManager.getServer(serverId)!]);
@@ -353,7 +323,10 @@ async function initializeAfterAppReady() {
     ServerManager.on(SERVER_ADDED, updateServerInfo);
     ServerManager.on(SERVER_URL_CHANGED, updateServerInfo);
     ServerManager.on(SERVER_PRE_AUTH_SECRET_CHANGED, updateServerInfo);
+
+    ServerManager.on(SERVER_ADDED, PreAuthManager.loadPreAuthSecretForServer);
     ServerManager.init();
+    ServerManager.off(SERVER_ADDED, PreAuthManager.loadPreAuthSecretForServer);
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
@@ -366,6 +339,11 @@ async function initializeAfterAppReady() {
                     'Content-Security-Policy': [`default-src 'self'; style-src 'self' 'nonce-${NonceManager.create(details.url)}'; media-src data:; img-src 'self' data:`],
                 },
             });
+            return;
+        }
+
+        // You can't call the callback more than once, so return if the preAuthManager handled it
+        if (PreAuthManager.preAuthHeaderOnHeadersReceivedHander(details, callback)) {
             return;
         }
 
@@ -391,7 +369,7 @@ async function initializeAfterAppReady() {
                 }
             }
         } catch (error) {
-            log.debug('Error injecting preauth secret header:', error);
+            log.debug('Error injecting preauth secret header:', {error});
         }
 
         // If no secret found or error occurred, proceed with original headers
@@ -453,7 +431,7 @@ async function initializeAfterAppReady() {
             },
         }).
             then(([react, redux]) => log.info(`Added Extension:  ${react.name}, ${redux.name}`)).
-            catch((err) => log.error('An error occurred: ', err));
+            catch((err) => log.error('An error occurred: ', {err}));
     }
 
     let deeplinkingURL;
@@ -500,13 +478,7 @@ async function initializeAfterAppReady() {
         i18nManager.setLocale(app.getLocaleCountryCode());
     }
 
-    handleUpdateMenuEvent();
-    DeveloperMode.on(DEVELOPER_MODE_UPDATED, handleUpdateMenuEvent);
-    TabManager.on(TAB_ADDED, handleUpdateMenuEvent);
-    TabManager.on(TAB_REMOVED, handleUpdateMenuEvent);
-    TabManager.on(TAB_ORDER_UPDATED, handleUpdateMenuEvent);
-    ViewManager.on(VIEW_TITLE_UPDATED, handleUpdateMenuEvent);
-    MainWindow.on(MAIN_WINDOW_FOCUSED, handleUpdateMenuEvent);
+    MenuManager.refreshMenu();
 
     ipcMain.emit('update-dict');
 
@@ -531,7 +503,7 @@ function onUserActivityStatus(status: {
     idleTime: number;
     isSystemEvent: boolean;
 }) {
-    log.debug('UserActivityMonitor.on(status)', status);
+    log.debug('UserActivityMonitor.on(status)', {status});
     WebContentsManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 

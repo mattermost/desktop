@@ -14,11 +14,6 @@ export type UniqueServer = Server & {
     id?: string;
     isPredefined?: boolean;
     isLoggedIn?: boolean;
-    preAuthSecret?: string;
-}
-
-export type NewServer = Server & {
-    preAuthSecret?: string;
 }
 
 export type UniqueView = {
@@ -61,6 +56,7 @@ export type ConfigV4 = {
     appLanguage?: string;
     enableMetrics?: boolean;
     viewLimit?: number;
+    themeSyncing?: boolean;
 }
 
 export type ConfigV3 = Omit<ConfigV4,

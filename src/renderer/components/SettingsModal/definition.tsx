@@ -145,6 +145,24 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                     },
                 },
                 {
+                    id: 'themeSyncing',
+                    component: CheckSetting,
+                    props: {
+                        label: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.themeSyncing'
+                                defaultMessage='Synchronize Desktop App theme with server'
+                            />
+                        ),
+                        subLabel: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.themeSyncing.description'
+                                defaultMessage='If enabled, the Desktop App theme will be synchronized with the server theme. For older server versions, a refresh of the server may be required to update the theme.'
+                            />
+                        ),
+                    },
+                },
+                {
                     id: 'minimizeToTray',
                     component: CheckSetting,
                     condition: window.process.platform === 'linux' || window.process.platform === 'win32',

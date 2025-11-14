@@ -118,6 +118,10 @@ import {
     GET_IS_VIEW_LIMIT_REACHED,
     UPDATE_MENTIONS_FOR_SERVER,
     SECURE_STORAGE_GET,
+    CLEAR_CACHE_AND_RELOAD,
+    UPDATE_THEME,
+    GET_THEME,
+    RESET_THEME,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -155,6 +159,7 @@ contextBridge.exposeInMainWorld('desktop', {
     getNonce: () => ipcRenderer.invoke(GET_NONCE),
     isDeveloperModeEnabled: () => ipcRenderer.invoke(IS_DEVELOPER_MODE_ENABLED),
     getSecret: (serverUrl, keySuffix) => ipcRenderer.invoke(SECURE_STORAGE_GET, serverUrl, keySuffix),
+    clearCacheAndReload: () => ipcRenderer.send(CLEAR_CACHE_AND_RELOAD),
 
     updateServerOrder: (serverOrder) => ipcRenderer.send(UPDATE_SERVER_ORDER, serverOrder),
     updateTabOrder: (serverId, viewOrder) => ipcRenderer.send(UPDATE_TAB_ORDER, serverId, viewOrder),
@@ -178,7 +183,7 @@ contextBridge.exposeInMainWorld('desktop', {
     onServerSwitched: (listener) => ipcRenderer.on(SERVER_SWITCHED, (_, serverId) => listener(serverId)),
     onTabAdded: (listener) => ipcRenderer.on(TAB_ADDED, (_, serverId, tabId) => listener(serverId, tabId)),
     onTabRemoved: (listener) => ipcRenderer.on(TAB_REMOVED, (_, serverId, tabId) => listener(serverId, tabId)),
-    validateServerURL: (url, currentId, preAuthSecret) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId, preAuthSecret),
+    validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
 
     getUniqueServersWithPermissions: () => ipcRenderer.invoke(GET_UNIQUE_SERVERS_WITH_PERMISSIONS),
     addServer: (server) => ipcRenderer.send(ADD_SERVER, server),
@@ -198,12 +203,15 @@ contextBridge.exposeInMainWorld('desktop', {
     getLocalConfiguration: () => ipcRenderer.invoke(GET_LOCAL_CONFIGURATION),
     getDownloadLocation: (downloadLocation) => ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, downloadLocation),
     getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
+    getTheme: () => ipcRenderer.invoke(GET_THEME),
 
     onReloadConfiguration: (listener) => {
         ipcRenderer.on(RELOAD_CONFIGURATION, () => listener());
         return () => ipcRenderer.off(RELOAD_CONFIGURATION, listener);
     },
     onDarkModeChange: (listener) => ipcRenderer.on(DARK_MODE_CHANGE, (_, darkMode) => listener(darkMode)),
+    onThemeChange: (listener) => ipcRenderer.on(UPDATE_THEME, (_, theme) => listener(theme)),
+    onResetTheme: (listener) => ipcRenderer.on(RESET_THEME, () => listener()),
     onLoadRetry: (listener) => ipcRenderer.on(LOAD_RETRY, (_, viewId, retry, err, loadUrl) => listener(viewId, retry, err, loadUrl)),
     onLoadSuccess: (listener) => ipcRenderer.on(LOAD_SUCCESS, (_, viewId) => listener(viewId)),
     onLoadFailed: (listener) => ipcRenderer.on(LOAD_FAILED, (_, viewId, err, loadUrl) => listener(viewId, err, loadUrl)),

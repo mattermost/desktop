@@ -9,13 +9,11 @@ import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerViewState from 'app/serverHub';
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
 import {ModalConstants} from 'common/constants';
-import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
-import secureStorage from 'main/secureStorage';
 import {getLocalPreload} from 'main/utils';
 
 import type {UniqueServer} from 'types/config';
@@ -112,16 +110,8 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
                     initialLoadURL = parseURL(`${parsedServerURL.origin}${prefillURL.substring(prefillURL.indexOf('/'))}`);
                 }
             }
-            const newServer = ServerManager.addServer(data, initialLoadURL);
 
-            // Store the secret with the server URL
-            if (data.preAuthSecret) {
-                try {
-                    await secureStorage.setSecret(newServer.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, data.preAuthSecret);
-                } catch (error) {
-                    log.error('Failed to store secure secret with server URL:', error);
-                }
-            }
+            ServerManager.addServer(data, initialLoadURL);
         }).catch((e) => {
             // e is undefined for user cancellation
             if (e) {
@@ -135,7 +125,7 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
 }
 
 export function handleMentionNotification(event: IpcMainInvokeEvent, title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) {
-    log.debug('handleMentionNotification', {channelId, teamId, url, silent, soundName});
+    log.debug('handleMentionNotification', {silent, soundName});
     return NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
@@ -188,7 +178,7 @@ export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolea
     }
 
     // Enforce macOS to restrict processes from reading the keyboard input when in a password field
-    log.debug('handleToggleSecureInput', secureInput);
+    log.debug('handleToggleSecureInput', {secureInput});
     app.setSecureKeyboardEntryEnabled(secureInput);
 }
 

@@ -36,6 +36,7 @@ export const MASK_PATH = 'PATH';
 export const MASK_URL = 'URL';
 
 export const LOGS_MAX_STRING_LENGTH = 63;
+export const POPOUT_RATE_LIMIT = 1000;
 
 // We use this URL inside the Diagnostics to check if the computer has internet connectivity
 export const IS_ONLINE_ENDPOINT = 'https://community.mattermost.com/api/v4/system/ping';
@@ -60,5 +61,5 @@ export const ModalConstants = {
     CERTIFICATE_MODAL: 'certificateModal',
     LOGIN_MODAL: 'loginModal',
     PROXY_LOGIN_MODAL: 'proxyLoginModal',
-    PERMISSION_MODAL: 'permissionModal',
+    PRE_AUTH_MODAL: 'preAuthModal',
 };

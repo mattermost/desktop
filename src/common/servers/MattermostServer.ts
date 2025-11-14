@@ -3,6 +3,8 @@
 
 import {v4 as uuid} from 'uuid';
 
+import type {Theme} from '@mattermost/desktop-api';
+
 import {parseURL} from 'common/utils/url';
 
 import type {UniqueServer, Server} from 'types/config';
@@ -15,6 +17,7 @@ export class MattermostServer {
     initialLoadURL?: URL;
     isLoggedIn: boolean;
     preAuthSecret?: string;
+    theme?: Theme;
 
     constructor(server: Server, isPredefined: boolean, initialLoadURL?: URL, preAuthSecret?: string) {
         this.id = uuid();
@@ -42,7 +45,6 @@ export class MattermostServer {
             id: this.id,
             isPredefined: this.isPredefined,
             isLoggedIn: this.isLoggedIn,
-            preAuthSecret: this.preAuthSecret,
         };
     };
 }

@@ -8,7 +8,6 @@ import '../../css/components/DownloadsDropdown/DownloadsDropdownButton.scss';
 
 type Props = {
     closeDownloadsDropdown: () => void;
-    darkMode: boolean;
     isDownloadsDropdownOpen: boolean;
     openDownloadsDropdown: () => void;
     showDownloadsBadge: boolean;
@@ -18,7 +17,7 @@ const DownloadsDropDownButtonBadge = ({show}: { show: boolean }) => (
     show ? <span className='DownloadsDropdownButton__badge'/> : null
 );
 
-const DownloadsDropdownButton: React.FC<Props> = ({darkMode, isDownloadsDropdownOpen, showDownloadsBadge, closeDownloadsDropdown, openDownloadsDropdown}: Props) => {
+const DownloadsDropdownButton: React.FC<Props> = ({isDownloadsDropdownOpen, showDownloadsBadge, closeDownloadsDropdown, openDownloadsDropdown}: Props) => {
     const buttonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
     useEffect(() => {
@@ -42,7 +41,6 @@ const DownloadsDropdownButton: React.FC<Props> = ({darkMode, isDownloadsDropdown
             ref={buttonRef}
             className={classNames('DownloadsDropdownButton', {
                 isDownloadsDropdownOpen,
-                darkMode,
             })}
             onClick={handleToggleButton}
             onDoubleClick={(event) => {

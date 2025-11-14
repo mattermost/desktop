@@ -11,6 +11,37 @@ export type DesktopCaptureSource = {
     name: string;
     thumbnailURL: string;
 };
+export type Theme = {
+    sidebarBg: string;
+    sidebarText: string;
+    sidebarUnreadText: string;
+    sidebarTextHoverBg: string;
+    sidebarTextActiveBorder: string;
+    sidebarTextActiveColor: string;
+    sidebarHeaderBg: string;
+    sidebarTeamBarBg: string;
+    sidebarHeaderTextColor: string;
+    onlineIndicator: string;
+    awayIndicator: string;
+    dndIndicator: string;
+    mentionBg: string;
+    mentionColor: string;
+    centerChannelBg: string;
+    centerChannelColor: string;
+    newMessageSeparator: string;
+    linkColor: string;
+    buttonBg: string;
+    buttonColor: string;
+    errorTextColor: string;
+    mentionHighlightBg: string;
+    mentionHighlightLink: string;
+    codeTheme: string;
+    isUsingSystemTheme: boolean;
+};
+export type PopoutViewProps = {
+    titleTemplate?: string;
+    isRHS?: boolean;
+};
 export type DesktopAPI = {
     isDev: () => Promise<boolean>;
     getAppInfo: () => Promise<{
@@ -36,6 +67,9 @@ export type DesktopAPI = {
     onBrowserHistoryStatusUpdated: (listener: (canGoBack: boolean, canGoForward: boolean) => void) => () => void;
     onBrowserHistoryPush: (listener: (pathName: string) => void) => () => void;
     sendBrowserHistoryPush: (path: string) => void;
+    updateTheme: (theme: Theme) => void;
+    getDarkMode: () => Promise<boolean>;
+    onDarkModeChanged: (listener: (darkMode: boolean) => void) => () => void;
     joinCall: (opts: {
         callID: string;
         title: string;
@@ -70,4 +104,12 @@ export type DesktopAPI = {
         memory?: number;
     }>) => void) => () => void;
     unregister: (channel: string) => void;
+    canPopout: () => Promise<boolean>;
+    openPopout: (path: string, props: PopoutViewProps) => Promise<string>;
+    canUsePopoutOption: (optionName: string) => Promise<boolean>;
+    sendToParent: (channel: string, ...args: unknown[]) => void;
+    onMessageFromParent: (listener: (channel: string, ...args: unknown[]) => void) => () => void;
+    sendToPopout: (id: string, channel: string, ...args: unknown[]) => void;
+    onMessageFromPopout: (listener: (id: string, channel: string, ...args: unknown[]) => void) => () => void;
+    onPopoutClosed: (listener: (id: string) => void) => () => void;
 };

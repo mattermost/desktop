@@ -3,6 +3,8 @@
 
 import type {ipcRenderer, Rectangle} from 'electron/renderer';
 
+import type {Theme} from '@mattermost/desktop-api';
+
 import type {CombinedConfig, LocalConfiguration, UniqueServer, Server, UniqueView} from './config';
 import type {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import type {UniqueServerWithPermissions, Permissions} from './permissions';
@@ -49,6 +51,7 @@ declare global {
             getNonce: () => Promise<string | undefined>;
             isDeveloperModeEnabled: () => Promise<boolean>;
             getSecret: (serverUrl: string, keySuffix?: string) => Promise<string | null>;
+            clearCacheAndReload: () => void;
 
             updateServerOrder: (serverOrder: string[]) => Promise<void>;
             updateTabOrder: (serverId: string, viewOrder: string[]) => Promise<void>;
@@ -69,7 +72,7 @@ declare global {
             onServerSwitched: (listener: (serverId: string) => void) => void;
             onTabAdded: (listener: (serverId: string, tabId: string) => void) => void;
             onTabRemoved: (listener: (serverId: string, tabId: string) => void) => void;
-            validateServerURL: (url: string, currentId?: string, preAuthSecret?: string) => Promise<URLValidationResult>;
+            validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
             editServer: (server: UniqueServer, permissions?: Permissions) => void;
@@ -88,9 +91,12 @@ declare global {
             getLocalConfiguration: () => Promise<LocalConfiguration>;
             getDownloadLocation: (downloadLocation?: string) => Promise<string>;
             getLanguageInformation: () => Promise<Language>;
+            getTheme: () => Promise<Theme>;
 
             onReloadConfiguration: (listener: () => void) => () => void;
             onDarkModeChange: (listener: (darkMode: boolean) => void) => void;
+            onThemeChange: (listener: (theme: Theme) => void) => void;
+            onResetTheme: (listener: () => void) => void;
             onLoadRetry: (listener: (viewId: string, retry: Date, err: string, loadUrl: string) => void) => void;
             onLoadSuccess: (listener: (viewId: string) => void) => void;
             onLoadFailed: (listener: (viewId: string, err: string, loadUrl: string) => void) => void;
@@ -109,7 +115,7 @@ declare global {
             onOpenDownloadsDropdown: (listener: () => void) => void;
             onShowDownloadsDropdownButtonBadge: (listener: () => void) => void;
             onHideDownloadsDropdownButtonBadge: (listener: () => void) => void;
-            onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems, darkMode: boolean, windowBounds: Rectangle, item: DownloadedItem) => void) => void;
+            onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems, windowBounds: Rectangle, item: DownloadedItem) => void) => void;
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
             onUpdateMentionsForServer: (listener: (serverId: string, expired: boolean, mentions: number, unreads: boolean) => void) => void;
@@ -152,7 +158,7 @@ declare global {
                 clearFile: (item: DownloadedItem) => void;
                 openFile: (item: DownloadedItem) => void;
 
-                onUpdateDownloadsDropdownMenu: (listener: (item: DownloadedItem, darkMode: boolean) => void) => void;
+                onUpdateDownloadsDropdownMenu: (listener: (item: DownloadedItem) => void) => void;
             };
 
             serverDropdown: {
@@ -165,7 +171,6 @@ declare global {
 
                 onUpdateServerDropdown: (listener: (
                     servers: UniqueServer[],
-                    darkMode: boolean,
                     windowBounds: Rectangle,
                     activeServer?: string,
                     enableServerManagement?: boolean,
