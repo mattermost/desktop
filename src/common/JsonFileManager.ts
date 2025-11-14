@@ -3,6 +3,10 @@
 // See LICENSE.txt for license information.
 import fs from 'fs';
 
+import {Logger} from 'common/log';
+
+const log = new Logger('JsonFileManager');
+
 export default class JsonFileManager<T> {
     jsonFile: string;
     json: T;
@@ -33,6 +37,8 @@ export default class JsonFileManager<T> {
     }
 
     writeToFile(): Promise<void> {
+        log.debug('writeToFile', this.jsonFile);
+
         const json = JSON.stringify(this.json, undefined, 2);
         if (this.saving) {
             this.saving = this.saving.then(() => this.write(json));
@@ -42,14 +48,14 @@ export default class JsonFileManager<T> {
         return this.saving;
     }
 
-    setJson(json: T): void {
+    setJson(json: T): Promise<void> {
         this.json = json;
-        this.writeToFile();
+        return this.writeToFile();
     }
 
-    setValue(key: keyof T, value: T[keyof T]): void {
+    setValue(key: keyof T, value: T[keyof T]): Promise<void> {
         this.json[key] = value;
-        this.writeToFile();
+        return this.writeToFile();
     }
 
     getValue(key: keyof T): T[keyof T] {
