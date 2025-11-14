@@ -186,10 +186,11 @@ describe('Menu/window_menu', function desc() {
 
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
+
             // send Shift + Command + W on mac
-            const modifiers = process.platform === 'darwin'
-                ? ['shift', 'command']
-                : [env.cmdOrCtrl];
+            const modifiers = process.platform === 'darwin' ?
+                ['shift', 'command'] :
+                [env.cmdOrCtrl];
 
             robot.keyTap('w', modifiers);
             await asyncSleep(2000);
