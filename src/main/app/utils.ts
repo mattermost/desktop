@@ -23,6 +23,7 @@ import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
 
 import type {MigrationInfo} from 'types/config';
+import type {RemoteInfo} from 'types/server';
 import type {Boundaries} from 'types/utils';
 
 import {mainProtocol} from './initialize';
@@ -226,7 +227,13 @@ export function migrateMacAppStore() {
 export async function updateServerInfos(servers: MattermostServer[]) {
     await Promise.all(servers.map(async (srv) => {
         const serverInfo = new ServerInfo(srv);
-        const data = await serverInfo.fetchRemoteInfo();
+        let data: RemoteInfo;
+        try {
+            data = await serverInfo.fetchRemoteInfo();
+        } catch (error) {
+            log.error('updateServerInfos: Failed to fetch remote info', {error});
+            return;
+        }
 
         if (data.siteURL) {
             // We need to validate the site URL is reachable by pinging the server
@@ -239,6 +246,7 @@ export async function updateServerInfos(servers: MattermostServer[]) {
                     return;
                 }
             } catch (error) {
+                log.error('updateServerInfos: Failed to fetch temp remote info', {error});
                 ServerManager.updateRemoteInfo(srv.id, data, false);
                 return;
             }
