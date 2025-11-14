@@ -186,7 +186,12 @@ describe('Menu/window_menu', function desc() {
 
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            robot.keyTap('w', [env.cmdOrCtrl]);
+            // send Shift + Command + W on mac
+            const modifiers = process.platform === 'darwin'
+                ? ['shift', 'command']
+                : [env.cmdOrCtrl];
+
+            robot.keyTap('w', modifiers);
             await asyncSleep(2000);
             const isVisible = await browserWindow.evaluate((window) => window.isVisible());
             isVisible.should.be.false;

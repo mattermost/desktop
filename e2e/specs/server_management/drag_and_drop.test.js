@@ -48,6 +48,7 @@ describe('server_management/drag_and_drop', function desc() {
             await env.loginToMattermost(mmServer);
             mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             await mainWindow.click('#newTabButton');
+            await asyncSleep(2000);
             await mainWindow.click('#newTabButton');
             await asyncSleep(3000);
             this.serverMap = await env.getServerMap(this.app);
@@ -57,12 +58,14 @@ describe('server_management/drag_and_drop', function desc() {
             const secondView = this.serverMap[config.servers[0].name][1].win;
             await secondView.waitForSelector('#sidebarItem_off-topic');
             await secondView.click('#sidebarItem_off-topic');
+            await asyncSleep(2000);
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
             await thirdTab.click();
             const thirdView = this.serverMap[config.servers[0].name][2].win;
             await thirdView.waitForSelector('#sidebarItem_town-square');
             await thirdView.click('#sidebarItem_town-square');
+            await asyncSleep(2000);
         });
         after(afterFunc);
 

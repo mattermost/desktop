@@ -42,9 +42,6 @@ describe('focus', function desc() {
     });
 
     afterEach(async () => {
-        if (this.app) {
-            await this.app.close();
-        }
         await env.clearElectronInstances();
     });
 

@@ -139,7 +139,7 @@ module.exports = {
 
     cleanDataDir() {
         try {
-            fs.rmdirSync(userDataDir, {recursive: true});
+            fs.rmSync(userDataDir, {recursive: true, force: true});
         } catch (err) {
             if (err.code !== 'ENOENT') {
                 // eslint-disable-next-line no-console
