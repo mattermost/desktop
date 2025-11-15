@@ -190,6 +190,8 @@ module.exports = {
                 '--disable-dev-shm-usage',
                 '--disable-dev-mode',
                 '--disable-gpu',
+                '--disable-gpu',
+                '--disable-gpu-sandbox',
                 ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
                 ...args,
             ],

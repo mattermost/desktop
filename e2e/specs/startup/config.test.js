@@ -6,6 +6,7 @@
 const fs = require('fs');
 
 const env = require('../../modules/environment');
+const {asyncSleep} = require('../../modules/utils');
 
 describe('config', function desc() {
     this.timeout(30000);
@@ -66,6 +67,7 @@ describe('config', function desc() {
         };
         fs.writeFileSync(env.configFilePath, JSON.stringify(oldConfig));
         this.app = await env.getApp();
+        await asyncSleep(2000);
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("Primary server")');
         dropdownButtonText.should.equal('Primary server');
