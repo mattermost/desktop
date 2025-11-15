@@ -182,6 +182,7 @@ module.exports = {
             env: {
                 ...process.env,
                 RESOURCES_PATH: path.join(sourceRootDir, 'e2e/dist'),
+                NODE_ENV: 'development',
             },
             executablePath: electronBinaryPath,
             args: [
