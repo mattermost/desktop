@@ -139,7 +139,7 @@ module.exports = {
 
     cleanDataDir() {
         try {
-            fs.rmdirSync(userDataDir, {recursive: true});
+            fs.rmSync(userDataDir, {recursive: true, force: true});
         } catch (err) {
             if (err.code !== 'ENOENT') {
                 // eslint-disable-next-line no-console
@@ -181,10 +181,21 @@ module.exports = {
             downloadsPath: downloadsLocation,
             env: {
                 ...process.env,
-                RESOURCES_PATH: userDataDir,
+                RESOURCES_PATH: path.join(sourceRootDir, 'e2e/dist'),
+                NODE_ENV: 'development',
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-shm-usage', '--disable-dev-mode', '--disable-gpu', '--no-sandbox', ...args],
+            args: [
+                path.join(sourceRootDir, 'e2e/dist'),
+                `--user-data-dir=${userDataDir}`,
+                '--disable-dev-shm-usage',
+                '--disable-dev-mode',
+                '--disable-gpu',
+                '--disable-gpu',
+                '--disable-gpu-sandbox',
+                ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
+                ...args,
+            ],
         };
 
         return electron.launch(options).then(async (eapp) => {

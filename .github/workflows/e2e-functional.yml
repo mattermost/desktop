@@ -1,8 +1,6 @@
 name: Electron Playwright Tests
 
 on:
-  pull_request:
-    types: [labeled]
   workflow_dispatch:
     inputs:
       version_name:
@@ -30,6 +28,7 @@ on:
         description: "True if this is nightly build"
         required: false
         default: false
+
 jobs:
   prepare-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}

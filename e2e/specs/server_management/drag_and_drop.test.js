@@ -39,6 +39,71 @@ describe('server_management/drag_and_drop', function desc() {
 
     this.timeout(30000);
 
+    describe('MM-T2635 should be able to drag and drop tabs', async () => {
+        let mainWindow;
+        before(async () => {
+            await beforeFunc();
+            this.serverMap = await env.getServerMap(this.app);
+            const mmServer = this.serverMap[config.servers[0].name][0].win;
+            await env.loginToMattermost(mmServer);
+            mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+            await mainWindow.click('#newTabButton');
+            await asyncSleep(2000);
+            await mainWindow.click('#newTabButton');
+            await asyncSleep(3000);
+            this.serverMap = await env.getServerMap(this.app);
+
+            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+            await secondTab.click();
+            const secondView = this.serverMap[config.servers[0].name][1].win;
+            await secondView.waitForSelector('#sidebarItem_off-topic');
+            await secondView.click('#sidebarItem_off-topic');
+            await asyncSleep(2000);
+
+            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
+            await thirdTab.click();
+            const thirdView = this.serverMap[config.servers[0].name][2].win;
+            await thirdView.waitForSelector('#sidebarItem_town-square');
+            await thirdView.click('#sidebarItem_town-square');
+            await asyncSleep(2000);
+        });
+        after(afterFunc);
+
+        it('MM-T2635_1 should be in the original order', async () => {
+            // Verify the original order
+            const firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
+            const firstTabText = await firstTab.innerText();
+            firstTabText.should.contain('Town Square');
+            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+            const secondTabText = await secondTab.innerText();
+            secondTabText.should.contain('Off-Topic');
+            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
+            const thirdTabText = await thirdTab.innerText();
+            thirdTabText.should.contain('Town Square');
+        });
+
+        it('MM-T2635_2 after moving the tab to the right, the tab should be in the new order', async () => {
+            // Move the first tab to the right
+            let firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
+            await firstTab.focus();
+            await mainWindow.keyboard.down(' ');
+            await mainWindow.keyboard.down('ArrowRight');
+            await mainWindow.keyboard.down(' ');
+            await asyncSleep(1000);
+
+            // Verify that the new order is visible
+            firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
+            const firstTabText = await firstTab.innerText();
+            firstTabText.should.contain('Off-Topic');
+            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+            const secondTabText = await secondTab.innerText();
+            secondTabText.should.contain('Town Square');
+            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
+            const thirdTabText = await thirdTab.innerText();
+            thirdTabText.should.contain('Town Square');
+        });
+    });
+
     describe('MM-T2634 should be able to drag and drop servers in the dropdown menu', async () => {
         let mainWindow;
         let dropdownView;
@@ -95,68 +160,6 @@ describe('server_management/drag_and_drop', function desc() {
             order1.order.should.equal(1);
             const order2 = newConfig.servers.find((server) => server.name === 'google');
             order2.order.should.equal(2);
-        });
-    });
-
-    describe('MM-T2635 should be able to drag and drop tabs', async () => {
-        let mainWindow;
-        before(async () => {
-            await beforeFunc();
-            this.serverMap = await env.getServerMap(this.app);
-            const mmServer = this.serverMap[config.servers[0].name][0].win;
-            await env.loginToMattermost(mmServer);
-            mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-            await mainWindow.click('#newTabButton');
-            await mainWindow.click('#newTabButton');
-            await asyncSleep(3000);
-            this.serverMap = await env.getServerMap(this.app);
-
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
-            await secondTab.click();
-            const secondView = this.serverMap[config.servers[0].name][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic');
-            await secondView.click('#sidebarItem_off-topic');
-
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
-            await thirdTab.click();
-            const thirdView = this.serverMap[config.servers[0].name][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square');
-            await thirdView.click('#sidebarItem_town-square');
-        });
-        after(afterFunc);
-
-        it('MM-T2635_1 should be in the original order', async () => {
-            // Verify the original order
-            const firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
-            const firstTabText = await firstTab.innerText();
-            firstTabText.should.contain('Town Square');
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
-            const secondTabText = await secondTab.innerText();
-            secondTabText.should.contain('Off-Topic');
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
-            const thirdTabText = await thirdTab.innerText();
-            thirdTabText.should.contain('Town Square');
-        });
-
-        it('MM-T2635_2 after moving the tab to the right, the tab should be in the new order', async () => {
-            // Move the first tab to the right
-            let firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
-            await firstTab.focus();
-            await mainWindow.keyboard.down(' ');
-            await mainWindow.keyboard.down('ArrowRight');
-            await mainWindow.keyboard.down(' ');
-            await asyncSleep(1000);
-
-            // Verify that the new order is visible
-            firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
-            const firstTabText = await firstTab.innerText();
-            firstTabText.should.contain('Off-Topic');
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
-            const secondTabText = await secondTab.innerText();
-            secondTabText.should.contain('Town Square');
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
-            const thirdTabText = await thirdTab.innerText();
-            thirdTabText.should.contain('Town Square');
         });
     });
 });
