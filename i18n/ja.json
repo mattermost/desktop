@@ -333,6 +333,8 @@
   "renderer.components.settingsPage.spellCheckerSetting.language": "スペルチェッカーの言語",
   "renderer.components.settingsPage.startAppOnLogin": "ログイン時にアプリを起動する",
   "renderer.components.settingsPage.startAppOnLogin.description": "有効な場合、マシンにログインした際に自動的にアプリが起動します。",
+  "renderer.components.settingsPage.themeSyncing": "デスクトップアプリのテーマをサーバーと同期する",
+  "renderer.components.settingsPage.themeSyncing.description": "有効な場合、デスクトップアプリのテーマがサーバーのテーマと同期されます。サーバーのバージョンが古い場合、テーマを更新するためにサーバーの更新が必要になることがあります。",
   "renderer.components.settingsPage.trayIcon.color": "アイコンの色: ",
   "renderer.components.settingsPage.trayIcon.show": "通知領域にアイコンを表示する",
   "renderer.components.settingsPage.trayIcon.show.darwin": "メニューバーに{appName}アイコンを表示する",
