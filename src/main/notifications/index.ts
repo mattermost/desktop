@@ -3,6 +3,7 @@
 
 import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
@@ -251,8 +252,6 @@ export async function getDoNotDisturb() {
     // We have to turn this off for dev mode because the Electron binary doesn't have the focus center API entitlement
     if (process.platform === 'darwin' && !isDev) {
         try {
-            // Dynamically import the macOS-specific module only when needed
-            const {getDoNotDisturb: getDarwinDoNotDisturb} = await import('macos-notification-state');
             const dnd = await getDarwinDoNotDisturb();
             return dnd;
         } catch (e) {
