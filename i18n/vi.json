@@ -28,7 +28,7 @@
   "main.app.app.handleAppCertificateError.certError.button.cancelConnection": "Hủy Kết Nối",
   "main.app.app.handleAppCertificateError.certError.button.moreDetails": "Xem thêm",
   "main.app.app.handleAppCertificateError.certError.dialog.detail": "{extraDetail}Gốc: {origin}\nLỗi: {error}",
-  "main.app.app.handleAppCertificateError.certError.dialog.message": "Đã xảy ra sự cố cấu hình với máy chủ Mattermost này hoặc ai đó đang cố chặn kết nối của bạn. Bạn cũng có thể cần phải đăng nhập vào Wi-Fi mà bạn đã kết nối bằng trình duyệt web của mình.",
+  "main.app.app.handleAppCertificateError.certError.dialog.message": "Đã xảy ra sự cố cấu hình bảo mật với máy chủ Mattermost này hoặc đối với nội dung nhúng trong một tin nhắn nào đó. Vui lòng liên hệ quản trị viên của máy chủ này hoặc bộ phận IT để xử lý vấn đề này.",
   "main.app.app.handleAppCertificateError.certError.dialog.title": "Lỗi Chứng Chỉ",
   "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": "Hủy Kết Nối",
   "main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate": "Tin Cậy Chứng Chỉ Không Bảo Mật",
