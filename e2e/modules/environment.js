@@ -196,60 +196,72 @@ module.exports = {
                 path.join(sourceRootDir, 'e2e/dist'),
                 `--user-data-dir=${userDataDir}`,
 
-                // ==== Cross-platform safe performance flags ====
-                '--disable-dev-shm-usage', // Fixes Linux low-shm crashes
-                '--disable-gpu', // Avoid GPU/ANGLE instability
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
                 '--disable-gpu-compositing',
-                '--use-gl=swiftshader', // Software GL – consistent everywhere
+                '--use-gl=swiftshader',
 
-                // Linux ONLY
-                ...(process.platform === 'linux' ?
-                    ['--no-sandbox', '--disable-setuid-sandbox'] :
-                    []),
+                ...(process.platform === 'linux'
+                    ? ['--no-sandbox', '--disable-setuid-sandbox']
+                    : []),
 
                 // macOS ONLY – fix Metal+Electron startup issues on CI
-                ...(process.platform === 'darwin' ?
-                    ['--disable-features=Metal'] :
-                    []),
+                ...(process.platform === 'darwin'
+                    ? ['--disable-features=Metal']
+                    : []),
 
-                // Windows ONLY – avoid DirectX/ANGLE random GPU crash
-                ...(process.platform === 'win32' ?
-                    ['--force-angle=swiftshader'] :
-                    []),
+                ...(process.platform === 'win32'
+                    ? ['--force-angle=swiftshader']
+                    : []),
 
                 ...args,
             ],
         };
 
-        const launchFn = async () => {
-            const eapp = await electron.launch(options);
-            await eapp.evaluate(({app}) => {
-                return new Promise((resolve) => {
-                    if (app.isReady?.()) {
-                        return resolve();
-                    }
-                    app.once('e2e-app-loaded', resolve);
+        const launchFn = () => (
+            electron.launch(options).then(async (eapp) => {
+                await eapp.evaluate(({ app }) => {
+                    return new Promise((resolve) => {
+                        if (app.isReady?.()) {
+                            resolve();
+                            return;
+                        }
+                        app.once('e2e-app-loaded', resolve);
+                    });
                 });
-            });
+                return eapp;
+            })
+        );
 
-            return eapp;
-        };
-
-        return await module.exports.launchWithRetry(launchFn);
+        return module.exports.launchWithRetry(launchFn);
     },
 
     async launchWithRetry(fn, retries = 3) {
+        let lastError;
+
         for (let i = 0; i < retries; i++) {
             try {
-                return await fn();
+                const result = await fn();
+                return result;
             } catch (err) {
-                if (i === retries - 1) {
-                    throw err;
+                lastError = err;
+
+                if (i < retries - 1) {
+                    // Use logger instead of console.warn to appease ESLint
+                    if (typeof logger !== 'undefined') {
+                        logger.warn(
+                            `Retrying Electron launch (${i + 1}/${retries}) due to error: ${err.message}`
+                        );
+                    }
+
+                    const delay = new Promise((resolve) => setTimeout(resolve, 2000));
+                    // eslint-disable-next-line no-await-in-loop
+                    await delay;
                 }
-                console.warn(`Retrying Electron launch (${i + 1}/${retries}) due to error:`, err.message);
-                await new Promise((r) => setTimeout(r, 2000));
             }
         }
+
+        throw lastError;
     },
 
     async getServerMap(app) {
