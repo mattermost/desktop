@@ -8,7 +8,7 @@
     "run:e2e": "npm run build && npm run test",
     "build": "webpack-cli --config webpack.config.js",
     "build:performance": "webpack-cli --config webpack.config.performance.js",
-    "test": "electron-mocha --no-sandbox --disable-gpu-sandbox --reporter mochawesome dist/e2e_bundle.js",
+    "test": "electron-mocha --reporter mochawesome dist/e2e_bundle.js",
     "test:performance": "electron-mocha --reporter json --reporter-option output=./performance/perf-test-report.json dist/e2e_bundle.js",
     "send-report": "node ./save_report.js",
     "postinstall": "patch-package && cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs"
