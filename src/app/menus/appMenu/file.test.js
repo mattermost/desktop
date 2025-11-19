@@ -356,7 +356,6 @@ describe('app/menus/appMenu/file', () => {
             });
             const menu = createFileMenu();
             const hiddenCloseItem = menu.submenu.find((item) =>
-                item.role === 'close' &&
                 item.visible === false &&
                 item.accelerator === 'CmdOrCtrl+W',
             );

@@ -121,9 +121,12 @@ function getBaseFileMenu(): MenuItemConstructorOptions[] {
             });
         } else {
             baseFileMenu.push({
-                role: 'close',
+                label: localizeMessage('main.menus.app.window.closeWindow', 'Close Window'),
                 visible: false,
                 accelerator: 'CmdOrCtrl+W',
+                click() {
+                    MainWindow.get()?.close();
+                },
             });
         }
     }
