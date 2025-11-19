@@ -102,8 +102,8 @@ function getBaseFileMenu(): MenuItemConstructorOptions[] {
         accelerator: (BrowserWindow.getFocusedWindow() === MainWindow.get()) ? 'CmdOrCtrl+Shift+W' : 'CmdOrCtrl+W',
     });
 
-    if (currentServerId && BrowserWindow.getFocusedWindow() === MainWindow.get()) {
-        const tabs = TabManager.getOrderedTabsForServer(currentServerId);
+    const tabs = currentServerId ? TabManager.getOrderedTabsForServer(currentServerId) : [];
+    if (BrowserWindow.getFocusedWindow() === MainWindow.get()) {
         if (tabs.length > 1) {
             baseFileMenu.push({
                 label: localizeMessage('main.menus.app.window.closeTab', 'Close Tab'),
@@ -118,6 +118,12 @@ function getBaseFileMenu(): MenuItemConstructorOptions[] {
                         window?.close();
                     }
                 },
+            });
+        } else {
+            baseFileMenu.push({
+                role: 'close',
+                visible: false,
+                accelerator: 'CmdOrCtrl+W',
             });
         }
     }
