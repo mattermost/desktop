@@ -250,14 +250,21 @@ export class ServerManager extends EventEmitter {
             return;
         }
 
+        let nextServer;
+        if (this.currentServerId === serverId) {
+            const orderedServers = this.getOrderedServers();
+            const currentIndex = orderedServers.findIndex((server) => server.id === serverId);
+            nextServer = orderedServers[currentIndex - 1]?.id || orderedServers[currentIndex + 1]?.id || orderedServers[0]?.id;
+        }
+
         const index = this.serverOrder.findIndex((id) => id === serverId);
-        this.serverOrder.splice(index, 1);
+        if (index !== -1) {
+            this.serverOrder.splice(index, 1);
+        }
         this.remoteInfo.delete(serverId);
         this.servers.delete(serverId);
 
-        if (this.currentServerId === serverId) {
-            const currentIndex = this.serverOrder.findIndex((id) => id === serverId);
-            const nextServer = this.serverOrder[currentIndex - 1] || this.serverOrder[currentIndex + 1] || this.serverOrder[0];
+        if (nextServer) {
             this.updateCurrentServer(nextServer);
         }
 
@@ -268,28 +275,29 @@ export class ServerManager extends EventEmitter {
     reloadServer = (serverId: string) => {
         log.debug('reloadServer', {serverId});
 
-        const index = this.serverOrder.findIndex((id) => id === serverId);
-        if (index === -1) {
-            return;
-        }
         const server = this.servers.get(serverId);
         if (!server) {
             return;
         }
         const wasCurrent = this.currentServerId === serverId;
+        const originalIndex = this.serverOrder.findIndex((id) => id === serverId);
 
         this.removeServer(serverId);
-        const newServer = this.addServer(server.toUniqueServer());
-        if (wasCurrent) {
+        const newServer = server.isPredefined ? this.addServerToMap(server, wasCurrent, false) : this.addServer(server.toUniqueServer());
+        if (wasCurrent && !server.isPredefined) {
             this.updateCurrentServer(newServer.id);
         }
 
+        if (server.isPredefined) {
+            return;
+        }
+
         // Move the serverId back to its original position in serverOrder using updateServerOrder
-        const newIdx = this.serverOrder.findIndex((id) => id === serverId);
-        if (newIdx !== -1 && newIdx !== index) {
+        const newIdx = this.serverOrder.findIndex((id) => id === newServer.id);
+        if (newIdx !== -1 && newIdx !== originalIndex) {
             const newOrder = [...this.serverOrder];
             newOrder.splice(newIdx, 1);
-            newOrder.splice(index, 0, serverId);
+            newOrder.splice(originalIndex, 0, newServer.id);
             this.updateServerOrder(newOrder);
         }
     };
@@ -313,10 +321,8 @@ export class ServerManager extends EventEmitter {
         // Set the current server based on config if the user last used a local server
         // Otherwise, just use the first server
         let currentServerIndex = Config.lastActiveServer ?? 0;
-        if (Config.localServers.length && Config.predefinedServers.length) {
-            currentServerIndex += Config.predefinedServers.length;
-        } else if (Config.predefinedServers.length) {
-            currentServerIndex = 0;
+        if (currentServerIndex >= initialServers.length - 1) {
+            currentServerIndex = initialServers.length - 1;
         }
 
         initialServers.forEach((server, index) => this.addServerToMap(server, currentServerIndex === index, false));
@@ -339,7 +345,7 @@ export class ServerManager extends EventEmitter {
                 url: srv.url.toString(),
                 order: this.serverOrder.indexOf(srv.id),
             }));
-        Config.setServers(localServers, this.currentServerId ? this.serverOrder.indexOf(this.currentServerId) : undefined);
+        Config.setServers(localServers, this.currentServerId ? this.getOrderedServers().findIndex((server) => server.id === this.currentServerId) : undefined);
     };
 }
 
