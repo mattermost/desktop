@@ -54,7 +54,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          commit_sha: ${{ github.sha }}
           context: e2e/${{ matrix.platform }}
           description: E2E tests for Mattermost desktop app on ${{ matrix.platform }} have started...
           status: pending
@@ -80,50 +80,35 @@ jobs:
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
-  update-final-status-linux:
+  update-final-status:
+    name: Update final status
     runs-on: ubuntu-22.04
     needs:
+      - prepare-matrix
       - e2e-tests
+    if: always()
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/linux
-          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_LINUX }} failures
-          status: ${{ needs.e2e-tests.outputs.STATUS_LINUX }}
-          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_LINUX }}
+      - name: Determine platform outputs
+        id: platform-outputs
+        run: |
+          if echo "${{ matrix.runner }}" | grep -iq "ubuntu"; then
+            echo "os_key=LINUX" >> $GITHUB_OUTPUT
+          elif echo "${{ matrix.runner }}" | grep -iq "macos"; then
+            echo "os_key=MACOS" >> $GITHUB_OUTPUT
+          else
+            echo "os_key=WINDOWS" >> $GITHUB_OUTPUT
+          fi
 
-  update-final-status-macos:
-    runs-on: ubuntu-22.04
-    needs:
-      - e2e-tests
-    steps:
       - uses: mattermost/actions/delivery/update-commit-status@main
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository_full_name: ${{ github.repository }}
           commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/macOS
-          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_MACOS }} failures
-          status: ${{ needs.e2e-tests.outputs.STATUS_MACOS }}
-          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_MACOS }}
-
-  update-final-status-windows:
-    runs-on: ubuntu-22.04
-    needs:
-      - e2e-tests
-    steps:
-      - uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/windows
-          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }} failures
-          status: ${{ needs.e2e-tests.outputs.STATUS_WINDOWS }}
-          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
+          context: e2e/${{ matrix.platform }}
+          description: Completed with ${{ needs.e2e-tests.outputs[format('NEW_FAILURES_{0}', steps.platform-outputs.outputs.os_key)] }} failures
+          status: ${{ needs.e2e-tests.outputs[format('STATUS_{0}', steps.platform-outputs.outputs.os_key)] }}
+          target_url: ${{ needs.e2e-tests.outputs[format('REPORT_LINK_{0}', steps.platform-outputs.outputs.os_key)] }}

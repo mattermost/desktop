@@ -264,8 +264,7 @@ jobs:
       - name: e2e/run-playwright-tests-macos
         if: runner.os == 'macOS'
         run: |
-          sudo spctl --master-disable
-          xattr -dr com.apple.quarantine ./node_modules/electron
+          xattr -dr com.apple.quarantine ./node_modules/electron/dist/Electron.app
           npm run build-test
           cd e2e
           npm run run:e2e || true
