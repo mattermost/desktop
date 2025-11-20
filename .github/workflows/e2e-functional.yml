@@ -44,20 +44,24 @@ jobs:
     name: Update initial status
     needs: prepare-matrix
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
-      - name: Update initial status for ${{ matrix.platform }}
-        uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Update initial status for all platforms
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.sha }}
-          context: e2e/${{ matrix.platform }}
-          description: E2E tests for Mattermost desktop app on ${{ matrix.platform }} have started...
-          status: pending
+          github-token: ${{ github.token }}
+          script: |
+            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            for (const platform of platforms) {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: context.sha,
+                state: 'pending',
+                context: `e2e/${platform.platform}`,
+                description: `E2E tests for Mattermost desktop app on ${platform.platform} have started...`
+              });
+              console.log(`Created initial status for e2e/${platform.platform}`);
+            }
 
   e2e-tests:
     needs: 
@@ -87,28 +91,38 @@ jobs:
       - prepare-matrix
       - e2e-tests
     if: always()
-    strategy:
-      matrix:
-        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
-      - name: Determine platform outputs
-        id: platform-outputs
-        run: |
-          if echo "${{ matrix.runner }}" | grep -iq "ubuntu"; then
-            echo "os_key=LINUX" >> $GITHUB_OUTPUT
-          elif echo "${{ matrix.runner }}" | grep -iq "macos"; then
-            echo "os_key=MACOS" >> $GITHUB_OUTPUT
-          else
-            echo "os_key=WINDOWS" >> $GITHUB_OUTPUT
-          fi
-
-      - uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Update final status for all platforms
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/${{ matrix.platform }}
-          description: Completed with ${{ needs.e2e-tests.outputs[format('NEW_FAILURES_{0}', steps.platform-outputs.outputs.os_key)] }} failures
-          status: ${{ needs.e2e-tests.outputs[format('STATUS_{0}', steps.platform-outputs.outputs.os_key)] }}
-          target_url: ${{ needs.e2e-tests.outputs[format('REPORT_LINK_{0}', steps.platform-outputs.outputs.os_key)] }}
+          github-token: ${{ github.token }}
+          script: |
+            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
+
+            for (const platform of platforms) {
+              // Determine OS key based on runner
+              let osKey;
+              if (platform.runner.includes('ubuntu')) {
+                osKey = 'LINUX';
+              } else if (platform.runner.includes('macos')) {
+                osKey = 'MACOS';
+              } else {
+                osKey = 'WINDOWS';
+              }
+
+              const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
+              const status = outputs[`STATUS_${osKey}`] || 'failure';
+              const reportLink = outputs[`REPORT_LINK_${osKey}`] || '';
+
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: context.payload.pull_request?.head?.sha || context.sha,
+                state: status,
+                context: `e2e/${platform.platform}`,
+                description: `Completed with ${failures} failures`,
+                target_url: reportLink
+              });
+              console.log(`Updated final status for e2e/${platform.platform}: ${status} with ${failures} failures`);
+            }
