@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {BrowserWindow} from 'electron';
+
 import MainWindow from 'app/mainWindow/mainWindow';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
@@ -339,6 +341,25 @@ describe('app/menus/appMenu/file', () => {
             const newTabOption = menu.submenu.find((item) => item.label === 'New Tab');
             expect(newWindowOption.enabled).toBe(false);
             expect(newTabOption.enabled).toBe(false);
+        });
+
+        it('should include hidden CmdOrCtrl+W accelerator when main window is focused and there are less than 2 tabs', () => {
+            const mockMainWindow = {};
+            MainWindow.get.mockReturnValue(mockMainWindow);
+            BrowserWindow.getFocusedWindow.mockReturnValue(mockMainWindow);
+            TabManager.getOrderedTabsForServer.mockReturnValue([{id: 'tab-1'}]);
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.window.closeWindow') {
+                    return 'Close Window';
+                }
+                return id;
+            });
+            const menu = createFileMenu();
+            const hiddenCloseItem = menu.submenu.find((item) =>
+                item.visible === false &&
+                item.accelerator === 'CmdOrCtrl+W',
+            );
+            expect(hiddenCloseItem).not.toBe(undefined);
         });
     });
 });
