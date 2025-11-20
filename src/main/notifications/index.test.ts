@@ -6,6 +6,7 @@ import notMockedCP from 'child_process';
 
 import type {BrowserWindow, IpcMain, IpcMainEvent, WebContents} from 'electron';
 import {Notification as NotMockedNotification, shell, app, ipcMain as NotMockedIpcMain} from 'electron';
+import {getDoNotDisturb as notMockedGetDarwinDoNotDisturb} from 'macos-notification-state';
 import {getFocusAssist as notMockedGetFocusAssist} from 'windows-focus-assist';
 
 import notMockedMainWindow from 'app/mainWindow/mainWindow';
@@ -25,6 +26,7 @@ import NotificationManager from './index';
 const Notification = jest.mocked(NotMockedNotification);
 const getFocusAssist = jest.mocked(notMockedGetFocusAssist);
 const PermissionsManager = jest.mocked(notMockedPermissionsManager);
+const getDarwinDoNotDisturb = jest.mocked(notMockedGetDarwinDoNotDisturb);
 const Config = jest.mocked(notMockedConfig);
 const MainWindow = jest.mocked(notMockedMainWindow);
 const localizeMessage = jest.mocked(notMockedLocalizeMessage);
@@ -93,10 +95,6 @@ jest.mock('windows-focus-assist', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
-
-// Import the mocked function after the mock is defined
-const {getDoNotDisturb: getDarwinDoNotDisturb} = jest.requireMock<{getDoNotDisturb: jest.Mock}>('macos-notification-state');
-
 jest.mock('common/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
     showById: jest.fn(),

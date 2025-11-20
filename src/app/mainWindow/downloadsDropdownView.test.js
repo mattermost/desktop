@@ -3,6 +3,8 @@
 
 'use strict';
 
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
+
 import MainWindow from 'app/mainWindow/mainWindow';
 import {DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_HEIGHT} from 'common/utils/constants';
 
@@ -19,10 +21,6 @@ jest.mock('fs', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
-
-// Import the mocked function after the mock is defined
-const {getDoNotDisturb: getDarwinDoNotDisturb} = jest.requireMock('macos-notification-state');
-
 jest.mock('electron', () => {
     class NotificationMock {
         static isSupported = jest.fn();
