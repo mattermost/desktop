@@ -196,6 +196,7 @@ module.exports = {
                 ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
                 ...args,
             ],
+            timeout: 30000,
         };
 
         return electron.launch(options).then(async (eapp) => {
@@ -206,8 +207,12 @@ module.exports = {
                     });
                 });
                 return promise;
-            });
+            }, {timeout: 30000});
             return eapp;
+        }).catch((error) => {
+            // eslint-disable-next-line no-console
+            console.error('Failed to launch Electron app:', error);
+            throw error;
         });
     },
 

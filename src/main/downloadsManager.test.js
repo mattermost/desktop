@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 
 import {shell} from 'electron';
-import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import Config from 'common/config';
 import {APP_UPDATE_KEY} from 'common/constants';
@@ -78,6 +77,10 @@ jest.mock('fs', () => ({
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
+
+// Import the mocked function after the mock is defined
+const {getDoNotDisturb: getDarwinDoNotDisturb} = jest.requireMock('macos-notification-state');
+
 jest.mock('main/notifications', () => ({}));
 jest.mock('app/mainWindow/mainWindow', () => ({
     sendToRenderer: jest.fn(),
