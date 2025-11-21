@@ -224,7 +224,9 @@ module.exports = {
                 NODE_OPTIONS: '--no-warnings',
             },
             executablePath: electronBinaryPath,
-            timeout: 10000,
+
+            // macOS-15 requires longer timeout due to slower initialization
+            timeout: process.platform === 'darwin' ? 90000 : 30000,
             args: [
                 path.join(sourceRootDir, 'e2e/dist'),
                 `--user-data-dir=${userDataDir}`,
