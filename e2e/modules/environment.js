@@ -282,7 +282,7 @@ module.exports = {
             await asyncSleep(100); // Check every 100ms
         }
 
-        if (!hasWindowsWithUrls) {
+        if (hasWindowsWithUrls === false) {
             // eslint-disable-next-line no-console
             console.log('Warning: No windows with URLs detected within 30 seconds, but continuing anyway');
         } else {
