@@ -241,19 +241,12 @@ module.exports = {
 
         for (let i = 0; i < retries; i++) {
             try {
+                // eslint-disable-next-line no-await-in-loop
                 const result = await fn();
                 return result;
             } catch (err) {
                 lastError = err;
-
                 if (i < retries - 1) {
-                    // Use logger instead of console.warn to appease ESLint
-                    if (typeof logger !== 'undefined') {
-                        logger.warn(
-                            `Retrying Electron launch (${i + 1}/${retries}) due to error: ${err.message}`,
-                        );
-                    }
-
                     const delay = new Promise((resolve) => setTimeout(resolve, 2000));
                     // eslint-disable-next-line no-await-in-loop
                     await delay;
