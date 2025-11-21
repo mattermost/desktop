@@ -128,6 +128,21 @@ module.exports = {
                 }
             }
         });
+
+        // Clean up single-instance lock files on macOS to prevent launch failures
+        if (process.platform === 'darwin') {
+            const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
+            lockFiles.forEach((lockName) => {
+                try {
+                    const lockPath = path.join(userDataDir, lockName);
+                    if (fs.existsSync(lockPath)) {
+                        fs.unlinkSync(lockPath);
+                    }
+                } catch (err) {
+                    // Ignore errors - lock might not exist or already be deleted
+                }
+            });
+        }
     },
     async cleanTestConfigAsync() {
         await Promise.all(
@@ -144,6 +159,26 @@ module.exports = {
             if (err.code !== 'ENOENT') {
                 // eslint-disable-next-line no-console
                 console.error(err);
+            }
+        }
+
+        // Clean up single-instance lock files on macOS
+        if (process.platform === 'darwin') {
+            try {
+                const lockFile = path.join(userDataDir, 'SingletonLock');
+                const lockSocket = path.join(userDataDir, 'SingletonSocket');
+                const cookieLock = path.join(userDataDir, 'SingletonCookie');
+                [lockFile, lockSocket, cookieLock].forEach((file) => {
+                    try {
+                        if (fs.existsSync(file)) {
+                            fs.unlinkSync(file);
+                        }
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                });
+            } catch (err) {
+                // Ignore errors
             }
         }
     },
@@ -183,14 +218,13 @@ module.exports = {
                 ...process.env,
                 RESOURCES_PATH: path.join(sourceRootDir, 'e2e/dist'),
                 NODE_ENV: 'test',
-                ...process.env,
                 ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
                 ELECTRON_ENABLE_LOGGING: 'true',
                 ELECTRON_NO_ATTACH_CONSOLE: 'true',
                 NODE_OPTIONS: '--no-warnings',
             },
             executablePath: electronBinaryPath,
-            timeout: 60000,
+            timeout: 10000,
             args: [
                 path.join(sourceRootDir, 'e2e/dist'),
                 `--user-data-dir=${userDataDir}`,
