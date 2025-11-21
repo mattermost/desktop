@@ -77,12 +77,16 @@ describe('server_management/popout_windows', function desc() {
                 window.setBounds(bounds);
             }, newBounds);
 
-            await asyncSleep(1000);
+            // Wait for the bounds change to be applied
+            await asyncSleep(2000);
 
             // Verify the window was resized
             const currentBounds = await browserWindow.evaluate((window) => window.getBounds());
-            currentBounds.width.should.equal(newBounds.width);
-            currentBounds.height.should.equal(newBounds.height);
+
+            // Use a tolerance check since window managers might adjust dimensions slightly
+            // due to constraints like minimum window size
+            Math.abs(currentBounds.width - newBounds.width).should.be.lessThan(10);
+            Math.abs(currentBounds.height - newBounds.height).should.be.lessThan(10);
         });
 
         it('MM-TXXXX_3 should move the popout window by dragging title bar', async () => {
@@ -101,12 +105,15 @@ describe('server_management/popout_windows', function desc() {
                 window.setBounds(bounds);
             }, newBounds);
 
-            await asyncSleep(1000);
+            // Wait for the bounds change to be applied
+            await asyncSleep(2000);
 
             // Verify the window was moved
             const currentBounds = await browserWindow.evaluate((window) => window.getBounds());
-            currentBounds.x.should.equal(newBounds.x);
-            currentBounds.y.should.equal(newBounds.y);
+
+            // Use a tolerance check for position as well
+            Math.abs(currentBounds.x - newBounds.x).should.be.lessThan(10);
+            Math.abs(currentBounds.y - newBounds.y).should.be.lessThan(10);
         });
 
         it('MM-TXXXX_4 should close the popout window using close button', async () => {

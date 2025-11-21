@@ -11,6 +11,7 @@ describe('Welcome Screen Modal', function desc() {
 
     beforeEach(async () => {
         env.createTestUserDataDir();
+        await asyncSleep(1000);
         env.cleanTestConfig();
         await asyncSleep(1000);
 
@@ -24,6 +25,7 @@ describe('Welcome Screen Modal', function desc() {
             await this.app.close();
         }
         await env.clearElectronInstances();
+        await asyncSleep(1000);
     });
 
     let welcomeScreenModal;

@@ -12,7 +12,9 @@ describe('window', function desc() {
 
     beforeEach(async () => {
         env.createTestUserDataDir();
+        await asyncSleep(1000);
         env.cleanTestConfig();
+        await asyncSleep(1000);
     });
 
     afterEach(async () => {
@@ -23,6 +25,7 @@ describe('window', function desc() {
             } catch (err) {}
         }
         await env.clearElectronInstances();
+        await asyncSleep(1000);
     });
 
     // TODO: this fails on Linux right now due to the window frame for some reason

@@ -251,18 +251,29 @@ module.exports = {
 
         const eapp = await electron.launch(options);
 
-        // Wait for windows to be available instead of relying on event
+        // Wait for windows to be available with their URLs loaded
         // Poll for windows with a timeout to handle slow initialization on macOS-15
         const startTime = Date.now();
         const timeout = 30000; // 30 seconds
-        let hasWindows = false;
+        let hasWindowsWithUrls = false;
 
-        while (!hasWindows && (Date.now() - startTime) < timeout) {
+        while (!hasWindowsWithUrls && (Date.now() - startTime) < timeout) {
             try {
                 const windows = eapp.windows();
                 if (windows.length > 0) {
-                    hasWindows = true;
-                    break;
+                    // Check if at least one window has a URL loaded
+                    const windowsWithUrls = windows.filter((win) => {
+                        try {
+                            const url = win.url();
+                            return url && url.length > 0;
+                        } catch (e) {
+                            return false;
+                        }
+                    });
+                    if (windowsWithUrls.length > 0) {
+                        hasWindowsWithUrls = true;
+                        break;
+                    }
                 }
             } catch (err) {
                 // Ignore errors during polling
@@ -271,12 +282,13 @@ module.exports = {
             await asyncSleep(100); // Check every 100ms
         }
 
-        if (hasWindows === false) {
+        if (!hasWindowsWithUrls) {
             // eslint-disable-next-line no-console
-            console.log('Warning: No windows detected within 30 seconds, but continuing anyway');
+            console.log('Warning: No windows with URLs detected within 30 seconds, but continuing anyway');
         } else {
-            // Give windows a bit more time to fully initialize and be accessible
-            await asyncSleep(500);
+            // Give windows a bit more time to fully render content
+            // macOS needs more time due to slower window initialization
+            await asyncSleep(process.platform === 'darwin' ? 1000 : 500);
         }
 
         return eapp;

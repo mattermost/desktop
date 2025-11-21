@@ -12,7 +12,9 @@ describe('startup/app', function desc() {
 
     beforeEach(async () => {
         env.createTestUserDataDir();
+        await asyncSleep(1000);
         env.cleanTestConfig();
+        await asyncSleep(1000);
         this.app = await env.getApp();
     });
 
@@ -21,6 +23,7 @@ describe('startup/app', function desc() {
             await this.app.close();
         }
         await env.clearElectronInstances();
+        await asyncSleep(1000);
     });
 
     it('MM-T4400 should be stopped when the app instance already exists', (done) => {

@@ -29,8 +29,11 @@ describe('focus', function desc() {
 
     beforeEach(async () => {
         env.cleanDataDir();
+        await asyncSleep(1000);
         env.createTestUserDataDir();
+        await asyncSleep(1000);
         env.cleanTestConfig();
+        await asyncSleep(1000);
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
         await asyncSleep(1000);
         this.app = await env.getApp();
@@ -43,6 +46,7 @@ describe('focus', function desc() {
 
     afterEach(async () => {
         await env.clearElectronInstances();
+        await asyncSleep(1000);
     });
 
     describe('Focus textbox tests', () => {

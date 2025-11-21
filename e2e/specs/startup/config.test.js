@@ -13,7 +13,9 @@ describe('config', function desc() {
 
     beforeEach(async () => {
         env.createTestUserDataDir();
+        await asyncSleep(1000);
         env.cleanTestConfig();
+        await asyncSleep(1000);
     });
 
     afterEach(async () => {
@@ -24,6 +26,7 @@ describe('config', function desc() {
             } catch (err) {}
         }
         await env.clearElectronInstances();
+        await asyncSleep(1000);
     });
 
     describe('MM-T4401 should show servers in dropdown when there is config file', async () => {
@@ -32,6 +35,7 @@ describe('config', function desc() {
         beforeEach(async () => {
             fs.writeFileSync(env.configFilePath, JSON.stringify(config));
             this.app = await env.getApp();
+            await asyncSleep(1000);
         });
 
         afterEach(async () => {
@@ -41,6 +45,7 @@ describe('config', function desc() {
                 // eslint-disable-next-line no-empty
                 } catch (err) {}
             }
+            await asyncSleep(1000);
         });
 
         it('MM-T4401_1 should show correct server in the dropdown button', async () => {
