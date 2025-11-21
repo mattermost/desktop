@@ -321,7 +321,7 @@ export class ServerManager extends EventEmitter {
         // Set the current server based on config if the user last used a local server
         // Otherwise, just use the first server
         let currentServerIndex = Config.lastActiveServer ?? 0;
-        if (currentServerIndex >= initialServers.length - 1) {
+        if (currentServerIndex > initialServers.length - 1) {
             currentServerIndex = initialServers.length - 1;
         }
 
