@@ -51,6 +51,8 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
             for (const platform of platforms) {
               await github.rest.repos.createCommitStatus({
                 owner: context.repo.owner,
@@ -58,7 +60,8 @@ jobs:
                 sha: context.sha,
                 state: 'pending',
                 context: `e2e/${platform.platform}`,
-                description: `E2E tests for Mattermost desktop app on ${platform.platform} have started...`
+                description: `E2E tests for Mattermost desktop app on ${platform.platform} have started...`,
+                target_url: workflowUrl
               });
               console.log(`Created initial status for e2e/${platform.platform}`);
             }

@@ -201,18 +201,18 @@ module.exports = {
                 '--disable-gpu-compositing',
                 '--use-gl=swiftshader',
 
-                ...(process.platform === 'linux'
-                    ? ['--no-sandbox', '--disable-setuid-sandbox']
-                    : []),
+                ...(process.platform === 'linux' ?
+                    ['--no-sandbox', '--disable-setuid-sandbox'] :
+                    []),
 
                 // macOS ONLY – fix Metal+Electron startup issues on CI
-                ...(process.platform === 'darwin'
-                    ? ['--disable-features=Metal']
-                    : []),
+                ...(process.platform === 'darwin' ?
+                    ['--disable-features=Metal'] :
+                    []),
 
-                ...(process.platform === 'win32'
-                    ? ['--force-angle=swiftshader']
-                    : []),
+                ...(process.platform === 'win32' ?
+                    ['--force-angle=swiftshader'] :
+                    []),
 
                 ...args,
             ],
@@ -220,7 +220,7 @@ module.exports = {
 
         const launchFn = () => (
             electron.launch(options).then(async (eapp) => {
-                await eapp.evaluate(({ app }) => {
+                await eapp.evaluate(({app}) => {
                     return new Promise((resolve) => {
                         if (app.isReady?.()) {
                             resolve();
@@ -250,7 +250,7 @@ module.exports = {
                     // Use logger instead of console.warn to appease ESLint
                     if (typeof logger !== 'undefined') {
                         logger.warn(
-                            `Retrying Electron launch (${i + 1}/${retries}) due to error: ${err.message}`
+                            `Retrying Electron launch (${i + 1}/${retries}) due to error: ${err.message}`,
                         );
                     }
 
