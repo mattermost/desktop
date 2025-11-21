@@ -215,31 +215,32 @@ module.exports = {
 
         const eapp = await electron.launch(options);
 
-        // Wait for app to be ready and emit the e2e-app-loaded event
-        // Use a timeout to handle cases where the event may not be emitted
-        const waitForAppLoaded = eapp.evaluate(async ({app}) => {
-            return new Promise((resolve) => {
-                // Set a timeout to resolve if event doesn't fire
-                const timeout = setTimeout(() => {
-                    resolve('timeout');
-                }, 20000);
+        // Wait for windows to be available instead of relying on event
+        // Poll for windows with a timeout to handle slow initialization on macOS-15
+        const startTime = Date.now();
+        const timeout = 30000; // 30 seconds
+        let hasWindows = false;
 
-                app.once('e2e-app-loaded', () => {
-                    clearTimeout(timeout);
-                    resolve('loaded');
-                });
-            });
-        });
-
-        try {
-            const result = await waitForAppLoaded;
-            if (result === 'timeout') {
-                // eslint-disable-next-line no-console
-                console.log('Warning: e2e-app-loaded event did not fire within 20 seconds');
+        while (!hasWindows && (Date.now() - startTime) < timeout) {
+            try {
+                const windows = eapp.windows();
+                if (windows.length > 0) {
+                    hasWindows = true;
+                    break;
+                }
+            } catch (err) {
+                // Ignore errors during polling
             }
-        } catch (err) {
+            // eslint-disable-next-line no-await-in-loop
+            await asyncSleep(100); // Check every 100ms
+        }
+
+        if (hasWindows === false) {
             // eslint-disable-next-line no-console
-            console.log('Error waiting for e2e-app-loaded:', err.message);
+            console.log('Warning: No windows detected within 30 seconds, but continuing anyway');
+        } else {
+            // Give windows a bit more time to fully initialize and be accessible
+            await asyncSleep(500);
         }
 
         return eapp;
