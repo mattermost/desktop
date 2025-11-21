@@ -44,7 +44,6 @@ function mkDirAsync(path) {
         }).catch((err) => {
             reject(err);
         });
-        asyncSleep(1000);
     });
 }
 

@@ -114,7 +114,6 @@ module.exports = {
                 });
                 resolve();
             });
-            asyncSleep(1000);
         });
     },
 
@@ -129,7 +128,6 @@ module.exports = {
                 }
             }
         });
-        asyncSleep(1000);
     },
     async cleanTestConfigAsync() {
         await Promise.all(
@@ -158,7 +156,6 @@ module.exports = {
         if (!fs.existsSync(userDataDir)) {
             fs.mkdirSync(userDataDir);
         }
-        asyncSleep(1000);
     },
 
     clipboard(textToCopy) {
@@ -182,79 +179,36 @@ module.exports = {
     async getApp(args = []) {
         const options = {
             downloadsPath: downloadsLocation,
-
             env: {
                 ...process.env,
                 RESOURCES_PATH: path.join(sourceRootDir, 'e2e/dist'),
                 NODE_ENV: 'development',
-                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
             },
-
             executablePath: electronBinaryPath,
-
             args: [
                 path.join(sourceRootDir, 'e2e/dist'),
                 `--user-data-dir=${userDataDir}`,
-
                 '--disable-dev-shm-usage',
+                '--disable-dev-mode',
                 '--disable-gpu',
-                '--disable-gpu-compositing',
-                '--use-gl=swiftshader',
-
-                ...(process.platform === 'linux' ?
-                    ['--no-sandbox', '--disable-setuid-sandbox'] :
-                    []),
-
-                // macOS ONLY – fix Metal+Electron startup issues on CI
-                ...(process.platform === 'darwin' ?
-                    ['--disable-features=Metal'] :
-                    []),
-
-                ...(process.platform === 'win32' ?
-                    ['--force-angle=swiftshader'] :
-                    []),
-
+                '--disable-gpu',
+                '--disable-gpu-sandbox',
+                ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
                 ...args,
             ],
         };
 
-        const launchFn = () => (
-            electron.launch(options).then(async (eapp) => {
-                await eapp.evaluate(({app}) => {
-                    return new Promise((resolve) => {
-                        if (app.isReady?.()) {
-                            resolve();
-                            return;
-                        }
-                        app.once('e2e-app-loaded', resolve);
+        return electron.launch(options).then(async (eapp) => {
+            await eapp.evaluate(async ({app}) => {
+                const promise = new Promise((resolve) => {
+                    app.on('e2e-app-loaded', () => {
+                        resolve();
                     });
                 });
-                return eapp;
-            })
-        );
-
-        return module.exports.launchWithRetry(launchFn);
-    },
-
-    async launchWithRetry(fn, retries = 3) {
-        let lastError;
-
-        for (let i = 0; i < retries; i++) {
-            try {
-                // eslint-disable-next-line no-await-in-loop
-                const result = await fn();
-                return result;
-            } catch (err) {
-                lastError = err;
-                if (i < retries - 1) {
-                    const delay = new Promise((resolve) => setTimeout(resolve, 2000));
-                    // eslint-disable-next-line no-await-in-loop
-                    await delay;
-                }
-            }
-        }
-
-        throw lastError;
+                return promise;
+            });
+            return eapp;
+        });
     },
 
     async getServerMap(app) {

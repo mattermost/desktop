@@ -254,10 +254,8 @@ jobs:
           export NO_AT_BRIDGE=1
           npm run build-test
           cd e2e
-          npm run build
-          export ELECTRON_EXTRA_LAUNCH_ARGS="--no-sandbox --disable-setuid-sandbox --disable-gpu-sandbox"
           export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
-          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm run run:linux:e2e || true
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm run run:e2e || true
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
