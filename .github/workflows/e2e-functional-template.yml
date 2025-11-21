@@ -267,12 +267,17 @@ jobs:
           echo "Cleaning macOS Electron system folders…"
           rm -rf ~/Library/Application\ Support/Electron || true
           rm -rf ~/Library/Application\ Support/Mattermost || true
+          rm -rf ~/Library/Caches/Electron || true
 
-          xattr -dr com.apple.quarantine ./node_modules/electron/dist/Electron.app
-          echo "Ensuring Electron has execute permissions…"
+          echo "Ensuring Electron.app is properly configured for macOS-15…"
+          xattr -dr com.apple.quarantine ./node_modules/electron/dist/Electron.app || true
           chmod -R 755 ./node_modules/electron/dist/Electron.app
+          codesign --force --deep --sign - ./node_modules/electron/dist/Electron.app || true
 
+          echo "Building test bundle…"
           npm run build-test
+
+          echo "Running E2E tests…"
           cd e2e
           npm run run:e2e || true
           npm run send-report

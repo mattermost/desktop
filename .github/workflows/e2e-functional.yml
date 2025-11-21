@@ -115,7 +115,10 @@ jobs:
 
               const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
               const status = outputs[`STATUS_${osKey}`] || 'failure';
-              const reportLink = outputs[`REPORT_LINK_${osKey}`] || '';
+              let reportLink = outputs[`REPORT_LINK_${osKey}`];
+              if (!reportLink) {
+              reportLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+              }
 
               await github.rest.repos.createCommitStatus({
                 owner: context.repo.owner,

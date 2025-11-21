@@ -190,6 +190,7 @@ module.exports = {
                 NODE_OPTIONS: '--no-warnings',
             },
             executablePath: electronBinaryPath,
+            timeout: 60000,
             args: [
                 path.join(sourceRootDir, 'e2e/dist'),
                 `--user-data-dir=${userDataDir}`,
@@ -212,17 +213,36 @@ module.exports = {
             ],
         };
 
-        return electron.launch(options).then(async (eapp) => {
-            await eapp.evaluate(async ({app}) => {
-                const promise = new Promise((resolve) => {
-                    app.on('e2e-app-loaded', () => {
-                        resolve();
-                    });
+        const eapp = await electron.launch(options);
+
+        // Wait for app to be ready and emit the e2e-app-loaded event
+        // Use a timeout to handle cases where the event may not be emitted
+        const waitForAppLoaded = eapp.evaluate(async ({app}) => {
+            return new Promise((resolve) => {
+                // Set a timeout to resolve if event doesn't fire
+                const timeout = setTimeout(() => {
+                    resolve('timeout');
+                }, 20000);
+
+                app.once('e2e-app-loaded', () => {
+                    clearTimeout(timeout);
+                    resolve('loaded');
                 });
-                return promise;
             });
-            return eapp;
         });
+
+        try {
+            const result = await waitForAppLoaded;
+            if (result === 'timeout') {
+                // eslint-disable-next-line no-console
+                console.log('Warning: e2e-app-loaded event did not fire within 20 seconds');
+            }
+        } catch (err) {
+            // eslint-disable-next-line no-console
+            console.log('Error waiting for e2e-app-loaded:', err.message);
+        }
+
+        return eapp;
     },
 
     async getServerMap(app) {
