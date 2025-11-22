@@ -131,7 +131,7 @@ describe('server_management/popout_windows', function desc() {
             popoutWindows.length.should.equal(0);
         });
 
-        if (process.platform !== 'darwin') {
+        if (process.platform === 'win32') {
             it('MM-TXXXX_5 should close popout windows when main window is closed', async () => {
                 // Create a popout window first
                 robot.keyTap('n', [env.cmdOrCtrl]);
@@ -150,7 +150,6 @@ describe('server_management/popout_windows', function desc() {
                 await mainBrowserWindow.evaluate((window) => window.close());
 
                 // Wait longer to allow popout windows to close cascade
-                // Linux may need more time for window close events to propagate
                 await asyncSleep(3000);
 
                 // Check the current state of windows

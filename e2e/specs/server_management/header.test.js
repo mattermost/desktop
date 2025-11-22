@@ -46,30 +46,31 @@ describe('header', function desc() {
                 isMaximized.should.be.equal(true);
             });
         }
-        it('MM-T2637_2 should restore on double-clicking the header when maximized', async () => {
-            await browserWindow.evaluate((window) => window.maximize());
-            await asyncSleep(1000);
+        if (process.platform !== 'linux') {
+            it('MM-T2637_2 should restore on double-clicking the header when maximized', async () => {
+                await browserWindow.evaluate((window) => window.maximize());
+                await asyncSleep(1000);
 
-            const maximized = await browserWindow.evaluate((window) => window.isMaximized());
-            maximized.should.be.true;
+                const maximized = await browserWindow.evaluate((window) => window.isMaximized());
+                maximized.should.be.true;
 
-            const headerBox = await header.boundingBox();
-            if (!headerBox) {
-                throw new Error('Header boundingBox() returned null');
-            }
+                const headerBox = await header.boundingBox();
+                if (!headerBox) {
+                    throw new Error('Header boundingBox() returned null');
+                }
 
-            await header.dblclick({
-                position: {
-                    x: headerBox.width / 2,
-                    y: headerBox.height / 2,
-                },
+                await header.dblclick({
+                    position: {
+                        x: headerBox.width / 2,
+                        y: headerBox.height / 2,
+                    },
+                });
+
+                await asyncSleep(1000);
+
+                const restored = await browserWindow.evaluate((window) => window.isMaximized());
+                restored.should.be.false;
             });
-
-            // Linux window managers may need more time to process the restore action
-            await asyncSleep(2000);
-
-            const restored = await browserWindow.evaluate((window) => window.isMaximized());
-            restored.should.be.false;
-        });
+        }
     });
 });

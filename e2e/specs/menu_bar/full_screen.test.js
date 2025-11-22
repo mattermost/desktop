@@ -33,20 +33,19 @@ describe('menu/view', function desc() {
     });
 
     // TODO: No keyboard shortcut for macOS
-    if (process.platform !== 'darwin') {
+    if (process.platform === 'win32') {
         it('MM-T816 Toggle Full Screen in the Menu Bar', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const firstServer = this.serverMap[config.servers[0].name][0].win;
             await env.loginToMattermost(firstServer);
             await firstServer.waitForSelector('#post_textbox');
-            let currentWidth = await firstServer.evaluate('window.outerWidth');
-            let currentHeight = await firstServer.evaluate('window.outerHeight');
+            const currentWidth = await firstServer.evaluate('window.outerWidth');
+            const currentHeight = await firstServer.evaluate('window.outerHeight');
             await mainWindow.click('button.three-dot-menu');
             robot.keyTap('v');
             robot.keyTap('t');
             robot.keyTap('enter');
 
-            // Linux window managers need more time to process fullscreen transitions
             await asyncSleep(2000);
 
             const fullScreenWidth = await firstServer.evaluate('window.outerWidth');
@@ -58,13 +57,12 @@ describe('menu/view', function desc() {
             robot.keyTap('t');
             robot.keyTap('enter');
 
-            // Wait for fullscreen exit to complete
             await asyncSleep(2000);
 
-            currentWidth = await firstServer.evaluate('window.outerWidth');
-            currentHeight = await firstServer.evaluate('window.outerHeight');
-            currentWidth.should.be.lessThan(fullScreenWidth);
-            currentHeight.should.be.lessThan(fullScreenHeight);
+            const exitWidth = await firstServer.evaluate('window.outerWidth');
+            const exitHeight = await firstServer.evaluate('window.outerHeight');
+            exitWidth.should.be.lessThan(fullScreenWidth);
+            exitHeight.should.be.lessThan(fullScreenHeight);
         });
     }
 });

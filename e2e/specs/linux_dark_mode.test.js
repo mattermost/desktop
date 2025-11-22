@@ -40,7 +40,8 @@ describe('dark_mode', function desc() {
             await toggleDarkMode();
 
             // Wait for dark mode class to be applied
-            await mainWindow.waitForSelector('.topBar.darkMode', {timeout: 5000});
+            // Linux needs more time for dark mode to propagate through the window manager
+            await mainWindow.waitForSelector('.topBar.darkMode', {timeout: 10000});
 
             const topBarElementWithDarkMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithDarkMode = await topBarElementWithDarkMode.getAttribute('class');
@@ -51,7 +52,7 @@ describe('dark_mode', function desc() {
             await toggleDarkMode();
 
             // Wait for dark mode class to be removed
-            await asyncSleep(1000);
+            await asyncSleep(2000);
 
             const topBarElementWithLightMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithLightMode = await topBarElementWithLightMode.getAttribute('class');
