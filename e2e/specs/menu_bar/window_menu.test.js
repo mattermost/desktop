@@ -44,7 +44,7 @@ describe('Menu/window_menu', function desc() {
         await env.clearElectronInstances();
     };
 
-    this.timeout(60000);
+    this.timeout(45000);
 
     describe('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {
         let mainWindow;
@@ -86,25 +86,46 @@ describe('Menu/window_menu', function desc() {
             await mainView.click('#newTabButton');
             await mainView.click('#newTabButton');
 
-            // macOS 15 and Linux need more time for tabs to initialize
-            await asyncSleep(process.platform === 'darwin' ? 5000 : 4000);
+            // macOS 15 needs more time for tabs to initialize
+            await asyncSleep(process.platform === 'darwin' ? 5000 : 3000);
+
+            // Ensure tabs are visible
+            await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10000});
+            await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10000});
+            await asyncSleep(1000);
+
             this.serverMap = await env.getServerMap(this.app);
 
-            const secondTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15000});
-            await secondTab.click();
-            await asyncSleep(1500);
-            const secondView = this.serverMap[config.servers[0].name][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 15000});
-            await secondView.click('#sidebarItem_off-topic');
-            await asyncSleep(1000);
+            // Ensure we have all tabs in the server map - retry if needed
+            const serverName = config.servers[0].name;
+            const waitForServerMap = async (retries = 0) => {
+                if (this.serverMap[serverName] && this.serverMap[serverName].length >= 3) {
+                    return Promise.resolve();
+                }
+                if (retries >= 3) {
+                    return Promise.resolve();
+                }
+                await asyncSleep(2000);
+                this.serverMap = await env.getServerMap(this.app);
+                return waitForServerMap(retries + 1);
+            };
+            await waitForServerMap();
 
-            const thirdTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15000});
-            await thirdTab.click();
-            await asyncSleep(1500);
-            const thirdView = this.serverMap[config.servers[0].name][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 15000});
-            await thirdView.click('#sidebarItem_town-square');
+            const secondTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10000});
+            await secondTab.click();
             await asyncSleep(1000);
+            const secondView = this.serverMap[serverName][1].win;
+            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 10000});
+            await secondView.click('#sidebarItem_off-topic');
+            await asyncSleep(500);
+
+            const thirdTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10000});
+            await thirdTab.click();
+            await asyncSleep(1000);
+            const thirdView = this.serverMap[serverName][2].win;
+            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 10000});
+            await thirdView.click('#sidebarItem_town-square');
+            await asyncSleep(500);
         });
         after(afterFunc);
 
