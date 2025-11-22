@@ -1,14 +1,26 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import Config from 'common/config';
 import {parseURL, isInternalURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 
 import {ServerManager} from './serverManager';
 
-jest.mock('common/config', () => ({
-    set: jest.fn(),
-}));
+jest.mock('common/config', () => {
+    const mock = {
+        set: jest.fn(),
+        predefinedServers: [],
+        localServers: [],
+        lastActiveServer: undefined,
+        enableServerManagement: true,
+        setServers: jest.fn(),
+    };
+    return {
+        __esModule: true,
+        default: mock,
+    };
+});
 jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
     isInternalURL: jest.fn(),
@@ -134,6 +146,172 @@ describe('common/servers/serverManager', () => {
         it('should return undefined for wrong server', () => {
             const inputURL = new URL('http://server-3.com');
             expect(serverManager.lookupServerByURL(inputURL)).toBe(undefined);
+        });
+    });
+
+    describe('persistServers with predefined servers', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            Config.predefinedServers = [
+                {name: 'Predefined Server 1', url: 'http://predefined-1.com'},
+                {name: 'Predefined Server 2', url: 'http://predefined-2.com'},
+            ];
+            Config.localServers = [];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = undefined;
+            Config.setServers.mockClear();
+
+            parseURL.mockImplementation((url) => new URL(url));
+
+            serverManager = new ServerManager();
+            serverManager.init();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should always set lastActiveServer to at least 0 when there are predefined servers', () => {
+            const localServer = {name: 'Local Server', url: 'http://local.com'};
+            serverManager.addServer(localServer);
+            serverManager.updateCurrentServer(serverManager.getOrderedServers()[0].id);
+            expect(Config.setServers).toHaveBeenCalledWith(expect.any(Array), 0);
+        });
+    });
+
+    describe('init with invalid lastActiveServer', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            parseURL.mockImplementation((url) => new URL(url));
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should set a current server even when lastActiveServer index is out of bounds', () => {
+            Config.predefinedServers = [
+                {name: 'Predefined Server 1', url: 'http://predefined-1.com'},
+            ];
+            Config.localServers = [
+                {name: 'Local Server 1', url: 'http://local-1.com', order: 0},
+            ];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 10;
+
+            serverManager = new ServerManager();
+            serverManager.init();
+
+            expect(serverManager.getCurrentServerId()).toBeDefined();
+            const orderedServers = serverManager.getOrderedServers();
+            expect(orderedServers.length).toBeGreaterThan(0);
+            expect(orderedServers.some((s) => s.id === serverManager.getCurrentServerId())).toBe(true);
+        });
+    });
+
+    describe('reloadServer', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            Config.predefinedServers = [];
+            Config.localServers = [
+                {name: 'Local Server 1', url: 'http://local-1.com', order: 0},
+                {name: 'Local Server 2', url: 'http://local-2.com', order: 1},
+                {name: 'Local Server 3', url: 'http://local-3.com', order: 2},
+            ];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+
+            parseURL.mockImplementation((url) => new URL(url));
+
+            serverManager = new ServerManager();
+            serverManager.init();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should maintain the same order when reloading a user-configured server', () => {
+            const orderedServers = serverManager.getOrderedServers();
+            const serverToReload = orderedServers[1];
+            const originalOrder = orderedServers.map((s) => s.id);
+
+            serverManager.reloadServer(serverToReload.id);
+
+            const newOrderedServers = serverManager.getOrderedServers();
+            const newOrder = newOrderedServers.map((s) => s.id);
+
+            expect(newOrder.length).toBe(originalOrder.length);
+            const reloadedServer = newOrderedServers.find((s) => s.name === serverToReload.name);
+            expect(reloadedServer).toBeDefined();
+            const reloadedIndex = newOrder.indexOf(reloadedServer.id);
+            expect(reloadedIndex).toBe(1);
+        });
+    });
+
+    describe('removeServer', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            parseURL.mockImplementation((url) => new URL(url));
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should switch to previous server when removing a server, even with predefined servers', () => {
+            Config.predefinedServers = [
+                {name: 'Predefined Server 1', url: 'http://predefined-1.com'},
+            ];
+            Config.localServers = [
+                {name: 'Local Server 1', url: 'http://local-1.com', order: 0},
+                {name: 'Local Server 2', url: 'http://local-2.com', order: 1},
+            ];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+
+            serverManager = new ServerManager();
+            serverManager.init();
+
+            const orderedServers = serverManager.getOrderedServers();
+            const serverToRemove = orderedServers[2];
+            const previousServer = orderedServers[1];
+
+            serverManager.updateCurrentServer(serverToRemove.id);
+            expect(serverManager.getCurrentServerId()).toBe(serverToRemove.id);
+
+            serverManager.removeServer(serverToRemove.id);
+
+            expect(serverManager.getCurrentServerId()).toBe(previousServer.id);
+        });
+
+        it('should switch to next server when removing first server and no previous exists', () => {
+            Config.predefinedServers = [
+                {name: 'Predefined Server 1', url: 'http://predefined-1.com'},
+            ];
+            Config.localServers = [
+                {name: 'Local Server 1', url: 'http://local-1.com', order: 0},
+            ];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+
+            serverManager = new ServerManager();
+            serverManager.init();
+
+            const orderedServers = serverManager.getOrderedServers();
+            const firstServer = orderedServers[0];
+            const nextServer = orderedServers[1];
+
+            serverManager.updateCurrentServer(firstServer.id);
+            expect(serverManager.getCurrentServerId()).toBe(firstServer.id);
+
+            serverManager.removeServer(firstServer.id);
+
+            expect(serverManager.getCurrentServerId()).toBe(nextServer.id);
         });
     });
 });
