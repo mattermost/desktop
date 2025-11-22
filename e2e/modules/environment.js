@@ -1,3 +1,4 @@
+// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 'use strict';
@@ -84,6 +85,25 @@ const demoMattermostConfig = {
 
 const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
+// Helper function to clean up single-instance lock files on macOS
+function cleanMacOSSingletonLocks() {
+    if (process.platform !== 'darwin') {
+        return;
+    }
+
+    const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
+    lockFiles.forEach((lockName) => {
+        try {
+            const lockPath = path.join(userDataDir, lockName);
+            if (fs.existsSync(lockPath)) {
+                fs.unlinkSync(lockPath);
+            }
+        } catch (err) {
+            // Ignore errors - lock might not exist or already be deleted
+        }
+    });
+}
+
 module.exports = {
     sourceRootDir,
     configFilePath,
@@ -129,19 +149,7 @@ module.exports = {
         });
 
         // Clean up single-instance lock files on macOS to prevent launch failures
-        if (process.platform === 'darwin') {
-            const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
-            lockFiles.forEach((lockName) => {
-                try {
-                    const lockPath = path.join(userDataDir, lockName);
-                    if (fs.existsSync(lockPath)) {
-                        fs.unlinkSync(lockPath);
-                    }
-                } catch (err) {
-                    // Ignore errors - lock might not exist or already be deleted
-                }
-            });
-        }
+        cleanMacOSSingletonLocks();
     },
     async cleanTestConfigAsync() {
         await Promise.all(
@@ -162,24 +170,7 @@ module.exports = {
         }
 
         // Clean up single-instance lock files on macOS
-        if (process.platform === 'darwin') {
-            try {
-                const lockFile = path.join(userDataDir, 'SingletonLock');
-                const lockSocket = path.join(userDataDir, 'SingletonSocket');
-                const cookieLock = path.join(userDataDir, 'SingletonCookie');
-                [lockFile, lockSocket, cookieLock].forEach((file) => {
-                    try {
-                        if (fs.existsSync(file)) {
-                            fs.unlinkSync(file);
-                        }
-                    } catch (e) {
-                        // Ignore errors
-                    }
-                });
-            } catch (err) {
-                // Ignore errors
-            }
-        }
+        cleanMacOSSingletonLocks();
     },
 
     cleanDataDirAsync() {
@@ -314,9 +305,9 @@ module.exports = {
                 lastWindowCount = windows.length;
             }
 
+            // eslint-disable-next-line no-await-in-loop
             const results = await Promise.all(windows.map(async (win) => {
                 try {
-                    // eslint-disable-next-line no-await-in-loop
                     return await win.evaluate(async () => {
                         if (!window.testHelper) {
                             return null;
