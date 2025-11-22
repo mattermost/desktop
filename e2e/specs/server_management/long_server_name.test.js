@@ -23,12 +23,18 @@ describe('LongServerName', function desc() {
         this.app = await env.getApp();
 
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        await mainView.waitForLoadState('domcontentloaded');
 
         await mainView.click('.ServerDropdownButton');
+        await asyncSleep(500);
+
+        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        await dropdownView.waitForLoadState('domcontentloaded');
+
         await dropdownView.click('.ServerDropdown .ServerDropdown__button.addServer');
         newServerView = await this.app.waitForEvent('window', {
             predicate: (window) => window.url().includes('newServer'),
+            timeout: 10000,
         });
 
         // wait for autofocus to finish

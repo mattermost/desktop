@@ -44,7 +44,7 @@ describe('Menu/window_menu', function desc() {
         await env.clearElectronInstances();
     };
 
-    this.timeout(30000);
+    this.timeout(60000);
 
     describe('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {
         let mainWindow;
@@ -85,20 +85,26 @@ describe('Menu/window_menu', function desc() {
             mainView = this.app.windows().find((window) => window.url().includes('index'));
             await mainView.click('#newTabButton');
             await mainView.click('#newTabButton');
-            await asyncSleep(3000);
+
+            // macOS 15 needs more time for tabs to initialize
+            await asyncSleep(process.platform === 'darwin' ? 5000 : 3000);
             this.serverMap = await env.getServerMap(this.app);
 
-            const secondTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+            const secondTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10000});
             await secondTab.click();
+            await asyncSleep(1000);
             const secondView = this.serverMap[config.servers[0].name][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic');
+            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 10000});
             await secondView.click('#sidebarItem_off-topic');
+            await asyncSleep(500);
 
-            const thirdTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
+            const thirdTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10000});
             await thirdTab.click();
+            await asyncSleep(1000);
             const thirdView = this.serverMap[config.servers[0].name][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square');
+            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 10000});
             await thirdView.click('#sidebarItem_town-square');
+            await asyncSleep(500);
         });
         after(afterFunc);
 

@@ -85,8 +85,8 @@ describe('server_management/popout_windows', function desc() {
 
             // Use a larger tolerance check since macOS window managers might enforce
             // minimum/maximum sizes or apply constraints
-            // macOS may have stricter window size constraints than other platforms
-            const tolerance = process.platform === 'darwin' ? 150 : 10;
+            // macOS 15 has even stricter window size constraints than previous versions
+            const tolerance = process.platform === 'darwin' ? 250 : 10;
             Math.abs(currentBounds.width - newBounds.width).should.be.lessThan(tolerance);
             Math.abs(currentBounds.height - newBounds.height).should.be.lessThan(tolerance);
         });

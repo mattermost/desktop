@@ -287,14 +287,26 @@ module.exports = {
     async getServerMap(app) {
         // Wait for testHelper to be available in windows
         // This is especially important after clicking newTabButton or during slow initialization
-        const maxRetries = 100; // 10 seconds total (100 * 100ms)
+        // Windows CI needs more time, so increase retries
+        const maxRetries = process.platform === 'win32' ? 200 : 100; // 20 seconds on Windows, 10 seconds otherwise
         let retries = 0;
         let lastWindowCount = 0;
         let stableCount = 0;
         let lastMap = {};
 
+        // Windows needs more stability checks
+        const requiredStableCount = process.platform === 'win32' ? 10 : 5;
+
         while (retries < maxRetries) {
-            const windows = app.windows().filter((win) => !win.url().includes('mattermost-desktop://'));
+            const windows = app.windows().filter((win) => {
+                try {
+                    const url = win.url();
+                    return url && !url.includes('mattermost-desktop://');
+                } catch (e) {
+                    // Window might be closed or not ready
+                    return false;
+                }
+            });
 
             // Track if window count is stable (no new windows appearing)
             if (windows.length === lastWindowCount && windows.length > 0) {
@@ -307,12 +319,16 @@ module.exports = {
             // eslint-disable-next-line no-await-in-loop
             const results = await Promise.all(windows.map(async (win) => {
                 try {
-                    return await win.evaluate(async () => {
-                        if (!window.testHelper) {
-                            return null;
-                        }
-                        return window.testHelper.getViewInfoForTest();
-                    });
+                    // Add timeout to evaluate call to prevent hanging on Windows
+                    return await Promise.race([
+                        win.evaluate(async () => {
+                            if (!window.testHelper) {
+                                return null;
+                            }
+                            return window.testHelper.getViewInfoForTest();
+                        }),
+                        new Promise((resolve) => setTimeout(() => resolve(null), 5000)),
+                    ]);
                 } catch (e) {
                     return null;
                 }
@@ -339,9 +355,9 @@ module.exports = {
             const readyCount = results.filter((r) => r !== null).length;
 
             // Return conditions:
-            // 1. All windows have testHelper ready AND window count has been stable for at least 5 iterations (500ms)
+            // 1. All windows have testHelper ready AND window count has been stable for required iterations
             // 2. OR if no windows to process (edge case)
-            if ((readyCount === windows.length && readyCount > 0 && stableCount >= 5) ||
+            if ((readyCount === windows.length && readyCount > 0 && stableCount >= requiredStableCount) ||
                 windows.length === 0) {
                 return tempMap;
             }

@@ -42,15 +42,27 @@ describe('server_management/tab_management', function desc() {
             await mainWindow.click('#newTabButton');
             await asyncSleep(2000);
 
+            // Wait for the new tab to be visible
+            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+            await asyncSleep(1000);
+
             // Refresh serverMap to get the new tab
             this.serverMap = await env.getServerMap(this.app);
+
+            // Ensure we have the new tab in the server map
+            const serverName = config.servers[0].name;
+            if (!this.serverMap[serverName] || this.serverMap[serverName].length < 2) {
+                // Retry getting server map if tab is not ready
+                await asyncSleep(2000);
+                this.serverMap = await env.getServerMap(this.app);
+            }
 
             // Navigate to a different channel in the new tab
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
             await secondTab.click();
             await asyncSleep(1000);
 
-            const secondView = this.serverMap[config.servers[0].name][1].win;
+            const secondView = this.serverMap[serverName][1].win;
             await secondView.waitForSelector('#sidebarItem_off-topic');
             await secondView.click('#sidebarItem_off-topic');
             await asyncSleep(1000);

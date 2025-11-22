@@ -44,6 +44,7 @@ describe('window', function desc() {
                 bounds.x.should.equal(expectedBounds.x);
                 bounds.y.should.equal(expectedBounds.y);
                 bounds.width.should.equal(expectedBounds.width);
+
                 // Allow some tolerance for height on Windows (±150px for title bar and DPI adjustments)
                 Math.abs(bounds.height - expectedBounds.height).should.be.lessThan(150);
             } else {

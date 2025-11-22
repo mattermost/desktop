@@ -51,18 +51,32 @@ describe('server_management/drag_and_drop', function desc() {
             await asyncSleep(2000);
             await mainWindow.click('#newTabButton');
             await asyncSleep(3000);
+
+            // Wait for tabs to be visible before getting server map
+            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
+            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
+            await asyncSleep(1000);
+
             this.serverMap = await env.getServerMap(this.app);
+
+            // Ensure we have all tabs in the server map
+            const serverName = config.servers[0].name;
+            if (!this.serverMap[serverName] || this.serverMap[serverName].length < 3) {
+                // Retry getting server map if tabs are not ready
+                await asyncSleep(2000);
+                this.serverMap = await env.getServerMap(this.app);
+            }
 
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
             await secondTab.click();
-            const secondView = this.serverMap[config.servers[0].name][1].win;
+            const secondView = this.serverMap[serverName][1].win;
             await secondView.waitForSelector('#sidebarItem_off-topic');
             await secondView.click('#sidebarItem_off-topic');
             await asyncSleep(2000);
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
             await thirdTab.click();
-            const thirdView = this.serverMap[config.servers[0].name][2].win;
+            const thirdView = this.serverMap[serverName][2].win;
             await thirdView.waitForSelector('#sidebarItem_town-square');
             await thirdView.click('#sidebarItem_town-square');
             await asyncSleep(2000);
