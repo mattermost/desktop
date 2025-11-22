@@ -1,4 +1,3 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 'use strict';
@@ -296,23 +295,69 @@ module.exports = {
 
     async getServerMap(app) {
         const map = {};
-        await Promise.all(app.windows().
-            filter((win) => !win.url().includes('mattermost-desktop://')).
-            map(async (win) => {
-                return win.evaluate(async () => {
-                    if (!window.testHelper) {
-                        return null;
-                    }
-                    return window.testHelper.getViewInfoForTest();
-                }).then((result) => {
-                    if (result) {
-                        if (!map[result.serverName]) {
-                            map[result.serverName] = [];
+
+        // Wait for testHelper to be available in windows
+        // This is especially important after clicking newTabButton or during slow initialization
+        const maxRetries = 50; // 5 seconds total (50 * 100ms)
+        let retries = 0;
+        let lastWindowCount = 0;
+        let stableCount = 0;
+
+        while (retries < maxRetries) {
+            const windows = app.windows().filter((win) => !win.url().includes('mattermost-desktop://'));
+
+            // Track if window count is stable (no new windows appearing)
+            if (windows.length === lastWindowCount) {
+                stableCount++;
+            } else {
+                stableCount = 0;
+                lastWindowCount = windows.length;
+            }
+
+            const results = await Promise.all(windows.map(async (win) => {
+                try {
+                    // eslint-disable-next-line no-await-in-loop
+                    return await win.evaluate(async () => {
+                        if (!window.testHelper) {
+                            return null;
                         }
-                        map[result.serverName].push({win, webContentsId: result.webContentsId});
-                    }
-                });
+                        return window.testHelper.getViewInfoForTest();
+                    });
+                } catch (e) {
+                    return null;
+                }
             }));
+
+            // Build the map from results
+            const tempMap = {};
+            windows.forEach((win, index) => {
+                const result = results[index];
+                if (result) {
+                    if (!tempMap[result.serverName]) {
+                        tempMap[result.serverName] = [];
+                    }
+                    tempMap[result.serverName].push({win, webContentsId: result.webContentsId});
+                }
+            });
+
+            // Count how many windows have testHelper ready
+            const readyCount = results.filter((r) => r !== null).length;
+
+            // If all windows have testHelper ready and count has been stable, return
+            // OR if we have at least one server mapped and window count stable for 3 iterations (300ms)
+            // OR if no windows to process
+            if ((readyCount === windows.length && readyCount > 0) ||
+                (Object.keys(tempMap).length > 0 && stableCount >= 3) ||
+                windows.length === 0) {
+                return tempMap;
+            }
+
+            // Otherwise wait a bit and retry
+            retries++;
+            // eslint-disable-next-line no-await-in-loop
+            await asyncSleep(100);
+        }
+
         return map;
     },
 
