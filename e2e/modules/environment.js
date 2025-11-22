@@ -285,20 +285,19 @@ module.exports = {
     },
 
     async getServerMap(app) {
-        const map = {};
-
         // Wait for testHelper to be available in windows
         // This is especially important after clicking newTabButton or during slow initialization
-        const maxRetries = 50; // 5 seconds total (50 * 100ms)
+        const maxRetries = 100; // 10 seconds total (100 * 100ms)
         let retries = 0;
         let lastWindowCount = 0;
         let stableCount = 0;
+        let lastMap = {};
 
         while (retries < maxRetries) {
             const windows = app.windows().filter((win) => !win.url().includes('mattermost-desktop://'));
 
             // Track if window count is stable (no new windows appearing)
-            if (windows.length === lastWindowCount) {
+            if (windows.length === lastWindowCount && windows.length > 0) {
                 stableCount++;
             } else {
                 stableCount = 0;
@@ -331,14 +330,18 @@ module.exports = {
                 }
             });
 
+            // Keep track of the last valid map we built
+            if (Object.keys(tempMap).length > 0) {
+                lastMap = tempMap;
+            }
+
             // Count how many windows have testHelper ready
             const readyCount = results.filter((r) => r !== null).length;
 
-            // If all windows have testHelper ready and count has been stable, return
-            // OR if we have at least one server mapped and window count stable for 3 iterations (300ms)
-            // OR if no windows to process
-            if ((readyCount === windows.length && readyCount > 0) ||
-                (Object.keys(tempMap).length > 0 && stableCount >= 3) ||
+            // Return conditions:
+            // 1. All windows have testHelper ready AND window count has been stable for at least 5 iterations (500ms)
+            // 2. OR if no windows to process (edge case)
+            if ((readyCount === windows.length && readyCount > 0 && stableCount >= 5) ||
                 windows.length === 0) {
                 return tempMap;
             }
@@ -349,7 +352,9 @@ module.exports = {
             await asyncSleep(100);
         }
 
-        return map;
+        // If we exhausted retries, return the last valid map we had
+        // This prevents returning an empty map when timeout occurs
+        return lastMap;
     },
 
     async loginToMattermost(window) {

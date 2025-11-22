@@ -48,7 +48,7 @@ describe('header', function desc() {
         }
         it('MM-T2637_2 should restore on double-clicking the header when maximized', async () => {
             await browserWindow.evaluate((window) => window.maximize());
-            await asyncSleep(700);
+            await asyncSleep(1000);
 
             const maximized = await browserWindow.evaluate((window) => window.isMaximized());
             maximized.should.be.true;
@@ -65,7 +65,8 @@ describe('header', function desc() {
                 },
             });
 
-            await asyncSleep(1000);
+            // Linux window managers may need more time to process the restore action
+            await asyncSleep(2000);
 
             const restored = await browserWindow.evaluate((window) => window.isMaximized());
             restored.should.be.false;

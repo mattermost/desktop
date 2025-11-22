@@ -19,7 +19,7 @@ describe('menu/view', function desc() {
         env.createTestUserDataDir();
         env.cleanTestConfig();
         fs.writeFileSync(env.configFilePath, JSON.stringify(config));
-        fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 0, y: 0, width: 600, height: 240, maximized: false, fullscreen: false}));
+        fs.writeFileSync(env.boundsInfoPath, JSON.stringify({x: 0, y: 0, width: 800, height: 600, maximized: false, fullscreen: false}));
         await asyncSleep(1000);
         this.app = await env.getApp();
         this.serverMap = await env.getServerMap(this.app);
@@ -45,7 +45,10 @@ describe('menu/view', function desc() {
             robot.keyTap('v');
             robot.keyTap('t');
             robot.keyTap('enter');
-            await asyncSleep(1000);
+
+            // Linux window managers need more time to process fullscreen transitions
+            await asyncSleep(2000);
+
             const fullScreenWidth = await firstServer.evaluate('window.outerWidth');
             const fullScreenHeight = await firstServer.evaluate('window.outerHeight');
             fullScreenWidth.should.be.greaterThan(currentWidth);
@@ -54,7 +57,10 @@ describe('menu/view', function desc() {
             robot.keyTap('v');
             robot.keyTap('t');
             robot.keyTap('enter');
-            await asyncSleep(1000);
+
+            // Wait for fullscreen exit to complete
+            await asyncSleep(2000);
+
             currentWidth = await firstServer.evaluate('window.outerWidth');
             currentHeight = await firstServer.evaluate('window.outerHeight');
             currentWidth.should.be.lessThan(fullScreenWidth);
