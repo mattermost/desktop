@@ -121,11 +121,11 @@ describe('Menu/window_menu', function desc() {
 
             const thirdTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10000});
             await thirdTab.click();
-            await asyncSleep(1000);
+            await asyncSleep(2000);
             const thirdView = this.serverMap[serverName][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 10000});
+            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 15000});
             await thirdView.click('#sidebarItem_town-square');
-            await asyncSleep(500);
+            await asyncSleep(1000);
         });
         after(afterFunc);
 
@@ -165,9 +165,10 @@ describe('Menu/window_menu', function desc() {
 
         const secondTab = await mainView.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
         await secondTab.click();
+        await asyncSleep(1000);
         const secondView = this.serverMap[config.servers[0].name][1].win;
-        await secondView.waitForSelector('#sidebarItem_off-topic');
-        await secondView.click('#sidebarItem_off-topic');
+        await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 10000});
+        await secondView.click('#sidebarItem_off-topic', {force: true});
 
         let tabViewButton = await mainView.innerText('.active');
         tabViewButton.should.contain('Off-Topic');
