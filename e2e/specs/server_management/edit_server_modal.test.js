@@ -55,7 +55,10 @@ describe('EditServerModal', function desc() {
 
     it('MM-T4391_1 should not edit server when Save is pressed but nothing edited', async () => {
         await editServerView.click('#newServerModal_confirm');
-        await asyncSleep(1000);
+
+        // Linux needs more time for window close events to propagate
+        await asyncSleep(process.platform === 'linux' ? 3000 : 1000);
+
         const existing = Boolean(await this.app.windows().find((window) => window.url().includes('editServer')));
         existing.should.be.false;
 

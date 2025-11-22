@@ -18,7 +18,17 @@ describe('Configure Server Modal', function desc() {
 
         this.app = await env.getApp();
 
+        // Wait for welcomeScreen window to be available
         configureServerModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
+
+        // If not immediately available, wait for it
+        if (!configureServerModal) {
+            configureServerModal = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('welcomeScreen'),
+                timeout: 10000,
+            });
+        }
+
         await configureServerModal.click('#getStartedWelcomeScreen');
 
         await asyncSleep(1000);

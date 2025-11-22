@@ -31,6 +31,8 @@ module.exports = {
         playwright: 'require("playwright")',
         robotjs: 'require("robotjs")',
         'registry-js': 'require("registry-js")',
+        'macos-notification-state': 'require("macos-notification-state")',
+        'electron-is-dev': 'require("electron-is-dev")',
     },
     module: {
         rules: [{
@@ -48,6 +50,8 @@ module.exports = {
         modules: [
             'node_modules',
             '../src',
+            path.resolve(__dirname),
+            path.resolve(__dirname, 'specs'),
         ],
         alias: {
             src: path.resolve(__dirname, '../src'),
