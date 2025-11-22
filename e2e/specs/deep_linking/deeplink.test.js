@@ -44,23 +44,13 @@ describe('application', function desc() {
 
             // Wait for server map to have the github server populated
             const serverName = config.servers[1].name;
-            const waitForServerMap = async (retries = 0) => {
-                if (this.serverMap[serverName] && this.serverMap[serverName].length > 0) {
-                    return true;
-                }
-                if (retries >= 5) {
-                    return false;
-                }
-                await asyncSleep(1000);
+            if (!this.serverMap[serverName] || this.serverMap[serverName].length === 0) {
+                // Retry getting server map if github server is not ready
+                await asyncSleep(2000);
                 this.serverMap = await env.getServerMap(this.app);
-                return waitForServerMap(retries + 1);
-            };
-            const success = await waitForServerMap();
+            }
 
             // Ensure we have the server data before accessing webContentsId
-            if (!success) {
-                throw new Error(`Server map does not contain ${serverName} after 5 retries`);
-            }
             this.serverMap.should.have.property(serverName);
             this.serverMap[serverName].should.have.lengthOf.at.least(1);
 

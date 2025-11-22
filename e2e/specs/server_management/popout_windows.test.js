@@ -144,34 +144,19 @@ describe('server_management/popout_windows', function desc() {
                 mainWindows.length.should.equal(1);
                 popoutWindows.length.should.equal(1);
 
-                const popoutWindow = popoutWindows[0];
-
                 // Close the main window
                 const mainWindow = mainWindows[0];
                 const mainBrowserWindow = await this.app.browserWindow(mainWindow);
                 await mainBrowserWindow.evaluate((window) => window.close());
 
-                // Poll for popout window to close instead of fixed wait
-                const checkWindowClosed = async (attempts = 0) => {
-                    if (attempts >= 30) {
-                        return false;
-                    }
-                    try {
-                        // Check if popout window is still valid
-                        await popoutWindow.title();
-                        await asyncSleep(100);
-                        return checkWindowClosed(attempts + 1);
-                    } catch (e) {
-                        // Window is closed
-                        return true;
-                    }
-                };
+                // Wait longer to allow popout windows to close cascade
+                await asyncSleep(3000);
 
-                await checkWindowClosed();
-
-                // Verify popout windows are closed
+                // Check the current state of windows
                 const remainingWindows = this.app.windows();
                 const remainingPopouts = remainingWindows.filter((window) => window.url().includes('popout.html'));
+
+                // Popout windows should be closed when main window is closed
                 remainingPopouts.length.should.equal(0);
             });
         }
