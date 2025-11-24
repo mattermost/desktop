@@ -225,7 +225,7 @@ jobs:
           path: |
             node_modules
             C:\Users\runneradmin\.electron-gyp
-          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-node-modules
             ${{ runner.os }}-build-
