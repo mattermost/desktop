@@ -32,7 +32,7 @@ jobs:
       DESKTOP_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
     steps:
       - name: cmt/checkout-desktop
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
@@ -45,7 +45,7 @@ jobs:
     needs:
       - calculate-commit-hash
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@003fac68730de6e3e2dc31939e7f2c460f2a8ba0
+      - uses: mattermost/actions/delivery/update-commit-status@0c9abef1aec10e633f677d19e461af4d76503741
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -108,7 +108,7 @@ jobs:
       - calculate-commit-hash
       - e2e
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@003fac68730de6e3e2dc31939e7f2c460f2a8ba0
+      - uses: mattermost/actions/delivery/update-commit-status@0c9abef1aec10e633f677d19e461af4d76503741
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -126,7 +126,7 @@ jobs:
       - calculate-commit-hash
       - e2e
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@003fac68730de6e3e2dc31939e7f2c460f2a8ba0
+      - uses: mattermost/actions/delivery/update-commit-status@0c9abef1aec10e633f677d19e461af4d76503741
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
