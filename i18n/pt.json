@@ -352,7 +352,7 @@
   "renderer.components.showCertificateModal.commonName": "Nome Comum",
   "renderer.components.showCertificateModal.issuerName": "Nome do Emissor",
   "renderer.components.showCertificateModal.noCertSelected": "Nenhum certificado selecionado",
-  "renderer.components.showCertificateModal.notValidAfter": "Expira Depois de",
+  "renderer.components.showCertificateModal.notValidAfter": "Não Válido Depois de",
   "renderer.components.showCertificateModal.notValidBefore": "Não Válido Antes de",
   "renderer.components.showCertificateModal.publicKeyInfo": "Informação da Chave Pública",
   "renderer.components.showCertificateModal.serialNumber": "Número de Série",
