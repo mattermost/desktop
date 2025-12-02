@@ -22,6 +22,7 @@ import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {localizeMessage} from 'main/i18nManager';
 
 import CallsWidgetWindow from './callsWidgetWindow';
+import PopoutManager from './windows/popoutManager';
 
 const log = new Logger('NavigationManager');
 
@@ -160,10 +161,18 @@ export class NavigationManager {
             if (!currentView) {
                 return;
             }
-            if (!MainWindow.get()?.isFocused()) {
-                MainWindow.get()?.focus();
+            const view = ViewManager.getView(currentView.id);
+            switch (view?.type) {
+            case ViewType.TAB:
+                if (!MainWindow.get()?.isFocused()) {
+                    MainWindow.get()?.focus();
+                }
+                TabManager.switchToTab(currentView.id);
+                break;
+            case ViewType.WINDOW:
+                PopoutManager.getWindow(view.id)?.browserWindow?.show();
+                break;
             }
-            TabManager.switchToTab(currentView.id);
         }
 
         currentView?.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
