@@ -96,6 +96,10 @@ export class CallsWidgetWindow {
         return this.options?.callID;
     }
 
+    get mainViewId() {
+        return this.mainView?.id;
+    }
+
     private get serverID() {
         return this.mainView?.serverId;
     }

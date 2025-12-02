@@ -21,7 +21,9 @@ import ViewManager from 'common/views/viewManager';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {localizeMessage} from 'main/i18nManager';
 
-const log = new Logger('DeepLinking');
+import CallsWidgetWindow from './callsWidgetWindow';
+
+const log = new Logger('NavigationManager');
 
 export class NavigationManager {
     private ready: boolean;
@@ -132,7 +134,8 @@ export class NavigationManager {
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
         log.debug('handleBrowserHistoryPush', {webContentsId: e.sender.id});
 
-        let currentView = WebContentsManager.getViewByWebContentsId(e.sender.id);
+        const callsViewId = CallsWidgetWindow.isCallsWidget(e.sender.id) && CallsWidgetWindow.mainViewId;
+        let currentView = callsViewId ? WebContentsManager.getView(callsViewId) : WebContentsManager.getViewByWebContentsId(e.sender.id);
         if (!currentView) {
             return;
         }

@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import CallsWidgetWindow from 'app/callsWidgetWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
@@ -23,6 +24,11 @@ jest.mock('electron', () => ({
 
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     removeModal: jest.fn(),
+}));
+
+jest.mock('app/callsWidgetWindow', () => ({
+    isCallsWidget: jest.fn(),
+    mainViewId: 'mainViewId',
 }));
 
 jest.mock('app/serverHub', () => ({
@@ -291,6 +297,7 @@ describe('app/navigationManager', () => {
         };
 
         beforeEach(() => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(false);
             WebContentsManager.getViewByWebContentsId.mockReturnValue(mockView);
             ServerManager.getServer.mockReturnValue(mockServer);
             ViewManager.isPrimaryView.mockReturnValue(false);
@@ -405,6 +412,27 @@ describe('app/navigationManager', () => {
             // Should not call any sendToRenderer or updateHistoryButton
             expect(mockView.sendToRenderer).not.toHaveBeenCalled();
             expect(mockView.updateHistoryButton).not.toHaveBeenCalled();
+        });
+
+        it('should use calls widget parent view id when calls widget is pushing browser history', () => {
+            const mockCallsWidgetView = {
+                id: 'calls-main-view',
+                webContentsId: 2,
+                serverId: 'server-1',
+                sendToRenderer: jest.fn(),
+                updateHistoryButton: jest.fn(),
+            };
+
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            WebContentsManager.getView.mockReturnValue(mockCallsWidgetView);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            expect(WebContentsManager.getView).toHaveBeenCalledWith('mainViewId');
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+            expect(mockCallsWidgetView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
+            expect(mockCallsWidgetView.updateHistoryButton).toHaveBeenCalled();
         });
     });
 });
