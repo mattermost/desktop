@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
+import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
@@ -433,6 +434,32 @@ describe('app/navigationManager', () => {
             expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
             expect(mockCallsWidgetView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
             expect(mockCallsWidgetView.updateHistoryButton).toHaveBeenCalled();
+        });
+
+        it('should focus main window and switch to the correcttab when calls widget is pushing browser history', () => {
+            const mockCallsWidgetView = {
+                id: 'calls-main-view',
+                webContentsId: 2,
+                serverId: 'server-1',
+                sendToRenderer: jest.fn(),
+                updateHistoryButton: jest.fn(),
+            };
+            const mockMainWindow = {
+                isFocused: jest.fn().mockReturnValue(false),
+                focus: jest.fn(),
+            };
+
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            WebContentsManager.getView.mockReturnValue(mockCallsWidgetView);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+            MainWindow.get.mockReturnValue(mockMainWindow);
+
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            expect(MainWindow.get).toHaveBeenCalled();
+            expect(mockMainWindow.isFocused).toHaveBeenCalled();
+            expect(mockMainWindow.focus).toHaveBeenCalled();
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('calls-main-view');
         });
     });
 });

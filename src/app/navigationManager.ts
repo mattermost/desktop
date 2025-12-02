@@ -155,12 +155,15 @@ export class NavigationManager {
             cleanedPathName = pathName.replace(server.url.pathname, '');
         }
 
-        if (currentView.parentViewId) {
+        if (currentView.parentViewId || callsViewId) {
+            currentView = currentView.parentViewId ? WebContentsManager.getView(currentView.parentViewId) : currentView;
+            if (!currentView) {
+                return;
+            }
             if (!MainWindow.get()?.isFocused()) {
                 MainWindow.get()?.focus();
             }
-            TabManager.switchToTab(currentView.parentViewId);
-            currentView = WebContentsManager.getView(currentView.parentViewId);
+            TabManager.switchToTab(currentView.id);
         }
 
         currentView?.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
