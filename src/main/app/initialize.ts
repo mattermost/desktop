@@ -424,7 +424,7 @@ async function initializeAfterAppReady() {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    if (global.isDev || __IS_NIGHTLY_BUILD__) {
+    if ((global.isDev || __IS_NIGHTLY_BUILD__) && !DeveloperMode.get('disableDevTools')) {
         installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS], {
             loadExtensionOptions: {
                 allowFileAccess: true,
