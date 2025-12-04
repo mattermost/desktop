@@ -6,7 +6,7 @@
 import os from 'os';
 import path from 'path';
 
-import {BrowserWindow, app, globalShortcut, ipcMain, dialog} from 'electron';
+import {BrowserWindow, app, ipcMain, dialog} from 'electron';
 
 import {
     EMIT_CONFIGURATION,
@@ -69,10 +69,6 @@ jest.mock('electron', () => {
         }),
         dialog: {
             showMessageBox: jest.fn(),
-        },
-        globalShortcut: {
-            registerAll: jest.fn(),
-            unregisterAll: jest.fn(),
         },
         ipcMain: mockIpcMain,
         mockIpcMain,
@@ -273,7 +269,6 @@ describe('BaseWindow', () => {
             expect(baseWindow).toBeDefined();
             expect(baseWindow.browserWindow.once).toHaveBeenCalledWith('restore', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('closed', expect.any(Function));
-            expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('focus', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('blur', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('unresponsive', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('enter-full-screen', expect.any(Function));
@@ -467,28 +462,11 @@ describe('BaseWindow', () => {
     });
 
     describe('event handlers', () => {
-        it('should register global shortcuts on focus for Linux', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {value: 'linux'});
-
-            const baseWindow = new BaseWindow({});
-
-            baseWindow.browserWindow.emit('focus');
-
-            expect(globalShortcut.registerAll).toHaveBeenCalledWith(
-                ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'],
-                expect.any(Function),
-            );
-
-            Object.defineProperty(process, 'platform', {value: originalPlatform});
-        });
-
-        it('should unregister global shortcuts on blur', () => {
+        it('should remove secure input on blur', () => {
             const baseWindow = new BaseWindow({});
 
             baseWindow.browserWindow.emit('blur');
 
-            expect(globalShortcut.unregisterAll).toHaveBeenCalled();
             expect(ipcMain.emit).toHaveBeenCalledWith(TOGGLE_SECURE_INPUT, null, false);
         });
 
