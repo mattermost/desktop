@@ -21,7 +21,10 @@ import ViewManager from 'common/views/viewManager';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {localizeMessage} from 'main/i18nManager';
 
-const log = new Logger('DeepLinking');
+import CallsWidgetWindow from './callsWidgetWindow';
+import PopoutManager from './windows/popoutManager';
+
+const log = new Logger('NavigationManager');
 
 export class NavigationManager {
     private ready: boolean;
@@ -132,18 +135,19 @@ export class NavigationManager {
     private handleBrowserHistoryPush = (e: IpcMainEvent, pathName: string) => {
         log.debug('handleBrowserHistoryPush', {webContentsId: e.sender.id});
 
-        let currentView = WebContentsManager.getViewByWebContentsId(e.sender.id);
-        if (!currentView) {
+        const callsViewId = CallsWidgetWindow.isCallsWidget(e.sender.id) && CallsWidgetWindow.mainViewId;
+        const sourceView = callsViewId ? WebContentsManager.getView(callsViewId) : WebContentsManager.getViewByWebContentsId(e.sender.id);
+        if (!sourceView) {
             return;
         }
 
-        const server = ServerManager.getServer(currentView.serverId);
+        const server = ServerManager.getServer(sourceView.serverId);
         if (!server) {
             return;
         }
 
         // We should disallow navigation to non-logged in servers from non-primary views
-        if (!server?.isLoggedIn && !ViewManager.isPrimaryView(currentView.id)) {
+        if (!server?.isLoggedIn && !ViewManager.isPrimaryView(sourceView.id)) {
             return;
         }
 
@@ -152,16 +156,29 @@ export class NavigationManager {
             cleanedPathName = pathName.replace(server.url.pathname, '');
         }
 
-        if (currentView.parentViewId) {
-            if (!MainWindow.get()?.isFocused()) {
-                MainWindow.get()?.focus();
-            }
-            TabManager.switchToTab(currentView.parentViewId);
-            currentView = WebContentsManager.getView(currentView.parentViewId);
+        const shouldNavigateToParent = sourceView.parentViewId || callsViewId;
+        const navigationView = shouldNavigateToParent && sourceView.parentViewId ? WebContentsManager.getView(sourceView.parentViewId) : sourceView;
+        if (!navigationView) {
+            return;
         }
 
-        currentView?.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
-        currentView?.updateHistoryButton();
+        if (shouldNavigateToParent) {
+            const view = ViewManager.getView(navigationView.id);
+            switch (view?.type) {
+            case ViewType.TAB:
+                if (!MainWindow.get()?.isFocused()) {
+                    MainWindow.get()?.focus();
+                }
+                TabManager.switchToTab(navigationView.id);
+                break;
+            case ViewType.WINDOW:
+                PopoutManager.getWindow(view.id)?.browserWindow?.show();
+                break;
+            }
+        }
+
+        navigationView.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
+        navigationView.updateHistoryButton();
     };
 
     private handleRequestBrowserHistoryStatus = (e: IpcMainInvokeEvent) => {
