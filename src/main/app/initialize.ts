@@ -59,6 +59,7 @@ import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
+import sentryHandler from 'main/sentryHandler';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
@@ -177,6 +178,8 @@ async function initializeConfig() {
             if (Config.enableHardwareAcceleration === false || __DISABLE_GPU__) {
                 app.disableHardwareAcceleration();
             }
+
+            sentryHandler.init();
 
             resolve();
         });

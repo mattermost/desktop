@@ -249,6 +249,8 @@
   "renderer.components.settingsPage.enableHardwareAcceleration.description": "If enabled, {appName} UI is rendered more efficiently but can lead to decreased stability for some systems.",
   "renderer.components.settingsPage.enableMetrics": "Send anonymous usage data to your configured servers",
   "renderer.components.settingsPage.enableMetrics.description": "Sends usage data about the application and its performance to your configured servers that accept it.",
+  "renderer.components.settingsPage.enableSentry": "Send error reports to help improve the app",
+  "renderer.components.settingsPage.enableSentry.description": "If enabled, error reports and crash information will be sent to help identify and fix issues in the application. Setting takes effect after restarting the app.",
   "renderer.components.settingsPage.flashWindow": "Flash taskbar icon when a new message is received",
   "renderer.components.settingsPage.flashWindow.description": "If enabled, the taskbar icon will flash for a few seconds when a new message is received.",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "This functionality may not work with all Linux window managers.",
