@@ -13,14 +13,9 @@ export default function UrlView() {
     useEffect(() => {
         window.desktop.onSetURLForURLView((newUrl) => {
             setUrl(newUrl);
+            window.desktop.updateURLViewWidth(urlRef.current?.scrollWidth);
         });
     }, []);
-
-    useEffect(() => {
-        if (url) {
-            window.desktop.updateURLViewWidth(urlRef.current?.scrollWidth);
-        }
-    }, [url]);
 
     if (url) {
         return (
