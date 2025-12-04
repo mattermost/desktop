@@ -136,18 +136,18 @@ export class NavigationManager {
         log.debug('handleBrowserHistoryPush', {webContentsId: e.sender.id});
 
         const callsViewId = CallsWidgetWindow.isCallsWidget(e.sender.id) && CallsWidgetWindow.mainViewId;
-        let currentView = callsViewId ? WebContentsManager.getView(callsViewId) : WebContentsManager.getViewByWebContentsId(e.sender.id);
-        if (!currentView) {
+        const sourceView = callsViewId ? WebContentsManager.getView(callsViewId) : WebContentsManager.getViewByWebContentsId(e.sender.id);
+        if (!sourceView) {
             return;
         }
 
-        const server = ServerManager.getServer(currentView.serverId);
+        const server = ServerManager.getServer(sourceView.serverId);
         if (!server) {
             return;
         }
 
         // We should disallow navigation to non-logged in servers from non-primary views
-        if (!server?.isLoggedIn && !ViewManager.isPrimaryView(currentView.id)) {
+        if (!server?.isLoggedIn && !ViewManager.isPrimaryView(sourceView.id)) {
             return;
         }
 
@@ -156,18 +156,20 @@ export class NavigationManager {
             cleanedPathName = pathName.replace(server.url.pathname, '');
         }
 
-        if (currentView.parentViewId || callsViewId) {
-            currentView = currentView.parentViewId ? WebContentsManager.getView(currentView.parentViewId) : currentView;
-            if (!currentView) {
-                return;
-            }
-            const view = ViewManager.getView(currentView.id);
+        const shouldNavigateToParent = sourceView.parentViewId || callsViewId;
+        const navigationView = shouldNavigateToParent && sourceView.parentViewId ? WebContentsManager.getView(sourceView.parentViewId) : sourceView;
+        if (!navigationView) {
+            return;
+        }
+
+        if (shouldNavigateToParent) {
+            const view = ViewManager.getView(navigationView.id);
             switch (view?.type) {
             case ViewType.TAB:
                 if (!MainWindow.get()?.isFocused()) {
                     MainWindow.get()?.focus();
                 }
-                TabManager.switchToTab(currentView.id);
+                TabManager.switchToTab(navigationView.id);
                 break;
             case ViewType.WINDOW:
                 PopoutManager.getWindow(view.id)?.browserWindow?.show();
@@ -175,8 +177,8 @@ export class NavigationManager {
             }
         }
 
-        currentView?.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
-        currentView?.updateHistoryButton();
+        navigationView.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
+        navigationView.updateHistoryButton();
     };
 
     private handleRequestBrowserHistoryStatus = (e: IpcMainInvokeEvent) => {
