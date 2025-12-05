@@ -162,6 +162,36 @@ jest.mock('registry-js', () => {
                     throw new Error('Registry access error in CU');
                 }
                 return [];
+            } else if (hive === 'theme-light-hive') {
+                if (key.includes('Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize')) {
+                    return [
+                        {
+                            name: 'AppsUseLightTheme',
+                            data: 1,
+                        },
+                    ];
+                }
+                return [];
+            } else if (hive === 'theme-dark-hive') {
+                if (key.includes('Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize')) {
+                    return [
+                        {
+                            name: 'AppsUseLightTheme',
+                            data: 0,
+                        },
+                    ];
+                }
+                return [];
+            } else if (hive === 'theme-undefined-hive') {
+                if (key.includes('Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize')) {
+                    return [];
+                }
+                return [];
+            } else if (hive === 'theme-error-hive') {
+                if (key.includes('Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize')) {
+                    throw new Error('Registry access error');
+                }
+                return [];
             }
 
             return [];
@@ -499,6 +529,116 @@ describe('common/config/RegistryConfig', () => {
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
+        });
+    });
+
+    describe('getAppsUseLightTheme', () => {
+        let registryConfig;
+        let originalPlatform;
+
+        beforeEach(() => {
+            registryConfig = new RegistryConfig();
+            originalPlatform = process.platform;
+        });
+
+        afterEach(() => {
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should return true when AppsUseLightTheme is 1 (light mode)', () => {
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
+            const originalFn = registryConfig.getRegistryEntryValues;
+            registryConfig.getRegistryEntryValues = (hive, key, name) => {
+                if (hive === 'HKEY_CURRENT_USER' && key.includes('Themes\\Personalize')) {
+                    return originalFn.apply(registryConfig, ['theme-light-hive', key, name, false]);
+                }
+                return originalFn.apply(registryConfig, [hive, key, name, false]);
+            };
+
+            const result = registryConfig.getAppsUseLightTheme();
+            expect(result).toBe(true);
+        });
+
+        it('should return false when AppsUseLightTheme is 0 (dark mode)', () => {
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
+            const originalFn = registryConfig.getRegistryEntryValues;
+            registryConfig.getRegistryEntryValues = (hive, key, name) => {
+                if (hive === 'HKEY_CURRENT_USER' && key.includes('Themes\\Personalize')) {
+                    return originalFn.apply(registryConfig, ['theme-dark-hive', key, name, false]);
+                }
+                return originalFn.apply(registryConfig, [hive, key, name, false]);
+            };
+
+            const result = registryConfig.getAppsUseLightTheme();
+            expect(result).toBe(false);
+        });
+
+        it('should return true (default) when AppsUseLightTheme is undefined', () => {
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
+            const originalFn = registryConfig.getRegistryEntryValues;
+            registryConfig.getRegistryEntryValues = (hive, key, name) => {
+                if (hive === 'HKEY_CURRENT_USER' && key.includes('Themes\\Personalize')) {
+                    return originalFn.apply(registryConfig, ['theme-undefined-hive', key, name, false]);
+                }
+                return originalFn.apply(registryConfig, [hive, key, name, false]);
+            };
+
+            const result = registryConfig.getAppsUseLightTheme();
+            expect(result).toBe(true);
+        });
+
+        it('should return true (default) on non-Windows platforms', () => {
+            Object.defineProperty(process, 'platform', {
+                value: 'darwin',
+            });
+
+            const result = registryConfig.getAppsUseLightTheme();
+            expect(result).toBe(true);
+        });
+
+        it('should return true (default) when registry access throws an error', () => {
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
+            const originalFn = registryConfig.getRegistryEntryValues;
+            registryConfig.getRegistryEntryValues = (hive, key, name) => {
+                if (hive === 'HKEY_CURRENT_USER' && key.includes('Themes\\Personalize')) {
+                    return originalFn.apply(registryConfig, ['theme-error-hive', key, name, false]);
+                }
+                return originalFn.apply(registryConfig, [hive, key, name, false]);
+            };
+
+            const result = registryConfig.getAppsUseLightTheme();
+            expect(result).toBe(true);
+        });
+
+        it('should correctly read AppsUseLightTheme from HKEY_CURRENT_USER', () => {
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+
+            const originalFn = registryConfig.getRegistryEntryValues;
+            registryConfig.getRegistryEntryValues = (hive, key, name) => {
+                if (hive === 'HKEY_CURRENT_USER' && key.includes('Themes\\Personalize') && name === 'AppsUseLightTheme') {
+                    return 0;
+                }
+                return originalFn.apply(registryConfig, [hive, key, name, false]);
+            };
+
+            const result = registryConfig.getAppsUseLightTheme();
+            expect(result).toBe(false);
         });
     });
 });
