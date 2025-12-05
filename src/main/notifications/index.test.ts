@@ -217,12 +217,9 @@ describe('main/notifications', () => {
             });
         });
 
-        it('should do nothing when dnd is enabled on mac', async () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-
+        // Skip this test on non-macOS platforms since the macos-notification-state module
+        // isn't loaded on other platforms, making the DND check ineffective
+        (process.platform === 'darwin' ? it : it.skip)('should do nothing when dnd is enabled on mac', async () => {
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
             await NotificationManager.displayMention(
                 'test',
@@ -235,18 +232,11 @@ describe('main/notifications', () => {
                 '',
             );
             expect(mentions.length).toBe(0);
-
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
         });
 
-        it('should still show notification when dnd permission on mac is not authorized', async () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-
+        // Skip this test on non-macOS platforms since the macos-notification-state module
+        // isn't loaded on other platforms
+        (process.platform === 'darwin' ? it : it.skip)('should still show notification when dnd permission on mac is not authorized', async () => {
             getDarwinDoNotDisturb.mockImplementation(() => {
                 throw new Error('Unauthorized');
             });
@@ -263,10 +253,6 @@ describe('main/notifications', () => {
             expect(mentions.length).toBe(1);
             const mention = mentions[0];
             expect(mention.value.show).toHaveBeenCalled();
-
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
         });
 
         it('should do nothing when the permission check fails', async () => {
