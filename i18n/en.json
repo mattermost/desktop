@@ -91,6 +91,7 @@
   "main.menus.app.view.clearDataForServer": "Clear Data for Current Server",
   "main.menus.app.view.developerModeBrowserOnly": "Browser Only Mode",
   "main.menus.app.view.developerModeDisableContextMenu": "Disable Context Menu",
+  "main.menus.app.view.developerModeDisableDevTools": "Disable React/Redux Dev Tools",
   "main.menus.app.view.developerModeDisableNotificationStorage": "Disable Notification Storage",
   "main.menus.app.view.developerModeDisableUserActivityMonitor": "Disable User Activity Monitor",
   "main.menus.app.view.devToolsCurrentCallWidget": "Developer Tools for Call Widget",

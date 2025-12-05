@@ -89,6 +89,14 @@ export default function createViewMenu() {
                     DeveloperMode.toggle('disableContextMenu');
                 },
             },
+            {
+                label: localizeMessage('main.menus.app.view.developerModeDisableDevTools', 'Disable React/Redux Dev Tools'),
+                type: 'checkbox' as const,
+                checked: DeveloperMode.get('disableDevTools'),
+                click() {
+                    DeveloperMode.toggle('disableDevTools');
+                },
+            },
         );
     }
 

@@ -21,7 +21,12 @@ export class DeveloperMode extends EventEmitter {
         ipcMain.handle(IS_DEVELOPER_MODE_ENABLED, this.enabled);
     }
 
-    enabled = () => process.env.MM_DESKTOP_DEVELOPER_MODE === 'true' || isDev;
+    enabled = () => {
+        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return process.env.MM_DESKTOP_DEVELOPER_MODE === 'true' || isDev || __IS_NIGHTLY_BUILD__;
+    };
 
     toggle = (setting: keyof DeveloperSettings) => {
         if (!this.enabled()) {
