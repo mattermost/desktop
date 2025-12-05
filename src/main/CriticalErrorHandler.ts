@@ -10,6 +10,7 @@ import {app, dialog} from 'electron';
 
 import {Logger} from 'common/log';
 import {localizeMessage} from 'main/i18nManager';
+import sentryHandler from 'main/sentryHandler';
 
 const log = new Logger('CriticalErrorHandler');
 
@@ -23,6 +24,8 @@ export class CriticalErrorHandler {
         if (process.env.NODE_ENV === 'test') {
             return;
         }
+
+        sentryHandler.captureException(err);
 
         if (app.isReady()) {
             this.showExceptionDialog(err);

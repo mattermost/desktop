@@ -225,6 +225,10 @@ jest.mock('main/security/preAuthManager', () => ({
     handlePreAuthSecret: jest.fn(),
 }));
 
+jest.mock('main/sentryHandler', () => ({
+    init: jest.fn(),
+}));
+
 const originalProcess = process;
 describe('main/app/initialize', () => {
     beforeAll(() => {

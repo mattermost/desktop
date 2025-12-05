@@ -52,6 +52,7 @@ const defaultPreferences: ConfigV4 = {
     startInFullscreen: false,
     logLevel: 'info',
     enableMetrics: true,
+    enableSentry: true,
     viewLimit: 15,
     themeSyncing: true,
 };
