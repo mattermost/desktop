@@ -95,7 +95,6 @@ import {
     shouldShowTrayIcon,
     updateSpellCheckerLocales,
     wasUpdated,
-    migrateMacAppStore,
     updateServerInfos,
 } from './utils';
 import {
@@ -131,13 +130,6 @@ export async function initialize() {
     // no need to continue initializing if app is quitting
     if (global.willAppQuit) {
         return;
-    }
-
-    // eslint-disable-next-line no-undef
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    if (__IS_MAC_APP_STORE__) {
-        migrateMacAppStore();
     }
 
     // initialization that should run once the app is ready

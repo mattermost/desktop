@@ -1,11 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import fs from 'fs';
-import path from 'path';
-
 import type {BrowserWindow, Rectangle} from 'electron';
-import {app, session, dialog, nativeImage, screen} from 'electron';
+import {app, session, dialog, screen} from 'electron';
 import isDev from 'electron-is-dev';
 
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -13,24 +10,18 @@ import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
-import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {isValidURI} from 'common/utils/url';
-import {migrationInfoPath, updatePaths} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
 
-import type {MigrationInfo} from 'types/config';
 import type {RemoteInfo} from 'types/server';
 import type {Boundaries} from 'types/utils';
 
 import {mainProtocol} from './initialize';
 
-const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const appIconURL = path.resolve(assetsDir, 'appicon_with_spacing_32.png');
-const appIcon = nativeImage.createFromPath(appIconURL);
 const log = new Logger('App.Utils');
 
 export function openDeepLink(deeplinkingUrl: string) {
@@ -165,63 +156,6 @@ export function flushCookiesStore() {
     session.defaultSession.cookies.flushStore().catch((err) => {
         log.error(`There was a problem flushing cookies:\n${err}`);
     });
-}
-
-export function migrateMacAppStore() {
-    const migrationPrefs = new JsonFileManager<MigrationInfo>(migrationInfoPath);
-    const oldPath = path.join(app.getPath('userData'), '../../../../../../../Library/Application Support/Mattermost');
-
-    // Check if we've already migrated
-    if (migrationPrefs.getValue('masConfigs')) {
-        return;
-    }
-
-    // Check if the files are there to migrate
-    try {
-        const exists = fs.existsSync(oldPath);
-        if (!exists) {
-            log.info('MAS: No files to migrate, skipping');
-            return;
-        }
-    } catch (e) {
-        log.error('MAS: Failed to check for existing Mattermost Desktop install, skipping', {e});
-        return;
-    }
-
-    const cancelImport = dialog.showMessageBoxSync({
-        title: app.name,
-        message: localizeMessage('main.app.utils.migrateMacAppStore.dialog.message', 'Import Existing Configuration'),
-        detail: localizeMessage('main.app.utils.migrateMacAppStore.dialog.detail', 'It appears that an existing {appName} configuration exists, would you like to import it? You will be asked to pick the correct configuration directory.', {appName: app.name}),
-        icon: appIcon,
-        buttons: [
-            localizeMessage('main.app.utils.migrateMacAppStore.button.selectAndImport', 'Select Directory and Import'),
-            localizeMessage('main.app.utils.migrateMacAppStore.button.dontImport', 'Don\'t Import'),
-        ],
-        type: 'info',
-        defaultId: 0,
-        cancelId: 1,
-    });
-
-    if (cancelImport) {
-        migrationPrefs.setValue('masConfigs', true);
-        return;
-    }
-
-    const result = dialog.showOpenDialogSync({
-        defaultPath: oldPath,
-        properties: ['openDirectory'],
-    });
-    if (!(result && result[0])) {
-        return;
-    }
-
-    try {
-        fs.cpSync(result[0], app.getPath('userData'), {recursive: true});
-        updatePaths(true);
-        migrationPrefs.setValue('masConfigs', true);
-    } catch (e) {
-        log.error('MAS: An error occurred importing the existing configuration', {e});
-    }
 }
 
 export async function updateServerInfos(servers: MattermostServer[]) {
