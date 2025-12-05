@@ -265,6 +265,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.themeSyncing ?? true;
     }
 
+    getWindowsSystemDarkMode = () => {
+        return !this.registryConfig.getAppsUseLightTheme();
+    };
+
     /**
      * Gets the servers from registry into the config object and reload
      *

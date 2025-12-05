@@ -106,6 +106,27 @@ export default class RegistryConfig extends EventEmitter {
     }
 
     /**
+   * Retrieves the current Windows theme preference (AppsUseLightTheme)
+   * @returns true if light mode is enabled, false if dark mode is enabled
+   */
+    getAppsUseLightTheme(): boolean {
+        if (process.platform !== 'win32') {
+            return true;
+        }
+        try {
+            const value = this.getRegistryEntryValues(
+                HKEY.HKEY_CURRENT_USER,
+                'Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize',
+                'AppsUseLightTheme',
+            );
+            return value === undefined ? true : value === 1;
+        } catch (error) {
+            log.debug('Error reading AppsUseLightTheme from registry', error);
+            return true;
+        }
+    }
+
+    /**
    * Initiates retrieval of a specific key in the Windows registry
    *
    * @param {string} key Path to the registry key to return
