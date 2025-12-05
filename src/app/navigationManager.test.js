@@ -1,10 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import CallsWidgetWindow from 'app/callsWidgetWindow';
+import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
+import PopoutManager from 'app/windows/popoutManager';
 import {BROWSER_HISTORY_PUSH} from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import Utils from 'common/utils/util';
@@ -23,6 +26,11 @@ jest.mock('electron', () => ({
 
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     removeModal: jest.fn(),
+}));
+
+jest.mock('app/callsWidgetWindow', () => ({
+    isCallsWidget: jest.fn(),
+    mainViewId: 'mainViewId',
 }));
 
 jest.mock('app/serverHub', () => ({
@@ -80,6 +88,7 @@ jest.mock('common/utils/util', () => ({
 
 jest.mock('common/views/viewManager', () => ({
     getPrimaryView: jest.fn(),
+    getView: jest.fn(),
     getViewLog: jest.fn(() => ({
         debug: jest.fn(),
         error: jest.fn(),
@@ -90,6 +99,10 @@ jest.mock('common/views/viewManager', () => ({
 
 jest.mock('main/app/intercom', () => ({
     handleWelcomeScreenModal: jest.fn(),
+}));
+
+jest.mock('app/windows/popoutManager', () => ({
+    getWindow: jest.fn(),
 }));
 
 describe('app/navigationManager', () => {
@@ -291,6 +304,7 @@ describe('app/navigationManager', () => {
         };
 
         beforeEach(() => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(false);
             WebContentsManager.getViewByWebContentsId.mockReturnValue(mockView);
             ServerManager.getServer.mockReturnValue(mockServer);
             ViewManager.isPrimaryView.mockReturnValue(false);
@@ -364,7 +378,81 @@ describe('app/navigationManager', () => {
             expect(mockView.updateHistoryButton).toHaveBeenCalled();
         });
 
-        it('should use parent view when current view has parentViewId', () => {
+        it('should use parent view when current view has parentViewId and view type is TAB', () => {
+            const mockParentView = {
+                id: 'parent-view',
+                webContentsId: 2,
+                serverId: 'server-1',
+                sendToRenderer: jest.fn(),
+                updateHistoryButton: jest.fn(),
+            };
+            const mockViewWithParent = {
+                ...mockView,
+                parentViewId: 'parent-view',
+            };
+            const mockMainWindow = {
+                isFocused: jest.fn().mockReturnValue(false),
+                focus: jest.fn(),
+            };
+
+            // Override the beforeEach mocks by setting up after they run
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockViewWithParent);
+            WebContentsManager.getView.mockReturnValue(mockParentView);
+            ViewManager.getView.mockReturnValue({id: 'parent-view', type: ViewType.TAB});
+            MainWindow.get.mockReturnValue(mockMainWindow);
+
+            // Call the method
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            expect(WebContentsManager.getView).toHaveBeenCalledWith('parent-view');
+            expect(ViewManager.getView).toHaveBeenCalledWith('parent-view');
+            expect(MainWindow.get).toHaveBeenCalled();
+            expect(mockMainWindow.isFocused).toHaveBeenCalled();
+            expect(mockMainWindow.focus).toHaveBeenCalled();
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('parent-view');
+            expect(mockParentView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
+            expect(mockParentView.updateHistoryButton).toHaveBeenCalled();
+            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+            expect(mockView.updateHistoryButton).not.toHaveBeenCalled();
+        });
+
+        it('should show popout window when parent view has view type WINDOW', () => {
+            const mockParentView = {
+                id: 'parent-view',
+                webContentsId: 2,
+                serverId: 'server-1',
+                sendToRenderer: jest.fn(),
+                updateHistoryButton: jest.fn(),
+            };
+            const mockViewWithParent = {
+                ...mockView,
+                parentViewId: 'parent-view',
+            };
+            const mockBrowserWindow = {
+                show: jest.fn(),
+            };
+            const mockPopoutWindow = {
+                browserWindow: mockBrowserWindow,
+            };
+
+            // Override the beforeEach mocks by setting up after they run
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockViewWithParent);
+            WebContentsManager.getView.mockReturnValue(mockParentView);
+            ViewManager.getView.mockReturnValue({id: 'parent-view', type: ViewType.WINDOW});
+            PopoutManager.getWindow.mockReturnValue(mockPopoutWindow);
+
+            // Call the method
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            expect(WebContentsManager.getView).toHaveBeenCalledWith('parent-view');
+            expect(ViewManager.getView).toHaveBeenCalledWith('parent-view');
+            expect(PopoutManager.getWindow).toHaveBeenCalledWith('parent-view');
+            expect(mockBrowserWindow.show).toHaveBeenCalled();
+            expect(mockParentView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
+            expect(mockParentView.updateHistoryButton).toHaveBeenCalled();
+        });
+
+        it('should handle case when parent view exists but ViewManager.getView returns null', () => {
             const mockParentView = {
                 id: 'parent-view',
                 webContentsId: 2,
@@ -380,14 +468,18 @@ describe('app/navigationManager', () => {
             // Override the beforeEach mocks by setting up after they run
             WebContentsManager.getViewByWebContentsId.mockReturnValue(mockViewWithParent);
             WebContentsManager.getView.mockReturnValue(mockParentView);
+            ViewManager.getView.mockReturnValue(null);
 
             // Call the method
             navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
 
+            expect(WebContentsManager.getView).toHaveBeenCalledWith('parent-view');
+            expect(ViewManager.getView).toHaveBeenCalledWith('parent-view');
+            expect(MainWindow.get).not.toHaveBeenCalled();
+            expect(TabManager.switchToTab).not.toHaveBeenCalled();
+            expect(PopoutManager.getWindow).not.toHaveBeenCalled();
             expect(mockParentView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
             expect(mockParentView.updateHistoryButton).toHaveBeenCalled();
-            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
-            expect(mockView.updateHistoryButton).not.toHaveBeenCalled();
         });
 
         it('should handle case when parent view does not exist', () => {
@@ -405,6 +497,85 @@ describe('app/navigationManager', () => {
             // Should not call any sendToRenderer or updateHistoryButton
             expect(mockView.sendToRenderer).not.toHaveBeenCalled();
             expect(mockView.updateHistoryButton).not.toHaveBeenCalled();
+        });
+
+        it('should use calls widget parent view id when calls widget is pushing browser history', () => {
+            const mockCallsWidgetView = {
+                id: 'calls-main-view',
+                webContentsId: 2,
+                serverId: 'server-1',
+                sendToRenderer: jest.fn(),
+                updateHistoryButton: jest.fn(),
+            };
+
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            WebContentsManager.getView.mockReturnValue(mockCallsWidgetView);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            expect(WebContentsManager.getView).toHaveBeenCalledWith('mainViewId');
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+            expect(mockCallsWidgetView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
+            expect(mockCallsWidgetView.updateHistoryButton).toHaveBeenCalled();
+        });
+
+        it('should focus main window and switch to the correcttab when calls widget is pushing browser history', () => {
+            const mockCallsWidgetView = {
+                id: 'calls-main-view',
+                webContentsId: 2,
+                serverId: 'server-1',
+                sendToRenderer: jest.fn(),
+                updateHistoryButton: jest.fn(),
+            };
+            const mockMainWindow = {
+                isFocused: jest.fn().mockReturnValue(false),
+                focus: jest.fn(),
+            };
+
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            WebContentsManager.getView.mockReturnValue(mockCallsWidgetView);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+            ViewManager.getView.mockReturnValue({id: 'calls-main-view', type: ViewType.TAB});
+            MainWindow.get.mockReturnValue(mockMainWindow);
+
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            expect(ViewManager.getView).toHaveBeenCalledWith('calls-main-view');
+            expect(MainWindow.get).toHaveBeenCalled();
+            expect(mockMainWindow.isFocused).toHaveBeenCalled();
+            expect(mockMainWindow.focus).toHaveBeenCalled();
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('calls-main-view');
+        });
+
+        it('should show popout window when calls widget view type is WINDOW', () => {
+            const mockCallsWidgetView = {
+                id: 'calls-main-view',
+                webContentsId: 2,
+                serverId: 'server-1',
+                sendToRenderer: jest.fn(),
+                updateHistoryButton: jest.fn(),
+            };
+            const mockBrowserWindow = {
+                show: jest.fn(),
+            };
+            const mockPopoutWindow = {
+                browserWindow: mockBrowserWindow,
+            };
+
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            WebContentsManager.getView.mockReturnValue(mockCallsWidgetView);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+            ViewManager.getView.mockReturnValue({id: 'calls-main-view', type: ViewType.WINDOW});
+            PopoutManager.getWindow.mockReturnValue(mockPopoutWindow);
+
+            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/team/channel');
+
+            expect(ViewManager.getView).toHaveBeenCalledWith('calls-main-view');
+            expect(PopoutManager.getWindow).toHaveBeenCalledWith('calls-main-view');
+            expect(mockBrowserWindow.show).toHaveBeenCalled();
+            expect(mockCallsWidgetView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
+            expect(mockCallsWidgetView.updateHistoryButton).toHaveBeenCalled();
         });
     });
 });

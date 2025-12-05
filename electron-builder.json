@@ -110,8 +110,8 @@
     "entitlements": "./resources/mac/entitlements.mac.plist",
     "entitlementsInherit": "./resources/mac/entitlements.mac.inherit.plist",
     "extendInfo": {
-      "NSMicrophoneUsageDescription": "Microphone access may be used by Mattermost plugins, such as Jitsi video conferencing.",
-      "NSCameraUsageDescription": "Camera access may be used by Mattermost plugins, such as Jitsi video conferencing.",
+      "NSMicrophoneUsageDescription": "Microphone access is used to capture audio for voice communication and recordings.",
+      "NSCameraUsageDescription": "Camera access is used to capture video for video conferencing and recordings.",
       "NSFocusStatusUsageDescription": "Focus status is used by Mattermost to determine whether to send notifications or not.",
       "LSFileQuarantineEnabled": true
     }
