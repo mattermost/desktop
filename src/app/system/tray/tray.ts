@@ -3,11 +3,12 @@
 
 import path from 'path';
 
-import {app, nativeImage, Tray, systemPreferences, nativeTheme} from 'electron';
+import {app, nativeImage, Tray, systemPreferences} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -45,8 +46,10 @@ export class TrayIcon {
     };
 
     refreshImages = (trayIconTheme: string) => {
-        const systemTheme = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
-        const winTheme = trayIconTheme === 'use_system' ? systemTheme : trayIconTheme;
+        let winTheme = trayIconTheme;
+        if (trayIconTheme === 'use_system') {
+            winTheme = Config.getWindowsSystemDarkMode() ? 'light' : 'dark';
+        }
 
         switch (process.platform) {
         case 'win32':
