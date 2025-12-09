@@ -6,6 +6,7 @@ import {ipcMain} from 'electron';
 
 import type {PopoutViewProps} from '@mattermost/desktop-api';
 
+import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
@@ -305,7 +306,8 @@ export class PopoutManager {
             return undefined;
         }
 
-        const view = WebContentsManager.getViewByWebContentsId(event.sender.id);
+        const callsViewId = CallsWidgetWindow.isCallsWidget(event.sender.id) && CallsWidgetWindow.mainViewId;
+        const view = callsViewId ? WebContentsManager.getView(callsViewId) : WebContentsManager.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return undefined;
         }
