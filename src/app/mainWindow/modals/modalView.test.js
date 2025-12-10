@@ -23,7 +23,10 @@ jest.mock('electron', () => ({
     })),
 }));
 
-jest.mock('main/contextMenu', () => jest.fn());
+const mockContextMenu = {
+    dispose: jest.fn(),
+};
+jest.mock('main/contextMenu', () => jest.fn().mockImplementation(() => mockContextMenu));
 
 jest.mock('main/utils', () => ({
     getWindowBoundaries: jest.fn(),
@@ -132,6 +135,12 @@ describe('main/views/modalView', () => {
             modalView.view.webContents.isDevToolsOpened = jest.fn().mockReturnValue(true);
             modalView.hide();
             expect(modalView.view.webContents.closeDevTools).toBeCalled();
+        });
+
+        it('should dispose context menu on hide', () => {
+            mockContextMenu.dispose.mockClear();
+            modalView.hide();
+            expect(mockContextMenu.dispose).toHaveBeenCalled();
         });
     });
 });
