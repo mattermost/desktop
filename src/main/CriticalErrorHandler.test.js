@@ -39,6 +39,10 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
+jest.mock('main/sentryHandler', () => ({
+    captureException: jest.fn(),
+}));
+
 describe('main/CriticalErrorHandler', () => {
     const criticalErrorHandler = new CriticalErrorHandler();
     const env = process.env;

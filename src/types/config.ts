@@ -55,6 +55,7 @@ export type ConfigV4 = {
     logLevel?: string;
     appLanguage?: string;
     enableMetrics?: boolean;
+    enableSentry?: boolean;
     viewLimit?: number;
     themeSyncing?: boolean;
 }

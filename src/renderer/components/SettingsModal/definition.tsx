@@ -468,6 +468,24 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                     },
                 },
                 {
+                    id: 'enableSentry',
+                    component: CheckSetting,
+                    props: {
+                        label: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.enableSentry'
+                                defaultMessage='Send error reports to help improve the app'
+                            />
+                        ),
+                        subLabel: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.enableSentry.description'
+                                defaultMessage='If enabled, error reports and crash information will be sent to help identify and fix issues in the application. Setting takes effect after restarting the app.'
+                            />
+                        ),
+                    },
+                },
+                {
                     id: 'enableHardwareAcceleration',
                     component: CheckSetting,
                     props: {
