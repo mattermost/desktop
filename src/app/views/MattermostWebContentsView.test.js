@@ -359,6 +359,13 @@ describe('main/views/MattermostWebContentsView', () => {
             expect(AppState.clear).toBeCalledWith(mattermostView.id);
         });
 
+        it('should dispose context menu when context menu exists', () => {
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.close = jest.fn();
+            mattermostView.destroy();
+            expect(contextMenu.dispose).toHaveBeenCalled();
+        });
+
         it('should clear outstanding timeouts', () => {
             const mattermostView = new MattermostWebContentsView(view, {}, window);
             mattermostView.webContentsView.webContents.close = jest.fn();

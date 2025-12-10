@@ -40,7 +40,7 @@ const log = new Logger('WebContentsEventManager');
 
 export class WebContentsEventManager {
     listeners: Record<number, () => void>;
-    popupWindow?: {win: BrowserWindow; serverURL?: URL};
+    popupWindow?: {win: BrowserWindow; serverURL?: URL; contextMenu?: ContextMenu};
 
     constructor() {
         this.listeners = {};
@@ -242,11 +242,14 @@ export class WebContentsEventManager {
                     popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
                     popup.webContents.setWindowOpenHandler(this.denyNewWindow);
                     popup.once('closed', () => {
+                        if (this.popupWindow?.contextMenu) {
+                            this.popupWindow.contextMenu.dispose();
+                        }
                         this.popupWindow = undefined;
                     });
 
-                    const contextMenu = new ContextMenu({}, popup);
-                    contextMenu.reload();
+                    this.popupWindow.contextMenu = new ContextMenu({}, popup);
+                    this.popupWindow.contextMenu.reload();
                 }
 
                 popup.once('ready-to-show', () => popup.show());

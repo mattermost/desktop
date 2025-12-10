@@ -8,6 +8,8 @@ import path from 'path';
 
 import {BrowserWindow, app, ipcMain, dialog} from 'electron';
 
+import {LoadingScreen} from 'app/views/loadingScreen';
+import {URLView} from 'app/views/urlView';
 import {
     EMIT_CONFIGURATION,
     FOCUS_THREE_DOT_MENU,
@@ -112,6 +114,7 @@ jest.mock('app/views/urlView', () => ({
 describe('BaseWindow', () => {
     const mockContextMenu = {
         reload: jest.fn(),
+        dispose: jest.fn(),
     };
 
     beforeEach(() => {
@@ -310,9 +313,6 @@ describe('BaseWindow', () => {
         });
 
         it('should create LoadingScreen and URLView', () => {
-            const {LoadingScreen} = require('app/views/loadingScreen');
-            const {URLView} = require('app/views/urlView');
-
             const baseWindow = new BaseWindow({});
 
             expect(baseWindow).toBeDefined();
@@ -504,6 +504,18 @@ describe('BaseWindow', () => {
             baseWindow.browserWindow.emit('leave-full-screen');
 
             expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith('leave-full-screen');
+        });
+
+        it('should dispose context menu when window is closed', () => {
+            const baseWindow = new BaseWindow({});
+            const loadingScreen = LoadingScreen.mock.results[LoadingScreen.mock.results.length - 1].value;
+            const urlView = URLView.mock.results[URLView.mock.results.length - 1].value;
+
+            baseWindow.browserWindow.emit('closed');
+
+            expect(mockContextMenu.dispose).toHaveBeenCalled();
+            expect(loadingScreen.destroy).toHaveBeenCalled();
+            expect(urlView.destroy).toHaveBeenCalled();
         });
     });
 
