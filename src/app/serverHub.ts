@@ -29,7 +29,7 @@ import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
-import {isValidURI, isValidURL, parseURL} from 'common/utils/url';
+import {isEasySSOLoginURL, isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
@@ -191,8 +191,13 @@ export class ServerHub {
         e: IpcMainInvokeEvent,
         url?: string,
         currentId?: string,
+        originalUrl?: string,
     ): Promise<URLValidationResult> => {
         log.verbose('handleServerURLValidation', {currentId});
+        let originalURL = originalUrl;
+        if (!originalURL) {
+            originalURL = url;
+        }
 
         // If the URL is missing or null, reject
         if (!url) {
@@ -351,6 +356,7 @@ export class ServerHub {
                     e,
                     parsedURL.toString().substring(0, parsedURL.toString().lastIndexOf('/')),
                     currentId,
+                    originalURL,
                 );
             }
 
@@ -414,8 +420,13 @@ export class ServerHub {
         }
 
         log.debug('handleServerURLValidation: Remote URL matches Site URL, returning OK');
+        let status = URLValidationStatus.OK;
+        if (isEasySSOLoginURL(originalURL || '')) {
+            log.debug('handleServerURLValidation: Detected Easy Login URL, returning EasyLogin status');
+            status = URLValidationStatus.EasyLogin;
+        }
         return {
-            status: URLValidationStatus.OK,
+            status,
             serverVersion: remoteInfo.serverVersion,
             serverName: remoteServerName,
             validatedURL: remoteURL.toString(),
