@@ -20,7 +20,14 @@ describe('RemoveServerModal', function desc() {
         this.app = await env.getApp();
 
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        let dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+
+        // Wait for dropdown window if not immediately available
+        if (!dropdownView) {
+            await asyncSleep(500);
+            dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        }
+
         await mainView.click('.ServerDropdownButton');
         await dropdownView.hover('.ServerDropdown .ServerDropdown__button:nth-child(1)');
         await dropdownView.click('.ServerDropdown .ServerDropdown__button:nth-child(1) button.ServerDropdown__button-remove');

@@ -9,14 +9,28 @@ const {asyncSleep} = require('../../modules/utils');
 describe('Welcome Screen Modal', function desc() {
     this.timeout(30000);
 
+    let welcomeScreenModal;
+
     beforeEach(async () => {
         env.createTestUserDataDir();
+        await asyncSleep(1000);
         env.cleanTestConfig();
         await asyncSleep(1000);
 
         this.app = await env.getApp();
 
+        // Wait for welcome screen modal to appear if not immediately available
         welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
+        if (!welcomeScreenModal) {
+            welcomeScreenModal = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('welcomeScreen'),
+                timeout: 10000,
+            });
+        }
+
+        // Wait for the welcome screen modal to be fully loaded
+        await welcomeScreenModal.waitForLoadState('domcontentloaded');
+        await asyncSleep(500);
     });
 
     afterEach(async () => {
@@ -24,9 +38,8 @@ describe('Welcome Screen Modal', function desc() {
             await this.app.close();
         }
         await env.clearElectronInstances();
+        await asyncSleep(1000);
     });
-
-    let welcomeScreenModal;
 
     it('MM-T4976 should show the slides in the expected order', async () => {
         const welcomeSlideClass = await welcomeScreenModal.getAttribute('#welcome', 'class');

@@ -85,6 +85,25 @@ const demoMattermostConfig = {
 
 const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
+// Helper function to clean up single-instance lock files on macOS
+function cleanMacOSSingletonLocks() {
+    if (process.platform !== 'darwin') {
+        return;
+    }
+
+    const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
+    lockFiles.forEach((lockName) => {
+        try {
+            const lockPath = path.join(userDataDir, lockName);
+            if (fs.existsSync(lockPath)) {
+                fs.unlinkSync(lockPath);
+            }
+        } catch (err) {
+            // Ignore errors - lock might not exist or already be deleted
+        }
+    });
+}
+
 module.exports = {
     sourceRootDir,
     configFilePath,
@@ -128,6 +147,9 @@ module.exports = {
                 }
             }
         });
+
+        // Clean up single-instance lock files on macOS to prevent launch failures
+        cleanMacOSSingletonLocks();
     },
     async cleanTestConfigAsync() {
         await Promise.all(
@@ -139,13 +161,16 @@ module.exports = {
 
     cleanDataDir() {
         try {
-            fs.rmdirSync(userDataDir, {recursive: true});
+            fs.rmSync(userDataDir, {recursive: true, force: true});
         } catch (err) {
             if (err.code !== 'ENOENT') {
                 // eslint-disable-next-line no-console
                 console.error(err);
             }
         }
+
+        // Clean up single-instance lock files on macOS
+        cleanMacOSSingletonLocks();
     },
 
     cleanDataDirAsync() {
@@ -181,45 +206,171 @@ module.exports = {
             downloadsPath: downloadsLocation,
             env: {
                 ...process.env,
-                RESOURCES_PATH: userDataDir,
+                RESOURCES_PATH: path.join(sourceRootDir, 'e2e/dist'),
+                NODE_ENV: 'test',
+                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+                ELECTRON_ENABLE_LOGGING: 'true',
+                ELECTRON_NO_ATTACH_CONSOLE: 'true',
+                NODE_OPTIONS: '--no-warnings',
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-shm-usage', '--disable-dev-mode', '--disable-gpu', '--no-sandbox', ...args],
+
+            // macOS-15 requires longer timeout due to slower initialization
+            timeout: process.platform === 'darwin' ? 90000 : 30000,
+            args: [
+                path.join(sourceRootDir, 'e2e/dist'),
+                `--user-data-dir=${userDataDir}`,
+                '--disable-dev-shm-usage',
+                '--disable-dev-mode',
+                '--disable-gpu',
+                '--disable-gpu-sandbox',
+                '--no-sandbox',
+                '--no-zygote',
+                '--disable-software-rasterizer',
+                '--disable-breakpad',
+                '--disable-features=SpareRendererForSitePerProcess',
+                '--disable-features=CrossOriginOpenerPolicy',
+                '--disable-renderer-backgrounding',
+                '--window-open-file-system',
+                '--force-color-profile=srgb',
+                '--mute-audio',
+                ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
+                ...args,
+            ],
         };
 
-        return electron.launch(options).then(async (eapp) => {
-            await eapp.evaluate(async ({app}) => {
-                const promise = new Promise((resolve) => {
-                    app.on('e2e-app-loaded', () => {
-                        resolve();
+        const eapp = await electron.launch(options);
+
+        // Wait for windows to be available with their URLs loaded
+        // Poll for windows with a timeout to handle slow initialization on macOS-15
+        const startTime = Date.now();
+        const timeout = 30000; // 30 seconds
+        let hasWindowsWithUrls = false;
+
+        while (!hasWindowsWithUrls && (Date.now() - startTime) < timeout) {
+            try {
+                const windows = eapp.windows();
+                if (windows.length > 0) {
+                    // Check if at least one window has a URL loaded
+                    const windowsWithUrls = windows.filter((win) => {
+                        try {
+                            const url = win.url();
+                            return url && url.length > 0;
+                        } catch (e) {
+                            return false;
+                        }
                     });
-                });
-                return promise;
-            });
-            return eapp;
-        });
+                    if (windowsWithUrls.length > 0) {
+                        hasWindowsWithUrls = true;
+                        break;
+                    }
+                }
+            } catch (err) {
+                // Ignore errors during polling
+            }
+            // eslint-disable-next-line no-await-in-loop
+            await asyncSleep(100); // Check every 100ms
+        }
+
+        if (hasWindowsWithUrls === false) {
+            // eslint-disable-next-line no-console
+            console.log('Warning: No windows with URLs detected within 30 seconds, but continuing anyway');
+        } else {
+            // Give windows a bit more time to fully render content
+            // macOS needs more time due to slower window initialization
+            await asyncSleep(process.platform === 'darwin' ? 1000 : 500);
+        }
+
+        return eapp;
     },
 
     async getServerMap(app) {
-        const map = {};
-        await Promise.all(app.windows().
-            filter((win) => !win.url().includes('mattermost-desktop://')).
-            map(async (win) => {
-                return win.evaluate(async () => {
-                    if (!window.testHelper) {
-                        return null;
-                    }
-                    return window.testHelper.getViewInfoForTest();
-                }).then((result) => {
-                    if (result) {
-                        if (!map[result.serverName]) {
-                            map[result.serverName] = [];
-                        }
-                        map[result.serverName].push({win, webContentsId: result.webContentsId});
-                    }
-                });
+        // Wait for testHelper to be available in windows
+        // This is especially important after clicking newTabButton or during slow initialization
+        // Windows CI needs more time, so increase retries
+        const maxRetries = process.platform === 'win32' ? 200 : 100; // 20 seconds on Windows, 10 seconds otherwise
+        let retries = 0;
+        let lastWindowCount = 0;
+        let stableCount = 0;
+        let lastMap = {};
+
+        // Windows needs more stability checks
+        const requiredStableCount = process.platform === 'win32' ? 10 : 5;
+
+        while (retries < maxRetries) {
+            const windows = app.windows().filter((win) => {
+                try {
+                    const url = win.url();
+                    return url && !url.includes('mattermost-desktop://');
+                } catch (e) {
+                    // Window might be closed or not ready
+                    return false;
+                }
+            });
+
+            // Track if window count is stable (no new windows appearing)
+            if (windows.length === lastWindowCount && windows.length > 0) {
+                stableCount++;
+            } else {
+                stableCount = 0;
+                lastWindowCount = windows.length;
+            }
+
+            // eslint-disable-next-line no-await-in-loop
+            const results = await Promise.all(windows.map(async (win) => {
+                try {
+                    // Add timeout to evaluate call to prevent hanging on Windows
+                    return await Promise.race([
+                        win.evaluate(async () => {
+                            if (!window.testHelper) {
+                                return null;
+                            }
+                            return window.testHelper.getViewInfoForTest();
+                        }),
+                        new Promise((resolve) => setTimeout(() => resolve(null), 5000)),
+                    ]);
+                } catch (e) {
+                    return null;
+                }
             }));
-        return map;
+
+            // Build the map from results
+            const tempMap = {};
+            windows.forEach((win, index) => {
+                const result = results[index];
+                if (result) {
+                    if (!tempMap[result.serverName]) {
+                        tempMap[result.serverName] = [];
+                    }
+                    tempMap[result.serverName].push({win, webContentsId: result.webContentsId});
+                }
+            });
+
+            // Keep track of the last valid map we built
+            if (Object.keys(tempMap).length > 0) {
+                lastMap = tempMap;
+            }
+
+            // Count how many windows have testHelper ready
+            const readyCount = results.filter((r) => r !== null).length;
+
+            // Return conditions:
+            // 1. All windows have testHelper ready AND window count has been stable for required iterations
+            // 2. OR if no windows to process (edge case)
+            if ((readyCount === windows.length && readyCount > 0 && stableCount >= requiredStableCount) ||
+                windows.length === 0) {
+                return tempMap;
+            }
+
+            // Otherwise wait a bit and retry
+            retries++;
+            // eslint-disable-next-line no-await-in-loop
+            await asyncSleep(100);
+        }
+
+        // If we exhausted retries, return the last valid map we had
+        // This prevents returning an empty map when timeout occurs
+        return lastMap;
     },
 
     async loginToMattermost(window) {
