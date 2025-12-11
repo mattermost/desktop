@@ -118,6 +118,7 @@
   "main.menus.app.view.devToolsSubMenu": "Entwickler-Tools",
   "main.menus.app.view.developerModeBrowserOnly": "Nur Browser-Modus",
   "main.menus.app.view.developerModeDisableContextMenu": "Kontextmenü deaktivieren",
+  "main.menus.app.view.developerModeDisableDevTools": "React/Redux Entwicklungswerkzeuge deaktivieren",
   "main.menus.app.view.developerModeDisableNotificationStorage": "Nachrichtenspeicher deaktivieren",
   "main.menus.app.view.developerModeDisableUserActivityMonitor": "Benutzeraktivitätsmonitor deaktivieren",
   "main.menus.app.view.developerModeForceLegacyAPI": "Legacy-API erzwingen",
