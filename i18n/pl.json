@@ -118,6 +118,7 @@
   "main.menus.app.view.devToolsSubMenu": "Narzędzia dla programistów",
   "main.menus.app.view.developerModeBrowserOnly": "Tryb tylko przeglądarki",
   "main.menus.app.view.developerModeDisableContextMenu": "Wyłącz menu kontekstowe",
+  "main.menus.app.view.developerModeDisableDevTools": "Wyłącz narzędzia deweloperskie React/Redux",
   "main.menus.app.view.developerModeDisableNotificationStorage": "Wyłącz przechowywanie powiadomień",
   "main.menus.app.view.developerModeDisableUserActivityMonitor": "Wyłącz monitor aktywności użytkownika",
   "main.menus.app.view.developerModeForceLegacyAPI": "Wymuś starszy interfejs API",
