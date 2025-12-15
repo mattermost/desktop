@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import Config from 'common/config';
 import {handleConfigUpdate} from 'main/app/config';
 import AutoLauncher from 'main/AutoLauncher';
 
@@ -69,6 +70,15 @@ jest.mock('app/mainWindow/mainWindow', () => ({
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     isModalDisplayed: jest.fn(),
 }));
+jest.mock('common/config', () => {
+    const mockConfig = {
+        getWindowsSystemDarkMode: jest.fn(),
+    };
+    return {
+        __esModule: true,
+        default: mockConfig,
+    };
+});
 
 describe('main/tray', () => {
     beforeEach(() => {
@@ -193,6 +203,74 @@ describe('main/tray', () => {
         });
         Object.defineProperty(process, 'platform', {
             value: originalPlatform,
+        });
+    });
+
+    describe('win32 - use_system', () => {
+        const originalPlatform = process.platform;
+
+        beforeEach(() => {
+            Object.defineProperty(process, 'platform', {
+                value: 'win32',
+            });
+            jest.clearAllMocks();
+        });
+
+        afterEach(() => {
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should use dark theme when system is in light mode (AppsUseLightTheme = true)', () => {
+            Config.getWindowsSystemDarkMode.mockReturnValue(false);
+            const theme = 'dark';
+            const winResultDark = {
+                normal: `windows/tray_${theme}.ico`,
+                unread: `windows/tray_${theme}_unread.ico`,
+                mention: `windows/tray_${theme}_mention.ico`,
+            };
+
+            const result = Tray.refreshImages('use_system');
+
+            expect(Config.getWindowsSystemDarkMode).toHaveBeenCalled();
+            expect(result.normal.image).toBe(winResultDark.normal);
+            expect(result.unread.image).toBe(winResultDark.unread);
+            expect(result.mention.image).toBe(winResultDark.mention);
+        });
+
+        it('should use light theme when system is in dark mode (AppsUseLightTheme = false)', () => {
+            Config.getWindowsSystemDarkMode.mockReturnValue(true);
+            const theme = 'light';
+            const winResultLight = {
+                normal: `windows/tray_${theme}.ico`,
+                unread: `windows/tray_${theme}_unread.ico`,
+                mention: `windows/tray_${theme}_mention.ico`,
+            };
+
+            const result = Tray.refreshImages('use_system');
+
+            expect(Config.getWindowsSystemDarkMode).toHaveBeenCalled();
+            expect(result.normal.image).toBe(winResultLight.normal);
+            expect(result.unread.image).toBe(winResultLight.unread);
+            expect(result.mention.image).toBe(winResultLight.mention);
+        });
+
+        it('should call getWindowsSystemDarkMode when trayIconTheme is use_system', () => {
+            Config.getWindowsSystemDarkMode.mockReturnValue(false);
+
+            Tray.refreshImages('use_system');
+
+            expect(Config.getWindowsSystemDarkMode).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not call getWindowsSystemDarkMode when trayIconTheme is not use_system', () => {
+            Config.getWindowsSystemDarkMode.mockReturnValue(false);
+
+            Tray.refreshImages('light');
+            Tray.refreshImages('dark');
+
+            expect(Config.getWindowsSystemDarkMode).not.toHaveBeenCalled();
         });
     });
 });
