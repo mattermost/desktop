@@ -110,6 +110,7 @@
   "main.menus.app.view.devToolsSubMenu": "Utviklerverktøy",
   "main.menus.app.view.developerModeBrowserOnly": "Kun nettleser-modus",
   "main.menus.app.view.developerModeDisableContextMenu": "Deaktiver kontekstmeny",
+  "main.menus.app.view.developerModeDisableDevTools": "Deaktiver React/Redux Dev Tools",
   "main.menus.app.view.developerModeDisableNotificationStorage": "Deaktiver varslingslagring",
   "main.menus.app.view.developerModeDisableUserActivityMonitor": "Deaktiver overvåking av brukeraktivitet",
   "main.menus.app.view.developerModeForceLegacyAPI": "Tvungen bruk av legacy API",
