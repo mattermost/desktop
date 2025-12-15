@@ -45,25 +45,17 @@ jobs:
     needs: prepare-matrix
     runs-on: ubuntu-22.04
     steps:
+      - name: Checkout code
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+
       - name: Update initial status for all platforms
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           github-token: ${{ github.token }}
           script: |
+            const { updateInitialStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
-            const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            for (const platform of platforms) {
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: 'pending',
-                context: `e2e/${platform.platform}`,
-                description: `E2E tests for Mattermost desktop app on ${platform.platform} have started...`,
-                target_url: workflowUrl
-              });
-              console.log(`Created initial status for e2e/${platform.platform}`);
-            }
+            await updateInitialStatus({ github, context, platforms });
 
   e2e-tests:
     needs: 
@@ -94,40 +86,15 @@ jobs:
       - e2e-tests
     if: always()
     steps:
+      - name: Checkout code
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+
       - name: Update final status for all platforms
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           github-token: ${{ github.token }}
           script: |
+            const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-
-            for (const platform of platforms) {
-              // Determine OS key based on runner
-              let osKey;
-              if (platform.runner.includes('ubuntu')) {
-                osKey = 'LINUX';
-              } else if (platform.runner.includes('macos')) {
-                osKey = 'MACOS';
-              } else {
-                osKey = 'WINDOWS';
-              }
-
-              const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
-              const status = outputs[`STATUS_${osKey}`] || 'failure';
-              let reportLink = outputs[`REPORT_LINK_${osKey}`];
-              if (!reportLink) {
-              reportLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-              }
-
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.payload.pull_request?.head?.sha || context.sha,
-                state: status,
-                context: `e2e/${platform.platform}`,
-                description: `Completed with ${failures} failures`,
-                target_url: reportLink
-              });
-              console.log(`Updated final status for e2e/${platform.platform}: ${status} with ${failures} failures`);
-            }
+            await updateFinalStatus({ github, context, platforms, outputs });

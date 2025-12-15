@@ -3,6 +3,7 @@
 
 import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
+import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
@@ -20,19 +21,6 @@ import getWindowsDoNotDisturb from './dnd-windows';
 import {DownloadNotification} from './Download';
 import {Mention} from './Mention';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
-
-let getDarwinDoNotDisturb: (() => boolean) | undefined;
-if (process.platform === 'darwin') {
-    try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
-        const macosNotificationState = require('macos-notification-state');
-        getDarwinDoNotDisturb = macosNotificationState.getDoNotDisturb;
-    } catch (e) {
-        // Module failed to load, DND checking will not work on macOS
-        // eslint-disable-next-line no-console
-        console.warn('[macos-notification-state] failed to load notification state addon:', e);
-    }
-}
 
 const log = new Logger('Notifications');
 
@@ -264,12 +252,8 @@ export async function getDoNotDisturb() {
     // We have to turn this off for dev mode because the Electron binary doesn't have the focus center API entitlement
     if (process.platform === 'darwin' && !isDev) {
         try {
-            if (getDarwinDoNotDisturb) {
-                const dnd = await getDarwinDoNotDisturb();
-                return dnd;
-            }
-            log.warn('macOS DND check unavailable - notification state module not loaded');
-            return false;
+            const dnd = await getDarwinDoNotDisturb();
+            return dnd;
         } catch (e) {
             log.warn('macOS DND check threw an error', {e});
             return false;
