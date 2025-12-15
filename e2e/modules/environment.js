@@ -220,6 +220,8 @@ module.exports = {
             args: [
                 path.join(sourceRootDir, 'e2e/dist'),
                 `--user-data-dir=${userDataDir}`,
+
+                // CI environment compatibility flags
                 '--disable-dev-shm-usage',
                 '--disable-dev-mode',
                 '--disable-gpu',
@@ -227,14 +229,19 @@ module.exports = {
                 '--no-sandbox',
                 '--no-zygote',
                 '--disable-software-rasterizer',
+
+                // Stability and performance flags
                 '--disable-breakpad',
                 '--disable-features=SpareRendererForSitePerProcess',
                 '--disable-features=CrossOriginOpenerPolicy',
                 '--disable-renderer-backgrounding',
                 '--window-open-file-system',
+                '--disable-dev-mode',
+
+                // Consistency flags
                 '--force-color-profile=srgb',
                 '--mute-audio',
-                ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
+
                 ...args,
             ],
         };
@@ -244,10 +251,10 @@ module.exports = {
         // Wait for windows to be available with their URLs loaded
         // Poll for windows with a timeout to handle slow initialization on macOS-15
         const startTime = Date.now();
-        const timeout = 30000; // 30 seconds
+        const windowPollTimeout = 30000; // 30 seconds
         let hasWindowsWithUrls = false;
 
-        while (!hasWindowsWithUrls && (Date.now() - startTime) < timeout) {
+        while (!hasWindowsWithUrls && (Date.now() - startTime) < windowPollTimeout) {
             try {
                 const windows = eapp.windows();
                 if (windows.length > 0) {
@@ -438,5 +445,8 @@ module.exports = {
     },
     isOneOf(platforms) {
         return (platforms.indexOf(process.platform) !== -1);
+    },
+    isCI() {
+        return process.env.CI === 'true';
     },
 };

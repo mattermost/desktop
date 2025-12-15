@@ -264,16 +264,6 @@ jobs:
       - name: e2e/run-playwright-tests-macos
         if: runner.os == 'macOS'
         run: |
-          echo "Cleaning macOS Electron system folders…"
-          rm -rf ~/Library/Application\ Support/Electron || true
-          rm -rf ~/Library/Application\ Support/Mattermost || true
-          rm -rf ~/Library/Caches/Electron || true
-
-          echo "Ensuring Electron.app is properly configured for macOS-15…"
-          xattr -dr com.apple.quarantine ./node_modules/electron/dist/Electron.app || true
-          chmod -R 755 ./node_modules/electron/dist/Electron.app
-          codesign --force --deep --sign - ./node_modules/electron/dist/Electron.app || true
-
           echo "Building test bundle…"
           npm run build-test
 
