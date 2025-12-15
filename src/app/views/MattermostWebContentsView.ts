@@ -227,6 +227,9 @@ export class MattermostWebContentsView extends EventEmitter {
         if (this.parentWindow) {
             this.parentWindow.contentView.removeChildView(this.webContentsView);
         }
+        if (this.contextMenu) {
+            this.contextMenu.dispose();
+        }
         this.webContentsView.webContents.close();
 
         if (this.retryLoad) {

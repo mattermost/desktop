@@ -31,6 +31,7 @@ export default class BaseWindow {
     private loadingScreen: LoadingScreen;
     private urlView: URLView;
     private ready: boolean;
+    private contextMenu: ContextMenu;
 
     private altPressStatus: boolean;
 
@@ -90,8 +91,8 @@ export default class BaseWindow {
             this.win.webContents.openDevTools({mode: 'detach'});
         }
 
-        const contextMenu = new ContextMenu({}, this.win);
-        contextMenu.reload();
+        this.contextMenu = new ContextMenu({}, this.win);
+        this.contextMenu.reload();
 
         this.loadingScreen = new LoadingScreen(this.win);
         this.urlView = new URLView(this.win);
@@ -203,6 +204,7 @@ export default class BaseWindow {
         log.info('window closed');
         this.ready = false;
         ipcMain.off(EMIT_CONFIGURATION, this.onEmitConfiguration);
+        this.contextMenu.dispose();
         this.loadingScreen.destroy();
         this.urlView.destroy();
     };

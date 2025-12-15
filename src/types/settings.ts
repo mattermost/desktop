@@ -15,6 +15,7 @@ export type DeveloperSettings = {
     disableNotificationStorage?: boolean;
     disableUserActivityMonitor?: boolean;
     disableContextMenu?: boolean;
+    disableDevTools?: boolean;
 };
 
 export type SettingsDefinition = Record<string, SettingCategory>;
