@@ -3,9 +3,9 @@
 
 import {Menu} from 'electron';
 
-import ServerManager from 'common/servers/serverManager';
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
+import ServerManager from 'common/servers/serverManager';
 import {localizeMessage} from 'main/i18nManager';
 
 import createTrayMenu from './tray';
@@ -83,8 +83,8 @@ describe('main/menus/tray', () => {
         createTrayMenu();
 
         const template = Menu.buildFromTemplate.mock.calls[0][0];
-        const serverMenuItem = template.find(item => item.label === 'Test Server');
-        
+        const serverMenuItem = template.find((item) => item.label === 'Test Server');
+
         expect(serverMenuItem).toBeDefined();
         expect(serverMenuItem.click).toBeDefined();
 
@@ -109,8 +109,8 @@ describe('main/menus/tray', () => {
         createTrayMenu();
 
         const template = Menu.buildFromTemplate.mock.calls[0][0];
-        const settingsMenuItem = template.find(item => item.label === 'Settings');
-        
+        const settingsMenuItem = template.find((item) => item.label === 'Settings');
+
         expect(settingsMenuItem).toBeDefined();
         expect(settingsMenuItem.click).toBeDefined();
 
