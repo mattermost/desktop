@@ -4,6 +4,9 @@
 import {Menu} from 'electron';
 
 import ServerManager from 'common/servers/serverManager';
+import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
+import {localizeMessage} from 'main/i18nManager';
 
 import createTrayMenu from './tray';
 
@@ -19,16 +22,27 @@ jest.mock('main/i18nManager', () => ({
 
 jest.mock('common/servers/serverManager', () => ({
     getOrderedServers: jest.fn(),
+    updateCurrentServer: jest.fn(),
 }));
 jest.mock('app/serverHub', () => ({
     switchServer: jest.fn(),
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
+    get: jest.fn(),
+    show: jest.fn(),
     sendToRenderer: jest.fn(),
     on: jest.fn(),
 }));
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+}));
+jest.mock('main/utils', () => ({
+    getLocalPreload: jest.fn((file) => file),
+}));
+jest.mock('common/constants', () => ({
+    ModalConstants: {
+        SETTINGS_MODAL: 'settings-modal',
+    },
 }));
 
 describe('main/menus/tray', () => {
@@ -51,5 +65,60 @@ describe('main/menus/tray', () => {
             expect.objectContaining({label: 'server-7'}),
             expect.objectContaining({label: 'server-8'}),
         ]));
+    });
+
+    it('should open main window if it is not visible when clicking a server', () => {
+        const servers = [{
+            id: 'server-1',
+            name: 'Test Server',
+            url: 'http://test.com',
+        }];
+        ServerManager.getOrderedServers.mockReturnValue(servers);
+
+        const mockWindow = {
+            isVisible: jest.fn().mockReturnValue(false),
+        };
+        MainWindow.get.mockReturnValue(mockWindow);
+
+        createTrayMenu();
+
+        const template = Menu.buildFromTemplate.mock.calls[0][0];
+        const serverMenuItem = template.find(item => item.label === 'Test Server');
+        
+        expect(serverMenuItem).toBeDefined();
+        expect(serverMenuItem.click).toBeDefined();
+
+        serverMenuItem.click();
+
+        expect(MainWindow.get).toHaveBeenCalled();
+        expect(mockWindow.isVisible).toHaveBeenCalled();
+        expect(MainWindow.show).toHaveBeenCalled();
+        expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
+    });
+
+    it('should open main window if it is not visible when clicking settings', () => {
+        ServerManager.getOrderedServers.mockReturnValue([]);
+        localizeMessage.mockReturnValue('Settings');
+
+        const mockWindow = {
+            isVisible: jest.fn().mockReturnValue(false),
+            show: jest.fn(),
+        };
+        MainWindow.get.mockReturnValue(mockWindow);
+
+        createTrayMenu();
+
+        const template = Menu.buildFromTemplate.mock.calls[0][0];
+        const settingsMenuItem = template.find(item => item.label === 'Settings');
+        
+        expect(settingsMenuItem).toBeDefined();
+        expect(settingsMenuItem.click).toBeDefined();
+
+        settingsMenuItem.click();
+
+        expect(MainWindow.get).toHaveBeenCalled();
+        expect(mockWindow.isVisible).toHaveBeenCalled();
+        expect(mockWindow.show).toHaveBeenCalled();
+        expect(ModalManager.addModal).toHaveBeenCalled();
     });
 });
