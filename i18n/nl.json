@@ -118,6 +118,7 @@
   "main.menus.app.view.devToolsSubMenu": "Gereedschap voor ontwikkelaars",
   "main.menus.app.view.developerModeBrowserOnly": "Alleen Browser Modus",
   "main.menus.app.view.developerModeDisableContextMenu": "Contextmenu uitschakelen",
+  "main.menus.app.view.developerModeDisableDevTools": "React/Redux ontwikkelaarstools uitschakelen",
   "main.menus.app.view.developerModeDisableNotificationStorage": "Opslag van meldingen uitschakelen",
   "main.menus.app.view.developerModeDisableUserActivityMonitor": "Gebruikersactiviteitenmonitor uitschakelen",
   "main.menus.app.view.developerModeForceLegacyAPI": "Legacy API afdwingen",
