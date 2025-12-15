@@ -1,6 +1,5 @@
-/**
- * GitHub Actions utility functions for E2E workflow status updates
- */
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
 
 /**
  * Update initial pending status for all platforms
@@ -9,21 +8,20 @@
  * @param {Object} params.context - GitHub Actions context
  * @param {Array} params.platforms - Array of platform objects from matrix
  */
-async function updateInitialStatus({ github, context, platforms }) {
+async function updateInitialStatus({github, context, platforms}) {
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-    for (const platform of platforms) {
-        await github.rest.repos.createCommitStatus({
+    await Promise.all(platforms.map((platform) =>
+        github.rest.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha: context.sha,
             state: 'pending',
             context: `e2e/${platform.platform}`,
             description: `E2E tests for Mattermost desktop app on ${platform.platform} have started...`,
-            target_url: workflowUrl
-        });
-        console.log(`Created initial status for e2e/${platform.platform}`);
-    }
+            target_url: workflowUrl,
+        }),
+    ));
 }
 
 /**
@@ -34,8 +32,8 @@ async function updateInitialStatus({ github, context, platforms }) {
  * @param {Array} params.platforms - Array of platform objects from matrix
  * @param {Object} params.outputs - Test outputs from e2e-tests job
  */
-async function updateFinalStatus({ github, context, platforms, outputs }) {
-    for (const platform of platforms) {
+async function updateFinalStatus({github, context, platforms, outputs}) {
+    await Promise.all(platforms.map((platform) => {
         // Determine OS key based on runner
         let osKey;
         if (platform.runner.includes('ubuntu')) {
@@ -53,20 +51,19 @@ async function updateFinalStatus({ github, context, platforms, outputs }) {
             reportLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
         }
 
-        await github.rest.repos.createCommitStatus({
+        return github.rest.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha: context.payload.pull_request?.head?.sha || context.sha,
             state: status,
             context: `e2e/${platform.platform}`,
             description: `Completed with ${failures} failures`,
-            target_url: reportLink
+            target_url: reportLink,
         });
-        console.log(`Updated final status for e2e/${platform.platform}: ${status} with ${failures} failures`);
-    }
+    }));
 }
 
 module.exports = {
     updateInitialStatus,
-    updateFinalStatus
+    updateFinalStatus,
 };
