@@ -19,6 +19,9 @@ export default function createTrayMenu() {
             return {
                 label: server.name.length > 50 ? `${server.name.slice(0, 50)}...` : server.name,
                 click: () => {
+                    if (!MainWindow.get()?.isVisible()) {
+                        MainWindow.show();
+                    }
                     ServerManager.updateCurrentServer(server.id);
                 },
             };
@@ -30,6 +33,10 @@ export default function createTrayMenu() {
                 const mainWindow = MainWindow.get();
                 if (!mainWindow) {
                     return;
+                }
+
+                if (!mainWindow.isVisible()) {
+                    mainWindow.show();
                 }
 
                 ModalManager.addModal(
