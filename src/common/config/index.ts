@@ -257,6 +257,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.enableMetrics ?? true;
     }
 
+    get enableSentry() {
+        return this.combinedData?.enableSentry ?? true;
+    }
+
     get viewLimit() {
         return this.combinedData?.viewLimit ?? 15;
     }
