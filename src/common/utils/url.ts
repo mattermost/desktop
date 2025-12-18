@@ -123,7 +123,7 @@ export const isEasySSOLoginURL = (url: string): boolean => {
         const parsed = parseURL(urlToTest);
 
         // Check pathname and search params
-        if (parsed?.pathname === '/login/sso/easy') {
+        if (parsed?.pathname === '/login/one_time_link') {
             const t = parsed.searchParams.get('t');
             return Boolean(t && (/^[A-Za-z0-9]{64}$/).test(t));
         }

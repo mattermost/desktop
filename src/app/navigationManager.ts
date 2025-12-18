@@ -13,7 +13,7 @@ import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSE
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
-import {getFormattedPathName, parseURL} from 'common/utils/url';
+import {getFormattedPathName, isEasySSOLoginURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
@@ -67,7 +67,11 @@ export class NavigationManager {
             if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
                 const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
                 const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
-                webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
+                if (isEasySSOLoginURL(urlWithSchema)) {
+                    webContentsView.load(urlWithSchema);
+                } else {
+                    webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
+                }
                 this.deeplinkSuccess(webContentsView.id);
             } else {
                 webContentsView.resetLoadingStatus();
