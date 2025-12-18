@@ -1,4 +1,10 @@
 {
+  "app.menus.contextMenu.openInNewTab": "Atidaryti naujame skirtuke",
+  "app.menus.contextMenu.openInNewWindow": "Atidaryti naujame lange",
+  "app.navigationManager.viewLimitReached": "Peržiūrėti pasiektą limitą",
+  "app.navigationManager.viewLimitReached.description": "Jūs pasiekėte maksimalų langų ir skirtukų skaičių šiam serveriui. Prašome uždaryti egzistuojantį langą ar skirtuką, arba pakeisti peržiūros limitą nustatymų modulyje.",
+  "callsWidgetWindow.cannotStartCall.message": "Kitame serveryje vyksta skambutis, kuris turi būti užbaigtas norint prisijungti prie naujo skambučio.",
+  "callsWidgetWindow.cannotStartCall.title": "Negalima pradėti skambučio",
   "common.permissions.canBasicAuth": "Autentifikavimas internetu",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",

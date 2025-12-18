@@ -131,6 +131,11 @@ describe('main/views/webContentsEvents', () => {
         const webContentsEventManager = new WebContentsEventManager();
         const newWindow = webContentsEventManager.generateNewWindowListener(1, true);
 
+        const mockContextMenu = {
+            reload: jest.fn(),
+            dispose: jest.fn(),
+        };
+
         beforeEach(() => {
             webContentsEventManager.getServerURLFromWebContentsId = jest.fn().mockImplementation(() => new URL('http://server-1.com'));
 
@@ -143,9 +148,8 @@ describe('main/views/webContentsEvents', () => {
                     setWindowOpenHandler: jest.fn(),
                 },
             }));
-            ContextMenu.mockImplementation(() => ({
-                reload: jest.fn(),
-            }));
+            ContextMenu.mockImplementation(() => mockContextMenu);
+            mockContextMenu.dispose.mockClear();
         });
 
         afterEach(() => {
@@ -225,6 +229,33 @@ describe('main/views/webContentsEvents', () => {
         it('should open external URIs in browser', () => {
             expect(newWindow({url: 'https://google.com'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).toBeCalledWith('https://google.com');
+        });
+
+        it('should dispose context menu when popup window closes', () => {
+            let closedCallback;
+            const mockPopup = {
+                once: jest.fn((event, callback) => {
+                    if (event === 'closed') {
+                        closedCallback = callback;
+                    }
+                }),
+                show: jest.fn(),
+                loadURL: jest.fn(),
+                webContents: {
+                    on: jest.fn(),
+                    setWindowOpenHandler: jest.fn(),
+                },
+            };
+            BrowserWindow.mockImplementation(() => mockPopup);
+
+            newWindow({url: 'http://server-1.com/plugins/myplugin/login'});
+
+            expect(webContentsEventManager.popupWindow).toBeTruthy();
+            expect(webContentsEventManager.popupWindow.contextMenu).toBe(mockContextMenu);
+            expect(closedCallback).toBeDefined();
+
+            closedCallback();
+            expect(mockContextMenu.dispose).toHaveBeenCalled();
         });
     });
 

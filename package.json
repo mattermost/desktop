@@ -89,7 +89,8 @@
       "__IS_NIGHTLY_BUILD__": false,
       "__IS_MAC_APP_STORE__": false,
       "__DISABLE_GPU__": false,
-      "__SKIP_ONBOARDING_SCREENS__": false
+      "__SKIP_ONBOARDING_SCREENS__": false,
+      "__SENTRY_DSN__": "https://test@sentry.io/123"
     },
     "setupFiles": [
       "./src/jest/jestSetup.js"
@@ -130,7 +131,7 @@
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
-    "electron": "38.2.1",
+    "electron": "38.7.2",
     "electron-builder": "24.13.3",
     "eslint": "8.57.0",
     "eslint-import-resolver-webpack": "0.13.8",
@@ -160,6 +161,7 @@
     "@emotion/react": "11.11.4",
     "@floating-ui/react": "0.26.28",
     "@mattermost/compass-icons": "0.1.45",
+    "@sentry/electron": "7.4.0",
     "auto-launch": "5.0.6",
     "classnames": "2.5.1",
     "electron-context-menu": "4.0.4",

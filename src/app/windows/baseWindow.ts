@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 
 import type {BrowserWindowConstructorOptions, Input, WebContents} from 'electron';
-import {app, BrowserWindow, dialog, globalShortcut, ipcMain} from 'electron';
+import {app, BrowserWindow, dialog, ipcMain} from 'electron';
 
 import {LoadingScreen} from 'app/views/loadingScreen';
 import {URLView} from 'app/views/urlView';
@@ -25,13 +25,13 @@ import ContextMenu from '../../main/contextMenu';
 import {getLocalPreload} from '../../main/utils';
 
 const log = new Logger('BaseWindow');
-const ALT_MENU_KEYS = ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'];
 
 export default class BaseWindow {
     private win: BrowserWindow;
     private loadingScreen: LoadingScreen;
     private urlView: URLView;
     private ready: boolean;
+    private contextMenu: ContextMenu;
 
     private altPressStatus: boolean;
 
@@ -80,7 +80,6 @@ export default class BaseWindow {
             this.win?.restore();
         });
         this.win.on('closed', this.onClosed);
-        this.win.on('focus', this.onFocus);
         this.win.on('blur', this.onBlur);
         this.win.on('unresponsive', this.onUnresponsive);
         this.win.on('enter-full-screen', this.onEnterFullScreen);
@@ -92,8 +91,8 @@ export default class BaseWindow {
             this.win.webContents.openDevTools({mode: 'detach'});
         }
 
-        const contextMenu = new ContextMenu({}, this.win);
-        contextMenu.reload();
+        this.contextMenu = new ContextMenu({}, this.win);
+        this.contextMenu.reload();
 
         this.loadingScreen = new LoadingScreen(this.win);
         this.urlView = new URLView(this.win);
@@ -197,17 +196,7 @@ export default class BaseWindow {
         };
     };
 
-    private onFocus = () => {
-        // Only add shortcuts when window is in focus
-        if (process.platform === 'linux') {
-            globalShortcut.registerAll(ALT_MENU_KEYS, () => {
-                // do nothing because we want to supress the menu popping up
-            });
-        }
-    };
-
     private onBlur = () => {
-        globalShortcut.unregisterAll();
         ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
     };
 
@@ -215,6 +204,7 @@ export default class BaseWindow {
         log.info('window closed');
         this.ready = false;
         ipcMain.off(EMIT_CONFIGURATION, this.onEmitConfiguration);
+        this.contextMenu.dispose();
         this.loadingScreen.destroy();
         this.urlView.destroy();
     };

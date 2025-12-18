@@ -1,15 +1,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import fs from 'fs';
-
-import {dialog, screen} from 'electron';
+import {screen} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
-import JsonFileManager from 'common/JsonFileManager';
-import {updatePaths} from 'main/constants';
+import {MattermostServer} from 'common/servers/MattermostServer';
+import ServerManager from 'common/servers/serverManager';
+import {ServerInfo} from 'main/server/serverInfo';
 
-import {getDeeplinkingURL, resizeScreen, migrateMacAppStore} from './utils';
+import {getDeeplinkingURL, resizeScreen, updateServerInfos} from './utils';
 
 jest.mock('fs', () => ({
     readFileSync: jest.fn(),
@@ -72,6 +71,22 @@ jest.mock('app/navigationManager', () => ({
 
 jest.mock('./initialize', () => ({
     mainProtocol: 'mattermost',
+}));
+
+jest.mock('common/servers/MattermostServer', () => ({
+    MattermostServer: jest.fn().mockImplementation((config) => ({
+        id: config.id || 'server-1',
+        name: config.name || 'Test Server',
+        url: config.url || 'http://localhost:8065',
+    })),
+}));
+
+jest.mock('common/servers/serverManager', () => ({
+    updateRemoteInfo: jest.fn(),
+}));
+
+jest.mock('main/server/serverInfo', () => ({
+    ServerInfo: jest.fn(),
 }));
 
 describe('main/app/utils', () => {
@@ -196,67 +211,23 @@ describe('main/app/utils', () => {
         });
     });
 
-    describe('migrateMacAppStore', () => {
-        it('should skip migration if already migrated', () => {
-            JsonFileManager.mockImplementation(() => ({
-                getValue: () => true,
-            }));
-            migrateMacAppStore();
-            expect(dialog.showMessageBoxSync).not.toHaveBeenCalled();
+    describe('updateServerInfos', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
         });
 
-        it('should skip migration if folder does not exist', () => {
-            JsonFileManager.mockImplementation(() => ({
-                getValue: () => false,
-            }));
-            fs.existsSync.mockReturnValue(false);
-            migrateMacAppStore();
-            expect(fs.existsSync).toHaveBeenCalled();
-            expect(dialog.showMessageBoxSync).not.toHaveBeenCalled();
-        });
-
-        it('should skip migration and set value if the user rejects import', () => {
-            const migrationPrefs = {
-                getValue: () => false,
-                setValue: jest.fn(),
+        it('should catch error when ServerInfo.fetchRemoteInfo throws', async () => {
+            const mockServer = new MattermostServer({id: 'server-1', name: 'Test Server', url: 'http://localhost:8065'});
+            const mockError = new Error('Network error');
+            const mockServerInfoInstance = {
+                fetchRemoteInfo: jest.fn().mockRejectedValue(mockError),
             };
-            JsonFileManager.mockImplementation(() => migrationPrefs);
-            fs.existsSync.mockReturnValue(true);
-            dialog.showMessageBoxSync.mockReturnValue(1);
-            migrateMacAppStore();
-            expect(migrationPrefs.setValue).toHaveBeenCalledWith('masConfigs', true);
-            expect(dialog.showOpenDialogSync).not.toHaveBeenCalled();
-        });
+            ServerInfo.mockImplementation(() => mockServerInfoInstance);
 
-        it('should do nothing if no directory is chosen, or if the dialog is closed', () => {
-            JsonFileManager.mockImplementation(() => ({
-                getValue: () => false,
-            }));
-            fs.existsSync.mockReturnValue(true);
-            dialog.showMessageBoxSync.mockReturnValue(0);
-            dialog.showOpenDialogSync.mockReturnValue([]);
-            migrateMacAppStore();
-            expect(dialog.showOpenDialogSync).toHaveBeenCalled();
-            expect(updatePaths).not.toHaveBeenCalled();
-        });
+            await updateServerInfos([mockServer]);
 
-        // this doesn't run on windows because of path resolution
-        if (process.platform !== 'win32') {
-            it('should copy all of the configs when they exist to the new directory', () => {
-                const migrationPrefs = {
-                    getValue: () => false,
-                    setValue: jest.fn(),
-                };
-                JsonFileManager.mockImplementation(() => migrationPrefs);
-                fs.readFileSync.mockReturnValue('config-data');
-                fs.existsSync.mockReturnValue(true);
-                dialog.showMessageBoxSync.mockReturnValue(0);
-                dialog.showOpenDialogSync.mockReturnValue(['/old/data/path']);
-                migrateMacAppStore();
-                expect(fs.cpSync).toHaveBeenCalledWith('/old/data/path', '/path/to/data', {recursive: true});
-                expect(updatePaths).toHaveBeenCalled();
-                expect(migrationPrefs.setValue).toHaveBeenCalledWith('masConfigs', true);
-            });
-        }
+            expect(mockServerInfoInstance.fetchRemoteInfo).toHaveBeenCalled();
+            expect(ServerManager.updateRemoteInfo).not.toHaveBeenCalled();
+        });
     });
 });

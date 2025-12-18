@@ -6,8 +6,10 @@
 import os from 'os';
 import path from 'path';
 
-import {BrowserWindow, app, globalShortcut, ipcMain, dialog} from 'electron';
+import {BrowserWindow, app, ipcMain, dialog} from 'electron';
 
+import {LoadingScreen} from 'app/views/loadingScreen';
+import {URLView} from 'app/views/urlView';
 import {
     EMIT_CONFIGURATION,
     FOCUS_THREE_DOT_MENU,
@@ -70,10 +72,6 @@ jest.mock('electron', () => {
         dialog: {
             showMessageBox: jest.fn(),
         },
-        globalShortcut: {
-            registerAll: jest.fn(),
-            unregisterAll: jest.fn(),
-        },
         ipcMain: mockIpcMain,
         mockIpcMain,
     };
@@ -116,6 +114,7 @@ jest.mock('app/views/urlView', () => ({
 describe('BaseWindow', () => {
     const mockContextMenu = {
         reload: jest.fn(),
+        dispose: jest.fn(),
     };
 
     beforeEach(() => {
@@ -273,7 +272,6 @@ describe('BaseWindow', () => {
             expect(baseWindow).toBeDefined();
             expect(baseWindow.browserWindow.once).toHaveBeenCalledWith('restore', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('closed', expect.any(Function));
-            expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('focus', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('blur', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('unresponsive', expect.any(Function));
             expect(baseWindow.browserWindow.on).toHaveBeenCalledWith('enter-full-screen', expect.any(Function));
@@ -315,9 +313,6 @@ describe('BaseWindow', () => {
         });
 
         it('should create LoadingScreen and URLView', () => {
-            const {LoadingScreen} = require('app/views/loadingScreen');
-            const {URLView} = require('app/views/urlView');
-
             const baseWindow = new BaseWindow({});
 
             expect(baseWindow).toBeDefined();
@@ -467,28 +462,11 @@ describe('BaseWindow', () => {
     });
 
     describe('event handlers', () => {
-        it('should register global shortcuts on focus for Linux', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {value: 'linux'});
-
-            const baseWindow = new BaseWindow({});
-
-            baseWindow.browserWindow.emit('focus');
-
-            expect(globalShortcut.registerAll).toHaveBeenCalledWith(
-                ['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'],
-                expect.any(Function),
-            );
-
-            Object.defineProperty(process, 'platform', {value: originalPlatform});
-        });
-
-        it('should unregister global shortcuts on blur', () => {
+        it('should remove secure input on blur', () => {
             const baseWindow = new BaseWindow({});
 
             baseWindow.browserWindow.emit('blur');
 
-            expect(globalShortcut.unregisterAll).toHaveBeenCalled();
             expect(ipcMain.emit).toHaveBeenCalledWith(TOGGLE_SECURE_INPUT, null, false);
         });
 
@@ -526,6 +504,18 @@ describe('BaseWindow', () => {
             baseWindow.browserWindow.emit('leave-full-screen');
 
             expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith('leave-full-screen');
+        });
+
+        it('should dispose context menu when window is closed', () => {
+            const baseWindow = new BaseWindow({});
+            const loadingScreen = LoadingScreen.mock.results[LoadingScreen.mock.results.length - 1].value;
+            const urlView = URLView.mock.results[URLView.mock.results.length - 1].value;
+
+            baseWindow.browserWindow.emit('closed');
+
+            expect(mockContextMenu.dispose).toHaveBeenCalled();
+            expect(loadingScreen.destroy).toHaveBeenCalled();
+            expect(urlView.destroy).toHaveBeenCalled();
         });
     });
 

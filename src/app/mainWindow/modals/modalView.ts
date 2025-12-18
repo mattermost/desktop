@@ -99,6 +99,7 @@ export class ModalView<T, T2> {
             }
             performanceMonitor.unregisterView(this.view.webContents.id);
             this.windowAttached.contentView.removeChildView(this.view);
+            this.contextMenu.dispose();
             this.view.webContents.close();
 
             delete this.windowAttached;

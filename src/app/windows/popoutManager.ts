@@ -6,6 +6,7 @@ import {ipcMain} from 'electron';
 
 import type {PopoutViewProps} from '@mattermost/desktop-api';
 
+import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
@@ -32,6 +33,7 @@ import {
     SEND_TO_POPOUT,
     MESSAGE_FROM_POPOUT,
     POPOUT_CLOSED,
+    UPDATE_TARGET_URL,
 } from 'common/communication';
 import {POPOUT_RATE_LIMIT} from 'common/constants';
 import {Logger} from 'common/log';
@@ -151,12 +153,14 @@ export class PopoutManager {
             // TODO: Would be better encapsulated in the MenuManager
             MenuManager.refreshMenu();
         };
+        const updateTargetURL = (url: string) => window.showURLView(url);
         const setBounds = this.setBounds(window, webContentsView);
         const close = this.onClosePopout(viewId);
 
         mattermostWebContentsView.on(LOADSCREEN_END, loadScreenEnd);
         mattermostWebContentsView.on(LOAD_FAILED, loadFailed);
         mattermostWebContentsView.on(RELOAD_VIEW, reloadView);
+        mattermostWebContentsView.on(UPDATE_TARGET_URL, updateTargetURL);
         window.browserWindow.on('focus', focus);
         window.browserWindow.contentView.on('bounds-changed', setBounds);
         window.browserWindow.once('show', setBounds);
@@ -171,6 +175,7 @@ export class PopoutManager {
             mattermostWebContentsView.off(LOADSCREEN_END, loadScreenEnd);
             mattermostWebContentsView.off(LOAD_FAILED, loadFailed);
             mattermostWebContentsView.off(RELOAD_VIEW, reloadView);
+            mattermostWebContentsView.off(UPDATE_TARGET_URL, updateTargetURL);
             window.browserWindow.off('focus', focus);
             window.browserWindow.contentView.off('bounds-changed', setBounds);
             window.browserWindow.off('show', setBounds);
@@ -301,7 +306,8 @@ export class PopoutManager {
             return undefined;
         }
 
-        const view = WebContentsManager.getViewByWebContentsId(event.sender.id);
+        const callsViewId = CallsWidgetWindow.isCallsWidget(event.sender.id) && CallsWidgetWindow.mainViewId;
+        const view = callsViewId ? WebContentsManager.getView(callsViewId) : WebContentsManager.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return undefined;
         }

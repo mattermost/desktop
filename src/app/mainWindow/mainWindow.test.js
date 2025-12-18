@@ -4,7 +4,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import {BrowserWindow, screen, app, globalShortcut, dialog} from 'electron';
+import {BrowserWindow, screen, app, dialog} from 'electron';
 
 import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
 import Config from 'common/config';
@@ -40,10 +40,6 @@ jest.mock('electron', () => ({
     screen: {
         getDisplayMatching: jest.fn(),
         getPrimaryDisplay: jest.fn(),
-    },
-    globalShortcut: {
-        register: jest.fn(),
-        registerAll: jest.fn(),
     },
 }));
 
@@ -543,61 +539,6 @@ describe('main/windows/mainWindow', () => {
             });
             expect(window.webContents.send).toHaveBeenCalledWith(SELECT_NEXT_TAB);
             expect(window.webContents.send).toHaveBeenCalledWith(SELECT_PREVIOUS_TAB);
-        });
-
-        it('should add override shortcuts for the top menu on Linux to stop it showing up', () => {
-            const {isKDE} = require('../../main/utils');
-            isKDE.mockReturnValue(false);
-
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'linux',
-            });
-            const window = {
-                ...baseWindow,
-                getSize: jest.fn().mockReturnValue([800, 600]),
-                getContentBounds: jest.fn().mockReturnValue({x: 0, y: 0, width: 800, height: 600}),
-                on: jest.fn().mockImplementation((event, cb) => {
-                    if (event === 'focus') {
-                        cb();
-                    }
-                }),
-            };
-            BrowserWindow.mockImplementation(() => window);
-            const mainWindow = new MainWindow();
-            mainWindow.init();
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-            expect(globalShortcut.registerAll).toHaveBeenCalledWith(['Alt+F', 'Alt+E', 'Alt+V', 'Alt+H', 'Alt+W', 'Alt+P'], expect.any(Function));
-        });
-
-        it('should register global shortcuts even when window is minimized on KDE/KWin', () => {
-            const {isKDE} = require('../../main/utils');
-            isKDE.mockReturnValue(true);
-
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'linux',
-            });
-            const window = {
-                ...baseWindow,
-                isMinimized: jest.fn().mockReturnValue(true),
-                on: jest.fn().mockImplementation((event, cb) => {
-                    if (event === 'focus') {
-                        cb();
-                    }
-                }),
-            };
-            BrowserWindow.mockImplementation(() => window);
-            const mainWindow = new MainWindow();
-            mainWindow.getBounds = jest.fn();
-            mainWindow.init();
-
-            expect(globalShortcut.registerAll).toHaveBeenCalled();
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
         });
     });
 

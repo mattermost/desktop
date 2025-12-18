@@ -59,6 +59,7 @@ import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
+import sentryHandler from 'main/sentryHandler';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
@@ -95,7 +96,6 @@ import {
     shouldShowTrayIcon,
     updateSpellCheckerLocales,
     wasUpdated,
-    migrateMacAppStore,
     updateServerInfos,
 } from './utils';
 import {
@@ -131,13 +131,6 @@ export async function initialize() {
     // no need to continue initializing if app is quitting
     if (global.willAppQuit) {
         return;
-    }
-
-    // eslint-disable-next-line no-undef
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    if (__IS_MAC_APP_STORE__) {
-        migrateMacAppStore();
     }
 
     // initialization that should run once the app is ready
@@ -177,6 +170,8 @@ async function initializeConfig() {
             if (Config.enableHardwareAcceleration === false || __DISABLE_GPU__) {
                 app.disableHardwareAcceleration();
             }
+
+            sentryHandler.init();
 
             resolve();
         });
@@ -424,7 +419,7 @@ async function initializeAfterAppReady() {
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    if (global.isDev || __IS_NIGHTLY_BUILD__) {
+    if ((global.isDev || __IS_NIGHTLY_BUILD__) && !DeveloperMode.get('disableDevTools')) {
         installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS], {
             loadExtensionOptions: {
                 allowFileAccess: true,

@@ -55,6 +55,7 @@ export type ConfigV4 = {
     logLevel?: string;
     appLanguage?: string;
     enableMetrics?: boolean;
+    enableSentry?: boolean;
     viewLimit?: number;
     themeSyncing?: boolean;
 }
@@ -147,7 +148,5 @@ export type LocalConfiguration = CurrentConfig & {
 
 export type MigrationInfo = {
     updateTrayIconWin32: boolean;
-    masConfigs: boolean;
-    closeExtraTabs: boolean;
     enableMetrics: boolean;
 }
