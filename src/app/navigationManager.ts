@@ -13,7 +13,7 @@ import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSE
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
-import {getFormattedPathName, isEasySSOLoginURL, parseURL} from 'common/utils/url';
+import {getFormattedPathName, isMagicLinkUrl, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
@@ -46,11 +46,6 @@ export class NavigationManager {
         const parsedURL = parseURL(url)!;
         const server = ServerManager.lookupServerByURL(parsedURL, true);
 
-        let trimmedPathname = getFormattedPathName(parsedURL.pathname);
-        if (trimmedPathname.length > 1 && trimmedPathname.endsWith('/')) {
-            trimmedPathname = trimmedPathname.slice(0, -1);
-        }
-
         if (server) {
             const view = getView(server);
             if (!view) {
@@ -63,11 +58,11 @@ export class NavigationManager {
                 return;
             }
 
-            const urlWithSchema = `${server.url.origin}${trimmedPathname}${parsedURL.search}`;
+            const urlWithSchema = `${server.url.origin}${parsedURL.pathname}${parsedURL.search}`;
             if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
                 const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
                 const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
-                if (isEasySSOLoginURL(urlWithSchema)) {
+                if (isMagicLinkUrl(server.url, parsedURL)) {
                     webContentsView.load(urlWithSchema);
                 } else {
                     webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
@@ -80,10 +75,10 @@ export class NavigationManager {
                 webContentsView.load(urlWithSchema);
             }
         } else if (ServerManager.hasServers()) {
-            ServerHub.showNewServerModal(`${parsedURL.host}${trimmedPathname}${parsedURL.search}`);
+            ServerHub.showNewServerModal(`${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`);
         } else {
             ModalManager.removeModal('welcomeScreen');
-            const prefillURL = `${parsedURL.host}${trimmedPathname}${parsedURL.search}`;
+            const prefillURL = `${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`;
             handleWelcomeScreenModal(prefillURL);
         }
     };

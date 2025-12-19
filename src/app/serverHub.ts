@@ -29,7 +29,7 @@ import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
-import {isEasySSOLoginURL, isValidURI, isValidURL, parseURL} from 'common/utils/url';
+import {isMagicLinkUrl, isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
@@ -421,9 +421,9 @@ export class ServerHub {
 
         log.debug('handleServerURLValidation: Remote URL matches Site URL, returning OK');
         let status = URLValidationStatus.OK;
-        if (isEasySSOLoginURL(originalURL || '')) {
-            log.debug('handleServerURLValidation: Detected Easy Login URL, returning EasyLogin status');
-            status = URLValidationStatus.EasyLogin;
+        if (isMagicLinkUrl(remoteURL, parsedURL)) {
+            log.debug('handleServerURLValidation: Detected Magic Link URL, returning MagicLink status');
+            status = URLValidationStatus.MagicLink;
         }
         return {
             status,

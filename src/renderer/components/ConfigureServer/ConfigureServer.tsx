@@ -59,7 +59,7 @@ function ConfigureServer({
     const [urlError, setURLError] = useState<{type: STATUS; value: string}>();
     const [showContent, setShowContent] = useState(false);
     const [waiting, setWaiting] = useState(false);
-    const [isEasyLogin, setIsEasyLogin] = useState(false);
+    const [isMagicLink, setIsMagicLink] = useState(false);
 
     const [validating, setValidating] = useState(false);
     const validationTimestamp = useRef<number>();
@@ -83,11 +83,11 @@ function ConfigureServer({
     }, []);
 
     useEffect(() => {
-        if (url && isEasyLogin) {
+        if (url && isMagicLink) {
             connect();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEasyLogin, url]);
+    }, [isMagicLink, url]);
 
     const fetchValidationResult = (urlToValidate: string) => {
         setValidating(true);
@@ -120,8 +120,8 @@ function ConfigureServer({
             }
             setValidating(false);
 
-            if (status === URLValidationStatus.EasyLogin) {
-                setIsEasyLogin(true);
+            if (status === URLValidationStatus.MagicLink) {
+                setIsMagicLink(true);
             }
         });
     };
@@ -212,7 +212,7 @@ function ConfigureServer({
             };
         }
 
-        if (validationResult?.status === URLValidationStatus.OK || validationResult?.status === URLValidationStatus.EasyLogin) {
+        if (validationResult?.status === URLValidationStatus.OK || validationResult?.status === URLValidationStatus.MagicLink) {
             message = {
                 type: STATUS.SUCCESS,
                 value: formatMessage({id: 'renderer.components.configureServer.url.ok', defaultMessage: 'Server URL is valid. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),

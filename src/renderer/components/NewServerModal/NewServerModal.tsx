@@ -143,7 +143,7 @@ class NewServerModal extends React.PureComponent<Props, State> {
                     return;
                 }
                 this.setState({validationResult, validationStarted: false, serverUrl: validationResult.validatedURL ?? serverUrl, serverName: this.state.serverName ? this.state.serverName : validationResult.serverName ?? ''});
-                if (validationResult.status === URLValidationStatus.EasyLogin && !this.props.editMode) {
+                if (validationResult.status === URLValidationStatus.MagicLink && !this.props.editMode) {
                     this.save();
                 }
             });

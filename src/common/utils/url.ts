@@ -64,6 +64,7 @@ export const isPublicFilesUrl = (serverURL: URL, inputURL: URL) => isUrlType('fi
 export const isAdminUrl = (serverURL: URL, inputURL: URL) => isUrlType('admin_console', serverURL, inputURL);
 export const isPluginUrl = (serverURL: URL, inputURL: URL) => isUrlType('plugins', serverURL, inputURL);
 export const isChannelExportUrl = (serverURL: URL, inputURL: URL) => isUrlType('plugins/com.mattermost.plugin-channel-export/api/v1/export', serverURL, inputURL);
+export const isMagicLinkUrl = (serverURL: URL, inputURL: URL) => isUrlType('login/one_time_link', serverURL, inputURL);
 export const isManagedResource = (serverURL: URL, inputURL: URL) => [...buildConfig.managedResources].some((testPath) => isUrlType(testPath, serverURL, inputURL));
 export const isTeamUrl = (serverURL: URL, inputURL: URL, withApi?: boolean) => {
     if (!isInternalURL(inputURL, serverURL)) {
@@ -112,26 +113,4 @@ const equalUrlsIgnoringSubpath = (url1: URL, url2: URL, ignoreScheme?: boolean) 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
 const escapeRegExp = (s: string) => {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-};
-
-export const isEasySSOLoginURL = (url: string): boolean => {
-    try {
-        let urlToTest = url;
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            urlToTest = `https://${url}`;
-        }
-        const parsed = parseURL(urlToTest);
-
-        // Check pathname and search params
-        if (parsed?.pathname === '/login/one_time_link') {
-            const t = parsed.searchParams.get('t');
-            return Boolean(t && (/^[A-Za-z0-9]{64}$/).test(t));
-        }
-
-        // Also allow for URLs where /login/sso/easy is not at root (e.g., subpath)
-        const match = url.match(/\/login\/sso\/easy\?t=([A-Za-z0-9]{64})/);
-        return Boolean(match);
-    } catch (e) {
-        return false;
-    }
 };
