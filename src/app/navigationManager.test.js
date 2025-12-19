@@ -80,6 +80,7 @@ jest.mock('common/utils/url', () => ({
         }
     },
     getFormattedPathName: (pathname) => (pathname.length ? pathname : '/'),
+    isMagicLinkUrl: jest.fn(() => false),
 }));
 
 jest.mock('common/utils/util', () => ({
