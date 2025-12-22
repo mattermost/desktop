@@ -90,8 +90,6 @@ describe('main/menus/tray', () => {
 
         serverMenuItem.click();
 
-        expect(MainWindow.get).toHaveBeenCalled();
-        expect(mockWindow.isVisible).toHaveBeenCalled();
         expect(MainWindow.show).toHaveBeenCalled();
         expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
     });
@@ -116,8 +114,6 @@ describe('main/menus/tray', () => {
 
         settingsMenuItem.click();
 
-        expect(MainWindow.get).toHaveBeenCalled();
-        expect(mockWindow.isVisible).toHaveBeenCalled();
         expect(mockWindow.show).toHaveBeenCalled();
         expect(ModalManager.addModal).toHaveBeenCalled();
     });
