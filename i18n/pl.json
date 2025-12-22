@@ -305,6 +305,8 @@
   "renderer.components.settingsPage.enableHardwareAcceleration.description": "Jeśli jest włączona, interfejs użytkownika {appName} jest renderowany bardziej wydajnie, ale może prowadzić do zmniejszenia stabilności niektórych systemów.",
   "renderer.components.settingsPage.enableMetrics": "Wysyłaj anonimowe dane użytkowania do skonfigurowanych serwerów",
   "renderer.components.settingsPage.enableMetrics.description": "Wysyła dane o użytkowaniu aplikacji i jej wydajności do skonfigurowanych serwerów, które je akceptują.",
+  "renderer.components.settingsPage.enableSentry": "Wysyłaj raporty o błędach, aby uzyskać pomoc w ulepszaniu aplikacji",
+  "renderer.components.settingsPage.enableSentry.description": "Jeśli opcja ta jest włączona, wysyłane będą raporty o błędach i informacje o awariach w celu udzielenia pomocy w identyfikacji i naprawie problemów w aplikacji. Ustawienie zacznie obowiązywać po ponownym uruchomieniu aplikacji.",
   "renderer.components.settingsPage.flashWindow": "Migająca ikona na pasku zadań po otrzymaniu nowej wiadomości",
   "renderer.components.settingsPage.flashWindow.description": "Jeśli jest włączona, ikona paska zadań będzie migać przez kilka sekund po otrzymaniu nowej wiadomości.",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "Ta funkcjonalność może nie działać ze wszystkimi menedżerami okien systemu Linux.",

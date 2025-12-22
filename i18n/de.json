@@ -305,6 +305,8 @@
   "renderer.components.settingsPage.enableHardwareAcceleration.description": "Wenn aktiviert, wird die {appName} Benutzeroberfläche effizienter angezeigt. Dies kann aber auf einigen Systemen die Stabilität verringern.",
   "renderer.components.settingsPage.enableMetrics": "Sende anonyme Nutzungsdaten an deine konfigurierten Server",
   "renderer.components.settingsPage.enableMetrics.description": "Sendet Nutzungsdaten über die Anwendung und ihre Leistung an deine konfigurierten Server, die sie akzeptieren.",
+  "renderer.components.settingsPage.enableSentry": "Sende Fehlerberichte, um die App zu verbessern",
+  "renderer.components.settingsPage.enableSentry.description": "Wenn diese Option aktiviert ist, werden Fehlerberichte und Absturzinformationen gesendet, um Probleme in der Anwendung zu erkennen und zu beheben. Die Einstellung wird nach einem Neustart der App wirksam.",
   "renderer.components.settingsPage.flashWindow": "Taskleisten-Symbol blinken, wenn eine neue Nachricht empfangen wurde",
   "renderer.components.settingsPage.flashWindow.description": "Wenn aktiviert, wird das Taskleisten-Symbol einige Sekunden blinken, wenn eine neue Nachricht empfangen wurde.",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "Diese Funktion funktioniert eventuell nicht mit allen Linux Window Managern.",

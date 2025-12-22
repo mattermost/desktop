@@ -305,6 +305,8 @@
   "renderer.components.settingsPage.enableHardwareAcceleration.description": "Indien ingeschakeld, wordt de {appName} UI efficiënter weergegeven, maar dit kan leiden tot verminderde stabiliteit voor sommige systemen.",
   "renderer.components.settingsPage.enableMetrics": "Stuur anonieme gebruiksgegevens naar je geconfigureerde servers",
   "renderer.components.settingsPage.enableMetrics.description": "Stuurt gebruiksgegevens over de applicatie en de prestaties naar je geconfigureerde servers die dit aanvaarden.",
+  "renderer.components.settingsPage.enableSentry": "Stuur foutrapporten om de app te helpen verbeteren",
+  "renderer.components.settingsPage.enableSentry.description": "Als deze optie is ingeschakeld, worden foutrapporten en crashinformatie verzonden om problemen in de applicatie te identificeren en op te lossen. De instelling wordt van kracht na het herstarten van de app.",
   "renderer.components.settingsPage.flashWindow": "Taakbalkpictogram laten knipperen als een nieuw bericht werd ontvangen",
   "renderer.components.settingsPage.flashWindow.description": "Indien ingeschakeld, knippert het taakbalkpictogram enkele seconden wanneer een nieuw bericht wordt ontvangen.",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "Deze functie werkt mogelijk niet met alle Linux window managers.",
