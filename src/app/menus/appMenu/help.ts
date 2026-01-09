@@ -2,14 +2,18 @@
 // See LICENSE.txt for license information.
 
 import {shell, app, clipboard, type MenuItemConstructorOptions} from 'electron';
-import log from 'electron-log';
+import {transports} from 'electron-log';
 
 import Config from 'common/config';
 import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK} from 'common/constants';
+import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
+import {parseURL} from 'common/utils/url';
 import UpdateManager from 'main/autoUpdater';
 import Diagnostics from 'main/diagnostics';
 import {localizeMessage} from 'main/i18nManager';
+
+const log = new Logger('Help');
 
 export default function createHelpMenu(): MenuItemConstructorOptions {
     const submenu: MenuItemConstructorOptions[] = [];
@@ -43,22 +47,26 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
     const currentServer = serverId ? ServerManager.getServer(serverId) : undefined;
     const currentRemoteInfo = currentServer ? ServerManager.getRemoteInfo(currentServer.id) : undefined;
     const helpLink = currentRemoteInfo?.helpLink ?? Config.helpLink;
-    if (helpLink) {
+    if (isHttpLink(helpLink)) {
         submenu.push({
             label: localizeMessage('main.menus.app.help.userGuide', 'User guide'),
             click() {
                 shell.openExternal(helpLink);
             },
         });
+    } else if (helpLink) {
+        log.debug('createHelpMenu', 'not rendering user guide link, link is invalid');
     }
     const academyLink = Config.academyLink;
-    if (academyLink) {
+    if (isHttpLink(academyLink)) {
         submenu.push({
             label: localizeMessage('main.menus.app.help.academy', 'Mattermost Academy'),
             click() {
                 shell.openExternal(academyLink);
             },
         });
+    } else if (academyLink) {
+        log.debug('createHelpMenu', 'not rendering academy link, link is invalid');
     }
     submenu.push({type: 'separator'});
 
@@ -66,7 +74,7 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
         id: 'Show logs',
         label: localizeMessage('main.menus.app.help.ShowLogs', 'Show logs'),
         click() {
-            shell.showItemInFolder(log.transports.file.getFile().path);
+            shell.showItemInFolder(transports.file.getFile().path);
         },
     });
 
@@ -90,13 +98,15 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
             break;
         }
     }
-    if (reportProblemLink) {
+    if (isHttpLink(reportProblemLink)) {
         submenu.push({
             label: localizeMessage('main.menus.app.help.reportProblem', 'Report a problem'),
             click() {
                 shell.openExternal(reportProblemLink!);
             },
         });
+    } else if (reportProblemLink) {
+        log.debug('createHelpMenu', 'not rendering report a problem link, link is invalid');
     }
     submenu.push({type: 'separator'});
 
@@ -136,4 +146,18 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
     });
 
     return {id: 'help', label: localizeMessage('main.menus.app.help', 'Hel&p'), submenu};
+}
+
+function isHttpLink(link: string | undefined): link is string {
+    if (!link) {
+        return false;
+    }
+
+    const url = parseURL(link);
+
+    if (!url) {
+        return false;
+    }
+
+    return url.protocol === 'http:' || url.protocol === 'https:';
 }
