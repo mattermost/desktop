@@ -12,6 +12,7 @@ import {OPEN_SERVERS_DROPDOWN, SHOW_NEW_SERVER_MODAL} from 'common/communication
 import type {Config} from 'common/config';
 import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK, ModalConstants} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
+import {parseURL} from 'common/utils/url';
 import {t} from 'common/utils/util';
 import {getViewDisplayName} from 'common/views/View';
 import type {ViewType} from 'common/views/View';
@@ -438,22 +439,26 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
     }
 
     const helpLink = currentRemoteInfo?.helpLink ?? config.helpLink;
-    if (helpLink) {
+    if (isHttpLink(helpLink)) {
         submenu.push({
             label: localizeMessage('main.menus.app.help.userGuide', 'User guide'),
             click() {
                 shell.openExternal(helpLink);
             },
         });
+    } else if (helpLink) {
+        log.debug('createTemplate', 'not rendering user guide link, link is invalid');
     }
     const academyLink = config.academyLink;
-    if (academyLink) {
+    if (isHttpLink(academyLink)) {
         submenu.push({
             label: localizeMessage('main.menus.app.help.academy', 'Mattermost Academy'),
             click() {
                 shell.openExternal(academyLink);
             },
         });
+    } else if (academyLink) {
+        log.debug('createTemplate', 'not rendering academy link, link is invalid');
     }
     submenu.push(separatorItem);
 
@@ -485,13 +490,15 @@ export function createTemplate(config: Config, updateManager: UpdateManager) {
             break;
         }
     }
-    if (reportProblemLink) {
+    if (isHttpLink(reportProblemLink)) {
         submenu.push({
             label: localizeMessage('main.menus.app.help.reportProblem', 'Report a problem'),
             click() {
                 shell.openExternal(reportProblemLink!);
             },
         });
+    } else if (reportProblemLink) {
+        log.debug('createTemplate', 'not rendering report a problem link, link is invalid');
     }
     submenu.push(separatorItem);
 
@@ -522,3 +529,17 @@ export function createMenu(config: Config, updateManager: UpdateManager) {
 t('common.tabs.TAB_MESSAGING');
 t('common.tabs.TAB_FOCALBOARD');
 t('common.tabs.TAB_PLAYBOOKS');
+
+function isHttpLink(link: string | undefined): link is string {
+    if (!link) {
+        return false;
+    }
+
+    const url = parseURL(link);
+
+    if (!url) {
+        return false;
+    }
+
+    return url.protocol === 'http:' || url.protocol === 'https:';
+}
