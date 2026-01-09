@@ -244,6 +244,15 @@ jobs:
           echo "$LINKLIST" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
 
+      # Upload artifacts new bucket
+      - name: nightly/setup-aws-credentials-new-bucket
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ROLE_TO_ASSUME }}
+      - name: nightly/upload-to-s3-new-bucket
+        run: aws s3 cp ./aws-s3-dist/ s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }} --cache-control "no-cache" --recursive
+
   share-links-to-channel:
     runs-on: ubuntu-22.04
     needs:
