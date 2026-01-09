@@ -240,6 +240,12 @@ export async function clearAllData() {
         await session.defaultSession.clearCodeCaches({});
         await session.defaultSession.clearHostResolverCache();
         await session.defaultSession.clearData();
+
+        // These are here to suppress an unnecessary exception thrown when the app is force exited
+        // The app will restart anyways so we don't need to handle the exception
+        process.removeAllListeners('uncaughtException');
+        process.removeAllListeners('unhandledRejection');
+
         app.relaunch();
         app.exit();
     }
