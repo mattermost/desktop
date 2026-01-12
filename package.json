@@ -167,7 +167,7 @@
     "electron-devtools-installer": "4.0.0",
     "electron-is-dev": "2.0.0",
     "electron-log": "5.2.0",
-    "electron-updater": "6.3.0",
+    "electron-updater": "6.7.3",
     "joi": "17.12.2",
     "macos-notification-state": "3.0.0",
     "pretty-bytes": "6.1.1",
