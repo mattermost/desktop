@@ -156,6 +156,57 @@ describe('app/menus/appMenu/help', () => {
             expect(shell.openExternal).toHaveBeenCalledWith('http://link-to-help.site.com');
         });
 
+        describe('should only show help link if the link is a valid http or https URL', () => {
+            const testCases = [
+                {
+                    name: 'http link',
+                    input: 'http://link-to-help.site.com',
+                    expectLinkExists: true,
+                },
+                {
+                    name: 'https link',
+                    input: 'https://link-to-help.site.com',
+                    expectLinkExists: true,
+                },
+                {
+                    name: 'not a link',
+                    input: 'notalink',
+                    expectLinkExists: false,
+                },
+                {
+                    name: 'another protocol',
+                    input: 'mailto:example@example.com',
+                    expectLinkExists: false,
+                },
+            ];
+
+            for (const testCase of testCases) {
+                it(testCase.name, () => {
+                    ServerManager.getRemoteInfo.mockReturnValue({
+                        helpLink: testCase.input,
+                    });
+                    localizeMessage.mockImplementation((id) => {
+                        if (id === 'main.menus.app.help.userGuide') {
+                            return 'User guide';
+                        }
+                        return id;
+                    });
+
+                    const menu = createHelpMenu();
+                    const userGuideItem = menu.submenu.find((item) => item.label === 'User guide');
+
+                    if (testCase.expectLinkExists) {
+                        expect(userGuideItem).not.toBe(undefined);
+
+                        userGuideItem.click();
+                        expect(shell.openExternal).toHaveBeenCalledWith(testCase.input);
+                    } else {
+                        expect(userGuideItem).toBe(undefined);
+                    }
+                });
+            }
+        });
+
         it('should show academy link when available', () => {
             localizeMessage.mockImplementation((id) => {
                 if (id === 'main.menus.app.help.academy') {
@@ -261,6 +312,56 @@ describe('app/menus/appMenu/help', () => {
             const reportProblemItem = menu.submenu.find((item) => item.label === 'Report a problem');
             reportProblemItem.click();
             expect(shell.openExternal).toHaveBeenCalledWith('https://mattermost.com/pl/report-a-bug');
+        });
+
+        describe('should only show report problem link if the link is a valid http or https URL', () => {
+            const testCases = [
+                {
+                    name: 'http link',
+                    input: 'http://server-report.com',
+                    expectLinkExists: true,
+                },
+                {
+                    name: 'https link',
+                    input: 'https://server-report.com',
+                    expectLinkExists: true,
+                },
+                {
+                    name: 'not a link',
+                    input: 'notalink',
+                    expectLinkExists: false,
+                },
+                {
+                    name: 'another protocol',
+                    input: 'mailto:example@example.com',
+                    expectLinkExists: false,
+                },
+            ];
+
+            for (const testCase of testCases) {
+                it(testCase.name, () => {
+                    ServerManager.getRemoteInfo.mockReturnValue({
+                        reportProblemLink: testCase.input,
+                    });
+                    localizeMessage.mockImplementation((id) => {
+                        if (id === 'main.menus.app.help.reportProblem') {
+                            return 'Report a problem';
+                        }
+                        return id;
+                    });
+                    const menu = createHelpMenu();
+                    const reportProblemItem = menu.submenu.find((item) => item.label === 'Report a problem');
+
+                    if (testCase.expectLinkExists) {
+                        expect(reportProblemItem).not.toBe(undefined);
+
+                        reportProblemItem.click();
+                        expect(shell.openExternal).toHaveBeenCalledWith(testCase.input);
+                    } else {
+                        expect(reportProblemItem).toBe(undefined);
+                    }
+                });
+            }
         });
 
         it('should show version information', () => {
