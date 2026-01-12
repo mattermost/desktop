@@ -1,5 +1,18 @@
+diff --git a/node_modules/app-builder-lib/out/targets/MsiTarget.js b/node_modules/app-builder-lib/out/targets/MsiTarget.js
+index 73a3276..d104eaf 100644
+--- a/node_modules/app-builder-lib/out/targets/MsiTarget.js
++++ b/node_modules/app-builder-lib/out/targets/MsiTarget.js
+@@ -216,7 +216,7 @@ class MsiTarget extends core_1.Target {
+                     if (hasMenuCategory) {
+                         dirs.push(`<Directory Id="${startMenuShortcutDirectoryId}" Name="ProgramMenuFolder:\\${commonOptions.menuCategory}\\"/>`);
+                     }
+-                    result += `${fileSpace}  <Shortcut Id="startMenuShortcut" Directory="${startMenuShortcutDirectoryId}" Name="${xmlAttr(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes" Icon="${this.iconId}">\n`;
++                    result += `${fileSpace}  <Shortcut Id="startMenuShortcut" Directory="${startMenuShortcutDirectoryId}" Name="${xmlAttr(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="no">\n`;
+                     result += `${fileSpace}    <ShortcutProperty Key="System.AppUserModel.ID" Value="${xmlAttr(this.packager.appInfo.id)}"/>\n`;
+                     result += `${fileSpace}  </Shortcut>\n`;
+                 }
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..9bf447e 100644
+index 2d5cd3c..cf70b8b 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -1,5 +1,8 @@
@@ -23,7 +36,7 @@ index 2d5cd3c..9bf447e 100644
 +    </Upgrade>
 +    <MajorUpgrade AllowDowngrades='yes'/>
      <MediaTemplate CompressionLevel="${compressionLevel}" EmbedCab="yes"/>
-   
+ 
      <Property Id="WIXUI_INSTALLDIR" Value="APPLICATIONFOLDER"/>
      <Property Id="ApplicationFolderName" Value="${installationDirectoryWixName}"/>
      <Property Id="WixAppFolder" Value="WixPerUserFolder"/>
