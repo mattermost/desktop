@@ -1,8 +1,28 @@
 diff --git a/node_modules/app-builder-lib/out/targets/MsiTarget.js b/node_modules/app-builder-lib/out/targets/MsiTarget.js
-index 73a3276..d104eaf 100644
+index 73a3276..1bce9f1 100644
 --- a/node_modules/app-builder-lib/out/targets/MsiTarget.js
 +++ b/node_modules/app-builder-lib/out/targets/MsiTarget.js
-@@ -216,7 +216,7 @@ class MsiTarget extends core_1.Target {
+@@ -195,15 +195,17 @@ class MsiTarget extends core_1.Target {
+             // since RegistryValue can be part of Component, *** *** *** *** *** *** *** *** *** wix cannot auto generate guid
+             // https://stackoverflow.com/questions/1405100/change-my-component-guid-in-wix
+             let result = `<Component${directoryId === null ? "" : ` Directory="${directoryId}"`}>`;
+-            result += `\n${fileSpace}  <File Name="${xmlAttr(fileName)}" Source="$(var.appDir)${path.sep}${xmlAttr(packagePath)}" ReadOnly="yes" KeyPath="yes"`;
+             const isMainExecutable = packagePath === `${appInfo.productFilename}.exe`;
++            const isCreateDesktopShortcut = commonOptions.isCreateDesktopShortcut !== CommonWindowsInstallerConfiguration_1.DesktopShortcutCreationPolicy.NEVER;
++            const hasNonAdvertisedShortcut = isMainExecutable && commonOptions.isCreateStartMenuShortcut;
++            const useRegistryKeyPath = hasNonAdvertisedShortcut;
++            result += `\n${fileSpace}  <File Name="${xmlAttr(fileName)}" Source="$(var.appDir)${path.sep}${xmlAttr(packagePath)}" ReadOnly="yes"${useRegistryKeyPath ? "" : " KeyPath=\"yes\""}`;
+             if (isMainExecutable) {
+                 result += ' Id="mainExecutable"';
+             }
+             else if (directoryId === null) {
+                 result += ` Id="${path.basename(packagePath)}_f"`;
+             }
+-            const isCreateDesktopShortcut = commonOptions.isCreateDesktopShortcut !== CommonWindowsInstallerConfiguration_1.DesktopShortcutCreationPolicy.NEVER;
+             if (isMainExecutable && (isCreateDesktopShortcut || commonOptions.isCreateStartMenuShortcut)) {
+                 result += `>\n`;
+                 const shortcutName = commonOptions.shortcutName;
+@@ -216,11 +218,14 @@ class MsiTarget extends core_1.Target {
                      if (hasMenuCategory) {
                          dirs.push(`<Directory Id="${startMenuShortcutDirectoryId}" Name="ProgramMenuFolder:\\${commonOptions.menuCategory}\\"/>`);
                      }
@@ -10,6 +30,13 @@ index 73a3276..d104eaf 100644
 +                    result += `${fileSpace}  <Shortcut Id="startMenuShortcut" Directory="${startMenuShortcutDirectoryId}" Name="${xmlAttr(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="no">\n`;
                      result += `${fileSpace}    <ShortcutProperty Key="System.AppUserModel.ID" Value="${xmlAttr(this.packager.appInfo.id)}"/>\n`;
                      result += `${fileSpace}  </Shortcut>\n`;
+                 }
+                 result += `${fileSpace}</File>`;
++                if (useRegistryKeyPath) {
++                    result += `\n${fileSpace}  <RegistryValue Root="HKCU" Key="Software\\${xmlAttr(this.packager.appInfo.id)}" Name="Installed" Type="integer" Value="1" KeyPath="yes"/>`;
++                }
+                 if (hasMenuCategory) {
+                     result += `<RemoveFolder Id="${startMenuShortcutDirectoryId}" Directory="${startMenuShortcutDirectoryId}" On="uninstall"/>\n`;
                  }
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
 index 2d5cd3c..cf70b8b 100644
