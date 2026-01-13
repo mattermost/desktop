@@ -8,7 +8,7 @@ import Config from 'common/config';
 import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {parseURL} from 'common/utils/url';
+import {isHttpLink} from 'common/utils/url';
 import UpdateManager from 'main/autoUpdater';
 import Diagnostics from 'main/diagnostics';
 import {localizeMessage} from 'main/i18nManager';
@@ -146,18 +146,4 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
     });
 
     return {id: 'help', label: localizeMessage('main.menus.app.help', 'Hel&p'), submenu};
-}
-
-function isHttpLink(link: string | undefined): link is string {
-    if (!link) {
-        return false;
-    }
-
-    const url = parseURL(link);
-
-    if (!url) {
-        return false;
-    }
-
-    return url.protocol === 'http:' || url.protocol === 'https:';
 }
