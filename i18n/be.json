@@ -3,7 +3,7 @@
   "app.menus.contextMenu.openInNewWindow": "Адкрыць у новым акне",
   "app.navigationManager.viewLimitReached": "Дасягнуты ліміт праглядаў",
   "app.navigationManager.viewLimitReached.description": "Вы дасягнулі максімальнай колькасці адкрытых вокнаў і ўкладак для гэтага сервера. Калі ласка, зачыніце існуючае акно ці ўкладку або адкарэктуйце ліміт праглядаў у наладах.",
-  "callsWidgetWindow.cannotStartCall.message": "На іншым серверы ідзе званок, які трэба завяршыць перад тым, як далучыцца да новага званка.",
+  "callsWidgetWindow.cannotStartCall.message": "Існуе званок на іншым серверы, які трэба завяршыць перад далучэннем да новага.",
   "callsWidgetWindow.cannotStartCall.title": "Немагчыма пачаць званок",
   "common.permissions.canBasicAuth": "Вэб-аўтэнтыфікацыя",
   "common.tabs.TAB_FOCALBOARD": "Boards",
