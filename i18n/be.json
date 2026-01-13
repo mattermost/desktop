@@ -55,7 +55,7 @@
   "main.badge.unreadChannels": "У вас ёсць непрачытаныя каналы",
   "main.badge.unreadMentions": "У вас ёсць непрачытаныя згадкі ({mentionCount})",
   "main.downloadsManager.resetDownloadsFolder": "Калі ласка, скіньце папку, у якую будуць спампоўвацца файлы",
-  "main.downloadsManager.specifyDownloadsFolder": "Пакажыце папку, у якую будуць спампоўвацца файлы",
+  "main.downloadsManager.specifyDownloadsFolder": "Укажыце папку, куды будуць спампоўвацца файлы",
   "main.menus.app.edit": "&Рэдагаваць",
   "main.menus.app.edit.copy": "Капіяваць",
   "main.menus.app.edit.cut": "Выразаць",
