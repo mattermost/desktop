@@ -168,8 +168,13 @@
         "to": "gpo"
       }
     ],
-    "signDlls": true,
-    "publisherName": "CN=\"Mattermost, Inc.\", O=\"Mattermost, Inc.\", L=Palo Alto, S=California, C=US"
+    "signExts": [".dll", ".node"],
+    "azureSignOptions": { 
+      "certificateProfileName": "mattermost-desktop-app",
+      "codeSigningAccountName": "DesktopAppCodeSigning",
+      "endpoint": "https://eus.codesigning.azure.net",
+      "publisherName": "CN=\"Mattermost, Inc.\", O=\"Mattermost, Inc.\", L=Palo Alto, S=California, C=US"
+    }
   },
   "nsis": {
     "artifactName": "${version}/${name}-setup-${version}-win.${ext}",

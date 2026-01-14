@@ -125,6 +125,7 @@ jobs:
       - name: ci/build
         run: |
           mkdir -p ./build/win
+          jq '.win.azureSignOptions=null' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm run package:windows
           bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win
