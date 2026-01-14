@@ -25,6 +25,20 @@ export const parseURL = (inputURL: string | URL) => {
 export const isValidURL = (testURL: string) => Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && Boolean(parseURL(testURL));
 export const isValidURI = (testURL: string) => Boolean(isUri(testURL));
 
+export function isHttpLink(link: string | undefined): link is string {
+    if (!link) {
+        return false;
+    }
+
+    const url = parseURL(link);
+
+    if (!url) {
+        return false;
+    }
+
+    return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
 // isInternalURL determines if the target url is internal to the application.
 // - currentURL is the current url inside the webview
 export const isInternalURL = (targetURL: URL, currentURL: URL, ignoreScheme?: boolean) => {
