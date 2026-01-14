@@ -62,6 +62,10 @@ export class NavigationManager {
             if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
                 const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
                 const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
+
+                // When navigating to the magic link url, we are hitting a special route
+                // in the server that is not handled by the react routers. Therefore,
+                // we need to load the url directly instead of using the browser history push.
                 if (isMagicLinkUrl(server.url, parsedURL)) {
                     webContentsView.load(urlWithSchema);
                 } else {
