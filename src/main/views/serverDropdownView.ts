@@ -109,7 +109,7 @@ export class ServerDropdownView {
     };
 
     private updateMentions = (expired: Map<string, boolean>, mentions: Map<string, number>, unreads: Map<string, boolean>) => {
-        log.silly('updateMentions', {expired, mentions, unreads});
+        log.silly('updateMentions');
 
         this.unreads = this.reduceNotifications(this.unreads, unreads, (base, value) => base || value || false);
         this.mentions = this.reduceNotifications(this.mentions, mentions, (base, value) => (base ?? 0) + (value ?? 0));

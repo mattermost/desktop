@@ -91,8 +91,6 @@ export class MattermostWebContentsView extends EventEmitter {
             }
         });
 
-        WebContentsEventManager.addWebContentsEventListeners(this.webContentsView.webContents);
-
         if (!DeveloperMode.get('disableContextMenu')) {
             this.contextMenu = new ContextMenu({}, this.webContentsView.webContents);
         }
@@ -181,13 +179,13 @@ export class MattermostWebContentsView extends EventEmitter {
             if (parsedURL) {
                 loadURL = parsedURL.toString();
             } else {
-                this.log.error('Cannot parse provided url, using current server url', someURL);
+                this.log.error('Cannot parse provided url, using current server url');
                 loadURL = this.view.url.toString();
             }
         } else {
             loadURL = this.view.url.toString();
         }
-        this.log.verbose(`Loading ${loadURL}`);
+        this.log.verbose('Loading URL');
         if (this.view.type === TAB_MESSAGING) {
             performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.server.id);
         } else {
@@ -391,7 +389,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 } else {
                     MainWindow.sendToRenderer(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
-                    this.log.info(`Couldn't esviewlish a connection with ${loadURL}, will continue to retry in the background`, err);
+                    this.log.info('Could not establish a connection, will continue to retry in the background', {err});
                     this.status = Status.ERROR;
                     this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
                 }
@@ -427,14 +425,14 @@ export class MattermostWebContentsView extends EventEmitter {
     private loadRetry = (loadURL: string, err: Error) => {
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
         MainWindow.sendToRenderer(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
-        this.log.info(`failed loading ${loadURL}: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
+        this.log.info(`failed loading URL: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     };
 
     private loadSuccess = (loadURL: string) => {
         return () => {
             const serverInfo = ServerManager.getRemoteInfo(this.view.server.id);
             if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
-                this.log.verbose(`finished loading ${loadURL}`);
+                this.log.verbose('finished loading URL');
                 MainWindow.sendToRenderer(LOAD_SUCCESS, this.id);
                 this.maxRetries = MAX_SERVER_RETRIES;
                 this.status = Status.WAITING_MM;
@@ -457,7 +455,7 @@ export class MattermostWebContentsView extends EventEmitter {
      */
 
     private handleUpdateTarget = (e: Event, url: string) => {
-        this.log.silly('handleUpdateTarget', e, url);
+        this.log.silly('handleUpdateTarget');
         const parsedURL = parseURL(url);
         if (parsedURL && isInternalURL(parsedURL, this.view.server.url)) {
             this.emit(UPDATE_TARGET_URL);

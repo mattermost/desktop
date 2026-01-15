@@ -123,7 +123,7 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
 }
 
 export function handleMentionNotification(event: IpcMainInvokeEvent, title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) {
-    log.debug('handleMentionNotification', {channelId, teamId, url, silent, soundName});
+    log.debug('handleMentionNotification', {silent, soundName});
     return NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
@@ -167,7 +167,7 @@ export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolea
     }
 
     // Enforce macOS to restrict processes from reading the keyboard input when in a password field
-    log.debug('handleToggleSecureInput', secureInput);
+    log.debug('handleToggleSecureInput', {secureInput});
     app.setSecureKeyboardEntryEnabled(secureInput);
 }
 

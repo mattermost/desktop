@@ -30,15 +30,15 @@ export class I18nManager {
     }
 
     setLocale = (locale: string) => {
-        log.debug('setLocale', locale);
+        log.debug('setLocale', {locale});
 
         if (this.isLanguageAvailable(locale)) {
             this.currentLanguage = this.getLanguages()[locale];
-            log.info('Set new language', locale);
+            log.info('Set new language', {locale});
             return true;
         }
 
-        log.warn('Failed to set new language', locale);
+        log.warn('Failed to set new language', {locale});
         return false;
     };
 

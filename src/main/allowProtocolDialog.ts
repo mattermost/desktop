@@ -85,7 +85,7 @@ export class AllowProtocolDialog {
                 break;
             }
         } catch (error) {
-            log.warn('Could not open external URL', error);
+            log.warn('Could not open external URL', {error});
         }
     };
 }

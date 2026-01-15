@@ -14,7 +14,7 @@ export const setLoggingLevel = (level: string) => {
     if (log.transports.file.level === level) {
         return;
     }
-    log.error('Logger', 'Log level set to:', level);
+    log.error('Logger', 'Log level set to:', {level});
 
     log.transports.console.level = level as LevelOption;
     log.transports.file.level = level as LevelOption;

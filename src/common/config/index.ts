@@ -118,7 +118,7 @@ export class Config extends EventEmitter {
      * @param {array} properties an array of config properties to save
      */
     setMultiple = (newData: Partial<ConfigType>) => {
-        log.debug('setMultiple', newData);
+        log.debug('setMultiple');
 
         if (newData.darkMode && newData.darkMode !== this.darkMode) {
             this.emit('darkModeChange', newData.darkMode);
@@ -129,7 +129,7 @@ export class Config extends EventEmitter {
     };
 
     setServers = (servers: ConfigServer[], lastActiveServer?: number) => {
-        log.debug('setServers', servers, lastActiveServer);
+        log.debug('setServers');
 
         this.localConfigData = Object.assign({}, this.localConfigData, {teams: servers, lastActiveTeam: lastActiveServer ?? this.localConfigData?.lastActiveTeam});
         this.regenerateCombinedConfigData();
@@ -258,7 +258,7 @@ export class Config extends EventEmitter {
      */
 
     private onLoadRegistry = (registryData: Partial<RegistryConfigType>): void => {
-        log.debug('loadRegistry', {registryData});
+        log.debug('loadRegistry');
 
         this.registryConfigData = registryData;
         if (this.registryConfigData.servers) {

@@ -25,7 +25,7 @@ const log = new Logger('App.App');
 
 // activate first app instance, subsequent instances will quit themselves
 export function handleAppSecondInstance(event: Event, argv: string[]) {
-    log.debug('handleAppSecondInstance', argv);
+    log.debug('handleAppSecondInstance', {argv});
 
     // Protocol handler for win32
     // argv: An array of the second instance’s (command line / deep linked) arguments
@@ -61,7 +61,7 @@ export function handleAppBrowserWindowCreated(event: Event, newWindow: BrowserWi
 export function handleAppWillFinishLaunching() {
     // Protocol handler for osx
     app.on('open-url', (event, url) => {
-        log.info(`Handling deeplinking url: ${url}`);
+        log.verbose('Handling deeplinking url');
         event.preventDefault();
         const deeplinkingUrl = getDeeplinkingURL([url]);
         if (deeplinkingUrl) {
@@ -84,7 +84,7 @@ export function handleAppBeforeQuit() {
 }
 
 export async function handleAppCertificateError(event: Event, webContents: WebContents, url: string, error: string, certificate: Certificate, callback: (isTrusted: boolean) => void) {
-    log.verbose('handleAppCertificateError', {url, error, certificate});
+    log.verbose('handleAppCertificateError', {error});
 
     const parsedURL = parseURL(url);
     if (!parsedURL) {
@@ -92,7 +92,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     }
     if (CertificateStore.isExplicitlyUntrusted(parsedURL)) {
         event.preventDefault();
-        log.warn(`Ignoring previously untrusted certificate for ${parsedURL.origin}`);
+        log.warn('Ignoring previously untrusted certificate');
         callback(false);
     } else if (CertificateStore.isTrusted(parsedURL, certificate)) {
         event.preventDefault();
@@ -105,7 +105,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         if (view?.view.server) {
             const serverURL = parseURL(view.view.server.url);
             if (serverURL && serverURL.origin !== parsedURL.origin) {
-                log.warn(`Ignoring certificate for unmatched origin ${parsedURL.origin}, will not trust`);
+                log.warn('Ignoring certificate for unmatched origin, will not trust');
                 callback(false);
                 return;
             }
@@ -184,5 +184,5 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
 }
 
 export function handleChildProcessGone(event: Event, details: Details) {
-    log.error('"child-process-gone" The child process has crashed. Details: ', details);
+    log.error('"child-process-gone" The child process has crashed. Details: ', {details});
 }

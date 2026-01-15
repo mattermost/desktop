@@ -99,7 +99,7 @@ export function clearAppCache() {
         mainWindow.webContents.session.clearCache().
             then(mainWindow.webContents.reload).
             catch((err) => {
-                log.error('clearAppCache', err);
+                log.error('clearAppCache', {err});
             });
     } else {
     //Wait for mainWindow
@@ -204,7 +204,7 @@ export function migrateMacAppStore() {
             return;
         }
     } catch (e) {
-        log.error('MAS: Failed to check for existing Mattermost Desktop install, skipping', e);
+        log.error('MAS: Failed to check for existing Mattermost Desktop install, skipping', {e});
         return;
     }
 
@@ -240,7 +240,7 @@ export function migrateMacAppStore() {
         updatePaths(true);
         migrationPrefs.setValue('masConfigs', true);
     } catch (e) {
-        log.error('MAS: An error occurred importing the existing configuration', e);
+        log.error('MAS: An error occurred importing the existing configuration', {e});
     }
 }
 
@@ -253,7 +253,7 @@ export async function updateServerInfos(servers: MattermostServer[]) {
                 map.set(srv.id, data);
             }).
             catch((error) => {
-                log.warn('Could not get server info for', srv.name, error);
+                log.warn('Could not get server info', {serverId: srv.id, error});
             });
     }));
     ServerManager.updateRemoteInfos(map);

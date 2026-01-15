@@ -386,7 +386,7 @@ async function initializeAfterAppReady() {
             },
         }).
             then(([react, redux]) => log.info(`Added Extension:  ${react.name}, ${redux.name}`)).
-            catch((err) => log.error('An error occurred: ', err));
+            catch((err) => log.error('An error occurred: ', {err}));
     }
 
     MainWindow.show();
@@ -459,7 +459,7 @@ function onUserActivityStatus(status: {
     idleTime: number;
     isSystemEvent: boolean;
 }) {
-    log.debug('UserActivityMonitor.on(status)', status);
+    log.debug('UserActivityMonitor.on(status)', {status});
     ViewManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
 }
 

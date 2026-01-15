@@ -8,7 +8,7 @@ import {
     SERVERS_UPDATE,
 } from 'common/communication';
 import Config from 'common/config';
-import {Logger, getLevel} from 'common/log';
+import {getLevel, Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
 import FocalboardView from 'common/views/FocalboardView';
@@ -388,7 +388,7 @@ export class ServerManager extends EventEmitter {
         if (!server) {
             return new Logger(serverId);
         }
-        return new Logger(...additionalPrefixes, ...this.includeId(serverId, server.name));
+        return new Logger(...additionalPrefixes, serverId);
     };
 
     getViewLog = (viewId: string, ...additionalPrefixes: string[]) => {
@@ -396,7 +396,7 @@ export class ServerManager extends EventEmitter {
         if (!view) {
             return new Logger(viewId);
         }
-        return new Logger(...additionalPrefixes, ...this.includeId(viewId, view.server.name, view.type));
+        return new Logger(...additionalPrefixes, ...this.includeId(viewId, view.type));
     };
 }
 
