@@ -88,12 +88,10 @@ export class WebContentsEventManager {
 
     private generateWillNavigate = (webContentsId: number) => {
         return (event: Event, url: string) => {
-            this.log(webContentsId).debug('will-navigate', url);
+            this.log(webContentsId).debug('will-navigate');
 
             const parsedURL = parseURL(url)!;
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
-
-            this.log(webContentsId).info(serverURL?.toString());
 
             if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
                 return;
@@ -112,28 +110,28 @@ export class WebContentsEventManager {
                 return;
             }
 
-            this.log(webContentsId).info(`Prevented desktop from navigating to: ${url}`);
+            this.log(webContentsId).info('Prevented desktop from navigating to external URL');
             event.preventDefault();
         };
     };
 
-    private denyNewWindow = (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
-        this.log().warn(`Prevented popup window to open a new window to ${details.url}.`);
+    private denyNewWindow = (): {action: 'deny' | 'allow'} => {
+        this.log().warn('Prevented popup window from opening a new window');
         return {action: 'deny'};
     };
 
     private generateNewWindowListener = (webContentsId: number, spellcheck?: boolean) => {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
-            this.log(webContentsId).debug('new-window', details.url);
+            this.log(webContentsId).debug('new-window');
 
             const parsedURL = parseURL(details.url);
             if (!parsedURL) {
-                this.log(webContentsId).warn(`Ignoring non-url ${details.url}`);
+                this.log(webContentsId).warn('Ignoring non-url');
                 return {action: 'deny'};
             }
 
             if (!isValidURI(details.url)) {
-                this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
+                this.log(webContentsId).warn('Ignoring invalid URL');
                 dialog.showErrorBox(
                     localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
                     localizeMessage(
@@ -197,11 +195,11 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
             if (isAdminUrl(serverURL, parsedURL)) {
-                this.log(webContentsId).info(`${details.url} is an admin console page, preventing to open a new window`);
+                this.log(webContentsId).info('Admin console page detected, preventing new window');
                 return {action: 'deny'};
             }
             if (this.popupWindow && this.popupWindow.win.webContents.getURL() === details.url) {
-                this.log(webContentsId).info(`Popup window already open at provided url: ${details.url}`);
+                this.log(webContentsId).info('Popup window already open at provided URL');
                 return {action: 'deny'};
             }
 
