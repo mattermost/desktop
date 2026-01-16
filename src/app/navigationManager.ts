@@ -13,7 +13,7 @@ import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSE
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
-import {getFormattedPathName, parseURL} from 'common/utils/url';
+import {getFormattedPathName, isMagicLinkUrl, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
@@ -45,6 +45,7 @@ export class NavigationManager {
 
         const parsedURL = parseURL(url)!;
         const server = ServerManager.lookupServerByURL(parsedURL, true);
+
         if (server) {
             const view = getView(server);
             if (!view) {
@@ -57,11 +58,19 @@ export class NavigationManager {
                 return;
             }
 
-            const urlWithSchema = `${server.url.origin}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`;
+            const urlWithSchema = `${server.url.origin}${parsedURL.pathname}${parsedURL.search}`;
             if (webContentsView.isReady() && ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion && Utils.isVersionGreaterThanOrEqualTo(ServerManager.getRemoteInfo(webContentsView.serverId)?.serverVersion ?? '', '6.0.0')) {
                 const formattedServerURL = `${server.url.origin}${getFormattedPathName(server.url.pathname)}`;
                 const pathName = `/${urlWithSchema.replace(formattedServerURL, '')}`;
-                webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
+
+                // When navigating to the magic link url, we are hitting a special route
+                // in the server that is not handled by the react routers. Therefore,
+                // we need to load the url directly instead of using the browser history push.
+                if (isMagicLinkUrl(server.url, parsedURL)) {
+                    webContentsView.load(urlWithSchema);
+                } else {
+                    webContentsView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
+                }
                 this.deeplinkSuccess(webContentsView.id);
             } else {
                 webContentsView.resetLoadingStatus();
@@ -70,10 +79,11 @@ export class NavigationManager {
                 webContentsView.load(urlWithSchema);
             }
         } else if (ServerManager.hasServers()) {
-            ServerHub.showNewServerModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
+            ServerHub.showNewServerModal(`${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`);
         } else {
             ModalManager.removeModal('welcomeScreen');
-            handleWelcomeScreenModal(`${parsedURL.host}${getFormattedPathName(parsedURL.pathname)}${parsedURL.search}`);
+            const prefillURL = `${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`;
+            handleWelcomeScreenModal(prefillURL);
         }
     };
 

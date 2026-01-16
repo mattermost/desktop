@@ -59,6 +59,7 @@ function ConfigureServer({
     const [urlError, setURLError] = useState<{type: STATUS; value: string}>();
     const [showContent, setShowContent] = useState(false);
     const [waiting, setWaiting] = useState(false);
+    const [isMagicLink, setIsMagicLink] = useState(false);
 
     const [validating, setValidating] = useState(false);
     const validationTimestamp = useRef<number>();
@@ -81,6 +82,13 @@ function ConfigureServer({
         };
     }, []);
 
+    useEffect(() => {
+        if (url && isMagicLink) {
+            connect();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMagicLink, url]);
+
     const fetchValidationResult = (urlToValidate: string) => {
         setValidating(true);
         setURLError({
@@ -89,7 +97,7 @@ function ConfigureServer({
         });
         const requestTime = Date.now();
         validationTimestamp.current = requestTime;
-        validateURL(urlToValidate).then(({validatedURL, serverName, message}) => {
+        validateURL(urlToValidate).then(({validatedURL, serverName, message, status}) => {
             if (editing.current) {
                 setValidating(false);
                 setURLError(undefined);
@@ -111,6 +119,10 @@ function ConfigureServer({
                 setURLError(message);
             }
             setValidating(false);
+
+            if (status === URLValidationStatus.MagicLink) {
+                setIsMagicLink(true);
+            }
         });
     };
 
@@ -200,7 +212,7 @@ function ConfigureServer({
             };
         }
 
-        if (validationResult?.status === URLValidationStatus.OK) {
+        if (validationResult?.status === URLValidationStatus.OK || validationResult?.status === URLValidationStatus.MagicLink) {
             message = {
                 type: STATUS.SUCCESS,
                 value: formatMessage({id: 'renderer.components.configureServer.url.ok', defaultMessage: 'Server URL is valid. Server version: {serverVersion}'}, {serverVersion: validationResult.serverVersion}),
@@ -211,6 +223,7 @@ function ConfigureServer({
             validatedURL: validationResult.validatedURL,
             serverName: validationResult.serverName,
             message,
+            status: validationResult.status,
         };
     };
 
@@ -250,9 +263,7 @@ function ConfigureServer({
         }
     };
 
-    const submit = async (e: React.MouseEvent | React.KeyboardEvent) => {
-        e.preventDefault();
-
+    const connect = () => {
         if (!canSave || waiting) {
             return;
         }
@@ -269,7 +280,6 @@ function ConfigureServer({
         }
 
         setTransition('outToLeft');
-
         setTimeout(() => {
             onConnect({
                 url,
@@ -277,6 +287,12 @@ function ConfigureServer({
                 id,
             });
         }, MODAL_TRANSITION_TIMEOUT);
+    };
+
+    const submit = async (e: React.MouseEvent | React.KeyboardEvent) => {
+        e.preventDefault();
+
+        connect();
     };
 
     const getAlternateLink = useCallback(() => {
