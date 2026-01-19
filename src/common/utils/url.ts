@@ -25,6 +25,20 @@ export const parseURL = (inputURL: string | URL) => {
 export const isValidURL = (testURL: string) => Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && Boolean(parseURL(testURL));
 export const isValidURI = (testURL: string) => Boolean(isUri(testURL));
 
+export function isHttpLink(link: string | undefined): link is string {
+    if (!link) {
+        return false;
+    }
+
+    const url = parseURL(link);
+
+    if (!url) {
+        return false;
+    }
+
+    return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
 // isInternalURL determines if the target url is internal to the application.
 // - currentURL is the current url inside the webview
 export const isInternalURL = (targetURL: URL, currentURL: URL, ignoreScheme?: boolean) => {
@@ -64,6 +78,7 @@ export const isPublicFilesUrl = (serverURL: URL, inputURL: URL) => isUrlType('fi
 export const isAdminUrl = (serverURL: URL, inputURL: URL) => isUrlType('admin_console', serverURL, inputURL);
 export const isPluginUrl = (serverURL: URL, inputURL: URL) => isUrlType('plugins', serverURL, inputURL);
 export const isChannelExportUrl = (serverURL: URL, inputURL: URL) => isUrlType('plugins/com.mattermost.plugin-channel-export/api/v1/export', serverURL, inputURL);
+export const isMagicLinkUrl = (serverURL: URL, inputURL: URL) => isUrlType('login/one_time_link', serverURL, inputURL);
 export const isManagedResource = (serverURL: URL, inputURL: URL) => [...buildConfig.managedResources].some((testPath) => isUrlType(testPath, serverURL, inputURL));
 export const isTeamUrl = (serverURL: URL, inputURL: URL, withApi?: boolean) => {
     if (!isInternalURL(inputURL, serverURL)) {
