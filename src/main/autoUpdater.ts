@@ -3,7 +3,7 @@
 
 import path from 'path';
 
-import {dialog, ipcMain, app, nativeImage} from 'electron';
+import {dialog, ipcMain, app, nativeImage, shell} from 'electron';
 import type {ProgressInfo, UpdateInfo} from 'electron-updater';
 import {autoUpdater, CancellationToken} from 'electron-updater';
 
@@ -17,8 +17,12 @@ import {
     NO_UPDATE_AVAILABLE,
     CANCEL_UPDATE_DOWNLOAD,
     UPDATE_REMIND_LATER,
+    DISMISS_UPDATE_DEPRECATION_NOTICE,
+    OPEN_WINDOWS_STORE,
+    OPEN_WEBSITE,
 } from 'common/communication';
 import Config from 'common/config';
+import {WEBSITE_LINK, WINDOWS_STORE_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
@@ -96,6 +100,15 @@ export class UpdateManager {
 
         ipcMain.on(CANCEL_UPDATE_DOWNLOAD, this.handleCancelDownload);
         ipcMain.on(UPDATE_REMIND_LATER, this.handleRemindLater);
+        ipcMain.on(DISMISS_UPDATE_DEPRECATION_NOTICE, () => {
+            downloadsManager.dismissAutoUpdaterDeprecationNotice();
+        });
+        ipcMain.on(OPEN_WINDOWS_STORE, () => {
+            shell.openExternal(WINDOWS_STORE_LINK);
+        });
+        ipcMain.on(OPEN_WEBSITE, () => {
+            shell.openExternal(WEBSITE_LINK);
+        });
     }
 
     notify = (): void => {

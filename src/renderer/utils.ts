@@ -47,7 +47,7 @@ const getDownloadingFileStatus = (item: DownloadedItem) => {
 };
 
 const getIconClassName = (file: DownloadedItem) => {
-    if (file.type === 'update') {
+    if (file.type === 'update' || file.type === 'update_deprecation') {
         return 'mattermost';
     }
 
