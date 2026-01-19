@@ -58,6 +58,7 @@ describe('config', function desc() {
             this.serverMap = await env.getServerMap(this.app);
             const firstServer = this.serverMap[config.servers[0].name][0].win;
             const secondServer = this.serverMap[config.servers[1].name][0].win;
+            await asyncSleep(1000);
 
             firstServer.url().should.equal(config.servers[0].url);
             secondServer.url().should.equal(config.servers[1].url);

@@ -160,6 +160,10 @@ module.exports = {
     },
 
     cleanDataDir() {
+
+        // Clean up single-instance lock files on macOS
+        cleanMacOSSingletonLocks();
+
         try {
             fs.rmSync(userDataDir, {recursive: true, force: true});
         } catch (err) {
@@ -168,9 +172,6 @@ module.exports = {
                 console.error(err);
             }
         }
-
-        // Clean up single-instance lock files on macOS
-        cleanMacOSSingletonLocks();
     },
 
     cleanDataDirAsync() {
