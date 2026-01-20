@@ -150,4 +150,5 @@ export type MigrationInfo = {
     masConfigs: boolean;
     closeExtraTabs: boolean;
     enableMetrics: boolean;
+    autoUpdaterDeprecationNoticeDismissed?: boolean;
 }
