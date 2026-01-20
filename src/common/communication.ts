@@ -87,6 +87,9 @@ export const START_UPDATE_DOWNLOAD = 'start-update-download';
 export const START_UPGRADE = 'start-upgrade';
 export const CHECK_FOR_UPDATES = 'check-for-updates';
 export const NO_UPDATE_AVAILABLE = 'no-update-available';
+export const DISMISS_UPDATE_DEPRECATION_NOTICE = 'dismiss-update-deprecation-notice';
+export const OPEN_WINDOWS_STORE = 'open-windows-store';
+export const OPEN_WEBSITE = 'open-website';
 
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const TAB_LOGIN_CHANGED = 'tab-login-changed';
