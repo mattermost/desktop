@@ -411,6 +411,9 @@ async function initializeAfterAppReady() {
     } else {
         log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
     }
+    setTimeout(() => {
+        downloadsManager.showAutoUpdaterDeprecationNotice();
+    }, 5000);
 
     if (!global.isDev) {
         AutoLauncher.upgradeAutoLaunch();
