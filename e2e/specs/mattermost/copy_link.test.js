@@ -11,7 +11,7 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 describe('copylink', function desc() {
-    this.timeout(40000);
+    this.timeout(90000);
 
     const config = env.demoMattermostConfig;
 

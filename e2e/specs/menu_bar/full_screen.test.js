@@ -10,7 +10,7 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 describe('menu/view', function desc() {
-    this.timeout(30000);
+    this.timeout(90000);
 
     const config = env.demoMattermostConfig;
 

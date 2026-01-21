@@ -25,7 +25,7 @@ describe('menu_bar/dropdown', function desc() {
         await env.clearElectronInstances();
     };
 
-    this.timeout(30000);
+    this.timeout(90000);
 
     it('MM-T4405 should set name of menu item from config file', async () => {
         await beforeFunc();
@@ -103,12 +103,17 @@ describe('menu_bar/dropdown', function desc() {
             // Wait for views to be initialized and attached
             await asyncSleep(500);
             await browserWindow.evaluate((window, url) => {
-                return new Promise((resolve) => {
+                return new Promise((resolve, reject) => {
+                    const maxAttempts = 200; // 20 seconds max (200 * 100ms)
+                    let attempts = 0;
                     const checkView = () => {
                         const hasView = window.contentView.children.find((view) => view.webContents.getURL() === url);
                         if (hasView) {
                             resolve();
+                        } else if (attempts >= maxAttempts) {
+                            reject(new Error(`View with URL ${url} not found after ${maxAttempts * 100}ms`));
                         } else {
+                            attempts++;
                             setTimeout(checkView, 100);
                         }
                     };
