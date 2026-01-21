@@ -122,9 +122,6 @@ import {
     UPDATE_THEME,
     GET_THEME,
     RESET_THEME,
-    DISMISS_UPDATE_DEPRECATION_NOTICE,
-    OPEN_WINDOWS_STORE,
-    OPEN_WEBSITE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -253,9 +250,6 @@ contextBridge.exposeInMainWorld('desktop', {
         startUpdateDownload: () => ipcRenderer.send(START_UPDATE_DOWNLOAD),
         startUpgrade: () => ipcRenderer.send(START_UPGRADE),
         focus: () => ipcRenderer.send(DOWNLOADS_DROPDOWN_FOCUSED),
-        dismissUpdateDeprecationNotice: () => ipcRenderer.send(DISMISS_UPDATE_DEPRECATION_NOTICE),
-        openWindowsStore: () => ipcRenderer.send(OPEN_WINDOWS_STORE),
-        openWebsite: () => ipcRenderer.send(OPEN_WEBSITE),
     },
 
     downloadsDropdownMenu: {

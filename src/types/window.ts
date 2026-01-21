@@ -149,9 +149,6 @@ declare global {
                 requestClearDownloadsDropdown: () => void;
                 toggleDownloadsDropdownMenu: (payload: DownloadsMenuOpenEventPayload) => void;
                 focus: () => void;
-                dismissUpdateDeprecationNotice: () => void;
-                openWindowsStore: () => void;
-                openWebsite: () => void;
             };
 
             downloadsDropdownMenu: {
