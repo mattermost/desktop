@@ -100,6 +100,22 @@ describe('menu_bar/dropdown', function desc() {
         after(afterFunc);
 
         it('MM-T4408_1 should show the first view', async () => {
+            // Wait for views to be initialized and attached
+            await asyncSleep(500);
+            await browserWindow.evaluate((window, url) => {
+                return new Promise((resolve) => {
+                    const checkView = () => {
+                        const hasView = window.contentView.children.find((view) => view.webContents.getURL() === url);
+                        if (hasView) {
+                            resolve();
+                        } else {
+                            setTimeout(checkView, 100);
+                        }
+                    };
+                    checkView();
+                });
+            }, env.exampleURL);
+
             const firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.contentView.children.find((view) => view.webContents.getURL() === url)), env.exampleURL);
             firstViewIsAttached.should.be.true;
             const secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.contentView.children.find((view) => view.webContents.getURL() === 'https://github.com/')));

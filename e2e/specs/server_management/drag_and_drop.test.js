@@ -151,9 +151,16 @@ describe('server_management/drag_and_drop', function desc() {
             await dropdownView.keyboard.down(' ');
             await dropdownView.keyboard.down('ArrowDown');
             await dropdownView.keyboard.down(' ');
-            await asyncSleep(1000);
+
+            // Wait for drag operation to complete and config to be written
+            await asyncSleep(2000);
+
             await mainWindow.keyboard.press('Escape');
+            await asyncSleep(500);
             await mainWindow.click('.ServerDropdownButton');
+
+            // Wait for dropdown to reopen and render with new order
+            await asyncSleep(500);
 
             // Verify that the new order persists
             const firstMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
@@ -167,7 +174,10 @@ describe('server_management/drag_and_drop', function desc() {
             thirdMenuItemText.should.equal('google');
         });
 
-        it('MM-T2634_3 should update the config file', () => {
+        it('MM-T2634_3 should update the config file', async () => {
+            // Wait to ensure config file has been written
+            await asyncSleep(500);
+
             // Verify config is updated
             const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
             const order0 = newConfig.servers.find((server) => server.name === 'github');

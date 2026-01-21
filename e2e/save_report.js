@@ -12,6 +12,7 @@
  * Environment variables:
  *   BRANCH=[branch]            : Branch identifier from CI
  *   BUILD_TAG=[build_tag]      : Commit SHA from CI
+ *   RUNNER_OS=[os]             : Operating system (linux, darwin, win32)
  *
  *   For saving artifacts to AWS S3
  *      - AWS_S3_BUCKET, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
@@ -49,6 +50,7 @@ const saveReport = async () => {
     const {
         BRANCH,
         BUILD_TAG,
+        RUNNER_OS,
         ZEPHYR_ENABLE,
         ZEPHYR_CYCLE_KEY,
         TYPE,
@@ -65,7 +67,7 @@ const saveReport = async () => {
         jsonReport,
         {
             reportDir: MOCHAWESOME_REPORT_DIR,
-            reportTitle: `Desktop E2E - ${BRANCH} (${BUILD_TAG.substring(0, 8)})`,
+            reportTitle: `Desktop E2E [${RUNNER_OS || 'unknown'}] - ${BRANCH} (${BUILD_TAG.substring(0, 8)})`,
         },
     );
 
