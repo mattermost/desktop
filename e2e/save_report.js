@@ -11,8 +11,7 @@
  *
  * Environment variables:
  *   BRANCH=[branch]            : Branch identifier from CI
- *   BUILD_ID=[build_id]        : Build identifier from CI
- *   BUILD_TAG=[build_tag]      : Docker image used to run the test
+ *   BUILD_TAG=[build_tag]      : Commit SHA from CI
  *
  *   For saving artifacts to AWS S3
  *      - AWS_S3_BUCKET, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
@@ -49,7 +48,6 @@ require('dotenv').config();
 const saveReport = async () => {
     const {
         BRANCH,
-        BUILD_ID,
         BUILD_TAG,
         ZEPHYR_ENABLE,
         ZEPHYR_CYCLE_KEY,
@@ -67,7 +65,7 @@ const saveReport = async () => {
         jsonReport,
         {
             reportDir: MOCHAWESOME_REPORT_DIR,
-            reportTitle: `Desktop E2E - Build: ${BUILD_ID} Branch: ${BRANCH} Tag: ${BUILD_TAG}`,
+            reportTitle: `Desktop E2E - ${BRANCH} (${BUILD_TAG.substring(0, 8)})`,
         },
     );
 

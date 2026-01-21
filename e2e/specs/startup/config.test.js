@@ -60,7 +60,8 @@ describe('config', function desc() {
             const secondServer = this.serverMap[config.servers[1].name][0].win;
             await asyncSleep(1000);
 
-            firstServer.url().should.equal(config.servers[0].url);
+            // Application automatically upgrades HTTP to HTTPS for security (see serverHub.ts:228-233)
+            firstServer.url().should.equal('https://example.com/');
             secondServer.url().should.equal(config.servers[1].url);
         });
     });
