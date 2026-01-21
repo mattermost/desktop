@@ -160,7 +160,6 @@ module.exports = {
     },
 
     cleanDataDir() {
-
         // Clean up single-instance lock files on macOS
         cleanMacOSSingletonLocks();
 
