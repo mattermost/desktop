@@ -149,4 +149,5 @@ export type LocalConfiguration = CurrentConfig & {
 export type MigrationInfo = {
     updateTrayIconWin32: boolean;
     enableMetrics: boolean;
+    autoUpdaterDeprecationNoticeDismissed?: boolean;
 }

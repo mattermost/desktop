@@ -56,7 +56,14 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
     handleUpdate = (downloads: DownloadedItems, windowBounds: Electron.Rectangle, item?: DownloadedItem) => {
         const newDownloads = Object.values<DownloadedItem>(downloads);
         newDownloads.sort((a, b) => {
-            // Show App update first
+            // Show deprecation notice first
+            if (a.type === 'update_deprecation') {
+                return -1;
+            } else if (b.type === 'update_deprecation') {
+                return 1;
+            }
+
+            // Show App update second
             if (a.type === 'update') {
                 return -1;
             } else if (b.type === 'update') {
@@ -82,7 +89,9 @@ class DownloadsDropdown extends React.PureComponent<Record<string, never>, State
     };
 
     clearAllButtonDisabled = () => {
-        return this.state.downloads?.length === 1 && this.state.downloads[0]?.type === 'update';
+        const nonClearableTypes = ['update', 'update_deprecation'];
+        return this.state.downloads?.length > 0 &&
+               this.state.downloads.every((item) => nonClearableTypes.includes(item.type));
     };
 
     render() {
