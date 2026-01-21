@@ -33,10 +33,6 @@ const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const exampleURL = 'http://example.com/';
 const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
 
-if (process.platform === 'win32') {
-    const robot = require('robotjs');
-    robot.mouseClick();
-}
 
 const exampleServer = {
     name: 'example',
@@ -85,9 +81,9 @@ const demoMattermostConfig = {
 
 const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
-// Helper function to clean up single-instance lock files on macOS
-function cleanMacOSSingletonLocks() {
-    if (process.platform !== 'darwin') {
+// Helper function to clean up single-instance lock files on macOS and Windows
+function cleanSingletonLocks() {
+    if (process.platform !== 'darwin' && process.platform !== 'win32') {
         return;
     }
 
@@ -148,8 +144,8 @@ module.exports = {
             }
         });
 
-        // Clean up single-instance lock files on macOS to prevent launch failures
-        cleanMacOSSingletonLocks();
+        // Clean up single-instance lock files on macOS and Windows to prevent launch failures
+        cleanSingletonLocks();
     },
     async cleanTestConfigAsync() {
         await Promise.all(
@@ -160,8 +156,8 @@ module.exports = {
     },
 
     cleanDataDir() {
-        // Clean up single-instance lock files on macOS
-        cleanMacOSSingletonLocks();
+        // Clean up single-instance lock files on macOS and Windows
+        cleanSingletonLocks();
 
         try {
             fs.rmSync(userDataDir, {recursive: true, force: true});

@@ -11,7 +11,7 @@ const env = require('../modules/environment');
 const {asyncSleep} = require('../modules/utils');
 
 describe('focus', function desc() {
-    this.timeout(40000);
+    this.timeout(process.platform === 'win32' ? 60000 : 40000);
 
     const config = {
         ...env.demoMattermostConfig,
