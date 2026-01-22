@@ -21,7 +21,7 @@ index 6fe63f1..85e3925 100644
                      result += `${fileSpace}  </Shortcut>\n`;
                  }
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..cf70b8b 100644
+index 2d5cd3c..b5d8d51 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -1,5 +1,8 @@
@@ -71,8 +71,8 @@ index 2d5cd3c..cf70b8b 100644
 +    />
 +    <CustomAction
 +      Id="removeExeInstaller"
-+      Directory="APPLICATIONFOLDER"
-+      ExeCommand="[APPLICATIONFOLDER]Uninstall ${productName}.exe /S"
++      Property="EXEINSTALLEREXISTS"
++      ExeCommand="[EXEINSTALLEREXISTS] /S"
 +      Execute="immediate"
 +      Impersonate="yes"
 +      Return="ignore"
