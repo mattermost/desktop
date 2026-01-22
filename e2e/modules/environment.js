@@ -86,14 +86,23 @@ function cleanSingletonLocks() {
         return;
     }
 
+    const debugLog = (msg) => {
+        if (process.env.DEBUG_E2E) {
+            // eslint-disable-next-line no-console
+            console.log(`[cleanSingletonLocks] ${msg}`);
+        }
+    };
+
     const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
     lockFiles.forEach((lockName) => {
         try {
             const lockPath = path.join(userDataDir, lockName);
             if (fs.existsSync(lockPath)) {
+                debugLog(`Removing lock file: ${lockPath}`);
                 fs.unlinkSync(lockPath);
             }
         } catch (err) {
+            debugLog(`Error removing ${lockName}: ${err.message}`);
             // Ignore errors - lock might not exist or already be deleted
         }
     });
@@ -113,25 +122,136 @@ module.exports = {
     demoMattermostConfig,
     cmdOrCtrl,
 
+    /**
+     * Normalize and compare paths in a platform-aware manner
+     * On Windows: case-insensitive comparison with normalized paths
+     * On Unix: case-sensitive comparison with normalized paths
+     */
+    pathsMatch(path1, path2) {
+        if (!path1 || !path2) {
+            return false;
+        }
+
+        const normalized1 = path.normalize(path1);
+        const normalized2 = path.normalize(path2);
+
+        if (process.platform === 'win32') {
+            return normalized1.toLowerCase() === normalized2.toLowerCase();
+        }
+
+        return normalized1 === normalized2;
+    },
+
+    /**
+     * Extract executable name from a command path
+     * Example: C:\path\to\electron.exe -> electron.exe
+     */
+    getExecutableName(commandPath) {
+        if (!commandPath) {
+            return '';
+        }
+
+        const parts = commandPath.replace(/\\/g, '/').split('/');
+        return parts[parts.length - 1];
+    },
+
     async clearElectronInstances() {
+        const debugLog = (msg) => {
+            if (process.env.DEBUG_E2E) {
+                // eslint-disable-next-line no-console
+                console.log(`[clearElectronInstances] ${msg}`);
+            }
+        };
+
+        debugLog(`Looking for Electron processes. electronBinaryPath: ${electronBinaryPath}`);
+
         return new Promise((resolve, reject) => {
             ps.lookup({
                 command: process.platform === 'darwin' ? 'Electron' : 'electron',
             }, async (err, resultList) => {
                 if (err) {
+                    debugLog(`ps.lookup error: ${err}`);
                     reject(err);
                     return;
                 }
-                resultList.forEach((process) => {
-                    if (process && process.command === electronBinaryPath && !process.arguments.some((arg) => arg.includes('electron-mocha'))) {
-                        ps.kill(process.pid);
+
+                debugLog(`Found ${resultList.length} potential processes`);
+
+                const electronExeName = this.getExecutableName(electronBinaryPath);
+                const processesToKill = [];
+
+                resultList.forEach((proc) => {
+                    if (!proc || !proc.command) {
+                        return;
+                    }
+
+                    debugLog(`Checking process PID ${proc.pid}: command="${proc.command}"`);
+
+                    // Skip electron-mocha processes
+                    if (proc.arguments && proc.arguments.some &&
+                        proc.arguments.some((arg) => arg.includes('electron-mocha'))) {
+                        debugLog(`Skipping electron-mocha process ${proc.pid}`);
+                        return;
+                    }
+
+                    // Match by exact path (primary method)
+                    const exactMatch = this.pathsMatch(proc.command, electronBinaryPath);
+
+                    // Match by executable name (fallback method for Windows)
+                    const execNameMatch = process.platform === 'win32' &&
+                        this.getExecutableName(proc.command).toLowerCase() === electronExeName.toLowerCase();
+
+                    if (exactMatch || execNameMatch) {
+                        debugLog(`Will kill process ${proc.pid} (exactMatch: ${exactMatch}, execNameMatch: ${execNameMatch})`);
+                        processesToKill.push(proc.pid);
+                    } else {
+                        debugLog(`No match for process ${proc.pid}`);
                     }
                 });
 
-                // Windows needs time for file handles to be fully released
-                if (process.platform === 'win32') {
-                    await asyncSleep(2000);
+                if (processesToKill.length === 0) {
+                    debugLog('No Electron processes to kill');
+                    resolve();
+                    return;
                 }
+
+                debugLog(`Killing ${processesToKill.length} processes: ${processesToKill.join(', ')}`);
+
+                // Kill all identified processes
+                const killPromises = processesToKill.map((pid) => {
+                    return new Promise((resolveKill) => {
+                        ps.kill(pid, (killErr) => {
+                            if (killErr) {
+                                debugLog(`Error killing process ${pid}: ${killErr.message}`);
+                            } else {
+                                debugLog(`Successfully killed process ${pid}`);
+                            }
+                            // Resolve even on error to continue with other processes
+                            resolveKill();
+                        });
+                    });
+                });
+
+                await Promise.all(killPromises);
+
+                // Clean singleton lock files immediately after killing processes
+                debugLog('Cleaning singleton lock files');
+                cleanSingletonLocks();
+
+                // Windows needs time for file handles to be fully released
+                // Use progressive delay based on number of processes killed
+                if (process.platform === 'win32') {
+                    const baseDelay = 2000;
+                    const perProcessDelay = 500;
+                    const totalDelay = Math.min(baseDelay + (processesToKill.length * perProcessDelay), 5000);
+                    debugLog(`Waiting ${totalDelay}ms for file handles to be released`);
+                    await asyncSleep(totalDelay);
+
+                    // Clean singleton locks again to ensure they're gone
+                    cleanSingletonLocks();
+                }
+
+                debugLog('clearElectronInstances complete');
                 resolve();
             });
         });
