@@ -101,7 +101,9 @@ describe('menu_bar/dropdown', function desc() {
 
         it('MM-T4408_1 should show the first view', async () => {
             // Wait for views to be initialized and attached
-            await asyncSleep(500);
+            // macOS needs more time for the async view creation and attachment chain
+            const initialWait = process.platform === 'darwin' ? 2000 : 1000;
+            await asyncSleep(initialWait);
             await browserWindow.evaluate((window, url) => {
                 return new Promise((resolve, reject) => {
                     const maxAttempts = 200; // 20 seconds max (200 * 100ms)

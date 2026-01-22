@@ -102,9 +102,9 @@ describe('server_management/drag_and_drop', function desc() {
             // Move the first tab to the right
             let firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
             await firstTab.focus();
-            await mainWindow.keyboard.down(' ');
-            await mainWindow.keyboard.down('ArrowRight');
-            await mainWindow.keyboard.down(' ');
+            await mainWindow.keyboard.press(' ');
+            await mainWindow.keyboard.press('ArrowRight');
+            await mainWindow.keyboard.press(' ');
             await asyncSleep(1000);
 
             // Verify that the new order is visible
@@ -148,19 +148,19 @@ describe('server_management/drag_and_drop', function desc() {
             // Move the first server down, then re-open the dropdown
             const initialMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
             await initialMenuItem.focus();
-            await dropdownView.keyboard.down(' ');
-            await dropdownView.keyboard.down('ArrowDown');
-            await dropdownView.keyboard.down(' ');
+            await dropdownView.keyboard.press(' ');
+            await dropdownView.keyboard.press('ArrowDown');
+            await dropdownView.keyboard.press(' ');
 
             // Wait for drag operation to complete and config to be written
             await asyncSleep(2000);
 
             await mainWindow.keyboard.press('Escape');
-            await asyncSleep(500);
+            await asyncSleep(1000);
             await mainWindow.click('.ServerDropdownButton');
 
             // Wait for dropdown to reopen and render with new order
-            await asyncSleep(500);
+            await asyncSleep(1500);
 
             // Verify that the new order persists
             const firstMenuItem = await dropdownView.waitForSelector('.ServerDropdown button.ServerDropdown__button:nth-child(1) .ServerDropdown__draggable-handle');
@@ -176,7 +176,7 @@ describe('server_management/drag_and_drop', function desc() {
 
         it('MM-T2634_3 should update the config file', async () => {
             // Wait to ensure config file has been written
-            await asyncSleep(500);
+            await asyncSleep(1500);
 
             // Verify config is updated
             const newConfig = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));

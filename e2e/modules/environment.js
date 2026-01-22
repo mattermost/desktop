@@ -156,6 +156,42 @@ module.exports = {
         return parts[parts.length - 1];
     },
 
+    /**
+     * Force kill a process using native OS commands
+     * This is used as a fallback when ps.kill() times out
+     */
+    async forceKillProcess(pid) {
+        const debugLog = (msg) => {
+            if (process.env.DEBUG_E2E) {
+                // eslint-disable-next-line no-console
+                console.log(`[forceKillProcess] ${msg}`);
+            }
+        };
+
+        return new Promise((resolve) => {
+            let killCommand;
+            if (process.platform === 'win32') {
+                killCommand = `taskkill /F /PID ${pid}`;
+            } else {
+                killCommand = `kill -9 ${pid}`;
+            }
+
+            debugLog(`Executing: ${killCommand}`);
+
+            const {exec} = require('child_process');
+            exec(killCommand, (error) => {
+                if (error) {
+                    debugLog(`Force kill error for PID ${pid}: ${error.message}`);
+                } else {
+                    debugLog(`Force kill succeeded for PID ${pid}`);
+                }
+
+                // Always resolve - if process doesn't exist anymore, that's fine
+                resolve();
+            });
+        });
+    },
+
     async clearElectronInstances() {
         const debugLog = (msg) => {
             if (process.env.DEBUG_E2E) {
@@ -218,19 +254,40 @@ module.exports = {
 
                 debugLog(`Killing ${processesToKill.length} processes: ${processesToKill.join(', ')}`);
 
-                // Kill all identified processes
-                const killPromises = processesToKill.map((pid) => {
-                    return new Promise((resolveKill) => {
+                // Kill all identified processes with timeout handling
+                const killPromises = processesToKill.map(async (pid) => {
+                    const KILL_TIMEOUT = 10000; // 10 second timeout for ps.kill
+
+                    debugLog(`Attempting to kill process ${pid}`);
+
+                    const killAttempt = new Promise((resolveKill) => {
                         ps.kill(pid, (killErr) => {
                             if (killErr) {
-                                debugLog(`Error killing process ${pid}: ${killErr.message}`);
+                                debugLog(`ps.kill error for ${pid}: ${killErr.message}`);
+                                resolveKill({success: false, error: killErr.message});
                             } else {
-                                debugLog(`Successfully killed process ${pid}`);
+                                debugLog(`ps.kill succeeded for ${pid}`);
+                                resolveKill({success: true});
                             }
-                            // Resolve even on error to continue with other processes
-                            resolveKill();
                         });
                     });
+
+                    const timeout = new Promise((resolveTimeout) => {
+                        setTimeout(() => {
+                            debugLog(`ps.kill timeout for ${pid} after ${KILL_TIMEOUT}ms`);
+                            resolveTimeout({success: false, error: 'timeout'});
+                        }, KILL_TIMEOUT);
+                    });
+
+                    const result = await Promise.race([killAttempt, timeout]);
+
+                    // If ps.kill failed or timed out, use force kill
+                    if (!result.success) {
+                        debugLog(`ps.kill failed for ${pid}, attempting force kill`);
+                        await this.forceKillProcess(pid);
+                    }
+
+                    return result;
                 });
 
                 await Promise.all(killPromises);
@@ -239,17 +296,68 @@ module.exports = {
                 debugLog('Cleaning singleton lock files');
                 cleanSingletonLocks();
 
-                // Windows needs time for file handles to be fully released
-                // Use progressive delay based on number of processes killed
-                if (process.platform === 'win32') {
-                    const baseDelay = 2000;
-                    const perProcessDelay = 500;
-                    const totalDelay = Math.min(baseDelay + (processesToKill.length * perProcessDelay), 5000);
-                    debugLog(`Waiting ${totalDelay}ms for file handles to be released`);
-                    await asyncSleep(totalDelay);
+                // Wait for processes to fully terminate and file handles to be released
+                // This is needed on all platforms, not just Windows
+                const waitDelay = (() => {
+                    if (process.platform === 'win32') {
+                        // Windows needs longest wait
+                        const baseDelay = 2000;
+                        const perProcessDelay = 500;
+                        return Math.min(baseDelay + (processesToKill.length * perProcessDelay), 5000);
+                    }
+                    if (process.platform === 'linux') {
+                        // Linux needs moderate wait in CI
+                        return 2000;
+                    }
 
-                    // Clean singleton locks again to ensure they're gone
+                    // macOS
+                    return 1000;
+                })();
+
+                debugLog(`Waiting ${waitDelay}ms for process cleanup`);
+                await asyncSleep(waitDelay);
+
+                // Clean singleton locks again to ensure they're gone
+                if (process.platform === 'win32' || process.platform === 'darwin') {
                     cleanSingletonLocks();
+                }
+
+                // Verify processes are actually dead
+                debugLog('Verifying processes are terminated');
+                const stillAlive = await new Promise((resolveVerify) => {
+                    ps.lookup({
+                        command: process.platform === 'darwin' ? 'Electron' : 'electron',
+                    }, (verifyErr, verifyList) => {
+                        if (verifyErr) {
+                            debugLog(`Verification lookup error: ${verifyErr}`);
+                            resolveVerify([]);
+                            return;
+                        }
+
+                        const alive = verifyList.filter((proc) => {
+                            if (!proc || !proc.pid) {
+                                return false;
+                            }
+
+                            // Check if this PID was in our kill list
+                            return processesToKill.includes(proc.pid);
+                        });
+
+                        if (alive.length > 0) {
+                            debugLog(`WARNING: ${alive.length} processes still alive: ${alive.map((p) => p.pid).join(', ')}`);
+                        } else {
+                            debugLog('All processes verified dead');
+                        }
+
+                        resolveVerify(alive);
+                    });
+                });
+
+                // If any processes are still alive, force kill them one more time
+                if (stillAlive.length > 0) {
+                    debugLog('Force killing remaining processes');
+                    await Promise.all(stillAlive.map((proc) => this.forceKillProcess(proc.pid)));
+                    await asyncSleep(1000); // Short wait after force kill
                 }
 
                 debugLog('clearElectronInstances complete');
