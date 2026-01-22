@@ -9,7 +9,7 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 describe('RemoveServerModal', function desc() {
-    this.timeout(process.platform === 'win32' ? 90000 : 60000);
+    this.timeout(30000);
     const config = env.demoConfig;
 
     beforeEach(async () => {

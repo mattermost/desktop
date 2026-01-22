@@ -104,7 +104,7 @@ describe('menu_bar/dropdown', function desc() {
             await asyncSleep(500);
             await browserWindow.evaluate((window, url) => {
                 return new Promise((resolve, reject) => {
-                    const maxAttempts = 400; // 40 seconds max (400 * 100ms)
+                    const maxAttempts = 200; // 20 seconds max (200 * 100ms)
                     let attempts = 0;
                     const checkView = () => {
                         const hasView = window.contentView.children.find((view) => view.webContents.getURL() === url);

@@ -9,8 +9,7 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 describe('server_management/tab_management', function desc() {
-    // Windows and Linux need longer timeout due to slower CI initialization with tab creation
-    this.timeout(process.platform === 'win32' ? 90000 : 60000);
+    this.timeout(30000);
     const config = env.demoMattermostConfig;
 
     const beforeFunc = async () => {
