@@ -169,10 +169,11 @@ module.exports = {
         return new Promise((resolve, reject) => {
             ps.lookup({
                 command: process.platform === 'darwin' ? 'Electron' : 'electron',
-            }, (err, resultList) => {
+            }, async (err, resultList) => {
                 if (err) {
                     debugLog(`ps.lookup error: ${err}`);
                     reject(err);
+                    return;
                 }
 
                 debugLog(`Found ${resultList.length} potential processes`);
@@ -208,6 +209,50 @@ module.exports = {
                         debugLog(`No match for process ${proc.pid}`);
                     }
                 });
+
+                if (processesToKill.length === 0) {
+                    debugLog('No Electron processes to kill');
+                    resolve();
+                    return;
+                }
+
+                debugLog(`Killing ${processesToKill.length} processes: ${processesToKill.join(', ')}`);
+
+                // Kill all identified processes
+                const killPromises = processesToKill.map((pid) => {
+                    return new Promise((resolveKill) => {
+                        ps.kill(pid, (killErr) => {
+                            if (killErr) {
+                                debugLog(`Error killing process ${pid}: ${killErr.message}`);
+                            } else {
+                                debugLog(`Successfully killed process ${pid}`);
+                            }
+                            // Resolve even on error to continue with other processes
+                            resolveKill();
+                        });
+                    });
+                });
+
+                await Promise.all(killPromises);
+
+                // Clean singleton lock files immediately after killing processes
+                debugLog('Cleaning singleton lock files');
+                cleanSingletonLocks();
+
+                // Windows needs time for file handles to be fully released
+                // Use progressive delay based on number of processes killed
+                if (process.platform === 'win32') {
+                    const baseDelay = 2000;
+                    const perProcessDelay = 500;
+                    const totalDelay = Math.min(baseDelay + (processesToKill.length * perProcessDelay), 5000);
+                    debugLog(`Waiting ${totalDelay}ms for file handles to be released`);
+                    await asyncSleep(totalDelay);
+
+                    // Clean singleton locks again to ensure they're gone
+                    cleanSingletonLocks();
+                }
+
+                debugLog('clearElectronInstances complete');
                 resolve();
             });
         });
@@ -293,7 +338,17 @@ module.exports = {
             executablePath: electronBinaryPath,
 
             // macOS-15 requires longer timeout due to slower initialization
-            timeout: process.platform === 'darwin' ? 90000 : 30000,
+            // Linux CI with xvfb also needs more time due to virtual framebuffer overhead
+            // Windows CI needs longest timeout due to antivirus scanning and slower disk I/O
+            timeout: (() => {
+                if (process.platform === 'win32') {
+                    return 120000;
+                }
+                if (process.platform === 'darwin') {
+                    return 90000;
+                }
+                return 60000;
+            })(),
             args: [
                 path.join(sourceRootDir, 'e2e/dist'),
                 `--user-data-dir=${userDataDir}`,
@@ -361,8 +416,19 @@ module.exports = {
             console.log('Warning: No windows with URLs detected within 30 seconds, but continuing anyway');
         } else {
             // Give windows a bit more time to fully render content
-            // macOS needs more time due to slower window initialization
-            await asyncSleep(process.platform === 'darwin' ? 1000 : 500);
+            // macOS and Linux need more time due to slower window initialization
+            // Linux with xvfb has similar delays to macOS
+            // Windows needs even more time due to slower disk I/O and antivirus scanning
+            const renderDelay = (() => {
+                if (process.platform === 'win32') {
+                    return 2000;
+                }
+                if (process.platform === 'darwin' || process.platform === 'linux') {
+                    return 1000;
+                }
+                return 500;
+            })();
+            await asyncSleep(renderDelay);
         }
 
         return eapp;
@@ -371,15 +437,23 @@ module.exports = {
     async getServerMap(app) {
         // Wait for testHelper to be available in windows
         // This is especially important after clicking newTabButton or during slow initialization
-        // Windows CI needs more time, so increase retries
-        const maxRetries = process.platform === 'win32' ? 200 : 100; // 20 seconds on Windows, 10 seconds otherwise
+        // Windows and Linux CI need more time, so increase retries
+        const maxRetries = (() => {
+            if (process.platform === 'win32') {
+                return 200; // 20s Windows
+            }
+            if (process.platform === 'linux') {
+                return 150; // 15s Linux
+            }
+            return 100; // 10s macOS
+        })();
         let retries = 0;
         let lastWindowCount = 0;
         let stableCount = 0;
         let lastMap = {};
 
-        // Windows needs more stability checks
-        const requiredStableCount = process.platform === 'win32' ? 10 : 5;
+        // Windows and Linux need more stability checks due to slower DOM updates
+        const requiredStableCount = (process.platform === 'win32' || process.platform === 'linux') ? 10 : 5;
 
         while (retries < maxRetries) {
             const windows = app.windows().filter((win) => {
@@ -458,13 +532,32 @@ module.exports = {
     },
 
     async loginToMattermost(window) {
-        await asyncSleep(1000);
-        await window.waitForSelector('#input_loginId');
-        await window.waitForSelector('#input_password-input');
-        await window.waitForSelector('#saveSetting');
-        await window.type('#input_loginId', process.env.MM_TEST_USER_NAME);
-        await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
-        await window.click('#saveSetting');
+        // Windows needs more time for page navigation and rendering
+        const initialDelay = process.platform === 'win32' ? 3000 : 1000;
+        await asyncSleep(initialDelay);
+
+        // Add explicit timeout for all platforms, with longer timeout for Windows
+        const selectorTimeout = process.platform === 'win32' ? 60000 : 30000;
+
+        try {
+            await window.waitForSelector('#input_loginId', {timeout: selectorTimeout});
+            await window.waitForSelector('#input_password-input', {timeout: selectorTimeout});
+            await window.waitForSelector('#saveSetting', {timeout: selectorTimeout});
+
+            await window.type('#input_loginId', process.env.MM_TEST_USER_NAME);
+            await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
+            await window.click('#saveSetting');
+
+            // Wait for login to complete
+            await asyncSleep(process.platform === 'win32' ? 2000 : 1000);
+        } catch (error) {
+            // Log detailed error for debugging
+            // eslint-disable-next-line no-console
+            console.error('loginToMattermost failed:', error.message);
+            // eslint-disable-next-line no-console
+            console.error('Window URL:', window.url());
+            throw error;
+        }
     },
 
     async openDownloadsDropdown(app) {

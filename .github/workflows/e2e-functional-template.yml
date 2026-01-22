@@ -137,6 +137,7 @@ env:
   DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
   NODE_ENV: "test"
+  DEBUG_E2E: "true"
 
 jobs:
   e2e:
