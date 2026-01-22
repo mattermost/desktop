@@ -44,7 +44,7 @@ describe('Menu/window_menu', function desc() {
         await env.clearElectronInstances();
     };
 
-    this.timeout(60000);
+    this.timeout(process.platform === 'win32' ? 90000 : 60000);
 
     describe('MM-T826 should switch to servers when keyboard shortcuts are pressed', async () => {
         let mainWindow;

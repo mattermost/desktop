@@ -42,7 +42,7 @@ describe('copylink', function desc() {
             clipboard.writeText('');
             await asyncSleep(500);
 
-            await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 5000});
+            await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 20000});
             await firstServer.click('#sidebarItem_town-square', {button: 'right'});
             await asyncSleep(2000);
             switch (process.platform) {

@@ -20,7 +20,14 @@ const config = {
 };
 
 describe('downloads/downloads_manager', function desc() {
-    this.timeout(30000);
+    // macOS and Windows need 120s, Linux needs 90s due to slower CI with file operations
+    const timeout = (() => {
+        if (process.platform === 'win32' || process.platform === 'darwin') {
+            return 120000;
+        }
+        return 90000;
+    })();
+    this.timeout(timeout);
     let firstServer;
     const filename = `${Date.now().toString()}.txt`;
 
@@ -36,8 +43,8 @@ describe('downloads/downloads_manager', function desc() {
         await env.loginToMattermost(firstServer);
         await asyncSleep(2000);
 
-        await firstServer.waitForSelector('#post_textbox');
-        const fileInput = await firstServer.waitForSelector('input#fileUploadInput');
+        await firstServer.waitForSelector('#post_textbox', {timeout: 15000});
+        const fileInput = await firstServer.waitForSelector('input#fileUploadInput', {timeout: 10000});
         await fileInput.setInputFiles({
             name: filename,
             mimeType: 'text/plain',

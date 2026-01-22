@@ -31,7 +31,8 @@ describe('dark_mode', function desc() {
         await env.clearElectronInstances();
     });
 
-    if (process.platform === 'linux') {
+    // Skip on CI as robotjs doesn't work in headless xvfb environment
+    if (process.platform === 'linux' && process.env.CI !== 'true') {
         it('MM-T2465 Linux Dark Mode Toggle', async () => {
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             mainWindow.should.not.be.null;

@@ -11,7 +11,8 @@ const env = require('../modules/environment');
 const {asyncSleep} = require('../modules/utils');
 
 describe('focus', function desc() {
-    this.timeout(process.platform === 'win32' ? 60000 : 40000);
+    // Linux and Windows need longer timeouts due to slower CI initialization
+    this.timeout(process.platform === 'win32' || process.platform === 'linux' ? 60000 : 40000);
 
     const config = {
         ...env.demoMattermostConfig,

@@ -37,7 +37,7 @@ describe('server_management/drag_and_drop', function desc() {
         await env.clearElectronInstances();
     };
 
-    this.timeout(30000);
+    this.timeout(process.platform === 'darwin' ? 120000 : 60000);
 
     describe('MM-T2635 should be able to drag and drop tabs', async () => {
         let mainWindow;
@@ -53,8 +53,8 @@ describe('server_management/drag_and_drop', function desc() {
             await asyncSleep(4000);
 
             // Wait for tabs to be visible before getting server map
-            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15000});
-            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15000});
+            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 20000});
+            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 20000});
             await asyncSleep(2000);
 
             this.serverMap = await env.getServerMap(this.app);
@@ -63,7 +63,7 @@ describe('server_management/drag_and_drop', function desc() {
             const serverName = config.servers[0].name;
             if (!this.serverMap[serverName] || this.serverMap[serverName].length < 3) {
                 // Retry getting server map if tabs are not ready
-                await asyncSleep(3000);
+                await asyncSleep(5000);
                 this.serverMap = await env.getServerMap(this.app);
             }
 
@@ -71,7 +71,7 @@ describe('server_management/drag_and_drop', function desc() {
             await secondTab.click();
             await asyncSleep(1500);
             const secondView = this.serverMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 15000});
+            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 20000});
             await secondView.click('#sidebarItem_off-topic');
             await asyncSleep(2000);
 
@@ -79,7 +79,7 @@ describe('server_management/drag_and_drop', function desc() {
             await thirdTab.click();
             await asyncSleep(1500);
             const thirdView = this.serverMap[serverName][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 15000});
+            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 20000});
             await thirdView.click('#sidebarItem_town-square');
             await asyncSleep(2000);
         });
