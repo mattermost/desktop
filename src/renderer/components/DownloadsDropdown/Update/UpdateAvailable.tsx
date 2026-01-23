@@ -34,7 +34,6 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
             } else {
                 window.desktop.downloadUpdateManually();
             }
-            window.desktop.downloadUpdateManually();
         } else if (platform === 'linux') {
             window.desktop.openUpdateGuide();
         }
@@ -119,7 +118,7 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                     {getMainButtonText()}
                 </button>
                 <div className='DownloadsDropdown__Update__Details__SubButtons'>
-                    {(platform === 'win32' || platform === 'darwin') && (
+                    {platform === 'win32' && (
                         <a
                             className='DownloadsDropdown__Update__Details__SubButton'
                             onClick={handleDownloadManually}

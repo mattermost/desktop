@@ -68,6 +68,13 @@ jest.mock('common/log', () => ({
     })),
 }));
 
+jest.mock('electron-is-dev', () => ({
+    __esModule: true,
+    default: false,
+}));
+
+const net = jest.mocked(notMockedNet);
+
 describe('main/updateNotifier', () => {
     describe('constructor', () => {
         afterEach(() => {
@@ -200,8 +207,17 @@ describe('main/updateNotifier', () => {
     });
 
     describe('performUpdateCheck', () => {
+        beforeEach(() => {
+            jest.resetAllMocks();
+        });
+
         it('should return update info', async () => {
             app.getVersion.mockReturnValue('5.0.0');
+            const mockResponse = {
+                ok: true,
+                text: jest.fn().mockResolvedValue('6.1.0-develop.2\n'),
+            } as unknown as Response;
+            net.fetch.mockResolvedValue(mockResponse);
             const updateNotifier = new UpdateNotifier();
             const result = await updateNotifier.performUpdateCheck(false);
             expect(result).toEqual({version: '6.1.0-develop.2'});
