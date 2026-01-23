@@ -93,6 +93,11 @@ describe('menu_bar/dropdown', function desc() {
 
         before(async () => {
             await beforeFunc();
+
+            // Wait for server views to be fully initialized before testing
+            // This ensures contentView.children is populated
+            await env.getServerMap(this.app);
+
             mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             browserWindow = await this.app.browserWindow(mainWindow);
             dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
@@ -100,20 +105,29 @@ describe('menu_bar/dropdown', function desc() {
         after(afterFunc);
 
         it('MM-T4408_1 should show the first view', async () => {
-            // Wait for views to be initialized and attached
-            // macOS needs more time for the async view creation and attachment chain
-            const initialWait = process.platform === 'darwin' ? 2000 : 1000;
-            await asyncSleep(initialWait);
+            // getServerMap in before() hook already waited for views to be ready
+            // Add a small delay for view attachment to complete
+            await asyncSleep(500);
+
             await browserWindow.evaluate((window, url) => {
                 return new Promise((resolve, reject) => {
-                    const maxAttempts = 200; // 20 seconds max (200 * 100ms)
+                    const maxAttempts = 100; // 10 seconds max (100 * 100ms) - should be enough since views are already loaded
                     let attempts = 0;
                     const checkView = () => {
                         const hasView = window.contentView.children.find((view) => view.webContents.getURL() === url);
                         if (hasView) {
                             resolve();
                         } else if (attempts >= maxAttempts) {
-                            reject(new Error(`View with URL ${url} not found after ${maxAttempts * 100}ms`));
+                            // Enhanced error message with diagnostic info
+                            const childCount = window.contentView.children.length;
+                            const childUrls = window.contentView.children.map((view) => {
+                                try {
+                                    return view.webContents.getURL();
+                                } catch (e) {
+                                    return 'error-getting-url';
+                                }
+                            });
+                            reject(new Error(`View with URL ${url} not found after ${maxAttempts * 100}ms. Found ${childCount} children with URLs: ${JSON.stringify(childUrls)}`));
                         } else {
                             attempts++;
                             setTimeout(checkView, 100);
