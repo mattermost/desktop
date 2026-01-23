@@ -64,8 +64,6 @@ import {
     RECEIVE_DOWNLOADS_DROPDOWN_SIZE,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
-    START_UPDATE_DOWNLOAD,
-    START_UPGRADE,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
     MODAL_CANCEL,
@@ -122,6 +120,11 @@ import {
     UPDATE_THEME,
     GET_THEME,
     RESET_THEME,
+    OPEN_WINDOWS_STORE,
+    DOWNLOAD_UPDATE_MANUALLY,
+    OPEN_UPDATE_GUIDE,
+    GET_IS_MAC_APP_STORE,
+    OPEN_MAC_APP_STORE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -150,6 +153,11 @@ contextBridge.exposeInMainWorld('desktop', {
     openServerExternally: () => ipcRenderer.send(OPEN_SERVER_EXTERNALLY),
     openServerUpgradeLink: () => ipcRenderer.send(OPEN_SERVER_UPGRADE_LINK),
     openChangelogLink: () => ipcRenderer.send(OPEN_CHANGELOG_LINK),
+    openWindowsStore: () => ipcRenderer.send(OPEN_WINDOWS_STORE),
+    downloadUpdateManually: () => ipcRenderer.send(DOWNLOAD_UPDATE_MANUALLY),
+    openUpdateGuide: () => ipcRenderer.send(OPEN_UPDATE_GUIDE),
+    getIsMacAppStore: () => ipcRenderer.invoke(GET_IS_MAC_APP_STORE),
+    openMacAppStore: () => ipcRenderer.send(OPEN_MAC_APP_STORE),
     closeDownloadsDropdown: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN),
     closeDownloadsDropdownMenu: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU),
     openDownloadsDropdown: () => ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN),
@@ -247,8 +255,6 @@ contextBridge.exposeInMainWorld('desktop', {
         sendSize: (width, height) => ipcRenderer.send(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, width, height),
         requestClearDownloadsDropdown: () => ipcRenderer.send(REQUEST_CLEAR_DOWNLOADS_DROPDOWN),
         openFile: (item) => ipcRenderer.send(DOWNLOADS_DROPDOWN_OPEN_FILE, item),
-        startUpdateDownload: () => ipcRenderer.send(START_UPDATE_DOWNLOAD),
-        startUpgrade: () => ipcRenderer.send(START_UPGRADE),
         focus: () => ipcRenderer.send(DOWNLOADS_DROPDOWN_FOCUSED),
     },
 

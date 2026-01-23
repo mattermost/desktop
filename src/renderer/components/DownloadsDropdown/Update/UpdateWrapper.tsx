@@ -6,7 +6,6 @@ import React from 'react';
 import type {DownloadedItem} from 'types/downloads';
 
 import UpdateAvailable from './UpdateAvailable';
-import UpdateDownloaded from './UpdateDownloaded';
 
 import 'renderer/css/components/Button.scss';
 
@@ -19,14 +18,6 @@ const UpdateWrapper = ({item, appName}: OwnProps) => {
     if (item.state === 'available') {
         return (
             <UpdateAvailable
-                item={item}
-                appName={appName}
-            />
-        );
-    }
-    if (item.state === 'completed') {
-        return (
-            <UpdateDownloaded
                 item={item}
                 appName={appName}
             />

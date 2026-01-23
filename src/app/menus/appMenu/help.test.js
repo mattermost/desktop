@@ -5,9 +5,9 @@ import {shell, clipboard} from 'electron';
 
 import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
-import UpdateManager from 'main/autoUpdater';
 import Diagnostics from 'main/diagnostics';
 import {localizeMessage} from 'main/i18nManager';
+import UpdateManager from 'main/updateNotifier';
 
 import createHelpMenu from './help';
 
@@ -49,7 +49,7 @@ jest.mock('common/servers/serverManager', () => ({
     getRemoteInfo: jest.fn(),
 }));
 
-jest.mock('main/autoUpdater', () => ({
+jest.mock('main/updateNotifier', () => ({
     versionDownloaded: false,
     versionAvailable: false,
     handleUpdate: jest.fn(),

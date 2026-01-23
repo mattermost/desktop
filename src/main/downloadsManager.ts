@@ -5,12 +5,10 @@ import path from 'path';
 
 import type {DownloadItem, Event, WebContents, FileFilter, IpcMainInvokeEvent} from 'electron';
 import {ipcMain, dialog, shell, Menu, app, nativeImage} from 'electron';
-import type {ProgressInfo, UpdateInfo} from 'electron-updater';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
-    CANCEL_UPDATE_DOWNLOAD,
     CLOSE_DOWNLOADS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_FOCUSED,
@@ -21,10 +19,8 @@ import {
     REQUEST_HAS_DOWNLOADS,
     SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
     UPDATE_AVAILABLE,
-    UPDATE_DOWNLOADED,
     UPDATE_DOWNLOADS_DROPDOWN,
     UPDATE_PATHS,
-    UPDATE_PROGRESS,
 } from 'common/communication';
 import Config from 'common/config';
 import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
@@ -91,15 +87,11 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         ipcMain.removeHandler(GET_DOWNLOAD_LOCATION);
         ipcMain.removeListener(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
         ipcMain.removeListener(UPDATE_AVAILABLE, this.onUpdateAvailable);
-        ipcMain.removeListener(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
-        ipcMain.removeListener(UPDATE_PROGRESS, this.onUpdateProgress);
         ipcMain.removeListener(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
 
         ipcMain.handle(GET_DOWNLOAD_LOCATION, this.handleSelectDownload);
         ipcMain.on(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
         ipcMain.on(UPDATE_AVAILABLE, this.onUpdateAvailable);
-        ipcMain.on(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
-        ipcMain.on(UPDATE_PROGRESS, this.onUpdateProgress);
         ipcMain.on(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
     };
 
@@ -329,12 +321,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
         const fileId = this.getDownloadedFileId(item);
 
-        if (this.isAppUpdate(item)) {
-            ipcMain.emit(CANCEL_UPDATE_DOWNLOAD);
-            const update = this.downloads[APP_UPDATE_KEY];
-            update.state = 'cancelled';
-            this.save(APP_UPDATE_KEY, update);
-        } else if (this.progressingItems.has(fileId)) {
+        if (this.progressingItems.has(fileId)) {
             this.progressingItems.get(fileId)?.cancel?.();
             this.progressingItems.delete(fileId);
         }
@@ -592,32 +579,6 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
             state: 'available',
         });
         this.openDownloadsDropdown();
-    };
-    private onUpdateDownloaded = (event: Event, info: UpdateInfo) => {
-        log.debug('onUpdateDownloaded');
-
-        const {version} = info;
-        const update = this.downloads[APP_UPDATE_KEY];
-        update.state = 'completed';
-        update.progress = 100;
-        update.filename = version;
-
-        this.save(APP_UPDATE_KEY, update);
-        this.openDownloadsDropdown();
-    };
-    private onUpdateProgress = (event: Event, progress: ProgressInfo) => {
-        log.debug('onUpdateProgress');
-        const {total, transferred, percent} = progress;
-        const update = this.downloads[APP_UPDATE_KEY] || {...UPDATE_DOWNLOAD_ITEM};
-        if (typeof update.addedAt !== 'number' || update.addedAt === 0) {
-            update.addedAt = Date.now();
-        }
-        update.state = 'progressing';
-        update.totalBytes = total;
-        update.receivedBytes = transferred;
-        update.progress = Math.round(percent);
-        this.save(APP_UPDATE_KEY, update);
-        this.shouldShowBadge();
     };
     private noUpdateAvailable = () => {
         const downloads = this.downloads;
