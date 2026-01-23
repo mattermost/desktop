@@ -32,8 +32,8 @@ export default function UpdatesSetting({
                 subLabel={
                     <div className='UpdatesSetting__subLabel'>
                         <FormattedMessage
-                            id='renderer.components.settingsPage.updates.automatic.description'
-                            defaultMessage='If enabled, updates to the Desktop App will download automatically and you will be notified when ready to install.'
+                            id='renderer.components.settingsPage.updates.automatic.newDescription'
+                            defaultMessage='If enabled, you will be automatically notified when a new update is available.'
                         />
                         <button
                             className='UpdatesSetting__button btn btn-primary'
