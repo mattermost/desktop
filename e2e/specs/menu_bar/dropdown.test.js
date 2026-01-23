@@ -93,11 +93,6 @@ describe('menu_bar/dropdown', function desc() {
 
         before(async () => {
             await beforeFunc();
-
-            // Wait for server views to be fully initialized before testing
-            // This ensures contentView.children is populated
-            await env.getServerMap(this.app);
-
             mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             browserWindow = await this.app.browserWindow(mainWindow);
             dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
@@ -105,13 +100,12 @@ describe('menu_bar/dropdown', function desc() {
         after(afterFunc);
 
         it('MM-T4408_1 should show the first view', async () => {
-            // getServerMap in before() hook already waited for views to be ready
-            // Add a small delay for view attachment to complete
+            // Wait for views to be initialized and attached
             await asyncSleep(500);
 
             await browserWindow.evaluate((window, url) => {
                 return new Promise((resolve, reject) => {
-                    const maxAttempts = 100; // 10 seconds max (100 * 100ms) - should be enough since views are already loaded
+                    const maxAttempts = 200; // 20 seconds max (200 * 100ms)
                     let attempts = 0;
                     const checkView = () => {
                         const hasView = window.contentView.children.find((view) => view.webContents.getURL() === url);

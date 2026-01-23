@@ -545,15 +545,15 @@ module.exports = {
     async getServerMap(app) {
         // Wait for testHelper to be available in windows
         // This is especially important after clicking newTabButton or during slow initialization
-        // Windows and Linux CI need more time, so increase retries
+        // macOS CI needs most time due to process cleanup and slow initialization
         const maxRetries = (() => {
+            if (process.platform === 'darwin') {
+                return 300; // 30s macOS - LONGEST due to slow CI initialization
+            }
             if (process.platform === 'win32') {
                 return 200; // 20s Windows
             }
-            if (process.platform === 'linux') {
-                return 150; // 15s Linux
-            }
-            return 100; // 10s macOS
+            return 150; // 15s Linux
         })();
         let retries = 0;
         let lastWindowCount = 0;
