@@ -1,8 +1,6 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import fs from 'fs';
-import path from 'path';
 
 import {EventEmitter} from 'events';
 
@@ -31,7 +29,6 @@ const log = new Logger('Config');
 export class Config extends EventEmitter {
     private configFilePath?: string;
     private appName?: string;
-    private appPath?: string;
 
     private registryConfig: RegistryConfig;
     private _predefinedServers: ConfigServer[];
@@ -42,7 +39,6 @@ export class Config extends EventEmitter {
     private registryConfigData?: Partial<RegistryCurrentConfig>;
     private defaultConfigData?: CurrentConfig;
     private buildConfigData?: BuildConfig;
-    private canUpgradeValue?: boolean;
 
     constructor() {
         super();
@@ -53,11 +49,9 @@ export class Config extends EventEmitter {
         }
     }
 
-    init = (configFilePath: string, appName: string, appPath: string) => {
+    init = (configFilePath: string, appName: string) => {
         this.configFilePath = configFilePath;
         this.appName = appName;
-        this.appPath = appPath;
-        this.canUpgradeValue = this.checkWriteableApp();
 
         this.reload();
     };
@@ -242,7 +236,7 @@ export class Config extends EventEmitter {
     }
 
     get canUpgrade() {
-        return process.env.NODE_ENV === 'test' || (this.canUpgradeValue && this.buildConfigData?.enableAutoUpdater && !(process.platform === 'linux' && !process.env.APPIMAGE) && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false));
+        return process.env.NODE_ENV === 'test' || (this.buildConfigData?.enableAutoUpdater && !(process.platform === 'linux' && !process.env.APPIMAGE) && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false));
     }
 
     get autoCheckForUpdates() {
@@ -416,39 +410,6 @@ export class Config extends EventEmitter {
         if (this.combinedData) {
             this.combinedData.appName = this.appName;
         }
-    };
-
-    private checkWriteableApp = () => {
-        if (!this.appPath) {
-            throw new Error('Config not initialized, cannot regenerate');
-        }
-
-        if (process.platform === 'win32') {
-            try {
-                fs.accessSync(path.join(path.dirname(this.appPath), '../../'), fs.constants.W_OK);
-
-                // check to make sure that app-update.yml exists
-                if (!fs.existsSync(path.join(process.resourcesPath, 'app-update.yml'))) {
-                    log.warn('app-update.yml does not exist, disabling auto-updates');
-                    return false;
-                }
-            } catch (error) {
-                log.info(`${this.appPath}: ${error}`);
-                log.warn('autoupgrade disabled');
-                return false;
-            }
-
-            // eslint-disable-next-line no-undef
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            return __CAN_UPGRADE__; // prevent showing the option if the path is not writeable, like in a managed environment.
-        }
-
-        // temporarily disabling auto updater for macOS due to security issues
-        // eslint-disable-next-line no-undef
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return process.platform !== 'darwin' && __CAN_UPGRADE__;
     };
 }
 

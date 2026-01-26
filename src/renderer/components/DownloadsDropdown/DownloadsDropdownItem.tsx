@@ -7,7 +7,6 @@ import type {DownloadedItem} from 'types/downloads';
 
 import DownloadsDropdownItemFile from './DownloadsDropdownItemFile';
 import UpdateWrapper from './Update/UpdateWrapper';
-import UpdateDeprecationNotice from './UpdateDeprecationNotice';
 
 type OwnProps = {
     activeItem?: DownloadedItem;
@@ -16,15 +15,6 @@ type OwnProps = {
 }
 
 const DownloadsDropdownItem = ({item, activeItem, appName}: OwnProps) => {
-    if (item.type === 'update_deprecation') {
-        return (
-            <UpdateDeprecationNotice
-                item={item}
-                appName={appName}
-            />
-        );
-    }
-
     if (item.type === 'update' && item.state !== 'progressing') {
         return (
             <UpdateWrapper

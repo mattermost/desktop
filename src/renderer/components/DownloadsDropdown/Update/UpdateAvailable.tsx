@@ -23,7 +23,8 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
         }
         setIsProcessing(true);
         e?.preventDefault?.();
-        window.desktop.downloadsDropdown.startUpdateDownload();
+
+        // TODO: start update download
     };
 
     return (

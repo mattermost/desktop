@@ -25,7 +25,6 @@ jest.mock('main/app/utils', () => ({
     getDeeplinkingURL: jest.fn(),
     openDeepLink: jest.fn(),
 }));
-jest.mock('main/autoUpdater', () => ({}));
 
 jest.mock('main/security/certificateStore', () => ({
     isExplicitlyUntrusted: jest.fn(),

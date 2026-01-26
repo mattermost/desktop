@@ -61,7 +61,6 @@ jobs:
         run: |
           mkdir -p ./build/linux
           npm run package:linux
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: release/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -107,7 +106,6 @@ jobs:
       - name: release/package
         run: |
           mkdir -p ./build/win-release
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: release/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -156,7 +154,6 @@ jobs:
           zsh -c 'echo -n $APPLE_API_KEY_RAW > ./key.p8'
           mkdir -p ./build/macos-release
           npm run package:mac-with-universal
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
       - name: release/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

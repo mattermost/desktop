@@ -57,11 +57,10 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_AZURE_CLIENT_SECRET }}
           AZURE_TENANT_ID: ${{ secrets.MM_DESKTOP_MSI_INSTALLER_AZURE_TENANT_ID }}
-        run: npm run package:windows-installers
+        run: npm run package:windows-msi
       - name: nightly/package
         run: |
           mkdir -p ./build/win
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win
       - name: nightly/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -108,7 +107,6 @@ jobs:
           zsh -c 'echo -n $APPLE_API_KEY_RAW > ./key.p8'
           mkdir -p ./build/macos
           npm run package:mac-with-universal
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/macos
       - name: nightly/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

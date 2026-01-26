@@ -64,8 +64,6 @@ import {
     RECEIVE_DOWNLOADS_DROPDOWN_SIZE,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
     REQUEST_DOWNLOADS_DROPDOWN_INFO,
-    START_UPDATE_DOWNLOAD,
-    START_UPGRADE,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_OPEN_FILE,
     MODAL_CANCEL,
@@ -122,9 +120,6 @@ import {
     UPDATE_THEME,
     GET_THEME,
     RESET_THEME,
-    DISMISS_UPDATE_DEPRECATION_NOTICE,
-    OPEN_WINDOWS_STORE,
-    OPEN_WEBSITE,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -250,12 +245,7 @@ contextBridge.exposeInMainWorld('desktop', {
         sendSize: (width, height) => ipcRenderer.send(RECEIVE_DOWNLOADS_DROPDOWN_SIZE, width, height),
         requestClearDownloadsDropdown: () => ipcRenderer.send(REQUEST_CLEAR_DOWNLOADS_DROPDOWN),
         openFile: (item) => ipcRenderer.send(DOWNLOADS_DROPDOWN_OPEN_FILE, item),
-        startUpdateDownload: () => ipcRenderer.send(START_UPDATE_DOWNLOAD),
-        startUpgrade: () => ipcRenderer.send(START_UPGRADE),
         focus: () => ipcRenderer.send(DOWNLOADS_DROPDOWN_FOCUSED),
-        dismissUpdateDeprecationNotice: () => ipcRenderer.send(DISMISS_UPDATE_DEPRECATION_NOTICE),
-        openWindowsStore: () => ipcRenderer.send(OPEN_WINDOWS_STORE),
-        openWebsite: () => ipcRenderer.send(OPEN_WEBSITE),
     },
 
     downloadsDropdownMenu: {

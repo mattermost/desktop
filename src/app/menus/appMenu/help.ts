@@ -9,7 +9,6 @@ import {DEFAULT_EE_REPORT_PROBLEM_LINK, DEFAULT_TE_REPORT_PROBLEM_LINK} from 'co
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {isHttpLink} from 'common/utils/url';
-import UpdateManager from 'main/autoUpdater';
 import Diagnostics from 'main/diagnostics';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -17,31 +16,6 @@ const log = new Logger('Help');
 
 export default function createHelpMenu(): MenuItemConstructorOptions {
     const submenu: MenuItemConstructorOptions[] = [];
-    if (Config.canUpgrade) {
-        if (UpdateManager.versionDownloaded) {
-            submenu.push({
-                label: localizeMessage('main.menus.app.help.restartAndUpdate', 'Restart and Update'),
-                click() {
-                    UpdateManager.handleUpdate();
-                },
-            });
-        } else if (UpdateManager.versionAvailable) {
-            submenu.push({
-                label: localizeMessage('main.menus.app.help.downloadUpdate', 'Download Update'),
-                click() {
-                    UpdateManager.handleDownload();
-                },
-            });
-        } else {
-            submenu.push({
-                label: localizeMessage('main.menus.app.help.checkForUpdates', 'Check for Updates'),
-                click() {
-                    UpdateManager.checkForUpdates(true);
-                },
-            });
-        }
-        submenu.push({type: 'separator'});
-    }
 
     const serverId = ServerManager.getCurrentServerId();
     const currentServer = serverId ? ServerManager.getServer(serverId) : undefined;
