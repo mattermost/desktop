@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: ci/checkout-repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ env.REFERENCE }}
       - name: ci/setup-node
@@ -63,7 +63,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
@@ -117,7 +117,7 @@ jobs:
       CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
@@ -150,7 +150,7 @@ jobs:
       - mac-app-store-preflight
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
@@ -206,7 +206,7 @@ jobs:
       contents: read
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-aws-credentials
