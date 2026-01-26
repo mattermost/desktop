@@ -324,6 +324,7 @@
   "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": "New Desktop version available",
   "renderer.downloadsDropdown.Update.OpenMacAppStore": "Open Mac App Store",
   "renderer.downloadsDropdown.Update.OpenWindowsStore": "Open Windows Store",
+  "renderer.downloadsDropdown.Update.SkipThisVersion": "Skip This Version",
   "renderer.downloadsDropdown.Update.ViewChangelog": "View Changelog",
   "renderer.downloadsDropdown.Update.ViewUpdateGuide": "View Update Guide",
   "renderer.downloadsDropdownMenu.CancelDownload": "Cancel Download",

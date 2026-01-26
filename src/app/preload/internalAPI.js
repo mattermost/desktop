@@ -125,6 +125,7 @@ import {
     OPEN_UPDATE_GUIDE,
     GET_IS_MAC_APP_STORE,
     OPEN_MAC_APP_STORE,
+    SKIP_VERSION,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -158,6 +159,7 @@ contextBridge.exposeInMainWorld('desktop', {
     openUpdateGuide: () => ipcRenderer.send(OPEN_UPDATE_GUIDE),
     getIsMacAppStore: () => ipcRenderer.invoke(GET_IS_MAC_APP_STORE),
     openMacAppStore: () => ipcRenderer.send(OPEN_MAC_APP_STORE),
+    skipVersion: () => ipcRenderer.send(SKIP_VERSION),
     closeDownloadsDropdown: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN),
     closeDownloadsDropdownMenu: () => ipcRenderer.send(CLOSE_DOWNLOADS_DROPDOWN_MENU),
     openDownloadsDropdown: () => ipcRenderer.send(OPEN_DOWNLOADS_DROPDOWN),

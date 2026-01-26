@@ -382,6 +382,10 @@ body {
                             flex-direction: column;
                             justify-content: flex-start;
                             width: 100%;
+
+                            > .DownloadsDropdown__Update__Details__SubButton {
+                                margin-top: 4px;
+                            }
                         }
 
                         button#downloadUpdateButton {

@@ -18,10 +18,12 @@ import {
     OPEN_UPDATE_GUIDE,
     GET_IS_MAC_APP_STORE,
     OPEN_MAC_APP_STORE,
+    SKIP_VERSION,
 } from 'common/communication';
 import Config from 'common/config';
 import buildConfig from 'common/config/buildConfig';
 import {Logger} from 'common/log';
+import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
 import NotificationManager from 'main/notifications';
 
@@ -50,6 +52,7 @@ export class UpdateNotifier {
         ipcMain.on(OPEN_UPDATE_GUIDE, this.openUpdateGuide);
         ipcMain.handle(GET_IS_MAC_APP_STORE, () => this.isMacAppStore());
         ipcMain.on(OPEN_MAC_APP_STORE, this.openMacAppStore);
+        ipcMain.on(SKIP_VERSION, this.skipVersion);
     }
 
     onUpdateAvailable = (info: UpdateInfo): void => {
@@ -102,6 +105,11 @@ export class UpdateNotifier {
         if (!this.lastNotification || manually) {
             this.performUpdateCheck(manually).then((updateInfo) => {
                 if (updateInfo) {
+                    const skippedVersions = Config.data?.skippedVersions || [];
+                    if (!manually && skippedVersions.includes(updateInfo.version)) {
+                        log.info('Version is skipped, not notifying', {version: updateInfo.version});
+                        return;
+                    }
                     this.onUpdateAvailable(updateInfo);
                 } else {
                     ipcMain.emit(NO_UPDATE_AVAILABLE);
@@ -216,6 +224,33 @@ export class UpdateNotifier {
 
     private getDownloadURL = (version: string, platformName: string, fileExt: string, archName: string): string => {
         return `mattermost-desktop-${version}-${platformName}-${archName}.${fileExt}`;
+    };
+
+    private skipVersion = (): void => {
+        if (!this.versionAvailable) {
+            log.warn('No version available to skip');
+            return;
+        }
+
+        const versionToSkip = this.versionAvailable;
+        const skippedVersions = Config.data?.skippedVersions || [];
+
+        if (skippedVersions.includes(versionToSkip)) {
+            log.info('Version already skipped', {version: versionToSkip});
+        } else {
+            const updatedSkippedVersions = [...skippedVersions, versionToSkip];
+            Config.set('skippedVersions', updatedSkippedVersions);
+        }
+
+        this.versionAvailable = undefined;
+        if (this.lastNotification) {
+            clearTimeout(this.lastNotification);
+            this.lastNotification = undefined;
+        }
+
+        downloadsManager.removeUpdateBeforeRestart();
+        ipcMain.emit(NO_UPDATE_AVAILABLE);
+        log.info('Version skipped', {version: versionToSkip});
     };
 }
 

@@ -49,6 +49,11 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
         window.desktop.openChangelogLink();
     };
 
+    const handleSkipVersion = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e?.preventDefault?.();
+        window.desktop.skipVersion();
+    };
+
     const getMainButtonText = () => {
         if (platform === 'win32') {
             return (
@@ -138,6 +143,16 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                         <FormattedMessage
                             id='renderer.downloadsDropdown.Update.ViewChangelog'
                             defaultMessage='View Changelog'
+                        />
+                    </a>
+                    <a
+                        className='DownloadsDropdown__Update__Details__SubButton'
+                        onClick={handleSkipVersion}
+                        href='#'
+                    >
+                        <FormattedMessage
+                            id='renderer.downloadsDropdown.Update.SkipThisVersion'
+                            defaultMessage='Skip This Version'
                         />
                     </a>
                 </div>

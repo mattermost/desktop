@@ -73,6 +73,10 @@ jest.mock('electron-is-dev', () => ({
     default: false,
 }));
 
+jest.mock('main/downloadsManager', () => ({
+    removeUpdateBeforeRestart: jest.fn(),
+}));
+
 const net = jest.mocked(notMockedNet);
 
 describe('main/updateNotifier', () => {

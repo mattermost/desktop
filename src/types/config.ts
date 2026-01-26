@@ -58,6 +58,7 @@ export type ConfigV4 = {
     enableSentry?: boolean;
     viewLimit?: number;
     themeSyncing?: boolean;
+    skippedVersions?: string[];
 }
 
 export type ConfigV3 = Omit<ConfigV4,
