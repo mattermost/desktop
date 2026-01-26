@@ -42,6 +42,12 @@ declare global {
             openServerExternally: () => void;
             openServerUpgradeLink: () => void;
             openChangelogLink: () => void;
+            openWindowsStore: () => void;
+            downloadUpdateManually: () => void;
+            openUpdateGuide: () => void;
+            getIsMacAppStore: () => Promise<boolean>;
+            openMacAppStore: () => void;
+            skipVersion: () => void;
             closeDownloadsDropdown: () => void;
             closeDownloadsDropdownMenu: () => void;
             openDownloadsDropdown: () => void;

@@ -1,10 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {FormattedMessage} from 'react-intl';
-
-import LoadingWrapper from 'renderer/components/SaveButton/LoadingWrapper';
 
 import type {DownloadedItem} from 'types/downloads';
 
@@ -16,15 +14,85 @@ type OwnProps = {
 }
 
 const UpdateAvailable = ({item, appName}: OwnProps) => {
-    const [isProcessing, setIsProcessing] = useState(false);
-    const onButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (isProcessing) {
-            return;
+    const [isMacAppStore, setIsMacAppStore] = useState(false);
+    const platform = window.process.platform;
+
+    useEffect(() => {
+        if (platform === 'darwin') {
+            window.desktop.getIsMacAppStore().then(setIsMacAppStore);
         }
-        setIsProcessing(true);
+    }, [platform]);
+
+    const handleMainButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         e?.preventDefault?.();
 
-        // TODO: start update download
+        if (platform === 'win32') {
+            window.desktop.openWindowsStore();
+        } else if (platform === 'darwin') {
+            if (isMacAppStore) {
+                window.desktop.openMacAppStore();
+            } else {
+                window.desktop.downloadUpdateManually();
+            }
+        } else if (platform === 'linux') {
+            window.desktop.openUpdateGuide();
+        }
+    };
+
+    const handleDownloadManually = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e?.preventDefault?.();
+        window.desktop.downloadUpdateManually();
+    };
+
+    const handleViewChangelog = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e?.preventDefault?.();
+        window.desktop.openChangelogLink();
+    };
+
+    const handleSkipVersion = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e?.preventDefault?.();
+        window.desktop.skipVersion();
+    };
+
+    const getMainButtonText = () => {
+        if (platform === 'win32') {
+            return (
+                <FormattedMessage
+                    id='renderer.downloadsDropdown.Update.OpenWindowsStore'
+                    defaultMessage='Open Windows Store'
+                />
+            );
+        }
+        if (platform === 'darwin') {
+            if (isMacAppStore) {
+                return (
+                    <FormattedMessage
+                        id='renderer.downloadsDropdown.Update.OpenMacAppStore'
+                        defaultMessage='Open Mac App Store'
+                    />
+                );
+            }
+            return (
+                <FormattedMessage
+                    id='renderer.downloadsDropdown.Update.DownloadUpdate'
+                    defaultMessage='Download Update'
+                />
+            );
+        }
+        if (platform === 'linux') {
+            return (
+                <FormattedMessage
+                    id='renderer.downloadsDropdown.Update.ViewUpdateGuide'
+                    defaultMessage='View Update Guide'
+                />
+            );
+        }
+        return (
+            <FormattedMessage
+                id='renderer.downloadsDropdown.Update.DownloadUpdate'
+                defaultMessage='Download Update'
+            />
+        );
     };
 
     return (
@@ -50,34 +118,44 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                 <button
                     id='downloadUpdateButton'
                     className='primary-button DownloadsDropdown__Update__Details__Button'
-                    onClick={onButtonClick}
-                    disabled={isProcessing}
+                    onClick={handleMainButtonClick}
                 >
-                    <LoadingWrapper
-                        loading={isProcessing}
-                        text={(
+                    {getMainButtonText()}
+                </button>
+                <div className='DownloadsDropdown__Update__Details__SubButtons'>
+                    {platform === 'win32' && (
+                        <a
+                            className='DownloadsDropdown__Update__Details__SubButton'
+                            onClick={handleDownloadManually}
+                            href='#'
+                        >
                             <FormattedMessage
-                                id='renderer.downloadsDropdown.Update.Downloading'
-                                defaultMessage='Downloading'
+                                id='renderer.downloadsDropdown.Update.DownloadManually'
+                                defaultMessage='Download Manually'
                             />
-                        )}
+                        </a>
+                    )}
+                    <a
+                        className='DownloadsDropdown__Update__Details__SubButton'
+                        onClick={handleViewChangelog}
+                        href='#'
                     >
                         <FormattedMessage
-                            id='renderer.downloadsDropdown.Update.DownloadUpdate'
-                            defaultMessage='Download Update'
+                            id='renderer.downloadsDropdown.Update.ViewChangelog'
+                            defaultMessage='View Changelog'
                         />
-                    </LoadingWrapper>
-                </button>
-                <a
-                    className='DownloadsDropdown__Update__Details__Changelog'
-                    onClick={() => window.desktop.openChangelogLink()}
-                    href='#'
-                >
-                    <FormattedMessage
-                        id='renderer.downloadsDropdown.Update.ViewChangelog'
-                        defaultMessage='View Changelog'
-                    />
-                </a>
+                    </a>
+                    <a
+                        className='DownloadsDropdown__Update__Details__SubButton'
+                        onClick={handleSkipVersion}
+                        href='#'
+                    >
+                        <FormattedMessage
+                            id='renderer.downloadsDropdown.Update.SkipThisVersion'
+                            defaultMessage='Skip This Version'
+                        />
+                    </a>
+                </div>
             </div>
         </div>
     );

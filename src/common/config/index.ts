@@ -178,8 +178,8 @@ export class Config extends EventEmitter {
     get enableServerManagement() {
         return this.combinedData?.enableServerManagement ?? buildConfig.enableServerManagement;
     }
-    get enableAutoUpdater() {
-        return this.combinedData?.enableAutoUpdater ?? buildConfig.enableAutoUpdater;
+    get enableUpdateNotifications() {
+        return this.combinedData?.enableUpdateNotifications ?? buildConfig.enableUpdateNotifications;
     }
     get autostart() {
         return this.combinedData?.autostart ?? defaultPreferences.autostart;
@@ -236,7 +236,7 @@ export class Config extends EventEmitter {
     }
 
     get canUpgrade() {
-        return process.env.NODE_ENV === 'test' || (this.buildConfigData?.enableAutoUpdater && !(process.platform === 'linux' && !process.env.APPIMAGE) && !(process.platform === 'win32' && this.registryConfigData?.enableAutoUpdater === false));
+        return process.env.NODE_ENV === 'test' || (this.buildConfigData?.enableUpdateNotifications && !(process.platform === 'win32' && this.registryConfigData?.enableUpdateNotifications === false));
     }
 
     get autoCheckForUpdates() {

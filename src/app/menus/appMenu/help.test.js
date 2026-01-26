@@ -7,6 +7,7 @@ import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
 import Diagnostics from 'main/diagnostics';
 import {localizeMessage} from 'main/i18nManager';
+import UpdateManager from 'main/updateNotifier';
 
 import createHelpMenu from './help';
 
@@ -46,6 +47,12 @@ jest.mock('common/servers/serverManager', () => ({
     getServer: jest.fn(),
     getOrderedServers: jest.fn(),
     getRemoteInfo: jest.fn(),
+}));
+
+jest.mock('main/updateNotifier', () => ({
+    versionDownloaded: false,
+    versionAvailable: false,
+    checkForUpdates: jest.fn(),
 }));
 
 jest.mock('main/diagnostics', () => ({
@@ -401,6 +408,61 @@ describe('app/menus/appMenu/help', () => {
             const serverVersionItem = menu.submenu.find((item) => item.label === '    Server Version 7.0.0');
             serverVersionItem.click();
             expect(clipboard.writeText).toHaveBeenCalledWith('Server Version 7.0.0');
+        });
+
+        it('should show check for updates option when no update is available', () => {
+            Config.canUpgrade = true;
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.help.checkForUpdates') {
+                    return 'Check for Updates';
+                }
+                return id;
+            });
+            const menu = createHelpMenu();
+            const checkUpdatesItem = menu.submenu.find((item) => item.label === 'Check for Updates');
+            expect(checkUpdatesItem).not.toBe(undefined);
+        });
+
+        it('should call UpdateManager.checkForUpdates when check for updates is clicked', () => {
+            Config.canUpgrade = true;
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.help.checkForUpdates') {
+                    return 'Check for Updates';
+                }
+                return id;
+            });
+            const menu = createHelpMenu();
+            const checkUpdatesItem = menu.submenu.find((item) => item.label === 'Check for Updates');
+            checkUpdatesItem.click();
+            expect(UpdateManager.checkForUpdates).toHaveBeenCalledWith(true);
+        });
+
+        it('should not show update options when canUpgrade is false', () => {
+            Config.canUpgrade = false;
+            const menu = createHelpMenu();
+            const restartUpdateItem = menu.submenu.find((item) => item.label === 'Restart and Update');
+            const downloadUpdateItem = menu.submenu.find((item) => item.label === 'Download Update');
+            const checkUpdatesItem = menu.submenu.find((item) => item.label === 'Check for Updates');
+            expect(restartUpdateItem).toBe(undefined);
+            expect(downloadUpdateItem).toBe(undefined);
+            expect(checkUpdatesItem).toBe(undefined);
+        });
+
+        it('should show unavailable server version when server version is not available', () => {
+            ServerManager.getRemoteInfo.mockReturnValue({});
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.help.versionString.server.unavailable') {
+                    return 'Unavailable';
+                }
+                if (id === 'main.menus.app.help.versionString.server') {
+                    return 'Server Version Unavailable';
+                }
+                return id;
+            });
+            const menu = createHelpMenu();
+            const serverVersionItem = menu.submenu.find((item) => item.label === '    Server Version Unavailable');
+            expect(serverVersionItem).not.toBe(undefined);
+            expect(serverVersionItem.enabled).toBe(false);
         });
     });
 });

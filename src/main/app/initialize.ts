@@ -57,6 +57,7 @@ import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
+import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
@@ -393,7 +394,7 @@ async function initializeAfterAppReady() {
             log.debug('checkForUpdates');
             if (Config.canUpgrade && Config.autoCheckForUpdates) {
                 setTimeout(() => {
-                    // TODO: check for updates
+                    updateNotifier.checkForUpdates(false);
                 }, 5000);
             } else {
                 log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
@@ -401,7 +402,7 @@ async function initializeAfterAppReady() {
         });
     } else if (Config.canUpgrade && Config.autoCheckForUpdates) {
         setTimeout(() => {
-            // TODO: check for updates
+            updateNotifier.checkForUpdates(false);
         }, 5000);
     } else {
         log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);

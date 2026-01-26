@@ -80,6 +80,12 @@ export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 export const UPDATE_AVAILABLE = 'update-available';
 export const CHECK_FOR_UPDATES = 'check-for-updates';
 export const NO_UPDATE_AVAILABLE = 'no-update-available';
+export const OPEN_WINDOWS_STORE = 'open-windows-store';
+export const DOWNLOAD_UPDATE_MANUALLY = 'download-update-manually';
+export const OPEN_UPDATE_GUIDE = 'open-update-guide';
+export const GET_IS_MAC_APP_STORE = 'get-is-mac-app-store';
+export const OPEN_MAC_APP_STORE = 'open-mac-app-store';
+export const SKIP_VERSION = 'skip-version';
 
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const TAB_LOGIN_CHANGED = 'tab-login-changed';

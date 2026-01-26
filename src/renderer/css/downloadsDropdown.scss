@@ -376,6 +376,18 @@ body {
                             }
                         }
 
+                        .DownloadsDropdown__Update__Details__SubButtons {
+                            display: flex;
+                            margin-top: 4px;
+                            flex-direction: column;
+                            justify-content: flex-start;
+                            width: 100%;
+
+                            > .DownloadsDropdown__Update__Details__SubButton {
+                                margin-top: 4px;
+                            }
+                        }
+
                         button#downloadUpdateButton {
                             font-style: normal;
                             font-weight: 600;
