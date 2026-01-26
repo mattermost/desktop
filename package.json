@@ -54,7 +54,7 @@
     "package:linux": "run-s package:linux-*",
     "package:linux-tar": "npm run build-prod && electron-builder --linux tar.gz --x64 --publish=never && cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux tar.gz --arm64 --publish=never",
     "package:linux-pkg": "npm run build-prod && electron-builder --linux deb rpm --x64 --publish=never && cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux deb rpm --arm64 --publish=never",
-    "package:linux-appImage": "npm run build-prod-upgrade && electron-builder --linux tar.gz appimage --x64 --publish=never && cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux tar.gz appimage --arm64 --publish=never"
+    "package:linux-appImage": "npm run build-prod && electron-builder --linux tar.gz appimage --x64 --publish=never && cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux tar.gz appimage --arm64 --publish=never"
   },
   "jest": {
     "clearMocks": true,
