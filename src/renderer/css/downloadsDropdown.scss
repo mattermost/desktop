@@ -332,12 +332,15 @@ body {
                     justify-content: flex-start;
                     padding: 12px 12px 12px 20px;
                     width: 100%;
+                    position: relative;
 
                     .DownloadsDropdown__Update__Details {
                         align-items: flex-start;
                         display: flex;
                         flex-direction: column;
                         justify-content: space-between;
+                        margin-right: 8px;
+                        width: calc(100% - 32px - 28px - 16px);
 
                         .DownloadsDropdown__Update__Details__Title {
                             color: var(--center-channel-color);
@@ -354,7 +357,7 @@ body {
                         }
 
                         .DownloadsDropdown__Update__Details__Description {
-                            color: rgba(var(--center-channel-color-rgb), 0.64);
+                            color: rgba(var(--center-channel-color-rgb), 0.75);
                             font-size: 10px;
                             font-style: normal;
                             font-weight: 400;
@@ -394,7 +397,55 @@ body {
                             font-size: 12px;
                             height: 32px;
                             margin-top: 6px;
-                            padding: 10px 16px;
+                            padding: 10px 12px;
+                            border: 2px solid transparent;
+
+                            &:focus {
+                                padding: 10px 12px;
+                            }
+                        }
+                    }
+
+                    .DownloadsDropdown__File__Body__ThreeDotButton {
+                        background: transparent;
+                        border: none;
+                        border-radius: 4px;
+                        color: rgba(var(--center-channel-color-rgb), 0.56);
+                        cursor: pointer;
+                        visibility: hidden;
+                        font-size: 18px;
+                        height: 28px;
+                        outline: none;
+                        position: absolute;
+                        right: 12px;
+                        top: 12px;
+                        width: 28px;
+
+                        &.visible {
+                            visibility: visible;
+                        }
+                        &.active {
+                            visibility: visible;
+                            background: rgba(var(--button-bg-rgb), 0.08);
+                            color: var(--button-bg);
+                        }
+                        &:hover {
+                            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+                            color: rgba(var(--center-channel-color-rgb), 0.72)
+                        }
+                        *.active:hover {
+                            background: rgba(var(--button-bg-rgb), 0.16);
+                            color: var(--button-bg);
+                        }
+                        &:active {
+                            background: rgba(var(--button-bg-rgb), 0.08);
+                            color: var(--button-bg);
+                        }
+                        > .icon-dots-vertical {
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
                         }
                     }
                 }

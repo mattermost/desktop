@@ -6,14 +6,17 @@ import {FormattedMessage} from 'react-intl';
 
 import type {DownloadedItem} from 'types/downloads';
 
+import ThreeDotButton from '../ThreeDotButton';
 import Thumbnail from '../Thumbnail';
 
 type OwnProps = {
+    activeItem?: DownloadedItem;
     item: DownloadedItem;
     appName: string;
 }
 
-const UpdateAvailable = ({item, appName}: OwnProps) => {
+const UpdateAvailable = ({item, appName, activeItem}: OwnProps) => {
+    const [threeDotButtonVisible, setThreeDotButtonVisible] = useState(false);
     const [isMacAppStore, setIsMacAppStore] = useState(false);
     const platform = window.process.platform;
 
@@ -35,7 +38,7 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                 window.desktop.downloadUpdateManually();
             }
         } else if (platform === 'linux') {
-            window.desktop.openUpdateGuide();
+            window.desktop.openLinuxGitHubRelease();
         }
     };
 
@@ -44,14 +47,9 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
         window.desktop.downloadUpdateManually();
     };
 
-    const handleViewChangelog = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const handleViewInstallGuide = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e?.preventDefault?.();
-        window.desktop.openChangelogLink();
-    };
-
-    const handleSkipVersion = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e?.preventDefault?.();
-        window.desktop.skipVersion();
+        window.desktop.openUpdateGuide();
     };
 
     const getMainButtonText = () => {
@@ -75,40 +73,44 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
             return (
                 <FormattedMessage
                     id='renderer.downloadsDropdown.Update.DownloadUpdate'
-                    defaultMessage='Download Update'
+                    defaultMessage='Download update'
                 />
             );
         }
         if (platform === 'linux') {
             return (
                 <FormattedMessage
-                    id='renderer.downloadsDropdown.Update.ViewUpdateGuide'
-                    defaultMessage='View Update Guide'
+                    id='renderer.downloadsDropdown.Update.ViewDownloadOptions'
+                    defaultMessage='View download options'
                 />
             );
         }
         return (
             <FormattedMessage
                 id='renderer.downloadsDropdown.Update.DownloadUpdate'
-                defaultMessage='Download Update'
+                defaultMessage='Download update'
             />
         );
     };
 
     return (
-        <div className='DownloadsDropdown__Update'>
+        <div
+            className='DownloadsDropdown__Update'
+            onMouseEnter={() => setThreeDotButtonVisible(true)}
+            onMouseLeave={() => setThreeDotButtonVisible(false)}
+        >
             <Thumbnail item={item}/>
             <div className='DownloadsDropdown__Update__Details'>
                 <div className='DownloadsDropdown__Update__Details__Title'>
                     <FormattedMessage
                         id='renderer.downloadsDropdown.Update.NewDesktopVersionAvailable'
-                        defaultMessage='New Desktop version available'
+                        defaultMessage='New version available'
                     />
                 </div>
                 <div className='DownloadsDropdown__Update__Details__Description'>
                     <FormattedMessage
                         id='renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall'
-                        defaultMessage={`A new version of the {appName} Desktop App (version ${item.filename}) is available to install.`}
+                        defaultMessage='{appName} Desktop App version {version} is available to install.'
                         values={{
                             version: item.filename,
                             appName,
@@ -131,32 +133,29 @@ const UpdateAvailable = ({item, appName}: OwnProps) => {
                         >
                             <FormattedMessage
                                 id='renderer.downloadsDropdown.Update.DownloadManually'
-                                defaultMessage='Download Manually'
+                                defaultMessage='Download installer'
                             />
                         </a>
                     )}
-                    <a
-                        className='DownloadsDropdown__Update__Details__SubButton'
-                        onClick={handleViewChangelog}
-                        href='#'
-                    >
-                        <FormattedMessage
-                            id='renderer.downloadsDropdown.Update.ViewChangelog'
-                            defaultMessage='View Changelog'
-                        />
-                    </a>
-                    <a
-                        className='DownloadsDropdown__Update__Details__SubButton'
-                        onClick={handleSkipVersion}
-                        href='#'
-                    >
-                        <FormattedMessage
-                            id='renderer.downloadsDropdown.Update.SkipThisVersion'
-                            defaultMessage='Skip This Version'
-                        />
-                    </a>
+                    {platform === 'linux' && (
+                        <a
+                            className='DownloadsDropdown__Update__Details__SubButton'
+                            onClick={handleViewInstallGuide}
+                            href='#'
+                        >
+                            <FormattedMessage
+                                id='renderer.downloadsDropdown.Update.ViewInstallGuide'
+                                defaultMessage='View install guide'
+                            />
+                        </a>
+                    )}
                 </div>
             </div>
+            <ThreeDotButton
+                item={item}
+                activeItem={activeItem}
+                visible={threeDotButtonVisible}
+            />
         </div>
     );
 };

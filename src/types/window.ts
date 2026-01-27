@@ -45,6 +45,7 @@ declare global {
             openWindowsStore: () => void;
             downloadUpdateManually: () => void;
             openUpdateGuide: () => void;
+            openLinuxGitHubRelease: () => void;
             getIsMacAppStore: () => Promise<boolean>;
             openMacAppStore: () => void;
             skipVersion: () => void;

@@ -83,6 +83,7 @@ export const NO_UPDATE_AVAILABLE = 'no-update-available';
 export const OPEN_WINDOWS_STORE = 'open-windows-store';
 export const DOWNLOAD_UPDATE_MANUALLY = 'download-update-manually';
 export const OPEN_UPDATE_GUIDE = 'open-update-guide';
+export const OPEN_LINUX_GITHUB_RELEASE = 'open-linux-github-release';
 export const GET_IS_MAC_APP_STORE = 'get-is-mac-app-store';
 export const OPEN_MAC_APP_STORE = 'open-mac-app-store';
 export const SKIP_VERSION = 'skip-version';

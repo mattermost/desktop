@@ -131,6 +131,7 @@ export type BuildConfig = {
     macAppStoreUpdateURL: string;
     windowsStoreUpdateURL?: string;
     linuxUpdateURL: string;
+    linuxGitHubReleaseURL: string;
     managedResources: string[];
     allowedProtocols: string[];
 }

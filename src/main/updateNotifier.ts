@@ -16,6 +16,7 @@ import {
     OPEN_WINDOWS_STORE,
     DOWNLOAD_UPDATE_MANUALLY,
     OPEN_UPDATE_GUIDE,
+    OPEN_LINUX_GITHUB_RELEASE,
     GET_IS_MAC_APP_STORE,
     OPEN_MAC_APP_STORE,
     SKIP_VERSION,
@@ -50,6 +51,7 @@ export class UpdateNotifier {
         ipcMain.on(OPEN_WINDOWS_STORE, this.openWindowsStore);
         ipcMain.on(DOWNLOAD_UPDATE_MANUALLY, this.downloadUpdateManually);
         ipcMain.on(OPEN_UPDATE_GUIDE, this.openUpdateGuide);
+        ipcMain.on(OPEN_LINUX_GITHUB_RELEASE, this.openLinuxGitHubRelease);
         ipcMain.handle(GET_IS_MAC_APP_STORE, () => this.isMacAppStore());
         ipcMain.on(OPEN_MAC_APP_STORE, this.openMacAppStore);
         ipcMain.on(SKIP_VERSION, this.skipVersion);
@@ -212,6 +214,18 @@ export class UpdateNotifier {
     private openUpdateGuide = (): void => {
         if (process.platform === 'linux') {
             shell.openExternal(buildConfig.linuxUpdateURL);
+        }
+    };
+
+    private openLinuxGitHubRelease = (): void => {
+        if (!this.versionAvailable) {
+            log.warn('No version available for GitHub release');
+            return;
+        }
+        if (process.platform === 'linux') {
+            const version = this.versionAvailable;
+            const releaseURL = `${buildConfig.linuxGitHubReleaseURL}/v${version}`;
+            shell.openExternal(releaseURL);
         }
     };
 

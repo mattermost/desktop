@@ -20,6 +20,7 @@ const DownloadsDropdownItem = ({item, activeItem, appName}: OwnProps) => {
             <UpdateWrapper
                 item={item}
                 appName={appName}
+                activeItem={activeItem}
             />
         );
     }
