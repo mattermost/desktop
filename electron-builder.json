@@ -68,8 +68,10 @@
       "deb",
       "tar.gz",
       "appimage",
-      "rpm"
+      "rpm",
+      "flatpak"
     ],
+    "appId": "com.Mattermost.Desktop",
     "extraFiles": [
       {
         "filter": [
@@ -193,5 +195,10 @@
   },
   "rpm": {
     "fpm": ["--rpm-rpmbuild-define", "_build_id_links none", "--rpm-digest=sha256"]
+  },
+  "flatpak": {
+    "baseVersion": "25.08",
+    "runtimeVersion": "25.08",
+    "useWaylandFlags": true
   }
 }
