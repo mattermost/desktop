@@ -21,7 +21,7 @@ index 6fe63f1..85e3925 100644
                      result += `${fileSpace}  </Shortcut>\n`;
                  }
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..b5d8d51 100644
+index 2d5cd3c..ef2d419 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -1,5 +1,8 @@
@@ -102,14 +102,3 @@ index 2d5cd3c..b5d8d51 100644
      <Directory Id="TARGETDIR" Name="SourceDir">
        <Directory Id="${programFilesId}">
          {{ if (menuCategory) { }}
-@@ -110,6 +146,10 @@
-     {{-dirs}}
- 
-     <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
-+      <Component Directory="resourcesDir">
-+        <Condition>(NOT ALLUSERS = 1) AND MSIINSTALLPERUSER = 1 AND DISABLEAUTOUPDATE = 0</Condition>
-+        <File Name="app-update.yml" Source="$(var.appDir)\..\msi-app-update.yml" ReadOnly="yes" KeyPath="yes"/>
-+      </Component>
-       {{-files}}
-     </ComponentGroup>
-   </Product>

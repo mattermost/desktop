@@ -20,8 +20,6 @@ import {
     NOTIFY_MENTION,
     GET_AVAILABLE_SPELL_CHECKER_LANGUAGES,
     USER_ACTIVITY_UPDATE,
-    START_UPGRADE,
-    START_UPDATE_DOWNLOAD,
     PING_DOMAIN,
     OPEN_APP_MENU,
     GET_CONFIGURATION,
@@ -45,7 +43,6 @@ import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
-import updateManager from 'main/autoUpdater';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
@@ -60,6 +57,7 @@ import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
+import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
@@ -175,7 +173,7 @@ async function initializeConfig() {
 
             resolve();
         });
-        Config.init(configPath, app.name, app.getAppPath());
+        Config.init(configPath, app.name);
         ipcMain.on(UPDATE_PATHS, () => {
             log.debug('Config.UPDATE_PATHS');
 
@@ -256,8 +254,6 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.on(QUIT, handleQuit);
 
     ipcMain.handle(GET_AVAILABLE_SPELL_CHECKER_LANGUAGES, () => session.defaultSession.availableSpellCheckerLanguages);
-    ipcMain.on(START_UPDATE_DOWNLOAD, handleStartDownload);
-    ipcMain.on(START_UPGRADE, handleStartUpgrade);
     ipcMain.handle(PING_DOMAIN, handlePingDomain);
     ipcMain.handle(GET_CONFIGURATION, handleGetConfiguration);
     ipcMain.handle(GET_LOCAL_CONFIGURATION, handleGetLocalConfiguration);
@@ -398,7 +394,7 @@ async function initializeAfterAppReady() {
             log.debug('checkForUpdates');
             if (Config.canUpgrade && Config.autoCheckForUpdates) {
                 setTimeout(() => {
-                    updateManager.checkForUpdates(false);
+                    updateNotifier.checkForUpdates(false);
                 }, 5000);
             } else {
                 log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
@@ -406,14 +402,11 @@ async function initializeAfterAppReady() {
         });
     } else if (Config.canUpgrade && Config.autoCheckForUpdates) {
         setTimeout(() => {
-            updateManager.checkForUpdates(false);
+            updateNotifier.checkForUpdates(false);
         }, 5000);
     } else {
         log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
     }
-    setTimeout(() => {
-        downloadsManager.showAutoUpdaterDeprecationNotice();
-    }, 5000);
 
     if (!global.isDev) {
         AutoLauncher.upgradeAutoLaunch();
@@ -503,16 +496,4 @@ function onUserActivityStatus(status: {
 }) {
     log.debug('UserActivityMonitor.on(status)', {status});
     WebContentsManager.sendToAllViews(USER_ACTIVITY_UPDATE, status.userIsActive, status.idleTime, status.isSystemEvent);
-}
-
-function handleStartDownload() {
-    if (updateManager) {
-        updateManager.handleDownload();
-    }
-}
-
-function handleStartUpgrade() {
-    if (updateManager) {
-        updateManager.handleUpdate();
-    }
 }

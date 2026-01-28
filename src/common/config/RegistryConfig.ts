@@ -57,14 +57,14 @@ export default class RegistryConfig extends EventEmitter {
                 log.warn('Nothing retrieved for \'EnableServerManagement\'', {error});
             }
 
-            // extract EnableAutoUpdater from the registry
+            // extract EnableUpdateNotifications from the registry
             try {
-                const enableAutoUpdater = this.getEnableAutoUpdatorFromRegistry();
-                if (enableAutoUpdater !== undefined) {
-                    this.data.enableAutoUpdater = enableAutoUpdater;
+                const enableUpdateNotifications = this.getEnableUpdateNotificationsFromRegistry();
+                if (enableUpdateNotifications !== undefined) {
+                    this.data.enableUpdateNotifications = enableUpdateNotifications;
                 }
             } catch (error) {
-                log.warn('Nothing retrieved for \'EnableAutoUpdater\'', {error});
+                log.warn('Nothing retrieved for \'EnableUpdateNotifications\'', {error});
             }
         }
 
@@ -100,7 +100,8 @@ export default class RegistryConfig extends EventEmitter {
     /**
    * Determines whether the auto updated has been enabled, disabled or isn't configured
    */
-    private getEnableAutoUpdatorFromRegistry() {
+    private getEnableUpdateNotificationsFromRegistry() {
+        // This is still called EnableAutoUpdater in the registry for backwards compatibility
         const value = this.getRegistryEntry(BASE_REGISTRY_KEY_PATH, 'EnableAutoUpdater').pop();
         return value === undefined ? value : value === 1;
     }

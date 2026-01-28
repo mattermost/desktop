@@ -61,7 +61,6 @@ jobs:
         run: |
           mkdir -p ./build/linux
           npm run package:linux
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: release/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -107,7 +106,6 @@ jobs:
       - name: release/package
         run: |
           mkdir -p ./build/win-release
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: release/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -156,10 +154,7 @@ jobs:
           zsh -c 'echo -n $APPLE_API_KEY_RAW > ./key.p8'
           mkdir -p ./build/macos-release
           npm run package:mac-with-universal
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
-      - name: release/rename-arm64-to-m1
-        run: rename 's/arm64/m1/' ./build/macos-release/$(jq -r .version package.json)/*
       - name: release/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -196,8 +191,14 @@ jobs:
         run: |
           mkdir -p ./aws-s3-dist
           cp -r --backup=numbered ./build/{macos-release,win-release,linux}/* ./aws-s3-dist
+      - name: release/generate-latest-version
+        id: generate-latest
+        run: |
+          bash -x ./scripts/generate_latest_version.sh
       - name: release/upload-to-s3
         run: aws s3 cp ./aws-s3-dist/ s3://releases.mattermost.com/desktop/ --acl public-read --cache-control "no-cache" --recursive
+      - name: release/upload-latest-version
+        run: aws s3 cp ./${{ steps.generate-latest.outputs.FILENAME }} s3://releases.mattermost.com/desktop/${{ steps.generate-latest.outputs.FILENAME }} --acl public-read --cache-control "no-cache"
 
       # Upload artifacts new bucket
       - name: release/setup-aws-credentials-new-bucket
@@ -208,6 +209,8 @@ jobs:
 
       - name: release/upload-to-s3-new-bucket
         run: aws s3 cp ./aws-s3-dist/ s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }} --cache-control "no-cache" --recursive
+      - name: release/upload-latest-version-new-bucket
+        run: aws s3 cp ./${{ steps.generate-latest.outputs.FILENAME }} s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }}/${{ steps.generate-latest.outputs.FILENAME }} --cache-control "no-cache"
 
   github-release:
     runs-on: ubuntu-22.04

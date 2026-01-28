@@ -5,12 +5,10 @@ import path from 'path';
 
 import type {DownloadItem, Event, WebContents, FileFilter, IpcMainInvokeEvent} from 'electron';
 import {ipcMain, dialog, shell, Menu, app, nativeImage} from 'electron';
-import type {ProgressInfo, UpdateInfo} from 'electron-updater';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
-    CANCEL_UPDATE_DOWNLOAD,
     CLOSE_DOWNLOADS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_FOCUSED,
@@ -21,13 +19,11 @@ import {
     REQUEST_HAS_DOWNLOADS,
     SHOW_DOWNLOADS_DROPDOWN_BUTTON_BADGE,
     UPDATE_AVAILABLE,
-    UPDATE_DOWNLOADED,
     UPDATE_DOWNLOADS_DROPDOWN,
     UPDATE_PATHS,
-    UPDATE_PROGRESS,
 } from 'common/communication';
 import Config from 'common/config';
-import {APP_UPDATE_KEY, UPDATE_DEPRECATION_KEY, UPDATE_DOWNLOAD_ITEM, UPDATE_DEPRECATION_ITEM} from 'common/constants';
+import {APP_UPDATE_KEY, UPDATE_DOWNLOAD_ITEM} from 'common/constants';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -37,11 +33,10 @@ import {localizeMessage} from 'main/i18nManager';
 import NotificationManager from 'main/notifications';
 import {doubleSecToMs, getPercentage, isStringWithLength, readFilenameFromContentDispositionHeader, shouldIncrementFilename} from 'main/utils';
 
-import type {MigrationInfo} from 'types/config';
 import {type DownloadedItem, type DownloadItemDoneEventState, type DownloadedItems, type DownloadItemState, type DownloadItemUpdatedEventState, DownloadItemTypeEnum} from 'types/downloads';
 
 import appVersionManager from './AppVersionManager';
-import {downloadsJson, migrationInfoPath} from './constants';
+import {downloadsJson} from './constants';
 
 const log = new Logger('DownloadsManager');
 
@@ -92,52 +87,12 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         ipcMain.removeHandler(GET_DOWNLOAD_LOCATION);
         ipcMain.removeListener(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
         ipcMain.removeListener(UPDATE_AVAILABLE, this.onUpdateAvailable);
-        ipcMain.removeListener(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
-        ipcMain.removeListener(UPDATE_PROGRESS, this.onUpdateProgress);
         ipcMain.removeListener(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
 
         ipcMain.handle(GET_DOWNLOAD_LOCATION, this.handleSelectDownload);
         ipcMain.on(DOWNLOADS_DROPDOWN_FOCUSED, this.clearAutoCloseTimeout);
         ipcMain.on(UPDATE_AVAILABLE, this.onUpdateAvailable);
-        ipcMain.on(UPDATE_DOWNLOADED, this.onUpdateDownloaded);
-        ipcMain.on(UPDATE_PROGRESS, this.onUpdateProgress);
         ipcMain.on(NO_UPDATE_AVAILABLE, this.noUpdateAvailable);
-    };
-
-    showAutoUpdaterDeprecationNotice = () => {
-        if (process.env.NODE_ENV === 'test') {
-            log.info('showAutoUpdaterDeprecationNotice: test environment, skipping');
-            return;
-        }
-
-        if (!Config.canUpgrade) {
-            log.info('showAutoUpdaterDeprecationNotice: canUpgrade is false, skipping');
-            return;
-        }
-
-        const migrationPrefs = new JsonFileManager<MigrationInfo>(migrationInfoPath);
-        if (migrationPrefs.getValue('autoUpdaterDeprecationNoticeDismissed')) {
-            log.info('showAutoUpdaterDeprecationNotice: autoUpdaterDeprecationNoticeDismissed is true, skipping');
-            return;
-        }
-
-        this.save(UPDATE_DEPRECATION_KEY, {
-            ...UPDATE_DEPRECATION_ITEM,
-            filename: process.platform,
-            state: 'available',
-        });
-        this.openDownloadsDropdown();
-    };
-
-    dismissAutoUpdaterDeprecationNotice = () => {
-        const migrationPrefs = new JsonFileManager<MigrationInfo>(migrationInfoPath);
-        migrationPrefs.setValue('autoUpdaterDeprecationNoticeDismissed', true);
-
-        const downloads = this.downloads;
-        delete downloads[UPDATE_DEPRECATION_KEY];
-        this.saveAll(downloads);
-
-        this.closeDownloadsDropdown();
     };
 
     handleNewDownload = async (event: Event, item: DownloadItem, webContents: WebContents) => {
@@ -252,11 +207,6 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                     }
                 }
 
-                // Keep the deprecation notice
-                if (fileId === UPDATE_DEPRECATION_KEY) {
-                    continue;
-                }
-
                 if (file.state === 'completed') {
                     if (!file.location || !fs.existsSync(file.location)) {
                         downloads[fileId].state = 'deleted';
@@ -277,18 +227,10 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     clearDownloadsDropDown = () => {
         log.debug('clearDownloadsDropDown');
 
-        const itemsToKeep: DownloadedItems = {};
-
         if (this.hasUpdate()) {
-            itemsToKeep[APP_UPDATE_KEY] = this.downloads[APP_UPDATE_KEY];
-        }
-
-        if (this.downloads[UPDATE_DEPRECATION_KEY]) {
-            itemsToKeep[UPDATE_DEPRECATION_KEY] = this.downloads[UPDATE_DEPRECATION_KEY];
-        }
-
-        if (Object.keys(itemsToKeep).length > 0) {
-            this.saveAll(itemsToKeep);
+            this.saveAll({
+                [APP_UPDATE_KEY]: this.downloads[APP_UPDATE_KEY],
+            });
         } else {
             this.saveAll({});
             this.toggleAppMenuDownloadsEnabled(false);
@@ -356,7 +298,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     clearFile = (item?: DownloadedItem) => {
         log.debug('clearFile');
 
-        if (!item || item.type === DownloadItemTypeEnum.UPDATE || item.type === DownloadItemTypeEnum.UPDATE_DEPRECATION) {
+        if (!item || item.type === DownloadItemTypeEnum.UPDATE) {
             return;
         }
 
@@ -379,12 +321,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
 
         const fileId = this.getDownloadedFileId(item);
 
-        if (this.isAppUpdate(item)) {
-            ipcMain.emit(CANCEL_UPDATE_DOWNLOAD);
-            const update = this.downloads[APP_UPDATE_KEY];
-            update.state = 'cancelled';
-            this.save(APP_UPDATE_KEY, update);
-        } else if (this.progressingItems.has(fileId)) {
+        if (this.progressingItems.has(fileId)) {
             this.progressingItems.get(fileId)?.cancel?.();
             this.progressingItems.delete(fileId);
         }
@@ -643,32 +580,6 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         });
         this.openDownloadsDropdown();
     };
-    private onUpdateDownloaded = (event: Event, info: UpdateInfo) => {
-        log.debug('onUpdateDownloaded');
-
-        const {version} = info;
-        const update = this.downloads[APP_UPDATE_KEY];
-        update.state = 'completed';
-        update.progress = 100;
-        update.filename = version;
-
-        this.save(APP_UPDATE_KEY, update);
-        this.openDownloadsDropdown();
-    };
-    private onUpdateProgress = (event: Event, progress: ProgressInfo) => {
-        log.debug('onUpdateProgress');
-        const {total, transferred, percent} = progress;
-        const update = this.downloads[APP_UPDATE_KEY] || {...UPDATE_DOWNLOAD_ITEM};
-        if (typeof update.addedAt !== 'number' || update.addedAt === 0) {
-            update.addedAt = Date.now();
-        }
-        update.state = 'progressing';
-        update.totalBytes = total;
-        update.receivedBytes = transferred;
-        update.progress = Math.round(percent);
-        this.save(APP_UPDATE_KEY, update);
-        this.shouldShowBadge();
-    };
     private noUpdateAvailable = () => {
         const downloads = this.downloads;
         delete downloads[APP_UPDATE_KEY];
@@ -775,9 +686,6 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     private getDownloadedFileId = (item: DownloadedItem) => {
         if (item.type === DownloadItemTypeEnum.UPDATE) {
             return APP_UPDATE_KEY;
-        }
-        if (item.type === DownloadItemTypeEnum.UPDATE_DEPRECATION) {
-            return UPDATE_DEPRECATION_KEY;
         }
         const fileNameFromPath = this.readFilenameFromPath(item.location);
         const itemFilename = item.filename;

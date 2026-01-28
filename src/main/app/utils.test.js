@@ -41,7 +41,7 @@ jest.mock('common/config', () => ({
 }));
 jest.mock('common/JsonFileManager');
 
-jest.mock('main/autoUpdater', () => ({}));
+jest.mock('main/updateNotifier', () => ({}));
 jest.mock('main/constants', () => ({
     updatePaths: jest.fn(),
     secureStoragePath: '/path/to/secure',
