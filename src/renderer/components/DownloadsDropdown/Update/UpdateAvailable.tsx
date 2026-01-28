@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import type {DownloadedItem} from 'types/downloads';
 
@@ -16,6 +16,7 @@ type OwnProps = {
 }
 
 const UpdateAvailable = ({item, appName, activeItem}: OwnProps) => {
+    const {formatMessage} = useIntl();
     const [threeDotButtonVisible, setThreeDotButtonVisible] = useState(false);
     const [isMacAppStore, setIsMacAppStore] = useState(false);
     const platform = window.process.platform;
@@ -96,18 +97,27 @@ const UpdateAvailable = ({item, appName, activeItem}: OwnProps) => {
     return (
         <div
             className='DownloadsDropdown__Update'
+            role='status'
+            aria-live='polite'
+            aria-atomic='true'
             onMouseEnter={() => setThreeDotButtonVisible(true)}
             onMouseLeave={() => setThreeDotButtonVisible(false)}
         >
             <Thumbnail item={item}/>
             <div className='DownloadsDropdown__Update__Details'>
-                <div className='DownloadsDropdown__Update__Details__Title'>
+                <div
+                    className='DownloadsDropdown__Update__Details__Title'
+                    id='update-available-title'
+                >
                     <FormattedMessage
                         id='renderer.downloadsDropdown.Update.NewDesktopVersionAvailable'
                         defaultMessage='New version available'
                     />
                 </div>
-                <div className='DownloadsDropdown__Update__Details__Description'>
+                <div
+                    className='DownloadsDropdown__Update__Details__Description'
+                    id='update-available-description'
+                >
                     <FormattedMessage
                         id='renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall'
                         defaultMessage='{appName} Desktop App version {version} is available to install.'
@@ -121,6 +131,8 @@ const UpdateAvailable = ({item, appName, activeItem}: OwnProps) => {
                     id='downloadUpdateButton'
                     className='primary-button DownloadsDropdown__Update__Details__Button'
                     onClick={handleMainButtonClick}
+                    aria-labelledby='update-available-title downloadUpdateButton'
+                    aria-describedby='update-available-description'
                 >
                     {getMainButtonText()}
                 </button>
@@ -130,6 +142,7 @@ const UpdateAvailable = ({item, appName, activeItem}: OwnProps) => {
                             className='DownloadsDropdown__Update__Details__SubButton'
                             onClick={handleDownloadManually}
                             href='#'
+                            aria-label={formatMessage({id: 'renderer.downloadsDropdown.Update.DownloadManually', defaultMessage: 'Download installer'})}
                         >
                             <FormattedMessage
                                 id='renderer.downloadsDropdown.Update.DownloadManually'
@@ -142,6 +155,7 @@ const UpdateAvailable = ({item, appName, activeItem}: OwnProps) => {
                             className='DownloadsDropdown__Update__Details__SubButton'
                             onClick={handleViewInstallGuide}
                             href='#'
+                            aria-label={formatMessage({id: 'renderer.downloadsDropdown.Update.ViewInstallGuide', defaultMessage: 'View install guide'})}
                         >
                             <FormattedMessage
                                 id='renderer.downloadsDropdown.Update.ViewInstallGuide'
