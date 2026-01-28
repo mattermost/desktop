@@ -47,7 +47,7 @@ jobs:
         with:
           ref: ${{ inputs.branch || github.ref_name }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MATTERMOST_BUILD_GH_TOKEN }}
 
       - name: Configure Git
         run: |
