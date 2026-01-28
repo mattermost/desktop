@@ -1,5 +1,6 @@
 name: Run Release Script
 
+# Temporary push trigger for testing - remove before merging to master
 on:
   workflow_dispatch:
     inputs:
@@ -22,6 +23,11 @@ on:
         required: false
         type: boolean
         default: false
+  push:
+    branches:
+      - 'release-*'
+    paths:
+      - '.github/workflows/run-release-script.yml'
 
 defaults:
   run:
@@ -39,7 +45,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.branch || github.ref_name }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -73,6 +79,11 @@ jobs:
 
       - name: Run release script
         run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "Workflow triggered by push - running in test mode (skipping actual release script)"
+            echo "Workflow structure validated successfully!"
+            exit 0
+          fi
           command=$(echo "${{ inputs.release_command }}" | cut -d' ' -f1)
           if [[ "${command}" == "start" ]]; then
             esr_param="N"
@@ -85,6 +96,7 @@ jobs:
           fi
 
       - name: Push changes and tags
+        if: github.event_name != 'push'
         run: |
           git_origin="origin"
           branch_name=$(git symbolic-ref -q HEAD)
@@ -93,12 +105,19 @@ jobs:
 
       - name: Display summary
         run: |
-          command=$(echo "${{ inputs.release_command }}" | cut -d' ' -f1)
-          echo "Release script completed successfully!"
-          echo "Command: ${command}"
-          if [[ "${command}" == "start" ]]; then
-            echo "ESR Release: ${{ inputs.is_esr }}"
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "Test mode: Workflow triggered by push"
+            echo "Branch: ${{ github.ref_name }}"
+            echo "Latest version: $(jq -r .version package.json)"
+            echo "Latest tag: $(git describe --tags --abbrev=0 2>/dev/null || echo 'No tags found')"
+          else
+            command=$(echo "${{ inputs.release_command }}" | cut -d' ' -f1)
+            echo "Release script completed successfully!"
+            echo "Command: ${command}"
+            if [[ "${command}" == "start" ]]; then
+              echo "ESR Release: ${{ inputs.is_esr }}"
+            fi
+            echo "Branch: ${{ inputs.branch }}"
+            echo "Latest version: $(jq -r .version package.json)"
+            echo "Latest tag: $(git describe --tags --abbrev=0 2>/dev/null || echo 'No tags found')"
           fi
-          echo "Branch: ${{ inputs.branch }}"
-          echo "Latest version: $(jq -r .version package.json)"
-          echo "Latest tag: $(git describe --tags --abbrev=0 2>/dev/null || echo 'No tags found')"
