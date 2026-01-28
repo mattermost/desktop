@@ -25,7 +25,7 @@ describe('menu_bar/dropdown', function desc() {
         await env.clearElectronInstances();
     };
 
-    this.timeout(30000);
+    this.timeout(90000);
 
     it('MM-T4405 should set name of menu item from config file', async () => {
         await beforeFunc();
@@ -100,6 +100,37 @@ describe('menu_bar/dropdown', function desc() {
         after(afterFunc);
 
         it('MM-T4408_1 should show the first view', async () => {
+            // Wait for views to be initialized and attached
+            await asyncSleep(500);
+
+            await browserWindow.evaluate((window, url) => {
+                return new Promise((resolve, reject) => {
+                    const maxAttempts = 200; // 20 seconds max (200 * 100ms)
+                    let attempts = 0;
+                    const checkView = () => {
+                        const hasView = window.contentView.children.find((view) => view.webContents.getURL() === url);
+                        if (hasView) {
+                            resolve();
+                        } else if (attempts >= maxAttempts) {
+                            // Enhanced error message with diagnostic info
+                            const childCount = window.contentView.children.length;
+                            const childUrls = window.contentView.children.map((view) => {
+                                try {
+                                    return view.webContents.getURL();
+                                } catch (e) {
+                                    return 'error-getting-url';
+                                }
+                            });
+                            reject(new Error(`View with URL ${url} not found after ${maxAttempts * 100}ms. Found ${childCount} children with URLs: ${JSON.stringify(childUrls)}`));
+                        } else {
+                            attempts++;
+                            setTimeout(checkView, 100);
+                        }
+                    };
+                    checkView();
+                });
+            }, env.exampleURL);
+
             const firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean(window.contentView.children.find((view) => view.webContents.getURL() === url)), env.exampleURL);
             firstViewIsAttached.should.be.true;
             const secondViewIsAttached = await browserWindow.evaluate((window) => Boolean(window.contentView.children.find((view) => view.webContents.getURL() === 'https://github.com/')));

@@ -36,7 +36,15 @@ describe('file_menu/dropdown', function desc() {
     it('MM-T1313 Open Settings modal using keyboard shortcuts', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         mainWindow.should.not.be.null;
+
+        // Focus the main window and wait for it to be ready
+        await mainWindow.bringToFront();
+
+        // macOS needs more time for window focus and keyboard shortcut registration
+        await asyncSleep(process.platform === 'darwin' ? 1000 : 500);
+
         robot.keyTap(',', [env.cmdOrCtrl]);
+
         const settingsWindow = await this.app.waitForEvent('window', {
             predicate: (window) => window.url().includes('settings'),
         });

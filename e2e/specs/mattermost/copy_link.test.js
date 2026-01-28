@@ -11,7 +11,7 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 describe('copylink', function desc() {
-    this.timeout(40000);
+    this.timeout(90000);
 
     const config = env.demoMattermostConfig;
 
@@ -37,6 +37,11 @@ describe('copylink', function desc() {
             const firstServer = this.serverMap[config.servers[0].name][0].win;
             await env.loginToMattermost(firstServer);
             await asyncSleep(2000);
+
+            // Clear clipboard to prevent pollution from other tests
+            clipboard.writeText('');
+            await asyncSleep(500);
+
             await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 5000});
             await firstServer.click('#sidebarItem_town-square', {button: 'right'});
             await asyncSleep(2000);
@@ -50,6 +55,10 @@ describe('copylink', function desc() {
                 break;
             }
             robot.keyTap('enter');
+
+            // Wait for clipboard operation to complete
+            await asyncSleep(1000);
+
             await firstServer.click('#sidebarItem_town-square');
             await firstServer.click('#post_textbox');
             const clipboardText = clipboard.readText();

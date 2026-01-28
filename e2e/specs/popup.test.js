@@ -9,7 +9,9 @@ const robot = require('robotjs');
 const env = require('../modules/environment');
 const {asyncSleep} = require('../modules/utils');
 
-describe('popup', function desc() {
+// The new servers created for running e2e will not have github plugin configured
+// Skip in CI but allow running locally
+env.shouldTest(describe, !env.isCI())('popup', function desc() {
     this.timeout(40000);
 
     const config = env.demoMattermostConfig;

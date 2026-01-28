@@ -136,6 +136,8 @@ env:
   SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
   DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  NODE_ENV: "test"
+  DEBUG_E2E: "true"
 
 jobs:
   e2e:
@@ -224,7 +226,7 @@ jobs:
           path: |
             node_modules
             C:\Users\runneradmin\.electron-gyp
-          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('./package-lock.json') }}
+          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-node-modules
             ${{ runner.os }}-build-
@@ -263,9 +265,10 @@ jobs:
       - name: e2e/run-playwright-tests-macos
         if: runner.os == 'macOS'
         run: |
-          sudo spctl --master-disable
-          xattr -dr com.apple.quarantine ./node_modules/electron
+          echo "Building test bundle…"
           npm run build-test
+
+          echo "Running E2E tests…"
           cd e2e
           npm run run:e2e || true
           npm run send-report

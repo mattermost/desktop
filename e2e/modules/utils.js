@@ -50,21 +50,18 @@ function mkDirAsync(path) {
 function rmDirAsync(path) {
     return new Promise((resolve, reject) => {
         dirExistsAsync(path).then((exists) => {
-            if (exists) {
-                fs.rm(path, {recursive: true, force: true}, (error) => {
-                    if (error) {
-                        if (error.code === 'ENOENT') {
-                            resolve();
-                        }
-                        reject(error);
-                    }
-                    resolve();
-                });
+            if (!exists) {
+                resolve();
+                return;
             }
-            resolve();
-        }).catch((err) => {
-            reject(err);
-        });
+            fs.rm(path, {recursive: true, force: true}, (error) => {
+                if (error && error.code !== 'ENOENT') {
+                    reject(error);
+                    return;
+                }
+                resolve();
+            });
+        }).catch(reject);
     });
 }
 
@@ -74,8 +71,10 @@ function unlinkAsync(path) {
             if (error) {
                 if (error.code === 'ENOENT') {
                     resolve();
+                    return;
                 }
                 reject(error);
+                return;
             }
             resolve();
         });
@@ -94,11 +93,37 @@ function writeFileAsync(path, data) {
     });
 }
 
+async function rmDirAsyncWithRetry(path, maxRetries = 3, delay = 1000) {
+    let lastError;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            // eslint-disable-next-line no-await-in-loop
+            await rmDirAsync(path);
+            return;
+        } catch (error) {
+            lastError = error;
+            const isRetryableError = error.code === 'EBUSY' || error.code === 'EACCES';
+            const hasRetriesLeft = attempt < maxRetries - 1;
+
+            if (isRetryableError && hasRetriesLeft) {
+                // eslint-disable-next-line no-console
+                console.warn(`Retry ${attempt + 1}/${maxRetries} for ${path}: ${error.code}`);
+                // eslint-disable-next-line no-await-in-loop
+                await asyncSleep(delay);
+            } else {
+                throw error;
+            }
+        }
+    }
+    throw lastError;
+}
+
 module.exports = {
     asyncSleep,
     dirExistsAsync,
     mkDirAsync,
     rmDirAsync,
+    rmDirAsyncWithRetry,
     unlinkAsync,
     writeFileAsync,
 };

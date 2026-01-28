@@ -1,3 +1,78 @@
+diff --git a/node_modules/macos-notification-state/lib/index.js b/node_modules/macos-notification-state/lib/index.js
+index 156d3fc..bbdaf65 100644
+--- a/node_modules/macos-notification-state/lib/index.js
++++ b/node_modules/macos-notification-state/lib/index.js
+@@ -8,8 +8,14 @@ function safeLoad(addonName) {
+     );
+   }
+ }
+-// bindings - do search addon on each call - so load addon once when module loaded instead of each fn call
+-const notificationState = safeLoad("notificationstate");
++// Lazy load the addon only when needed (similar to windows-focus-assist)
++let notificationState;
++function getNotificationStateAddon() {
++  if (!notificationState) {
++    notificationState = safeLoad("notificationstate");
++  }
++  return notificationState;
++}
+ 
+ /**
+  * Returns the status, either 'UNKNOWN_ERROR', 'UNKNOWN', 'SESSION_SCREEN_IS_LOCKED','SESSION_ON_CONSOLE_KEY', or 'DO_NOT_DISTURB'. If DND is enabled, the session state isn't checked.
+@@ -26,7 +32,11 @@ function getNotificationState() {
+ 
+   return getDoNotDisturb().then((dnd) => {
+     if (dnd) return USER_NOTIFICATION_STATE[3];
+-    const ss = notificationState.getNotificationState();
++    const addon = getNotificationStateAddon();
++    if (!addon) {
++      return "UNKNOWN_ERROR";
++    }
++    const ss = addon.getNotificationState();
+     if (USER_NOTIFICATION_STATE[ss]) {
+       return USER_NOTIFICATION_STATE[ss];
+     } else {
+@@ -41,7 +51,13 @@ function getNotificationState() {
+  * @returns {string} sessionState
+  */
+ function getSessionState() {
+-  const result = notificationState.getNotificationState();
++  const addon = getNotificationStateAddon();
++  if (!addon) {
++    throw new Error(
++      "[macos-notification-state] notificationstate addon not loaded"
++    );
++  }
++  const result = addon.getNotificationState();
+ 
+   if (result === -1) {
+     throw new Error(
+@@ -65,7 +81,11 @@ let focusCenter;
+  */
+ function getDoNotDisturb() {
+   return new Promise((resolve, reject) => {
+-    const dnd = notificationState.getDoNotDisturb();
++    const addon = getNotificationStateAddon();
++    if (!addon) {
++      return reject(new Error("[macos-notification-state] notificationstate addon not loaded"));
++    }
++    const dnd = addon.getDoNotDisturb();
+ 
+     if (dnd === -1) {
+       // will return if macos > 12
+@@ -93,11 +113,7 @@ function withValidation(action) {
+     if (process.platform !== "darwin") {
+       throw new Error("[macos-notification-state] only works on macOS");
+     }
+-    if (!notificationState) {
+-      throw new Error(
+-        "[macos-notification-state] notificationstate addon not loaded"
+-      );
+-    }
++    // Addon will be lazy-loaded when needed, so we don't check here
+     return action();
+   };
+ }
 diff --git a/node_modules/macos-notification-state/package.json b/node_modules/macos-notification-state/package.json
 index 9a863a5..2e02960 100644
 --- a/node_modules/macos-notification-state/package.json

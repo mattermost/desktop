@@ -250,7 +250,7 @@ function generateTitle() {
         title = `E2E for Pull Request Build: [${BRANCH}](${PULL_REQUEST})`;
         break;
     case 'RELEASE':
-        title = `E2E for Release Build${releaseVersion}`;
+        title = `E2E for Release Build ${releaseVersion}`;
         break;
     case 'NIGHTLY':
         title = 'E2E for Master Nightly Build';
@@ -259,7 +259,7 @@ function generateTitle() {
         title = 'E2E for Post Merge to Master';
         break;
     case 'MANUAL':
-        title = `E2E for Manually triggered for ${BRANCH}`;
+        title = `E2E for Manually triggered for branch ${BRANCH}`;
         break;
     case 'CMT':
         title = `Compatibility Matrix Testing Report for Server v${SERVER_VERSION} and Desktop version v${DESKTOP_VERSION}`;

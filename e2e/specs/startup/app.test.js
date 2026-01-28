@@ -12,7 +12,9 @@ describe('startup/app', function desc() {
 
     beforeEach(async () => {
         env.createTestUserDataDir();
+        await asyncSleep(1000);
         env.cleanTestConfig();
+        await asyncSleep(1000);
         this.app = await env.getApp();
     });
 
@@ -21,6 +23,7 @@ describe('startup/app', function desc() {
             await this.app.close();
         }
         await env.clearElectronInstances();
+        await asyncSleep(1000);
     });
 
     it('MM-T4400 should be stopped when the app instance already exists', (done) => {
@@ -48,9 +51,19 @@ describe('startup/app', function desc() {
         env.cleanTestConfig();
         this.app = await env.getApp();
 
+        // Wait for welcome screen modal to appear if not immediately available
+        let welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
+        if (!welcomeScreenModal) {
+            welcomeScreenModal = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('welcomeScreen'),
+                timeout: 10000,
+            });
+        }
+
+        // Wait for the welcome screen modal to be fully loaded
+        await welcomeScreenModal.waitForLoadState('domcontentloaded');
         await asyncSleep(500);
 
-        const welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
         const modalButton = await welcomeScreenModal.innerText('.WelcomeScreen .WelcomeScreen__button');
         modalButton.should.equal('Get Started');
     });
