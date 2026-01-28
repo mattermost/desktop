@@ -1,0 +1,104 @@
+name: Run Release Script
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_command:
+        description: 'Release command to execute'
+        required: true
+        type: choice
+        options:
+          - start - Start a new release using the current version
+          - rc - Increment the release candidate version and create a new release candidate
+          - pre-final - Cut the final release for MAS approval
+          - final - Cut the final release to be released to GitHub
+          - patch - Create a patch (dot) release
+      branch:
+        description: 'Branch to run the release script on (must be a release-X.Y branch)'
+        required: true
+        type: string
+      is_esr:
+        description: 'Is this an ESR release? (Only used for "start" command)'
+        required: false
+        type: boolean
+        default: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TERM: xterm
+
+jobs:
+  run-release:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Verify branch is clean
+        run: |
+          if ! git diff --quiet; then
+            echo "Error: Branch has uncommitted changes"
+            git status
+            exit 1
+          fi
+
+      - name: Verify branch name
+        run: |
+          branch_name=$(git symbolic-ref -q HEAD)
+          branch_name="${branch_name##refs/heads/}"
+          if [[ ! "${branch_name}" =~ ^release- ]]; then
+            echo "Error: Branch '${branch_name}' does not match release-X.Y pattern"
+            exit 1
+          fi
+          echo "Running release script on branch: ${branch_name}"
+
+      - name: Run release script
+        run: |
+          command=$(echo "${{ inputs.release_command }}" | cut -d' ' -f1)
+          if [[ "${command}" == "start" ]]; then
+            esr_param="N"
+            if [[ "${{ inputs.is_esr }}" == "true" ]]; then
+              esr_param="Y"
+            fi
+            bash scripts/release.sh ${command} ${esr_param}
+          else
+            bash scripts/release.sh ${command}
+          fi
+
+      - name: Push changes and tags
+        run: |
+          git_origin="origin"
+          branch_name=$(git symbolic-ref -q HEAD)
+          branch_name="${branch_name##refs/heads/}"
+          git push --follow-tags ${git_origin} ${branch_name}:${branch_name}
+
+      - name: Display summary
+        run: |
+          command=$(echo "${{ inputs.release_command }}" | cut -d' ' -f1)
+          echo "Release script completed successfully!"
+          echo "Command: ${command}"
+          if [[ "${command}" == "start" ]]; then
+            echo "ESR Release: ${{ inputs.is_esr }}"
+          fi
+          echo "Branch: ${{ inputs.branch }}"
+          echo "Latest version: $(jq -r .version package.json)"
+          echo "Latest tag: $(git describe --tags --abbrev=0 2>/dev/null || echo 'No tags found')"
