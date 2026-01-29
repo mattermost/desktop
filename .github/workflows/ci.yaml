@@ -35,7 +35,6 @@ jobs:
         run: |
           mkdir -p ./build/linux
           npm run package:linux-tar
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-test-results
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -125,7 +124,6 @@ jobs:
           mkdir -p ./build/win
           jq '.win.azureSignOptions=null' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm run package:windows
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win
       - name: ci/upload-test-results
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -172,7 +170,6 @@ jobs:
         run: |
           mkdir -p ./build/macos
           npm run package:mac
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/macos/
         env:
           SDKROOT: ${{ env.SDKROOT }}

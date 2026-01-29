@@ -42,6 +42,13 @@ declare global {
             openServerExternally: () => void;
             openServerUpgradeLink: () => void;
             openChangelogLink: () => void;
+            openWindowsStore: () => void;
+            downloadUpdateManually: () => void;
+            openUpdateGuide: () => void;
+            openLinuxGitHubRelease: () => void;
+            getIsMacAppStore: () => Promise<boolean>;
+            openMacAppStore: () => void;
+            skipVersion: () => void;
             closeDownloadsDropdown: () => void;
             closeDownloadsDropdownMenu: () => void;
             openDownloadsDropdown: () => void;
@@ -144,14 +151,9 @@ declare global {
                 requestInfo: () => void;
                 sendSize: (width: number, height: number) => void;
                 openFile: (item: DownloadedItem) => void;
-                startUpdateDownload: () => void;
-                startUpgrade: () => void;
                 requestClearDownloadsDropdown: () => void;
                 toggleDownloadsDropdownMenu: (payload: DownloadsMenuOpenEventPayload) => void;
                 focus: () => void;
-                dismissUpdateDeprecationNotice: () => void;
-                openWindowsStore: () => void;
-                openWebsite: () => void;
             };
 
             downloadsDropdownMenu: {

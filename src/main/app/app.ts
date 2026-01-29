@@ -10,7 +10,6 @@ import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
-import updateManager from 'main/autoUpdater';
 import {localizeMessage} from 'main/i18nManager';
 import CertificateStore from 'main/security/certificateStore';
 
@@ -81,7 +80,6 @@ export function handleAppBeforeQuit() {
     // Make sure tray icon gets removed if the user exits via CTRL-Q
     Tray.destroy();
     global.willAppQuit = true;
-    updateManager.handleOnQuit();
 }
 
 export async function handleAppCertificateError(event: Event, webContents: WebContents, url: string, error: string, certificate: Certificate, callback: (isTrusted: boolean) => void) {

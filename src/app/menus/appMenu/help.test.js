@@ -5,9 +5,9 @@ import {shell, clipboard} from 'electron';
 
 import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
-import UpdateManager from 'main/autoUpdater';
 import Diagnostics from 'main/diagnostics';
 import {localizeMessage} from 'main/i18nManager';
+import UpdateManager from 'main/updateNotifier';
 
 import createHelpMenu from './help';
 
@@ -49,11 +49,9 @@ jest.mock('common/servers/serverManager', () => ({
     getRemoteInfo: jest.fn(),
 }));
 
-jest.mock('main/autoUpdater', () => ({
+jest.mock('main/updateNotifier', () => ({
     versionDownloaded: false,
     versionAvailable: false,
-    handleUpdate: jest.fn(),
-    handleDownload: jest.fn(),
     checkForUpdates: jest.fn(),
 }));
 
@@ -86,8 +84,6 @@ describe('app/menus/appMenu/help', () => {
             serverVersion: '7.0.0',
         });
         Config.canUpgrade = false;
-        UpdateManager.versionDownloaded = false;
-        UpdateManager.versionAvailable = false;
     });
 
     describe('createHelpMenu', () => {
@@ -412,64 +408,6 @@ describe('app/menus/appMenu/help', () => {
             const serverVersionItem = menu.submenu.find((item) => item.label === '    Server Version 7.0.0');
             serverVersionItem.click();
             expect(clipboard.writeText).toHaveBeenCalledWith('Server Version 7.0.0');
-        });
-
-        it('should show restart and update option when update is downloaded', () => {
-            Config.canUpgrade = true;
-            UpdateManager.versionDownloaded = true;
-            localizeMessage.mockImplementation((id) => {
-                if (id === 'main.menus.app.help.restartAndUpdate') {
-                    return 'Restart and Update';
-                }
-                return id;
-            });
-            const menu = createHelpMenu();
-            const restartUpdateItem = menu.submenu.find((item) => item.label === 'Restart and Update');
-            expect(restartUpdateItem).not.toBe(undefined);
-        });
-
-        it('should call UpdateManager.handleUpdate when restart and update is clicked', () => {
-            Config.canUpgrade = true;
-            UpdateManager.versionDownloaded = true;
-            localizeMessage.mockImplementation((id) => {
-                if (id === 'main.menus.app.help.restartAndUpdate') {
-                    return 'Restart and Update';
-                }
-                return id;
-            });
-            const menu = createHelpMenu();
-            const restartUpdateItem = menu.submenu.find((item) => item.label === 'Restart and Update');
-            restartUpdateItem.click();
-            expect(UpdateManager.handleUpdate).toHaveBeenCalled();
-        });
-
-        it('should show download update option when update is available', () => {
-            Config.canUpgrade = true;
-            UpdateManager.versionAvailable = true;
-            localizeMessage.mockImplementation((id) => {
-                if (id === 'main.menus.app.help.downloadUpdate') {
-                    return 'Download Update';
-                }
-                return id;
-            });
-            const menu = createHelpMenu();
-            const downloadUpdateItem = menu.submenu.find((item) => item.label === 'Download Update');
-            expect(downloadUpdateItem).not.toBe(undefined);
-        });
-
-        it('should call UpdateManager.handleDownload when download update is clicked', () => {
-            Config.canUpgrade = true;
-            UpdateManager.versionAvailable = true;
-            localizeMessage.mockImplementation((id) => {
-                if (id === 'main.menus.app.help.downloadUpdate') {
-                    return 'Download Update';
-                }
-                return id;
-            });
-            const menu = createHelpMenu();
-            const downloadUpdateItem = menu.submenu.find((item) => item.label === 'Download Update');
-            downloadUpdateItem.click();
-            expect(UpdateManager.handleDownload).toHaveBeenCalled();
         });
 
         it('should show check for updates option when no update is available', () => {
