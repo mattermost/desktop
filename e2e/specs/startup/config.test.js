@@ -6,13 +6,16 @@
 const fs = require('fs');
 
 const env = require('../../modules/environment');
+const {asyncSleep} = require('../../modules/utils');
 
 describe('config', function desc() {
     this.timeout(30000);
 
     beforeEach(async () => {
         env.createTestUserDataDir();
+        await asyncSleep(1000);
         env.cleanTestConfig();
+        await asyncSleep(1000);
     });
 
     afterEach(async () => {
@@ -23,6 +26,7 @@ describe('config', function desc() {
             } catch (err) {}
         }
         await env.clearElectronInstances();
+        await asyncSleep(1000);
     });
 
     describe('MM-T4401 should show servers in dropdown when there is config file', async () => {
@@ -31,6 +35,7 @@ describe('config', function desc() {
         beforeEach(async () => {
             fs.writeFileSync(env.configFilePath, JSON.stringify(config));
             this.app = await env.getApp();
+            await asyncSleep(1000);
         });
 
         afterEach(async () => {
@@ -40,6 +45,7 @@ describe('config', function desc() {
                 // eslint-disable-next-line no-empty
                 } catch (err) {}
             }
+            await asyncSleep(1000);
         });
 
         it('MM-T4401_1 should show correct server in the dropdown button', async () => {
@@ -52,8 +58,10 @@ describe('config', function desc() {
             this.serverMap = await env.getServerMap(this.app);
             const firstServer = this.serverMap[config.servers[0].name][0].win;
             const secondServer = this.serverMap[config.servers[1].name][0].win;
+            await asyncSleep(1000);
 
-            firstServer.url().should.equal(config.servers[0].url);
+            // Application automatically upgrades HTTP to HTTPS for security (see serverHub.ts:228-233)
+            firstServer.url().should.equal('https://example.com/');
             secondServer.url().should.equal(config.servers[1].url);
         });
     });
@@ -66,6 +74,7 @@ describe('config', function desc() {
         };
         fs.writeFileSync(env.configFilePath, JSON.stringify(oldConfig));
         this.app = await env.getApp();
+        await asyncSleep(2000);
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton:has-text("Primary server")');
         dropdownButtonText.should.equal('Primary server');

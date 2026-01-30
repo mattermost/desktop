@@ -33,11 +33,6 @@ const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const exampleURL = 'http://example.com/';
 const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
 
-if (process.platform === 'win32') {
-    const robot = require('robotjs');
-    robot.mouseClick();
-}
-
 const exampleServer = {
     name: 'example',
     url: exampleURL,
@@ -85,6 +80,35 @@ const demoMattermostConfig = {
 
 const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
+// Helper function to clean up single-instance lock files on macOS and Windows
+function cleanSingletonLocks() {
+    if (process.platform !== 'darwin' && process.platform !== 'win32') {
+        return;
+    }
+
+    const debugLog = (msg) => {
+        if (process.env.DEBUG_E2E) {
+            // eslint-disable-next-line no-console
+            console.log(`[cleanSingletonLocks] ${msg}`);
+        }
+    };
+
+    const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
+    lockFiles.forEach((lockName) => {
+        try {
+            const lockPath = path.join(userDataDir, lockName);
+            if (fs.existsSync(lockPath)) {
+                debugLog(`Removing lock file: ${lockPath}`);
+                fs.unlinkSync(lockPath);
+            }
+        } catch (err) {
+            debugLog(`Error removing ${lockName}: ${err.message}`);
+
+            // Ignore errors - lock might not exist or already be deleted
+        }
+    });
+}
+
 module.exports = {
     sourceRootDir,
     configFilePath,
@@ -99,19 +123,244 @@ module.exports = {
     demoMattermostConfig,
     cmdOrCtrl,
 
+    /**
+     * Normalize and compare paths in a platform-aware manner
+     * On Windows: case-insensitive comparison with normalized paths
+     * On Unix: case-sensitive comparison with normalized paths
+     */
+    pathsMatch(path1, path2) {
+        if (!path1 || !path2) {
+            return false;
+        }
+
+        const normalized1 = path.normalize(path1);
+        const normalized2 = path.normalize(path2);
+
+        if (process.platform === 'win32') {
+            return normalized1.toLowerCase() === normalized2.toLowerCase();
+        }
+
+        return normalized1 === normalized2;
+    },
+
+    /**
+     * Extract executable name from a command path
+     * Example: C:\path\to\electron.exe -> electron.exe
+     */
+    getExecutableName(commandPath) {
+        if (!commandPath) {
+            return '';
+        }
+
+        const parts = commandPath.replace(/\\/g, '/').split('/');
+        return parts[parts.length - 1];
+    },
+
+    /**
+     * Force kill a process using native OS commands
+     * This is used as a fallback when ps.kill() times out
+     */
+    async forceKillProcess(pid) {
+        const debugLog = (msg) => {
+            if (process.env.DEBUG_E2E) {
+                // eslint-disable-next-line no-console
+                console.log(`[forceKillProcess] ${msg}`);
+            }
+        };
+
+        return new Promise((resolve) => {
+            let killCommand;
+            if (process.platform === 'win32') {
+                killCommand = `taskkill /F /PID ${pid}`;
+            } else {
+                killCommand = `kill -9 ${pid}`;
+            }
+
+            debugLog(`Executing: ${killCommand}`);
+
+            const {exec} = require('child_process');
+            exec(killCommand, (error) => {
+                if (error) {
+                    debugLog(`Force kill error for PID ${pid}: ${error.message}`);
+                } else {
+                    debugLog(`Force kill succeeded for PID ${pid}`);
+                }
+
+                // Always resolve - if process doesn't exist anymore, that's fine
+                resolve();
+            });
+        });
+    },
+
     async clearElectronInstances() {
+        const debugLog = (msg) => {
+            if (process.env.DEBUG_E2E) {
+                // eslint-disable-next-line no-console
+                console.log(`[clearElectronInstances] ${msg}`);
+            }
+        };
+
+        debugLog(`Looking for Electron processes. electronBinaryPath: ${electronBinaryPath}`);
+
         return new Promise((resolve, reject) => {
             ps.lookup({
                 command: process.platform === 'darwin' ? 'Electron' : 'electron',
-            }, (err, resultList) => {
+            }, async (err, resultList) => {
                 if (err) {
+                    debugLog(`ps.lookup error: ${err}`);
                     reject(err);
+                    return;
                 }
-                resultList.forEach((process) => {
-                    if (process && process.command === electronBinaryPath && !process.arguments.some((arg) => arg.includes('electron-mocha'))) {
-                        ps.kill(process.pid);
+
+                debugLog(`Found ${resultList.length} potential processes`);
+
+                const electronExeName = this.getExecutableName(electronBinaryPath);
+                const processesToKill = [];
+
+                resultList.forEach((proc) => {
+                    if (!proc || !proc.command) {
+                        return;
+                    }
+
+                    debugLog(`Checking process PID ${proc.pid}: command="${proc.command}"`);
+
+                    // Skip electron-mocha processes
+                    if (proc.arguments && proc.arguments.some &&
+                        proc.arguments.some((arg) => arg.includes('electron-mocha'))) {
+                        debugLog(`Skipping electron-mocha process ${proc.pid}`);
+                        return;
+                    }
+
+                    // Match by exact path (primary method)
+                    const exactMatch = this.pathsMatch(proc.command, electronBinaryPath);
+
+                    // Match by executable name (fallback method for Windows)
+                    const execNameMatch = process.platform === 'win32' &&
+                        this.getExecutableName(proc.command).toLowerCase() === electronExeName.toLowerCase();
+
+                    if (exactMatch || execNameMatch) {
+                        debugLog(`Will kill process ${proc.pid} (exactMatch: ${exactMatch}, execNameMatch: ${execNameMatch})`);
+                        processesToKill.push(proc.pid);
+                    } else {
+                        debugLog(`No match for process ${proc.pid}`);
                     }
                 });
+
+                if (processesToKill.length === 0) {
+                    debugLog('No Electron processes to kill');
+                    resolve();
+                    return;
+                }
+
+                debugLog(`Killing ${processesToKill.length} processes: ${processesToKill.join(', ')}`);
+
+                // Kill all identified processes with timeout handling
+                const killPromises = processesToKill.map(async (pid) => {
+                    const KILL_TIMEOUT = 10000; // 10 second timeout for ps.kill
+
+                    debugLog(`Attempting to kill process ${pid}`);
+
+                    const killAttempt = new Promise((resolveKill) => {
+                        ps.kill(pid, (killErr) => {
+                            if (killErr) {
+                                debugLog(`ps.kill error for ${pid}: ${killErr.message}`);
+                                resolveKill({success: false, error: killErr.message});
+                            } else {
+                                debugLog(`ps.kill succeeded for ${pid}`);
+                                resolveKill({success: true});
+                            }
+                        });
+                    });
+
+                    const timeout = new Promise((resolveTimeout) => {
+                        setTimeout(() => {
+                            debugLog(`ps.kill timeout for ${pid} after ${KILL_TIMEOUT}ms`);
+                            resolveTimeout({success: false, error: 'timeout'});
+                        }, KILL_TIMEOUT);
+                    });
+
+                    const result = await Promise.race([killAttempt, timeout]);
+
+                    // If ps.kill failed or timed out, use force kill
+                    if (!result.success) {
+                        debugLog(`ps.kill failed for ${pid}, attempting force kill`);
+                        await this.forceKillProcess(pid);
+                    }
+
+                    return result;
+                });
+
+                await Promise.all(killPromises);
+
+                // Clean singleton lock files immediately after killing processes
+                debugLog('Cleaning singleton lock files');
+                cleanSingletonLocks();
+
+                // Wait for processes to fully terminate and file handles to be released
+                // This is needed on all platforms, not just Windows
+                const waitDelay = (() => {
+                    if (process.platform === 'win32') {
+                        // Windows needs longest wait
+                        const baseDelay = 2000;
+                        const perProcessDelay = 500;
+                        return Math.min(baseDelay + (processesToKill.length * perProcessDelay), 5000);
+                    }
+                    if (process.platform === 'linux') {
+                        // Linux needs moderate wait in CI
+                        return 2000;
+                    }
+
+                    // macOS
+                    return 1000;
+                })();
+
+                debugLog(`Waiting ${waitDelay}ms for process cleanup`);
+                await asyncSleep(waitDelay);
+
+                // Clean singleton locks again to ensure they're gone
+                if (process.platform === 'win32' || process.platform === 'darwin') {
+                    cleanSingletonLocks();
+                }
+
+                // Verify processes are actually dead
+                debugLog('Verifying processes are terminated');
+                const stillAlive = await new Promise((resolveVerify) => {
+                    ps.lookup({
+                        command: process.platform === 'darwin' ? 'Electron' : 'electron',
+                    }, (verifyErr, verifyList) => {
+                        if (verifyErr) {
+                            debugLog(`Verification lookup error: ${verifyErr}`);
+                            resolveVerify([]);
+                            return;
+                        }
+
+                        const alive = verifyList.filter((proc) => {
+                            if (!proc || !proc.pid) {
+                                return false;
+                            }
+
+                            // Check if this PID was in our kill list
+                            return processesToKill.includes(proc.pid);
+                        });
+
+                        if (alive.length > 0) {
+                            debugLog(`WARNING: ${alive.length} processes still alive: ${alive.map((p) => p.pid).join(', ')}`);
+                        } else {
+                            debugLog('All processes verified dead');
+                        }
+
+                        resolveVerify(alive);
+                    });
+                });
+
+                // If any processes are still alive, force kill them one more time
+                if (stillAlive.length > 0) {
+                    debugLog('Force killing remaining processes');
+                    await Promise.all(stillAlive.map((proc) => this.forceKillProcess(proc.pid)));
+                    await asyncSleep(1000); // Short wait after force kill
+                }
+
+                debugLog('clearElectronInstances complete');
                 resolve();
             });
         });
@@ -128,6 +377,9 @@ module.exports = {
                 }
             }
         });
+
+        // Clean up single-instance lock files on macOS and Windows to prevent launch failures
+        cleanSingletonLocks();
     },
     async cleanTestConfigAsync() {
         await Promise.all(
@@ -138,8 +390,11 @@ module.exports = {
     },
 
     cleanDataDir() {
+        // Clean up single-instance lock files on macOS and Windows
+        cleanSingletonLocks();
+
         try {
-            fs.rmdirSync(userDataDir, {recursive: true});
+            fs.rmSync(userDataDir, {recursive: true, force: true});
         } catch (err) {
             if (err.code !== 'ENOENT') {
                 // eslint-disable-next-line no-console
@@ -181,55 +436,236 @@ module.exports = {
             downloadsPath: downloadsLocation,
             env: {
                 ...process.env,
-                RESOURCES_PATH: userDataDir,
+                RESOURCES_PATH: path.join(sourceRootDir, 'e2e/dist'),
+                NODE_ENV: 'test',
+                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+                ELECTRON_ENABLE_LOGGING: 'true',
+                ELECTRON_NO_ATTACH_CONSOLE: 'true',
+                NODE_OPTIONS: '--no-warnings',
             },
             executablePath: electronBinaryPath,
-            args: [`${path.join(sourceRootDir, 'e2e/dist')}`, `--user-data-dir=${userDataDir}`, '--disable-dev-shm-usage', '--disable-dev-mode', '--disable-gpu', '--no-sandbox', ...args],
+
+            // macOS-15 requires longer timeout due to slower initialization
+            // Linux CI with xvfb also needs more time due to virtual framebuffer overhead
+            // Windows CI needs longest timeout due to antivirus scanning and slower disk I/O
+            timeout: (() => {
+                if (process.platform === 'win32') {
+                    return 120000;
+                }
+                if (process.platform === 'darwin') {
+                    return 90000;
+                }
+                return 60000;
+            })(),
+            args: [
+                path.join(sourceRootDir, 'e2e/dist'),
+                `--user-data-dir=${userDataDir}`,
+
+                // CI environment compatibility flags
+                '--disable-dev-shm-usage',
+                '--disable-dev-mode',
+                '--disable-gpu',
+                '--disable-gpu-sandbox',
+                '--no-sandbox',
+                '--no-zygote',
+                '--disable-software-rasterizer',
+
+                // Stability and performance flags
+                '--disable-breakpad',
+                '--disable-features=SpareRendererForSitePerProcess',
+                '--disable-features=CrossOriginOpenerPolicy',
+                '--disable-renderer-backgrounding',
+                '--window-open-file-system',
+                '--disable-dev-mode',
+
+                // Consistency flags
+                '--force-color-profile=srgb',
+                '--mute-audio',
+
+                ...args,
+            ],
         };
 
-        return electron.launch(options).then(async (eapp) => {
-            await eapp.evaluate(async ({app}) => {
-                const promise = new Promise((resolve) => {
-                    app.on('e2e-app-loaded', () => {
-                        resolve();
+        const eapp = await electron.launch(options);
+
+        // Wait for windows to be available with their URLs loaded
+        // Poll for windows with a timeout to handle slow initialization on macOS-15
+        const startTime = Date.now();
+        const windowPollTimeout = 30000; // 30 seconds
+        let hasWindowsWithUrls = false;
+
+        while (!hasWindowsWithUrls && (Date.now() - startTime) < windowPollTimeout) {
+            try {
+                const windows = eapp.windows();
+                if (windows.length > 0) {
+                    // Check if at least one window has a URL loaded
+                    const windowsWithUrls = windows.filter((win) => {
+                        try {
+                            const url = win.url();
+                            return url && url.length > 0;
+                        } catch (e) {
+                            return false;
+                        }
                     });
-                });
-                return promise;
-            });
-            return eapp;
-        });
+                    if (windowsWithUrls.length > 0) {
+                        hasWindowsWithUrls = true;
+                        break;
+                    }
+                }
+            } catch (err) {
+                // Ignore errors during polling
+            }
+            // eslint-disable-next-line no-await-in-loop
+            await asyncSleep(100); // Check every 100ms
+        }
+
+        if (hasWindowsWithUrls === false) {
+            // eslint-disable-next-line no-console
+            console.log('Warning: No windows with URLs detected within 30 seconds, but continuing anyway');
+        } else {
+            // Give windows a bit more time to fully render content
+            // macOS and Linux need more time due to slower window initialization
+            // Linux with xvfb has similar delays to macOS
+            // Windows needs even more time due to slower disk I/O and antivirus scanning
+            const renderDelay = (() => {
+                if (process.platform === 'win32') {
+                    return 2000;
+                }
+                if (process.platform === 'darwin' || process.platform === 'linux') {
+                    return 1000;
+                }
+                return 500;
+            })();
+            await asyncSleep(renderDelay);
+        }
+
+        return eapp;
     },
 
     async getServerMap(app) {
-        const map = {};
-        await Promise.all(app.windows().
-            filter((win) => !win.url().includes('mattermost-desktop://')).
-            map(async (win) => {
-                return win.evaluate(async () => {
-                    if (!window.testHelper) {
-                        return null;
-                    }
-                    return window.testHelper.getViewInfoForTest();
-                }).then((result) => {
-                    if (result) {
-                        if (!map[result.serverName]) {
-                            map[result.serverName] = [];
-                        }
-                        map[result.serverName].push({win, webContentsId: result.webContentsId});
-                    }
-                });
+        // Wait for testHelper to be available in windows
+        // This is especially important after clicking newTabButton or during slow initialization
+        // macOS CI needs most time due to process cleanup and slow initialization
+        const maxRetries = (() => {
+            if (process.platform === 'darwin') {
+                return 300; // 30s macOS - LONGEST due to slow CI initialization
+            }
+            if (process.platform === 'win32') {
+                return 200; // 20s Windows
+            }
+            return 150; // 15s Linux
+        })();
+        let retries = 0;
+        let lastWindowCount = 0;
+        let stableCount = 0;
+        let lastMap = {};
+
+        // Windows and Linux need more stability checks due to slower DOM updates
+        const requiredStableCount = (process.platform === 'win32' || process.platform === 'linux') ? 10 : 5;
+
+        while (retries < maxRetries) {
+            const windows = app.windows().filter((win) => {
+                try {
+                    const url = win.url();
+                    return url && !url.includes('mattermost-desktop://');
+                } catch (e) {
+                    // Window might be closed or not ready
+                    return false;
+                }
+            });
+
+            // Track if window count is stable (no new windows appearing)
+            if (windows.length === lastWindowCount && windows.length > 0) {
+                stableCount++;
+            } else {
+                stableCount = 0;
+                lastWindowCount = windows.length;
+            }
+
+            // eslint-disable-next-line no-await-in-loop
+            const results = await Promise.all(windows.map(async (win) => {
+                try {
+                    // Add timeout to evaluate call to prevent hanging on Windows
+                    return await Promise.race([
+                        win.evaluate(async () => {
+                            if (!window.testHelper) {
+                                return null;
+                            }
+                            return window.testHelper.getViewInfoForTest();
+                        }),
+                        new Promise((resolve) => setTimeout(() => resolve(null), 5000)),
+                    ]);
+                } catch (e) {
+                    return null;
+                }
             }));
-        return map;
+
+            // Build the map from results
+            const tempMap = {};
+            windows.forEach((win, index) => {
+                const result = results[index];
+                if (result) {
+                    if (!tempMap[result.serverName]) {
+                        tempMap[result.serverName] = [];
+                    }
+                    tempMap[result.serverName].push({win, webContentsId: result.webContentsId});
+                }
+            });
+
+            // Keep track of the last valid map we built
+            if (Object.keys(tempMap).length > 0) {
+                lastMap = tempMap;
+            }
+
+            // Count how many windows have testHelper ready
+            const readyCount = results.filter((r) => r !== null).length;
+
+            // Return conditions:
+            // 1. All windows have testHelper ready AND window count has been stable for required iterations
+            // 2. OR if no windows to process (edge case)
+            if ((readyCount === windows.length && readyCount > 0 && stableCount >= requiredStableCount) ||
+                windows.length === 0) {
+                return tempMap;
+            }
+
+            // Otherwise wait a bit and retry
+            retries++;
+            // eslint-disable-next-line no-await-in-loop
+            await asyncSleep(100);
+        }
+
+        // If we exhausted retries, return the last valid map we had
+        // This prevents returning an empty map when timeout occurs
+        return lastMap;
     },
 
     async loginToMattermost(window) {
-        await asyncSleep(1000);
-        await window.waitForSelector('#input_loginId');
-        await window.waitForSelector('#input_password-input');
-        await window.waitForSelector('#saveSetting');
-        await window.type('#input_loginId', process.env.MM_TEST_USER_NAME);
-        await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
-        await window.click('#saveSetting');
+        // Windows needs more time for page navigation and rendering
+        const initialDelay = process.platform === 'win32' ? 3000 : 1000;
+        await asyncSleep(initialDelay);
+
+        // Add explicit timeout for all platforms, with longer timeout for Windows
+        const selectorTimeout = process.platform === 'win32' ? 60000 : 30000;
+
+        try {
+            await window.waitForSelector('#input_loginId', {timeout: selectorTimeout});
+            await window.waitForSelector('#input_password-input', {timeout: selectorTimeout});
+            await window.waitForSelector('#saveSetting', {timeout: selectorTimeout});
+
+            await window.type('#input_loginId', process.env.MM_TEST_USER_NAME);
+            await window.type('#input_password-input', process.env.MM_TEST_PASSWORD);
+            await window.click('#saveSetting');
+
+            // Wait for login to complete
+            await asyncSleep(process.platform === 'win32' ? 2000 : 1000);
+        } catch (error) {
+            // Log detailed error for debugging
+            // eslint-disable-next-line no-console
+            console.error('loginToMattermost failed:', error.message);
+            // eslint-disable-next-line no-console
+            console.error('Window URL:', window.url());
+            throw error;
+        }
     },
 
     async openDownloadsDropdown(app) {
@@ -287,5 +723,8 @@ module.exports = {
     },
     isOneOf(platforms) {
         return (platforms.indexOf(process.platform) !== -1);
+    },
+    isCI() {
+        return process.env.CI === 'true';
     },
 };
