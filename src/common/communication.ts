@@ -78,18 +78,15 @@ export const REQUEST_SERVERS_DROPDOWN_INFO = 'request-servers-dropdown-info';
 export const RECEIVE_DROPDOWN_MENU_SIZE = 'receive-dropdown-menu-size';
 
 export const UPDATE_AVAILABLE = 'update-available';
-export const UPDATE_DOWNLOADED = 'update-downloaded';
-export const UPDATE_PROGRESS = 'update-progress';
-export const UPDATE_REMIND_LATER = 'update-remind-later';
-export const CANCEL_UPDATE_DOWNLOAD = 'cancel-update-download';
-export const CANCEL_UPGRADE = 'cancel-upgrade';
-export const START_UPDATE_DOWNLOAD = 'start-update-download';
-export const START_UPGRADE = 'start-upgrade';
 export const CHECK_FOR_UPDATES = 'check-for-updates';
 export const NO_UPDATE_AVAILABLE = 'no-update-available';
-export const DISMISS_UPDATE_DEPRECATION_NOTICE = 'dismiss-update-deprecation-notice';
 export const OPEN_WINDOWS_STORE = 'open-windows-store';
-export const OPEN_WEBSITE = 'open-website';
+export const DOWNLOAD_UPDATE_MANUALLY = 'download-update-manually';
+export const OPEN_UPDATE_GUIDE = 'open-update-guide';
+export const OPEN_LINUX_GITHUB_RELEASE = 'open-linux-github-release';
+export const GET_IS_MAC_APP_STORE = 'get-is-mac-app-store';
+export const OPEN_MAC_APP_STORE = 'open-mac-app-store';
+export const SKIP_VERSION = 'skip-version';
 
 export const BROWSER_HISTORY_PUSH = 'browser-history-push';
 export const TAB_LOGIN_CHANGED = 'tab-login-changed';
