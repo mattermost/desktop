@@ -49,4 +49,8 @@ $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x86_64.rpm")
 #### Linux (Unofficial) - AppImage files
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-arm64.AppImage")
 $(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x86_64.AppImage")
+
+#### Linux (Unofficial) - flatpak files (beta)
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-aarch64.flatpak")
+$(print_link "${BASE_URL}/mattermost-desktop-${VERSION}-linux-x86_64.flatpak")
 MD
