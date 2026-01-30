@@ -38,7 +38,6 @@
     "build:renderer": "webpack-cli --config webpack.config.renderer.js",
     "build-prod": "cross-env NODE_ENV=production run-s check-build-config build",
     "build-prod-mas": "cross-env NODE_ENV=production IS_MAC_APP_STORE=true run-s check-build-config build",
-    "build-prod-upgrade": "cross-env NODE_ENV=production CAN_UPGRADE=true run-s check-build-config build",
     "build-test": "cross-env NODE_ENV=test run-p build:*",
     "create-linux-dev-shortcut": "node scripts/create_linux_dev_shortcut.js",
     "start": "npm run create-linux-dev-shortcut && electron dist/ --disable-dev-mode",
@@ -47,7 +46,7 @@
     "package": "run-s package:windows package:mac-with-universal package:mas package:linux",
     "package:windows": "run-s package:windows-*",
     "package:windows-zip": "npm run build-prod && electron-builder --win zip --x64 --arm64 --publish=never",
-    "package:windows-installers": "npm run build-prod-upgrade && electron-builder --win nsis --x64 --arm64 --publish=never && node scripts/cp_msi_app_update.js && electron-builder --win msi --x64 --arm64 --publish=never",
+    "package:windows-msi": "npm run build-prod && electron-builder --win msi --x64 --arm64 --publish=never",
     "package:mac": "npm run build-prod && electron-builder --config.mac.provisioningProfile=./mac.provisionProfile --mac --x64 --arm64 --publish=never",
     "package:mac-with-universal": "npm run package:mac -- --universal",
     "package:mas": "npm run build-prod-mas && electron-builder --mac mas --universal --publish=never",
@@ -55,7 +54,7 @@
     "package:linux": "run-s package:linux-*",
     "package:linux-tar": "npm run build-prod && electron-builder --linux tar.gz --x64 --publish=never && cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux tar.gz --arm64 --publish=never",
     "package:linux-pkg": "npm run build-prod && electron-builder --linux deb rpm --x64 --publish=never && cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux deb rpm --arm64 --publish=never",
-    "package:linux-appImage": "npm run build-prod-upgrade && electron-builder --linux tar.gz appimage --x64 --publish=never && cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux tar.gz appimage --arm64 --publish=never"
+    "package:linux-appImage": "npm run build-prod && electron-builder --linux tar.gz appimage --x64 --publish=never && cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux tar.gz appimage --arm64 --publish=never"
   },
   "jest": {
     "clearMocks": true,
@@ -85,7 +84,6 @@
     ],
     "globals": {
       "__HASH_VERSION__": "5.0.0",
-      "__CAN_UPGRADE__": false,
       "__IS_NIGHTLY_BUILD__": false,
       "__IS_MAC_APP_STORE__": false,
       "__DISABLE_GPU__": false,
@@ -126,7 +124,6 @@
     "@types/react-dom": "17.0.14",
     "@types/uuid": "9.0.8",
     "@types/valid-url": "1.0.7",
-    "7zip-bin": "5.1.1",
     "babel-loader": "9.1.3",
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
@@ -168,7 +165,6 @@
     "electron-devtools-installer": "4.0.0",
     "electron-is-dev": "2.0.0",
     "electron-log": "5.2.0",
-    "electron-updater": "6.7.3",
     "joi": "17.12.2",
     "macos-notification-state": "3.0.0",
     "pretty-bytes": "6.1.1",

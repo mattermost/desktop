@@ -1,10 +1,4 @@
 {
-  "publish": [
-    {
-    "provider": "generic",
-    "url": "https://releases.mattermost.com/desktop"
-    }
-  ],
   "appId": "Mattermost.Desktop",
   "artifactName": "${version}/${name}-${version}-${os}-${arch}.${ext}",
   "directories": {
@@ -46,7 +40,6 @@
   ],
   "beforePack": "scripts/beforepack.js",
   "afterPack": "scripts/afterpack.js",
-  "afterAllArtifactBuild": "scripts/afterbuild.js",
   "deb": {
     "artifactName": "${version}/${name}_${version}-1_${arch}.${ext}",
     "synopsis": "Mattermost Desktop App",
@@ -150,13 +143,8 @@
         "height": 380
     }
   },
-  "squirrelWindows": {
-    "iconUrl": "file://src/assets/icon.ico",
-    "artifactName": "${version}/${name}-setup-${version}-${arch}.${ext}"
-  },
   "win": {
     "target": [
-      "nsis",
       "zip",
       "msi"
     ],
@@ -179,12 +167,6 @@
       "endpoint": "https://eus.codesigning.azure.net",
       "publisherName": "CN=\"Mattermost, Inc.\", O=\"Mattermost, Inc.\", L=Palo Alto, S=California, C=US"
     }
-  },
-  "nsis": {
-    "artifactName": "${version}/${name}-setup-${version}-win.${ext}",
-    "packElevateHelper": false,
-    "uninstallDisplayName": "${productName}",
-    "include": "scripts/installer.nsh"
   },
   "msi": {
     "additionalWixArgs": ["-ext", "WixUtilExtension"],
