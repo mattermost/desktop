@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import os from 'os';
 import path from 'path';
 
 import type {BrowserWindowConstructorOptions, Input, WebContents} from 'electron';
@@ -18,7 +17,6 @@ import {
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH, MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
-import Utils from 'common/utils/util';
 import {localizeMessage} from 'main/i18nManager';
 
 import ContextMenu from '../../main/contextMenu';
@@ -39,6 +37,7 @@ export default class BaseWindow {
         this.ready = false;
         this.altPressStatus = false;
 
+        const useNativeTitleBar = process.platform === 'linux' && Config.useNativeTitleBar;
         const windowOptions: BrowserWindowConstructorOptions = Object.assign({}, {
             fullscreenable: process.platform !== 'linux',
             show: false, // don't start the window until it is ready and only if it isn't hidden
@@ -47,9 +46,9 @@ export default class BaseWindow {
             minHeight: MINIMUM_WINDOW_HEIGHT,
             height: DEFAULT_WINDOW_HEIGHT,
             width: DEFAULT_WINDOW_WIDTH,
-            frame: !this.isFramelessWindow(),
-            titleBarStyle: 'hidden' as const,
-            titleBarOverlay: this.getTitleBarOverlay(),
+            frame: useNativeTitleBar,
+            titleBarStyle: useNativeTitleBar ? 'default' as const : 'hidden' as const,
+            titleBarOverlay: useNativeTitleBar ? undefined : this.getTitleBarOverlay(),
             trafficLightPosition: {x: 12, y: 12},
             backgroundColor: '#000', // prevents blurry text: https://electronjs.org/docs/faq#the-font-looks-blurry-what-is-this-and-what-can-i-do
             webPreferences: {
@@ -107,18 +106,6 @@ export default class BaseWindow {
     get browserWindow() {
         return this.win;
     }
-
-    getBounds = (): Electron.Rectangle => {
-        // Workaround for linux maximizing/minimizing, which doesn't work properly because of these bugs:
-        // https://github.com/electron/electron/issues/28699
-        // https://github.com/electron/electron/issues/28106
-        if (process.platform === 'linux') {
-            const size = this.win.getSize();
-            return {...this.win.getContentBounds(), width: size[0], height: size[1]};
-        }
-
-        return this.win.getContentBounds();
-    };
 
     handleAltKeyPressed = (_: Event, input: Input) => {
         log.silly('handleInputEvents', {input});
@@ -184,10 +171,6 @@ export default class BaseWindow {
         this.win.webContents.send(channel, ...args);
     };
 
-    private isFramelessWindow = () => {
-        return os.platform() === 'darwin' || (os.platform() === 'win32' && Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.2'));
-    };
-
     private getTitleBarOverlay = () => {
         return {
             color: Config.darkMode ? 'rgba(25, 27, 31, 0)' : 'rgba(255, 255, 255, 0)',
@@ -241,7 +224,10 @@ export default class BaseWindow {
     private onEmitConfiguration = () => {
         this.win.webContents.send(RELOAD_CONFIGURATION);
         if (process.platform !== 'darwin') {
-            this.win.setTitleBarOverlay(this.getTitleBarOverlay());
+            const useNativeTitleBar = process.platform === 'linux' && Config.useNativeTitleBar;
+            if (!useNativeTitleBar) {
+                this.win.setTitleBarOverlay(this.getTitleBarOverlay());
+            }
         }
     };
 }

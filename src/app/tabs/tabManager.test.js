@@ -45,6 +45,9 @@ jest.mock('electron', () => {
         BrowserWindow: {
             getFocusedWindow: jest.fn(),
         },
+        app: {
+            name: 'Mattermost',
+        },
     };
 });
 
@@ -93,6 +96,7 @@ jest.mock('common/views/viewManager', () => {
         emit: jest.fn((event, ...args) => mockViewManager.emit(event, ...args)),
         getView: jest.fn(),
         getPrimaryView: jest.fn(),
+        getViewTitle: jest.fn(),
         createView: jest.fn(),
         removeView: jest.fn(),
         isPrimaryView: jest.fn(),
@@ -149,6 +153,7 @@ describe('TabManager', () => {
         },
         getContentBounds: jest.fn(() => ({width: 800, height: 600})),
         sendToRenderer: jest.fn(),
+        setTitle: jest.fn(),
     };
 
     const mockServer = {

@@ -217,6 +217,7 @@ describe('common/Validator', () => {
             themeSyncing: true,
             enableMetrics: true,
             enableSentry: true,
+            useNativeTitleBar: false,
         };
 
         it('should validate v4 config data', () => {

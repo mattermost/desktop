@@ -130,6 +130,14 @@ jest.mock('app/callsWidgetWindow', () => ({
     mainViewId: undefined,
 }));
 
+jest.mock('app/popoutMenu', () => ({
+    createSetNativeTitleBar: jest.fn(),
+}));
+
+jest.mock('common/config', () => ({
+    useNativeTitleBar: false,
+}));
+
 describe('PopoutManager', () => {
     const {EventEmitter} = jest.requireActual('events');
     const mockWebContents = new EventEmitter();

@@ -7,6 +7,8 @@ import {useIntl} from 'react-intl';
 
 import './TopBar.scss';
 
+import {useConfig} from 'renderer/hooks/useConfig';
+
 type Props = {
     children?: React.ReactNode;
     title?: string;
@@ -16,6 +18,7 @@ type Props = {
 
 const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
     const intl = useIntl();
+    const {config} = useConfig();
     const [fullScreen, setFullScreen] = useState(false);
     const [threeDotsIsFocused, setThreeDotsIsFocused] = useState(false);
     const topBar = useRef<HTMLDivElement>(null);
@@ -93,7 +96,7 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
                         <i className='icon icon-arrow-collapse'/>
                     </div>
                 )}
-                {window.process.platform !== 'darwin' && !fullScreen && (
+                {window.process.platform !== 'darwin' && !fullScreen && (window.process.platform !== 'linux' || !config?.useNativeTitleBar) && (
                     <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
                 )}
             </div>
