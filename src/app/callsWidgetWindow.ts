@@ -280,7 +280,7 @@ export class CallsWidgetWindow {
         this.setWidgetWindowStacking({onTop: true});
 
         const bounds = this.win.getBounds();
-        const mainBounds = mainWindow.getBounds();
+        const mainBounds = mainWindow.browserWindow.getContentBounds();
         const initialBounds = {
             x: mainBounds.x + 12,
             y: (mainBounds.y + mainBounds.height) - bounds.height - 12,

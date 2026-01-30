@@ -59,6 +59,7 @@ export type ConfigV4 = {
     viewLimit?: number;
     themeSyncing?: boolean;
     skippedVersions?: string[];
+    useNativeTitleBar?: boolean;
 }
 
 export type ConfigV3 = Omit<ConfigV4,

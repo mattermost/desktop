@@ -148,12 +148,14 @@ describe('main/windows/callsWidgetWindow', () => {
 
         beforeEach(() => {
             MainWindow.window = {
-                getBounds: jest.fn().mockReturnValue({
-                    x: 0,
-                    y: 0,
-                    width: 1280,
-                    height: 720,
-                }),
+                browserWindow: {
+                    getContentBounds: jest.fn().mockReturnValue({
+                        x: 0,
+                        y: 0,
+                        width: 1280,
+                        height: 720,
+                    }),
+                },
             };
             callsWidgetWindow.win.getBounds.mockReturnValue({
                 x: 0,

@@ -158,7 +158,7 @@ export class MainWindow extends EventEmitter {
     };
 
     getBounds = () => {
-        return this.win?.getBounds();
+        return this.win?.browserWindow.getContentBounds();
     };
 
     private shouldStartFullScreen = () => {
@@ -250,7 +250,7 @@ export class MainWindow extends EventEmitter {
             }
         }
 
-        this.emit(MAIN_WINDOW_RESIZED, this.win?.getBounds());
+        this.emit(MAIN_WINDOW_RESIZED, this.win?.browserWindow.getContentBounds());
         this.emit(MAIN_WINDOW_FOCUSED);
     };
 
@@ -259,7 +259,7 @@ export class MainWindow extends EventEmitter {
             return;
         }
 
-        this.emit(MAIN_WINDOW_RESIZED, this.win?.getBounds());
+        this.emit(MAIN_WINDOW_RESIZED, this.win?.browserWindow.getContentBounds());
         ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
 
         // App should save bounds when a window is closed.

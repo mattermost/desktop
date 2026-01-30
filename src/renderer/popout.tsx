@@ -64,6 +64,10 @@ function Popout() {
         return null;
     }
 
+    if (config.useNativeTitleBar) {
+        return null;
+    }
+
     return (
         <IntlProvider>
             <BasePage
