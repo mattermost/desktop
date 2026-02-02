@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.openInNewTab": "Apri in una nuova scheda",
   "common.permissions.canBasicAuth": "Autenticazione WEB",
   "common.tabs.TAB_FOCALBOARD": "Board",
   "common.tabs.TAB_MESSAGING": "Canali",
