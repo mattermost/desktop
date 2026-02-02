@@ -123,47 +123,6 @@ describe('main/sentryHandler', () => {
         });
     });
 
-    describe('captureException', () => {
-        beforeEach(() => {
-            process.env = {NODE_ENV: 'production'};
-            sentryHandler.init();
-        });
-
-        it('should capture exception when initialized and enabled', () => {
-            const error = new Error('Test error');
-            sentryHandler.captureException(error);
-            expect(Sentry.captureException).toHaveBeenCalledWith(error);
-        });
-
-        it('should not capture exception if not initialized', () => {
-            const uninitializedHandler = new SentryHandler();
-            const error = new Error('Test error');
-            uninitializedHandler.captureException(error);
-            expect(Sentry.captureException).not.toHaveBeenCalled();
-        });
-
-        it('should not capture exception if NODE_ENV is not production', () => {
-            process.env = {NODE_ENV: 'development'};
-            const error = new Error('Test error');
-            sentryHandler.captureException(error);
-            expect(Sentry.captureException).not.toHaveBeenCalled();
-        });
-
-        it('should not capture exception if enableSentry is false', () => {
-            Config.enableSentry = false;
-            const error = new Error('Test error');
-            sentryHandler.captureException(error);
-            expect(Sentry.captureException).not.toHaveBeenCalled();
-            Config.enableSentry = true;
-        });
-
-        it('should handle missing error argument', () => {
-            sentryHandler.captureException(null);
-
-            expect(Sentry.captureException).not.toHaveBeenCalled();
-        });
-    });
-
     describe('isPrereleaseBuild', () => {
         beforeEach(() => {
             process.env = {NODE_ENV: 'production'};

@@ -7,6 +7,8 @@ import path from 'path';
 
 import {app, dialog} from 'electron';
 
+import sentryHandler from 'main/sentryHandler';
+
 import {CriticalErrorHandler} from './CriticalErrorHandler';
 
 jest.mock('path', () => ({
@@ -40,7 +42,7 @@ jest.mock('main/i18nManager', () => ({
 }));
 
 jest.mock('main/sentryHandler', () => ({
-    captureException: jest.fn(),
+    flush: jest.fn(),
 }));
 
 describe('main/CriticalErrorHandler', () => {
@@ -81,6 +83,24 @@ describe('main/CriticalErrorHandler', () => {
             criticalErrorHandler.processUncaughtExceptionHandler(new Error('test'));
             await promise;
             expect(app.relaunch).toBeCalled();
+        });
+
+        it('should call sentryHandler.flush before app.exit when an exception happens', async () => {
+            const callOrder = [];
+            sentryHandler.flush.mockImplementation(() => {
+                callOrder.push('flush');
+                return Promise.resolve();
+            });
+            app.exit.mockImplementation(() => {
+                callOrder.push('exit');
+            });
+            path.join.mockImplementation(() => 'testfile.txt');
+            const promise = Promise.resolve({response: process.platform === 'darwin' ? 0 : 2});
+            dialog.showMessageBox.mockImplementation(() => promise);
+            criticalErrorHandler.processUncaughtExceptionHandler(new Error('test'));
+            await promise;
+            await new Promise((resolve) => setImmediate(resolve));
+            expect(callOrder).toEqual(['flush', 'exit']);
         });
     });
 });
