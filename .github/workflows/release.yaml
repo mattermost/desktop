@@ -54,6 +54,8 @@ jobs:
           wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
           wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
           sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y --noninteractive flathub org.freedesktop.Platform/x86_64/25.08 org.freedesktop.Sdk/x86_64/25.08 org.electronjs.Electron2.BaseApp/x86_64/25.08 org.freedesktop.Platform/aarch64/25.08 org.freedesktop.Sdk/aarch64/25.08 org.electronjs.Electron2.BaseApp/aarch64/25.08
           npm ci
       - name: release/test
         uses: ./.github/actions/test
