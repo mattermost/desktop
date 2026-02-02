@@ -20,6 +20,7 @@ import type {
 
 import buildConfig from './buildConfig';
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
+import MDMConfig, {MDM_READ_EVENT} from './MDMConfig';
 import migrateConfigItems from './migrationPreferences';
 import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
 import upgradeConfigData from './upgradePreferences';
@@ -31,18 +32,21 @@ export class Config extends EventEmitter {
     private appName?: string;
 
     private registryConfig: RegistryConfig;
+    private mdmConfig: MDMConfig;
     private _predefinedServers: ConfigServer[];
     private json?: JsonFileManager<CurrentConfig>;
 
     private combinedData?: CombinedConfig;
     private localConfigData?: CurrentConfig;
     private registryConfigData?: Partial<RegistryCurrentConfig>;
+    private mdmConfigData?: Partial<RegistryCurrentConfig>;
     private defaultConfigData?: CurrentConfig;
     private buildConfigData?: BuildConfig;
 
     constructor() {
         super();
         this.registryConfig = new RegistryConfig();
+        this.mdmConfig = new MDMConfig();
         this._predefinedServers = [];
         if (buildConfig.defaultServers) {
             this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => ({...server, order: index})));
@@ -57,18 +61,29 @@ export class Config extends EventEmitter {
     };
 
     initRegistry = () => {
-        if (process.platform !== 'win32') {
-            return Promise.resolve();
+        if (process.platform === 'win32') {
+            return new Promise<void>((resolve) => {
+                this.registryConfig = new RegistryConfig();
+                this.registryConfig.once(REGISTRY_READ_EVENT, (data) => {
+                    this.onLoadRegistry(data);
+                    resolve();
+                });
+                this.registryConfig.init();
+            });
         }
 
-        return new Promise<void>((resolve) => {
-            this.registryConfig = new RegistryConfig();
-            this.registryConfig.once(REGISTRY_READ_EVENT, (data) => {
-                this.onLoadRegistry(data);
-                resolve();
+        if (process.platform === 'darwin') {
+            return new Promise<void>((resolve) => {
+                this.mdmConfig = new MDMConfig();
+                this.mdmConfig.once(MDM_READ_EVENT, (data) => {
+                    this.onLoadMDM(data);
+                    resolve();
+                });
+                this.mdmConfig.init();
             });
-            this.registryConfig.init();
-        });
+        }
+
+        return Promise.resolve();
     };
 
     /**
@@ -153,6 +168,9 @@ export class Config extends EventEmitter {
     get registryData() {
         return this.registryConfigData;
     }
+    get mdmData() {
+        return this.mdmConfigData;
+    }
 
     // convenience getters
 
@@ -236,7 +254,7 @@ export class Config extends EventEmitter {
     }
 
     get canUpgrade() {
-        return process.env.NODE_ENV === 'test' || (this.buildConfigData?.enableUpdateNotifications && !(process.platform === 'win32' && this.registryConfigData?.enableUpdateNotifications === false));
+        return process.env.NODE_ENV === 'test' || (this.buildConfigData?.enableUpdateNotifications && !(process.platform === 'win32' && this.registryConfigData?.enableUpdateNotifications === false) && !(process.platform === 'darwin' && this.mdmConfigData?.enableUpdateNotifications === false));
     }
 
     get autoCheckForUpdates() {
@@ -283,6 +301,18 @@ export class Config extends EventEmitter {
         this.registryConfigData = registryData;
         if (this.registryConfigData.servers) {
             this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => ({...server, order: index})));
+        }
+
+        this.regenerateCombinedConfigData();
+        this.emit('update', this.combinedData);
+    };
+
+    private onLoadMDM = (mdmData: Partial<RegistryCurrentConfig>): void => {
+        log.debug('loadMDM');
+
+        this.mdmConfigData = mdmData;
+        if (this.mdmConfigData.servers) {
+            this._predefinedServers.push(...this.mdmConfigData.servers.map((server, index) => ({...server, order: index})));
         }
 
         this.regenerateCombinedConfigData();
