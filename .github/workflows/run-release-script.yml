@@ -63,10 +63,8 @@ jobs:
 
       - name: Verify branch name
         run: |
-          branch_name=$(git symbolic-ref -q HEAD)
-          branch_name="${branch_name##refs/heads/}"
-          if [[ ! "${branch_name}" =~ ^release- ]]; then
-            echo "Error: Branch '${branch_name}' does not match release-X.Y pattern"
+          if [[ ! "$BRANCH" =~ ^release-[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Branch '$BRANCH' does not match release-X.Y pattern"
             exit 1
           fi
           echo "Running release script on branch: ${branch_name}"
