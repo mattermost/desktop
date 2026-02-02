@@ -86,10 +86,7 @@ jobs:
 
       - name: Push changes and tags
         run: |
-          git_origin="origin"
-          branch_name=$(git symbolic-ref -q HEAD)
-          branch_name="${branch_name##refs/heads/}"
-          git push --follow-tags ${git_origin} ${branch_name}:${branch_name}
+          git push --follow-tags origin "$BRANCH":"$BRANCH"
 
       - name: Display summary
         run: |
