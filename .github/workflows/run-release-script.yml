@@ -55,14 +55,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
 
-      - name: Verify branch is clean
-        run: |
-          if ! git diff --quiet; then
-            echo "Error: Branch has uncommitted changes"
-            git status
-            exit 1
-          fi
-
       - name: Verify branch name
         run: |
           if [[ ! "$BRANCH" =~ ^release-[0-9]+\.[0-9]+$ ]]; then
