@@ -39,18 +39,25 @@ describe('dark_mode', function desc() {
             // Toggle Dark Mode
             await toggleDarkMode();
 
+            // Wait for dark mode class to be applied
+            // Linux needs more time for dark mode to propagate through the window manager
+            await mainWindow.waitForSelector('.topBar.darkMode', {timeout: 10000});
+
             const topBarElementWithDarkMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithDarkMode = await topBarElementWithDarkMode.getAttribute('class');
 
-            topBarElementClassWithDarkMode.should.contain('topBar darkMode');
+            topBarElementClassWithDarkMode.should.contain('darkMode');
 
             // Toggle Light Mode
             await toggleDarkMode();
 
+            // Wait for dark mode class to be removed
+            await asyncSleep(2000);
+
             const topBarElementWithLightMode = await mainWindow.waitForSelector('.topBar');
             const topBarElementClassWithLightMode = await topBarElementWithLightMode.getAttribute('class');
 
-            topBarElementClassWithLightMode.should.contain('topBar');
+            topBarElementClassWithLightMode.should.not.contain('darkMode');
         });
     }
 });

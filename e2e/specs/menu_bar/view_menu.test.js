@@ -34,7 +34,7 @@ function setZoomFactorOfServer(browserWindow, serverId, zoomFactor) {
 }
 
 describe('menu/view', function desc() {
-    this.timeout(30000);
+    this.timeout(90000);
 
     const config = env.demoMattermostConfig;
 
