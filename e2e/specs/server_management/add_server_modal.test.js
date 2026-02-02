@@ -20,7 +20,14 @@ describe('Add Server Modal', function desc() {
         this.app = await env.getApp();
 
         const mainView = this.app.windows().find((window) => window.url().includes('index'));
-        const dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        let dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+
+        // Wait for dropdown window if not immediately available
+        if (dropdownView === false) {
+            await asyncSleep(500);
+            dropdownView = this.app.windows().find((window) => window.url().includes('dropdown'));
+        }
+
         await mainView.click('.ServerDropdownButton');
         await dropdownView.click('.ServerDropdown .ServerDropdown__button.addServer');
         newServerView = await this.app.waitForEvent('window', {

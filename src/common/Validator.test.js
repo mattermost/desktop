@@ -200,6 +200,7 @@ describe('common/Validator', () => {
             minimizeToTray: false,
             showTrayIcon: false,
             showUnreadBadge: true,
+            skippedVersions: [],
             spellCheckerLocales: ['en-US'],
             spellCheckerURL: 'http://spellcheckerservice.com',
             servers: [

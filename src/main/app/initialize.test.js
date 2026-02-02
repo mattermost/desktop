@@ -149,7 +149,7 @@ jest.mock('main/AppVersionManager', () => ({}));
 jest.mock('main/AutoLauncher', () => ({
     upgradeAutoLaunch: jest.fn(),
 }));
-jest.mock('main/autoUpdater', () => ({}));
+jest.mock('main/updateNotifier', () => ({}));
 jest.mock('app/system/badge', () => ({
     setupBadge: jest.fn(),
 }));

@@ -39,7 +39,6 @@ jobs:
         run: |
           mkdir -p ./build/linux
           npm run package:linux-tar
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -64,7 +63,7 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: ci/cache-node-modules
         id: cache-node-modules
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: node_modules
           key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
@@ -96,7 +95,7 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: ci/cache-node-modules
         id: cache-node-modules
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: node_modules
           key: ${{ runner.os }}-build-node-modules-${{ hashFiles('package-lock.json') }}
@@ -128,7 +127,6 @@ jobs:
         run: |
           mkdir -p ./build/win
           npm run package:windows
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/win
       - name: ci/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -176,7 +174,6 @@ jobs:
           zsh -c 'echo -n $APPLE_API_KEY_RAW > ./key.p8'
           mkdir -p ./build/macos
           npm run package:mac
-          bash -x ./scripts/patch_updater_yml.sh
           bash -x ./scripts/cp_artifacts.sh release ./build/macos/
       - name: ci/upload-build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

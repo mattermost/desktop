@@ -41,9 +41,23 @@ describe('application', function desc() {
             }
             const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
             const browserWindow = await this.app.browserWindow(mainWindow);
-            const webContentsId = this.serverMap[config.servers[1].name][0].webContentsId;
+
+            // Wait for server map to have the github server populated
+            const serverName = config.servers[1].name;
+            if (!this.serverMap[serverName] || this.serverMap[serverName].length === 0) {
+                // Retry getting server map if github server is not ready
+                await asyncSleep(2000);
+                this.serverMap = await env.getServerMap(this.app);
+            }
+
+            // Ensure we have the server data before accessing webContentsId
+            this.serverMap.should.have.property(serverName);
+            this.serverMap[serverName].should.have.lengthOf.at.least(1);
+
+            const webContentsId = this.serverMap[serverName][0].webContentsId;
             const isActive = await browserWindow.evaluate((window, id) => {
-                return window.contentView.children.find((view) => view.webContents.id === id).webContents.getURL();
+                const view = window.contentView.children.find((view) => view.webContents && view.webContents.id === id);
+                return view ? view.webContents.getURL() : null;
             }, webContentsId);
             isActive.should.equal('https://github.com/test/url/');
             const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');

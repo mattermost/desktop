@@ -1,8 +1,6 @@
 name: Electron Playwright Tests
 
 on:
-  pull_request:
-    types: [labeled]
   workflow_dispatch:
     inputs:
       version_name:
@@ -30,6 +28,7 @@ on:
         description: "True if this is nightly build"
         required: false
         default: false
+
 jobs:
   prepare-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
@@ -45,20 +44,18 @@ jobs:
     name: Update initial status
     needs: prepare-matrix
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
-      - name: Update initial status for ${{ matrix.platform }}
-        uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Update initial status for all platforms
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/${{ matrix.platform }}
-          description: E2E tests for Mattermost desktop app on ${{ matrix.platform }} have started...
-          status: pending
+          github-token: ${{ github.token }}
+          script: |
+            const { updateInitialStatus } = require('./e2e/utils/github-actions.js');
+            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            await updateInitialStatus({ github, context, platforms });
 
   e2e-tests:
     needs: 
@@ -81,50 +78,23 @@ jobs:
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
-  update-final-status-linux:
+  update-final-status:
+    name: Update final status
     runs-on: ubuntu-22.04
     needs:
+      - prepare-matrix
       - e2e-tests
+    if: always()
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/linux
-          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_LINUX }} failures
-          status: ${{ needs.e2e-tests.outputs.STATUS_LINUX }}
-          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_LINUX }}
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-  update-final-status-macos:
-    runs-on: ubuntu-22.04
-    needs:
-      - e2e-tests
-    steps:
-      - uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Update final status for all platforms
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/macOS
-          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_MACOS }} failures
-          status: ${{ needs.e2e-tests.outputs.STATUS_MACOS }}
-          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_MACOS }}
-
-  update-final-status-windows:
-    runs-on: ubuntu-22.04
-    needs:
-      - e2e-tests
-    steps:
-      - uses: mattermost/actions/delivery/update-commit-status@main
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          context: e2e/windows
-          description: Completed with ${{ needs.e2e-tests.outputs.NEW_FAILURES_WINDOWS }} failures
-          status: ${{ needs.e2e-tests.outputs.STATUS_WINDOWS }}
-          target_url: ${{ needs.e2e-tests.outputs.REPORT_LINK_WINDOWS }}
+          github-token: ${{ github.token }}
+          script: |
+            const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
+            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
+            await updateFinalStatus({ github, context, platforms, outputs });
