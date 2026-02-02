@@ -99,6 +99,6 @@ jobs:
           if [[ "${command}" == "start" ]]; then
             echo "ESR Release: ${{ inputs.is_esr }}"
           fi
-          echo "Branch: ${{ inputs.branch }}"
+          echo "Branch: $BRANCH"
           echo "Latest version: $(jq -r .version package.json)"
           echo "Latest tag: $(git describe --tags --abbrev=0 2>/dev/null || echo 'No tags found')"
