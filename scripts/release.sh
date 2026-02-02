@@ -64,8 +64,6 @@ if ! type jq >/dev/null 2>&1; then
     exit 11
 fi
 
-is_esr="N"
-electron_upgrade="N"
 # get version
 pkg_version="$(jq -r .version package.json)"
 # remove trailing
@@ -81,15 +79,10 @@ case "${1}" in
                 exit 2
             fi
             print_info "Generating ${current_version} release candidate 1"
-            read -p "Is this an ESR release? [y/N]: " is_esr
+            is_esr="${2:-N}"
             if [[ "${is_esr}" =~ ^[Yy]$ ]]; then
                 touch .esr
                 git add .esr
-            fi
-            read -p "Did you upgrade to the latest stable Electron release? [y/N]: " electron_upgrade
-            if [[ ! "${electron_upgrade}" =~ ^[Yy]$ ]]; then
-                print_info "Please upgrade to the latest stable Electron release before continuing"
-                exit 2
             fi
             new_pkg_version="${current_version}-rc.1"
             write_package_version "${new_pkg_version}"
@@ -196,11 +189,12 @@ case "${1}" in
     ;;
     *)
         print_info "Mattermmost Desktop Release Helper"
-        print_info "Usage: $0 <start|rc|pre-final|final|patch>\n"
+        print_info "Usage: $0 <start|rc|pre-final|final|patch> [esr]\n"
         print_info "This script will help you create a new release for the Mattermost Desktop App."
         print_info "Must be run on a release branch (release-X.Y)\n"
         print_info "Commands:"
         print_info "  start: Start a new release using the current version"
+        print_info "    Optional: [esr] - Set to 'y' or 'Y' if this is an ESR release"
         print_info "  rc: Increment the release candidate version and create a new release candidate"
         print_info "  pre-final: Cut the final release for MAS approval"
         print_info "  final: Cut the final release to be released to GitHub"
