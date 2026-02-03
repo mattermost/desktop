@@ -240,8 +240,7 @@ export class WebContentsManager {
             return;
         }
 
-        AppState.updateUnreadsPerServer(view.serverId, isUnread);
-        AppState.updateMentionsPerServer(view.serverId, mentionCount);
+        AppState.updateUnreadsAndMentionsPerServer(view.serverId, mentionCount, isUnread);
     };
 
     private handleSessionExpired = (event: IpcMainEvent, isExpired: boolean) => {
