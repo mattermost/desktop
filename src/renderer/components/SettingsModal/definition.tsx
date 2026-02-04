@@ -209,6 +209,32 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                     },
                 },
                 {
+                    id: 'useNativeTitleBar',
+                    component: CheckSetting,
+                    condition: window.process.platform === 'linux',
+                    props: {
+                        label: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.useNativeTitleBar'
+                                defaultMessage='Use native title bar'
+                            />
+                        ),
+                        subLabel: (
+                            <>
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.useNativeTitleBar.description'
+                                    defaultMessage='If enabled, the app will use the native title bar'
+                                />
+                                <br/>
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.afterRestart'
+                                    defaultMessage='Setting takes effect after restarting the app.'
+                                />
+                            </>
+                        ),
+                    },
+                },
+                {
                     id: 'viewLimit',
                     component: NumberSetting,
                     props: {

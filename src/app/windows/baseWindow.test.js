@@ -3,7 +3,6 @@
 
 'use strict';
 
-import os from 'os';
 import path from 'path';
 
 import {BrowserWindow, app, ipcMain, dialog} from 'electron';
@@ -18,7 +17,6 @@ import {
 } from 'common/communication';
 import Config from 'common/config';
 import {MINIMUM_WINDOW_HEIGHT, MINIMUM_WINDOW_WIDTH, SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
-import Utils from 'common/utils/util';
 
 import BaseWindow from './baseWindow';
 
@@ -80,6 +78,7 @@ jest.mock('electron', () => {
 jest.mock('common/config', () => ({
     darkMode: false,
     useSpellChecker: true,
+    useNativeTitleBar: false,
 }));
 
 jest.mock('common/utils/util', () => ({
@@ -196,43 +195,6 @@ describe('BaseWindow', () => {
             Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
 
-        it('should set frameless window for macOS', () => {
-            os.platform.mockReturnValue('darwin');
-
-            const baseWindow = new BaseWindow({});
-
-            expect(baseWindow).toBeDefined();
-            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
-                frame: false,
-            }));
-        });
-
-        it('should set frameless window for Windows 8+', () => {
-            os.platform.mockReturnValue('win32');
-            os.release.mockReturnValue('6.3.9600');
-            Utils.isVersionGreaterThanOrEqualTo.mockReturnValue(true);
-
-            const baseWindow = new BaseWindow({});
-
-            expect(baseWindow).toBeDefined();
-            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
-                frame: false,
-            }));
-        });
-
-        it('should set framed window for older Windows versions', () => {
-            os.platform.mockReturnValue('win32');
-            os.release.mockReturnValue('6.1.7601');
-            Utils.isVersionGreaterThanOrEqualTo.mockReturnValue(false);
-
-            const baseWindow = new BaseWindow({});
-
-            expect(baseWindow).toBeDefined();
-            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
-                frame: true,
-            }));
-        });
-
         it('should set title bar overlay with light theme colors', () => {
             Config.darkMode = false;
 
@@ -326,6 +288,62 @@ describe('BaseWindow', () => {
             expect(baseWindow).toBeDefined();
             expect(ipcMain.on).toHaveBeenCalledWith(EMIT_CONFIGURATION, expect.any(Function));
         });
+
+        it('should use native title bar on Linux when useNativeTitleBar is true', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'linux'});
+            Config.useNativeTitleBar = true;
+
+            const baseWindow = new BaseWindow({});
+
+            expect(baseWindow).toBeDefined();
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                frame: true,
+                titleBarStyle: 'default',
+            }));
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.not.objectContaining({
+                titleBarOverlay: expect.anything(),
+            }));
+
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+            Config.useNativeTitleBar = false;
+        });
+
+        it('should use custom title bar on Linux when useNativeTitleBar is false', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'linux'});
+            Config.useNativeTitleBar = false;
+
+            const baseWindow = new BaseWindow({});
+
+            expect(baseWindow).toBeDefined();
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                frame: false,
+                titleBarStyle: 'hidden',
+                titleBarOverlay: expect.objectContaining({
+                    height: TAB_BAR_HEIGHT,
+                }),
+            }));
+
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
+
+        it('should ignore useNativeTitleBar on non-Linux platforms', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
+            Config.useNativeTitleBar = true;
+
+            const baseWindow = new BaseWindow({});
+
+            expect(baseWindow).toBeDefined();
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                frame: false,
+                titleBarStyle: 'hidden',
+            }));
+
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+            Config.useNativeTitleBar = false;
+        });
     });
 
     describe('did-finish-load event', () => {
@@ -336,35 +354,6 @@ describe('BaseWindow', () => {
 
             expect(baseWindow.isReady).toBe(true);
             expect(baseWindow.browserWindow.webContents.zoomLevel).toBe(0);
-        });
-    });
-
-    describe('getBounds', () => {
-        it('should return content bounds for non-Linux platforms', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {value: 'darwin'});
-
-            const baseWindow = new BaseWindow({});
-            const bounds = baseWindow.getBounds();
-
-            expect(baseWindow.browserWindow.getContentBounds).toHaveBeenCalled();
-            expect(bounds).toEqual({x: 0, y: 0, width: 800, height: 600});
-
-            Object.defineProperty(process, 'platform', {value: originalPlatform});
-        });
-
-        it('should return modified bounds for Linux platform', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {value: 'linux'});
-
-            const baseWindow = new BaseWindow({});
-            const bounds = baseWindow.getBounds();
-
-            expect(baseWindow.browserWindow.getContentBounds).toHaveBeenCalled();
-            expect(baseWindow.browserWindow.getSize).toHaveBeenCalled();
-            expect(bounds).toEqual({x: 0, y: 0, width: 800, height: 600});
-
-            Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
     });
 
@@ -545,6 +534,56 @@ describe('BaseWindow', () => {
 
             expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
             expect(baseWindow.browserWindow.setTitleBarOverlay).not.toHaveBeenCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+        });
+
+        it('should not call setTitleBarOverlay on Linux when useNativeTitleBar is true', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            Config.useNativeTitleBar = true;
+
+            const baseWindow = new BaseWindow({});
+            baseWindow.getTitleBarOverlay = jest.fn().mockReturnValue({
+                color: 'rgba(255, 255, 255, 0)',
+                symbolColor: 'rgba(63, 67, 80, 0.64)',
+                height: 40,
+            });
+
+            ipcMain.emit(EMIT_CONFIGURATION);
+
+            expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
+            expect(baseWindow.browserWindow.setTitleBarOverlay).not.toHaveBeenCalled();
+
+            Object.defineProperty(process, 'platform', {
+                value: originalPlatform,
+            });
+            Config.useNativeTitleBar = false;
+        });
+
+        it('should call setTitleBarOverlay on Linux when useNativeTitleBar is false', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {
+                value: 'linux',
+            });
+            Config.useNativeTitleBar = false;
+
+            const baseWindow = new BaseWindow({});
+            const mockOverlay = {
+                color: 'rgba(255, 255, 255, 0)',
+                symbolColor: 'rgba(63, 67, 80, 0.64)',
+                height: 40,
+            };
+            baseWindow.getTitleBarOverlay = jest.fn().mockReturnValue(mockOverlay);
+
+            ipcMain.emit(EMIT_CONFIGURATION);
+
+            expect(baseWindow.browserWindow.webContents.send).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
+            expect(baseWindow.browserWindow.setTitleBarOverlay).toHaveBeenCalledWith(mockOverlay);
 
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,

@@ -263,6 +263,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.themeSyncing ?? true;
     }
 
+    get useNativeTitleBar() {
+        return this.combinedData?.useNativeTitleBar ?? false;
+    }
+
     getWindowsSystemDarkMode = () => {
         return !this.registryConfig.getAppsUseLightTheme();
     };
