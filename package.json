@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "scripts": {
-    "postinstall": "patch-package && electron-builder install-app-deps",
+    "postinstall": "patch-package && electron-builder install-app-deps && node scripts/postinstall.js",
     "clean": "rm -rf release/ node_modules/ src/node_modules/ dist/ && cd e2e && npm run clean && cd -",
     "clean-install": "npm run clean && npm install",
     "clean-dist": "rm -rf dist/",
