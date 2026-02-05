@@ -16,7 +16,7 @@
     "url": "git://github.com/mattermost/desktop.git"
   },
   "scripts": {
-    "postinstall": "patch-package && electron-builder install-app-deps && node scripts/postinstall.js",
+    "postinstall": "patch-package && electron-builder install-app-deps",
     "clean": "rm -rf release/ node_modules/ src/node_modules/ dist/ && cd e2e && npm run clean && cd -",
     "clean-install": "npm run clean && npm install",
     "clean-dist": "rm -rf dist/",
@@ -39,10 +39,10 @@
     "build-prod": "cross-env NODE_ENV=production run-s check-build-config build",
     "build-prod-mas": "cross-env NODE_ENV=production IS_MAC_APP_STORE=true run-s check-build-config build",
     "build-test": "cross-env NODE_ENV=test run-p build:*",
-    "create-linux-dev-shortcut": "node scripts/create_linux_dev_shortcut.js",
-    "start": "npm run create-linux-dev-shortcut && electron dist/ --disable-dev-mode",
+    "linux-dev-setup": "node scripts/linux_dev_setup.js",
+    "start": "npm run linux-dev-setup && electron dist/ --disable-dev-mode",
     "restart": "run-s build start",
-    "watch": "npm run create-linux-dev-shortcut && node scripts/watch.js",
+    "watch": "npm run linux-dev-setup && node scripts/watch.js",
     "package": "run-s package:windows package:mac-with-universal package:mas package:linux",
     "package:windows": "run-s package:windows-*",
     "package:windows-zip": "npm run build-prod && electron-builder --win zip --x64 --arm64 --publish=never",
