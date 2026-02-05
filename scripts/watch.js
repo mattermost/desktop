@@ -4,6 +4,7 @@
 const {spawn} = require('child_process');
 const path = require('path');
 
+const electron = require('electron');
 const webpack = require('webpack');
 
 const mainConfig = require('../webpack.config.main.js');
@@ -17,7 +18,7 @@ function startElectron() {
         electronProcess.removeAllListeners();
     }
     electronProcess = spawn(
-        process.platform === 'win32' ? 'electron.cmd' : 'electron',
+        electron,
         [path.resolve('dist/')],
         {stdio: 'inherit'},
     );
