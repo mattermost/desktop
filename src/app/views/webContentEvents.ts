@@ -173,6 +173,7 @@ export class WebContentsEventManager {
                     );
                     return {action: 'deny'};
                 }
+
                 // URL parsed successfully despite failing strict validation - allow it
                 this.log(webContentsId).debug(`Allowing URL that failed strict RFC validation but parsed successfully: ${details.url}`);
             }
