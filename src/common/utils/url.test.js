@@ -4,13 +4,10 @@
 
 import {
     getFormattedPathName,
-    hasCommandInjectionPatterns,
-    isCustomProtocolUrl,
     isUrlType,
     isValidURL,
     isValidURI,
-    normalizeCustomProtocolUrl,
-    parseCustomProtocolUrl,
+    normalizeUrlForValidation,
     parseURL,
     isInternalURL,
     isCallsPopOutURL,
@@ -92,117 +89,31 @@ describe('common/utils/url', () => {
         });
     });
 
-    describe('isCustomProtocolUrl', () => {
-        it('should return true for onenote protocol', () => {
-            expect(isCustomProtocolUrl('onenote:///D:/OneNote/Apps/Test.one')).toBe(true);
-        });
-        it('should return true for spotify protocol', () => {
-            expect(isCustomProtocolUrl('spotify:album:2OZbaW9tgO62ndm375lFZr')).toBe(true);
-        });
-        it('should return true for msteams protocol', () => {
-            expect(isCustomProtocolUrl('msteams://teams.microsoft.com/l/chat')).toBe(true);
-        });
-        it('should return true for mattermost protocol', () => {
-            expect(isCustomProtocolUrl('mattermost://server.com/team/channel')).toBe(true);
-        });
-        it('should return false for http protocol', () => {
-            expect(isCustomProtocolUrl('http://example.com')).toBe(false);
-        });
-        it('should return false for https protocol', () => {
-            expect(isCustomProtocolUrl('https://example.com')).toBe(false);
-        });
-        it('should return false for invalid URL without scheme', () => {
-            expect(isCustomProtocolUrl('not-a-url')).toBe(false);
-        });
-    });
-
-    describe('normalizeCustomProtocolUrl', () => {
+    describe('normalizeUrlForValidation', () => {
         it('should convert backslashes to forward slashes', () => {
             const input = String.raw`onenote:///D:\OneNote\Apps\Test.one`;
-            expect(normalizeCustomProtocolUrl(input)).toBe('onenote:///D:/OneNote/Apps/Test.one');
+            expect(normalizeUrlForValidation(input)).toBe('onenote:///D:/OneNote/Apps/Test.one');
         });
         it('should encode curly braces', () => {
-            const input = 'onenote:///path#section&page-id={840EDD0C-B6FB-481E-A342-E39AEDA50EE6}';
-            expect(normalizeCustomProtocolUrl(input)).toBe('onenote:///path#section&page-id=%7B840EDD0C-B6FB-481E-A342-E39AEDA50EE6%7D');
+            const input = 'https://teams.microsoft.com/l/message?context={%22contextType%22:%22chat%22}';
+            expect(normalizeUrlForValidation(input)).toBe('https://teams.microsoft.com/l/message?context=%7B%22contextType%22:%22chat%22%7D');
         });
-        it('should handle both backslashes and curly braces', () => {
-            const input = String.raw`onenote:///D:\OneNote\Apps\Test.one#Page&page-id={GUID}`;
-            expect(normalizeCustomProtocolUrl(input)).toBe('onenote:///D:/OneNote/Apps/Test.one#Page&page-id=%7BGUID%7D');
+        it('should make MS Teams URLs pass isValidURI after normalization', () => {
+            const teamsUrl = 'https://teams.microsoft.com/l/message/19:meeting@thread.v2/123?context={%22contextType%22:%22chat%22}';
+            expect(isValidURI(teamsUrl)).toBe(false); // Fails without normalization
+            expect(isValidURI(normalizeUrlForValidation(teamsUrl))).toBe(true); // Passes with normalization
         });
-        it('should not modify URLs without special characters', () => {
-            const input = 'spotify:album:2OZbaW9tgO62ndm375lFZr';
-            expect(normalizeCustomProtocolUrl(input)).toBe(input);
+        it('should make OneNote URLs pass isValidURI after normalization', () => {
+            const onenoteUrl = 'onenote:///D:/path#section&page-id={GUID}';
+            expect(isValidURI(onenoteUrl)).toBe(false); // Fails without normalization
+            expect(isValidURI(normalizeUrlForValidation(onenoteUrl))).toBe(true); // Passes with normalization
         });
-    });
-
-    describe('hasCommandInjectionPatterns', () => {
-        it('should detect double quotes', () => {
-            expect(hasCommandInjectionPatterns('protocol://path" --flag')).toBe(true);
-        });
-        it('should detect single quotes', () => {
-            expect(hasCommandInjectionPatterns("protocol://path' --flag")).toBe(true);
-        });
-        it('should detect command-line flags pattern', () => {
-            expect(hasCommandInjectionPatterns('protocol://path --data-dir /malicious')).toBe(true);
-        });
-        it('should detect shell OR operator', () => {
-            expect(hasCommandInjectionPatterns('protocol://path || rm -rf')).toBe(true);
-        });
-        it('should detect shell AND operator', () => {
-            expect(hasCommandInjectionPatterns('protocol://path && malicious')).toBe(true);
-        });
-        it('should detect semicolons', () => {
-            expect(hasCommandInjectionPatterns('protocol://path; malicious')).toBe(true);
-        });
-        it('should detect pipe operator', () => {
-            expect(hasCommandInjectionPatterns('protocol://path | malicious')).toBe(true);
-        });
-        it('should detect command substitution', () => {
-            expect(hasCommandInjectionPatterns('protocol://$(whoami)')).toBe(true);
-        });
-        it('should detect backtick command substitution', () => {
-            expect(hasCommandInjectionPatterns('protocol://`whoami`')).toBe(true);
-        });
-        it('should allow safe OneNote URL', () => {
-            expect(hasCommandInjectionPatterns('onenote:///D:/OneNote/Apps/Test.one#Page%20Title&page-id=%7B840EDD0C-B6FB-481E-A342-E39AEDA50EE6%7D')).toBe(false);
-        });
-        it('should allow safe Spotify URL', () => {
-            expect(hasCommandInjectionPatterns('spotify:album:2OZbaW9tgO62ndm375lFZr')).toBe(false);
-        });
-        it('should allow safe MS Teams URL', () => {
-            expect(hasCommandInjectionPatterns('msteams://teams.microsoft.com/l/chat/0/0')).toBe(false);
+        it('should still reject malicious URLs after normalization', () => {
+            const maliciousUrl = String.raw`mattermost:///" --data-dir "\\deans-mbp\mattermost`;
+            expect(isValidURI(normalizeUrlForValidation(maliciousUrl))).toBe(false);
         });
     });
 
-    describe('parseCustomProtocolUrl', () => {
-        it('should parse standard http URL without normalization', () => {
-            const result = parseCustomProtocolUrl('http://example.com/path');
-            expect(result).toBeDefined();
-            expect(result.href).toBe('http://example.com/path');
-        });
-        it('should parse OneNote URL with backslashes after normalization', () => {
-            const input = String.raw`onenote:///D:\OneNote\Apps\Test.one`;
-            const result = parseCustomProtocolUrl(input);
-            expect(result).toBeDefined();
-            expect(result.protocol).toBe('onenote:');
-        });
-        it('should parse OneNote URL with curly braces after normalization', () => {
-            const input = 'onenote:///D:/OneNote/Apps/Test.one#Page&page-id={GUID}';
-            const result = parseCustomProtocolUrl(input);
-            expect(result).toBeDefined();
-            expect(result.protocol).toBe('onenote:');
-        });
-        it('should parse SharePoint URL with curly braces after normalization', () => {
-            const input = 'http://server/path/_layouts/listform.aspx?ListId={2E982C3E-A485-4AC9-8093-CC00C8B36197}';
-            const result = parseCustomProtocolUrl(input);
-            expect(result).toBeDefined();
-            expect(result.host).toBe('server');
-        });
-        it('should return undefined for completely invalid URL', () => {
-            const result = parseCustomProtocolUrl('not-a-valid-url-at-all');
-            expect(result).toBeUndefined();
-        });
-    });
     describe('isInternalURL', () => {
         it('should return false on different hosts', () => {
             const baseURL = new URL('http://mattermost.com');
