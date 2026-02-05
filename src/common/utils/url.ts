@@ -128,3 +128,16 @@ const equalUrlsIgnoringSubpath = (url1: URL, url2: URL, ignoreScheme?: boolean) 
 const escapeRegExp = (s: string) => {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 };
+
+/**
+ * Normalizes a URL for RFC 3986 validation by encoding characters that are
+ * technically invalid but commonly used by applications like MS Teams, SharePoint, and OneNote.
+ * - Converts Windows-style backslashes to forward slashes
+ * - Encodes curly braces which are used in GUIDs and JSON-like query parameters
+ */
+export const normalizeUrlForValidation = (url: string): string => {
+    return url.
+        replace(/\\/g, '/').
+        replace(/\{/g, '%7B').
+        replace(/\}/g, '%7D');
+};

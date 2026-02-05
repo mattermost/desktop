@@ -162,9 +162,14 @@ describe('main/views/webContentsEvents', () => {
 
         it('should deny and show dialog on invalid URL', () => {
             expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
-            expect(newWindow({url: 'https://example.com/path}'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).not.toBeCalled();
             expect(dialog.showErrorBox).toBeCalled();
+        });
+
+        it('should open MS Teams URLs with curly braces in query string', () => {
+            // Curly braces are normalized before validation, so these should work
+            const teamsUrl = 'https://teams.microsoft.com/l/message/19:meeting_abc@thread.v2/123?context={%22contextType%22:%22chat%22}';
+            expect(newWindow({url: teamsUrl})).toStrictEqual({action: 'deny'});
+            expect(shell.openExternal).toBeCalledWith(teamsUrl);
         });
 
         it('should allow dev tools to open', () => {
@@ -181,9 +186,20 @@ describe('main/views/webContentsEvents', () => {
             expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('spotify:', 'spotify:album:2OZbaW9tgO62ndm375lFZr');
         });
 
-        it('should ignore invalid URIs with custom protocols', () => {
-            expect(newWindow({url: 'customproto:test\\data'})).toStrictEqual({action: 'deny'});
+        it('should allow OneNote URLs with curly braces', () => {
+            const onenoteUrl = 'onenote:///D:/OneNote/Apps/Test.one#Page&page-id={840EDD0C-B6FB-481E-A342-E39AEDA50EE6}';
+            expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
+            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('onenote:', onenoteUrl);
+        });
+
+        it('should reject malicious URLs with command injection patterns', () => {
+            // This malicious URL is rejected at the parseURL stage (no dialog shown)
+            const maliciousUrl = String.raw`customproto:///" --data-dir "\\deans-mbp\mattermost`;
+            expect(newWindow({url: maliciousUrl})).toStrictEqual({action: 'deny'});
+
+            // URL fails to parse, so it's rejected without dialog - the important thing is it's blocked
             expect(shell.openExternal).not.toBeCalled();
+            expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
         });
 
         it('should open in the browser when there is no server matching', () => {
