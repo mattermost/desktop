@@ -128,3 +128,78 @@ const equalUrlsIgnoringSubpath = (url1: URL, url2: URL, ignoreScheme?: boolean) 
 const escapeRegExp = (s: string) => {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 };
+
+/**
+ * Custom protocol URL handling
+ *
+ * Many applications (OneNote, MS Teams, Spotify, etc.) use custom protocol schemes
+ * that don't strictly follow RFC 3986. These helpers allow us to handle such URLs
+ * more leniently while still maintaining basic security checks.
+ */
+
+/**
+ * Checks if a URL string appears to use a custom (non-http/https) protocol scheme.
+ */
+export const isCustomProtocolUrl = (url: string): boolean => {
+    const schemeMatch = url.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/?\/?/);
+    if (!schemeMatch) {
+        return false;
+    }
+    const scheme = schemeMatch[1].toLowerCase();
+    return scheme !== 'http' && scheme !== 'https';
+};
+
+/**
+ * Normalizes a custom protocol URL to make it parseable by the URL constructor.
+ * - Converts Windows-style backslashes to forward slashes
+ * - Encodes curly braces which are invalid in RFC 3986 but used by apps like OneNote
+ */
+export const normalizeCustomProtocolUrl = (url: string): string => {
+    // Convert backslashes to forward slashes (Windows paths)
+    let normalized = url.replace(/\\/g, '/');
+
+    // Encode curly braces (used by OneNote for page IDs, SharePoint for list IDs)
+    normalized = normalized.replace(/\{/g, '%7B').replace(/\}/g, '%7D');
+
+    return normalized;
+};
+
+/**
+ * Checks for potentially dangerous patterns in URLs that could be used for command injection.
+ * This is a security measure when handling custom protocol URLs that bypass strict RFC validation.
+ */
+export const hasCommandInjectionPatterns = (url: string): boolean => {
+    // Check for common command injection patterns
+    // These patterns could be used to inject shell commands when passed to shell.openExternal
+    const dangerousPatterns = [
+        /["'`]/, // Quote characters that could break out of string context
+        /\s--\w/, // Command-line flags
+        /\|\|/, // Shell OR operator
+        /&&/, // Shell AND operator
+        /[;<>|]/, // Shell metacharacters
+        /\$\(/, // Command substitution
+        /`[^`]+`/, // Backtick command substitution
+    ];
+
+    return dangerousPatterns.some((pattern) => pattern.test(url));
+};
+
+/**
+ * Attempts to parse a custom protocol URL, applying normalization if needed.
+ * Returns the parsed URL or undefined if it cannot be parsed even after normalization.
+ */
+export const parseCustomProtocolUrl = (url: string): URL | undefined => {
+    // First try parsing as-is
+    let parsed = parseURL(url);
+    if (parsed) {
+        return parsed;
+    }
+
+    // Try with normalization for custom protocols
+    if (isCustomProtocolUrl(url)) {
+        const normalized = normalizeCustomProtocolUrl(url);
+        parsed = parseURL(normalized);
+    }
+
+    return parsed;
+};

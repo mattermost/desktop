@@ -160,11 +160,26 @@ describe('main/views/webContentsEvents', () => {
             expect(newWindow({url: 'a-bad<url'})).toStrictEqual({action: 'deny'});
         });
 
-        it('should deny and show dialog on invalid URL', () => {
+        it('should open http/https URLs externally even if they fail strict RFC validation', () => {
+            // URLs with characters like ^ or } that fail strict RFC validation but can still be parsed
+            // should be opened externally (this allows MS Teams, SharePoint links to work)
             expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
+            expect(shell.openExternal).toBeCalledWith('https://google.com/?^');
+            shell.openExternal.mockClear();
+
             expect(newWindow({url: 'https://example.com/path}'})).toStrictEqual({action: 'deny'});
+            expect(shell.openExternal).toBeCalledWith('https://example.com/path}');
+        });
+
+        it('should open MS Teams URLs with curly braces in query string', () => {
+            const teamsUrl = 'https://teams.microsoft.com/l/message/19:meeting_abc@thread.v2/123?context={%22contextType%22:%22chat%22}';
+            expect(newWindow({url: teamsUrl})).toStrictEqual({action: 'deny'});
+            expect(shell.openExternal).toBeCalledWith(teamsUrl);
+        });
+
+        it('should deny and show dialog on truly unparseable URLs', () => {
+            expect(newWindow({url: 'https://'})).toStrictEqual({action: 'deny'});
             expect(shell.openExternal).not.toBeCalled();
-            expect(dialog.showErrorBox).toBeCalled();
         });
 
         it('should allow dev tools to open', () => {
@@ -181,9 +196,35 @@ describe('main/views/webContentsEvents', () => {
             expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('spotify:', 'spotify:album:2OZbaW9tgO62ndm375lFZr');
         });
 
-        it('should ignore invalid URIs with custom protocols', () => {
+        it('should allow custom protocol URLs with backslashes after normalization', () => {
             expect(newWindow({url: 'customproto:test\\data'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).not.toBeCalled();
+            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('customproto:', 'customproto:test\\data');
+        });
+
+        it('should allow OneNote URLs with curly braces', () => {
+            const onenoteUrl = 'onenote:///D:/OneNote/Apps/Test.one#Page&page-id={840EDD0C-B6FB-481E-A342-E39AEDA50EE6}';
+            expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
+            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('onenote:', onenoteUrl);
+        });
+
+        it('should allow OneNote URLs with Windows backslash paths', () => {
+            const onenoteUrl = String.raw`onenote:///D:\OneNote\Apps\Test.one#Page`;
+            expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
+            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('onenote:', onenoteUrl);
+        });
+
+        it('should reject custom protocol URLs with command injection patterns', () => {
+            // URL with spaces fails to parse, so it's rejected early (no dialog needed)
+            const unparsableUrl = String.raw`customproto:///" --data-dir "/malicious`;
+            expect(newWindow({url: unparsableUrl})).toStrictEqual({action: 'deny'});
+            expect(allowProtocolDialog.handleDialogEvent).not.toBeCalledWith('customproto:', unparsableUrl);
+
+            // URL that parses but contains injection patterns should show dialog
+            dialog.showErrorBox.mockClear();
+            const parsableButMaliciousUrl = 'customproto://path"injection';
+            expect(newWindow({url: parsableButMaliciousUrl})).toStrictEqual({action: 'deny'});
+            expect(dialog.showErrorBox).toBeCalled();
+            expect(allowProtocolDialog.handleDialogEvent).not.toBeCalledWith('customproto:', parsableButMaliciousUrl);
         });
 
         it('should open in the browser when there is no server matching', () => {

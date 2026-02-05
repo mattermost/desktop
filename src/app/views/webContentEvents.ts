@@ -13,9 +13,11 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {
+    hasCommandInjectionPatterns,
     isAdminUrl,
     isCallsPopOutURL,
     isChannelExportUrl,
+    isCustomProtocolUrl,
     isHelpUrl,
     isImageProxyUrl,
     isInternalURL,
@@ -25,6 +27,7 @@ import {
     isPublicFilesUrl,
     isTeamUrl,
     isValidURI,
+    parseCustomProtocolUrl,
     parseURL,
 } from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
@@ -124,22 +127,54 @@ export class WebContentsEventManager {
         return (details: Electron.HandlerDetails): {action: 'deny' | 'allow'} => {
             this.log(webContentsId).debug('new-window');
 
-            const parsedURL = parseURL(details.url);
+            const isNonStandardProtocol = isCustomProtocolUrl(details.url);
+
+            // For custom protocols, try parsing with normalization (handles Windows paths, curly braces, etc.)
+            // For standard protocols, use standard parsing first, then try with normalization as fallback
+            let parsedURL = isNonStandardProtocol ? parseCustomProtocolUrl(details.url) : parseURL(details.url);
+
+            // If standard parsing failed for http/https, try with normalization
+            // (handles URLs with curly braces like MS Teams/SharePoint links)
+            if (!parsedURL && !isNonStandardProtocol) {
+                parsedURL = parseCustomProtocolUrl(details.url);
+            }
+
             if (!parsedURL) {
-                this.log(webContentsId).warn('Ignoring non-url');
+                this.log(webContentsId).warn(`Ignoring non-url: ${details.url}`);
                 return {action: 'deny'};
             }
 
-            if (!isValidURI(details.url)) {
-                this.log(webContentsId).warn('Ignoring invalid URL');
-                dialog.showErrorBox(
-                    localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
-                    localizeMessage(
-                        'main.webContentEvents.invalidLinkDescription',
-                        'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.',
-                    ),
-                );
-                return {action: 'deny'};
+            // For custom protocols, check for command injection patterns instead of strict RFC validation
+            // This allows apps like OneNote, MS Teams, etc. to work while maintaining security
+            if (isNonStandardProtocol) {
+                if (hasCommandInjectionPatterns(details.url)) {
+                    this.log(webContentsId).warn(`Ignoring potentially dangerous custom protocol URL: ${details.url}`);
+                    dialog.showErrorBox(
+                        localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
+                        localizeMessage(
+                            'main.webContentEvents.invalidLinkDescription',
+                            'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.',
+                        ),
+                    );
+                    return {action: 'deny'};
+                }
+            } else if (!isValidURI(details.url)) {
+                // For http/https URLs that fail strict RFC validation, check if they can still be parsed
+                // Many legitimate URLs (MS Teams, SharePoint) contain characters like {} that are
+                // technically invalid per RFC 3986 but are handled fine by browsers
+                if (hasCommandInjectionPatterns(details.url)) {
+                    this.log(webContentsId).warn(`Ignoring potentially dangerous URL: ${details.url}`);
+                    dialog.showErrorBox(
+                        localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
+                        localizeMessage(
+                            'main.webContentEvents.invalidLinkDescription',
+                            'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.',
+                        ),
+                    );
+                    return {action: 'deny'};
+                }
+                // URL parsed successfully despite failing strict validation - allow it
+                this.log(webContentsId).debug(`Allowing URL that failed strict RFC validation but parsed successfully: ${details.url}`);
             }
 
             // Dev tools case
