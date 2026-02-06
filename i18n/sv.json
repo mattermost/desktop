@@ -68,7 +68,7 @@
   "main.badge.unreadMentions": "Du har olästa omnämnanden ({mentionCount})",
   "main.downloadsManager.resetDownloadsFolder": "Återställ mappen där hämtade filer kommer sparas",
   "main.downloadsManager.specifyDownloadsFolder": "Ange mappen där hämtade filer ska sparas",
-  "main.menus.app.edit": "R&edigera",
+  "main.menus.app.edit": "&Redigera",
   "main.menus.app.edit.copy": "Kopiera",
   "main.menus.app.edit.cut": "Klipp",
   "main.menus.app.edit.paste": "Klistra in",
