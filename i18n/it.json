@@ -1,4 +1,8 @@
 {
+  "app.menus.contextMenu.openInNewTab": "Apri in una nuova scheda",
+  "app.menus.contextMenu.openInNewWindow": "Apri in una nuova finestra",
+  "app.navigationManager.viewLimitReached": "Limite di visualizzazione raggiunto",
+  "app.navigationManager.viewLimitReached.description": "Hai raggiunto il numero massimo di finestre e schede aperte per questo server. Chiudi una finestra o una scheda esistente, oppure regola il limite di visualizzazione nella maschera Impostazioni.",
   "common.permissions.canBasicAuth": "Autenticazione WEB",
   "common.tabs.TAB_FOCALBOARD": "Board",
   "common.tabs.TAB_MESSAGING": "Canali",
