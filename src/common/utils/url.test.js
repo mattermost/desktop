@@ -7,6 +7,7 @@ import {
     isUrlType,
     isValidURL,
     isValidURI,
+    normalizeUrlForValidation,
     parseURL,
     isInternalURL,
     isCallsPopOutURL,
@@ -87,6 +88,32 @@ describe('common/utils/url', () => {
             expect(isValidURI(testURL)).toBe(false);
         });
     });
+
+    describe('normalizeUrlForValidation', () => {
+        it('should convert backslashes to forward slashes', () => {
+            const input = String.raw`onenote:///D:\OneNote\Apps\Test.one`;
+            expect(normalizeUrlForValidation(input)).toBe('onenote:///D:/OneNote/Apps/Test.one');
+        });
+        it('should encode curly braces', () => {
+            const input = 'https://teams.microsoft.com/l/message?context={%22contextType%22:%22chat%22}';
+            expect(normalizeUrlForValidation(input)).toBe('https://teams.microsoft.com/l/message?context=%7B%22contextType%22:%22chat%22%7D');
+        });
+        it('should make MS Teams URLs pass isValidURI after normalization', () => {
+            const teamsUrl = 'https://teams.microsoft.com/l/message/19:meeting@thread.v2/123?context={%22contextType%22:%22chat%22}';
+            expect(isValidURI(teamsUrl)).toBe(false); // Fails without normalization
+            expect(isValidURI(normalizeUrlForValidation(teamsUrl))).toBe(true); // Passes with normalization
+        });
+        it('should make OneNote URLs pass isValidURI after normalization', () => {
+            const onenoteUrl = 'onenote:///D:/path#section&page-id={GUID}';
+            expect(isValidURI(onenoteUrl)).toBe(false); // Fails without normalization
+            expect(isValidURI(normalizeUrlForValidation(onenoteUrl))).toBe(true); // Passes with normalization
+        });
+        it('should still reject malicious URLs after normalization', () => {
+            const maliciousUrl = String.raw`mattermost:///" --data-dir "\\deans-mbp\mattermost`;
+            expect(isValidURI(normalizeUrlForValidation(maliciousUrl))).toBe(false);
+        });
+    });
+
     describe('isInternalURL', () => {
         it('should return false on different hosts', () => {
             const baseURL = new URL('http://mattermost.com');
