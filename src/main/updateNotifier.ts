@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {spawn} from 'child_process';
+import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
@@ -201,7 +203,7 @@ export class UpdateNotifier {
 
         switch (platform) {
         case 'win32':
-            shell.openExternal(`${baseURL}/${version}/${this.getDownloadURL(version, 'win', 'msi', arch)}`);
+            this.downloadAndInstallMsiOnWindows(version, baseURL, arch);
             break;
         case 'darwin':
             shell.openExternal(`${baseURL}/${version}/${this.getDownloadURL(version, 'mac', 'dmg', arch)}`);
@@ -209,6 +211,56 @@ export class UpdateNotifier {
         default:
             log.error('Unsupported platform for manual download', {platform});
         }
+    };
+
+    private downloadAndInstallMsiOnWindows = async (version: string, baseURL: string, arch: string): Promise<void> => {
+        const filename = this.getDownloadURL(version, 'win', 'msi', arch);
+        const downloadURL = `${baseURL}/${version}/${filename}`;
+        const msiPath = path.join(app.getPath('temp'), filename);
+
+        try {
+            log.info('Downloading Windows installer', {downloadURL});
+            const response = await net.fetch(downloadURL);
+            if (!response.ok) {
+                throw new Error(`Download failed: ${response.status}`);
+            }
+            const buffer = Buffer.from(await response.arrayBuffer());
+            fs.writeFileSync(msiPath, buffer);
+            log.info('Installer downloaded', {msiPath});
+        } catch (error) {
+            log.error('Failed to download installer', {error, downloadURL});
+            dialog.showMessageBox({
+                title: app.name,
+                icon: appIcon,
+                message: localizeMessage('main.autoUpdater.downloadFailed.message', 'Download failed'),
+                type: 'error',
+                buttons: [localizeMessage('label.ok', 'OK')],
+                detail: localizeMessage('main.autoUpdater.downloadFailed.detail', 'Could not download the installer. You can try downloading it from your browser instead.'),
+            }).then(() => {
+                shell.openExternal(downloadURL);
+            });
+            return;
+        }
+
+        const psScript = 'while (Get-Process -Id $env:MM_PARENT_PID -ErrorAction SilentlyContinue) { Start-Sleep -Milliseconds 200 }; Start-Process -FilePath $env:MM_MSI_PATH';
+        const child = spawn('powershell.exe', [
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-Command', psScript,
+        ], {
+            detached: true,
+            stdio: 'ignore',
+            env: {
+                ...process.env,
+                MM_PARENT_PID: String(process.pid),
+                MM_MSI_PATH: msiPath,
+            },
+        });
+        child.on('error', (err) => {
+            log.error('Failed to start installer helper', {err});
+        });
+        child.unref();
+        app.quit();
     };
 
     private openUpdateGuide = (): void => {

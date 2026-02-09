@@ -38,6 +38,8 @@
   "main.app.utils.clearDataForServer.cancel": "Cancel",
   "main.app.utils.clearDataForServer.confirm": "Clear Data",
   "main.app.utils.clearDataForServer.message": "This action will erase all session, cache, cookie and storage data for the server \"{serverName}\". Are you sure you want to clear data for this server?",
+  "main.autoUpdater.downloadFailed.detail": "Could not download the installer. You can try downloading it from your browser instead.",
+  "main.autoUpdater.downloadFailed.message": "Download failed",
   "main.autoUpdater.noUpdate.detail": "You are using the latest version of the {appName} Desktop App (version {version}). You'll be notified when a new version is available to install.",
   "main.autoUpdater.noUpdate.message": "You're up to date",
   "main.badge.noUnreads": "You have no unread messages",
