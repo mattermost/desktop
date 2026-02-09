@@ -25,6 +25,7 @@ import {
     isPublicFilesUrl,
     isTeamUrl,
     isValidURI,
+    normalizeUrlForValidation,
     parseURL,
 } from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
@@ -126,12 +127,15 @@ export class WebContentsEventManager {
 
             const parsedURL = parseURL(details.url);
             if (!parsedURL) {
-                this.log(webContentsId).warn('Ignoring non-url');
+                this.log(webContentsId).warn(`Ignoring non-url: ${details.url}`);
                 return {action: 'deny'};
             }
 
-            if (!isValidURI(details.url)) {
-                this.log(webContentsId).warn('Ignoring invalid URL');
+            // Normalize URL before validation to handle characters like backslashes and curly braces
+            // that are technically invalid per RFC 3986 but commonly used by apps like MS Teams,
+            // SharePoint, and OneNote
+            if (!isValidURI(normalizeUrlForValidation(details.url))) {
+                this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
                 dialog.showErrorBox(
                     localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
                     localizeMessage(
