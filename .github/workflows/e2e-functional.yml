@@ -104,6 +104,7 @@ jobs:
     needs: [update-final-status]
     if: always()
     permissions:
+      actions: read
       issues: write
     steps:
       - name: Remove E2E/Run label when triggered via Matterwick
@@ -126,8 +127,28 @@ jobs:
               }
 
               // Try to find associated PR
+              let prNumber = null;
+
+              // First try: check run.data.pull_requests (reliable for pull_request events)
               if (run.data.pull_requests && run.data.pull_requests.length > 0) {
-                const prNumber = run.data.pull_requests[0].number;
+                prNumber = run.data.pull_requests[0].number;
+              } else {
+                // Second try: query PRs by head branch (more reliable for workflow_dispatch)
+                const branchName = run.data.head_branch;
+                if (branchName) {
+                  const prs = await github.rest.pulls.list({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    state: 'open',
+                    head: `${context.repo.owner}:${branchName}`
+                  });
+                  if (prs.data && prs.data.length > 0) {
+                    prNumber = prs.data[0].number;
+                  }
+                }
+              }
+
+              if (prNumber) {
                 await github.rest.issues.removeLabel({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -135,7 +156,7 @@ jobs:
                   name: 'E2E/Run'
                 });
               } else {
-                console.log('Label removal skipped - workflow run is not associated with a PR');
+                console.log('Label removal skipped - could not find associated PR');
               }
             } catch (error) {
               if (error && error.status === 404) {
