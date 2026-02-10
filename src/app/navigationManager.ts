@@ -161,11 +161,6 @@ export class NavigationManager {
             return;
         }
 
-        let cleanedPathName = pathName;
-        if (server.url.pathname !== '/' && pathName.startsWith(server.url.pathname)) {
-            cleanedPathName = pathName.replace(server.url.pathname, '');
-        }
-
         const shouldNavigateToParent = sourceView.parentViewId || callsViewId;
         const navigationView = shouldNavigateToParent && sourceView.parentViewId ? WebContentsManager.getView(sourceView.parentViewId) : sourceView;
         if (!navigationView) {
@@ -187,7 +182,7 @@ export class NavigationManager {
             }
         }
 
-        navigationView.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
+        navigationView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
         navigationView.updateHistoryButton();
     };
 

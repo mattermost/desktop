@@ -366,19 +366,6 @@ describe('app/navigationManager', () => {
             expect(mockView.updateHistoryButton).not.toHaveBeenCalled();
         });
 
-        it('should clean pathname when server has subpath', () => {
-            ServerManager.getServer.mockReturnValue({
-                ...mockServer,
-                url: new URL('http://server-1.com/subpath'),
-            });
-            ViewManager.isPrimaryView.mockReturnValue(true);
-
-            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/subpath/team/channel');
-
-            expect(mockView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
-            expect(mockView.updateHistoryButton).toHaveBeenCalled();
-        });
-
         it('should use parent view when current view has parentViewId and view type is TAB', () => {
             const mockParentView = {
                 id: 'parent-view',
