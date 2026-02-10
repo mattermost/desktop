@@ -103,6 +103,8 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [update-final-status]
     if: always()
+    permissions:
+      issues: write
     steps:
       - name: Remove E2E/Run label when triggered via Matterwick
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
@@ -117,6 +119,12 @@ jobs:
                 run_id: context.runId
               });
 
+              // Only remove the label if this was triggered via workflow_dispatch (Matterwick)
+              if (run.data.event !== 'workflow_dispatch') {
+                console.log('Label removal skipped - workflow run is not triggered by workflow_dispatch (Matterwick)');
+                return;
+              }
+
               // Try to find associated PR
               if (run.data.pull_requests && run.data.pull_requests.length > 0) {
                 const prNumber = run.data.pull_requests[0].number;
@@ -126,7 +134,15 @@ jobs:
                   issue_number: prNumber,
                   name: 'E2E/Run'
                 });
+              } else {
+                console.log('Label removal skipped - workflow run is not associated with a PR');
               }
             } catch (error) {
-              console.log('Label removal skipped - not associated with a PR');
+              if (error && error.status === 404) {
+                console.log('Label removal skipped - label "E2E/Run" is not present on the associated PR (404).');
+              } else if (error && error.status === 403) {
+                console.log('Label removal failed - insufficient permissions to modify labels on the associated PR (403).');
+              } else {
+                console.log(`Label removal failed due to an unexpected error: status=${error && error.status}, message=${error && error.message}`);
+              }
             }
