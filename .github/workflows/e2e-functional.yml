@@ -162,7 +162,7 @@ jobs:
               }
             } catch (error) {
               if (error && error.status === 404) {
-                console.log('Label removal skipped - label "E2E/Run" is not present on the associated PR (404).');
+                console.log(`Label removal skipped - label "E2E/Run" not found or associated PR/issue not accessible (404). Details: ${error && error.message}`);
               } else if (error && error.status === 403) {
                 console.log('Label removal failed - insufficient permissions to modify labels on the associated PR (403).');
               } else {
