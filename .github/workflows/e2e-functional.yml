@@ -110,7 +110,6 @@ jobs:
     steps:
       - name: Remove E2E/Run label when triggered via Matterwick
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        continue-on-error: true
         with:
           script: |
             try {
