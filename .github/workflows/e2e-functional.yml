@@ -106,6 +106,7 @@ jobs:
     permissions:
       actions: read
       issues: write
+      pull-requests: read
     steps:
       - name: Remove E2E/Run label when triggered via Matterwick
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
@@ -136,11 +137,13 @@ jobs:
                 // Second try: query PRs by head branch (more reliable for workflow_dispatch)
                 const branchName = run.data.head_branch;
                 if (branchName) {
+                  // Use the actual head repository owner (supports fork PRs)
+                  const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
                   const prs = await github.rest.pulls.list({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     state: 'open',
-                    head: `${context.repo.owner}:${branchName}`
+                    head: `${headOwner}:${branchName}`
                   });
                   if (prs.data && prs.data.length > 0) {
                     prNumber = prs.data[0].number;
