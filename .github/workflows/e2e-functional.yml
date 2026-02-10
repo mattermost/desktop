@@ -145,7 +145,21 @@ jobs:
                     head: `${headOwner}:${branchName}`
                   });
                   if (prs.data && prs.data.length > 0) {
-                    prNumber = prs.data[0].number;
+                    // Prefer the PR whose head SHA matches the workflow run's head SHA
+                    const matchingPr = prs.data.find(
+                      pr => pr.head && pr.head.sha === run.data.head_sha
+                    );
+
+                    if (matchingPr) {
+                      prNumber = matchingPr.number;
+                    } else if (prs.data.length === 1) {
+                      // Preserve existing behavior when there is exactly one candidate
+                      prNumber = prs.data[0].number;
+                    } else {
+                      console.log(
+                        `Label removal skipped - multiple PRs found for ${headOwner}:${branchName} and none match head SHA ${run.data.head_sha}`
+                      );
+                    }
                   }
                 }
               }
