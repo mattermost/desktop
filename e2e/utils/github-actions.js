@@ -1,5 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+/* eslint-disable no-console */
 
 /**
  * Update initial pending status for all platforms
@@ -75,7 +76,7 @@ async function removeE2ELabel({github, context}) {
         const run = await github.rest.actions.getWorkflowRun({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            run_id: context.runId
+            run_id: context.runId,
         });
 
         // Only remove the label if this was triggered via workflow_dispatch (Matterwick)
@@ -100,7 +101,7 @@ async function removeE2ELabel({github, context}) {
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     state: 'open',
-                    head: `${headOwner}:${branchName}`
+                    head: `${headOwner}:${branchName}`,
                 });
                 if (prs.data && prs.data.length > 0) {
                     prNumber = prs.data[0].number;
@@ -113,7 +114,7 @@ async function removeE2ELabel({github, context}) {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                name: 'E2E/Run'
+                name: 'E2E/Run',
             });
         } else {
             console.log('Label removal skipped - could not find associated PR');
