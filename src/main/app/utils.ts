@@ -10,6 +10,7 @@ import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {MAIN_WINDOW_CREATED} from 'common/communication';
 import Config from 'common/config';
+import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -19,8 +20,6 @@ import {ServerInfo} from 'main/server/serverInfo';
 
 import type {RemoteInfo} from 'types/server';
 import type {Boundaries} from 'types/utils';
-
-import {mainProtocol} from './initialize';
 
 const log = new Logger('App.Utils');
 
@@ -47,7 +46,7 @@ export function getDeeplinkingURL(args: string[]) {
     if (Array.isArray(args) && args.length) {
     // deeplink urls should always be the last argument, but may not be the first (i.e. Windows with the app already running)
         const url = args[args.length - 1];
-        const protocol = isDev ? 'mattermost-dev' : mainProtocol;
+        const protocol = isDev ? 'mattermost-dev' : MATTERMOST_PROTOCOL;
         if (url && protocol && url.startsWith(protocol) && isValidURI(url)) {
             return url;
         }

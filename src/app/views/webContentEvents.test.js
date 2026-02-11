@@ -57,13 +57,8 @@ jest.mock('main/app/utils', () => ({
     flushCookiesStore: jest.fn(),
 }));
 
-jest.mock('../../../electron-builder.json', () => ({
-    protocols: [
-        {
-            name: 'Mattermost',
-            schemes: ['mattermost'],
-        },
-    ],
+jest.mock('common/constants', () => ({
+    MATTERMOST_PROTOCOL: 'mattermost',
 }));
 
 jest.mock('main/security/allowProtocolDialog', () => ({

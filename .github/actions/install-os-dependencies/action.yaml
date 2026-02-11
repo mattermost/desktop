@@ -63,9 +63,6 @@ runs:
       shell: bash
       run: |
         brew install nss
-        jq '.mac.target=["zip"]' electron-builder.json | \
-        jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && \
-        cp /tmp/electron-builder.json .
 
     - name: Install Windows Dependencies
       if: inputs.os == 'Windows'
