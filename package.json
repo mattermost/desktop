@@ -56,7 +56,7 @@
     "package:linux:arch-arm64": "cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux",
     "package:linux-tar": "npm run build-prod && npm run package:linux:arch-x64 -- tar.gz --x64 --publish=never && npm run package:linux:arch-arm64 -- tar.gz --arm64 --publish=never",
     "package:linux-pkg": "npm run build-prod && npm run package:linux:arch-x64 -- deb rpm flatpak --x64 --publish=never && npm run package:linux:arch-arm64 -- deb rpm flatpak --arm64 --publish=never",
-    "package:linux-appImage": "npm run build-prod && npm run package:linux-arch-x64 -- tar.gz appimage --x64 --publish=never && npm run package:linux-arch-arm64 -- tar.gz appimage --arm64 --publish=never"
+    "package:linux-appImage": "npm run build-prod && npm run package:linux:arch-x64 -- tar.gz appimage --x64 --publish=never && npm run package:linux:arch-arm64 -- tar.gz appimage --arm64 --publish=never"
   },
   "jest": {
     "clearMocks": true,
