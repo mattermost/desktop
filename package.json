@@ -160,6 +160,7 @@
     "@mattermost/compass-icons": "0.1.45",
     "@sentry/electron": "7.4.0",
     "auto-launch": "5.0.6",
+    "cf-prefs": "2.0.1",
     "classnames": "2.5.1",
     "electron-context-menu": "4.0.4",
     "electron-devtools-installer": "4.0.0",

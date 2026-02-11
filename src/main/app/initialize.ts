@@ -123,7 +123,6 @@ export async function initialize() {
     // wait for registry config data to load and app ready event
     await Promise.all([
         app.whenReady(),
-        Config.initRegistry(),
     ]);
 
     // no need to continue initializing if app is quitting
