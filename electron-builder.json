@@ -15,15 +15,19 @@
     "node_modules/macos-notification-state/**/*",
     "node_modules/windows-focus-assist/**/*",
     "node_modules/registry-js/**/*",
+    "node_modules/cf-prefs/**/*",
     "!**/node_modules/macos-notification-state/bin/**/*",
     "!**/node_modules/macos-notification-state/build/**/*",
     "!**/node_modules/windows-focus-assist/bin/**/*",
     "!**/node_modules/windows-focus-assist/build/**/*",
     "!**/node_modules/registry-js/bin/**/*",
     "!**/node_modules/registry-js/build/**/*",
+    "!**/node_modules/cf-prefs/bin/**/*",
+    "!**/node_modules/cf-prefs/build/**/*",
     "node_modules/macos-notification-state/build/**/*.node",
     "node_modules/windows-focus-assist/build/Release/**/*.node",
     "node_modules/registry-js/build/Release/**/*.node",
+    "node_modules/cf-prefs/build/Release/**/*.node",
     {
       "from": "dist",
       "to": ".",
@@ -53,7 +57,8 @@
   "asarUnpack": [
     "./node_modules/macos-notification-state/build/Release/**/*.node",
     "./node_modules/windows-focus-assist/build/Release/**/*.node",
-    "./node_modules/registry-js/build/Release/**/*.node"
+    "./node_modules/registry-js/build/Release/**/*.node",
+    "./node_modules/cf-prefs/build/Release/**/*.node"
   ],
   "linux": {
     "category": "Network;InstantMessaging",
