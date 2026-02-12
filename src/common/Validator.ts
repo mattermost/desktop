@@ -157,6 +157,7 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
         name: Joi.string().required(),
         url: Joi.string().required(),
         order: Joi.number().integer().min(0),
+        isPredefined: Joi.boolean(),
     })).default([]),
     showTrayIcon: Joi.boolean().default(false),
     trayIconTheme: Joi.any().allow('').valid('light', 'dark', 'use_system').default('use_system'),

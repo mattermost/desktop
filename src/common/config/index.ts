@@ -45,7 +45,7 @@ export class Config extends EventEmitter {
         this.registryConfig = new RegistryConfig();
         this._predefinedServers = [];
         if (buildConfig.defaultServers) {
-            this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => ({...server, order: index})));
+            this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => ({...server, order: index, isPredefined: true})));
         }
     }
 
@@ -130,7 +130,7 @@ export class Config extends EventEmitter {
         this.localConfigData = Object.assign({}, this.localConfigData, {
             servers,
             lastActiveServer: lastActiveServer ?? this.localConfigData?.lastActiveServer,
-            viewLimit: this.localConfigData?.viewLimit ? Math.max(this.localConfigData.viewLimit, servers.length + this.predefinedServers.length) : undefined,
+            viewLimit: this.localConfigData?.viewLimit ? Math.max(this.localConfigData.viewLimit, servers.length) : undefined,
         });
         this.regenerateCombinedConfigData();
         this.saveLocalConfigData();
@@ -282,7 +282,7 @@ export class Config extends EventEmitter {
 
         this.registryConfigData = registryData;
         if (this.registryConfigData.servers) {
-            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => ({...server, order: index})));
+            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => ({...server, order: index, isPredefined: true})));
         }
 
         this.regenerateCombinedConfigData();

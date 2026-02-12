@@ -8,6 +8,7 @@ export type Server = {
 
 export type ConfigServer = Server & {
     order: number;
+    isPredefined?: boolean;
 }
 
 export type UniqueServer = Server & {

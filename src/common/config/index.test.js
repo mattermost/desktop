@@ -28,12 +28,14 @@ const buildServer = {
     name: 'build-server-1',
     order: 0,
     url: 'http://build-server-1.com',
+    isPredefined: true,
 };
 
 const registryServer = {
     name: 'registry-server-1',
     order: 0,
     url: 'http://registry-server-1.com',
+    isPredefined: true,
 };
 
 const server = {
