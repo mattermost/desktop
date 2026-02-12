@@ -38,6 +38,7 @@ import {
     SERVER_URL_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
+import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
@@ -100,10 +101,6 @@ import {
     handleDoubleClick,
     handleGetDarkMode,
 } from './windows';
-
-import {protocols} from '../../../electron-builder.json';
-
-export const mainProtocol = protocols?.[0]?.schemes?.[0];
 
 const log = new Logger('App.Initialize');
 
@@ -230,8 +227,8 @@ function initializeBeforeAppReady() {
 
     if (isDev && process.env.NODE_ENV !== 'test') {
         app.setAsDefaultProtocolClient('mattermost-dev', process.execPath, [path.resolve(process.cwd(), 'dist/')]);
-    } else if (mainProtocol) {
-        app.setAsDefaultProtocolClient(mainProtocol);
+    } else {
+        app.setAsDefaultProtocolClient(MATTERMOST_PROTOCOL);
     }
 
     if (process.platform === 'darwin' || process.platform === 'win32') {

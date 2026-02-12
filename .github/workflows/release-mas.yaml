@@ -41,8 +41,6 @@ jobs:
           npm ci
       - name: release/copy-provisioning-profile
         run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
-      - name: release/patch-version-number-for-MAS
-        run: ./scripts/patch_mas_version.sh
       - name: release/test
         uses: ./.github/actions/test
       - name: release/package
