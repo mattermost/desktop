@@ -29,6 +29,9 @@ on:
         required: false
         default: false
 
+permissions:
+  contents: read
+
 jobs:
   prepare-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
