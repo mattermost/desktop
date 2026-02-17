@@ -21,7 +21,7 @@ import type {
 import buildConfig from './buildConfig';
 import defaultPreferences, {getDefaultDownloadLocation} from './defaultPreferences';
 import migrateConfigItems from './migrationPreferences';
-import RegistryConfig, {REGISTRY_READ_EVENT} from './RegistryConfig';
+import policyConfigLoader from './policyConfigLoader';
 import upgradeConfigData from './upgradePreferences';
 
 const log = new Logger('Config');
@@ -30,19 +30,17 @@ export class Config extends EventEmitter {
     private configFilePath?: string;
     private appName?: string;
 
-    private registryConfig: RegistryConfig;
     private _predefinedServers: ConfigServer[];
     private json?: JsonFileManager<CurrentConfig>;
 
     private combinedData?: CombinedConfig;
     private localConfigData?: CurrentConfig;
-    private registryConfigData?: Partial<RegistryCurrentConfig>;
+    private policyConfigData?: Partial<RegistryCurrentConfig>;
     private defaultConfigData?: CurrentConfig;
     private buildConfigData?: BuildConfig;
 
     constructor() {
         super();
-        this.registryConfig = new RegistryConfig();
         this._predefinedServers = [];
         if (buildConfig.defaultServers) {
             this._predefinedServers.push(...buildConfig.defaultServers.map((server, index) => ({...server, order: index, isPredefined: true})));
@@ -54,21 +52,9 @@ export class Config extends EventEmitter {
         this.appName = appName;
 
         this.reload();
-    };
-
-    initRegistry = () => {
-        if (process.platform !== 'win32') {
-            return Promise.resolve();
+        if (process.platform === 'win32' || process.platform === 'darwin') {
+            this.onLoadRegistry(policyConfigLoader.getPolicyConfig());
         }
-
-        return new Promise<void>((resolve) => {
-            this.registryConfig = new RegistryConfig();
-            this.registryConfig.once(REGISTRY_READ_EVENT, (data) => {
-                this.onLoadRegistry(data);
-                resolve();
-            });
-            this.registryConfig.init();
-        });
     };
 
     /**
@@ -151,7 +137,7 @@ export class Config extends EventEmitter {
         return this.buildConfigData ?? buildConfig;
     }
     get registryData() {
-        return this.registryConfigData;
+        return this.policyConfigData;
     }
 
     // convenience getters
@@ -236,7 +222,7 @@ export class Config extends EventEmitter {
     }
 
     get canUpgrade() {
-        return process.env.NODE_ENV === 'test' || (this.buildConfigData?.enableUpdateNotifications && !(process.platform === 'win32' && this.registryConfigData?.enableUpdateNotifications === false));
+        return process.env.NODE_ENV === 'test' || (this.buildConfigData?.enableUpdateNotifications && !(this.policyConfigData && this.policyConfigData?.enableUpdateNotifications === false));
     }
 
     get autoCheckForUpdates() {
@@ -268,7 +254,7 @@ export class Config extends EventEmitter {
     }
 
     getWindowsSystemDarkMode = () => {
-        return !this.registryConfig.getAppsUseLightTheme();
+        return !policyConfigLoader.getAppsUseLightTheme();
     };
 
     /**
@@ -280,9 +266,9 @@ export class Config extends EventEmitter {
     private onLoadRegistry = (registryData: Partial<RegistryCurrentConfig>): void => {
         log.debug('loadRegistry');
 
-        this.registryConfigData = registryData;
-        if (this.registryConfigData.servers) {
-            this._predefinedServers.push(...this.registryConfigData.servers.map((server, index) => ({...server, order: index, isPredefined: true})));
+        this.policyConfigData = registryData;
+        if (this.policyConfigData.servers) {
+            this._predefinedServers.push(...this.policyConfigData.servers.map((server, index) => ({...server, order: index, isPredefined: true})));
         }
 
         this.regenerateCombinedConfigData();
@@ -392,19 +378,20 @@ export class Config extends EventEmitter {
     };
 
     /**
-     * Properly combines all sources of data into a single, manageable set of all config data
+     * Combines all config sources into one. Order (later overrides earlier):
+     * default < local < build < registry (GPO) < mdm (CFPrefs).
+     * Policy keys are loaded by policyConfigLoader.
      */
     private regenerateCombinedConfigData = () => {
         if (!this.appName) {
             throw new Error('Config not initialized, cannot regenerate');
         }
 
-        // combine all config data in the correct order
         this.combinedData = Object.assign({},
             this.defaultConfigData,
             this.localConfigData,
             this.buildConfigData,
-            this.registryConfigData,
+            this.policyConfigData,
         );
 
         // We don't want to include the servers in the combined config, they should only be accesible via the ServerManager

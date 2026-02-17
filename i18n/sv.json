@@ -349,6 +349,7 @@
   "renderer.components.settingsPage.updates": "Uppdateringar",
   "renderer.components.settingsPage.updates.automatic": "Kontrollera automatiskt om det finns uppdateringar",
   "renderer.components.settingsPage.updates.automatic.description": "Om aktiverad så hämtas uppdateringar till skrivbordsappen automatiskt och du får ett meddelande när de är redo att installeras.",
+  "renderer.components.settingsPage.updates.automatic.newDescription": "Om aktiverad får du automatiskt ett meddelande när en ny uppdatering finns tillgänglig.",
   "renderer.components.settingsPage.updates.checkNow": "Sök efter uppdateringar nu",
   "renderer.components.settingsPage.useNativeTitleBar": "Använd inbyggt titelfält",
   "renderer.components.settingsPage.useNativeTitleBar.description": "Appen kommer att använda det inbyggda titelfältet som den är aktiverad",
