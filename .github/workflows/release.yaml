@@ -215,7 +215,7 @@ jobs:
       - name: release/upload-to-s3-new-bucket
         run: aws s3 cp ./aws-s3-dist/ s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }} --cache-control "no-cache" --recursive
       - name: release/upload-latest-version-new-bucket
-        run: aws s3 cp ./${{ steps.generate-latest.outputs.FILENAME }} s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }}/${{ steps.generate-latest.outputs.FILENAME }} --cache-control "no-cache"
+        run: aws s3 cp ./${{ steps.generate-latest.outputs.FILENAME }} s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }}${{ steps.generate-latest.outputs.FILENAME }} --cache-control "no-cache"
 
   github-release:
     runs-on: ubuntu-22.04
