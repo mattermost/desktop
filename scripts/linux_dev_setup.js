@@ -1,8 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+const {spawnSync} = require('child_process');
 const fs = require('fs');
 const path = require('path');
+
+const SETUID_PERMISSIONS = '4755';
 
 // For linux dev, drop a desktop shortcut so deep linking works correctly
 if (process.platform === 'linux') {
@@ -36,5 +39,20 @@ Categories=contrib/net;
         fs.appendFileSync(mimeCachePath, 'x-scheme-handler/mattermost-dev=mattermost-desktop-dev.desktop\n');
 
         console.log('NOTE: You may need to log in and out of your session to ensure that deep linking works correctly.');
+    }
+
+    console.log('Setting proper ownership for linux arch');
+    let result = spawnSync('sudo', ['chown', 'root:root', './node_modules/electron/dist/chrome-sandbox']);
+    if (result.error) {
+        throw new Error(
+            `Failed to set proper ownership for linux arch: ${result.error} ${result.stderr} ${result.stdout}`,
+        );
+    }
+
+    result = spawnSync('sudo', ['chmod', SETUID_PERMISSIONS, './node_modules/electron/dist/chrome-sandbox']);
+    if (result.error) {
+        throw new Error(
+            `Failed to set proper permissions for linux arch: ${result.error} ${result.stderr} ${result.stdout}`,
+        );
     }
 }
