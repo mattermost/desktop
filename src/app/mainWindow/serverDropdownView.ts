@@ -39,7 +39,6 @@ const log = new Logger('ServerDropdownView');
 export class ServerDropdownView {
     private view?: WebContentsView;
     private servers: UniqueServer[];
-    private hasGPOServers: boolean;
     private isOpen: boolean;
     private bounds: Electron.Rectangle;
 
@@ -47,7 +46,6 @@ export class ServerDropdownView {
 
     constructor() {
         this.servers = [];
-        this.hasGPOServers = false;
         this.isOpen = false;
         this.bounds = this.getBounds(0, 0);
 
@@ -102,7 +100,6 @@ export class ServerDropdownView {
             this.windowBounds,
             ServerManager.hasServers() ? ServerManager.getCurrentServerId() : undefined,
             Config.enableServerManagement,
-            this.hasGPOServers,
             AppState.getExpired(),
             AppState.getMentionsPerServer(),
             AppState.getUnreadsPerServer(),
@@ -166,7 +163,6 @@ export class ServerDropdownView {
 
     private setOrderedServers = () => {
         this.servers = ServerManager.getOrderedServers().map((server) => server.toUniqueServer());
-        this.hasGPOServers = this.servers.some((srv) => srv.isPredefined);
     };
 }
 
