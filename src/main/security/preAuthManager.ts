@@ -134,24 +134,6 @@ export class PreAuthManager {
 
         event.preventDefault(); // prevent the app from getting the first certificate available
 
-        // The URL provided is in the format <domain>:<port>, so we need to convert it to a proper URL for trust checking
-        let urlToCheck = url;
-        if (url.includes(':') && !url.includes('://')) {
-            const [domain, port] = url.split(':');
-            if (port === '443') {
-                urlToCheck = `https://${domain}`;
-            } else if (port === '80') {
-                urlToCheck = `http://${domain}`;
-            } else {
-                urlToCheck = `https://${url}`;
-            }
-        }
-
-        if (!this.isTrustedURL(urlToCheck)) {
-            log.info('URL is not trusted. Skipping certificate selection');
-            return;
-        }
-
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             log.info('No main window found. Skipping certificate selection');
