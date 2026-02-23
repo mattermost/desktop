@@ -98,3 +98,22 @@ jobs:
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
             await updateFinalStatus({ github, context, platforms, outputs });
+
+  remove-e2e-label:
+    runs-on: ubuntu-22.04
+    needs: [update-final-status]
+    if: always()
+    permissions:
+      actions: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Remove E2E/Run label when triggered via Matterwick
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            const { removeE2ELabel } = require('./e2e/utils/github-actions.js');
+            await removeE2ELabel({ github, context });
