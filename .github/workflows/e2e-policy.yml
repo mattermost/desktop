@@ -29,7 +29,7 @@ env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.ref_name }}
   BUILD_TAG: ${{ github.sha }}
-  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
+  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || 'https://desktop-e2e.test.mattermost.cloud/' }}
   MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
   MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
   AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
