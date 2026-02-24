@@ -1,6 +1,11 @@
 name: E2E Policy Tests (GPO / MDM)
 
 on:
+  # remove Push trigger
+  push:
+    branches:
+      - policy_e2e_tests
+
   workflow_dispatch:
     inputs:
       version_name:
