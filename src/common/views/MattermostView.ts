@@ -27,7 +27,13 @@ export class MattermostView {
     parentViewId?: string;
     props?: PopoutViewProps;
 
-    constructor(server: MattermostServer, type: ViewType, initialPath?: string, parentViewId?: string, props?: PopoutViewProps) {
+    constructor(
+        server: MattermostServer,
+        type: ViewType,
+        initialPath?: string,
+        parentViewId?: string,
+        props?: PopoutViewProps,
+    ) {
         this.id = uuid();
         this.serverId = server.id;
         this.type = type;
@@ -42,24 +48,26 @@ export class MattermostView {
         if (!server) {
             throw new Error(`Server ${this.serverId} not found`);
         }
-        const serverURL = server.initialLoadURL ?? server.url;
+
+        // Only return the initial load URL if there is no initial path
         if (!this.initialPath) {
-            return serverURL;
+            return server.initialLoadURL ?? server.url;
         }
-        if (serverURL.pathname === '/') {
-            const url = parseURL(new URL(serverURL));
-            if (!url) {
-                throw new Error(`URL for server ${this.serverId} is not valid`);
-            }
-            url.pathname = this.initialPath;
-            return url;
+
+        // If the server URL is the root and the initial path starts with a slash, remove the slash
+        let initialPath = this.initialPath;
+        if (server.url.pathname === '/' && this.initialPath.startsWith('/')) {
+            initialPath = this.initialPath.slice(1);
         }
-        const url = parseURL(serverURL.toString() + this.initialPath);
+
+        const url = parseURL(server.url.toString() + initialPath);
         if (!url) {
             throw new Error(`URL for server ${this.serverId} is not valid`);
         }
+
+        // Fall back to the server URL if the URL is not internal
         if (!isInternalURL(server.url, url)) {
-            return serverURL;
+            return server.url;
         }
         return url;
     };

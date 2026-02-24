@@ -73,6 +73,20 @@ describe('MattermostView', () => {
             expect(view.getLoadingURL().toString()).toBe('https://test.com/channels/town-square');
         });
 
+        it('should preserve query string in initial path for root pathname', () => {
+            mockServer.url = new URL('https://test.com/');
+            const view = new MattermostView(mockServer, ViewType.TAB, '/channels/town-square?teid=test-team-id');
+
+            expect(view.getLoadingURL().toString()).toBe('https://test.com/channels/town-square?teid=test-team-id');
+        });
+
+        it('should preserve query string in initial path for root pathname with a subpath', () => {
+            mockServer.url = new URL('https://test.com/subpath');
+            const view = new MattermostView(mockServer, ViewType.TAB, '/channels/town-square?teid=test-team-id&channel_id=test-channel-id');
+
+            expect(view.getLoadingURL().toString()).toBe('https://test.com/subpath/channels/town-square?teid=test-team-id&channel_id=test-channel-id');
+        });
+
         it('should throw error when URL is not valid for root pathname', () => {
             mockServer.url = new URL('https://test.com/');
             parseURL.mockReturnValue(null);
