@@ -4,9 +4,6 @@
 'use strict';
 
 const {execFileSync} = require('child_process');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
 
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
@@ -17,21 +14,6 @@ const isSupported = env.isOneOf(['win32', 'darwin']);
 // Windows registry path (matches policyConfigLoader.ts WINDOWS_REGISTRY_PATH)
 const WIN_REG_PATH = 'HKCU:\\SOFTWARE\\Policies\\Mattermost';
 const WIN_REG_SERVER_LIST_PATH = `${WIN_REG_PATH}\\DefaultServerList`;
-
-// macOS CFPreferences path.
-//
-// cf-prefs calls CFPreferencesCopyAppValue with kCFPreferencesCurrentApplication.
-// In E2E tests the app runs as the raw Electron binary whose bundle ID is
-// "com.github.Electron", so CFPreferences reads from ~/Library/Preferences/
-// — no sudo required.  In a production install (bundle ID "Mattermost.Desktop")
-// the MDM-managed path would be /Library/Managed Preferences/Mattermost.Desktop.plist,
-// but that requires root and is not needed for functional test coverage.
-const MACOS_PLIST_PATH = path.join(
-    os.homedir(),
-    'Library',
-    'Preferences',
-    'com.github.Electron.plist',
-);
 
 /**
  * Write OS-level policy configuration before the Electron app launches.
@@ -80,44 +62,35 @@ function setupWindowsPolicy({servers = [], enableServerManagement, enableAutoUpd
 }
 
 function setupMacOSPolicy({servers = [], enableServerManagement, enableAutoUpdater} = {}) {
-    // Build a plist XML string from test-controlled data (not user input).
-    const serverListXML = servers.map(({name, url}) => `
-        <dict>
-            <key>name</key>
-            <string>${name}</string>
-            <key>url</key>
-            <string>${url}</string>
-        </dict>`).join('');
+    // Use `defaults write` instead of writing raw plist XML so that changes go
+    // through the CFPreferences daemon — this avoids cache staleness issues where
+    // CFPreferencesCopyAppValue returns the old (empty) value even after the plist
+    // file has been written to disk.
 
-    const enableServerManagementXML = enableServerManagement !== undefined
-        ? `\t<key>EnableServerManagement</key>\n\t${enableServerManagement ? '<true/>' : '<false/>'}\n`
-        : '';
+    const APP_ID = 'com.github.Electron';
 
-    const enableAutoUpdaterXML = enableAutoUpdater !== undefined
-        ? `\t<key>EnableAutoUpdater</key>\n\t${enableAutoUpdater ? '<true/>' : '<false/>'}\n`
-        : '';
-
-    const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-\t<key>DefaultServerList</key>
-\t<array>${serverListXML}
-\t</array>
-${enableServerManagementXML}${enableAutoUpdaterXML}</dict>
-</plist>
-`;
-
-    // ~/Library/Preferences/ is user-writable — no sudo required.
-    fs.mkdirSync(path.dirname(MACOS_PLIST_PATH), {recursive: true});
-    fs.writeFileSync(MACOS_PLIST_PATH, plistContent, 'utf8');
-
-    // Tell the OS to reload preferences from disk so the change is visible
-    // to CFPreferencesCopyAppValue immediately (macOS caches prefs aggressively).
+    // First delete any stale preferences so we start clean.
     try {
-        execFileSync('defaults', ['read', 'com.github.Electron'], {stdio: 'ignore'});
+        execFileSync('defaults', ['delete', APP_ID], {stdio: 'ignore'});
     } catch (err) {
-        // defaults read may fail if the plist format isn't recognized yet; ignore.
+        // Ignore — domain may not exist yet.
+    }
+
+    // Write DefaultServerList as an XML-format array using `defaults write`.
+    // Each server dict is written as a plist fragment accepted by `defaults write -array`.
+    if (servers.length > 0) {
+        const serverDicts = servers.map(({name, url}) =>
+            `<dict><key>name</key><string>${name}</string><key>url</key><string>${url}</string></dict>`,
+        );
+        execFileSync('defaults', ['write', APP_ID, 'DefaultServerList', '-array', ...serverDicts]);
+    }
+
+    if (enableServerManagement !== undefined) {
+        execFileSync('defaults', ['write', APP_ID, 'EnableServerManagement', '-bool', enableServerManagement ? 'true' : 'false']);
+    }
+
+    if (enableAutoUpdater !== undefined) {
+        execFileSync('defaults', ['write', APP_ID, 'EnableAutoUpdater', '-bool', enableAutoUpdater ? 'true' : 'false']);
     }
 }
 
@@ -134,9 +107,9 @@ function cleanupPolicy() {
         }
     } else if (process.platform === 'darwin') {
         try {
-            fs.unlinkSync(MACOS_PLIST_PATH);
+            execFileSync('defaults', ['delete', 'com.github.Electron'], {stdio: 'ignore'});
         } catch (err) {
-            // Ignore — file may not exist
+            // Ignore — domain may not exist
         }
     }
 }
