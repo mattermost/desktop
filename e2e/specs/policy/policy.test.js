@@ -81,9 +81,27 @@ function setupMacOSPolicy({servers = [], enableServerManagement, enableAutoUpdat
     // Write DefaultServerList as an XML-format array using `defaults write`.
     // Each server dict is written as a plist fragment accepted by `defaults write -array`.
     if (servers.length > 0) {
-        const serverDicts = servers.map(({name, url}) =>
-            `<dict><key>name</key><string>${name}</string><key>url</key><string>${url}</string></dict>`,
-        );
+        const escapeXml = (value) => String(value).replace(/[&<>"']/g, (ch) => {
+            switch (ch) {
+            case '&':
+                return '&amp;';
+            case '<':
+                return '&lt;';
+            case '>':
+                return '&gt;';
+            case '"':
+                return '&quot;';
+            case '\'':
+                return '&apos;';
+            default:
+                return ch;
+            }
+        });
+        const serverDicts = servers.map(({name, url}) => {
+            const escapedName = escapeXml(name);
+            const escapedUrl = escapeXml(url);
+            return `<dict><key>name</key><string>${escapedName}</string><key>url</key><string>${escapedUrl}</string></dict>`;
+        });
         execFileSync('defaults', ['write', APP_ID, 'DefaultServerList', '-array', ...serverDicts]);
     }
 
