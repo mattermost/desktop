@@ -39,6 +39,17 @@ function setupWindowsPolicy({servers = [], enableServerManagement, enableAutoUpd
     // beyond the fixed registry paths and typed values.
     const ps = 'powershell.exe';
 
+    // Remove any pre-existing Mattermost policy key so stale values from a previous
+    // test run (or from the developer's own machine) don't bleed into this test.
+    try {
+        execFileSync(ps, [
+            '-NonInteractive', '-Command',
+            `Remove-Item -Path '${WIN_REG_PATH}' -Recurse -Force -ErrorAction SilentlyContinue`,
+        ]);
+    } catch (err) {
+        // Ignore — key may not exist
+    }
+
     execFileSync(ps, ['-NonInteractive', '-Command', `New-Item -Path '${WIN_REG_PATH}' -Force | Out-Null`]);
 
     if (servers.length > 0) {
