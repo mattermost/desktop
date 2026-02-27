@@ -4,6 +4,7 @@
 'use strict';
 
 const {execFileSync} = require('child_process');
+const fs = require('fs');
 
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
@@ -210,6 +211,113 @@ function cleanupPolicy() {
         // The Add Server button should not be present when enableServerManagement=false
         const addServerVisible = await dropdownWindow.isVisible('.ServerDropdown__button.addServer');
         addServerVisible.should.be.false;
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Suite D — No-Policy: welcome screen shown when no servers or policy exist
+// ---------------------------------------------------------------------------
+// This baseline test is the inverse of Suite A. It confirms that when the OS
+// has NO Mattermost policy keys and no local config, the app shows the welcome
+// screen — not a server loaded from a stale policy key on the CI runner.
+(isSupported ? describe : describe.skip)('MM-T_GPO_NoPolicySuite - No-policy baseline: default app behaviour without GPO/MDM', function desc() {
+    this.timeout(60000);
+
+    beforeEach(async () => {
+        // Guarantee no OS policy exists before the app starts.
+        cleanupPolicy();
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        await asyncSleep(500);
+        this.app = await env.getApp();
+        await asyncSleep(1000);
+    });
+
+    afterEach(async () => {
+        if (this.app) {
+            try {
+                await this.app.close();
+            } catch (err) {
+                // ignore
+            }
+        }
+        await env.clearElectronInstances();
+    });
+
+    it('MM-T_GPO_NP_1 should show the welcome screen when no policy and no config exist', async () => {
+        // If a stale policy key is present on the runner, the app skips the welcome
+        // screen and shows the server dropdown instead — this test will catch it.
+        let welcomeScreenModal = this.app.windows().find((window) => window.url().includes('welcomeScreen'));
+        if (!welcomeScreenModal) {
+            welcomeScreenModal = await this.app.waitForEvent('window', {
+                predicate: (window) => window.url().includes('welcomeScreen'),
+                timeout: 10000,
+            });
+        }
+        await welcomeScreenModal.waitForLoadState('domcontentloaded');
+
+        const buttonText = await welcomeScreenModal.innerText('.WelcomeScreen .WelcomeScreen__button');
+        buttonText.should.equal('Get Started');
+    });
+
+    it('MM-T_GPO_NP_3 should report enableUpdateNotifications=true when no policy is applied', async () => {
+        // Baseline for Suite C (EnableAutoUpdater=false). Proves that the default
+        // combinedData value is true, so Suite C's assertion that policy sets it to
+        // false is not vacuous.
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        const config = await mainWindow.evaluate(() => window.desktop.getConfiguration());
+        config.enableUpdateNotifications.should.be.true;
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Suite E — No-Policy: server management controls visible by default
+// ---------------------------------------------------------------------------
+// Baseline for Suite B (EnableServerManagement=false). Confirms the Add Server
+// button IS visible when no policy is applied — proving Suite B's assertion that
+// it disappears under policy is not vacuous.
+(isSupported ? describe : describe.skip)('MM-T_GPO_NoPolicyServerMgmt - No-policy baseline: server management enabled by default', function desc() {
+    this.timeout(60000);
+
+    beforeEach(async () => {
+        cleanupPolicy();
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        // Write demoConfig so the app starts with servers (skips welcome screen).
+        fs.writeFileSync(env.configFilePath, JSON.stringify(env.demoConfig));
+        await asyncSleep(500);
+        this.app = await env.getApp();
+        await asyncSleep(1000);
+    });
+
+    afterEach(async () => {
+        if (this.app) {
+            try {
+                await this.app.close();
+            } catch (err) {
+                // ignore
+            }
+        }
+        await env.clearElectronInstances();
+    });
+
+    it('MM-T_GPO_NP_2 should show the Add Server button when no policy restricts server management', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.click('.ServerDropdownButton');
+
+        let dropdownWindow;
+        const deadline = Date.now() + 5000;
+        while (!dropdownWindow && Date.now() < deadline) {
+            dropdownWindow = this.app.windows().find((window) => window.url().includes('dropdown'));
+            if (!dropdownWindow) {
+                // eslint-disable-next-line no-await-in-loop
+                await asyncSleep(100);
+            }
+        }
+        dropdownWindow.should.be.ok;
+
+        const addServerVisible = await dropdownWindow.isVisible('.ServerDropdown__button.addServer');
+        addServerVisible.should.be.true;
     });
 });
 
