@@ -333,6 +333,7 @@ function cleanupPolicy() {
         cleanupPolicy();
         env.createTestUserDataDir();
         env.cleanTestConfig();
+
         // Write demoConfig so the app starts with servers (skips welcome screen).
         fs.writeFileSync(env.configFilePath, JSON.stringify(env.demoConfig));
         await asyncSleep(500);
