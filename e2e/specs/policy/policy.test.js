@@ -57,9 +57,10 @@ function setupWindowsPolicy({servers = [], enableServerManagement, enableAutoUpd
     if (servers.length > 0) {
         run(`New-Item -Path '${WIN_REG_SERVER_LIST_PATH}' -Force | Out-Null`);
         for (const {name, url} of servers) {
-            // Values are passed via -EncodedCommand so single-quotes / PowerShell
-            // metacharacters in name/url cannot break or inject into the script.
-            run(`New-ItemProperty -Path '${WIN_REG_SERVER_LIST_PATH}' -Name '${name}' -Value '${url}' -PropertyType String -Force | Out-Null`);
+            // Escape single quotes for PowerShell single-quoted string literals
+            const safeName = name.replace(/'/g, "''");
+            const safeUrl = url.replace(/'/g, "''");
+            run(`New-ItemProperty -Path '${WIN_REG_SERVER_LIST_PATH}' -Name '${safeName}' -Value '${safeUrl}' -PropertyType String -Force | Out-Null`);
         }
     }
 
