@@ -13,9 +13,21 @@ const {asyncSleep} = require('../../modules/utils');
 // Additionally, they are gated behind RUN_POLICY_E2E to avoid modifying developer machines unintentionally.
 const isSupported = env.isOneOf(['win32', 'darwin']) && process.env.RUN_POLICY_E2E === 'true';
 
-// Windows registry path (matches policyConfigLoader.ts WINDOWS_REGISTRY_PATH)
-const WIN_REG_PATH = 'HKCU:\\SOFTWARE\\Policies\\Mattermost';
-const WIN_REG_SERVER_LIST_PATH = `${WIN_REG_PATH}\\DefaultServerList`;
+// Windows registry paths (match policyConfigLoader.ts WINDOWS_REGISTRY_PATH).
+// Tests write to HKCU (no admin required). Cleanup also attempts HKLM so that
+// a pre-GPO-configured runner doesn't pollute the no-policy baseline tests.
+const WIN_REG_PATH_HKCU = 'HKCU:\\SOFTWARE\\Policies\\Mattermost';
+const WIN_REG_PATH_HKLM = 'HKLM:\\SOFTWARE\\Policies\\Mattermost';
+const WIN_REG_SERVER_LIST_PATH = `${WIN_REG_PATH_HKCU}\\DefaultServerList`;
+
+/**
+ * Encode a PowerShell script as a Base64 UTF-16LE string for -EncodedCommand.
+ * This avoids all single-quote / metacharacter escaping issues when interpolating
+ * arbitrary values (e.g. server URLs containing '&', "'", etc.) into PS scripts.
+ */
+function psEncode(script) {
+    return Buffer.from(script, 'utf16le').toString('base64');
+}
 
 /**
  * Write OS-level policy configuration before the Electron app launches.
@@ -34,43 +46,31 @@ function setupPolicy(config = {}) {
 }
 
 function setupWindowsPolicy({servers = [], enableServerManagement, enableAutoUpdater} = {}) {
-    // Use powershell.exe with -Command and a script block to avoid shell injection.
-    // Each call passes a self-contained script string with no external string interpolation
-    // beyond the fixed registry paths and typed values.
     const ps = 'powershell.exe';
+    const run = (script) => execFileSync(ps, ['-NonInteractive', '-EncodedCommand', psEncode(script)]);
 
-    // Remove any pre-existing Mattermost policy key so stale values from a previous
-    // test run (or from the developer's own machine) don't bleed into this test.
-    try {
-        execFileSync(ps, [
-            '-NonInteractive', '-Command',
-            `Remove-Item -Path '${WIN_REG_PATH}' -Recurse -Force -ErrorAction SilentlyContinue`,
-        ]);
-    } catch (err) {
-        // Ignore — key may not exist
-    }
-
-    execFileSync(ps, ['-NonInteractive', '-Command', `New-Item -Path '${WIN_REG_PATH}' -Force | Out-Null`]);
+    // Remove any pre-existing Mattermost policy key (HKCU only — tests run without admin)
+    // so stale values from a previous run don't bleed into this test.
+    run(`Remove-Item -Path '${WIN_REG_PATH_HKCU}' -Recurse -Force -ErrorAction SilentlyContinue`);
+    run(`New-Item -Path '${WIN_REG_PATH_HKCU}' -Force | Out-Null`);
 
     if (servers.length > 0) {
-        execFileSync(ps, ['-NonInteractive', '-Command', `New-Item -Path '${WIN_REG_SERVER_LIST_PATH}' -Force | Out-Null`]);
+        run(`New-Item -Path '${WIN_REG_SERVER_LIST_PATH}' -Force | Out-Null`);
         for (const {name, url} of servers) {
-            // Build the script as a single string — name/url are controlled test constants, not user input.
-            const script = `New-ItemProperty -Path '${WIN_REG_SERVER_LIST_PATH}' -Name '${name}' -Value '${url}' -PropertyType String -Force | Out-Null`;
-            execFileSync(ps, ['-NonInteractive', '-Command', script]);
+            // Values are passed via -EncodedCommand so single-quotes / PowerShell
+            // metacharacters in name/url cannot break or inject into the script.
+            run(`New-ItemProperty -Path '${WIN_REG_SERVER_LIST_PATH}' -Name '${name}' -Value '${url}' -PropertyType String -Force | Out-Null`);
         }
     }
 
     if (enableServerManagement !== undefined) {
-        const val = enableServerManagement ? '1' : '0';
-        const script = `New-ItemProperty -Path '${WIN_REG_PATH}' -Name 'EnableServerManagement' -Type DWord -Value ${val} -Force | Out-Null`;
-        execFileSync(ps, ['-NonInteractive', '-Command', script]);
+        const val = enableServerManagement ? 1 : 0;
+        run(`New-ItemProperty -Path '${WIN_REG_PATH_HKCU}' -Name 'EnableServerManagement' -Type DWord -Value ${val} -Force | Out-Null`);
     }
 
     if (enableAutoUpdater !== undefined) {
-        const val = enableAutoUpdater ? '1' : '0';
-        const script = `New-ItemProperty -Path '${WIN_REG_PATH}' -Name 'EnableAutoUpdater' -Type DWord -Value ${val} -Force | Out-Null`;
-        execFileSync(ps, ['-NonInteractive', '-Command', script]);
+        const val = enableAutoUpdater ? 1 : 0;
+        run(`New-ItemProperty -Path '${WIN_REG_PATH_HKCU}' -Name 'EnableAutoUpdater' -Type DWord -Value ${val} -Force | Out-Null`);
     }
 }
 
@@ -128,13 +128,34 @@ function setupMacOSPolicy({servers = [], enableServerManagement, enableAutoUpdat
 /** Remove OS-level policy configuration after each test. */
 function cleanupPolicy() {
     if (process.platform === 'win32') {
+        const ps = 'powershell.exe';
+        const run = (script) => execFileSync(ps, ['-NonInteractive', '-EncodedCommand', psEncode(script)]);
+
+        // Always remove HKCU (tests write here, no admin needed).
+        run(`Remove-Item -Path '${WIN_REG_PATH_HKCU}' -Recurse -Force -ErrorAction SilentlyContinue`);
+
+        // Attempt HKLM removal (requires admin — silently ignore if access is denied).
+        // policyConfigLoader reads both hives, so HKLM values would pollute the
+        // no-policy baseline tests on a real GPO-configured machine.
         try {
-            execFileSync('powershell.exe', [
-                '-NonInteractive', '-Command',
-                `Remove-Item -Path '${WIN_REG_PATH}' -Recurse -Force -ErrorAction SilentlyContinue`,
-            ]);
+            run(`Remove-Item -Path '${WIN_REG_PATH_HKLM}' -Recurse -Force -ErrorAction SilentlyContinue`);
         } catch (err) {
-            // Ignore — key may not exist
+            // Not an admin — can't remove HKLM. Check if values are actually present.
+        }
+
+        // Detect whether HKLM still has policy values and warn — the baseline tests
+        // (MM-T_GPO_NP_*) will likely fail on a machine with real GPO applied.
+        try {
+            const result = execFileSync(ps, [
+                '-NonInteractive', '-EncodedCommand',
+                psEncode(`(Test-Path -Path '${WIN_REG_PATH_HKLM}').ToString()`),
+            ], {encoding: 'utf8'});
+            if (result.trim() === 'True') {
+                // eslint-disable-next-line no-console
+                console.warn('[policy.test] WARNING: HKLM Mattermost policy key still exists — no-policy baseline tests may fail on this machine.');
+            }
+        } catch (err) {
+            // Ignore detection errors
         }
     } else if (process.platform === 'darwin') {
         try {
