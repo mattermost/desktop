@@ -9,7 +9,8 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 // Policy tests only run on Windows and macOS — Linux has no policyConfigLoader support.
-const isSupported = env.isOneOf(['win32', 'darwin']);
+// Additionally, they are gated behind RUN_POLICY_E2E to avoid modifying developer machines unintentionally.
+const isSupported = env.isOneOf(['win32', 'darwin']) && process.env.RUN_POLICY_E2E === 'true';
 
 // Windows registry path (matches policyConfigLoader.ts WINDOWS_REGISTRY_PATH)
 const WIN_REG_PATH = 'HKCU:\\SOFTWARE\\Policies\\Mattermost';
