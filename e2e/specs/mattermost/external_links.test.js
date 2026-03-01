@@ -9,13 +9,21 @@ const robot = require('robotjs');
 const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
-// Known external URL to paste into Mattermost and click
+// Known external URL to paste into Mattermost and click.
+// Must NOT match any server URL in the config, otherwise the app routes it
+// to an internal tab instead of the system browser.
 const EXTERNAL_URL = 'https://github.com/';
 
 describe('external_links', function desc() {
     this.timeout(90000);
 
-    const config = env.demoMattermostConfig;
+    // Use a config with only the Mattermost server so that EXTERNAL_URL is
+    // truly external (not registered as a server) and gets routed to the
+    // system browser via shell.openExternal.
+    const config = {
+        ...env.demoMattermostConfig,
+        servers: env.demoMattermostConfig.servers.filter((s) => !s.url.includes('github.com')),
+    };
 
     beforeEach(async () => {
         env.cleanDataDir();
@@ -40,9 +48,6 @@ describe('external_links', function desc() {
             await env.loginToMattermost(firstServer);
             await asyncSleep(2000);
 
-            // Install a spy on shell.openExternal in the Electron main process.
-            // This intercepts the call before any OS browser is launched, recording
-            // the URLs that would have been opened.
             await this.app.evaluate(({shell}) => {
                 shell._e2eOpenExternalCalls = [];
                 shell.openExternal = (url) => {

@@ -111,7 +111,8 @@ export class WebContentsEventManager {
                 return;
             }
 
-            this.log(webContentsId).info('Prevented desktop from navigating to external URL');
+            this.log(webContentsId).info('Opening external URL in system browser');
+            shell.openExternal(url);
             event.preventDefault();
         };
     };
