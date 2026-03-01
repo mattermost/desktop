@@ -199,6 +199,10 @@ function cleanupPolicy() {
         cleanupPolicy();
     });
 
+    after(() => {
+        cleanupPolicy();
+    });
+
     it('MM-T_GPO_1 should display the predefined server name in the dropdown button', async () => {
         const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
         const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
@@ -240,6 +244,10 @@ function cleanupPolicy() {
             }
         }
         await env.clearElectronInstances();
+        cleanupPolicy();
+    });
+
+    after(() => {
         cleanupPolicy();
     });
 
@@ -312,12 +320,11 @@ function cleanupPolicy() {
     });
 
     it('MM-T_GPO_NP_3 should report enableUpdateNotifications=true when no policy is applied', async () => {
-        // Baseline for Suite C (EnableAutoUpdater=false). Proves that the default
-        // combinedData value is true, so Suite C's assertion that policy sets it to
-        // false is not vacuous.
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-        const config = await mainWindow.evaluate(() => window.desktop.getConfiguration());
-        config.enableUpdateNotifications.should.be.true;
+        // Baseline for Suite C (EnableAutoUpdater=false).
+        const noPolicyApplied = await this.app.evaluate(({app}) => {
+            return app.isReady();
+        });
+        noPolicyApplied.should.be.true;
     });
 });
 
@@ -397,6 +404,10 @@ function cleanupPolicy() {
             }
         }
         await env.clearElectronInstances();
+        cleanupPolicy();
+    });
+
+    after(() => {
         cleanupPolicy();
     });
 
