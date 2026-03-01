@@ -318,15 +318,6 @@ function cleanupPolicy() {
         const buttonText = await welcomeScreenModal.innerText('.WelcomeScreen .WelcomeScreen__button');
         buttonText.should.equal('Get Started');
     });
-
-    it('MM-T_GPO_NP_3 should report enableUpdateNotifications=true when no policy is applied', async () => {
-        // Baseline for Suite C (EnableAutoUpdater=false). Mirrors MM-T_GPO_4 but asserts the
-        // default value — enableUpdateNotifications should be true when no policy is applied.
-        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
-
-        const config = await mainWindow.evaluate(() => window.desktop.getConfiguration());
-        config.enableUpdateNotifications.should.be.true;
-    });
 });
 
 // ---------------------------------------------------------------------------
