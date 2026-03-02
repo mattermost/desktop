@@ -202,7 +202,10 @@ jobs:
       - name: release/upload-to-s3
         run: aws s3 cp ./aws-s3-dist/ s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }} --cache-control "no-cache" --recursive
       - name: release/upload-latest-version
-        run: aws s3 cp ./${{ steps.generate-latest.outputs.FILENAME }} s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }}${{ steps.generate-latest.outputs.FILENAME }} --cache-control "no-cache"
+        env:
+          FILENAME: ${{ steps.generate-latest.outputs.FILENAME }}
+          BUCKET: ${{ secrets.MM_DESKTOP_RELEASE_BUCKET }}
+        run: aws s3 cp ./"$FILENAME" "s3://${BUCKET}${FILENAME}" --cache-control "no-cache"
 
   github-release:
     runs-on: ubuntu-22.04
