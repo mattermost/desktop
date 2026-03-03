@@ -315,6 +315,85 @@ describe('common/servers/serverManager', () => {
         });
     });
 
+    describe('editServer', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            Config.predefinedServers = [];
+            Config.localServers = [
+                {name: 'Local Server 1', url: 'http://local-1.com', order: 0},
+                {name: 'Local Server 2', url: 'http://local-2.com', order: 1},
+            ];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+
+            parseURL.mockImplementation((url) => new URL(url));
+
+            serverManager = new ServerManager();
+            serverManager.init();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should call reloadServer when the URL changes', () => {
+            const orderedServers = serverManager.getOrderedServers();
+            const server = orderedServers[0];
+            const reloadSpy = jest.spyOn(serverManager, 'reloadServer');
+
+            serverManager.editServer(server.id, {name: server.name, url: 'http://new-url.com'});
+
+            expect(reloadSpy).toHaveBeenCalledWith(server.id);
+            reloadSpy.mockRestore();
+        });
+
+        it('should not call reloadServer when only the name changes', () => {
+            const orderedServers = serverManager.getOrderedServers();
+            const server = orderedServers[0];
+            const reloadSpy = jest.spyOn(serverManager, 'reloadServer');
+            const emitSpy = jest.spyOn(serverManager, 'emit');
+
+            serverManager.editServer(server.id, {name: 'New Name', url: server.url.toString()});
+
+            expect(reloadSpy).not.toHaveBeenCalled();
+            expect(emitSpy).toHaveBeenCalledWith('server-name-changed', server.id);
+            reloadSpy.mockRestore();
+            emitSpy.mockRestore();
+        });
+
+        it('should not emit any events or reload when nothing changes', () => {
+            const orderedServers = serverManager.getOrderedServers();
+            const server = orderedServers[0];
+            const reloadSpy = jest.spyOn(serverManager, 'reloadServer');
+            const emitSpy = jest.spyOn(serverManager, 'emit');
+            emitSpy.mockClear();
+
+            serverManager.editServer(server.id, {name: server.name, url: server.url.toString()});
+
+            expect(reloadSpy).not.toHaveBeenCalled();
+            expect(emitSpy).not.toHaveBeenCalledWith('server-url-changed', expect.anything());
+            expect(emitSpy).not.toHaveBeenCalledWith('server-name-changed', expect.anything());
+            reloadSpy.mockRestore();
+            emitSpy.mockRestore();
+        });
+
+        it('should update the server URL and maintain order after reload', () => {
+            const orderedServers = serverManager.getOrderedServers();
+            const server = orderedServers[0];
+            const originalOrder = orderedServers.map((s) => s.name);
+
+            serverManager.editServer(server.id, {name: server.name, url: 'http://new-url.com'});
+
+            const newOrderedServers = serverManager.getOrderedServers();
+            const newOrder = newOrderedServers.map((s) => s.name);
+            expect(newOrder).toEqual(originalOrder);
+
+            const updatedServer = newOrderedServers.find((s) => s.name === server.name);
+            expect(updatedServer.url.toString()).toBe('http://new-url.com/');
+        });
+    });
+
     describe('reordering with predefined servers', () => {
         let serverManager;
 
