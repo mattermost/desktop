@@ -20,7 +20,6 @@ import {
     GET_IS_DEV_MODE,
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
-    SERVER_URL_CHANGED,
     OPEN_SERVER_EXTERNALLY,
     OPEN_POPOUT_MENU,
     UPDATE_SERVER_THEME,
@@ -67,16 +66,7 @@ export class WebContentsManager {
         if (process.platform !== 'linux') {
             nativeTheme.on('updated', this.handleDarkModeChanged);
         }
-
-        ServerManager.on(SERVER_URL_CHANGED, this.handleServerURLChanged);
     }
-
-    private handleServerURLChanged = (serverId: string) => {
-        const view = this.getView(serverId);
-        if (view) {
-            view.reload(view.currentURL);
-        }
-    };
 
     getView = (id: string) => {
         return this.webContentsViews.get(id);

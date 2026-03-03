@@ -156,13 +156,12 @@ export class ServerManager extends EventEmitter {
         existingServer.updateURL(server.url);
         this.servers.set(serverId, existingServer);
 
+        this.persistServers();
         if (urlChanged) {
-            this.reloadServer(serverId);
-        } else {
-            this.persistServers();
-            if (nameChanged) {
-                this.emit(SERVER_NAME_CHANGED, serverId);
-            }
+            this.emit(SERVER_URL_CHANGED, serverId);
+        }
+        if (nameChanged) {
+            this.emit(SERVER_NAME_CHANGED, serverId);
         }
         return existingServer;
     };
