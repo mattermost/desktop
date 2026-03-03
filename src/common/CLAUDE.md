@@ -1,6 +1,6 @@
 # src/common/ — Shared Modules
 
-Shared modules that live in the main process. Can be imported from renderer code but generally shouldn't be — renderer should use IPC via the preload API instead.
+Shared modules live in the main process. They can be imported from renderer code, but generally should not be—the renderer should use IPC via the preload API instead.
 
 ## Key modules
 
