@@ -6,6 +6,8 @@ Each step extends `DiagnosticStep` (with retry support and duration tracking) in
 
 To add a step: copy `steps/step.template.ts`, implement `run()`, and register it in `index.ts`.
 
+## Extending diagnostics
+
 ### Example: adding a new step
 
 ```typescript
