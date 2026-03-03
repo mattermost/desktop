@@ -6,7 +6,7 @@ The app has two layers of abstraction for what the user sees:
 
 - **Views** are Electron `WebContentsView` instances — the actual rendered content. `MattermostWebContentsView` wraps one per server, loading the web app with the external preload script. 
 
-Other views include `LoadingScreen`, `ServerDropdownView`, `DownloadsDropdownView`, and modal views. These are overlays on windows that provided additional functionality.
+Other views include `LoadingScreen`, `ServerDropdownView`, `DownloadsDropdownView`, and modal views. These are overlays on windows that provide additional functionality.
 
 - **Tabs** are the user-facing representation of views in the tab bar. A server can have multiple tabs. Tabs map to views, but the tab layer handles ordering, switching, and persistence independently.
 
