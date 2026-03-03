@@ -80,7 +80,7 @@ describe('MattermostView', () => {
             expect(view.getLoadingURL().toString()).toBe('https://test.com/channels/town-square?teid=test-team-id');
         });
 
-        it('should preserve query string in initial path for root pathname with a subpath', () => {
+        it('should preserve query string in initial path for server URL with a subpath', () => {
             mockServer.url = new URL('https://test.com/subpath');
             const view = new MattermostView(mockServer, ViewType.TAB, '/channels/town-square?teid=test-team-id&channel_id=test-channel-id');
 
@@ -124,6 +124,25 @@ describe('MattermostView', () => {
             mockServer.url = new URL('https://test.com/');
             const view = new MattermostView(mockServer, ViewType.TAB, '/channels/town-square');
             expect(view.getLoadingURL().toString()).toBe('https://test.com/channels/town-square');
+        });
+
+        it('should call isInternalURL with the constructed URL and server URL', () => {
+            mockServer.url = new URL('https://test.com/');
+            const view = new MattermostView(mockServer, ViewType.TAB, '/channels/town-square');
+            view.getLoadingURL();
+
+            expect(isInternalURL).toHaveBeenCalledWith(
+                new URL('https://test.com/channels/town-square'),
+                mockServer.url,
+            );
+        });
+
+        it('should fall back to server URL when isInternalURL returns false', () => {
+            mockServer.url = new URL('https://test.com/subpath');
+            isInternalURL.mockReturnValue(false);
+            const view = new MattermostView(mockServer, ViewType.TAB, '/some/external/path');
+
+            expect(view.getLoadingURL()).toEqual(mockServer.url);
         });
     });
 });

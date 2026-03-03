@@ -66,7 +66,7 @@ export class MattermostView {
         }
 
         // Fall back to the server URL if the URL is not internal
-        if (!isInternalURL(server.url, url)) {
+        if (!isInternalURL(url, server.url)) {
             return server.url;
         }
         return url;
