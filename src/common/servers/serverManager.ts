@@ -149,20 +149,21 @@ export class ServerManager extends EventEmitter {
             return existingServer;
         }
 
-        const urlChanged = existingServer.url.toString() !== parseURL(server.url)?.toString();
-        const nameChanged = existingServer.name !== server.name;
+        const events: string[] = [];
+        if (existingServer.url.toString() !== parseURL(server.url)?.toString()) {
+            // Emit this event whenever we update a server URL to ensure remote info is fetched
+            events.push(SERVER_URL_CHANGED);
+        }
+        if (existingServer.name !== server.name) {
+            events.push(SERVER_NAME_CHANGED);
+        }
 
         existingServer.name = server.name;
         existingServer.updateURL(server.url);
         this.servers.set(serverId, existingServer);
 
         this.persistServers();
-        if (urlChanged) {
-            this.emit(SERVER_URL_CHANGED, serverId);
-        }
-        if (nameChanged) {
-            this.emit(SERVER_NAME_CHANGED, serverId);
-        }
+        events.forEach((event) => this.emit(event, serverId));
         return existingServer;
     };
 
