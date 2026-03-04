@@ -139,6 +139,7 @@ jobs:
     runs-on: macos-15
     env:
       MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
+      CI_MAC_ZIP_ONLY: true
     if: ${{ github.event.label.name == 'Build Apps for PR' }}
     steps:
       - name: ci/checkout-repo
@@ -156,7 +157,6 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
           brew install yq
-          jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
           npm ci
       - name: ci/build

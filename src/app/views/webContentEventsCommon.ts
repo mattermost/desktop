@@ -4,11 +4,10 @@ import path from 'path';
 
 import type {Event, WebContentsConsoleMessageEventParams} from 'electron';
 
+import {MATTERMOST_PROTOCOL} from 'common/constants';
 import type {Logger} from 'common/log';
 import {getLevel} from 'common/log';
 import {parseURL} from 'common/utils/url';
-
-import {protocols} from '../../../electron-builder.json';
 
 export const generateHandleConsoleMessage = (log: Logger) => (event: Event<WebContentsConsoleMessageEventParams>) => {
     const wcLog = log.withPrefix('renderer');
@@ -40,11 +39,9 @@ function sanitizeMessage(sourceURL: string, message: string) {
 }
 
 export function isCustomProtocol(url: URL) {
-    const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
-    return url.protocol !== 'http:' && url.protocol !== 'https:' && url.protocol !== `${scheme}:`;
+    return url.protocol !== 'http:' && url.protocol !== 'https:' && url.protocol !== `${MATTERMOST_PROTOCOL}:`;
 }
 
 export function isMattermostProtocol(url: URL) {
-    const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
-    return url.protocol === `${scheme}:`;
+    return url.protocol === `${MATTERMOST_PROTOCOL}:`;
 }

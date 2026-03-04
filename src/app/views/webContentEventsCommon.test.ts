@@ -10,13 +10,8 @@ import {parseURL} from 'common/utils/url';
 import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
 
 // Mock the electron-builder.json protocols
-jest.mock('../../../electron-builder.json', () => ({
-    protocols: [
-        {
-            name: 'Mattermost',
-            schemes: ['mattermost'],
-        },
-    ],
+jest.mock('common/constants', () => ({
+    MATTERMOST_PROTOCOL: 'mattermost',
 }));
 
 // Mock the log module

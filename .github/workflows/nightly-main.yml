@@ -133,8 +133,6 @@ jobs:
           npm ci
       - name: nightly/copy-provisioning-profile
         run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
-      - name: nightly/patch-version-number-for-MAS
-        run: ./scripts/patch_mas_version.sh
       - name: nightly/test
         uses: ./.github/actions/test
       - name: nightly/package
