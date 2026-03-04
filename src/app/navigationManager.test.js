@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {dialog} from 'electron';
+
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -207,10 +209,11 @@ describe('app/navigationManager', () => {
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
         });
 
-        it('should handle unparseable URL gracefully', () => {
+        it('should handle unparseable URL gracefully and show error dialog', () => {
             navigationManager.openLinkInPrimaryTab('not-a-valid-url');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
         });
     });
 
@@ -292,10 +295,11 @@ describe('app/navigationManager', () => {
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
         });
 
-        it('should handle unparseable URL gracefully', () => {
+        it('should handle unparseable URL gracefully and show error dialog', () => {
             navigationManager.openLinkInNewTab('not-a-valid-url');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
         });
 
         it('should handle missing view gracefully', () => {

@@ -336,7 +336,7 @@ describe('main/views/webContentsEvents', () => {
 
         it('should open external URIs in browser', () => {
             expect(newWindow({url: 'https://google.com'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('https://google.com');
+            expect(shell.openExternal).toBeCalledWith('https://google.com/');
         });
 
         it('should dispose context menu when popup window closes', () => {
