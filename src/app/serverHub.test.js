@@ -494,6 +494,55 @@ describe('app/serverViewState', () => {
             expect(result.validatedURL).toBe('https://server.com/');
         });
 
+        it('should preserve the original URL with subpaths when validation fails all the way down', async () => {
+            ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => {
+                    throw new Error();
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'https://not-server.com/some/deep/path');
+            expect(result.status).toBe(URLValidationStatus.NotMattermost);
+            expect(result.validatedURL).toBe('https://not-server.com/some/deep/path');
+        });
+
+        it('should preserve the original URL with subpaths when entered without protocol', async () => {
+            ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => {
+                    throw new Error();
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'not-server.com/some/path');
+            expect(result.status).toBe(URLValidationStatus.NotMattermost);
+            expect(result.validatedURL).toBe('https://not-server.com/some/path');
+        });
+
+        it('should use the matched URL when a subpath-stripped URL finds a valid server', async () => {
+            ServerInfo.mockImplementation(({url}) => ({
+                pingServer: jest.fn().mockImplementation(() => {
+                    if (url !== 'https://server.com/') {
+                        throw new Error();
+                    }
+                    return {status: 'OK'};
+                }),
+                fetchConfigData: jest.fn().mockImplementation(() => {
+                    if (url !== 'https://server.com/') {
+                        throw new Error();
+                    }
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: 'https://server.com/',
+                    };
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com/extra/path');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
         it('should warn the user when the Site URL already exists as another server', async () => {
             ServerManager.lookupServerByURL.mockReturnValue({name: 'Test Server 1', id: 'server-1', url: new URL('https://mainserver.com')});
             ServerInfo.mockImplementation(() => ({

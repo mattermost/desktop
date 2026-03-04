@@ -195,9 +195,6 @@ export class ServerHub {
     ): Promise<URLValidationResult> => {
         log.verbose('handleServerURLValidation', {currentId});
         let originalURL = originalUrl;
-        if (!originalURL) {
-            originalURL = url;
-        }
 
         // If the URL is missing or null, reject
         if (!url) {
@@ -223,6 +220,10 @@ export class ServerHub {
         if (!parsedURL) {
             log.debug('handleServerURLValidation: URL is invalid');
             return {status: URLValidationStatus.Invalid};
+        }
+
+        if (!originalURL) {
+            originalURL = parsedURL.toString();
         }
 
         // Try and add HTTPS to see if we can get a more secure URL
@@ -363,7 +364,7 @@ export class ServerHub {
             log.debug('handleServerURLValidation: Remote info is missing, returning NotMattermost');
             return {
                 status: URLValidationStatus.NotMattermost,
-                validatedURL: parsedURL.toString().replace(/\/$/, ''),
+                validatedURL: (originalURL ?? parsedURL.toString()).replace(/\/$/, ''),
             };
         }
 
