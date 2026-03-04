@@ -99,6 +99,11 @@ jest.mock('common/config', () => {
     };
 });
 
+jest.mock('common/config/policyConfigLoader', () => ({
+    getPolicyConfig: jest.fn().mockReturnValue({}),
+    getAppsUseLightTheme: jest.fn().mockReturnValue(true),
+}));
+
 const downloadsJson = {
     'file1.txt': {
         addedAt: 1662545584346,

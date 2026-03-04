@@ -31,6 +31,7 @@ module.exports = {
         playwright: 'require("playwright")',
         robotjs: 'require("robotjs")',
         'registry-js': 'require("registry-js")',
+        'cf-prefs': 'require("cf-prefs")',
         'macos-notification-state': 'require("macos-notification-state")',
         'electron-is-dev': 'require("electron-is-dev")',
     },

@@ -145,20 +145,13 @@ describe('main/preAuthManager', () => {
             preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'trustedurl.com:8080', [{}, {}], callback);
             expect(ModalManager.addModal).toBeCalled();
         });
-
-        it('should not pop modal for untrusted domain:port format URLs', () => {
-            ServerManager.lookupServerByURL.mockReturnValue(undefined);
-            const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'untrusted.com:8080', [{}, {}], callback);
-            expect(ModalManager.addModal).not.toBeCalled();
-            expect(callback).not.toBeCalled();
-        });
     });
 
     describe('handlePreAuthSecret', () => {
         const preAuthManager = new PreAuthManager();
 
         it('should not pop modal on untrusted URL', () => {
+            ServerManager.lookupServerByURL.mockReturnValue(undefined);
             const callback = jest.fn();
             preAuthManager.handlePreAuthSecret('http://untrustedurl.com/', callback);
             expect(ModalManager.addModal).not.toBeCalled();

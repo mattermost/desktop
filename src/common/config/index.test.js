@@ -28,12 +28,14 @@ const buildServer = {
     name: 'build-server-1',
     order: 0,
     url: 'http://build-server-1.com',
+    isPredefined: true,
 };
 
 const registryServer = {
     name: 'registry-server-1',
     order: 0,
     url: 'http://registry-server-1.com',
+    isPredefined: true,
 };
 
 const server = {
@@ -56,9 +58,10 @@ jest.mock('common/config/buildConfig', () => {
     };
 });
 
-jest.mock('common/config/RegistryConfig', () => {
-    return jest.fn();
-});
+jest.mock('common/config/policyConfigLoader', () => ({
+    getPolicyConfig: jest.fn().mockReturnValue({}),
+    getAppsUseLightTheme: jest.fn().mockReturnValue(true),
+}));
 
 jest.mock('electron', () => ({
     app: {
@@ -310,7 +313,7 @@ describe('common/config', () => {
             config.defaultConfigData = {defaultSetting: 'default', otherDefaultSetting: 'default'};
             config.localConfigData = {otherDefaultSetting: 'local', localSetting: 'local', otherLocalSetting: 'local'};
             config.buildConfigData = {otherLocalSetting: 'build', buildSetting: 'build', otherBuildSetting: 'build'};
-            config.registryConfigData = {otherBuildSetting: 'registry', registrySetting: 'registry'};
+            config.policyConfigData = {otherBuildSetting: 'registry', registrySetting: 'registry'};
 
             config.regenerateCombinedConfigData();
             config.combinedData.darkMode = false;
@@ -334,7 +337,7 @@ describe('common/config', () => {
             config.defaultConfigData = {};
             config.localConfigData = {};
             config.buildConfigData = {enableServerManagement: true};
-            config.registryConfigData = {};
+            config.policyConfigData = {};
             config.predefinedServers.push(server, server);
             config.localConfigData = {servers: [
                 server,

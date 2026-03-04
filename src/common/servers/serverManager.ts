@@ -21,7 +21,7 @@ import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
 
-import type {Server} from 'types/config';
+import type {ConfigServer, Server} from 'types/config';
 import type {RemoteInfo} from 'types/server';
 
 const log = new Logger('ServerManager');
@@ -53,10 +53,7 @@ export class ServerManager extends EventEmitter {
     };
 
     getOrderedServers = () => {
-        return [
-            ...[...this.servers.values()].filter((srv) => srv.isPredefined),
-            ...this.serverOrder.map((id) => this.servers.get(id)!),
-        ];
+        return this.serverOrder.map((id) => this.servers.get(id)!);
     };
 
     getCurrentServerId = () => {
@@ -125,9 +122,7 @@ export class ServerManager extends EventEmitter {
         log.debug('addServerToMap', newServer.id, newServer.name);
 
         this.servers.set(newServer.id, newServer);
-        if (!newServer.isPredefined) {
-            this.serverOrder.push(newServer.id);
-        }
+        this.serverOrder.push(newServer.id);
 
         if (setAsCurrentServer) {
             this.currentServerId = newServer.id;
@@ -221,10 +216,7 @@ export class ServerManager extends EventEmitter {
     updateServerOrder = (serverOrder: string[]) => {
         log.debug('updateServerOrder', {serverOrder});
 
-        this.serverOrder = serverOrder.filter((id) => {
-            const server = this.servers.get(id);
-            return server && !server.isPredefined;
-        });
+        this.serverOrder = serverOrder;
         this.persistServers();
         this.emit(SERVER_ORDER_UPDATED, serverOrder);
     };
@@ -283,13 +275,9 @@ export class ServerManager extends EventEmitter {
         const originalIndex = this.serverOrder.findIndex((id) => id === serverId);
 
         this.removeServer(serverId);
-        const newServer = server.isPredefined ? this.addServerToMap(server, wasCurrent, false) : this.addServer(server.toUniqueServer());
-        if (wasCurrent && !server.isPredefined) {
+        const newServer = this.addServerToMap(server, wasCurrent, false);
+        if (wasCurrent) {
             this.updateCurrentServer(newServer.id);
-        }
-
-        if (server.isPredefined) {
-            return;
         }
 
         // Move the serverId back to its original position in serverOrder using updateServerOrder
@@ -309,13 +297,43 @@ export class ServerManager extends EventEmitter {
         this.currentServerId = undefined;
 
         // Add the servers from the config
-        let initialServers = [];
-        Config.predefinedServers.forEach((server) => {
+        let initialServers: MattermostServer[] = [];
+
+        // Add the unordered predefined servers first
+        const unorderedPredefinedServers = Config.predefinedServers.filter((server) =>
+            !Config.localServers.some((localServer) =>
+                localServer.isPredefined && parseURL(localServer.url)?.toString() === parseURL(server.url)?.toString()));
+
+        // Then add the rest of the servers, sorted by order
+        const restOfServers: ConfigServer[] = [];
+        if (Config.enableServerManagement) {
+            restOfServers.push(...Config.localServers.filter((server) => !server.isPredefined));
+        }
+        restOfServers.push(
+            ...Config.localServers.map((server) => {
+                if (!server.isPredefined) {
+                    return undefined;
+                }
+                const predefinedServer = Config.predefinedServers.find((predefinedServer) =>
+                    parseURL(predefinedServer.url)?.toString() === parseURL(server.url)?.toString());
+                if (!predefinedServer) {
+                    return undefined;
+                }
+                return {
+                    ...server,
+                    name: predefinedServer.name,
+                };
+            }).filter((server): server is ConfigServer => server !== undefined),
+        );
+        restOfServers.sort((a, b) => a.order - b.order);
+
+        unorderedPredefinedServers.forEach((server) => {
             initialServers.push(this.createServer(server, true));
         });
-        if (Config.enableServerManagement) {
-            initialServers.push(...Config.localServers.sort((a, b) => a.order - b.order).map((server) => this.createServer(server, false)));
-        }
+        restOfServers.forEach((server) => {
+            initialServers.push(this.createServer(server, server.isPredefined ?? false));
+        });
+
         initialServers = this.filterOutDuplicateServers(initialServers);
 
         // Set the current server based on config if the user last used a local server
@@ -326,13 +344,14 @@ export class ServerManager extends EventEmitter {
         }
 
         initialServers.forEach((server, index) => this.addServerToMap(server, currentServerIndex === index, false));
+        this.persistServers();
     };
 
     private filterOutDuplicateServers = (servers: MattermostServer[]) => {
         const uniqueServers = new Map<string, MattermostServer>();
         servers.forEach((server) => {
-            if (!uniqueServers.has(`${server.name}:${server.url.toString()}`)) {
-                uniqueServers.set(`${server.name}:${server.url.toString()}`, server);
+            if (!uniqueServers.has(`${server.url.toString()}`) || server.isPredefined) {
+                uniqueServers.set(`${server.url.toString()}`, server);
             }
         });
         return [...uniqueServers.values()];
@@ -340,9 +359,10 @@ export class ServerManager extends EventEmitter {
 
     private persistServers = () => {
         const localServers = [...this.servers.values()].
-            filter((srv) => !srv.isPredefined).map((srv) => ({
+            map((srv) => ({
                 name: srv.name,
                 url: srv.url.toString(),
+                isPredefined: srv.isPredefined,
                 order: this.serverOrder.indexOf(srv.id),
             }));
         Config.setServers(localServers, this.currentServerId ? this.getOrderedServers().findIndex((server) => server.id === this.currentServerId) : undefined);

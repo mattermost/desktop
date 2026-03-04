@@ -1,0 +1,16 @@
+diff --git a/node_modules/cf-prefs/index.js b/node_modules/cf-prefs/index.js
+index b86c7ba..e816a58 100644
+--- a/node_modules/cf-prefs/index.js
++++ b/node_modules/cf-prefs/index.js
+@@ -1,6 +1,8 @@
+-const preferences = require('bindings')('cf-prefs.node');
++const preferences = process.platform === 'darwin'
++  ? require('bindings')('cf-prefs.node')
++  : null;
+ 
+ module.exports = {
+-  getPreferenceValue: preferences.getValue,
+-  isPreferenceForced: preferences.isPreferenceForced,
++  getPreferenceValue: preferences ? preferences.getValue : () => undefined,
++  isPreferenceForced: preferences ? preferences.isPreferenceForced : () => false,
+ };
