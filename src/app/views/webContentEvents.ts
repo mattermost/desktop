@@ -89,7 +89,13 @@ export class WebContentsEventManager {
         return (event: Event, url: string) => {
             this.log(webContentsId).debug('will-navigate');
 
-            const parsedURL = parseURL(url)!;
+            const parsedURL = parseURL(url);
+            if (!parsedURL) {
+                this.log(webContentsId).warn(`Prevented navigation to invalid URL: ${url}`);
+                event.preventDefault();
+                return;
+            }
+
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
             if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {

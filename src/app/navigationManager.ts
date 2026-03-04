@@ -43,7 +43,15 @@ export class NavigationManager {
             return;
         }
 
-        const parsedURL = parseURL(url)!;
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
+            log.warn(`Ignoring invalid URL: ${url}`);
+            dialog.showErrorBox(
+                localizeMessage('app.navigationManager.invalidLinkTitle', 'Invalid Link'),
+                localizeMessage('app.navigationManager.invalidLinkDescription', 'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.'),
+            );
+            return;
+        }
         const server = ServerManager.lookupServerByURL(parsedURL, true);
 
         if (server) {

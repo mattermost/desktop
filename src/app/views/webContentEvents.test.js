@@ -122,6 +122,11 @@ describe('main/views/webContentsEvents', () => {
             expect(event.preventDefault).not.toBeCalled();
         });
 
+        it('should prevent navigation for invalid URLs', () => {
+            willNavigate(event, 'not-a-valid-url');
+            expect(event.preventDefault).toBeCalled();
+        });
+
         it('should not allow navigation under any other circumstances', () => {
             willNavigate(event, 'http://someotherurl.com');
             expect(event.preventDefault).toBeCalled();
