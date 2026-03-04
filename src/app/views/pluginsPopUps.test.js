@@ -136,7 +136,7 @@ describe('PluginsPopUpsManager', () => {
 
         // Verify opening custom protocols is handled through allowProtocolDialog
         expect(handlers['window-open']({url: 'custom:somelink'})).toEqual({action: 'deny'});
-        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:', 'custom:somelink');
+        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(new URL('custom:somelink'));
         expect(shell.openExternal).not.toHaveBeenCalledWith('custom:somelink');
 
         // Verify opening external links is allowed through browser
