@@ -19,7 +19,7 @@ import allowProtocolDialog from '../../main/security/allowProtocolDialog';
 jest.mock('electron', () => ({
     app: {},
     shell: {
-        openExternal: jest.fn(),
+        openExternal: jest.fn().mockResolvedValue(undefined),
     },
     BrowserWindow: jest.fn(),
     session: {},

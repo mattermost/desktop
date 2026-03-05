@@ -1,0 +1,146 @@
+name: E2E Policy Tests (GPO / MDM)
+
+on:
+  # remove Push trigger
+  push:
+    branches:
+      - policy_e2e_tests
+
+  workflow_dispatch:
+    inputs:
+      version_name:
+        type: string
+        description: "Desktop version to test (branch name, tag, or commit SHA)"
+        required: true
+        default: "master"
+      MM_TEST_SERVER_URL:
+        description: "Mattermost test server URL (provisioned by Matterwick)"
+        required: true
+        type: string
+      MM_TEST_USER_NAME:
+        description: "Admin username of the test instance"
+        required: false
+        type: string
+      MM_TEST_PASSWORD:
+        description: "Admin password of the test instance"
+        required: false
+        type: string
+      MM_SERVER_VERSION:
+        type: string
+        description: "Mattermost server version being tested"
+        required: true
+
+env:
+  AWS_S3_BUCKET: "mattermost-cypress-report"
+  BRANCH: ${{ github.ref_name }}
+  BUILD_TAG: ${{ github.sha }}
+  MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL || 'https://desktop-e2e.test.mattermost.cloud/' }}
+  MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
+  MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: "us-east-1"
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  NODE_ENV: "test"
+  DEBUG_E2E: "true"
+
+jobs:
+  e2e-policy:
+    name: policy-tests-${{ matrix.platform }}
+    strategy:
+      matrix:
+        include:
+          - platform: windows
+            runner: windows-2022
+          - platform: macos
+            runner: macos-latest
+      fail-fast: false
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: e2e/checkout-repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.version_name || github.ref }}
+
+      - name: e2e/setup-node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '22.x'
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: e2e/cache-node-modules
+        id: cache-node-modules
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: |
+            node_modules
+            C:\Users\runneradmin\.electron-gyp
+          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-node-modules
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: e2e/setup-python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.10"
+
+      - name: e2e/install-os-dependencies
+        uses: ./.github/actions/install-os-dependencies
+        with:
+          os: ${{ runner.os }}
+
+      - name: e2e/install-node-dependencies
+        run: |
+          npm ci
+          cd e2e && npm ci
+          npx electron-rebuild -f -t prod,optional,dev -w robotjs --module-dir ../
+
+      - name: e2e/build-test-bundle
+        run: npm run build-test
+
+      - name: e2e/run-policy-tests-macos
+        if: runner.os == 'macOS'
+        run: |
+          cd e2e
+          npm run run:policy || true
+          npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.version_name }}
+
+      - name: e2e/run-policy-tests-windows
+        if: runner.os == 'Windows'
+        run: |
+          cd e2e
+          npm run run:policy || true
+          npm run send-report
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.version_name }}
+
+      - name: e2e/check-for-failures
+        id: check-failures
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            process.chdir('./e2e');
+            const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
+            const { newFailedTests } = analyzeFlakyTests();
+            if (newFailedTests && newFailedTests.length > 0) {
+              core.setFailed(`${newFailedTests.length} policy test(s) failed:\n${newFailedTests.join('\n')}`);
+            }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: policy-test-results-${{ runner.os }}
+          path: e2e/mochawesome-report
+          retention-days: 7
