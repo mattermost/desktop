@@ -23,6 +23,9 @@ env:
   MM_WIN_INSTALLERS: 1
   REFERENCE: ${{ inputs.tag }}
 
+permissions:
+  contents: read
+
 jobs:
   build-linux:
     runs-on: ubuntu-22.04
