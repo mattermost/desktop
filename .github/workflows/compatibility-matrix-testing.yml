@@ -135,3 +135,20 @@ jobs:
           context: e2e/compatibility-matrix-testing
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: success
+
+  cleanup-cmt-instances:
+    runs-on: ubuntu-22.04
+    if: always()
+    needs:
+      - e2e
+    steps:
+      - name: cmt/cleanup-instances
+        if: ${{ inputs.cmt_run_id != '0' && inputs.cmt_run_id != '' }}
+        env:
+          MATTERWICK_URL: ${{ vars.MATTERWICK_URL }}
+          CMT_RUN_ID: ${{ inputs.cmt_run_id }}
+        run: |
+          curl -s -X POST "${MATTERWICK_URL}/cleanup_e2e" \
+            -H "Content-Type: application/json" \
+            -d "{\"repo\": \"desktop\", \"run_id\": ${CMT_RUN_ID}}" \
+            --fail-with-body || echo "Cleanup request failed (non-fatal)"
