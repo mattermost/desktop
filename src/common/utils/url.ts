@@ -11,8 +11,11 @@ export const parseURL = (inputURL: string | URL) => {
     if (inputURL instanceof URL) {
         return inputURL;
     }
+    if (inputURL.includes('\0') || inputURL.toLowerCase().includes('%00')) {
+        return undefined;
+    }
     try {
-        return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1')); // Regex here to remove extra slashes
+        return new URL(inputURL.replace(/([^:/]\/)\/+/g, '$1'));
     } catch (e) {
         return undefined;
     }
@@ -127,17 +130,4 @@ const equalUrlsIgnoringSubpath = (url1: URL, url2: URL, ignoreScheme?: boolean) 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
 const escapeRegExp = (s: string) => {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-};
-
-/**
- * Normalizes a URL for RFC 3986 validation by encoding characters that are
- * technically invalid but commonly used by applications like MS Teams, SharePoint, and OneNote.
- * - Converts Windows-style backslashes to forward slashes
- * - Encodes curly braces which are used in GUIDs and JSON-like query parameters
- */
-export const normalizeUrlForValidation = (url: string): string => {
-    return url.
-        replace(/\\/g, '/').
-        replace(/\{/g, '%7B').
-        replace(/\}/g, '%7D');
 };
