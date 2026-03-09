@@ -136,12 +136,12 @@ describe('PluginsPopUpsManager', () => {
 
         // Verify opening custom protocols is handled through allowProtocolDialog
         expect(handlers['window-open']({url: 'custom:somelink'})).toEqual({action: 'deny'});
-        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:', 'custom:somelink');
+        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(new URL('custom:somelink'));
         expect(shell.openExternal).not.toHaveBeenCalledWith('custom:somelink');
 
         // Verify opening external links is allowed through browser
         expect(handlers['window-open']({url: 'https://www.example.com'})).toEqual({action: 'deny'});
-        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com');
+        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com/');
 
         // Simulate render process gone
         handlers['render-process-gone'](null, {reason: 'oom'});

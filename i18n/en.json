@@ -1,6 +1,8 @@
 {
   "app.menus.contextMenu.openInNewTab": "Open in new tab",
   "app.menus.contextMenu.openInNewWindow": "Open in new window",
+  "app.navigationManager.invalidLinkDescription": "The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.",
+  "app.navigationManager.invalidLinkTitle": "Invalid Link",
   "app.navigationManager.viewLimitReached": "View limit reached",
   "app.navigationManager.viewLimitReached.description": "You have reached the maximum number of open windows and tabs for this server. Please close an existing window or tab, or adjust the view limit in the Settings modal.",
   "callsWidgetWindow.cannotStartCall.message": "There is an in-progress call on another server that must be ended before joining a new call.",
