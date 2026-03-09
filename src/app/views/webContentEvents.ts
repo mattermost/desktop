@@ -24,8 +24,6 @@ import {
     isPluginUrl,
     isPublicFilesUrl,
     isTeamUrl,
-    isValidURI,
-    normalizeUrlForValidation,
     parseURL,
 } from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
@@ -91,7 +89,13 @@ export class WebContentsEventManager {
         return (event: Event, url: string) => {
             this.log(webContentsId).debug('will-navigate');
 
-            const parsedURL = parseURL(url)!;
+            const parsedURL = parseURL(url);
+            if (!parsedURL) {
+                this.log(webContentsId).warn(`Prevented navigation to invalid URL: ${url}`);
+                event.preventDefault();
+                return;
+            }
+
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
             if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
@@ -127,14 +131,6 @@ export class WebContentsEventManager {
 
             const parsedURL = parseURL(details.url);
             if (!parsedURL) {
-                this.log(webContentsId).warn(`Ignoring non-url: ${details.url}`);
-                return {action: 'deny'};
-            }
-
-            // Normalize URL before validation to handle characters like backslashes and curly braces
-            // that are technically invalid per RFC 3986 but commonly used by apps like MS Teams,
-            // SharePoint, and OneNote
-            if (!isValidURI(normalizeUrlForValidation(details.url))) {
                 this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
                 dialog.showErrorBox(
                     localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
@@ -164,33 +160,35 @@ export class WebContentsEventManager {
 
             // Check for other custom protocols
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
+                allowProtocolDialog.handleDialogEvent(parsedURL);
                 return {action: 'deny'};
             }
 
+            const serializedURL = parsedURL.toString();
+
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
             if (!serverURL) {
-                shell.openExternal(details.url);
+                shell.openExternal(serializedURL);
                 return {action: 'deny'};
             }
 
             // Public download links case
             // we are going to mimic the browser and just pop a new browser window for public links
             if (isPublicFilesUrl(serverURL, parsedURL)) {
-                shell.openExternal(details.url);
+                shell.openExternal(serializedURL);
                 return {action: 'deny'};
             }
 
             // Image proxy case
             if (isImageProxyUrl(serverURL, parsedURL)) {
-                shell.openExternal(details.url);
+                shell.openExternal(serializedURL);
                 return {action: 'deny'};
             }
 
             if (isHelpUrl(serverURL, parsedURL)) {
                 // Help links case
                 // continue to open special case internal urls in default browser
-                shell.openExternal(details.url);
+                shell.openExternal(serializedURL);
                 return {action: 'deny'};
             }
 
@@ -202,7 +200,7 @@ export class WebContentsEventManager {
                 this.log(webContentsId).info('Admin console page detected, preventing new window');
                 return {action: 'deny'};
             }
-            if (this.popupWindow && this.popupWindow.win.webContents.getURL() === details.url) {
+            if (this.popupWindow && this.popupWindow.win.webContents.getURL() === serializedURL) {
                 this.log(webContentsId).info('Popup window already open at provided URL');
                 return {action: 'deny'};
             }
@@ -257,11 +255,11 @@ export class WebContentsEventManager {
                 popup.once('ready-to-show', () => popup.show());
 
                 if (isManagedResource(serverURL, parsedURL)) {
-                    popup.loadURL(details.url);
+                    popup.loadURL(serializedURL);
                 } else {
                     // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
                     // should be removed once a proper oAuth2 implementation is setup.
-                    popup.loadURL(details.url, {
+                    popup.loadURL(serializedURL, {
                         userAgent: composeUserAgent(),
                     });
                 }
@@ -276,7 +274,7 @@ export class WebContentsEventManager {
             }
 
             // If all else fails, just open externally
-            shell.openExternal(details.url);
+            shell.openExternal(serializedURL);
             return {action: 'deny'};
         };
     };
