@@ -141,7 +141,7 @@ describe('PluginsPopUpsManager', () => {
 
         // Verify opening external links is allowed through browser
         expect(handlers['window-open']({url: 'https://www.example.com'})).toEqual({action: 'deny'});
-        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com');
+        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com/');
 
         // Simulate render process gone
         handlers['render-process-gone'](null, {reason: 'oom'});
