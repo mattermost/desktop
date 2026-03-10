@@ -127,7 +127,6 @@ const config = {
         ],
         hardenedRuntime: true,
         gatekeeperAssess: true,
-        provisioningProfile: process.env.MAC_PROVISIONING_PROFILE || './mac.provisionprofile',
         entitlements: './resources/mac/entitlements.mac.plist',
         entitlementsInherit: './resources/mac/entitlements.mac.inherit.plist',
         extendInfo: {
