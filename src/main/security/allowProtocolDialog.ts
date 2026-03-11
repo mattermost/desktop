@@ -24,8 +24,10 @@ const BLOCKED_PROTOCOLS = new Set([
     'javascript:',
     'data:',
     'vbscript:',
-    'ms-msdt:',
-    'search-ms:',
+    'ms-msdt:',       // CVE-2021-34527 / Follina — MSDT remote code execution
+    'search-ms:',     // Windows Search protocol — can be abused for UNC path injection
+    'ms-appinstaller:', // CVE-2021-43890 — App Installer malware distribution vector
+    'ms-officecmd:',  // Office command handler — can trigger macro execution
 ]);
 
 export class AllowProtocolDialog {

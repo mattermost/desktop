@@ -107,6 +107,8 @@ describe('main/allowProtocolDialog', () => {
             allowProtocolDialog.addScheme('vbscript');
             allowProtocolDialog.addScheme('ms-msdt');
             allowProtocolDialog.addScheme('search-ms');
+            allowProtocolDialog.addScheme('ms-appinstaller');
+            allowProtocolDialog.addScheme('ms-officecmd');
 
             expect(allowProtocolDialog.allowedProtocols).not.toContain('file:');
             // eslint-disable-next-line no-script-url
@@ -115,6 +117,8 @@ describe('main/allowProtocolDialog', () => {
             expect(allowProtocolDialog.allowedProtocols).not.toContain('vbscript:');
             expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-msdt:');
             expect(allowProtocolDialog.allowedProtocols).not.toContain('search-ms:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-appinstaller:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-officecmd:');
         });
     });
 
@@ -206,6 +210,8 @@ describe('main/allowProtocolDialog', () => {
             ['vbscript:msgbox("hello")'],
             ['ms-msdt:/id PCWDiagnostic'],
             ['search-ms:query=test'],
+            ['ms-appinstaller://example.com/package.appinstaller'],
+            ['ms-officecmd://example.com/open?url=file.docx'],
         ])('should silently block %s without opening dialog or shell', async (urlStr) => {
             await allowProtocolDialog.handleDialogEvent(new URL(urlStr));
 
