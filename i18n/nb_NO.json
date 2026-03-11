@@ -1,6 +1,8 @@
 {
   "app.menus.contextMenu.openInNewTab": "Åpne i ny fane",
   "app.menus.contextMenu.openInNewWindow": "Åpne i et nytt vindu",
+  "app.navigationManager.invalidLinkDescription": "Lenken du klikket på, ser ut til å være ugyldig og kan ikke åpnes. Vennligst sjekk nettadressen for feil før du prøver på nytt.",
+  "app.navigationManager.invalidLinkTitle": "Ugyldig lenke",
   "app.navigationManager.viewLimitReached": "Visningsgrensen nådd",
   "app.navigationManager.viewLimitReached.description": "Du har nådd det maksimale antallet åpne vinduer og faner for denne serveren. Lukk et eksisterende vindu eller en fane, eller juster visningsgrensen i Innstillinger-modalen.",
   "callsWidgetWindow.cannotStartCall.message": "Det pågår et anrop på en annen server som må avsluttes før du kan bli med i et nytt anrop.",
