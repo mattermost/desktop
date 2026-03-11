@@ -111,22 +111,13 @@ export class WebContentsEventManager {
                 return;
             }
 
-            if (isMattermostProtocol(parsedURL)) {
-                NavigationManager.openLinkInNewTab(parsedURL);
-                event.preventDefault();
-                return;
-            }
-
             if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
                 event.preventDefault();
                 return;
             }
 
-            this.log(webContentsId).info('Opening external URL in system browser');
-            shell.openExternal(url).catch((err) => {
-                this.log(webContentsId).error(`Failed to open external URL: ${err}`);
-            });
+            this.log(webContentsId).info('Prevented desktop from navigating to external URL');
             event.preventDefault();
         };
     };

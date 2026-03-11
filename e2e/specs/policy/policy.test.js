@@ -20,6 +20,23 @@ const WIN_REG_PATH_HKCU = 'HKCU:\\SOFTWARE\\Policies\\Mattermost';
 const WIN_REG_PATH_HKLM = 'HKLM:\\SOFTWARE\\Policies\\Mattermost';
 const WIN_REG_SERVER_LIST_PATH = `${WIN_REG_PATH_HKCU}\\DefaultServerList`;
 
+// macOS CFPreferences domain used by policyConfigLoader.
+const APP_ID = 'com.github.Electron';
+
+// Escape XML special characters for use in plist fragments passed to `defaults write`.
+function escapeXml(value) {
+    return String(value).replace(/[&<>"']/g, (ch) => {
+        switch (ch) {
+        case '&': return '&amp;';
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '"': return '&quot;';
+        case '\'': return '&apos;';
+        default: return ch;
+        }
+    });
+}
+
 /**
  * Encode a PowerShell script as a Base64 UTF-16LE string for -EncodedCommand.
  * This avoids all single-quote / metacharacter escaping issues when interpolating
@@ -81,8 +98,6 @@ function setupMacOSPolicy({servers = [], enableServerManagement, enableAutoUpdat
     // CFPreferencesCopyAppValue returns the old (empty) value even after the plist
     // file has been written to disk.
 
-    const APP_ID = 'com.github.Electron';
-
     // First delete any stale preferences so we start clean.
     try {
         execFileSync('defaults', ['delete', APP_ID], {stdio: 'ignore'});
@@ -93,22 +108,6 @@ function setupMacOSPolicy({servers = [], enableServerManagement, enableAutoUpdat
     // Write DefaultServerList as an XML-format array using `defaults write`.
     // Each server dict is written as a plist fragment accepted by `defaults write -array`.
     if (servers.length > 0) {
-        const escapeXml = (value) => String(value).replace(/[&<>"']/g, (ch) => {
-            switch (ch) {
-            case '&':
-                return '&amp;';
-            case '<':
-                return '&lt;';
-            case '>':
-                return '&gt;';
-            case '"':
-                return '&quot;';
-            case '\'':
-                return '&apos;';
-            default:
-                return ch;
-            }
-        });
         const serverDicts = servers.map(({name, url}) => {
             const escapedName = escapeXml(name);
             const escapedUrl = escapeXml(url);
