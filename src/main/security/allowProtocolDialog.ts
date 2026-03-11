@@ -20,6 +20,7 @@ const log = new Logger('AllowProtocolDialog');
 // These are known attack vectors for remote code execution or local file access.
 const BLOCKED_PROTOCOLS = new Set([
     'file:',
+    // eslint-disable-next-line no-script-url
     'javascript:',
     'data:',
     'vbscript:',

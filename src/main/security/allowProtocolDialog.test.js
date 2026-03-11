@@ -109,6 +109,7 @@ describe('main/allowProtocolDialog', () => {
             allowProtocolDialog.addScheme('search-ms');
 
             expect(allowProtocolDialog.allowedProtocols).not.toContain('file:');
+            // eslint-disable-next-line no-script-url
             expect(allowProtocolDialog.allowedProtocols).not.toContain('javascript:');
             expect(allowProtocolDialog.allowedProtocols).not.toContain('data:');
             expect(allowProtocolDialog.allowedProtocols).not.toContain('vbscript:');
