@@ -127,11 +127,13 @@ jobs:
       DEBUG_E2E: "true"
     steps:
       - name: e2e/set-server-url
+        env:
+          INSTANCE_DETAILS: ${{ inputs.instance_details }}
         run: |
           RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
           URL=""
-          if [ -n '${{ inputs.instance_details }}' ]; then
-            URL=$(echo '${{ inputs.instance_details }}' | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
+          if [ -n "${INSTANCE_DETAILS}" ]; then
+            URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
           fi
           echo "MM_TEST_SERVER_URL=${URL:-https://mobile-e2e-site-2.test.mattermost.cloud/}" >> $GITHUB_ENV
 
