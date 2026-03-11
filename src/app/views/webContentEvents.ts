@@ -116,7 +116,7 @@ export class WebContentsEventManager {
             }
 
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
+                allowProtocolDialog.handleDialogEvent(parsedURL);
                 event.preventDefault();
                 return;
             }
