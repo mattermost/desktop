@@ -21,6 +21,8 @@ const WIN_REG_PATH_HKLM = 'HKLM:\\SOFTWARE\\Policies\\Mattermost';
 const WIN_REG_SERVER_LIST_PATH = `${WIN_REG_PATH_HKCU}\\DefaultServerList`;
 
 // macOS CFPreferences domain used by policyConfigLoader.
+// NOTE: 'com.github.Electron' is the bundle ID for unpackaged/dev builds. Production
+// builds use 'com.mattermost.desktop' — these tests must run against an unpackaged app.
 const APP_ID = 'com.github.Electron';
 
 // Escape XML special characters for use in plist fragments passed to `defaults write`.
@@ -159,7 +161,7 @@ function cleanupPolicy() {
         }
     } else if (process.platform === 'darwin') {
         try {
-            execFileSync('defaults', ['delete', 'com.github.Electron'], {stdio: 'ignore'});
+            execFileSync('defaults', ['delete', APP_ID], {stdio: 'ignore'});
         } catch (err) {
             // Ignore — domain may not exist
         }

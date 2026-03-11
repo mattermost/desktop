@@ -200,6 +200,8 @@ describe('main/allowProtocolDialog', () => {
 
         it.each([
             ['file:///etc/passwd'],
+            // eslint-disable-next-line no-script-url
+            ['javascript:alert(1)'],
             ['data:text/html,<script>alert(1)</script>'],
             ['vbscript:msgbox("hello")'],
             ['ms-msdt:/id PCWDiagnostic'],

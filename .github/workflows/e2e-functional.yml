@@ -104,10 +104,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - platform: linux
-            runner: ubuntu-24.04
+          - platform: macos
+            runner: macos-26
           - platform: windows
-            runner: windows-2022
+            runner: windows-2025
       fail-fast: false
     runs-on: ${{ matrix.runner }}
     defaults:
@@ -179,13 +179,11 @@ jobs:
       - name: e2e/build-test-bundle
         run: npm run build-test
 
-      - name: e2e/run-policy-tests-linux
-        if: runner.os == 'Linux'
+      - name: e2e/run-policy-tests-macos
+        if: runner.os == 'macOS'
         run: |
-          eval "$(dbus-launch --sh-syntax)"
-          export NO_AT_BRIDGE=1
           cd e2e
-          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm run run:policy || true
+          npm run run:policy || true
           npm run send-report
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
