@@ -68,7 +68,7 @@
   "main.badge.sessionExpired": "Sitzung abgelaufen: Bitte melde dich an um weiterhin Nachrichten zu empfangen.",
   "main.badge.unreadChannels": "Zu hast ungelesene Kanäle",
   "main.badge.unreadMentions": "Du hast ungelesene Erwähnungen ({mentionCount})",
-  "main.downloadsManager.resetDownloadsFolder": "Bitte setze den Ordner zurück, in den die Dateien heruntergeladen werden sollen",
+  "main.downloadsManager.resetDownloadsFolder": "Bitte setze den Ordner erneut, in den die Dateien heruntergeladen werden sollen",
   "main.downloadsManager.specifyDownloadsFolder": "Definiere das Verzeichnis in das Dateien heruntergeladen werden",
   "main.menus.app.edit": "Bearbeiten (&E)",
   "main.menus.app.edit.copy": "Kopieren",
