@@ -98,6 +98,28 @@ describe('main/allowProtocolDialog', () => {
 
             expect(allowProtocolDialog.allowedProtocols).toStrictEqual(['test:', 'test2:']);
         });
+
+        it('should not add blocked protocols', () => {
+            const allowProtocolDialog = new AllowProtocolDialog();
+            allowProtocolDialog.addScheme('file');
+            allowProtocolDialog.addScheme('javascript');
+            allowProtocolDialog.addScheme('data');
+            allowProtocolDialog.addScheme('vbscript');
+            allowProtocolDialog.addScheme('ms-msdt');
+            allowProtocolDialog.addScheme('search-ms');
+            allowProtocolDialog.addScheme('ms-appinstaller');
+            allowProtocolDialog.addScheme('ms-officecmd');
+
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('file:');
+            // eslint-disable-next-line no-script-url
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('javascript:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('data:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('vbscript:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-msdt:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('search-ms:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-appinstaller:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-officecmd:');
+        });
     });
 
     describe('handleDialogEvent', () => {
@@ -170,6 +192,31 @@ describe('main/allowProtocolDialog', () => {
 
                 expect(shell.openExternal).toBeCalledWith('bad-protocol://community.mattermost.com');
             });
+        });
+    });
+
+    describe('blocked protocols', () => {
+        let allowProtocolDialog;
+        beforeEach(() => {
+            MainWindow.get.mockImplementation(() => ({}));
+            allowProtocolDialog = new AllowProtocolDialog();
+        });
+
+        it.each([
+            ['file:///etc/passwd'],
+            // eslint-disable-next-line no-script-url
+            ['javascript:alert(1)'],
+            ['data:text/html,<script>alert(1)</script>'],
+            ['vbscript:msgbox("hello")'],
+            ['ms-msdt:/id PCWDiagnostic'],
+            ['search-ms:query=test'],
+            ['ms-appinstaller://example.com/package.appinstaller'],
+            ['ms-officecmd://example.com/open?url=file.docx'],
+        ])('should silently block %s without opening dialog or shell', async (urlStr) => {
+            await allowProtocolDialog.handleDialogEvent(new URL(urlStr));
+
+            expect(dialog.showMessageBox).not.toBeCalled();
+            expect(shell.openExternal).not.toBeCalled();
         });
     });
 });
