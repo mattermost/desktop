@@ -42,12 +42,9 @@ describe('window.close', function desc() {
         const serverView = this.serverMap[serverName][0].win;
 
         // Call window.close() in the server view's renderer process
-        try {
-            await serverView.evaluate(() => {
-                window.close();
-            });
-        // eslint-disable-next-line no-empty
-        } catch (err) {}
+        await serverView.evaluate(() => {
+            window.close();
+        });
 
         await asyncSleep(1000);
 
@@ -66,12 +63,9 @@ describe('window.close', function desc() {
         const serverName = config.servers[0].name;
         const serverView = this.serverMap[serverName][0].win;
 
-        try {
-            await serverView.evaluate(() => {
-                window.close();
-            });
-        // eslint-disable-next-line no-empty
-        } catch (err) {}
+        await serverView.evaluate(() => {
+            window.close();
+        });
 
         await asyncSleep(500);
 

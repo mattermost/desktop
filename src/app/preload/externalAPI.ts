@@ -209,8 +209,9 @@ setInterval(() => {
 contextBridge.executeInMainWorld({
     func: () => {
         Object.defineProperty(window, 'close', {
-            configurable: true,
-            writable: true,
+            configurable: false,
+            enumerable: false,
+            writable: false,
             value: () => {
                 (window as unknown as {desktopAPI: Pick<DesktopAPI, 'closeWindow'>}).desktopAPI.closeWindow();
             },
