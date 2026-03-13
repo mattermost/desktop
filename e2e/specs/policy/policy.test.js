@@ -374,6 +374,195 @@ function cleanupPolicy() {
 });
 
 // ---------------------------------------------------------------------------
+// Suite F — DefaultServerList with multiple servers
+// ---------------------------------------------------------------------------
+(isSupported ? describe : describe.skip)('MM-T_GPO_MultipleServers - Multiple predefined servers from policy appear in the dropdown', function desc() {
+    this.timeout(60000);
+
+    const policyServers = [
+        {name: 'Policy Server 1', url: env.mattermostURL},
+        {name: 'Policy Server 2', url: env.exampleURL},
+    ];
+
+    beforeEach(async () => {
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        setupPolicy({servers: policyServers});
+        await asyncSleep(500);
+        this.app = await env.getApp();
+        await asyncSleep(1000);
+    });
+
+    afterEach(async () => {
+        if (this.app) {
+            try {
+                await this.app.close();
+            } catch (err) {
+                // ignore
+            }
+        }
+        await env.clearElectronInstances();
+        cleanupPolicy();
+    });
+
+    after(() => {
+        cleanupPolicy();
+    });
+
+    it('MM-T_GPO_5 should display all predefined servers from policy in the dropdown', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.click('.ServerDropdownButton');
+
+        let dropdownWindow;
+        const deadline = Date.now() + 5000;
+        while (!dropdownWindow && Date.now() < deadline) {
+            dropdownWindow = this.app.windows().find((window) => window.url().includes('dropdown'));
+            if (!dropdownWindow) {
+                // eslint-disable-next-line no-await-in-loop
+                await asyncSleep(100);
+            }
+        }
+        dropdownWindow.should.be.ok;
+
+        // All policy-provided servers should appear as entries (excluding the Add Server button)
+        const serverButtons = await dropdownWindow.$$('.ServerDropdown__button:not(.addServer)');
+        serverButtons.length.should.equal(policyServers.length);
+
+        const serverNames = await Promise.all(serverButtons.map((btn) => btn.innerText()));
+        for (const {name} of policyServers) {
+            serverNames.some((text) => text.includes(name)).should.be.true;
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Suite G — Edit/Remove button visibility when EnableServerManagement=false
+// ---------------------------------------------------------------------------
+(isSupported ? describe : describe.skip)('MM-T_GPO_EditRemoveWithPolicy - Edit/remove visibility for predefined policy server with management disabled', function desc() {
+    this.timeout(60000);
+
+    const policyServer = {
+        name: 'Managed Server',
+        url: env.mattermostURL,
+    };
+
+    beforeEach(async () => {
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+        setupPolicy({servers: [policyServer], enableServerManagement: false});
+        await asyncSleep(500);
+        this.app = await env.getApp();
+        await asyncSleep(1000);
+    });
+
+    afterEach(async () => {
+        if (this.app) {
+            try {
+                await this.app.close();
+            } catch (err) {
+                // ignore
+            }
+        }
+        await env.clearElectronInstances();
+        cleanupPolicy();
+    });
+
+    after(() => {
+        cleanupPolicy();
+    });
+
+    it('MM-T_GPO_6 should show edit button but hide remove button for a predefined policy server', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.click('.ServerDropdownButton');
+
+        let dropdownWindow;
+        const deadline = Date.now() + 5000;
+        while (!dropdownWindow && Date.now() < deadline) {
+            dropdownWindow = this.app.windows().find((window) => window.url().includes('dropdown'));
+            if (!dropdownWindow) {
+                // eslint-disable-next-line no-await-in-loop
+                await asyncSleep(100);
+            }
+        }
+        dropdownWindow.should.be.ok;
+
+        // Edit button is always rendered regardless of enableServerManagement
+        const editVisible = await dropdownWindow.isVisible('.ServerDropdown__button-edit');
+        editVisible.should.be.true;
+
+        // Remove button is NOT rendered for predefined (policy-managed) servers
+        const removeVisible = await dropdownWindow.isVisible('.ServerDropdown__button-remove');
+        removeVisible.should.be.false;
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Suite H — Policy servers coexist with user-configured servers
+// ---------------------------------------------------------------------------
+(isSupported ? describe : describe.skip)('MM-T_GPO_PolicyCoexistence - Policy servers coexist with user-configured servers', function desc() {
+    this.timeout(60000);
+
+    const policyServer = {name: 'Policy Server', url: env.mattermostURL};
+
+    beforeEach(async () => {
+        env.createTestUserDataDir();
+        env.cleanTestConfig();
+
+        // Write user config with one server so the app skips the welcome screen
+        fs.writeFileSync(env.configFilePath, JSON.stringify({
+            ...env.demoConfig,
+            servers: [{name: 'example', url: env.exampleURL, order: 0}],
+        }));
+
+        // Apply a policy server alongside the user-configured one
+        setupPolicy({servers: [policyServer]});
+        await asyncSleep(500);
+        this.app = await env.getApp();
+        await asyncSleep(1000);
+    });
+
+    afterEach(async () => {
+        if (this.app) {
+            try {
+                await this.app.close();
+            } catch (err) {
+                // ignore
+            }
+        }
+        await env.clearElectronInstances();
+        cleanupPolicy();
+    });
+
+    after(() => {
+        cleanupPolicy();
+    });
+
+    it('MM-T_GPO_7 should display both the policy server and the user-configured server in the dropdown', async () => {
+        const mainWindow = this.app.windows().find((window) => window.url().includes('index'));
+        await mainWindow.click('.ServerDropdownButton');
+
+        let dropdownWindow;
+        const deadline = Date.now() + 5000;
+        while (!dropdownWindow && Date.now() < deadline) {
+            dropdownWindow = this.app.windows().find((window) => window.url().includes('dropdown'));
+            if (!dropdownWindow) {
+                // eslint-disable-next-line no-await-in-loop
+                await asyncSleep(100);
+            }
+        }
+        dropdownWindow.should.be.ok;
+
+        // Both the policy server and the user-configured server should appear
+        const serverButtons = await dropdownWindow.$$('.ServerDropdown__button:not(.addServer)');
+        serverButtons.length.should.equal(2);
+
+        const serverNames = await Promise.all(serverButtons.map((btn) => btn.innerText()));
+        serverNames.some((text) => text.includes(policyServer.name)).should.be.true;
+        serverNames.some((text) => text.includes('example')).should.be.true;
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Suite C — EnableAutoUpdater=false: update notifications suppressed
 // ---------------------------------------------------------------------------
 (isSupported ? describe : describe.skip)('MM-T_GPO_EnableAutoUpdater - Auto-updater disabled by policy', function desc() {
