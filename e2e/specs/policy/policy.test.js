@@ -66,7 +66,7 @@ function setupPolicy(config = {}) {
 
 function setupWindowsPolicy({servers = [], enableServerManagement, enableAutoUpdater} = {}) {
     const ps = 'powershell.exe';
-    const run = (script) => execFileSync(ps, ['-NonInteractive', '-EncodedCommand', psEncode(script)]);
+    const run = (script) => execFileSync(ps, ['-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', psEncode(script)]);
 
     // Remove any pre-existing Mattermost policy key (HKCU only — tests run without admin)
     // so stale values from a previous run don't bleed into this test.
@@ -127,11 +127,36 @@ function setupMacOSPolicy({servers = [], enableServerManagement, enableAutoUpdat
     }
 }
 
+/**
+ * Check whether a Mattermost policy key exists in HKLM (machine-scope GPO).
+ * On a domain-joined machine with real GPO applied, this will return true and
+ * the no-policy baseline tests must be skipped — they cannot clean HKLM without admin.
+ * GitHub Actions Windows runners are NOT domain-joined, so this returns false there.
+ */
+function isHklmPolicyPresent() {
+    if (process.platform !== 'win32') {
+        return false;
+    }
+    try {
+        const ps = 'powershell.exe';
+        const result = execFileSync(ps, [
+            '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand',
+            psEncode(`(Test-Path -Path '${WIN_REG_PATH_HKLM}').ToString()`),
+        ], {encoding: 'utf8'});
+        return result.trim() === 'True';
+    } catch (err) {
+        return false;
+    }
+}
+
+// True only when no machine-scope GPO is present — baseline tests are only valid in this state.
+const canRunBaseline = !isHklmPolicyPresent();
+
 /** Remove OS-level policy configuration after each test. */
 function cleanupPolicy() {
     if (process.platform === 'win32') {
         const ps = 'powershell.exe';
-        const run = (script) => execFileSync(ps, ['-NonInteractive', '-EncodedCommand', psEncode(script)]);
+        const run = (script) => execFileSync(ps, ['-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', psEncode(script)]);
 
         // Always remove HKCU (tests write here, no admin needed).
         run(`Remove-Item -Path '${WIN_REG_PATH_HKCU}' -Recurse -Force -ErrorAction SilentlyContinue`);
@@ -145,20 +170,8 @@ function cleanupPolicy() {
             // Not an admin — can't remove HKLM. Check if values are actually present.
         }
 
-        // Detect whether HKLM still has policy values and warn — the baseline tests
-        // (MM-T_GPO_NP_*) will likely fail on a machine with real GPO applied.
-        try {
-            const result = execFileSync(ps, [
-                '-NonInteractive', '-EncodedCommand',
-                psEncode(`(Test-Path -Path '${WIN_REG_PATH_HKLM}').ToString()`),
-            ], {encoding: 'utf8'});
-            if (result.trim() === 'True') {
-                // eslint-disable-next-line no-console
-                console.warn('[policy.test] WARNING: HKLM Mattermost policy key still exists — no-policy baseline tests may fail on this machine.');
-            }
-        } catch (err) {
-            // Ignore detection errors
-        }
+        // If HKLM still has values after cleanup (requires admin to remove), the
+        // canRunBaseline flag will already have excluded the baseline suites from running.
     } else if (process.platform === 'darwin') {
         try {
             execFileSync('defaults', ['delete', APP_ID], {stdio: 'ignore'});
@@ -280,7 +293,7 @@ function cleanupPolicy() {
 // This baseline test is the inverse of Suite A. It confirms that when the OS
 // has NO Mattermost policy keys and no local config, the app shows the welcome
 // screen — not a server loaded from a stale policy key on the CI runner.
-(isSupported ? describe : describe.skip)('MM-T_GPO_NoPolicySuite - No-policy baseline: default app behaviour without GPO/MDM', function desc() {
+(isSupported && canRunBaseline ? describe : describe.skip)('MM-T_GPO_NoPolicySuite - No-policy baseline: default app behaviour without GPO/MDM', function desc() {
     this.timeout(60000);
 
     beforeEach(async () => {
@@ -327,7 +340,7 @@ function cleanupPolicy() {
 // Baseline for Suite B (EnableServerManagement=false). Confirms the Add Server
 // button IS visible when no policy is applied — proving Suite B's assertion that
 // it disappears under policy is not vacuous.
-(isSupported ? describe : describe.skip)('MM-T_GPO_NoPolicyServerMgmt - No-policy baseline: server management enabled by default', function desc() {
+(isSupported && canRunBaseline ? describe : describe.skip)('MM-T_GPO_NoPolicyServerMgmt - No-policy baseline: server management enabled by default', function desc() {
     this.timeout(60000);
 
     beforeEach(async () => {
