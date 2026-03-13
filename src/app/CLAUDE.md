@@ -29,6 +29,10 @@ To add a menu item: find the appropriate factory function in `appMenu/` (e.g., `
 - **`ServerHub`**: Server management IPC — add/edit/remove server modals, URL validation.
 - **`PopoutMenu`** (`popoutMenu.ts`): Context menu for popout windows and tabs — copy link, close, reopen in tab.
 
+## Dependency constraints
+
+`WebContentsManager` (`views/webContentsManager.ts`) is imported by both `TabManager` and `PopoutManager`. To avoid circular dependencies, **`WebContentsManager` must never import `TabManager` or `PopoutManager`**. When an IPC event needs view-type-specific handling, register listeners in both `TabManager` (guarded on `ViewType.TAB`) and `PopoutManager` (guarded on `ViewType.WINDOW`) rather than centralizing in `WebContentsManager`.
+
 ## Navigation model
 
 Navigation is tightly controlled for security and UX:

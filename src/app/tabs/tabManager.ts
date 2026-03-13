@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, BrowserWindow, ipcMain} from 'electron';
+import {type IpcMainEvent, app, BrowserWindow, ipcMain} from 'electron';
 import EventEmitter from 'events';
 
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -38,6 +38,7 @@ import {
     CLOSE_DOWNLOADS_DROPDOWN,
     CLEAR_CACHE_AND_RELOAD,
     UPDATE_TARGET_URL,
+    WINDOW_CLOSE,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -72,6 +73,7 @@ export class TabManager extends EventEmitter {
         ipcMain.handle(GET_ORDERED_TABS_FOR_SERVER, (event, serverId) => this.getOrderedTabsForServer(serverId));
         ipcMain.handle(GET_ACTIVE_TAB_FOR_SERVER, (event, serverId) => this.getCurrentTabForServer(serverId)?.toUniqueView());
         ipcMain.handle(CREATE_NEW_TAB, (event, serverId) => this.handleCreateNewTab(serverId));
+        ipcMain.on(WINDOW_CLOSE, this.handleWindowClose);
         ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => this.updateTabOrder(serverId, viewOrder));
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.switchToTab(viewId));
         ipcMain.on(CLOSE_TAB, (event, viewId) => ViewManager.removeView(viewId));
@@ -493,6 +495,25 @@ export class TabManager extends EventEmitter {
 
     private onUpdateTargetURL = (url: string) => {
         MainWindow.window?.showURLView(url);
+    };
+
+    private handleWindowClose = (event: IpcMainEvent) => {
+        const webContentsView = WebContentsManager.getViewByWebContentsId(event.sender.id);
+        if (!webContentsView) {
+            return;
+        }
+
+        const view = ViewManager.getView(webContentsView.id);
+        if (!view || view.type !== ViewType.TAB) {
+            return;
+        }
+
+        const isLastTab = this.getOrderedTabsForServer(view.serverId).length <= 1;
+        if (isLastTab) {
+            return;
+        }
+
+        ViewManager.removeView(view.id);
     };
 
     private handleClearCacheAndReload = () => {
