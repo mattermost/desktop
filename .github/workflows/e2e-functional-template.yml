@@ -114,6 +114,9 @@ on:
         type: string
         required: true
 
+permissions:
+  contents: read
+
 env:
   AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
