@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {dialog, systemPreferences} from 'electron';
+import {dialog, shell, systemPreferences} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -26,6 +26,9 @@ jest.mock('electron', () => ({
     },
     dialog: {
         showMessageBox: jest.fn(),
+    },
+    shell: {
+        openExternal: jest.fn(),
     },
     systemPreferences: {
         getMediaAccessStatus: jest.fn(),
