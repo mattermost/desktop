@@ -337,5 +337,19 @@ describe('main/PermissionsManager', () => {
             expect(dialog.showMessageBox).toHaveBeenCalled();
             expect(cb).toHaveBeenCalledWith(true);
         });
+
+        it('PM-U04: should deny without crash when main window is null at dialog time', async () => {
+            MainWindow.get.mockReturnValue(null);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'notifications',
+                cb,
+                {requestingUrl: 'http://anyurl.com'},
+            );
+            expect(cb).toHaveBeenCalledWith(false);
+            expect(dialog.showMessageBox).not.toHaveBeenCalled();
+        });
     });
 });
