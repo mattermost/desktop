@@ -288,5 +288,38 @@ describe('main/PermissionsManager', () => {
             await permissionsManager.handlePermissionRequest({id: 2}, 'openExternal', cb, {requestingUrl: 'http://anyurl.com', externalURL: 'ms-excel://differenturl.com'});
             expect(dialog.showMessageBox).toHaveBeenCalled();
         });
+
+        it('PM-U01: should allow Calls widget request when pre-granted and not consult WebContentsManager', async () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.getViewURL.mockReturnValue(new URL('http://anyurl.com'));
+            isTrustedURL.mockReturnValue(true);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {screenShare: {allowed: true}},
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'screenShare',
+                cb,
+                {requestingUrl: 'http://anyurl.com'},
+            );
+            expect(cb).toHaveBeenCalledWith(true);
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+        });
+
+        it('PM-U02: should deny Calls widget request when getViewURL returns null', async () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.getViewURL.mockReturnValue(null);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'screenShare',
+                cb,
+                {requestingUrl: 'http://anyurl.com'},
+            );
+            expect(cb).toHaveBeenCalledWith(false);
+        });
     });
 });
