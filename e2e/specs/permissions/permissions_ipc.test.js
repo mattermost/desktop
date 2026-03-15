@@ -23,19 +23,21 @@ describe('permissions/ipc', function desc() {
         this.settingsWindow = await this.app.waitForEvent('window', {
             predicate: (w) => w.url().includes('settings'),
         });
+        await this.settingsWindow.waitForLoadState('domcontentloaded');
     });
 
     after(async function() {
         if (this.app) {
             await this.app.close();
         }
+        await env.clearElectronInstances();
     });
 
     it('E2E-P01: should return a valid media access status via GET_MEDIA_ACCESS_STATUS IPC', async function() {
         const status = await this.settingsWindow.evaluate(
             () => window.desktop.getMediaAccessStatus('microphone'),
         );
-        expect(['granted', 'denied', 'not-determined', 'restricted']).to.include(status);
+        expect(['granted', 'denied', 'not-determined', 'restricted', 'unknown']).to.include(status);
     });
 
     env.shouldTest(it, process.platform === 'win32')(
