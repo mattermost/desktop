@@ -128,7 +128,13 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
     }
 
     if (process.env.NODE_ENV === 'test') {
-        (global as TestGlobal).__testBadgeState = {sessionExpired, mentionCount, showUnreadBadge};
+        let resolvedType: 'mention' | 'unread' | 'expired' | 'none';
+        if (process.platform === 'linux') {
+            resolvedType = mentionCount > 0 ? 'mention' : (sessionExpired ? 'expired' : 'none');
+        } else {
+            resolvedType = mentionCount > 0 ? 'mention' : ((showUnreadBadge && showUnreadBadgeSetting) ? 'unread' : (sessionExpired ? 'expired' : 'none'));
+        }
+        (global as TestGlobal).__testBadgeState = {sessionExpired, mentionCount, showUnreadBadge, resolvedType};
     }
 }
 

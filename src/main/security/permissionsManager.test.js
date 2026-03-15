@@ -72,6 +72,11 @@ jest.mock('app/views/webContentsManager', () => ({
 
 describe('main/PermissionsManager', () => {
     describe('setForServer', () => {
+        beforeEach(() => {
+            systemPreferences.getMediaAccessStatus.mockClear();
+            systemPreferences.askForMediaAccess.mockClear();
+        });
+
         if (process.platform !== 'linux') {
             it('should ask for media permission when is not granted but the user explicitly granted it', () => {
                 systemPreferences.getMediaAccessStatus.mockReturnValue('denied');

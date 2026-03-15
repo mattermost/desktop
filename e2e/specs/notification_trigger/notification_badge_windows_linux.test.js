@@ -146,6 +146,7 @@ describe('notification_badge/windows_and_linux', function desc() {
             state.mentionCount.should.equal(5);
             state.sessionExpired.should.equal(true);
             state.showUnreadBadge.should.equal(false);
+            state.resolvedType.should.equal('mention');
         });
 
         env.shouldTest(it, process.platform === 'win32')('MM-T_BADGE_WIN_07 - mention count wins over unread dot on Windows', async () => {
@@ -155,6 +156,7 @@ describe('notification_badge/windows_and_linux', function desc() {
             state.mentionCount.should.equal(5);
             state.showUnreadBadge.should.equal(true);
             state.sessionExpired.should.equal(false);
+            state.resolvedType.should.equal('mention');
         });
 
         env.shouldTest(it, process.platform === 'win32')('MM-T_BADGE_WIN_08 - unread dot wins over session-expired on Windows when setting enabled', async () => {
@@ -167,6 +169,7 @@ describe('notification_badge/windows_and_linux', function desc() {
             state.showUnreadBadge.should.equal(true);
             state.sessionExpired.should.equal(true);
             state.mentionCount.should.equal(0);
+            state.resolvedType.should.equal('unread');
             await this.app.evaluate(() => {
                 global.__testTriggerSetUnreadBadgeSetting(false);
             });
@@ -178,6 +181,7 @@ describe('notification_badge/windows_and_linux', function desc() {
             state.should.not.be.null;
             state.mentionCount.should.equal(5);
             state.sessionExpired.should.equal(true);
+            state.resolvedType.should.equal('mention');
         });
     });
 
@@ -192,6 +196,7 @@ describe('notification_badge/windows_and_linux', function desc() {
             state.mentionCount.should.equal(0);
             state.showUnreadBadge.should.equal(true);
             state.sessionExpired.should.equal(false);
+            state.resolvedType.should.equal('none');
         });
 
         env.shouldTest(it, process.platform === 'win32')('MM-T_BADGE_WIN_10 - unread dot shown when showUnreadBadgeSetting is true', async () => {
@@ -204,6 +209,7 @@ describe('notification_badge/windows_and_linux', function desc() {
             state.mentionCount.should.equal(0);
             state.showUnreadBadge.should.equal(true);
             state.sessionExpired.should.equal(false);
+            state.resolvedType.should.equal('unread');
             await this.app.evaluate(() => {
                 global.__testTriggerSetUnreadBadgeSetting(false);
             });
