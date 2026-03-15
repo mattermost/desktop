@@ -306,6 +306,7 @@ describe('main/PermissionsManager', () => {
             );
             expect(cb).toHaveBeenCalledWith(true);
             expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+            expect(CallsWidgetWindow.getViewURL).toHaveBeenCalled();
         });
 
         it('PM-U02: should deny Calls widget request when getViewURL returns null', async () => {
@@ -320,6 +321,7 @@ describe('main/PermissionsManager', () => {
                 {requestingUrl: 'http://anyurl.com'},
             );
             expect(cb).toHaveBeenCalledWith(false);
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
         });
     });
 });
