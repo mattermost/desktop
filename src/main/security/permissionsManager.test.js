@@ -81,6 +81,34 @@ describe('main/PermissionsManager', () => {
                 expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(2, 'camera');
             });
         }
+
+        if (process.platform !== 'linux') {
+            it('PM-U06: should not call askForMediaAccess when OS has already granted access', () => {
+                systemPreferences.getMediaAccessStatus.mockReturnValue('granted');
+                const permissionsManager = new PermissionsManager('anyfile.json');
+                permissionsManager.setForServer(
+                    {url: new URL('http://anyurl.com')},
+                    {media: {allowed: true}},
+                );
+                expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
+            });
+        }
+
+        it('PM-U07: should skip all media access checks on Linux', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'linux', configurable: true});
+            try {
+                const permissionsManager = new PermissionsManager('anyfile.json');
+                permissionsManager.setForServer(
+                    {url: new URL('http://anyurl.com')},
+                    {media: {allowed: true}},
+                );
+                expect(systemPreferences.getMediaAccessStatus).not.toHaveBeenCalled();
+                expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
+            } finally {
+                Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
+            }
+        });
     });
 
     it('PM-U05: should open the correct ms-settings URLs for Windows camera and microphone', () => {
