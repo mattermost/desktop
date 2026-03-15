@@ -83,6 +83,15 @@ describe('main/PermissionsManager', () => {
         }
     });
 
+    it('PM-U05: should open the correct ms-settings URLs for Windows camera and microphone', () => {
+        const permissionsManager = new PermissionsManager('anyfile.json');
+        permissionsManager['openWindowsCameraPreferences']();
+        expect(shell.openExternal).toHaveBeenCalledWith('ms-settings:privacy-webcam');
+
+        permissionsManager['openWindowsMicrophonePreferences']();
+        expect(shell.openExternal).toHaveBeenCalledWith('ms-settings:privacy-microphone');
+    });
+
     describe('handlePermissionRequest', () => {
         const env = process.env;
 
