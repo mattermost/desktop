@@ -323,5 +323,19 @@ describe('main/PermissionsManager', () => {
             expect(cb).toHaveBeenCalledWith(false);
             expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
         });
+
+        it('PM-U03: should show dialog for fullscreen from an external origin', async () => {
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'fullscreen',
+                cb,
+                {requestingUrl: 'http://youtube.com'},
+            );
+            expect(dialog.showMessageBox).toHaveBeenCalled();
+            expect(cb).toHaveBeenCalledWith(true);
+        });
     });
 });
