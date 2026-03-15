@@ -40,18 +40,21 @@ describe('main/notifications/Upgrade', () => {
     describe('NewVersionNotification', () => {
         it('UV-01: should strip icon on macOS', () => {
             Object.defineProperty(process, 'platform', {value: 'darwin'});
+            // eslint-disable-next-line no-new
             new NewVersionNotification();
             expect(mockCapturedOptions[0]).not.toHaveProperty('icon');
         });
 
         it('UV-02: should include icon on Windows', () => {
             Object.defineProperty(process, 'platform', {value: 'win32'});
+            // eslint-disable-next-line no-new
             new NewVersionNotification();
             expect(mockCapturedOptions[0]).toHaveProperty('icon');
         });
 
         it('UV-03: should preserve icon on Linux', () => {
             Object.defineProperty(process, 'platform', {value: 'linux'});
+            // eslint-disable-next-line no-new
             new NewVersionNotification();
             expect(mockCapturedOptions[0]).toHaveProperty('icon');
         });
@@ -60,6 +63,7 @@ describe('main/notifications/Upgrade', () => {
     describe('UpgradeNotification', () => {
         it('UV-04: should use "ready to install" localization keys', () => {
             Object.defineProperty(process, 'platform', {value: 'linux'});
+            // eslint-disable-next-line no-new
             new UpgradeNotification();
             expect(localizeMessage).toHaveBeenCalledWith(
                 'main.notifications.upgrade.readyToInstall.title',
@@ -73,12 +77,14 @@ describe('main/notifications/Upgrade', () => {
 
         it('UV-05: should strip icon on macOS', () => {
             Object.defineProperty(process, 'platform', {value: 'darwin'});
+            // eslint-disable-next-line no-new
             new UpgradeNotification();
             expect(mockCapturedOptions[0]).not.toHaveProperty('icon');
         });
 
         it('UV-06: should include icon on Windows', () => {
             Object.defineProperty(process, 'platform', {value: 'win32'});
+            // eslint-disable-next-line no-new
             new UpgradeNotification();
             expect(mockCapturedOptions[0]).toHaveProperty('icon');
         });

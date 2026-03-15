@@ -6,7 +6,6 @@
 const fs = require('fs');
 
 const {expect} = require('chai');
-
 const {SHOW_SETTINGS_WINDOW} = require('src/common/communication');
 
 const env = require('../../modules/environment');

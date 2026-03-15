@@ -3,8 +3,8 @@
 
 'use strict';
 
-import notMockedLocalizeMessage from 'main/i18nManager';
 import notMockedUtils from 'common/utils/util';
+import notMockedLocalizeMessage from 'main/i18nManager';
 
 import {DownloadNotification} from './Download';
 
@@ -64,6 +64,7 @@ describe('main/notifications/DownloadNotification', () => {
         });
 
         it('DL-01: should use localized "Download Complete" title on Linux', () => {
+            // eslint-disable-next-line no-new
             new DownloadNotification('test-file.zip', 'My Server');
             expect(localizeMessage).toHaveBeenCalledWith(
                 'main.notifications.download.complete.title',
@@ -73,6 +74,7 @@ describe('main/notifications/DownloadNotification', () => {
 
         it('DL-02: should use raw fileName as body on Linux', () => {
             localizeMessage.mockReturnValue('Download Complete');
+            // eslint-disable-next-line no-new
             new DownloadNotification('test-file.zip', 'My Server');
             expect(mockCapturedOptions[0].body).toBe('test-file.zip');
         });
@@ -86,11 +88,13 @@ describe('main/notifications/DownloadNotification', () => {
 
         it('DL-03: should use serverName as title on Windows', () => {
             localizeMessage.mockReturnValue('Download Complete\ntest-file.zip');
+            // eslint-disable-next-line no-new
             new DownloadNotification('test-file.zip', 'My Server');
             expect(mockCapturedOptions[0].title).toBe('My Server');
         });
 
         it('DL-04: should use localized body with fileName interpolated on Windows', () => {
+            // eslint-disable-next-line no-new
             new DownloadNotification('test-file.zip', 'My Server');
             expect(localizeMessage).toHaveBeenCalledWith(
                 'main.notifications.download.complete.body',
@@ -104,6 +108,7 @@ describe('main/notifications/DownloadNotification', () => {
         it('DL-05: should strip icon on macOS', () => {
             Object.defineProperty(process, 'platform', {value: 'darwin'});
             Utils.isVersionGreaterThanOrEqualTo.mockReturnValue(true);
+            // eslint-disable-next-line no-new
             new DownloadNotification('file.zip', 'server');
             expect(mockCapturedOptions[0]).not.toHaveProperty('icon');
         });
@@ -112,6 +117,7 @@ describe('main/notifications/DownloadNotification', () => {
             Object.defineProperty(process, 'platform', {value: 'win32'});
             Utils.isVersionGreaterThanOrEqualTo.mockReturnValue(true);
             localizeMessage.mockReturnValue('');
+            // eslint-disable-next-line no-new
             new DownloadNotification('file.zip', 'server');
             expect(mockCapturedOptions[0]).not.toHaveProperty('icon');
         });
@@ -120,6 +126,7 @@ describe('main/notifications/DownloadNotification', () => {
             Object.defineProperty(process, 'platform', {value: 'linux'});
             Utils.isVersionGreaterThanOrEqualTo.mockReturnValue(false);
             localizeMessage.mockReturnValue('Download Complete');
+            // eslint-disable-next-line no-new
             new DownloadNotification('file.zip', 'server');
             expect(mockCapturedOptions[0]).toHaveProperty('icon');
         });

@@ -61,7 +61,9 @@ jest.mock('electron', () => {
         };
 
         show = jest.fn().mockImplementation(() => {
-            if (!mockBlockShow) this.callbackMap.get('show')?.();
+            if (!mockBlockShow) {
+                this.callbackMap.get('show')?.();
+            }
         });
 
         click = jest.fn().mockImplementation(() => {

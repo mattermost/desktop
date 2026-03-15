@@ -98,6 +98,7 @@ describe('main/notifications/Mention', () => {
         });
 
         it('MN-04: should construct Notification with silent=true when a custom sound is present', () => {
+            // eslint-disable-next-line no-new
             new Mention(
                 {title: 'test', body: 'body', silent: false, soundName: 'Bing'},
                 'ch-1',
@@ -111,6 +112,7 @@ describe('main/notifications/Mention', () => {
         it('MN-05: should strip icon on macOS', () => {
             Object.defineProperty(process, 'platform', {value: 'darwin'});
             Utils.isVersionGreaterThanOrEqualTo.mockReturnValue(true);
+            // eslint-disable-next-line no-new
             new Mention(
                 {title: 'test', body: 'body', silent: false, soundName: ''},
                 'ch-1',
@@ -123,6 +125,7 @@ describe('main/notifications/Mention', () => {
             Object.defineProperty(process, 'platform', {value: 'win32'});
             (os.release as jest.Mock).mockReturnValue('10.0.19041');
             Utils.isVersionGreaterThanOrEqualTo.mockReturnValue(true);
+            // eslint-disable-next-line no-new
             new Mention(
                 {title: 'test', body: 'body', silent: false, soundName: ''},
                 'ch-1',
