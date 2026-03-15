@@ -16,6 +16,9 @@ const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TestGlobal = typeof global & Record<string, any>;
+
 /**
      * Badge generation for Windows
      */
@@ -123,6 +126,10 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
         showBadgeLinux(sessionExpired, mentionCount);
         break;
     }
+
+    if (process.env.NODE_ENV === 'test') {
+        (global as TestGlobal).__testBadgeState = {sessionExpired, mentionCount, showUnreadBadge};
+    }
 }
 
 export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
@@ -132,4 +139,9 @@ export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
 
 export function setupBadge() {
     AppState.on(UPDATE_APPSTATE_TOTALS, showBadge);
+
+    if (process.env.NODE_ENV === 'test') {
+        (global as TestGlobal).__testTriggerBadge = showBadge;
+        (global as TestGlobal).__testTriggerSetUnreadBadgeSetting = setUnreadBadgeSetting;
+    }
 }
