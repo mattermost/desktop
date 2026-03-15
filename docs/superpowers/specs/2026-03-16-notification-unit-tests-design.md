@@ -55,21 +55,35 @@ When `silent=true` or `soundName='None'`, this evaluates to `String(false)` = th
 
 **Implementation notes:**
 
-**NM-05/NM-06:** The existing mock fires `show` synchronously inside `show()`, which resolves the `displayMention` promise before `failed` could race it. To test the `failed` path, the `show` callback must NOT fire. Use a nested describe block where `show` is overridden to a no-op:
+**NM-05/NM-06:** The existing mock defines `show` as an **own instance property** (`show = jest.fn().mockImplementation(...)`), so `Notification.prototype.show` overrides have no effect. To prevent `show` from auto-resolving the promise, use the `blockShow` flag pattern — the same mechanism used for NM-07. Add a module-level `blockShow` flag inside the `jest.mock('electron', ...)` factory:
+
+```js
+// Inside jest.mock('electron', ...) factory:
+let blockShow = false;
+class NotificationMock {
+    // ...
+    show = jest.fn().mockImplementation(() => {
+        if (!blockShow) this.callbackMap.get('show')?.();
+    });
+}
+// Export blockShow so tests can control it:
+// (access via the module-level variable in the test file)
+```
+
+Then NM-05 and NM-06 go in a nested describe:
 
 ```js
 describe('notification failed events', () => {
-    beforeEach(() => {
-        // Prevent show from auto-resolving the promise
-        Notification.prototype.show = jest.fn(); // does not fire callback
-    });
+    beforeEach(() => { blockShow = true; });
+    afterEach(() => { blockShow = false; });
+
     it('NM-05 - generic failed error', async () => {
         const promise = NotificationManager.displayMention(...);
-        // mentions[0].value is the Mention instance; show() was called but did nothing
         mentions[0].value.callbackMap.get('failed')?.(null, 'some generic error');
         const result = await promise;
         expect(result).toEqual({status: 'error', reason: 'electron_notification_failed'});
     });
+
     it('NM-06 - HRESULT Windows error', async () => {
         const promise = NotificationManager.displayMention(...);
         mentions[0].value.callbackMap.get('failed')?.(null, 'Error: HRESULT:-2143420143');
@@ -79,7 +93,7 @@ describe('notification failed events', () => {
 });
 ```
 
-Note: `show()` is called synchronously inside `displayMention` before the returned Promise is awaited by the test. Overriding `Notification.prototype.show` in `beforeEach` ensures the instance's `show()` — resolved via prototype — is a no-op. Restore the original show mock in `afterEach`.
+`blockShow` must be declared at the top of the `jest.mock` factory closure so it is accessible from both the mock class and the test file's `beforeEach`/`afterEach`.
 
 **NM-07 (fake timers):**
 - Wrap in a nested `describe` with `beforeEach(() => jest.useFakeTimers())` and `afterEach(() => jest.useRealTimers())`.
