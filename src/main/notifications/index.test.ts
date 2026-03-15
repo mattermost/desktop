@@ -38,6 +38,7 @@ const ViewManager = jest.mocked(notMockedViewManager);
 
 const mentions: Array<{body: string; value: any}> = [];
 let mockBlockShow = false;
+const mockNotificationConstruct = jest.fn();
 const isPriority = jest.mocked(notMockedIsPriority);
 
 jest.mock('child_process', () => ({
@@ -48,10 +49,9 @@ jest.mock('electron', () => {
     class NotificationMock {
         callbackMap: Map<string, () => void>;
         static isSupported = jest.fn();
-        static didConstruct = jest.fn();
 
         constructor(options: any) {
-            NotificationMock.didConstruct();
+            mockNotificationConstruct();
             this.callbackMap = new Map();
             mentions.push({body: options.body, value: this});
         }
@@ -486,7 +486,7 @@ describe('main/notifications', () => {
         });
 
         it('NM-01: should return error when view is not found', async () => {
-            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
             const result = await NotificationManager.displayMention(
                 'test', 'test body', 'channel_id', 'team_id',
                 'http://server-1.com/team_id/channel_id', false,
@@ -497,7 +497,7 @@ describe('main/notifications', () => {
         });
 
         it('NM-02: should return error when server is not found', async () => {
-            ServerManager.getServer.mockReturnValue(null);
+            ServerManager.getServer.mockReturnValue(undefined);
             const result = await NotificationManager.displayMention(
                 'test', 'test body', 'channel_id', 'team_id',
                 'http://server-1.com/team_id/channel_id', false,
@@ -562,7 +562,7 @@ describe('main/notifications', () => {
         describe('notification timeout', () => {
             beforeEach(() => {
                 mockBlockShow = true;
-                jest.useFakeTimers();
+                jest.useFakeTimers({doNotFake: ['setImmediate']});
             });
 
             afterEach(() => {
@@ -576,7 +576,8 @@ describe('main/notifications', () => {
                     'http://server-1.com/team_id/channel_id', false,
                     {id: 1} as WebContents, '',
                 );
-                await jest.runAllTimersAsync();
+                await new Promise(setImmediate);
+                jest.advanceTimersByTime(10000);
                 const result = await promise;
                 expect(result).toEqual({status: 'error', reason: 'notification_timeout'});
             });
@@ -670,14 +671,14 @@ describe('main/notifications', () => {
             Object.defineProperty(process, 'platform', {value: 'darwin'});
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
             await NotificationManager.displayDownloadCompleted('test.zip', '/path', 'server');
-            expect(Notification.didConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
 
         it('DD-02: should not show notification when Notification is not supported', async () => {
             Notification.isSupported.mockImplementation(() => false);
             await NotificationManager.displayDownloadCompleted('test.zip', '/path', 'server');
-            expect(Notification.didConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
         });
 
         it('DD-03: should flash frame on Linux when show fires and flashWindow config is set', async () => {
@@ -728,7 +729,7 @@ describe('main/notifications', () => {
         it('UV-07: should not show notification when Notification is not supported', async () => {
             Notification.isSupported.mockImplementation(() => false);
             await NotificationManager.displayUpgrade('1.0.0', jest.fn());
-            expect(Notification.didConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
         });
 
         it('UV-08: should not show notification when DND is active', async () => {
@@ -736,7 +737,7 @@ describe('main/notifications', () => {
             Object.defineProperty(process, 'platform', {value: 'darwin'});
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
             await NotificationManager.displayUpgrade('1.0.0', jest.fn());
-            expect(Notification.didConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
 
@@ -770,7 +771,7 @@ describe('main/notifications', () => {
         it('UV-11: should not show notification when Notification is not supported', async () => {
             Notification.isSupported.mockImplementation(() => false);
             await NotificationManager.displayRestartToUpgrade('1.0.0', jest.fn());
-            expect(Notification.didConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
         });
 
         it('UV-12: should not show notification when DND is active', async () => {
@@ -778,7 +779,7 @@ describe('main/notifications', () => {
             Object.defineProperty(process, 'platform', {value: 'darwin'});
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
             await NotificationManager.displayRestartToUpgrade('1.0.0', jest.fn());
-            expect(Notification.didConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
 

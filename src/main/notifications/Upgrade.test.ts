@@ -3,7 +3,7 @@
 
 'use strict';
 
-import notMockedLocalizeMessage from 'main/i18nManager';
+import {localizeMessage as notMockedLocalizeMessage} from 'main/i18nManager';
 
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
@@ -22,7 +22,7 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn().mockReturnValue(''),
 }));
 
-const localizeMessage = jest.mocked(notMockedLocalizeMessage.localizeMessage);
+const localizeMessage = jest.mocked(notMockedLocalizeMessage);
 
 describe('main/notifications/Upgrade', () => {
     let originalPlatform: NodeJS.Platform;
