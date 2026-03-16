@@ -4,7 +4,7 @@
 'use strict';
 
 import notMockedUtils from 'common/utils/util';
-import notMockedLocalizeMessage from 'main/i18nManager';
+import {localizeMessage as notMockedLocalizeMessage} from 'main/i18nManager';
 
 import {DownloadNotification} from './Download';
 
@@ -40,7 +40,7 @@ jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
 
-const localizeMessage = jest.mocked(notMockedLocalizeMessage.localizeMessage);
+const localizeMessage = jest.mocked(notMockedLocalizeMessage);
 const Utils = jest.mocked(notMockedUtils);
 
 describe('main/notifications/DownloadNotification', () => {

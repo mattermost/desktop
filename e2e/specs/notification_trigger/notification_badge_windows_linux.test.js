@@ -138,7 +138,7 @@ describe('notification_badge/windows_and_linux', function desc() {
 
     // --- Group 1: Badge Type Priority ---
 
-    describe('badge type priority', function() {
+    describe('badge type priority', () => {
         env.shouldTest(it, process.platform === 'win32')('MM-T_BADGE_WIN_06 - mention count wins over session-expired on Windows', async () => {
             await triggerBadge(this.app, true, 5, false);
             const state = await getBadgeState(this.app);
@@ -187,7 +187,7 @@ describe('notification_badge/windows_and_linux', function desc() {
 
     // --- Group 2: Unread Setting Toggle (Windows only) ---
 
-    describe('unread setting toggle', function() {
+    describe('unread setting toggle', () => {
         env.shouldTest(it, process.platform === 'win32')('MM-T_BADGE_WIN_09 - unread dot not shown when showUnreadBadgeSetting is false', async () => {
             // setting defaults to falsy — do not enable it
             await triggerBadge(this.app, false, 0, true);
@@ -218,7 +218,7 @@ describe('notification_badge/windows_and_linux', function desc() {
 
     // --- Group 3: Badge Clearing / Ghost-Badge Regression ---
 
-    describe('badge clearing', function() {
+    describe('badge clearing', () => {
         env.shouldTest(it, process.platform === 'win32')('MM-T_BADGE_WIN_11 - ghost mention badge clears on Windows', async () => {
             await triggerBadge(this.app, false, 3, false);
             let state = await getBadgeState(this.app);
@@ -279,7 +279,7 @@ describe('notification_badge/windows_and_linux', function desc() {
 
     // --- Group 4: State Transitions (Windows) ---
 
-    describe('state transitions', function() {
+    describe('state transitions', () => {
         env.shouldTest(it, process.platform === 'win32')('MM-T_BADGE_WIN_14 - mention count decrements correctly on Windows', async () => {
             await triggerBadge(this.app, false, 5, false);
             let state = await getBadgeState(this.app);
@@ -342,7 +342,7 @@ describe('notification_badge/windows_and_linux', function desc() {
 
     // --- Group 5: Windows-specific Edge Cases ---
 
-    describe('windows edge cases', function() {
+    describe('windows edge cases', () => {
         env.shouldTest(it, process.platform === 'win32')('MM-T_BADGE_WIN_18 - mention count exactly at 99 on Windows', async () => {
             await triggerBadge(this.app, false, 99, false);
             const state = await getBadgeState(this.app);
@@ -371,7 +371,7 @@ describe('notification_badge/windows_and_linux', function desc() {
 
     // --- Group 6: Linux-specific Edge Cases ---
 
-    describe('linux edge cases', function() {
+    describe('linux edge cases', () => {
         env.shouldTest(it, process.platform === 'linux')('MM-T_BADGE_LNX_06 - no cap on mention count on Linux', async () => {
             await triggerBadge(this.app, false, 100, false);
             const state = await getBadgeState(this.app);
