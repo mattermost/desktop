@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('application', () => {
@@ -68,6 +69,7 @@ test.describe('application', () => {
             expect(dropdownButtonText).toBe('github');
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 });

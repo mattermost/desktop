@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 async function launchWithWelcomeScreen(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');
@@ -37,29 +38,31 @@ async function launchWithWelcomeScreen(testInfo: {outputDir: string}) {
 
 test.describe('Configure Server Modal', () => {
     test('MM-T5115 should not be valid if no display name has been set', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-        const {app, configureServerModal} = await launchWithWelcomeScreen(testInfo);
+        const {app, configureServerModal, userDataDir} = await launchWithWelcomeScreen(testInfo);
         try {
             await configureServerModal.type('#input_name', '');
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
     test('MM-T5116 should not be valid if no URL has been set', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-        const {app, configureServerModal} = await launchWithWelcomeScreen(testInfo);
+        const {app, configureServerModal, userDataDir} = await launchWithWelcomeScreen(testInfo);
         try {
             await configureServerModal.type('#input_url', '');
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
     test('MM-T5117 should be valid if display name and URL are set', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-        const {app, configureServerModal} = await launchWithWelcomeScreen(testInfo);
+        const {app, configureServerModal, userDataDir} = await launchWithWelcomeScreen(testInfo);
         try {
             await configureServerModal.type('#input_name', 'TestServer');
             await configureServerModal.type('#input_url', 'https://community.mattermost.com');
@@ -68,11 +71,12 @@ test.describe('Configure Server Modal', () => {
             expect(connectButtonDisabled === '').toBe(false);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
     test('MM-T5118 should not be valid if an invalid URL has been set', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-        const {app, configureServerModal} = await launchWithWelcomeScreen(testInfo);
+        const {app, configureServerModal, userDataDir} = await launchWithWelcomeScreen(testInfo);
         try {
             await configureServerModal.type('#input_name', 'TestServer');
             await configureServerModal.type('#input_url', '!@#$%^&*()');
@@ -83,6 +87,7 @@ test.describe('Configure Server Modal', () => {
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -106,6 +111,7 @@ test.describe('Configure Server Modal', () => {
             });
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 });

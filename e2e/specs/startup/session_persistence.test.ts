@@ -8,6 +8,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -46,6 +47,7 @@ test(
             await serverWin1!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         } finally {
             await app1.close();
+            await waitForLockFileRelease(userDataDir);
         }
 
         // --- Second launch: should NOT show login page ---
@@ -71,6 +73,7 @@ test(
             await serverWin2!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         } finally {
             await app2.close();
+            await waitForLockFileRelease(userDataDir);
         }
     },
 );

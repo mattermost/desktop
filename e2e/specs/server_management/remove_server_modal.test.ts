@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');
@@ -61,6 +62,7 @@ test.describe('RemoveServerModal', () => {
             }, {timeout: 10000}).toStrictEqual(expectedConfig);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -75,11 +77,12 @@ test.describe('RemoveServerModal', () => {
             expect(savedConfig.servers).toStrictEqual(demoConfig.servers);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
     test('MM-T4390_3 should disappear on click Close', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-        const {app, removeServerView} = await launchWithRemoveServerModal(testInfo);
+        const {app, removeServerView, userDataDir} = await launchWithRemoveServerModal(testInfo);
         try {
             await removeServerView.click('button.close');
             await removeServerView.waitForEvent('close').catch(() => {});
@@ -87,11 +90,12 @@ test.describe('RemoveServerModal', () => {
             expect(existing).toBe(false);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
     test('MM-T4390_4 should disappear on click background', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-        const {app, removeServerView} = await launchWithRemoveServerModal(testInfo);
+        const {app, removeServerView, userDataDir} = await launchWithRemoveServerModal(testInfo);
         try {
             try {
                 await removeServerView.click('.Modal', {position: {x: 20, y: 20}});
@@ -101,6 +105,7 @@ test.describe('RemoveServerModal', () => {
             expect(existing).toBe(false);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 });

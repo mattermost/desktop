@@ -8,6 +8,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile, cmdOrCtrl} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -59,6 +60,7 @@ test.describe('Menu/window_menu', () => {
                 expect(dropdownButtonText).toContain('github');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -92,6 +94,7 @@ test.describe('Menu/window_menu', () => {
                 expect(dropdownButtonText).toContain('google');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -125,6 +128,7 @@ test.describe('Menu/window_menu', () => {
                 expect(dropdownButtonText).toContain('example');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });
@@ -178,6 +182,7 @@ test.describe('Menu/window_menu', () => {
                 expect(tabViewButton).toContain('Off-Topic');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -228,6 +233,7 @@ test.describe('Menu/window_menu', () => {
                 expect(tabViewButton).toContain('Town Square');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -278,6 +284,7 @@ test.describe('Menu/window_menu', () => {
                 expect(tabViewButton).toContain('Town Square');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });
@@ -326,6 +333,7 @@ test.describe('Menu/window_menu', () => {
             expect(tabViewButton).toContain('Off-Topic');
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -370,6 +378,7 @@ test.describe('Menu/window_menu', () => {
             expect(isMinimized).toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -414,6 +423,7 @@ test.describe('Menu/window_menu', () => {
             expect(isDestroyed).toBe(false);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 });

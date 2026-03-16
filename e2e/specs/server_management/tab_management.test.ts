@@ -6,6 +6,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -32,13 +33,13 @@ async function launchWithMattermostConfig(testInfo: {outputDir: string}) {
     const mmServer = serverMap[config.servers[0].name][0].win;
     await loginToMattermost(mmServer);
     const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
-    return {app, serverMap, mainWindow};
+    return {app, serverMap, mainWindow, userDataDir};
 }
 
 test.describe('server_management/tab_management', () => {
     test.describe('MM-TXXXX should be able to close server tabs', () => {
         test('MM-TXXXX_1 should close a server tab when clicking the x button', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, mainWindow} = await launchWithMattermostConfig(testInfo);
+            const {app, mainWindow, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 await mainWindow.click('#newTabButton');
 
@@ -71,13 +72,14 @@ test.describe('server_management/tab_management', () => {
                 expect(thirdTab).toBeNull();
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });
 
     test.describe('MM-TXXXX main tab for a server cannot be closed', () => {
         test('MM-TXXXX_2 should not show close button on the main tab when there is only one tab', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, mainWindow} = await launchWithMattermostConfig(testInfo);
+            const {app, mainWindow, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 const firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
                 const secondTab = await mainWindow.$('.TabBar li.serverTabItem:nth-child(2)');
@@ -88,11 +90,12 @@ test.describe('server_management/tab_management', () => {
                 expect(closeButton).toBeNull();
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
         test('MM-TXXXX_3 should show close button on the main tab when there are multiple tabs', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, mainWindow} = await launchWithMattermostConfig(testInfo);
+            const {app, mainWindow, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 await mainWindow.click('#newTabButton');
 
@@ -116,6 +119,7 @@ test.describe('server_management/tab_management', () => {
                 expect(secondTabAfterClose).toBeNull();
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });

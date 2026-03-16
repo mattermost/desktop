@@ -6,6 +6,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile, cmdOrCtrl} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -35,13 +36,13 @@ async function launchWithMattermostConfig(testInfo: {outputDir: string}) {
     const serverMap = await buildServerMap(app);
     const mmServer = serverMap[config.servers[0].name][0].win;
     await loginToMattermost(mmServer);
-    return {app, serverMap};
+    return {app, serverMap, userDataDir};
 }
 
 test.describe('server_management/popout_windows', () => {
     test.describe('MM-TXXXX popout window functionality', () => {
         test('MM-TXXXX_1 should create a new popout window using keyboard shortcut', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app} = await launchWithMattermostConfig(testInfo);
+            const {app, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
                 await mainWindow.keyboard.press(cmdOrCtrl === 'command' ? 'Meta+n' : 'Control+n');
@@ -55,11 +56,12 @@ test.describe('server_management/popout_windows', () => {
                 expect(popoutWindows[0]).toBeDefined();
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
         test('MM-TXXXX_2 should resize the popout window by dragging corners', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app} = await launchWithMattermostConfig(testInfo);
+            const {app, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
                 await mainWindow.keyboard.press(cmdOrCtrl === 'command' ? 'Meta+n' : 'Control+n');
@@ -90,11 +92,12 @@ test.describe('server_management/popout_windows', () => {
                 expect(Math.abs(currentBounds.height - newBounds.height)).toBeLessThan(tolerance);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
         test('MM-TXXXX_3 should move the popout window by dragging title bar', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app} = await launchWithMattermostConfig(testInfo);
+            const {app, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
                 await mainWindow.keyboard.press(cmdOrCtrl === 'command' ? 'Meta+n' : 'Control+n');
@@ -123,11 +126,12 @@ test.describe('server_management/popout_windows', () => {
                 expect(Math.abs(currentBounds.y - newBounds.y)).toBeLessThan(10);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
         test('MM-TXXXX_4 should close the popout window using close button', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app} = await launchWithMattermostConfig(testInfo);
+            const {app, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
                 await mainWindow.keyboard.press(cmdOrCtrl === 'command' ? 'Meta+n' : 'Control+n');
@@ -145,12 +149,13 @@ test.describe('server_management/popout_windows', () => {
                 }, {timeout: 10000}).toBe(0);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
         if (process.platform === 'win32') {
             test('MM-TXXXX_5 should close popout windows when main window is closed', {tag: ['@P2', '@win32']}, async ({}, testInfo) => {
-                const {app} = await launchWithMattermostConfig(testInfo);
+                const {app, userDataDir} = await launchWithMattermostConfig(testInfo);
                 try {
                     const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
                     await mainWindow.keyboard.press('Control+n');
@@ -172,6 +177,7 @@ test.describe('server_management/popout_windows', () => {
                     }, {timeout: 10000}).toBe(0);
                 } finally {
                     await app.close();
+                    await waitForLockFileRelease(userDataDir);
                 }
             });
         }
@@ -179,7 +185,7 @@ test.describe('server_management/popout_windows', () => {
 
     test.describe('MM-T4411 popout window content functionality', () => {
         test('MM-T4411_1 should display the same server content in popout window', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app} = await launchWithMattermostConfig(testInfo);
+            const {app, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
                 await mainWindow.keyboard.press(cmdOrCtrl === 'command' ? 'Meta+n' : 'Control+n');
@@ -200,11 +206,12 @@ test.describe('server_management/popout_windows', () => {
                 await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close());
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
         test('MM-T4411_2 should maintain separate navigation state in popout window', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, serverMap} = await launchWithMattermostConfig(testInfo);
+            const {app, serverMap, userDataDir} = await launchWithMattermostConfig(testInfo);
             try {
                 const mainView = serverMap[config.servers[0].name][0].win;
                 await mainView.waitForSelector('#sidebarItem_off-topic');
@@ -226,6 +233,7 @@ test.describe('server_management/popout_windows', () => {
                 await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close());
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });

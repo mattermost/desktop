@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, exampleURL, writeConfigFile} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 async function launchWithEditServerModal(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');
@@ -53,6 +54,7 @@ test.describe('EditServerModal', () => {
             });
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -74,11 +76,12 @@ test.describe('EditServerModal', () => {
             });
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
     test('MM-T2826_3 should not edit server if an invalid server address has been set', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-        const {app, editServerView} = await launchWithEditServerModal(testInfo);
+        const {app, editServerView, userDataDir} = await launchWithEditServerModal(testInfo);
         try {
             await editServerView.fill('#serverUrlInput', 'superInvalid url');
             await editServerView.waitForSelector('#customMessage_url.Input___error');
@@ -86,6 +89,7 @@ test.describe('EditServerModal', () => {
             expect(existing).toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -112,6 +116,7 @@ test.describe('EditServerModal', () => {
             });
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -138,6 +143,7 @@ test.describe('EditServerModal', () => {
             });
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -165,6 +171,7 @@ test.describe('EditServerModal', () => {
             });
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 });

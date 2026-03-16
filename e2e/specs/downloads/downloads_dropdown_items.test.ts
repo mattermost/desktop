@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 const file1 = {
     addedAt: Date.UTC(2022, 8, 8, 10), // Aug 08, 2022 10:00AM UTC
@@ -102,6 +103,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             expect(thumbnailBackgroundImage).toContain('text..svg');
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
@@ -137,6 +139,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             expect(thumbnailBackgroundImage).toContain('text..svg');
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
@@ -176,6 +179,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             expect(thumbnailBackgroundImage).toContain('text..svg');
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
@@ -206,6 +210,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             expect(file2InnerText).toBe(file1.filename);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });

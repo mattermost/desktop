@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, demoMattermostConfig} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -69,6 +70,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -96,6 +98,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -123,6 +126,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorInfo).toMatch(/ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -150,6 +154,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorInfo).toMatch(/ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)/);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });
@@ -168,7 +173,7 @@ test.describe('Bad Server Configurations', () => {
                 ],
                 lastActiveServer: 0,
             };
-            const {app} = await launchWithConfig(testInfo, badConfig);
+            const {app, userDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
@@ -180,6 +185,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -200,7 +206,7 @@ test.describe('Bad Server Configurations', () => {
                 ],
                 lastActiveServer: 0,
             };
-            const {app} = await launchWithConfig(testInfo, badConfig);
+            const {app, userDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
@@ -225,6 +231,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(postTextbox).toBeDefined();
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -241,7 +248,7 @@ test.describe('Bad Server Configurations', () => {
                 ],
                 lastActiveServer: 0,
             };
-            const {app} = await launchWithConfig(testInfo, badConfig);
+            const {app, userDataDir: badCertUserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
@@ -253,6 +260,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(badCertUserDataDir);
             }
         });
 
@@ -301,6 +309,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorView).toBeNull();
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -317,7 +326,7 @@ test.describe('Bad Server Configurations', () => {
                 ],
                 lastActiveServer: 0,
             };
-            const {app} = await launchWithConfig(testInfo, badConfig);
+            const {app, userDataDir: tls11UserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
@@ -329,6 +338,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorInfo).toMatch(/ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(tls11UserDataDir);
             }
         });
 
@@ -345,7 +355,7 @@ test.describe('Bad Server Configurations', () => {
                 ],
                 lastActiveServer: 0,
             };
-            const {app} = await launchWithConfig(testInfo, badConfig);
+            const {app, userDataDir: rc4UserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
@@ -357,6 +367,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorInfo).toMatch(/ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)/);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(rc4UserDataDir);
             }
         });
     });

@@ -6,6 +6,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 test(
     'main window can be hidden to tray and restored',
@@ -76,6 +77,7 @@ test(
             ).toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     },
 );

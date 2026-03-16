@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 const downloads = {
     'file1.txt': {
@@ -69,6 +70,7 @@ test.describe('downloads/downloads_menubar', () => {
                 expect(saveMenuItem).toHaveProperty('enabled', false);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });
@@ -98,6 +100,7 @@ test.describe('downloads/downloads_menubar', () => {
                 expect(saveMenuItem).toHaveProperty('enabled', true);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -125,6 +128,7 @@ test.describe('downloads/downloads_menubar', () => {
                 expect(isVisible).toBe(true);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -154,6 +158,7 @@ test.describe('downloads/downloads_menubar', () => {
                 expect(isVisible).toBe(true);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });

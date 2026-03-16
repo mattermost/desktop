@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 test.describe('Add Server Modal', () => {
     test('MM-T1312 should focus the first text input', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
@@ -34,6 +35,7 @@ test.describe('Add Server Modal', () => {
             expect(isFocused).toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -64,6 +66,7 @@ test.describe('Add Server Modal', () => {
             expect(existing).toBe(false);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -93,6 +96,7 @@ test.describe('Add Server Modal', () => {
                 expect(disabled === '').toBe(true);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -126,6 +130,7 @@ test.describe('Add Server Modal', () => {
                 expect(disabled === '').toBe(false);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -157,6 +162,7 @@ test.describe('Add Server Modal', () => {
                     expect(disabled === '').toBe(true);
                 } finally {
                     await app.close();
+                    await waitForLockFileRelease(userDataDir);
                 }
             });
         });
@@ -193,6 +199,7 @@ test.describe('Add Server Modal', () => {
                     expect(disabled === '').toBe(true);
                 } finally {
                     await app.close();
+                    await waitForLockFileRelease(userDataDir);
                 }
             });
         });
@@ -225,6 +232,7 @@ test.describe('Add Server Modal', () => {
             expect(existing).toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     });
 
@@ -257,6 +265,7 @@ test.describe('Add Server Modal', () => {
                 expect(disabled === null).toBe(true);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -298,6 +307,7 @@ test.describe('Add Server Modal', () => {
                 });
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });

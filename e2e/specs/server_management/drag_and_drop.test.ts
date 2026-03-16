@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -83,6 +84,7 @@ test.describe('server_management/drag_and_drop', () => {
                 expect(thirdTabText).toContain('Town Square');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -147,6 +149,7 @@ test.describe('server_management/drag_and_drop', () => {
                 expect(thirdTabText).toContain('Town Square');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });
@@ -181,6 +184,7 @@ test.describe('server_management/drag_and_drop', () => {
                 expect(thirdMenuItemText).toBe('google');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -222,6 +226,7 @@ test.describe('server_management/drag_and_drop', () => {
                 expect(thirdMenuItemText).toBe('google');
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
 
@@ -266,6 +271,7 @@ test.describe('server_management/drag_and_drop', () => {
                 expect(order2.order).toBe(2);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         });
     });

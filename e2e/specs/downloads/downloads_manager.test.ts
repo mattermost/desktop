@@ -7,6 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig} from '../../helpers/config';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -74,6 +75,7 @@ test.describe('downloads/downloads_manager', () => {
             expect(isVisible).toBe(true);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
