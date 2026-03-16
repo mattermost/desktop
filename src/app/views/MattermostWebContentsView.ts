@@ -37,6 +37,7 @@ import {getServerAPI} from 'main/server/serverAPI';
 
 import WebContentsEventManager from './webContentEvents';
 
+import {getInstalledBrowsers, openLinkInBrowser} from '../../main/browserManager';
 import ContextMenu from '../../main/contextMenu';
 import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../../main/utils';
 
@@ -93,6 +94,8 @@ export class MattermostWebContentsView extends EventEmitter {
         });
         this.webContentsView.webContents.on('did-navigate-in-page', () => this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle()));
         this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
+
+        this.loadBrowserList();
 
         if (!DeveloperMode.get('disableContextMenu')) {
             this.contextMenu = new ContextMenu(this.generateContextMenu(), this.webContentsView.webContents);
@@ -493,7 +496,11 @@ export class MattermostWebContentsView extends EventEmitter {
         return {
             append: (_, parameters) => {
                 const parsedURL = parseURL(parameters.linkURL);
-                if (parsedURL && isInternalURL(parsedURL, server.url)) {
+                if (!parsedURL) {
+                    return [];
+                }
+
+                if (isInternalURL(parsedURL, server.url)) {
                     return [
                         {
                             type: 'separator' as const,
@@ -514,8 +521,37 @@ export class MattermostWebContentsView extends EventEmitter {
                         },
                     ];
                 }
-                return [];
+
+                return this.generateOpenInBrowserMenuItems(parsedURL.toString());
             },
         };
+    };
+
+    private generateOpenInBrowserMenuItems = (url: string): Electron.MenuItemConstructorOptions[] => {
+        if (process.platform !== 'darwin') {
+            return [];
+        }
+
+        const browsers = this.cachedBrowsers;
+        if (!browsers || browsers.length === 0) {
+            return [];
+        }
+
+        return [
+            {type: 'separator'},
+            {
+                label: localizeMessage('app.menus.contextMenu.openLinkInBrowser', 'Open Link in Browser'),
+                submenu: browsers.map((browser) => ({
+                    label: browser.name,
+                    click: () => openLinkInBrowser(url, browser),
+                })),
+            },
+        ];
+    };
+
+    private cachedBrowsers: Awaited<ReturnType<typeof getInstalledBrowsers>> | null = null;
+
+    private loadBrowserList = async () => {
+        this.cachedBrowsers = await getInstalledBrowsers();
     };
 }
