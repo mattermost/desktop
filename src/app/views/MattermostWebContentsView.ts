@@ -499,7 +499,7 @@ export class MattermostWebContentsView extends EventEmitter {
                     return [];
                 }
 
-                if (isInternalURL(parsedURL, server.url)) {
+                if (this.isURLForConfiguredServer(parsedURL)) {
                     return [
                         {
                             type: 'separator' as const,
@@ -542,6 +542,10 @@ export class MattermostWebContentsView extends EventEmitter {
                 })),
             },
         ];
+    };
+
+    private isURLForConfiguredServer = (url: URL): boolean => {
+        return ServerManager.getAllServers().some((s) => isInternalURL(url, s.url));
     };
 
     private cachedBrowsers: Awaited<ReturnType<typeof getInstalledBrowsers>> | null = null;

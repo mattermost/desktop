@@ -179,6 +179,28 @@ describe('main/browserManager', () => {
             expect(browsers[0].name).toBe('Google Chrome');
         });
 
+        it('should parse registry command with flags and %1 placeholder', async () => {
+            mockExecResolveByPattern({
+                'Google Chrome': '    (Default)    REG_SZ    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --single-argument %1',
+            });
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers.length).toBe(1);
+            expect(browsers[0].executable).toBe('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe');
+            expect(browsers[0].args).toEqual(['--single-argument']);
+        });
+
+        it('should parse unquoted registry command path', async () => {
+            mockExecResolveByPattern({
+                'Google Chrome': '    (Default)    REG_SZ    C:\\Chrome\\chrome.exe',
+            });
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers.length).toBe(1);
+            expect(browsers[0].executable).toBe('C:\\Chrome\\chrome.exe');
+            expect(browsers[0].args).toEqual([]);
+        });
+
         it('should handle registry errors gracefully', async () => {
             mockExecReject(new Error('registry not found'));
 
@@ -295,12 +317,22 @@ describe('main/browserManager', () => {
 
         it('should fall back to shell.openExternal on failure', async () => {
             const {shell} = require('electron');
+            shell.openExternal.mockResolvedValue();
             mockExecFileReject(new Error('App not found'));
 
             const browser = {name: 'Chrome', executable: 'open', args: ['-b', 'com.google.Chrome']};
             await openLinkInBrowser('https://example.com', browser);
 
             expect(shell.openExternal).toHaveBeenCalledWith('https://example.com');
+        });
+
+        it('should catch shell.openExternal rejection gracefully', async () => {
+            const {shell} = require('electron');
+            shell.openExternal.mockRejectedValue(new Error('openExternal failed'));
+            mockExecFileReject(new Error('App not found'));
+
+            const browser = {name: 'Chrome', executable: 'open', args: ['-b', 'com.google.Chrome']};
+            await expect(openLinkInBrowser('https://example.com', browser)).resolves.toBeUndefined();
         });
     });
 });

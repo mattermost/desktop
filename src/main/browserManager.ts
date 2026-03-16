@@ -95,6 +95,45 @@ async function getMacOSBrowsers(): Promise<BrowserInfo[]> {
     return results.filter((b): b is BrowserInfo => b !== null);
 }
 
+/**
+ * Parse a Windows registry command string (e.g. from shell\open\command).
+ * The value may be a quoted path with flags and a %1 placeholder, e.g.:
+ *   "C:\Program Files\Browser\browser.exe" --flag %1
+ *   C:\Browser\browser.exe
+ */
+function parseRegistryCommand(raw: string): {executable: string; args: string[]} | null {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        return null;
+    }
+
+    let executable: string;
+    let rest: string;
+
+    if (trimmed.startsWith('"')) {
+        const closingQuote = trimmed.indexOf('"', 1);
+        if (closingQuote === -1) {
+            return null;
+        }
+        executable = trimmed.substring(1, closingQuote);
+        rest = trimmed.substring(closingQuote + 1).trim();
+    } else {
+        const spaceIndex = trimmed.indexOf(' ');
+        if (spaceIndex === -1) {
+            executable = trimmed;
+            rest = '';
+        } else {
+            executable = trimmed.substring(0, spaceIndex);
+            rest = trimmed.substring(spaceIndex + 1).trim();
+        }
+    }
+
+    // Filter out placeholders like %1, %*, etc. and keep real arguments
+    const args = rest.split(/\s+/).filter((token) => token && !(/(%\d|%\*)/).test(token));
+
+    return {executable, args};
+}
+
 // Windows detection via registry (checks both HKLM and HKCU)
 async function getWindowsBrowsers(): Promise<BrowserInfo[]> {
     const seenNames = new Set<string>();
@@ -109,15 +148,14 @@ async function getWindowsBrowsers(): Promise<BrowserInfo[]> {
                         {timeout: 5000},
                     );
 
-                    // Registry output contains REG_SZ followed by the path in quotes
                     const match = stdout.match(/REG_SZ\s+(.+)/);
                     if (match) {
-                        const browserPath = match[1].trim().replace(/^"(.*)"$/, '$1');
-                        if (fs.existsSync(browserPath)) {
+                        const parsed = parseRegistryCommand(match[1].trim());
+                        if (parsed && fs.existsSync(parsed.executable)) {
                             return {
                                 name: browser.name,
-                                executable: browserPath,
-                                args: [] as string[],
+                                executable: parsed.executable,
+                                args: parsed.args,
                             };
                         }
                     }
@@ -244,13 +282,17 @@ export function clearBrowserCache(): void {
 }
 
 export async function openLinkInBrowser(url: string, browser: BrowserInfo): Promise<void> {
-    log.debug('Opening link in browser', {url, browser: browser.name});
+    log.debug('Opening link in browser', {browser: browser.name});
     try {
         // Use execFile to avoid shell interpretation — URL is passed as an argument, not interpolated
         await execFile(browser.executable, [...browser.args, url], {timeout: 10000});
-    } catch (error) {
-        log.error('Failed to open link in browser, falling back to default', {browser: browser.name, error});
-        shell.openExternal(url);
+    } catch (execError) {
+        log.error('execFile failed to open link, falling back to default browser', {browser: browser.name, error: execError});
+        try {
+            await shell.openExternal(url);
+        } catch (fallbackError) {
+            log.error('Fallback shell.openExternal also failed', {error: fallbackError});
+        }
     }
 }
 
