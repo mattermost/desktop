@@ -1090,6 +1090,17 @@ describe('PopoutManager', () => {
             expect(ViewManager.updateViewTitleTemplate).not.toHaveBeenCalled();
         });
 
+        it('should not call updateViewTitleTemplate when titleTemplate is not a string', () => {
+            const mockEvent = {
+                sender: {id: 456},
+            };
+
+            popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, 123);
+
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+            expect(ViewManager.updateViewTitleTemplate).not.toHaveBeenCalled();
+        });
+
         it('should not call updateViewTitleTemplate when view is a tab', () => {
             const mockWebContentsView = {
                 id: 'tab-view-id',

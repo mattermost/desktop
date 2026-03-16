@@ -393,6 +393,9 @@ export class PopoutManager {
     };
 
     private handleUpdatePopoutTitleTemplate = (event: IpcMainEvent, titleTemplate: string) => {
+        if (typeof titleTemplate !== 'string') {
+            return;
+        }
         const webContentsView = WebContentsManager.getViewByWebContentsId(event.sender.id);
         if (!webContentsView) {
             return;
