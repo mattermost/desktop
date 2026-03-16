@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
 
 async function launchWithWelcomeScreen(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');

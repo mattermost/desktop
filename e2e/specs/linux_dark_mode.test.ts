@@ -14,7 +14,7 @@ async function toggleDarkMode(page: import('playwright').Page) {
 }
 
 test.describe('dark_mode', () => {
-    test('MM-T2465 Linux Dark Mode Toggle', {tag: ['@P2', '@linux']}, async ({electronApp, mainWindow}) => {
+    test('MM-T2465 Linux Dark Mode Toggle', {tag: ['@P2', '@linux']}, async ({mainWindow}) => {
         if (process.platform !== 'linux') {
             test.skip(true, 'Linux only');
             return;

@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, writeConfigFile, demoConfig} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, writeConfigFile, demoConfig} from '../../helpers/config';
 
 test.describe('header', () => {
     test.describe('MM-T2637 Double-Clicking on the header should minimize/maximize the app', () => {

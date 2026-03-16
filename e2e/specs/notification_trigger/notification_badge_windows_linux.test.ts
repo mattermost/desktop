@@ -107,6 +107,7 @@ test.describe('notification_badge/windows_and_linux', () => {
         }
         await triggerBadge(electronApp, false, 150, false);
         const state = await getBadgeState(electronApp);
+
         // Raw inputs are faithfully recorded; the "99+" cap is applied inside
         // showBadgeWindows() before setOverlayIcon() — a platform rendering detail
         expect(state!.mentionCount).toBe(150);
@@ -132,6 +133,7 @@ test.describe('notification_badge/windows_and_linux', () => {
             test.skip(true, 'Linux only');
             return;
         }
+
         // showBadgeLinux passes mentionCount + 1 to setBadgeCount when sessionExpired
         await triggerBadge(electronApp, true, 2, false);
         const state = await getBadgeState(electronApp);
@@ -230,6 +232,7 @@ test.describe('notification_badge/windows_and_linux', () => {
                 test.skip(true, 'Windows only');
                 return;
             }
+
             // setting defaults to falsy — do not enable it
             await triggerBadge(electronApp, false, 0, true);
             const state = await getBadgeState(electronApp);

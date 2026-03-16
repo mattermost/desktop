@@ -21,8 +21,8 @@ test.describe('startup/config', () => {
         'MM-T4401_2 should set src of browser view from config file',
         {tag: ['@P1', '@all']},
         async ({serverMap}) => {
-            const firstServer = serverMap['example']?.[0]?.win;
-            const secondServer = serverMap['github']?.[0]?.win;
+            const firstServer = serverMap.example?.[0]?.win;
+            const secondServer = serverMap.github?.[0]?.win;
             expect(firstServer).toBeDefined();
             expect(secondServer).toBeDefined();
             expect(firstServer!.url()).toContain(exampleURL);
@@ -33,7 +33,7 @@ test.describe('startup/config', () => {
     test(
         'MM-T4402 should upgrade v0 config file',
         {tag: ['@P1', '@all']},
-        async ({electronApp}, testInfo) => {
+        async ({}, testInfo) => {
             // Write a v0 config file, launch a fresh app, verify it upgrades
             const v0Config = {
                 version: 0,

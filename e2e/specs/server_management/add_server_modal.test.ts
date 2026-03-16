@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
 
 test.describe('Add Server Modal', () => {
     test('MM-T1312 should focus the first text input', {tag: ['@P2', '@all']}, async ({}, testInfo) => {

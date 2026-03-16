@@ -7,13 +7,13 @@ import {loginToMattermost} from '../../helpers/login';
 test(
     'clicking a notification navigates to the correct channel',
     {tag: ['@P0', '@all']},
-    async ({electronApp, serverMap, mainWindow}) => {
+    async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
         }
 
-        const serverWin = serverMap['example']?.[0]?.win;
+        const serverWin = serverMap.example?.[0]?.win;
         if (!serverWin) {
             test.skip(true, 'No server view available');
             return;
@@ -30,7 +30,9 @@ test(
             const store = (window as any).store;
             const state = store?.getState?.();
             const members = state?.entities?.channels?.myMembers;
-            if (!members || Object.keys(members).length === 0) return undefined;
+            if (!members || Object.keys(members).length === 0) {
+                return undefined;
+            }
             return Object.keys(members)[0];
         });
 

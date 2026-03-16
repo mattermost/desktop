@@ -6,13 +6,13 @@ import {test, expect} from '../../fixtures/index';
 test(
     'app does not crash when server becomes unreachable and recovers',
     {tag: ['@P0', '@all']},
-    async ({electronApp, serverMap, mainWindow}) => {
+    async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required for network resilience test');
             return;
         }
 
-        const serverWin = serverMap['example']?.[0]?.win;
+        const serverWin = serverMap.example?.[0]?.win;
         if (!serverWin) {
             test.skip(true, 'No server view available');
             return;

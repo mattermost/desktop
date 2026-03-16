@@ -1,9 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {Page} from 'playwright';
-
 import {expect} from '@playwright/test';
+import type {Page} from 'playwright';
 
 export async function triggerTestNotification(firstServer: Page) {
     await firstServer.click('div#CustomizeYourExperienceTour > button');

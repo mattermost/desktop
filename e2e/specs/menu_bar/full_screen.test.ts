@@ -58,11 +58,11 @@ test.describe('menu/view', () => {
             await new Promise<void>((resolve, reject) => {
                 const timeout = setTimeout(() => reject(new Error('Timed out waiting for exit fullscreen')), 15000);
                 const check = () => {
-                    if (!win.isFullScreen()) {
+                    if (win.isFullScreen()) {
+                        setTimeout(check, 100);
+                    } else {
                         clearTimeout(timeout);
                         resolve();
-                    } else {
-                        setTimeout(check, 100);
                     }
                 };
                 check();

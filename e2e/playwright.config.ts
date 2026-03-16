@@ -3,6 +3,15 @@
 
 import {defineConfig} from '@playwright/test';
 
+let platformGrep: RegExp;
+if (process.platform === 'darwin') {
+    platformGrep = /@all|@darwin/;
+} else if (process.platform === 'win32') {
+    platformGrep = /@all|@win32/;
+} else {
+    platformGrep = /@all|@linux/;
+}
+
 export default defineConfig({
     testDir: './specs',
     testMatch: '**/*.test.ts',
@@ -29,9 +38,7 @@ export default defineConfig({
     projects: [
         {
             name: process.platform,
-            grep: process.platform === 'darwin' ? /@all|@darwin/ :
-                  process.platform === 'win32'  ? /@all|@win32/ :
-                  /@all|@linux/,
+            grep: platformGrep,
         },
     ],
 });

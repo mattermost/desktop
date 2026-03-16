@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 
 const file1 = {
     addedAt: Date.UTC(2022, 8, 8, 10), // Aug 08, 2022 10:00AM UTC
@@ -53,7 +53,9 @@ async function launchAppWithDownloads(userDataDir: string, downloads: Record<str
 
 async function openDownloadsDropdown(app: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
     const mainWindow = app.windows().find((window) => window.url().includes('index'));
-    if (!mainWindow) {throw new Error('No main window found');}
+    if (!mainWindow) {
+        throw new Error('No main window found');
+    }
     await mainWindow.waitForLoadState();
     await mainWindow.bringToFront();
 
@@ -116,6 +118,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
 
         const {app} = await launchAppWithDownloads(userDataDir, downloads);
         fs.mkdirSync(downloadsLocation, {recursive: true});
+
         // Do NOT create the file — simulates deleted state
 
         try {

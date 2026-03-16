@@ -6,8 +6,8 @@ import * as path from 'path';
 import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile, cmdOrCtrl} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile, cmdOrCtrl} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 

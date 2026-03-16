@@ -4,8 +4,8 @@
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
 
 test.describe('LongServerName', () => {
     test('MM-T4050 Long server name', {tag: ['@P2', '@all']}, async ({}, testInfo) => {

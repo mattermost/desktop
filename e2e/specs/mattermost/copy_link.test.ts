@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {cmdOrCtrl} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 
 test.describe('copylink', () => {

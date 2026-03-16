@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 
 const downloads = {
     'file1.txt': {
@@ -51,7 +51,9 @@ test.describe('downloads/downloads_menubar', () => {
 
             try {
                 const mainWindow = app.windows().find((window) => window.url().includes('index'));
-                if (!mainWindow) {throw new Error('No main window found');}
+                if (!mainWindow) {
+                    throw new Error('No main window found');
+                }
                 await mainWindow.waitForLoadState();
                 await mainWindow.bringToFront();
 
@@ -78,7 +80,9 @@ test.describe('downloads/downloads_menubar', () => {
 
             try {
                 const mainWindow = app.windows().find((window) => window.url().includes('index'));
-                if (!mainWindow) {throw new Error('No main window found');}
+                if (!mainWindow) {
+                    throw new Error('No main window found');
+                }
                 await mainWindow.waitForLoadState();
                 await mainWindow.bringToFront();
 
@@ -103,7 +107,9 @@ test.describe('downloads/downloads_menubar', () => {
 
             try {
                 const mainWindow = app.windows().find((window) => window.url().includes('index'));
-                if (!mainWindow) {throw new Error('No main window found');}
+                if (!mainWindow) {
+                    throw new Error('No main window found');
+                }
                 await mainWindow.waitForLoadState();
                 await mainWindow.bringToFront();
 
@@ -128,7 +134,9 @@ test.describe('downloads/downloads_menubar', () => {
 
             try {
                 const mainWindow = app.windows().find((window) => window.url().includes('index'));
-                if (!mainWindow) {throw new Error('No main window found');}
+                if (!mainWindow) {
+                    throw new Error('No main window found');
+                }
                 await mainWindow.waitForLoadState();
                 await mainWindow.bringToFront();
 

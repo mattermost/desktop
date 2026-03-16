@@ -1,9 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {ElectronApplication} from 'playwright';
-
 import {expect} from '@playwright/test';
+import type {ElectronApplication} from 'playwright';
 
 /**
  * Wait until the main process has set global.__e2eAppReady = true.

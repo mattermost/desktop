@@ -6,10 +6,10 @@ import * as path from 'path';
 import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {buildServerMap} from '../../helpers/serverMap';
+import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {buildServerMap} from '../../helpers/serverMap';
 
 test(
     'session is preserved across app restart — no re-login required',
@@ -36,7 +36,7 @@ test(
         try {
             await waitForAppReady(app1);
             const serverMap1 = await buildServerMap(app1);
-            const serverWin1 = serverMap1['example']?.[0]?.win;
+            const serverWin1 = serverMap1.example?.[0]?.win;
             expect(serverWin1).toBeDefined();
 
             // Log in
@@ -59,12 +59,12 @@ test(
         try {
             await waitForAppReady(app2);
             const serverMap2 = await buildServerMap(app2);
-            const serverWin2 = serverMap2['example']?.[0]?.win;
+            const serverWin2 = serverMap2.example?.[0]?.win;
             expect(serverWin2).toBeDefined();
 
             // Login page should NOT appear
-            const loginVisible = await serverWin2!.locator('#input_loginId').isVisible()
-                .catch(() => false);
+            const loginVisible = await serverWin2!.locator('#input_loginId').isVisible().
+                catch(() => false);
             expect(loginVisible).toBe(false);
 
             // App channel should be visible

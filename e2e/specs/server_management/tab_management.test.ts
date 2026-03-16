@@ -4,8 +4,8 @@
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -38,7 +38,7 @@ async function launchWithMattermostConfig(testInfo: {outputDir: string}) {
 test.describe('server_management/tab_management', () => {
     test.describe('MM-TXXXX should be able to close server tabs', () => {
         test('MM-TXXXX_1 should close a server tab when clicking the x button', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, serverMap, mainWindow} = await launchWithMattermostConfig(testInfo);
+            const {app, mainWindow} = await launchWithMattermostConfig(testInfo);
             try {
                 await mainWindow.click('#newTabButton');
 

@@ -9,7 +9,7 @@ import {test, expect} from '../../fixtures/index';
 test(
     'downloaded file exists on disk after download completes',
     {tag: ['@P1', '@all']},
-    async ({electronApp, mainWindow}, testInfo) => {
+    async ({electronApp}, testInfo) => {
         // This test requires a real downloadable URL — skip if not in live env
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required for download test');
@@ -35,7 +35,7 @@ test(
 
         // Trigger a download via a known URL from one of the demo servers
         // Using a publicly available small file for the test
-        const downloadUrl = 'https://example.com/';  // Replace with actual test file URL in live env
+        const downloadUrl = 'https://example.com/'; // Replace with actual test file URL in live env
 
         const downloadPromise = externalWin!.waitForEvent('download', {timeout: 30_000});
 

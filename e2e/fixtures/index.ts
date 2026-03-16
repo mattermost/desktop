@@ -8,14 +8,15 @@ import {test as base, type Page} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 import {_electron as electron} from 'playwright';
 
-import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../helpers/config';
 import {waitForAppReady} from '../helpers/appReadiness';
 import {waitForLockFileRelease} from '../helpers/cleanup';
+import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../helpers/config';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
 
 export type {ServerMap, ServerEntry} from '../helpers/serverMap';
 
 type Fixtures = {
+
     /**
      * A launched ElectronApplication with its own isolated userDataDir.
      * Guaranteed torn down (app.close() + lock file release) after each test.
@@ -46,13 +47,19 @@ export const test = base.extend<Fixtures>({
         // writeConfigFile is SYNCHRONOUS — must complete before electron.launch()
         writeConfigFile(userDataDir, demoConfig);
 
-        const launchTimeout = process.platform === 'win32' ? 120_000 :
-                              process.platform === 'darwin' ? 90_000 : 60_000;
+        let launchTimeout: number;
+        if (process.platform === 'win32') {
+            launchTimeout = 120_000;
+        } else if (process.platform === 'darwin') {
+            launchTimeout = 90_000;
+        } else {
+            launchTimeout = 60_000;
+        }
 
         const app = await electron.launch({
             executablePath: electronBinaryPath,
             args: [
-                appDir,                              // test build directory (e2e/dist)
+                appDir, // test build directory (e2e/dist)
                 `--user-data-dir=${userDataDir}`,
 
                 // CI compatibility — required for Linux sandbox, GPU stability
@@ -97,16 +104,18 @@ export const test = base.extend<Fixtures>({
         await use();
     },
 
-    serverMap: async ({electronApp, appReady: _}, use) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    serverMap: async ({electronApp, appReady: _appReady}, use) => {
         const map = await buildServerMap(electronApp);
         await use(map);
     },
 
-    mainWindow: async ({electronApp, appReady: _}, use) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    mainWindow: async ({electronApp, appReady: _appReady}, use) => {
         const win = electronApp.windows().find((w) => w.url().includes('index'));
         if (!win) {
             throw new Error(
-                `mainWindow fixture: no window with 'index' in URL.\n` +
+                'mainWindow fixture: no window with \'index\' in URL.\n' +
                 `Available: ${electronApp.windows().map((w) => w.url()).join(', ')}`,
             );
         }

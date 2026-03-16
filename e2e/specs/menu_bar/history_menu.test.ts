@@ -7,7 +7,7 @@ import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('history_menu', () => {
-    test('Click back and forward from history', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
+    test('Click back and forward from history', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;

@@ -6,7 +6,6 @@ import {demoMattermostConfig, cmdOrCtrl} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
-
 function getZoomFactorOfServer(browserWindow: any, serverId: number) {
     return browserWindow.evaluate(
         (window: any, id: number) => window.contentView.children.find((view: any) => view.webContents.id === id).webContents.getZoomFactor(),
@@ -22,7 +21,7 @@ function setZoomFactorOfServer(browserWindow: any, serverId: number, zoomFactor:
 }
 
 test.describe('menu/view', () => {
-    test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
+    test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;

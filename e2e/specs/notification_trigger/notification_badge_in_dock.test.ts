@@ -1,10 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {triggerTestNotification, verifyNotificationRecievedinDM} from './helpers';
+
 import {test, expect} from '../../fixtures/index';
 import {loginToMattermost} from '../../helpers/login';
-
-import {triggerTestNotification, verifyNotificationRecievedinDM} from './helpers';
 
 test.describe('Trigger Notification From desktop', () => {
     test('should receive a notification on macOS', {tag: ['@P2', '@all', '@darwin']}, async ({electronApp, serverMap}) => {

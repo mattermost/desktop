@@ -4,8 +4,8 @@
 import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
 
 test(
     'main window can be hidden to tray and restored',

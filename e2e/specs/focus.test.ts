@@ -82,7 +82,9 @@ test.describe('focus', () => {
 
             const mainView = electronApp.windows().find((window) => window.url().includes('index'));
             const dropdownView = electronApp.windows().find((window) => window.url().includes('dropdown'));
-            if (!mainView || !dropdownView) {throw new Error('Required views not found');}
+            if (!mainView || !dropdownView) {
+                throw new Error('Required views not found');
+            }
             await mainView.click('.ServerDropdownButton');
             await dropdownView.click('.ServerDropdown .ServerDropdown__button.addServer');
             const newServerView = await electronApp.waitForEvent('window', {
@@ -121,11 +123,15 @@ test.describe('focus', () => {
 
             const mainView = electronApp.windows().find((window) => window.url().includes('index'));
             const dropdownView = electronApp.windows().find((window) => window.url().includes('dropdown'));
-            if (!mainView || !dropdownView) {throw new Error('Required views not found');}
+            if (!mainView || !dropdownView) {
+                throw new Error('Required views not found');
+            }
             await mainView.click('.ServerDropdownButton');
             await dropdownView.click('.ServerDropdown .ServerDropdown__button:has-text("community")');
-            const secondServer = serverMap['community']?.[0]?.win;
-            if (!secondServer) {throw new Error('community server view not found');}
+            const secondServer = serverMap.community?.[0]?.win;
+            if (!secondServer) {
+                throw new Error('community server view not found');
+            }
             await secondServer.waitForSelector('#input_loginId');
             await secondServer.focus('#input_loginId');
 

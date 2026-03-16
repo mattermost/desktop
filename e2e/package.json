@@ -2,14 +2,10 @@
   "name": "desktop-e2e",
   "version": "1.0.0",
   "description": "E2E tests for the Desktop App",
-  "main": "dist/e2e_bundle.js",
   "scripts": {
-    "clean": "rm -rf dist/ mochawesome-report/ node_modules/ testUserData/",
-    "build:performance": "webpack-cli --config webpack.config.performance.js",
+    "clean": "rm -rf node_modules/ testUserData/ playwright-report/",
     "test": "playwright test",
-    "test:performance": "electron-mocha --reporter json --reporter-option output=./performance/perf-test-report.json dist/e2e_bundle.js",
-    "postinstall": "patch-package && cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs",
-    "test:pw": "playwright test"
+    "postinstall": "patch-package && cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs"
   },
   "repository": {
     "type": "git",

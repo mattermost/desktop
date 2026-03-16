@@ -9,7 +9,7 @@ import {test, expect} from '../../fixtures/index';
 test.describe('startup/window', () => {
     test(
         'MM-T4403_1 should restore window bounds on restart',
-        {tag: ['@P2', '@darwin', '@win32']},  // skipped on Linux
+        {tag: ['@P2', '@darwin', '@win32']}, // skipped on Linux
         async ({electronApp}, testInfo) => {
             // Resize to a known size
             await electronApp.evaluate(({BrowserWindow}) => {
@@ -79,6 +79,7 @@ test.describe('startup/window', () => {
                 const bounds = await app2.evaluate(({BrowserWindow}) => {
                     return BrowserWindow.getAllWindows()[0].getBounds();
                 });
+
                 // Window should be on-screen (x >= 0)
                 expect(bounds.x).toBeGreaterThanOrEqual(0);
             } finally {

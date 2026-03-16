@@ -4,8 +4,8 @@
 import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
 
 // All welcome screen tests need a no-servers app. This helper launches one.
 async function launchEmptyApp(testInfo: {outputDir: string; title: string}) {
@@ -81,8 +81,8 @@ test.describe('startup/welcome_screen_modal', () => {
                 await modal.click('.WelcomeScreen .WelcomeScreen__button');
 
                 // Should open new server modal or close welcome screen
-                await modal.waitForSelector('.WelcomeScreen', {state: 'detached', timeout: 5_000})
-                    .catch(() => {/* modal may close in a different way */});
+                await modal.waitForSelector('.WelcomeScreen', {state: 'detached', timeout: 5_000}).
+                    catch(() => {/* modal may close in a different way */});
             } finally {
                 await app.close();
             }

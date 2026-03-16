@@ -17,7 +17,7 @@ export type ServerMap = Record<string, ServerEntry[]>;
  * (i.e., the Mattermost server web app views, not the internal UI).
  */
 export async function buildServerMap(app: ElectronApplication): Promise<ServerMap> {
-    const maxRetries = 60;  // 6 seconds max (after appReady, windows should be fast)
+    const maxRetries = 60; // 6 seconds max (after appReady, windows should be fast)
 
     for (let i = 0; i < maxRetries; i++) {
         const externalWindows = app.windows().filter((win) => {
@@ -40,7 +40,9 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
                     return await Promise.race([
                         win.evaluate(() => {
                             const helper = (window as any).testHelper;
-                            if (!helper) return null;
+                            if (!helper) {
+                                return null;
+                            }
                             return helper.getViewInfoForTest() as {serverName: string; webContentsId: number};
                         }),
                         sleep(3000).then(() => null),
@@ -70,7 +72,11 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
     }
 
     const availableUrls = app.windows().map((w) => {
-        try { return w.url(); } catch { return '<unavailable>'; }
+        try {
+            return w.url();
+        } catch {
+            return '<unavailable>';
+        }
     }).join(', ');
     throw new Error(
         `buildServerMap timed out after ${maxRetries * 100}ms waiting for external windows.\n` +

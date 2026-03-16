@@ -7,7 +7,7 @@ import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('edit_menu', () => {
-    test('MM-T807 Undo in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
+    test('MM-T807 Undo in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -26,7 +26,7 @@ test.describe('edit_menu', () => {
         expect(content).toBe('Mattermos');
     });
 
-    test('MM-T808 Redo in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
+    test('MM-T808 Redo in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -49,7 +49,7 @@ test.describe('edit_menu', () => {
         expect(content).toBe('Mattermost');
     });
 
-    test('MM-T809 Cut in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
+    test('MM-T809 Cut in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -68,7 +68,7 @@ test.describe('edit_menu', () => {
         expect(content).toBe('');
     });
 
-    test('MM-T810 Copy in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
+    test('MM-T810 Copy in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -89,7 +89,7 @@ test.describe('edit_menu', () => {
         expect(content).toBe('MattermostMattermost');
     });
 
-    test('MM-T811 Paste in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
+    test('MM-T811 Paste in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -110,7 +110,7 @@ test.describe('edit_menu', () => {
         expect(content).toBe('Mattermost');
     });
 
-    test('MM-T812 Select All in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
+    test('MM-T812 Select All in the Menu Bar', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;

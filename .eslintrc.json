@@ -107,26 +107,17 @@
                 "prefer-arrow-callback": 0,
                 "no-import-assign": 0,
                 "no-only-tests/no-only-tests": 1,
-                "import/no-commonjs": 0
-            }
-        },
-        {
-            "files": ["e2e/**/*"],
-            "settings": {
-                "import/resolver": {
-                    "webpack": {
-                        "config": "webpack.config.js"
-                    }
-                }
+                "import/no-commonjs": 0,
+                "import/no-unresolved": 0,
+                "import/order": 0,
+                "import/no-duplicates": 0,
+                "no-empty-pattern": 0,
+                "no-await-in-loop": 0
             }
         },
         {
             "files": [
                 "webpack.config.renderer.js",
-                "e2e/specs/startup/app.test.js",
-                "e2e/specs/settings.test.js",
-                "e2e/modules/utils.js",
-                "e2e/modules/environment.js",
                 "CHANGELOG.md",
                 "webpack.config.base.js",
                 "./babel.config.js",

@@ -10,7 +10,7 @@ test.describe('startup/app', () => {
     test(
         'MM-T4400 should be stopped when the app instance already exists',
         {tag: ['@P1', '@all']},
-        async ({electronApp}) => {
+        async ({}) => {
             // Try launching a second instance against the same userDataDir.
             // We cannot share the fixture's userDataDir, so we attempt against a
             // fresh dir — Electron's singleton is per-executable, not per-data-dir.
@@ -20,8 +20,9 @@ test.describe('startup/app', () => {
                 secondApp = await electron.launch({
                     executablePath: electronBinaryPath,
                     args: [appDir, '--no-sandbox', '--disable-gpu'],
-                    timeout: 5_000,  // short — expect it to exit quickly
+                    timeout: 5_000, // short — expect it to exit quickly
                 });
+
                 // If we get here, the second instance launched (bad — but close it)
                 await secondApp.close();
                 throw new Error('Second app instance should not have launched successfully');
@@ -36,7 +37,7 @@ test.describe('startup/app', () => {
     test(
         'MM-T4975 should show the welcome screen modal when no servers exist',
         {tag: ['@P1', '@all']},
-        async ({electronApp}, testInfo) => {
+        async ({}, testInfo) => {
             // This test needs a no-servers config. Override before launch.
             // Since electronApp fixture has already launched with demoConfig,
             // we test this by launching a fresh app with emptyConfig.
@@ -73,7 +74,7 @@ test.describe('startup/app', () => {
 
     test(
         'MM-T4985 should show app name in title bar when no servers exist',
-        {tag: ['@P2', '@darwin', '@win32']},  // skipped on Linux
+        {tag: ['@P2', '@darwin', '@win32']}, // skipped on Linux
         async ({electronApp}) => {
             const mainWin = electronApp.windows().find((w) => w.url().includes('index'));
             expect(mainWin).toBeDefined();

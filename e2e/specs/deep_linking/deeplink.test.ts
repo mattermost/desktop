@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('application', () => {
@@ -38,7 +38,9 @@ test.describe('application', () => {
                 });
             }
             const mainWindow = app.windows().find((window) => window.url().includes('index'));
-            if (!mainWindow) {throw new Error('No main window found');}
+            if (!mainWindow) {
+                throw new Error('No main window found');
+            }
             const browserWindow = await app.browserWindow(mainWindow);
 
             // Wait for server map to have the github server populated
