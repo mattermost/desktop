@@ -212,12 +212,14 @@ async function getLinuxBrowsers(): Promise<BrowserInfo[]> {
     const desktopDirResults = await Promise.all(
         existingDirs.map(async (dir) => {
             try {
-                const {stdout} = await exec(
-                    `grep -rl "x-scheme-handler/https" "${dir}" 2>/dev/null || true`,
+                // Use execFile to avoid shell — dir may contain untrusted content from HOME
+                const {stdout} = await execFile(
+                    'grep', ['-rl', 'x-scheme-handler/https', dir],
                     {timeout: 5000},
                 );
                 return stdout.trim().split('\n').filter(Boolean);
             } catch {
+                // grep returns exit code 1 when no matches found
                 return [];
             }
         }),

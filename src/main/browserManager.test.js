@@ -226,10 +226,17 @@ describe('main/browserManager', () => {
                     cb(null, {stdout: '/usr/bin/firefox', stderr: ''});
                 } else if (cmd === 'which google-chrome') {
                     cb(null, {stdout: '/usr/bin/google-chrome', stderr: ''});
-                } else if (cmd.startsWith('grep')) {
-                    cb(null, {stdout: '', stderr: ''});
                 } else {
                     cb(new Error('not found'));
+                }
+            });
+            // grep for .desktop files now uses execFile — return no matches
+            mockExecFile.mockImplementation((file, args, opts, cb) => {
+                if (typeof opts === 'function') {
+                    cb = opts;
+                }
+                if (typeof cb === 'function') {
+                    cb(new Error('no matches'), {stdout: '', stderr: ''});
                 }
             });
 
@@ -250,10 +257,14 @@ describe('main/browserManager', () => {
                 if (typeof cb !== 'function') {
                     return;
                 }
-                if (cmd.startsWith('grep')) {
-                    cb(null, {stdout: '', stderr: ''});
-                } else {
-                    cb(new Error('not found'));
+                cb(new Error('not found'));
+            });
+            mockExecFile.mockImplementation((file, args, opts, cb) => {
+                if (typeof opts === 'function') {
+                    cb = opts;
+                }
+                if (typeof cb === 'function') {
+                    cb(new Error('no matches'), {stdout: '', stderr: ''});
                 }
             });
 
