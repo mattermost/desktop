@@ -93,14 +93,10 @@ async function getZEPHYRFolderID() {
         ZEPHYR_FOLDER_MACOS_REPORT,
         ZEPHYR_FOLDER_WIN_REPORT,
     } = process.env;
-    if (TYPE === 'MASTER') {
-        return ZEPHYR_FOLDER_ID;
-    }
     const platform = os.platform();
 
     // Define Zephyr folder IDs for different run types and platforms.
     // For PR we dont generate reports.
-    // Post Merge to master branch, default folderID will be used.
     const folderIDs = {
         RELEASE: {
             darwin: ZEPHYR_FOLDER_MACOS_REPORT,

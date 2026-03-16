@@ -30,7 +30,7 @@ on:
         default: false
       run_type:
         type: string
-        description: "Run type for test reporting (PR/RELEASE/MASTER/MAIN). Auto-detected from branch if not provided."
+        description: "Run type for test reporting (PR/RELEASE). Auto-detected from branch if not provided."
         required: false
         default: ""
       pr_number:
@@ -83,7 +83,7 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
-      TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(github.ref_name, 'release-') && 'RELEASE' || (github.ref_name == 'master' && 'MASTER') || 'PR' }}
+      TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(github.ref_name, 'release-') && 'RELEASE' || 'PR' }}
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 

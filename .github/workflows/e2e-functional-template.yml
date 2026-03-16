@@ -36,7 +36,7 @@ on:
         default: false
       TYPE:
         type: string
-        description: "e.g. MASTER, PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
+        description: "e.g. PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
         required: false
         default: "PR"
       MM_SERVER_VERSION:
@@ -185,11 +185,7 @@ jobs:
               fi
               ;;
             "push")
-              if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-                echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=MASTER" >> $GITHUB_ENV
-                echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-              fi
+              echo "BUILD_SUFFIX=desktop-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
               ;;
           esac
           
