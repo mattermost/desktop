@@ -1,6 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-/* eslint-disable no-console */
+/* eslint-disable no-console -- Logging is intentional in CI utility scripts */
 
 /**
  * Update initial pending status for all platforms
@@ -104,7 +104,15 @@ async function removeE2ELabel({github, context}) {
                     head: `${headOwner}:${branchName}`,
                 });
                 if (prs.data && prs.data.length > 0) {
-                    prNumber = prs.data[0].number;
+                    // Prefer the PR whose head SHA matches the workflow run's head SHA
+                    const matchingPr = prs.data.find(
+                        (pr) => pr.head && pr.head.sha === run.data.head_sha,
+                    );
+                    if (matchingPr) {
+                        prNumber = matchingPr.number;
+                    } else {
+                        prNumber = prs.data[0].number;
+                    }
                 }
             }
         }
@@ -121,11 +129,11 @@ async function removeE2ELabel({github, context}) {
         }
     } catch (error) {
         if (error && error.status === 404) {
-            console.log('Label removal skipped - label "E2E/Run" is not present on the associated PR (404).');
+            console.log(`Label removal skipped - label or resource not found (404). Details: ${error.message}`);
         } else if (error && error.status === 403) {
-            console.log('Label removal failed - insufficient permissions to modify labels on the associated PR (403).');
+            console.log(`Label removal failed - insufficient permissions (403). Details: ${error.message}`);
         } else {
-            console.log(`Label removal failed due to an unexpected error: status=${error && error.status}, message=${error && error.message}`);
+            console.log(`Label removal failed - unexpected error: status=${error && error.status}, message=${error && error.message}`);
         }
     }
 }

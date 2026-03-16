@@ -111,6 +111,8 @@ jobs:
   remove-e2e-label:
     name: Remove E2E label from PR
     runs-on: ubuntu-22.04
+    permissions:
+      issues: write
     needs:
       - e2e-tests
     if: always() && inputs.pr_number != ''
