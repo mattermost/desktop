@@ -7,6 +7,12 @@ jest.mock('child_process', () => ({
     exec: mockExec,
 }));
 
+jest.mock('fs', () => ({
+    ...jest.requireActual('fs'),
+    existsSync: jest.fn(() => true),
+    readFileSync: jest.fn(),
+}));
+
 jest.mock('electron', () => ({
     shell: {
         openExternal: jest.fn(),
@@ -31,7 +37,7 @@ function mockExecResolve(stdout) {
     });
 }
 
-function mockExecResolveByBundleId(mapping) {
+function mockExecResolveByPattern(mapping) {
     mockExec.mockImplementation((cmd, opts, cb) => {
         if (typeof opts === 'function') {
             cb = opts;
@@ -39,9 +45,9 @@ function mockExecResolveByBundleId(mapping) {
         if (typeof cb !== 'function') {
             return;
         }
-        for (const [bundleId, appPath] of Object.entries(mapping)) {
-            if (cmd.includes(bundleId)) {
-                cb(null, {stdout: appPath, stderr: ''});
+        for (const [pattern, stdout] of Object.entries(mapping)) {
+            if (cmd.includes(pattern)) {
+                cb(null, {stdout, stderr: ''});
                 return;
             }
         }
@@ -81,16 +87,13 @@ describe('main/browserManager', () => {
         Object.defineProperty(process, 'platform', {value: originalPlatform});
     });
 
-    describe('getInstalledBrowsers', () => {
-        it('should return empty array on non-darwin platforms', async () => {
-            Object.defineProperty(process, 'platform', {value: 'win32'});
-            const browsers = await getInstalledBrowsers();
-            expect(browsers).toEqual([]);
+    describe('getInstalledBrowsers - macOS', () => {
+        beforeEach(() => {
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
         });
 
-        it('should detect installed browsers on macOS', async () => {
-            Object.defineProperty(process, 'platform', {value: 'darwin'});
-            mockExecResolveByBundleId({
+        it('should detect installed browsers via mdfind', async () => {
+            mockExecResolveByPattern({
                 'com.google.Chrome': '/Applications/Google Chrome.app',
                 'com.apple.Safari': '/Applications/Safari.app',
             });
@@ -98,14 +101,109 @@ describe('main/browserManager', () => {
             const browsers = await getInstalledBrowsers();
             expect(browsers.length).toBe(2);
             expect(browsers[0].name).toBe('Safari');
-            expect(browsers[0].bundleId).toBe('com.apple.Safari');
+            expect(browsers[0].command).toBe('open -b "com.apple.Safari"');
             expect(browsers[1].name).toBe('Google Chrome');
-            expect(browsers[1].bundleId).toBe('com.google.Chrome');
+            expect(browsers[1].command).toBe('open -b "com.google.Chrome"');
         });
 
-        it('should cache browser results', async () => {
+        it('should handle mdfind errors gracefully', async () => {
+            mockExecReject(new Error('mdfind failed'));
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers).toEqual([]);
+        });
+    });
+
+    describe('getInstalledBrowsers - Windows', () => {
+        beforeEach(() => {
+            Object.defineProperty(process, 'platform', {value: 'win32'});
+        });
+
+        it('should detect installed browsers via registry', async () => {
+            mockExecResolveByPattern({
+                'Google Chrome': '    (Default)    REG_SZ    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"',
+                'FIREFOX.EXE': '    (Default)    REG_SZ    "C:\\Program Files\\Mozilla Firefox\\firefox.exe"',
+            });
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers.length).toBe(2);
+            expect(browsers[0].name).toBe('Google Chrome');
+            expect(browsers[0].command).toBe('"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"');
+            expect(browsers[1].name).toBe('Firefox');
+        });
+
+        it('should handle registry errors gracefully', async () => {
+            mockExecReject(new Error('registry not found'));
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers).toEqual([]);
+        });
+    });
+
+    describe('getInstalledBrowsers - Linux', () => {
+        beforeEach(() => {
+            Object.defineProperty(process, 'platform', {value: 'linux'});
+        });
+
+        it('should detect installed browsers via which', async () => {
+            mockExec.mockImplementation((cmd, opts, cb) => {
+                if (typeof opts === 'function') {
+                    cb = opts;
+                }
+                if (typeof cb !== 'function') {
+                    return;
+                }
+                if (cmd === 'which firefox') {
+                    cb(null, {stdout: '/usr/bin/firefox', stderr: ''});
+                } else if (cmd === 'which google-chrome') {
+                    cb(null, {stdout: '/usr/bin/google-chrome', stderr: ''});
+                } else if (cmd.startsWith('grep')) {
+                    cb(null, {stdout: '', stderr: ''});
+                } else {
+                    cb(new Error('not found'));
+                }
+            });
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers.length).toBe(2);
+            expect(browsers[0].name).toBe('Firefox');
+            expect(browsers[0].command).toBe('firefox');
+            expect(browsers[1].name).toBe('Google Chrome');
+            expect(browsers[1].command).toBe('google-chrome');
+        });
+
+        it('should handle which errors gracefully', async () => {
+            mockExec.mockImplementation((cmd, opts, cb) => {
+                if (typeof opts === 'function') {
+                    cb = opts;
+                }
+                if (typeof cb !== 'function') {
+                    return;
+                }
+                if (cmd.startsWith('grep')) {
+                    cb(null, {stdout: '', stderr: ''});
+                } else {
+                    cb(new Error('not found'));
+                }
+            });
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers).toEqual([]);
+        });
+    });
+
+    describe('getInstalledBrowsers - unsupported platform', () => {
+        it('should return empty array', async () => {
+            Object.defineProperty(process, 'platform', {value: 'freebsd'});
+            const browsers = await getInstalledBrowsers();
+            expect(browsers).toEqual([]);
+        });
+    });
+
+    describe('caching', () => {
+        it('should cache browser results across calls', async () => {
             Object.defineProperty(process, 'platform', {value: 'darwin'});
-            mockExecResolveByBundleId({
+            mockExecResolveByPattern({
                 'com.apple.Safari': '/Applications/Safari.app',
             });
 
@@ -115,21 +213,13 @@ describe('main/browserManager', () => {
             expect(mockExec).not.toHaveBeenCalled();
             expect(browsers.length).toBe(1);
         });
-
-        it('should handle mdfind errors gracefully', async () => {
-            Object.defineProperty(process, 'platform', {value: 'darwin'});
-            mockExecReject(new Error('mdfind failed'));
-
-            const browsers = await getInstalledBrowsers();
-            expect(browsers).toEqual([]);
-        });
     });
 
     describe('openLinkInBrowser', () => {
-        it('should open link using the specified browser bundle ID', async () => {
+        it('should open link using the browser command', async () => {
             mockExecResolve('');
 
-            const browser = {name: 'Google Chrome', path: '/Applications/Google Chrome.app', bundleId: 'com.google.Chrome'};
+            const browser = {name: 'Google Chrome', command: 'open -b "com.google.Chrome"'};
             await openLinkInBrowser('https://example.com', browser);
 
             expect(mockExec).toHaveBeenCalledWith(
@@ -143,7 +233,7 @@ describe('main/browserManager', () => {
             const {shell} = require('electron');
             mockExecReject(new Error('App not found'));
 
-            const browser = {name: 'Chrome', path: '/Applications/Google Chrome.app', bundleId: 'com.google.Chrome'};
+            const browser = {name: 'Chrome', command: 'open -b "com.google.Chrome"'};
             await openLinkInBrowser('https://example.com', browser);
 
             expect(shell.openExternal).toHaveBeenCalledWith('https://example.com');

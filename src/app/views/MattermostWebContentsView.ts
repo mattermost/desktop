@@ -528,10 +528,6 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     private generateOpenInBrowserMenuItems = (url: string): Electron.MenuItemConstructorOptions[] => {
-        if (process.platform !== 'darwin') {
-            return [];
-        }
-
         const browsers = this.cachedBrowsers;
         if (!browsers || browsers.length === 0) {
             return [];
