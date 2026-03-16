@@ -53,8 +53,7 @@ test.describe('settings/keyboard_shortcuts', () => {
             await textbox.scrollIntoViewIfNeeded();
 
             const textToCopy = 'Afrikaans';
-            await electronApp.evaluate((_, text: string) => {
-                const {clipboard} = require('electron');
+            await electronApp.evaluate(({clipboard}, text: string) => {
                 clipboard.writeText(text);
             }, textToCopy);
 
@@ -84,8 +83,7 @@ test.describe('settings/keyboard_shortcuts', () => {
             await textbox.scrollIntoViewIfNeeded();
 
             const textToCopy = 'Afrikaans';
-            await electronApp.evaluate((_, text: string) => {
-                const {clipboard} = require('electron');
+            await electronApp.evaluate(({clipboard}, text: string) => {
                 clipboard.writeText(text);
             }, textToCopy);
 

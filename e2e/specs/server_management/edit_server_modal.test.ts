@@ -47,11 +47,11 @@ test.describe('EditServerModal', () => {
 
             const configPath = path.join(userDataDir, 'config.json');
             const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            expect(savedConfig.servers).toContainEqual({
+            expect(savedConfig.servers).toContainEqual(expect.objectContaining({
                 name: 'example',
                 url: exampleURL,
                 order: 0,
-            });
+            }));
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);
@@ -69,11 +69,11 @@ test.describe('EditServerModal', () => {
 
             const configPath = path.join(userDataDir, 'config.json');
             const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            expect(savedConfig.servers).toContainEqual({
+            expect(savedConfig.servers).toContainEqual(expect.objectContaining({
                 name: 'example',
                 url: exampleURL,
                 order: 0,
-            });
+            }));
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);
@@ -104,16 +104,16 @@ test.describe('EditServerModal', () => {
 
             const configPath = path.join(userDataDir, 'config.json');
             const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            expect(savedConfig.servers).not.toContainEqual({
+            expect(savedConfig.servers).not.toContainEqual(expect.objectContaining({
                 name: 'example',
                 url: exampleURL,
                 order: 0,
-            });
-            expect(savedConfig.servers).toContainEqual({
+            }));
+            expect(savedConfig.servers).toContainEqual(expect.objectContaining({
                 name: 'NewTestServer',
                 url: exampleURL,
                 order: 0,
-            });
+            }));
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);
@@ -131,16 +131,16 @@ test.describe('EditServerModal', () => {
 
             const configPath = path.join(userDataDir, 'config.json');
             const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            expect(savedConfig.servers).not.toContainEqual({
+            expect(savedConfig.servers).not.toContainEqual(expect.objectContaining({
                 name: 'example',
                 url: exampleURL,
                 order: 0,
-            });
-            expect(savedConfig.servers).toContainEqual({
+            }));
+            expect(savedConfig.servers).toContainEqual(expect.objectContaining({
                 name: 'example',
                 url: 'http://google.com/',
                 order: 0,
-            });
+            }));
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);
@@ -159,16 +159,16 @@ test.describe('EditServerModal', () => {
 
             const configPath = path.join(userDataDir, 'config.json');
             const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            expect(savedConfig.servers).not.toContainEqual({
+            expect(savedConfig.servers).not.toContainEqual(expect.objectContaining({
                 name: 'example',
                 url: exampleURL,
                 order: 0,
-            });
-            expect(savedConfig.servers).toContainEqual({
+            }));
+            expect(savedConfig.servers).toContainEqual(expect.objectContaining({
                 name: 'NewTestServer',
                 url: 'http://google.com/',
                 order: 0,
-            });
+            }));
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);

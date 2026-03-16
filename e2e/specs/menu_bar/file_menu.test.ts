@@ -12,9 +12,13 @@ test.describe('file_menu/dropdown', () => {
 
         await mainWindow.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+,`);
 
-        const settingsWindow = await electronApp.waitForEvent('window', {
-            predicate: (window) => window.url().includes('settings'),
-        });
+        let settingsWindow = electronApp.windows().find((window) => window.url().includes('settings'));
+        if (!settingsWindow) {
+            settingsWindow = await electronApp.waitForEvent('window', {
+                predicate: (window) => window.url().includes('settings'),
+                timeout: 30_000,
+            });
+        }
         expect(settingsWindow).toBeDefined();
     });
 
@@ -47,9 +51,13 @@ test.describe('file_menu/dropdown', () => {
         await mainWindow.keyboard.press('f');
         await mainWindow.keyboard.press('s');
         await mainWindow.keyboard.press('Enter');
-        const settingsWindowFromMenu = await electronApp.waitForEvent('window', {
-            predicate: (window) => window.url().includes('settings'),
-        });
+        let settingsWindowFromMenu = electronApp.windows().find((window) => window.url().includes('settings'));
+        if (!settingsWindowFromMenu) {
+            settingsWindowFromMenu = await electronApp.waitForEvent('window', {
+                predicate: (window) => window.url().includes('settings'),
+                timeout: 30_000,
+            });
+        }
         expect(settingsWindowFromMenu).toBeDefined();
     });
 

@@ -10,9 +10,13 @@ test.describe('permissions/ipc', () => {
         await electronApp.evaluate(({ipcMain}, showWindow) => {
             ipcMain.emit(showWindow);
         }, SHOW_SETTINGS_WINDOW);
-        const settingsWindow = await electronApp.waitForEvent('window', {
-            predicate: (w) => w.url().includes('settings'),
-        });
+        let settingsWindow = electronApp.windows().find((w) => w.url().includes('settings'));
+        if (!settingsWindow) {
+            settingsWindow = await electronApp.waitForEvent('window', {
+                predicate: (w) => w.url().includes('settings'),
+                timeout: 30_000,
+            });
+        }
         await settingsWindow.waitForLoadState('domcontentloaded');
 
         const status = await settingsWindow.evaluate(
@@ -30,13 +34,16 @@ test.describe('permissions/ipc', () => {
         await electronApp.evaluate(({ipcMain}, showWindow) => {
             ipcMain.emit(showWindow);
         }, SHOW_SETTINGS_WINDOW);
-        const settingsWindow = await electronApp.waitForEvent('window', {
-            predicate: (w) => w.url().includes('settings'),
-        });
+        let settingsWindow = electronApp.windows().find((w) => w.url().includes('settings'));
+        if (!settingsWindow) {
+            settingsWindow = await electronApp.waitForEvent('window', {
+                predicate: (w) => w.url().includes('settings'),
+                timeout: 30_000,
+            });
+        }
         await settingsWindow.waitForLoadState('domcontentloaded');
 
-        await electronApp.evaluate(() => {
-            const {shell} = require('electron');
+        await electronApp.evaluate(({shell}) => {
             (global as any).__testCapturedExternalURL = null;
             shell.openExternal = (url: string) => {
                 (global as any).__testCapturedExternalURL = url;
@@ -63,13 +70,16 @@ test.describe('permissions/ipc', () => {
         await electronApp.evaluate(({ipcMain}, showWindow) => {
             ipcMain.emit(showWindow);
         }, SHOW_SETTINGS_WINDOW);
-        const settingsWindow = await electronApp.waitForEvent('window', {
-            predicate: (w) => w.url().includes('settings'),
-        });
+        let settingsWindow = electronApp.windows().find((w) => w.url().includes('settings'));
+        if (!settingsWindow) {
+            settingsWindow = await electronApp.waitForEvent('window', {
+                predicate: (w) => w.url().includes('settings'),
+                timeout: 30_000,
+            });
+        }
         await settingsWindow.waitForLoadState('domcontentloaded');
 
-        await electronApp.evaluate(() => {
-            const {shell} = require('electron');
+        await electronApp.evaluate(({shell}) => {
             (global as any).__testCapturedExternalURL = null;
             shell.openExternal = (url: string) => {
                 (global as any).__testCapturedExternalURL = url;

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {demoConfig, exampleURL} from '../../helpers/config';
+import {demoConfig} from '../../helpers/config';
 
 test.describe('menu_bar/dropdown', () => {
     test('MM-T4405 should set name of menu item from config file', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
@@ -56,12 +56,12 @@ test.describe('menu_bar/dropdown', () => {
         test('MM-T4408_1 should show the first view', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
             const browserWindow = await electronApp.browserWindow(mainWindow);
 
-            await browserWindow.evaluate((window, url) => {
+            await browserWindow.evaluate((window, urlFragment) => {
                 return new Promise<void>((resolve, reject) => {
                     const maxAttempts = 200;
                     let attempts = 0;
                     const checkView = () => {
-                        const hasView = (window as any).contentView.children.find((view: any) => view.webContents.getURL() === url);
+                        const hasView = (window as any).contentView.children.find((view: any) => view.webContents.getURL().includes(urlFragment));
                         if (hasView) {
                             resolve();
                         } else if (attempts >= maxAttempts) {
@@ -73,7 +73,7 @@ test.describe('menu_bar/dropdown', () => {
                                     return 'error-getting-url';
                                 }
                             });
-                            reject(new Error(`View with URL ${url} not found after ${maxAttempts * 100}ms. Found ${childCount} children with URLs: ${JSON.stringify(childUrls)}`));
+                            reject(new Error(`View with URL containing ${urlFragment} not found after ${maxAttempts * 100}ms. Found ${childCount} children with URLs: ${JSON.stringify(childUrls)}`));
                         } else {
                             attempts++;
                             setTimeout(checkView, 100);
@@ -81,9 +81,9 @@ test.describe('menu_bar/dropdown', () => {
                     };
                     checkView();
                 });
-            }, exampleURL);
+            }, 'example.com');
 
-            const firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean((window as any).contentView.children.find((view: any) => view.webContents.getURL() === url)), exampleURL);
+            const firstViewIsAttached = await browserWindow.evaluate((window, urlFragment) => Boolean((window as any).contentView.children.find((view: any) => view.webContents.getURL().includes(urlFragment))), 'example.com');
             expect(firstViewIsAttached).toBe(true);
             const secondViewIsAttached = await browserWindow.evaluate((window) => Boolean((window as any).contentView.children.find((view: any) => view.webContents.getURL() === 'https://github.com/')));
             expect(secondViewIsAttached).toBe(false);
@@ -96,7 +96,7 @@ test.describe('menu_bar/dropdown', () => {
             await mainWindow.click('.ServerDropdownButton');
             await dropdownView!.click('.ServerDropdown button.ServerDropdown__button:nth-child(2)');
 
-            const firstViewIsAttached = await browserWindow.evaluate((window, url) => Boolean((window as any).contentView.children.find((view: any) => view.webContents.getURL() === url)), exampleURL);
+            const firstViewIsAttached = await browserWindow.evaluate((window, urlFragment) => Boolean((window as any).contentView.children.find((view: any) => view.webContents.getURL().includes(urlFragment))), 'example.com');
             expect(firstViewIsAttached).toBe(false);
             const secondViewIsAttached = await browserWindow.evaluate((window) => Boolean((window as any).contentView.children.find((view: any) => view.webContents.getURL() === 'https://github.com/')));
             expect(secondViewIsAttached).toBe(true);

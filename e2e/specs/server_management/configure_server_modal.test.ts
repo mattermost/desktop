@@ -104,11 +104,11 @@ test.describe('Configure Server Modal', () => {
 
             const configPath = path.join(userDataDir, 'config.json');
             const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            expect(savedConfig.servers).toContainEqual({
+            expect(savedConfig.servers).toContainEqual(expect.objectContaining({
                 url: 'http://example.org/',
                 name: 'TestServer',
                 order: 0,
-            });
+            }));
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);

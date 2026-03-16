@@ -63,10 +63,13 @@ async function openDownloadsDropdown(app: Awaited<ReturnType<typeof import('play
     const dlButtonLocator = await mainWindow.waitForSelector('.DownloadsDropdownButton');
     await dlButtonLocator.click();
 
-    const downloadsWindow = await app.waitForEvent('window', {
-        predicate: (w) => w.url().includes('downloadsDropdown'),
-        timeout: 10_000,
-    });
+    let downloadsWindow = app.windows().find((w) => w.url().includes('downloadsDropdown'));
+    if (!downloadsWindow) {
+        downloadsWindow = await app.waitForEvent('window', {
+            predicate: (w) => w.url().includes('downloadsDropdown'),
+            timeout: 10_000,
+        });
+    }
     await downloadsWindow.waitForLoadState();
     await downloadsWindow.bringToFront();
     return downloadsWindow;

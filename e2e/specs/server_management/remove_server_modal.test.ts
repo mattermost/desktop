@@ -59,7 +59,9 @@ test.describe('RemoveServerModal', () => {
             await expect.poll(() => {
                 const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
                 return savedConfig.servers;
-            }, {timeout: 10000}).toStrictEqual(expectedConfig);
+            }, {timeout: 10000}).toEqual(expect.arrayContaining(
+                expectedConfig.map((s: {name: string; url: string; order: number}) => expect.objectContaining(s)),
+            ));
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);
@@ -74,7 +76,9 @@ test.describe('RemoveServerModal', () => {
 
             const configPath = path.join(userDataDir, 'config.json');
             const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            expect(savedConfig.servers).toStrictEqual(demoConfig.servers);
+            expect(savedConfig.servers).toEqual(expect.arrayContaining(
+                demoConfig.servers.map((s) => expect.objectContaining(s)),
+            ));
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);

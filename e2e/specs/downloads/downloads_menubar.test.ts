@@ -120,10 +120,13 @@ test.describe('downloads/downloads_menubar', () => {
                 expect(await dlButton.isVisible()).toBe(true);
                 await dlButton.click();
 
-                const downloadsWindow = await app.waitForEvent('window', {
-                    predicate: (w) => w.url().includes('downloadsDropdown'),
-                    timeout: 10_000,
-                });
+                let downloadsWindow = app.windows().find((w) => w.url().includes('downloadsDropdown'));
+                if (!downloadsWindow) {
+                    downloadsWindow = await app.waitForEvent('window', {
+                        predicate: (w) => w.url().includes('downloadsDropdown'),
+                        timeout: 10_000,
+                    });
+                }
                 const isVisible = await downloadsWindow.isVisible('.DownloadsDropdown');
                 expect(isVisible).toBe(true);
             } finally {
@@ -150,10 +153,13 @@ test.describe('downloads/downloads_menubar', () => {
                     downloadsItem.click();
                 });
 
-                const downloadsWindow = await app.waitForEvent('window', {
-                    predicate: (w) => w.url().includes('downloadsDropdown'),
-                    timeout: 10_000,
-                });
+                let downloadsWindow = app.windows().find((w) => w.url().includes('downloadsDropdown'));
+                if (!downloadsWindow) {
+                    downloadsWindow = await app.waitForEvent('window', {
+                        predicate: (w) => w.url().includes('downloadsDropdown'),
+                        timeout: 10_000,
+                    });
+                }
                 const isVisible = await downloadsWindow.isVisible('.DownloadsDropdown');
                 expect(isVisible).toBe(true);
             } finally {
