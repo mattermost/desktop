@@ -30,16 +30,15 @@ import {isInternalURL, parseURL} from 'common/utils/url';
 import {type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
+import {getInstalledBrowsers, openLinkInBrowser} from 'main/browserManager';
+import ContextMenu from 'main/contextMenu';
 import DeveloperMode from 'main/developerMode';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import {getServerAPI} from 'main/server/serverAPI';
+import {getWindowBoundaries, getLocalPreload, composeUserAgent} from 'main/utils';
 
 import WebContentsEventManager from './webContentEvents';
-
-import {getInstalledBrowsers, openLinkInBrowser} from '../../main/browserManager';
-import ContextMenu from '../../main/contextMenu';
-import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../../main/utils';
 
 enum Status {
     LOADING,

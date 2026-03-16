@@ -3,13 +3,16 @@
 'use strict';
 
 const mockExec = jest.fn();
+const mockExecFile = jest.fn();
 jest.mock('child_process', () => ({
     exec: mockExec,
+    execFile: mockExecFile,
 }));
 
+const mockExistsSync = jest.fn(() => true);
 jest.mock('fs', () => ({
     ...jest.requireActual('fs'),
-    existsSync: jest.fn(() => true),
+    existsSync: (...args) => mockExistsSync(...args),
     readFileSync: jest.fn(),
 }));
 
@@ -25,17 +28,6 @@ jest.mock('common/log', () => ({
         error: jest.fn(),
     })),
 }));
-
-function mockExecResolve(stdout) {
-    mockExec.mockImplementation((cmd, opts, cb) => {
-        if (typeof opts === 'function') {
-            cb = opts;
-        }
-        if (typeof cb === 'function') {
-            cb(null, {stdout, stderr: ''});
-        }
-    });
-}
 
 function mockExecResolveByPattern(mapping) {
     mockExec.mockImplementation((cmd, opts, cb) => {
@@ -66,6 +58,28 @@ function mockExecReject(error) {
     });
 }
 
+function mockExecFileResolve() {
+    mockExecFile.mockImplementation((file, args, opts, cb) => {
+        if (typeof opts === 'function') {
+            cb = opts;
+        }
+        if (typeof cb === 'function') {
+            cb(null, {stdout: '', stderr: ''});
+        }
+    });
+}
+
+function mockExecFileReject(error) {
+    mockExecFile.mockImplementation((file, args, opts, cb) => {
+        if (typeof opts === 'function') {
+            cb = opts;
+        }
+        if (typeof cb === 'function') {
+            cb(error);
+        }
+    });
+}
+
 describe('main/browserManager', () => {
     let getInstalledBrowsers;
     let openLinkInBrowser;
@@ -75,6 +89,7 @@ describe('main/browserManager', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         jest.resetModules();
+        mockExistsSync.mockReturnValue(true);
 
         const browserManager = require('./browserManager');
         getInstalledBrowsers = browserManager.getInstalledBrowsers;
@@ -101,9 +116,11 @@ describe('main/browserManager', () => {
             const browsers = await getInstalledBrowsers();
             expect(browsers.length).toBe(2);
             expect(browsers[0].name).toBe('Safari');
-            expect(browsers[0].command).toBe('open -b "com.apple.Safari"');
+            expect(browsers[0].executable).toBe('open');
+            expect(browsers[0].args).toEqual(['-b', 'com.apple.Safari']);
             expect(browsers[1].name).toBe('Google Chrome');
-            expect(browsers[1].command).toBe('open -b "com.google.Chrome"');
+            expect(browsers[1].executable).toBe('open');
+            expect(browsers[1].args).toEqual(['-b', 'com.google.Chrome']);
         });
 
         it('should handle mdfind errors gracefully', async () => {
@@ -128,8 +145,38 @@ describe('main/browserManager', () => {
             const browsers = await getInstalledBrowsers();
             expect(browsers.length).toBe(2);
             expect(browsers[0].name).toBe('Google Chrome');
-            expect(browsers[0].command).toBe('"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"');
+            expect(browsers[0].executable).toBe('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe');
+            expect(browsers[0].args).toEqual([]);
             expect(browsers[1].name).toBe('Firefox');
+            expect(browsers[1].executable).toBe('C:\\Program Files\\Mozilla Firefox\\firefox.exe');
+        });
+
+        it('should skip browsers whose executable does not exist', async () => {
+            mockExecResolveByPattern({
+                'Google Chrome': '    (Default)    REG_SZ    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"',
+                'FIREFOX.EXE': '    (Default)    REG_SZ    "C:\\Program Files\\Mozilla Firefox\\firefox.exe"',
+            });
+            mockExistsSync.mockImplementation((p) => {
+                if (p === 'C:\\Program Files\\Mozilla Firefox\\firefox.exe') {
+                    return false;
+                }
+                return true;
+            });
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers.length).toBe(1);
+            expect(browsers[0].name).toBe('Google Chrome');
+        });
+
+        it('should check both HKLM and HKCU registries', async () => {
+            mockExecResolveByPattern({
+                'HKLM': '',
+                'HKCU\\SOFTWARE\\Clients\\StartMenuInternet\\Google Chrome': '    (Default)    REG_SZ    "C:\\Users\\user\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe"',
+            });
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers.length).toBe(1);
+            expect(browsers[0].name).toBe('Google Chrome');
         });
 
         it('should handle registry errors gracefully', async () => {
@@ -167,9 +214,10 @@ describe('main/browserManager', () => {
             const browsers = await getInstalledBrowsers();
             expect(browsers.length).toBe(2);
             expect(browsers[0].name).toBe('Firefox');
-            expect(browsers[0].command).toBe('firefox');
+            expect(browsers[0].executable).toBe('/usr/bin/firefox');
+            expect(browsers[0].args).toEqual([]);
             expect(browsers[1].name).toBe('Google Chrome');
-            expect(browsers[1].command).toBe('google-chrome');
+            expect(browsers[1].executable).toBe('/usr/bin/google-chrome');
         });
 
         it('should handle which errors gracefully', async () => {
@@ -216,14 +264,30 @@ describe('main/browserManager', () => {
     });
 
     describe('openLinkInBrowser', () => {
-        it('should open link using the browser command', async () => {
-            mockExecResolve('');
+        it('should open link using execFile with browser executable and args', async () => {
+            mockExecFileResolve();
 
-            const browser = {name: 'Google Chrome', command: 'open -b "com.google.Chrome"'};
+            const browser = {name: 'Google Chrome', executable: 'open', args: ['-b', 'com.google.Chrome']};
             await openLinkInBrowser('https://example.com', browser);
 
-            expect(mockExec).toHaveBeenCalledWith(
-                'open -b "com.google.Chrome" "https://example.com"',
+            expect(mockExecFile).toHaveBeenCalledWith(
+                'open',
+                ['-b', 'com.google.Chrome', 'https://example.com'],
+                {timeout: 10000},
+                expect.any(Function),
+            );
+        });
+
+        it('should pass URL as argument without shell interpolation', async () => {
+            mockExecFileResolve();
+
+            const browser = {name: 'Firefox', executable: '/usr/bin/firefox', args: []};
+            const maliciousUrl = 'https://example.com/$(whoami)';
+            await openLinkInBrowser(maliciousUrl, browser);
+
+            expect(mockExecFile).toHaveBeenCalledWith(
+                '/usr/bin/firefox',
+                ['https://example.com/$(whoami)'],
                 {timeout: 10000},
                 expect.any(Function),
             );
@@ -231,9 +295,9 @@ describe('main/browserManager', () => {
 
         it('should fall back to shell.openExternal on failure', async () => {
             const {shell} = require('electron');
-            mockExecReject(new Error('App not found'));
+            mockExecFileReject(new Error('App not found'));
 
-            const browser = {name: 'Chrome', command: 'open -b "com.google.Chrome"'};
+            const browser = {name: 'Chrome', executable: 'open', args: ['-b', 'com.google.Chrome']};
             await openLinkInBrowser('https://example.com', browser);
 
             expect(shell.openExternal).toHaveBeenCalledWith('https://example.com');

@@ -1,8 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {exec as execOriginal} from 'child_process';
+import {exec as execOriginal, execFile as execFileOriginal} from 'child_process';
 import fs from 'fs';
+import path from 'path';
 import {promisify} from 'util';
 
 import {shell} from 'electron';
@@ -10,14 +11,16 @@ import {shell} from 'electron';
 import {Logger} from 'common/log';
 
 const exec = promisify(execOriginal);
+const execFile = promisify(execFileOriginal);
 const log = new Logger('BrowserManager');
 
 export interface BrowserInfo {
     name: string;
-    command: string;
+    executable: string;
+    args: string[];
 }
 
-// macOS: known browsers with their bundle identifiers
+// macOS: known browsers with their bundle identifiers (safe — hardcoded values only)
 const KNOWN_MACOS_BROWSERS: Array<{name: string; bundleId: string}> = [
     {name: 'Safari', bundleId: 'com.apple.Safari'},
     {name: 'Google Chrome', bundleId: 'com.google.Chrome'},
@@ -43,6 +46,11 @@ const KNOWN_WINDOWS_BROWSERS: Array<{name: string; registryKey: string}> = [
     {name: 'Arc', registryKey: 'Arc'},
 ];
 
+const WINDOWS_REGISTRY_ROOTS = [
+    'HKLM\\SOFTWARE\\Clients\\StartMenuInternet',
+    'HKCU\\SOFTWARE\\Clients\\StartMenuInternet',
+];
+
 // Linux: known browsers with their executable names
 const KNOWN_LINUX_BROWSERS: Array<{name: string; commands: string[]}> = [
     {name: 'Firefox', commands: ['firefox', 'firefox-esr']},
@@ -53,6 +61,11 @@ const KNOWN_LINUX_BROWSERS: Array<{name: string; commands: string[]}> = [
     {name: 'Vivaldi', commands: ['vivaldi', 'vivaldi-stable']},
     {name: 'Opera', commands: ['opera']},
     {name: 'Zen Browser', commands: ['zen-browser']},
+];
+
+const LINUX_DESKTOP_DIRS = [
+    '/usr/share/applications',
+    path.join(process.env.HOME || '', '.local/share/applications'),
 ];
 
 let cachedBrowsers: BrowserInfo[] | null = null;
@@ -69,7 +82,8 @@ async function getMacOSBrowsers(): Promise<BrowserInfo[]> {
                 if (stdout.trim().length > 0) {
                     return {
                         name: browser.name,
-                        command: `open -b "${browser.bundleId}"`,
+                        executable: 'open',
+                        args: ['-b', browser.bundleId],
                     };
                 }
             } catch {
@@ -81,34 +95,48 @@ async function getMacOSBrowsers(): Promise<BrowserInfo[]> {
     return results.filter((b): b is BrowserInfo => b !== null);
 }
 
-// Windows detection via registry
+// Windows detection via registry (checks both HKLM and HKCU)
 async function getWindowsBrowsers(): Promise<BrowserInfo[]> {
-    const results = await Promise.all(
-        KNOWN_WINDOWS_BROWSERS.map(async (browser) => {
-            try {
-                const {stdout} = await exec(
-                    `reg query "HKLM\\SOFTWARE\\Clients\\StartMenuInternet\\${browser.registryKey}\\shell\\open\\command" /ve`,
-                    {timeout: 5000},
-                );
+    const seenNames = new Set<string>();
+    const found: BrowserInfo[] = [];
 
-                // Registry output contains REG_SZ followed by the path in quotes
-                const match = stdout.match(/REG_SZ\s+(.+)/);
-                if (match) {
-                    const browserPath = match[1].trim().replace(/^"(.*)"$/, '$1');
-                    if (fs.existsSync(browserPath)) {
-                        return {
-                            name: browser.name,
-                            command: `"${browserPath}"`,
-                        };
+    const results = await Promise.all(
+        WINDOWS_REGISTRY_ROOTS.flatMap((root) =>
+            KNOWN_WINDOWS_BROWSERS.map(async (browser) => {
+                try {
+                    const {stdout} = await exec(
+                        `reg query "${root}\\${browser.registryKey}\\shell\\open\\command" /ve`,
+                        {timeout: 5000},
+                    );
+
+                    // Registry output contains REG_SZ followed by the path in quotes
+                    const match = stdout.match(/REG_SZ\s+(.+)/);
+                    if (match) {
+                        const browserPath = match[1].trim().replace(/^"(.*)"$/, '$1');
+                        if (fs.existsSync(browserPath)) {
+                            return {
+                                name: browser.name,
+                                executable: browserPath,
+                                args: [] as string[],
+                            };
+                        }
                     }
+                } catch {
+                    // browser not found in registry
                 }
-            } catch {
-                // browser not found in registry
-            }
-            return null;
-        }),
+                return null;
+            }),
+        ),
     );
-    return results.filter((b): b is BrowserInfo => b !== null);
+
+    for (const result of results) {
+        if (result && !seenNames.has(result.name)) {
+            found.push(result);
+            seenNames.add(result.name);
+        }
+    }
+
+    return found;
 }
 
 // Linux detection via which + .desktop files
@@ -123,7 +151,7 @@ async function getLinuxBrowsers(): Promise<BrowserInfo[]> {
                     // eslint-disable-next-line no-await-in-loop
                     const {stdout} = await exec(`which ${cmd}`, {timeout: 3000});
                     if (stdout.trim().length > 0) {
-                        return {name: browser.name, command: cmd};
+                        return {name: browser.name, executable: stdout.trim(), args: [] as string[]};
                     }
                 } catch {
                     // command not found, try next
@@ -142,31 +170,42 @@ async function getLinuxBrowsers(): Promise<BrowserInfo[]> {
     }
 
     // Also discover browsers from .desktop files that handle http(s)
-    try {
-        const {stdout} = await exec(
-            'grep -rl "x-scheme-handler/https" /usr/share/applications/ 2>/dev/null || true',
-            {timeout: 5000},
-        );
-        const desktopFiles = stdout.trim().split('\n').filter(Boolean);
-        for (const file of desktopFiles) {
+    const existingDirs = LINUX_DESKTOP_DIRS.filter((dir) => fs.existsSync(dir));
+    const desktopDirResults = await Promise.all(
+        existingDirs.map(async (dir) => {
             try {
-                const content = fs.readFileSync(file, 'utf-8');
-                const nameMatch = content.match(/^Name=(.+)$/m);
-                const execMatch = content.match(/^Exec=(\S+)/m);
-                if (nameMatch && execMatch && !seenNames.has(nameMatch[1])) {
-                    const execPath = execMatch[1].replace(/%[uUfF]/g, '').trim();
+                const {stdout} = await exec(
+                    `grep -rl "x-scheme-handler/https" "${dir}" 2>/dev/null || true`,
+                    {timeout: 5000},
+                );
+                return stdout.trim().split('\n').filter(Boolean);
+            } catch {
+                return [];
+            }
+        }),
+    );
+
+    for (const file of desktopDirResults.flat()) {
+        try {
+            const content = fs.readFileSync(file, 'utf-8');
+            const nameMatch = content.match(/^Name=(.+)$/m);
+            const execMatch = content.match(/^Exec=(\S+)/m);
+            if (nameMatch && execMatch && !seenNames.has(nameMatch[1])) {
+                const execPath = execMatch[1].replace(/%[uUfF]/g, '').trim();
+
+                // Only accept absolute paths that point to an existing executable
+                if (path.isAbsolute(execPath) && fs.existsSync(execPath)) {
                     found.push({
                         name: nameMatch[1],
-                        command: execPath,
+                        executable: execPath,
+                        args: [],
                     });
                     seenNames.add(nameMatch[1]);
                 }
-            } catch {
-                // skip unreadable desktop files
             }
+        } catch {
+            // skip unreadable desktop files
         }
-    } catch {
-        // fallback if grep fails
     }
 
     return found;
@@ -207,12 +246,8 @@ export function clearBrowserCache(): void {
 export async function openLinkInBrowser(url: string, browser: BrowserInfo): Promise<void> {
     log.debug('Opening link in browser', {url, browser: browser.name});
     try {
-        const escapedUrl = url.replace(/"/g, '\\"');
-        if (process.platform === 'win32') {
-            await exec(`${browser.command} "${escapedUrl}"`, {timeout: 10000});
-        } else {
-            await exec(`${browser.command} "${escapedUrl}"`, {timeout: 10000});
-        }
+        // Use execFile to avoid shell interpretation — URL is passed as an argument, not interpolated
+        await execFile(browser.executable, [...browser.args, url], {timeout: 10000});
     } catch (error) {
         log.error('Failed to open link in browser, falling back to default', {browser: browser.name, error});
         shell.openExternal(url);
