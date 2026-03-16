@@ -29,11 +29,16 @@ jest.mock('common/log', () => ({
     })),
 }));
 
+function resolveExecCallback(opts, callback) {
+    if (typeof opts === 'function') {
+        return opts;
+    }
+    return callback;
+}
+
 function mockExecResolveByPattern(mapping) {
-    mockExec.mockImplementation((cmd, opts, cb) => {
-        if (typeof opts === 'function') {
-            cb = opts;
-        }
+    mockExec.mockImplementation((cmd, opts, callback) => {
+        const cb = resolveExecCallback(opts, callback);
         if (typeof cb !== 'function') {
             return;
         }
@@ -48,10 +53,8 @@ function mockExecResolveByPattern(mapping) {
 }
 
 function mockExecReject(error) {
-    mockExec.mockImplementation((cmd, opts, cb) => {
-        if (typeof opts === 'function') {
-            cb = opts;
-        }
+    mockExec.mockImplementation((cmd, opts, callback) => {
+        const cb = resolveExecCallback(opts, callback);
         if (typeof cb === 'function') {
             cb(error);
         }
@@ -59,10 +62,8 @@ function mockExecReject(error) {
 }
 
 function mockExecFileResolve() {
-    mockExecFile.mockImplementation((file, args, opts, cb) => {
-        if (typeof opts === 'function') {
-            cb = opts;
-        }
+    mockExecFile.mockImplementation((file, args, opts, callback) => {
+        const cb = resolveExecCallback(opts, callback);
         if (typeof cb === 'function') {
             cb(null, {stdout: '', stderr: ''});
         }
@@ -70,10 +71,8 @@ function mockExecFileResolve() {
 }
 
 function mockExecFileReject(error) {
-    mockExecFile.mockImplementation((file, args, opts, cb) => {
-        if (typeof opts === 'function') {
-            cb = opts;
-        }
+    mockExecFile.mockImplementation((file, args, opts, callback) => {
+        const cb = resolveExecCallback(opts, callback);
         if (typeof cb === 'function') {
             cb(error);
         }
@@ -170,7 +169,7 @@ describe('main/browserManager', () => {
 
         it('should check both HKLM and HKCU registries', async () => {
             mockExecResolveByPattern({
-                'HKLM': '',
+                HKLM: '',
                 'HKCU\\SOFTWARE\\Clients\\StartMenuInternet\\Google Chrome': '    (Default)    REG_SZ    "C:\\Users\\user\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe"',
             });
 
@@ -215,10 +214,8 @@ describe('main/browserManager', () => {
         });
 
         it('should detect installed browsers via which', async () => {
-            mockExec.mockImplementation((cmd, opts, cb) => {
-                if (typeof opts === 'function') {
-                    cb = opts;
-                }
+            mockExec.mockImplementation((cmd, opts, callback) => {
+                const cb = resolveExecCallback(opts, callback);
                 if (typeof cb !== 'function') {
                     return;
                 }
@@ -230,11 +227,10 @@ describe('main/browserManager', () => {
                     cb(new Error('not found'));
                 }
             });
+
             // grep for .desktop files now uses execFile — return no matches
-            mockExecFile.mockImplementation((file, args, opts, cb) => {
-                if (typeof opts === 'function') {
-                    cb = opts;
-                }
+            mockExecFile.mockImplementation((file, args, opts, callback) => {
+                const cb = resolveExecCallback(opts, callback);
                 if (typeof cb === 'function') {
                     cb(new Error('no matches'), {stdout: '', stderr: ''});
                 }
@@ -250,19 +246,15 @@ describe('main/browserManager', () => {
         });
 
         it('should handle which errors gracefully', async () => {
-            mockExec.mockImplementation((cmd, opts, cb) => {
-                if (typeof opts === 'function') {
-                    cb = opts;
-                }
+            mockExec.mockImplementation((cmd, opts, callback) => {
+                const cb = resolveExecCallback(opts, callback);
                 if (typeof cb !== 'function') {
                     return;
                 }
                 cb(new Error('not found'));
             });
-            mockExecFile.mockImplementation((file, args, opts, cb) => {
-                if (typeof opts === 'function') {
-                    cb = opts;
-                }
+            mockExecFile.mockImplementation((file, args, opts, callback) => {
+                const cb = resolveExecCallback(opts, callback);
                 if (typeof cb === 'function') {
                     cb(new Error('no matches'), {stdout: '', stderr: ''});
                 }
