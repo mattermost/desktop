@@ -10,7 +10,7 @@ const env = require('../../modules/environment');
 const {asyncSleep} = require('../../modules/utils');
 
 describe('menu/view', function desc() {
-    this.timeout(90000);
+    this.timeout(120000);
 
     const config = env.demoMattermostConfig;
 
@@ -46,7 +46,8 @@ describe('menu/view', function desc() {
             robot.keyTap('t');
             robot.keyTap('enter');
 
-            await asyncSleep(2000);
+            const browserWindow = await this.app.browserWindow(mainWindow);
+            await browserWindow.waitForFunction((window) => window.isFullScreen(), {timeout: 15000});
 
             const fullScreenWidth = await firstServer.evaluate('window.outerWidth');
             const fullScreenHeight = await firstServer.evaluate('window.outerHeight');
@@ -57,7 +58,7 @@ describe('menu/view', function desc() {
             robot.keyTap('t');
             robot.keyTap('enter');
 
-            await asyncSleep(2000);
+            await browserWindow.waitForFunction((window) => !window.isFullScreen(), {timeout: 15000});
 
             const exitWidth = await firstServer.evaluate('window.outerWidth');
             const exitHeight = await firstServer.evaluate('window.outerHeight');
