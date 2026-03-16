@@ -24,6 +24,15 @@ export class CriticalErrorHandler {
             return;
         }
 
+        // Suppress a very specific known Electron bug that won't be fixed in the current version
+        // See https://github.com/electron/electron/issues/50059
+        if (err.name === 'TypeError' &&
+            err.message === 'Invalid URL' &&
+            err.stack?.includes('electron/js2c/browser_init')) {
+            log.warn('Suppressing Electron internal popup error', err.message);
+            return;
+        }
+
         if (app.isReady()) {
             this.showExceptionDialog(err);
         } else {
