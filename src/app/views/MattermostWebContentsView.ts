@@ -496,6 +496,13 @@ export class MattermostWebContentsView extends EventEmitter {
         return {
             append: (_, parameters) => {
                 const parsedURL = parseURL(parameters.linkURL);
+                this.log.debug('Context menu append', {
+                    linkURL: parameters.linkURL,
+                    parsedURL: parsedURL?.toString(),
+                    isInternal: parsedURL ? isInternalURL(parsedURL, server.url) : 'n/a',
+                    cachedBrowsers: this.cachedBrowsers?.length ?? 'null',
+                    platform: process.platform,
+                });
                 if (!parsedURL) {
                     return [];
                 }
@@ -553,5 +560,6 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private loadBrowserList = async () => {
         this.cachedBrowsers = await getInstalledBrowsers();
+        this.log.debug('Browser list loaded', {count: this.cachedBrowsers.length, browsers: this.cachedBrowsers.map((b) => b.name)});
     };
 }
