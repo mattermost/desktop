@@ -10,7 +10,7 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 // All welcome screen tests need a no-servers app. This helper launches one.
 async function launchEmptyApp(testInfo: {outputDir: string; title: string}) {
     const {mkdirSync} = await import('fs');
-    const userDataDir = testInfo.outputDir + '/empty-' + Date.now();
+    const userDataDir = testInfo.outputDir + '/empty-userdata';
     mkdirSync(userDataDir, {recursive: true});
     writeConfigFile(userDataDir, emptyConfig);
 

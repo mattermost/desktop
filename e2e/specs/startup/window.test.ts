@@ -57,13 +57,12 @@ test.describe('startup/window', () => {
         async ({electronApp}, testInfo) => {
             const userDataDir = path.join(testInfo.outputDir, 'userdata');
 
-            // Write bounds with x far off-screen
+            // Write bounds with x far off-screen (after close so the app doesn't overwrite it)
+            await electronApp.close();
             fs.writeFileSync(
                 path.join(userDataDir, 'bounds-info.json'),
                 JSON.stringify({x: -9999, y: 0, width: 800, height: 600}),
             );
-
-            await electronApp.close();
             const {_electron: electron} = await import('playwright');
             const {electronBinaryPath, appDir} = await import('../../helpers/config');
             const {waitForAppReady} = await import('../../helpers/appReadiness');
@@ -94,12 +93,12 @@ test.describe('startup/window', () => {
         async ({electronApp}, testInfo) => {
             const userDataDir = path.join(testInfo.outputDir, 'userdata');
 
+            // Write bounds with y far off-screen (after close so the app doesn't overwrite it)
+            await electronApp.close();
             fs.writeFileSync(
                 path.join(userDataDir, 'bounds-info.json'),
                 JSON.stringify({x: 0, y: -9999, width: 800, height: 600}),
             );
-
-            await electronApp.close();
             const {_electron: electron} = await import('playwright');
             const {electronBinaryPath, appDir} = await import('../../helpers/config');
             const {waitForAppReady} = await import('../../helpers/appReadiness');
