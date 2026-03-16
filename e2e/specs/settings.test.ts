@@ -2,76 +2,57 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-'use strict';
+import * as fs from 'fs';
 
-const fs = require('fs');
+import {SHOW_SETTINGS_WINDOW} from 'src/common/communication';
 
-const {SHOW_SETTINGS_WINDOW} = require('src/common/communication');
+import {test, expect} from '../fixtures/index';
 
-const env = require('../modules/environment');
-const {asyncSleep} = require('../modules/utils');
-
-describe('Settings', function desc() {
-    this.timeout(30000);
-
-    const config = env.demoConfig;
-
-    beforeEach(async () => {
-        env.createTestUserDataDir();
-        env.cleanTestConfig();
-        fs.writeFileSync(env.configFilePath, JSON.stringify(config));
-        fs.writeFileSync(env.appUpdatePath, '');
-        await asyncSleep(1000);
-        this.app = await env.getApp();
-    });
-
-    afterEach(async () => {
-        if (this.app) {
-            await this.app.close();
-        }
-        await env.clearElectronInstances();
-    });
-
-    describe('Options', () => {
-        describe('Start app on login', () => {
-            it('MM-T4392 should appear on win32 or linux', async () => {
+test.describe('Settings', () => {
+    test.describe('Options', () => {
+        test.describe('Start app on login', () => {
+            test('MM-T4392 should appear on win32 or linux', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'win32' || process.platform === 'linux');
-                this.app.evaluate(({ipcMain}, showWindow) => {
+                electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
-                const settingsWindow = await this.app.waitForEvent('window', {
+                const settingsWindow = await electronApp.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-general');
                 await settingsWindow.click('#settingCategoryButton-general');
                 await settingsWindow.waitForSelector('#CheckSetting_autostart', {state: expected ? 'attached' : 'detached'});
                 const existing = await settingsWindow.isVisible('#CheckSetting_autostart');
-                existing.should.equal(expected);
+                expect(existing).toBe(expected);
             });
         });
 
-        describe('Show icon in menu bar / notification area', () => {
-            it('MM-T4393_1 should appear on darwin or linux', async () => {
+        test.describe('Show icon in menu bar / notification area', () => {
+            test('MM-T4393_1 should appear on darwin or linux', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'darwin' || process.platform === 'linux');
-                this.app.evaluate(({ipcMain}, showWindow) => {
+                electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
-                const settingsWindow = await this.app.waitForEvent('window', {
+                const settingsWindow = await electronApp.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-general');
                 await settingsWindow.click('#settingCategoryButton-general');
                 await settingsWindow.waitForSelector('#CheckSetting_showTrayIcon', {state: expected ? 'attached' : 'detached'});
                 const existing = await settingsWindow.isVisible('#CheckSetting_showTrayIcon');
-                existing.should.equal(expected);
+                expect(existing).toBe(expected);
             });
 
-            describe('Save tray icon setting on mac', () => {
-                env.shouldTest(it, env.isOneOf(['darwin', 'linux']))('MM-T4393_2 should be saved when it\'s selected', async () => {
-                    this.app.evaluate(({ipcMain}, showWindow) => {
+            test.describe('Save tray icon setting on mac', () => {
+                test("MM-T4393_2 should be saved when it's selected", {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
+                    if (!['darwin', 'linux'].includes(process.platform)) {
+                        test.skip(true, 'darwin/linux only');
+                        return;
+                    }
+                    electronApp.evaluate(({ipcMain}, showWindow) => {
                         ipcMain.emit(showWindow);
                     }, SHOW_SETTINGS_WINDOW);
-                    const settingsWindow = await this.app.waitForEvent('window', {
+                    const settingsWindow = await electronApp.waitForEvent('window', {
                         predicate: (window) => window.url().includes('settings'),
                     });
                     await settingsWindow.waitForSelector('#settingCategoryButton-general');
@@ -80,24 +61,29 @@ describe('Settings', function desc() {
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
-                    let config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                    config0.showTrayIcon.should.true;
+                    const configFilePath = `${testInfo.outputDir}/userdata/config.json`;
+                    let config0 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                    expect(config0.showTrayIcon).toBe(true);
 
                     await settingsWindow.click('#CheckSetting_showTrayIcon button');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
-                    config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                    config0.showTrayIcon.should.false;
+                    config0 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                    expect(config0.showTrayIcon).toBe(false);
                 });
             });
 
-            describe('Save tray icon theme on linux', () => {
-                env.shouldTest(it, process.platform === 'linux')('MM-T4393_3 should be saved when it\'s selected', async () => {
-                    this.app.evaluate(({ipcMain}, showWindow) => {
+            test.describe('Save tray icon theme on linux', () => {
+                test("MM-T4393_3 should be saved when it's selected", {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
+                    if (process.platform !== 'linux') {
+                        test.skip(true, 'Linux only');
+                        return;
+                    }
+                    electronApp.evaluate(({ipcMain}, showWindow) => {
                         ipcMain.emit(showWindow);
                     }, SHOW_SETTINGS_WINDOW);
-                    const settingsWindow = await this.app.waitForEvent('window', {
+                    const settingsWindow = await electronApp.waitForEvent('window', {
                         predicate: (window) => window.url().includes('settings'),
                     });
                     await settingsWindow.waitForSelector('#settingCategoryButton-general');
@@ -107,149 +93,157 @@ describe('Settings', function desc() {
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
-                    const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                    config0.trayIconTheme.should.equal('dark');
+                    const configFilePath = `${testInfo.outputDir}/userdata/config.json`;
+                    const config0 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                    expect(config0.trayIconTheme).toBe('dark');
 
                     await settingsWindow.waitForSelector('.SettingsModal__saving', {state: 'detached'});
                     await settingsWindow.click('#RadioSetting_trayIconTheme_light');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
-                    const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                    config1.trayIconTheme.should.equal('light');
+                    const config1 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                    expect(config1.trayIconTheme).toBe('light');
                 });
             });
         });
 
-        describe('Leave app running in notification area when application window is closed', () => {
-            it('MM-T4394 should appear on linux and win32', async () => {
+        test.describe('Leave app running in notification area when application window is closed', () => {
+            test('MM-T4394 should appear on linux and win32', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'linux' || process.platform === 'win32');
-                this.app.evaluate(({ipcMain}, showWindow) => {
+                electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
-                const settingsWindow = await this.app.waitForEvent('window', {
+                const settingsWindow = await electronApp.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-general');
                 await settingsWindow.click('#settingCategoryButton-general');
                 const existing = await settingsWindow.isVisible('#CheckSetting_minimizeToTray');
-                existing.should.equal(expected);
+                expect(existing).toBe(expected);
             });
         });
 
-        describe('Flash app window and taskbar icon when a new message is received', () => {
-            it('MM-T4395 should appear on win32 and linux', async () => {
+        test.describe('Flash app window and taskbar icon when a new message is received', () => {
+            test('MM-T4395 should appear on win32 and linux', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'win32' || process.platform === 'linux');
-                this.app.evaluate(({ipcMain}, showWindow) => {
+                electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
-                const settingsWindow = await this.app.waitForEvent('window', {
+                const settingsWindow = await electronApp.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-notifications');
                 await settingsWindow.click('#settingCategoryButton-notifications');
                 const existing = await settingsWindow.isVisible('#CheckSetting_flashWindow');
-                existing.should.equal(expected);
+                expect(existing).toBe(expected);
             });
         });
 
-        describe('Show red badge on taskbar icon to indicate unread messages', () => {
-            it('MM-T4396 should appear on darwin or win32', async () => {
+        test.describe('Show red badge on taskbar icon to indicate unread messages', () => {
+            test('MM-T4396 should appear on darwin or win32', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'darwin' || process.platform === 'win32');
-                this.app.evaluate(({ipcMain}, showWindow) => {
+                electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
-                const settingsWindow = await this.app.waitForEvent('window', {
+                const settingsWindow = await electronApp.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-notifications');
                 await settingsWindow.click('#settingCategoryButton-notifications');
                 const existing = await settingsWindow.isVisible('#CheckSetting_showUnreadBadge');
-                existing.should.equal(expected);
+                expect(existing).toBe(expected);
             });
         });
 
-        describe('Check spelling', () => {
-            it('MM-T4397 should appear and be selectable', async () => {
-                this.app.evaluate(({ipcMain}, showWindow) => {
+        test.describe('Check spelling', () => {
+            test('MM-T4397 should appear and be selectable', {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
+                electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
-                const settingsWindow = await this.app.waitForEvent('window', {
+                const settingsWindow = await electronApp.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-language');
                 await settingsWindow.click('#settingCategoryButton-language');
                 const existing = await settingsWindow.isVisible('#CheckSetting_useSpellChecker');
-                existing.should.equal(true);
+                expect(existing).toBe(true);
 
                 const selected = await settingsWindow.isChecked('#checkSetting-useSpellChecker');
-                selected.should.equal(true);
+                expect(selected).toBe(true);
 
                 await settingsWindow.click('#CheckSetting_useSpellChecker button');
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
 
-                const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                config1.useSpellChecker.should.equal(false);
+                const configFilePath = `${testInfo.outputDir}/userdata/config.json`;
+                const config1 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                expect(config1.useSpellChecker).toBe(false);
             });
         });
 
-        describe('Enable GPU hardware acceleration', () => {
-            it('MM-T4398 should save selected option', async () => {
+        test.describe('Enable GPU hardware acceleration', () => {
+            test('MM-T4398 should save selected option', {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
                 const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#CheckSetting_enableHardwareAcceleration button';
-                this.app.evaluate(({ipcMain}, showWindow) => {
+                electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
-                const settingsWindow = await this.app.waitForEvent('window', {
+                const settingsWindow = await electronApp.waitForEvent('window', {
                     predicate: (window) => window.url().includes('settings'),
                 });
                 await settingsWindow.waitForSelector('#settingCategoryButton-advanced');
                 await settingsWindow.click('#settingCategoryButton-advanced');
                 const selected = await settingsWindow.isChecked('#checkSetting-enableHardwareAcceleration');
-                selected.should.equal(true); // default is true
+                expect(selected).toBe(true); // default is true
 
                 await settingsWindow.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
-                const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                config0.enableHardwareAcceleration.should.equal(false);
+
+                const configFilePath = `${testInfo.outputDir}/userdata/config.json`;
+                const config0 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                expect(config0.enableHardwareAcceleration).toBe(false);
 
                 await settingsWindow.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
-                const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                config1.enableHardwareAcceleration.should.equal(true);
+                const config1 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                expect(config1.enableHardwareAcceleration).toBe(true);
             });
         });
 
-        if (process.platform !== 'darwin') {
-            describe('Enable automatic check for updates', () => {
-                it('MM-T4549 should save selected option', async () => {
-                    const ID_INPUT_ENABLE_AUTO_UPDATES = '#CheckSetting_autoCheckForUpdates button';
-                    this.app.evaluate(({ipcMain}, showWindow) => {
-                        ipcMain.emit(showWindow);
-                    }, SHOW_SETTINGS_WINDOW);
-                    const settingsWindow = await this.app.waitForEvent('window', {
-                        predicate: (window) => window.url().includes('settings'),
-                    });
-                    await settingsWindow.waitForSelector('#settingCategoryButton-general');
-                    await settingsWindow.click('#settingCategoryButton-general');
-                    const selected = await settingsWindow.isChecked('#checkSetting-autoCheckForUpdates');
-                    selected.should.equal(true); // default is true
-
-                    await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
-                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
-                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
-                    const config0 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                    config0.autoCheckForUpdates.should.equal(false);
-
-                    await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
-                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
-                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
-                    const config1 = JSON.parse(fs.readFileSync(env.configFilePath, 'utf-8'));
-                    config1.autoCheckForUpdates.should.equal(true);
+        test.describe('Enable automatic check for updates', () => {
+            test('MM-T4549 should save selected option', {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
+                if (process.platform === 'darwin') {
+                    test.skip(true, 'Not applicable on macOS');
+                    return;
+                }
+                const ID_INPUT_ENABLE_AUTO_UPDATES = '#CheckSetting_autoCheckForUpdates button';
+                electronApp.evaluate(({ipcMain}, showWindow) => {
+                    ipcMain.emit(showWindow);
+                }, SHOW_SETTINGS_WINDOW);
+                const settingsWindow = await electronApp.waitForEvent('window', {
+                    predicate: (window) => window.url().includes('settings'),
                 });
+                await settingsWindow.waitForSelector('#settingCategoryButton-general');
+                await settingsWindow.click('#settingCategoryButton-general');
+                const selected = await settingsWindow.isChecked('#checkSetting-autoCheckForUpdates');
+                expect(selected).toBe(true); // default is true
+
+                await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
+
+                const configFilePath = `${testInfo.outputDir}/userdata/config.json`;
+                const config0 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                expect(config0.autoCheckForUpdates).toBe(false);
+
+                await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
+                const config1 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
+                expect(config1.autoCheckForUpdates).toBe(true);
             });
-        }
+        });
     });
 });
