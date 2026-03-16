@@ -62,7 +62,7 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
             }
         });
 
-        if (Object.keys(map).length > 0 && results.every((r) => r !== null)) {
+        if (Object.keys(map).length > 0) {
             return map;
         }
 

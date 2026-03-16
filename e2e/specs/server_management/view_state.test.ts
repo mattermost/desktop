@@ -28,8 +28,10 @@ test(
         // Switch back to Server A
         await mainWindow.click('.ServerButton >> nth=0');
 
-        // Server A URL should be unchanged
-        const returnedUrlA = serverA!.url();
-        expect(returnedUrlA).toBe(initialUrlA);
+        // Server A URL should be unchanged — poll to let any async view re-activation settle
+        await expect.poll(
+            () => serverA!.url(),
+            {timeout: 5_000, message: 'Server A URL should be unchanged after returning'},
+        ).toBe(initialUrlA);
     },
 );

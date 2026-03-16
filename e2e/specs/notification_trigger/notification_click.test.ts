@@ -28,8 +28,10 @@ test(
         const channelId = await serverWin!.evaluate(() => {
             // Get the town-square channel ID from the webapp store
             const store = (window as any).store;
-            return store?.getState?.()?.entities?.channels?.myMembers &&
-                Object.keys(store.getState().entities.channels.myMembers)[0];
+            const state = store?.getState?.();
+            const members = state?.entities?.channels?.myMembers;
+            if (!members || Object.keys(members).length === 0) return undefined;
+            return Object.keys(members)[0];
         });
 
         if (!channelId) {

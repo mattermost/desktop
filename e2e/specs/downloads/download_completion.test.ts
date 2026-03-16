@@ -37,37 +37,16 @@ test(
         // Using a publicly available small file for the test
         const downloadUrl = 'https://example.com/';  // Replace with actual test file URL in live env
 
-        const downloadPromise = electronApp.evaluate(({webContents, BrowserWindow}) => {
-            return new Promise<string>((resolve, reject) => {
-                const wc = BrowserWindow.getAllWindows()[0]?.webContents;
-                if (!wc) {
-                    reject(new Error('No main window webContents'));
-                    return;
-                }
-                wc.session.once('will-download', (_event, item) => {
-                    item.once('done', (_e, state) => {
-                        if (state === 'completed') {
-                            resolve(item.getSavePath());
-                        } else {
-                            reject(new Error(`Download failed: ${state}`));
-                        }
-                    });
-                });
-            });
-        });
+        const downloadPromise = externalWin!.waitForEvent('download', {timeout: 30_000});
 
         // Navigate to trigger the download
         await externalWin.goto(downloadUrl);
 
-        const savedPath = await Promise.race([
-            downloadPromise,
-            new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error('Download timed out')), 30_000),
-            ),
-        ]);
+        const download = await downloadPromise;
+        const savedPath = await download.path();
 
-        expect(fs.existsSync(savedPath as string)).toBe(true);
-        const stat = fs.statSync(savedPath as string);
+        expect(savedPath).not.toBeNull();
+        const stat = fs.statSync(savedPath!);
         expect(stat.size).toBeGreaterThan(0);
     },
 );
