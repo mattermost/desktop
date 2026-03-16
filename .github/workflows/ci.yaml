@@ -217,3 +217,29 @@ jobs:
           comment_mode: failures
           compare_to_earlier_commit: false
           junit_files: "**/*.xml"
+
+  e2e-smoke:
+    name: E2E Smoke Tests
+    runs-on: ${{ matrix.os }}
+    needs:
+      - build-mac-no-dmg
+      - build-win-no-installer
+      - build-linux
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install root dependencies
+        run: npm ci
+      - name: Build test bundle
+        run: npm run build-test
+      - name: Install E2E dependencies
+        run: cd e2e && npm ci
+      - name: Run E2E smoke tests (P0)
+        run: cd e2e && npx playwright test --grep "@P0"
+        env:
+          CI: 'true'

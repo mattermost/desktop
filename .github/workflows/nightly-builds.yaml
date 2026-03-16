@@ -42,3 +42,24 @@ jobs:
     secrets: inherit
     with:
       tag: ${{ needs.tag-nightly-build.outputs.tag }}
+
+  nightly-e2e:
+    name: Nightly E2E Full Suite
+    needs:
+      - nightly-main
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install root dependencies
+        run: npm ci
+      - name: Build test bundle
+        run: npm run build-test
+      - name: Install E2E dependencies
+        run: cd e2e && npm ci
+      - name: Run E2E full suite
+        run: cd e2e && npx playwright test
+        env:
+          CI: 'true'
