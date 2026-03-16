@@ -4,33 +4,55 @@
 import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
+import {waitForAppReady} from '../../helpers/appReadiness';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {electronBinaryPath, appDir, demoConfig, emptyConfig, writeConfigFile} from '../../helpers/config';
 
 test.describe('startup/app', () => {
     test(
         'MM-T4400 should be stopped when the app instance already exists',
         {tag: ['@P1', '@all']},
-        async ({}) => {
-            // Try launching a second instance against the same userDataDir.
-            // We cannot share the fixture's userDataDir, so we attempt against a
-            // fresh dir — Electron's singleton is per-executable, not per-data-dir.
-            // The second instance should exit before resolving.
+        async ({}, testInfo) => {
+            const userDataDir = testInfo.outputDir + '/singleton-userdata';
+            const {mkdirSync} = await import('fs');
+            mkdirSync(userDataDir, {recursive: true});
+            writeConfigFile(userDataDir, demoConfig);
+
+            // Launch first app to hold the singleton lock
+            const firstApp = await electron.launch({
+                executablePath: electronBinaryPath,
+                args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+                env: {...process.env, NODE_ENV: 'test'},
+                timeout: 60_000,
+            });
+
+            let secondLaunchSucceeded = false;
             let secondApp;
             try {
-                secondApp = await electron.launch({
-                    executablePath: electronBinaryPath,
-                    args: [appDir, '--no-sandbox', '--disable-gpu'],
-                    timeout: 5_000, // short — expect it to exit quickly
-                });
+                // Wait for full init so requestSingleInstanceLock() is definitely held
+                await waitForAppReady(firstApp);
 
-                // If we get here, the second instance launched (bad — but close it)
-                await secondApp.close();
-                throw new Error('Second app instance should not have launched successfully');
-            } catch (err: any) {
-                // Expected: launch times out or the process exits quickly.
-                // A timeout error or process exit error is the correct outcome.
-                expect(err.message).not.toContain('Second app instance should not have launched');
+                try {
+                    secondApp = await electron.launch({
+                        executablePath: electronBinaryPath,
+                        args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+                        env: {...process.env, NODE_ENV: 'test'},
+                        timeout: 5_000, // short — second instance should exit immediately
+                    });
+                    secondLaunchSucceeded = true;
+                } catch {
+                    // Expected: second instance exits when it can't acquire the singleton lock
+                } finally {
+                    if (secondApp) {
+                        await secondApp.close().catch(() => {});
+                    }
+                }
+            } finally {
+                await firstApp.close().catch(() => {});
+                await waitForLockFileRelease(userDataDir);
             }
+
+            expect(secondLaunchSucceeded, 'Second app instance should not have launched successfully').toBe(false);
         },
     );
 
@@ -68,6 +90,7 @@ test.describe('startup/app', () => {
                 expect(text).toBe('Get Started');
             } finally {
                 await emptyApp.close();
+                await waitForLockFileRelease(userDataDir);
             }
         },
     );
@@ -75,11 +98,29 @@ test.describe('startup/app', () => {
     test(
         'MM-T4985 should show app name in title bar when no servers exist',
         {tag: ['@P2', '@darwin', '@win32']}, // skipped on Linux
-        async ({electronApp}) => {
-            const mainWin = electronApp.windows().find((w) => w.url().includes('index'));
-            expect(mainWin).toBeDefined();
-            const titleText = await mainWin!.innerText('.app-title');
-            expect(titleText).toBe('Electron');
+        async ({}, testInfo) => {
+            const userDataDir = testInfo.outputDir + '/empty-title-userdata';
+            const {mkdirSync} = await import('fs');
+            mkdirSync(userDataDir, {recursive: true});
+            writeConfigFile(userDataDir, emptyConfig);
+
+            const emptyApp = await electron.launch({
+                executablePath: electronBinaryPath,
+                args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+                env: {...process.env, NODE_ENV: 'test'},
+                timeout: 60_000,
+            });
+
+            try {
+                await waitForAppReady(emptyApp);
+                const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
+                expect(mainWin).toBeDefined();
+                const titleText = await mainWin!.innerText('.app-title');
+                expect(titleText).toBe('Electron');
+            } finally {
+                await emptyApp.close();
+                await waitForLockFileRelease(userDataDir);
+            }
         },
     );
 });

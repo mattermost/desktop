@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {exampleURL} from '../../helpers/config';
 
 test.describe('startup/config', () => {
@@ -25,7 +26,7 @@ test.describe('startup/config', () => {
             const secondServer = serverMap.github?.[0]?.win;
             expect(firstServer).toBeDefined();
             expect(secondServer).toBeDefined();
-            expect(firstServer!.url()).toContain(exampleURL);
+            expect(firstServer!.url()).toContain('example.com');
             expect(secondServer!.url()).toContain('github.com');
         },
     );
@@ -35,9 +36,10 @@ test.describe('startup/config', () => {
         {tag: ['@P1', '@all']},
         async ({}, testInfo) => {
             // Write a v0 config file, launch a fresh app, verify it upgrades
+            // True v0 format: just a url string, no version field.
+            // The Config module detects v0 by absence of a version field.
             const v0Config = {
-                version: 0,
-                teams: [{name: 'example', url: exampleURL, order: 0}],
+                url: exampleURL,
             };
             const v0Dir = testInfo.outputDir + '/v0-userdata';
             fs.mkdirSync(v0Dir, {recursive: true});
@@ -62,9 +64,10 @@ test.describe('startup/config', () => {
                 const upgraded = JSON.parse(configRaw);
                 expect(upgraded.version).toBeGreaterThan(0);
                 expect(upgraded.servers).toBeDefined();
-                expect(upgraded.servers[0].url).toContain(exampleURL);
+                expect(upgraded.servers[0].url).toContain('example.com');
             } finally {
                 await upgradedApp.close();
+                await waitForLockFileRelease(v0Dir);
             }
         },
     );

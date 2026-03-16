@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 test(
     'config.json is valid JSON after app closes normally',
@@ -29,6 +30,7 @@ test(
 
         await waitForAppReady(app);
         await app.close();
+        await waitForLockFileRelease(userDataDir);
 
         // Config file must exist and be valid JSON
         const configPath = path.join(userDataDir, 'config.json');
@@ -72,6 +74,7 @@ test(
             expect(windows.length).toBeGreaterThan(0);
         } finally {
             await app.close();
+            await waitForLockFileRelease(userDataDir);
         }
     },
 );

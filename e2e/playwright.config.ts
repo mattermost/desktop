@@ -15,11 +15,12 @@ if (process.platform === 'darwin') {
 export default defineConfig({
     testDir: './specs',
     testMatch: '**/*.test.ts',
+    globalTeardown: './global-teardown.ts',
 
     // Electron is not a browser — each worker spawns a full ~300MB process.
-    // More than 1 worker in CI causes: xvfb focus races (Linux), dock API
-    // conflicts (macOS), RAM OOM (Windows).
-    workers: process.env.CI ? 1 : 2,
+    // Multiple simultaneous Electron instances cause singleton lock races,
+    // xvfb focus conflicts (Linux), dock API conflicts (macOS), and RAM OOM (Windows).
+    workers: 1,
     fullyParallel: false,
 
     retries: process.env.CI ? 1 : 0,

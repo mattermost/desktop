@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 test.describe('startup/window', () => {
     test(
@@ -21,6 +22,7 @@ test.describe('startup/window', () => {
             // Save bounds by closing (app persists bounds on close)
             const userDataDir = path.join(testInfo.outputDir, 'userdata');
             await electronApp.close();
+            await waitForLockFileRelease(userDataDir);
 
             // Relaunch with the SAME userDataDir (do not clean it)
             const {_electron: electron} = await import('playwright');
@@ -59,6 +61,7 @@ test.describe('startup/window', () => {
 
             // Write bounds with x far off-screen (after close so the app doesn't overwrite it)
             await electronApp.close();
+            await waitForLockFileRelease(userDataDir);
             fs.writeFileSync(
                 path.join(userDataDir, 'bounds-info.json'),
                 JSON.stringify({x: -9999, y: 0, width: 800, height: 600}),
@@ -96,6 +99,7 @@ test.describe('startup/window', () => {
 
             // Write bounds with y far off-screen (after close so the app doesn't overwrite it)
             await electronApp.close();
+            await waitForLockFileRelease(userDataDir);
             fs.writeFileSync(
                 path.join(userDataDir, 'bounds-info.json'),
                 JSON.stringify({x: 0, y: -9999, width: 800, height: 600}),

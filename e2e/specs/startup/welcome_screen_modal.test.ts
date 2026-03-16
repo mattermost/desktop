@@ -5,6 +5,7 @@ import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
 
 // All welcome screen tests need a no-servers app. This helper launches one.
@@ -28,7 +29,7 @@ async function launchEmptyApp(testInfo: {outputDir: string; title: string}) {
             timeout: 10_000,
         });
     await modal.waitForLoadState('domcontentloaded');
-    return {app, modal};
+    return {app, modal, userDataDir};
 }
 
 test.describe('startup/welcome_screen_modal', () => {
@@ -36,12 +37,13 @@ test.describe('startup/welcome_screen_modal', () => {
         'MM-T4976 should show the slides in the expected order',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
-            const {app, modal} = await launchEmptyApp(testInfo);
+            const {app, modal, userDataDir} = await launchEmptyApp(testInfo);
             try {
-                const title = await modal.innerText('.WelcomeScreen__title');
+                const title = await modal.innerText('.WelcomeScreenSlide__title');
                 expect(title.length).toBeGreaterThan(0);
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         },
     );
@@ -50,17 +52,18 @@ test.describe('startup/welcome_screen_modal', () => {
         'MM-T4977 should be able to move through slides clicking navigation buttons',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
-            const {app, modal} = await launchEmptyApp(testInfo);
+            const {app, modal, userDataDir} = await launchEmptyApp(testInfo);
             try {
                 const nextBtn = modal.locator('.WelcomeScreen__button--next');
                 if (await nextBtn.isVisible()) {
-                    const firstTitle = await modal.innerText('.WelcomeScreen__title');
+                    const firstTitle = await modal.innerText('.WelcomeScreenSlide__title');
                     await nextBtn.click();
-                    const secondTitle = await modal.innerText('.WelcomeScreen__title');
+                    const secondTitle = await modal.innerText('.WelcomeScreenSlide__title');
                     expect(secondTitle).not.toBe(firstTitle);
                 }
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         },
     );
@@ -69,7 +72,7 @@ test.describe('startup/welcome_screen_modal', () => {
         'MM-T4983 should click Get Started and open new server modal',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
-            const {app, modal} = await launchEmptyApp(testInfo);
+            const {app, modal, userDataDir} = await launchEmptyApp(testInfo);
             try {
                 // Navigate to last slide
                 let hasNext = await modal.locator('.WelcomeScreen__button--next').isVisible();
@@ -85,6 +88,7 @@ test.describe('startup/welcome_screen_modal', () => {
                     catch(() => {/* modal may close in a different way */});
             } finally {
                 await app.close();
+                await waitForLockFileRelease(userDataDir);
             }
         },
     );
