@@ -397,6 +397,9 @@ export class PopoutManager {
         if (!webContentsView) {
             return;
         }
+        if (ViewManager.getView(webContentsView.id)?.type !== ViewType.WINDOW) {
+            return;
+        }
         ViewManager.updateViewTitleTemplate(webContentsView.id, titleTemplate);
     };
 

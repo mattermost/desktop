@@ -1061,7 +1061,7 @@ describe('PopoutManager', () => {
             jest.clearAllMocks();
         });
 
-        it('should call updateViewTitleTemplate when view is found', () => {
+        it('should call updateViewTitleTemplate when view is a popout', () => {
             const mockWebContentsView = {
                 id: 'popout-view-id',
             };
@@ -1070,11 +1070,40 @@ describe('PopoutManager', () => {
             };
 
             WebContentsManager.getViewByWebContentsId.mockReturnValue(mockWebContentsView);
+            ViewManager.getView.mockReturnValue({type: ViewType.WINDOW});
 
             popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, '{channelName} - {teamName}');
 
             expect(WebContentsManager.getViewByWebContentsId).toHaveBeenCalledWith(456);
             expect(ViewManager.updateViewTitleTemplate).toHaveBeenCalledWith('popout-view-id', '{channelName} - {teamName}');
+        });
+
+        it('should not call updateViewTitleTemplate when view is not found', () => {
+            const mockEvent = {
+                sender: {id: 999},
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+
+            popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, '{channelName}');
+
+            expect(ViewManager.updateViewTitleTemplate).not.toHaveBeenCalled();
+        });
+
+        it('should not call updateViewTitleTemplate when view is a tab', () => {
+            const mockWebContentsView = {
+                id: 'tab-view-id',
+            };
+            const mockEvent = {
+                sender: {id: 456},
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockWebContentsView);
+            ViewManager.getView.mockReturnValue({type: ViewType.TAB});
+
+            popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, '{channelName}');
+
+            expect(ViewManager.updateViewTitleTemplate).not.toHaveBeenCalled();
         });
     });
 
