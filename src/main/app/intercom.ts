@@ -82,9 +82,15 @@ export function handleMainWindowIsShown() {
     log.debug('handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
         handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
+        if (process.env.NODE_ENV === 'test') {
+            (global as any).__e2eAppReady = true;
+        }
     } else {
         mainWindow?.once('show', () => {
             handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
+            if (process.env.NODE_ENV === 'test') {
+                (global as any).__e2eAppReady = true;
+            }
         });
     }
 }

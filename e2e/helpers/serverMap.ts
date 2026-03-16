@@ -69,7 +69,13 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
         await sleep(100);
     }
 
-    return {};
+    const availableUrls = app.windows().map((w) => {
+        try { return w.url(); } catch { return '<unavailable>'; }
+    }).join(', ');
+    throw new Error(
+        `buildServerMap timed out after ${maxRetries * 100}ms waiting for external windows.\n` +
+        `Available windows: [${availableUrls}]`,
+    );
 }
 
 function sleep(ms: number): Promise<void> {

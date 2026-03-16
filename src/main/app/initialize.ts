@@ -480,12 +480,6 @@ async function initializeAfterAppReady() {
 
     handleMainWindowIsShown();
 
-    // E2E readiness signal — only present in test builds (NODE_ENV === 'test' is
-    // inlined by webpack DefinePlugin at build time, so this is dead code in production)
-    if (process.env.NODE_ENV === 'test') {
-        (global as any).__e2eAppReady = true;
-    }
-
     // The metrics won't start collecting for another minute
     // so we can assume if we start now everything should be loaded by the time we're done
     PerformanceMonitor.init();
