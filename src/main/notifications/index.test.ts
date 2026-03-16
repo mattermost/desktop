@@ -625,7 +625,7 @@ describe('main/notifications', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {value: 'win32'});
             getFocusAssist.mockReturnValue({value: 1, name: ''});
-            isPriority.mockReturnValue({value: 0});
+            isPriority.mockReturnValue({value: 0, name: ''});
             await NotificationManager.displayMention(
                 'test', 'test body', 'channel_id', 'team_id',
                 'http://server-1.com/team_id/channel_id', false,
