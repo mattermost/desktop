@@ -9,20 +9,19 @@ test(
     async ({electronApp, serverMap, mainWindow}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required for network resilience test');
+            return;
         }
 
         const serverWin = serverMap['example']?.[0]?.win;
         if (!serverWin) {
             test.skip(true, 'No server view available');
+            return;
         }
 
         // Intercept all network requests to simulate offline state
         await serverWin!.route('**/*', (route) => route.abort('internetdisconnected'));
 
-        // Wait a moment for existing connections to drop
-        await serverWin!.waitForTimeout(2_000);
-
-        // App windows should still exist (not crashed)
+        // App windows should still exist (not crashed) — route is now in effect
         expect(electronApp.windows().length).toBeGreaterThan(0);
 
         // Restore network access

@@ -10,6 +10,21 @@ test(
     'downloaded file exists on disk after download completes',
     {tag: ['@P1', '@all']},
     async ({electronApp, mainWindow}, testInfo) => {
+        // This test requires a real downloadable URL — skip if not in live env
+        if (!process.env.MM_TEST_SERVER_URL) {
+            test.skip(true, 'MM_TEST_SERVER_URL required for download test');
+            return;
+        }
+
+        // Navigate to the download URL in one of the external views
+        const externalWin = electronApp.windows().find((w) =>
+            !w.url().startsWith('mattermost-desktop://'),
+        );
+        if (!externalWin) {
+            test.skip(true, 'No external window available for download trigger');
+            return;
+        }
+
         const downloadsDir = path.join(testInfo.outputDir, 'Downloads');
         fs.mkdirSync(downloadsDir, {recursive: true});
 
@@ -41,21 +56,8 @@ test(
             });
         });
 
-        // Navigate to the download URL in one of the external views
-        const externalWin = electronApp.windows().find((w) =>
-            !w.url().startsWith('mattermost-desktop://'),
-        );
-        if (!externalWin) {
-            test.skip(true, 'No external window available for download trigger');
-        }
-
-        // This test requires a real downloadable URL — skip if not in live env
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required for download test');
-        }
-
-        // Suppress unused variable warning — downloadUrl is a stub for live env
-        void downloadUrl;
+        // Navigate to trigger the download
+        await externalWin.goto(downloadUrl);
 
         const savedPath = await Promise.race([
             downloadPromise,

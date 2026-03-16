@@ -9,14 +9,16 @@ import {mattermostURL} from '../../helpers/config';
 test(
     'deep link navigates to correct server while app is running',
     {tag: ['@P1', '@darwin', '@win32']},
-    async ({electronApp, serverMap, mainWindow}) => {
+    async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
+            return;
         }
 
         const serverWin = serverMap['example']?.[0]?.win;
         if (!serverWin) {
             test.skip(true, 'No server view available');
+            return;
         }
 
         const channelName = 'town-square';

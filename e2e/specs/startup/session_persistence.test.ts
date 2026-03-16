@@ -17,6 +17,7 @@ test(
     async ({}, testInfo) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL not set');
+            return;
         }
 
         const {mkdirSync} = await import('fs');

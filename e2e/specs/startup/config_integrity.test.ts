@@ -9,11 +9,26 @@ import {test, expect} from '../../fixtures/index';
 test(
     'config.json is valid JSON after app closes normally',
     {tag: ['@P1', '@all']},
-    async ({electronApp}, testInfo) => {
-        const userDataDir = path.join(testInfo.outputDir, 'userdata');
+    async ({}, testInfo) => {
+        const {mkdirSync} = await import('fs');
+        const userDataDir = testInfo.outputDir + '/integrity-userdata';
+        mkdirSync(userDataDir, {recursive: true});
 
-        // App is running with demoConfig. Close it gracefully.
-        await electronApp.close();
+        const {_electron: electron} = await import('playwright');
+        const {electronBinaryPath, appDir, demoConfig, writeConfigFile} = await import('../../helpers/config');
+        const {waitForAppReady} = await import('../../helpers/appReadiness');
+
+        writeConfigFile(userDataDir, demoConfig);
+
+        const app = await electron.launch({
+            executablePath: electronBinaryPath,
+            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+            env: {...process.env, NODE_ENV: 'test'},
+            timeout: 60_000,
+        });
+
+        await waitForAppReady(app);
+        await app.close();
 
         // Config file must exist and be valid JSON
         const configPath = path.join(userDataDir, 'config.json');

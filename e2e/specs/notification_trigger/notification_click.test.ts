@@ -10,11 +10,13 @@ test(
     async ({electronApp, serverMap, mainWindow}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
+            return;
         }
 
         const serverWin = serverMap['example']?.[0]?.win;
         if (!serverWin) {
             test.skip(true, 'No server view available');
+            return;
         }
 
         // Log in
@@ -32,6 +34,7 @@ test(
 
         if (!channelId) {
             test.skip(true, 'Could not get channel ID from webapp store');
+            return;
         }
 
         // Emit notification click via Electron IPC
