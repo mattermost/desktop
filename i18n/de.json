@@ -1,6 +1,8 @@
 {
   "app.menus.contextMenu.openInNewTab": "In neuem Tab öffnen",
   "app.menus.contextMenu.openInNewWindow": "In neuem Fenster öffnen",
+  "app.navigationManager.invalidLinkDescription": "Der Link, auf den du geklickt hast, scheint fehlerhaft zu sein und kann nicht geöffnet werden. Bitte überprüfe die URL auf Fehler, bevor du es erneut versuchst.",
+  "app.navigationManager.invalidLinkTitle": "Ungültiger Link",
   "app.navigationManager.viewLimitReached": "Anzeigelimit erreicht",
   "app.navigationManager.viewLimitReached.description": "Du hast die maximale Anzahl an offenen Fenstern und Tabs für diesen Server erreicht. Bitte schließe ein bestehendes Fenster oder eine Registerkarte oder passe die Anzahl der geöffneten Fenster und Registerkarten in den Einstellungen an.",
   "callsWidgetWindow.cannotStartCall.message": "Es läuft ein Gespräch auf einem anderen Server, das beendet werden muss, bevor ein neues Gespräch aufgebaut werden kann.",
@@ -66,7 +68,7 @@
   "main.badge.sessionExpired": "Sitzung abgelaufen: Bitte melde dich an um weiterhin Nachrichten zu empfangen.",
   "main.badge.unreadChannels": "Zu hast ungelesene Kanäle",
   "main.badge.unreadMentions": "Du hast ungelesene Erwähnungen ({mentionCount})",
-  "main.downloadsManager.resetDownloadsFolder": "Bitte setze den Ordner zurück, in den die Dateien heruntergeladen werden sollen",
+  "main.downloadsManager.resetDownloadsFolder": "Bitte setze den Ordner erneut, in den die Dateien heruntergeladen werden sollen",
   "main.downloadsManager.specifyDownloadsFolder": "Definiere das Verzeichnis in das Dateien heruntergeladen werden",
   "main.menus.app.edit": "Bearbeiten (&E)",
   "main.menus.app.edit.copy": "Kopieren",
