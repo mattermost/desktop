@@ -102,6 +102,7 @@ jest.mock('common/views/viewManager', () => {
         getViewTitle: jest.fn(),
         isViewLimitReached: jest.fn(),
         getViewsByServerId: jest.fn(),
+        updateViewTitleTemplate: jest.fn(),
         mockViewManager,
     };
 });
@@ -1050,6 +1051,30 @@ describe('PopoutManager', () => {
             WebContentsManager.getView.mockReturnValue(null);
             popoutManager.handleSendToPopout(mockEvent, 'non-existent-id', 'test-channel', 'arg1');
             expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleUpdatePopoutTitleTemplate', () => {
+        const popoutManager = new PopoutManager();
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should call updateViewTitleTemplate when view is found', () => {
+            const mockWebContentsView = {
+                id: 'popout-view-id',
+            };
+            const mockEvent = {
+                sender: {id: 456},
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockWebContentsView);
+
+            popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, '{channelName} - {teamName}');
+
+            expect(WebContentsManager.getViewByWebContentsId).toHaveBeenCalledWith(456);
+            expect(ViewManager.updateViewTitleTemplate).toHaveBeenCalledWith('popout-view-id', '{channelName} - {teamName}');
         });
     });
 
