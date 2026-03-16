@@ -1,15 +1,15 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {SHOW_SETTINGS_WINDOW} from 'src/common/communication';
-
 import {test, expect} from '../../fixtures/index';
 import {cmdOrCtrl} from '../../helpers/config';
+
+const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 
 test.describe('settings/keyboard_shortcuts', () => {
     test.describe('MM-T1288 Manipulating Text', () => {
         test('MM-T1288_1 should be able to select and deselect language in the settings window', {tag: ['@P2', '@all']}, async ({electronApp}) => {
-            electronApp.evaluate(({ipcMain}, showWindow) => {
+            await electronApp.evaluate(({ipcMain}, showWindow) => {
                 ipcMain.emit(showWindow);
             }, SHOW_SETTINGS_WINDOW);
             const settingsWindow = await electronApp.waitForEvent('window', {
@@ -41,7 +41,7 @@ test.describe('settings/keyboard_shortcuts', () => {
         });
 
         test('MM-T1288_2 should be able to cut and paste in the settings window', {tag: ['@P2', '@all']}, async ({electronApp}) => {
-            electronApp.evaluate(({ipcMain}, showWindow) => {
+            await electronApp.evaluate(({ipcMain}, showWindow) => {
                 ipcMain.emit(showWindow);
             }, SHOW_SETTINGS_WINDOW);
             const settingsWindow = await electronApp.waitForEvent('window', {
@@ -72,7 +72,7 @@ test.describe('settings/keyboard_shortcuts', () => {
         });
 
         test('MM-T1288_3 should be able to copy and paste in the settings window', {tag: ['@P2', '@all']}, async ({electronApp}) => {
-            electronApp.evaluate(({ipcMain}, showWindow) => {
+            await electronApp.evaluate(({ipcMain}, showWindow) => {
                 ipcMain.emit(showWindow);
             }, SHOW_SETTINGS_WINDOW);
             const settingsWindow = await electronApp.waitForEvent('window', {

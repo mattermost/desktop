@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {SHOW_SETTINGS_WINDOW} from 'src/common/communication';
-
 import {test, expect} from '../../fixtures/index';
+
+const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 
 test.describe('permissions/ipc', () => {
     test('E2E-P01: should return a valid media access status via GET_MEDIA_ACCESS_STATUS IPC', {tag: ['@P2', '@all']}, async ({electronApp}) => {

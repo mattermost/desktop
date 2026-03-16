@@ -4,16 +4,16 @@
 
 import * as fs from 'fs';
 
-import {SHOW_SETTINGS_WINDOW} from 'src/common/communication';
-
 import {test, expect} from '../fixtures/index';
+
+const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 
 test.describe('Settings', () => {
     test.describe('Options', () => {
         test.describe('Start app on login', () => {
             test('MM-T4392 should appear on win32 or linux', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'win32' || process.platform === 'linux');
-                electronApp.evaluate(({ipcMain}, showWindow) => {
+                await electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await electronApp.waitForEvent('window', {
@@ -30,7 +30,7 @@ test.describe('Settings', () => {
         test.describe('Show icon in menu bar / notification area', () => {
             test('MM-T4393_1 should appear on darwin or linux', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'darwin' || process.platform === 'linux');
-                electronApp.evaluate(({ipcMain}, showWindow) => {
+                await electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await electronApp.waitForEvent('window', {
@@ -111,7 +111,7 @@ test.describe('Settings', () => {
         test.describe('Leave app running in notification area when application window is closed', () => {
             test('MM-T4394 should appear on linux and win32', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'linux' || process.platform === 'win32');
-                electronApp.evaluate(({ipcMain}, showWindow) => {
+                await electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await electronApp.waitForEvent('window', {
@@ -127,7 +127,7 @@ test.describe('Settings', () => {
         test.describe('Flash app window and taskbar icon when a new message is received', () => {
             test('MM-T4395 should appear on win32 and linux', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'win32' || process.platform === 'linux');
-                electronApp.evaluate(({ipcMain}, showWindow) => {
+                await electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await electronApp.waitForEvent('window', {
@@ -143,7 +143,7 @@ test.describe('Settings', () => {
         test.describe('Show red badge on taskbar icon to indicate unread messages', () => {
             test('MM-T4396 should appear on darwin or win32', {tag: ['@P2', '@all']}, async ({electronApp}) => {
                 const expected = (process.platform === 'darwin' || process.platform === 'win32');
-                electronApp.evaluate(({ipcMain}, showWindow) => {
+                await electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await electronApp.waitForEvent('window', {
@@ -158,7 +158,7 @@ test.describe('Settings', () => {
 
         test.describe('Check spelling', () => {
             test('MM-T4397 should appear and be selectable', {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
-                electronApp.evaluate(({ipcMain}, showWindow) => {
+                await electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await electronApp.waitForEvent('window', {
@@ -185,7 +185,7 @@ test.describe('Settings', () => {
         test.describe('Enable GPU hardware acceleration', () => {
             test('MM-T4398 should save selected option', {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
                 const ID_INPUT_ENABLE_HARDWARE_ACCELERATION = '#CheckSetting_enableHardwareAcceleration button';
-                electronApp.evaluate(({ipcMain}, showWindow) => {
+                await electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await electronApp.waitForEvent('window', {
@@ -219,7 +219,7 @@ test.describe('Settings', () => {
                     return;
                 }
                 const ID_INPUT_ENABLE_AUTO_UPDATES = '#CheckSetting_autoCheckForUpdates button';
-                electronApp.evaluate(({ipcMain}, showWindow) => {
+                await electronApp.evaluate(({ipcMain}, showWindow) => {
                     ipcMain.emit(showWindow);
                 }, SHOW_SETTINGS_WINDOW);
                 const settingsWindow = await electronApp.waitForEvent('window', {

@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {SHOW_SETTINGS_WINDOW} from 'src/common/communication';
-
 import {test, expect} from '../fixtures/index';
+
+const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 import {demoMattermostConfig} from '../helpers/config';
 import {loginToMattermost} from '../helpers/login';
 
@@ -37,7 +37,7 @@ test.describe('focus', () => {
             const textbox = await firstServer.waitForSelector('#post_textbox');
             await textbox.focus();
 
-            electronApp.evaluate(({ipcMain}, showWindow) => {
+            await electronApp.evaluate(({ipcMain}, showWindow) => {
                 ipcMain.emit(showWindow);
             }, SHOW_SETTINGS_WINDOW);
             const settingsWindow = await electronApp.waitForEvent('window', {
