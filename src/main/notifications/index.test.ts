@@ -507,22 +507,22 @@ describe('main/notifications', () => {
             expect(mentions.length).toBe(0);
         });
 
-        it('NM-03: should send PLAY_SOUND with string "false" when silent=true (String(false) is truthy)', async () => {
+        it('NM-03: should not send PLAY_SOUND when silent=true', async () => {
             await NotificationManager.displayMention(
                 'test', 'test body', 'channel_id', 'team_id',
                 'http://server-1.com/team_id/channel_id', true,
                 {id: 1} as WebContents, '',
             );
-            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'false');
+            expect(MainWindow.sendToRenderer).not.toHaveBeenCalledWith(PLAY_SOUND, expect.anything());
         });
 
-        it('NM-04: should send PLAY_SOUND with string "false" when soundName is "None"', async () => {
+        it('NM-04: should not send PLAY_SOUND when soundName is "None"', async () => {
             await NotificationManager.displayMention(
                 'test', 'test body', 'channel_id', 'team_id',
                 'http://server-1.com/team_id/channel_id', false,
                 {id: 1} as WebContents, 'None',
             );
-            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'false');
+            expect(MainWindow.sendToRenderer).not.toHaveBeenCalledWith(PLAY_SOUND, expect.anything());
         });
 
         describe('notification failed events', () => {

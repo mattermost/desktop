@@ -79,22 +79,22 @@ describe('main/notifications/Mention', () => {
             expect(mention.getNotificationSound()).toBe('Bing');
         });
 
-        it('MN-02: should return the string "false" when silent=true (String(false) is truthy)', () => {
+        it('MN-02: should return empty string when silent=true (no sound should play)', () => {
             const mention = new Mention(
                 {title: 'test', body: 'body', silent: true, soundName: 'Bing'},
                 'ch-1',
                 'tm-1',
             );
-            expect(mention.getNotificationSound()).toBe('false');
+            expect(mention.getNotificationSound()).toBe('');
         });
 
-        it('MN-03: should return the string "false" when soundName is "None"', () => {
+        it('MN-03: should return empty string when soundName is "None" (no sound should play)', () => {
             const mention = new Mention(
                 {title: 'test', body: 'body', silent: false, soundName: 'None'},
                 'ch-1',
                 'tm-1',
             );
-            expect(mention.getNotificationSound()).toBe('false');
+            expect(mention.getNotificationSound()).toBe('');
         });
 
         it('MN-04: should construct Notification with silent=true when a custom sound is present', () => {
