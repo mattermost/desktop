@@ -105,8 +105,12 @@ test.describe('downloads/downloads_manager', () => {
             await popupWindow.click('#download-link');
 
             await expect.poll(() => {
-                const downloads = JSON.parse(fs.readFileSync(path.join(userDataDir, 'downloads.json'), 'utf-8'));
-                return downloads[filename]?.state;
+                try {
+                    const downloads = JSON.parse(fs.readFileSync(path.join(userDataDir, 'downloads.json'), 'utf-8'));
+                    return downloads[filename]?.state;
+                } catch {
+                    return undefined;
+                }
             }, {timeout: 15_000}).toBe('completed');
 
             await expect.poll(() => {

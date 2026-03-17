@@ -21,7 +21,7 @@ const config = {
         ...demoMattermostConfig.servers,
         {
             name: 'community',
-            url: 'https://community.mattermost.com',
+            url: process.env.MM_TEST_SERVER_URL ?? 'http://localhost:8065',
             order: 0,
         },
     ],

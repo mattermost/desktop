@@ -7,17 +7,12 @@ import {loginToMattermost} from '../../helpers/login';
 
 test.describe('copylink', () => {
     test.use({appConfig: demoMattermostConfig});
+    test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
     test('MM-T1308 Check that external links dont open in the app', {tag: ['@P2', '@all']}, async ({electronApp, serverMap}) => {
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
-            return;
-        }
-
         const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
         if (!firstServer) {
-            test.skip(true, 'No server view available');
-            return;
+            throw new Error('No server view available');
         }
 
         await loginToMattermost(firstServer);

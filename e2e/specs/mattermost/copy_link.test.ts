@@ -7,21 +7,17 @@ import {loginToMattermost} from '../../helpers/login';
 
 test.describe('copylink', () => {
     test.use({appConfig: demoMattermostConfig});
+    test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
     test('MM-T125 Copy Link can be used from channel LHS', {tag: ['@P2', '@all']}, async ({electronApp, serverMap}) => {
         if (process.platform === 'linux') {
             test.skip(true, 'Not supported on Linux');
             return;
         }
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
-            return;
-        }
 
         const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
         if (!firstServer) {
-            test.skip(true, 'No server view available');
-            return;
+            throw new Error('No server view available');
         }
 
         await loginToMattermost(firstServer);
@@ -31,17 +27,13 @@ test.describe('copylink', () => {
             clipboard.writeText('');
         });
 
+        // Right-click the sidebar item to trigger the context menu
         await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 5000});
-        const channelLink = await firstServer.$eval('#sidebarItem_town-square', (el) => {
-            const href = (el as HTMLAnchorElement).href;
-            return new URL(href, window.location.origin).toString();
-        });
-        await electronApp.evaluate(({clipboard}, text) => {
-            clipboard.writeText(text);
-        }, channelLink);
+        await firstServer.click('#sidebarItem_town-square', {button: 'right'});
 
-        await firstServer.click('#sidebarItem_town-square');
-        await firstServer.click('#post_textbox');
+        // Click "Copy Link" from the context menu
+        const copyLinkItem = await firstServer.waitForSelector('button:has-text("Copy Link")', {timeout: 5000});
+        await copyLinkItem.click();
 
         const clipboardText = await electronApp.evaluate(({clipboard}) => {
             return clipboard.readText();

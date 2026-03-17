@@ -10,7 +10,7 @@ import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 const file1 = {
-    addedAt: Date.UTC(2022, 8, 8, 10), // Aug 08, 2022 10:00AM UTC
+    addedAt: Date.UTC(2022, 8, 8, 10), // Sep 08, 2022 10:00AM UTC
     filename: 'file1.txt',
     mimeType: 'plain/text',
     progress: 100,

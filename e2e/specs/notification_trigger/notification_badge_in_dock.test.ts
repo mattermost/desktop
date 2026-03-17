@@ -12,7 +12,7 @@ test.describe('Trigger Notification From desktop', () => {
     test.use({appConfig: demoMattermostConfig});
     test.setTimeout(120_000);
 
-    test('should receive a notification on macOS', {tag: ['@P2', '@all', '@darwin']}, async ({electronApp, serverMap}) => {
+    test('should receive a notification on macOS', {tag: ['@P2', '@darwin']}, async ({electronApp, serverMap}) => {
         if (process.platform !== 'darwin') {
             test.skip(true, 'This test is only for macOS');
             return;

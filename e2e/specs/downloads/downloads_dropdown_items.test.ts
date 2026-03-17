@@ -10,7 +10,7 @@ import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 
 const file1 = {
-    addedAt: Date.UTC(2022, 8, 8, 10), // Aug 08, 2022 10:00AM UTC
+    addedAt: Date.UTC(2022, 7, 8, 10), // Aug 08, 2022 10:00AM UTC
     filename: 'file1.txt',
     mimeType: 'text/plain',
     progress: 100,
@@ -20,7 +20,7 @@ const file1 = {
     type: 'file',
 };
 const file2 = {
-    addedAt: Date.UTC(2022, 8, 8, 11), // Aug 08, 2022 11:00AM UTC
+    addedAt: Date.UTC(2022, 7, 8, 11), // Aug 08, 2022 11:00AM UTC
     filename: 'file2.txt',
     mimeType: 'text/plain',
     progress: 100,
@@ -111,7 +111,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
 
             const fileThumbnailLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
-            expect(thumbnailBackgroundImage).toContain('text..svg');
+            expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);
@@ -147,7 +147,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
 
             const fileThumbnailLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
-            expect(thumbnailBackgroundImage).toContain('text..svg');
+            expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);
@@ -187,7 +187,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
 
             const fileThumbnailLocator = await downloadsWindow.waitForSelector('.DownloadsDropdown__Thumbnail');
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
-            expect(thumbnailBackgroundImage).toContain('text..svg');
+            expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
             await app.close();
             await waitForLockFileRelease(userDataDir);

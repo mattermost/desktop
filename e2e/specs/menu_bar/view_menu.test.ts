@@ -134,7 +134,11 @@ async function waitForServerReload(
                 resolve(false);
                 return;
             }
-            wc.once('did-finish-load', () => resolve(true));
+            const timeout = setTimeout(() => resolve(false), 30_000);
+            wc.once('did-finish-load', () => {
+                clearTimeout(timeout);
+                resolve(true);
+            });
         });
     }, webContentsId);
 
@@ -159,13 +163,9 @@ async function getServerContext() {
 
 test.describe('menu/view', () => {
     test.describe.configure({mode: 'serial'});
+    test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
     test.beforeAll(async () => {
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
-            return;
-        }
-
         userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mm-view-menu-e2e-'));
         writeConfigFile(userDataDir, demoMattermostConfig);
 

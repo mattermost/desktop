@@ -27,12 +27,18 @@ test.describe('header', () => {
                 });
                 try {
                     await waitForAppReady(app);
-                    const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
+                    const mainWindow = app.windows().find((w) => w.url().includes('index'));
+                    if (!mainWindow) {
+                        throw new Error('Main window not found');
+                    }
                     const browserWindow = await app.browserWindow(mainWindow);
                     const header = mainWindow.locator('div.topBar');
 
                     const headerBounds = await header.boundingBox();
-                    await header.dblclick({position: {x: headerBounds!.width / 2, y: headerBounds!.height / 2}});
+                    if (!headerBounds) {
+                        throw new Error('Header boundingBox() returned null');
+                    }
+                    await header.dblclick({position: {x: headerBounds.width / 2, y: headerBounds.height / 2}});
                     const isMaximized = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).isMaximized());
                     expect(isMaximized).toBe(true);
                 } finally {

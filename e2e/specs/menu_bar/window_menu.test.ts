@@ -440,8 +440,10 @@ test.describe('Menu/window_menu', () => {
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         if (process.platform === 'darwin') {
+            // macOS: call minimize() directly on the BrowserWindow
             await browserWindow.evaluate((window) => (window as any).minimize());
         } else {
+            // Windows: navigate the three-dot menu (Window > Minimize)
             await mainWindow.click('button.three-dot-menu');
             await mainWindow.keyboard.press('w');
             await mainWindow.keyboard.press('m');
@@ -461,10 +463,12 @@ test.describe('Menu/window_menu', () => {
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         if (process.platform === 'darwin') {
+            // macOS: app.hide() hides all windows without closing (Cmd+H behavior)
             await electronApp.evaluate(({app}) => {
                 app.hide();
             });
         } else {
+            // Windows: Ctrl+W closes the focused window (different semantics than macOS hide)
             await mainWindow.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+w`);
         }
 

@@ -117,11 +117,17 @@ describe('main/PermissionsManager', () => {
     });
 
     it('PM-U05: should open the correct ms-settings URLs for Windows camera and microphone', () => {
-        const permissionsManager = new PermissionsManager('anyfile.json');
-        permissionsManager.openWindowsCameraPreferences();
+        const {ipcMain} = require('electron');
+        // eslint-disable-next-line no-new
+        new PermissionsManager('anyfile.json');
+
+        const cameraHandler = ipcMain.on.mock.calls.find(([ch]) => ch === 'open-windows-camera-preferences')?.[1];
+        const micHandler = ipcMain.on.mock.calls.find(([ch]) => ch === 'open-windows-microphone-preferences')?.[1];
+
+        cameraHandler();
         expect(shell.openExternal).toHaveBeenCalledWith('ms-settings:privacy-webcam');
 
-        permissionsManager.openWindowsMicrophonePreferences();
+        micHandler();
         expect(shell.openExternal).toHaveBeenCalledWith('ms-settings:privacy-microphone');
     });
 

@@ -62,8 +62,8 @@ test.describe('file_menu/dropdown', () => {
     });
 
     test('MM-T805 Sign in to Another Server Window opens using menu item', {tag: ['@P2', '@win32']}, async ({electronApp, mainWindow}) => {
-        if (process.platform === 'darwin') {
-            test.skip(true, 'No keyboard shortcut for macOS');
+        if (process.platform !== 'win32') {
+            test.skip(true, 'Windows-only test');
             return;
         }
 
@@ -80,8 +80,8 @@ test.describe('file_menu/dropdown', () => {
     });
 
     test('MM-T804 Preferences in Menu Bar open the Settings page', {tag: ['@P2', '@win32']}, async ({electronApp, mainWindow}) => {
-        if (process.platform === 'darwin') {
-            test.skip(true, 'No keyboard shortcut for macOS');
+        if (process.platform !== 'win32') {
+            test.skip(true, 'Windows-only test');
             return;
         }
 
@@ -101,8 +101,8 @@ test.describe('file_menu/dropdown', () => {
     });
 
     test('MM-T806 Exit in the Menu Bar', {tag: ['@P2', '@darwin']}, async ({electronApp, mainWindow}) => {
-        if (process.platform === 'win32') {
-            test.skip(true, 'Causes issues on Windows');
+        if (process.platform !== 'darwin') {
+            test.skip(true, 'macOS-only test');
             return;
         }
 

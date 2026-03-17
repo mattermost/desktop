@@ -173,7 +173,7 @@ test.describe('server_management/popout_windows', () => {
     });
 
     test.describe('MM-TXXXX popout window functionality', () => {
-        test('MM-TXXXX_1 should create a new popout window using keyboard shortcut', {tag: ['@P2', '@all']}, async () => {
+        test('MM-TXXXX_1 should create a new popout window using File menu', {tag: ['@P2', '@all']}, async () => {
             const popoutWindow = await openPopoutWindow();
             expect(popoutWindow).toBeDefined();
             expect(electronApp.windows().filter((w) => w.url().includes('popout.html')).length).toBe(1);
@@ -235,14 +235,29 @@ test.describe('server_management/popout_windows', () => {
 
         if (process.platform === 'win32') {
             test('MM-TXXXX_5 should close popout windows when main window is closed', {tag: ['@P2', '@win32']}, async ({}, testInfo) => {
-                const {app, userDataDir} = await launchWithMattermostConfig(testInfo);
+                const testDataDir = path.join(testInfo.outputDir, 'popout-close-userdata');
+                await fs.mkdir(testDataDir, {recursive: true});
+                writeConfigFile(testDataDir, config);
+
+                const {_electron: electron} = await import('playwright');
+                const app = await electron.launch({
+                    executablePath: electronBinaryPath,
+                    args: [appDir, `--user-data-dir=${testDataDir}`, '--no-sandbox', '--disable-gpu'],
+                    env: {...process.env, NODE_ENV: 'test'},
+                    timeout: 60_000,
+                });
+                await waitForAppReady(app);
+
                 try {
-                    const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
-                    await mainWindow.keyboard.press('Control+n');
+                    const win = app.windows().find((w) => w.url().includes('index'));
+                    if (!win) {
+                        throw new Error('Main window not found');
+                    }
+                    await win.keyboard.press('Control+n');
 
                     await expect.poll(() => {
                         return app.windows().filter((w) => w.url().includes('popout.html')).length;
-                    }, {timeout: 10000}).toBe(1);
+                    }, {timeout: 10_000}).toBe(1);
 
                     const mainWindows = app.windows().filter((w) => w.url().includes('index'));
                     const popoutWindows = app.windows().filter((w) => w.url().includes('popout.html'));
@@ -254,10 +269,10 @@ test.describe('server_management/popout_windows', () => {
 
                     await expect.poll(() => {
                         return app.windows().filter((w) => w.url().includes('popout.html')).length;
-                    }, {timeout: 10000}).toBe(0);
+                    }, {timeout: 10_000}).toBe(0);
                 } finally {
-                    await app.close();
-                    await waitForLockFileRelease(userDataDir);
+                    await app.close().catch(() => {});
+                    await waitForLockFileRelease(testDataDir).catch(() => {});
                 }
             });
         }
