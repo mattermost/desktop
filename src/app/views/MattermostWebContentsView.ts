@@ -26,7 +26,7 @@ import {
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
-import {isInternalURL, parseURL} from 'common/utils/url';
+import {isHttpLink, isInternalURL, parseURL} from 'common/utils/url';
 import {type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
@@ -529,6 +529,11 @@ export class MattermostWebContentsView extends EventEmitter {
     private generateOpenInBrowserMenuItems = (url: string): Electron.MenuItemConstructorOptions[] => {
         const browsers = this.cachedBrowsers;
         if (!browsers || browsers.length === 0) {
+            return [];
+        }
+
+        // Only allow http/https URLs to be opened in external browsers
+        if (!isHttpLink(url)) {
             return [];
         }
 
