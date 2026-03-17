@@ -301,7 +301,7 @@
   "renderer.components.settingsPage.checkSpelling.editSpellcheckUrl": "Verwende eine alternative Wörterbuch-URL",
   "renderer.components.settingsPage.checkSpelling.preferredLanguages": "Wähle bevorzugte Sprache(n) aus",
   "renderer.components.settingsPage.checkSpelling.revertToDefault": "Zurück auf Standard",
-  "renderer.components.settingsPage.checkSpelling.specifyURL": "Definiere die URL von der Wörterbuch-Definitionen geholt werden können",
+  "renderer.components.settingsPage.checkSpelling.specifyURL": "Definiere die Url von der Wörterbuch-Definitionen geholt werden können",
   "renderer.components.settingsPage.downloadLocation": "Download Verzeichnis",
   "renderer.components.settingsPage.downloadLocation.description": "Definiere das Verzeichnis in das Dateien heruntergeladen werden.",
   "renderer.components.settingsPage.enableHardwareAcceleration": "Verwende GPU Hardware Beschleunigung",
