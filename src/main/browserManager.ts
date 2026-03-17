@@ -235,16 +235,45 @@ async function getLinuxBrowsers(): Promise<BrowserInfo[]> {
         try {
             const content = fs.readFileSync(file, 'utf-8');
             const nameMatch = content.match(/^Name=(.+)$/m);
-            const execMatch = content.match(/^Exec=(\S+)/m);
+            const execMatch = content.match(/^Exec=(.+)$/m);
             if (nameMatch && execMatch && !seenNames.has(nameMatch[1])) {
-                const execPath = execMatch[1].replace(/%[uUfF]/g, '').trim();
+                const execLine = execMatch[1].trim();
+                let executable: string;
+                let rest: string;
+
+                if (execLine.startsWith('"')) {
+                    const closingQuote = execLine.indexOf('"', 1);
+                    if (closingQuote === -1) {
+                        continue;
+                    }
+                    executable = execLine.substring(1, closingQuote);
+                    rest = execLine.substring(closingQuote + 1).trim();
+                } else {
+                    const spaceIndex = execLine.indexOf(' ');
+                    if (spaceIndex === -1) {
+                        executable = execLine;
+                        rest = '';
+                    } else {
+                        executable = execLine.substring(0, spaceIndex);
+                        rest = execLine.substring(spaceIndex + 1).trim();
+                    }
+                }
+
+                // Filter out .desktop field codes like %u %U %f %F %i %c %k and empty tokens
+                const args = rest ? rest.split(/\s+/).filter((token) => {
+                    if (!token) {
+                        return false;
+                    }
+                    const normalized = token.replace(/^["']|["']$/g, '');
+                    return !(/^%[uUfFickdDnNvm]$/).test(normalized);
+                }) : [];
 
                 // Only accept absolute paths that point to an existing executable
-                if (path.isAbsolute(execPath) && fs.existsSync(execPath)) {
+                if (path.isAbsolute(executable) && fs.existsSync(executable)) {
                     found.push({
                         name: nameMatch[1],
-                        executable: execPath,
-                        args: [],
+                        executable,
+                        args,
                     });
                     seenNames.add(nameMatch[1]);
                 }

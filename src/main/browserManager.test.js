@@ -274,6 +274,32 @@ describe('main/browserManager', () => {
             const browsers = await getInstalledBrowsers();
             expect(browsers).toEqual([]);
         });
+
+        it('should parse .desktop files with Exec args and strip field codes', async () => {
+            const fs = require('fs');
+            mockExec.mockImplementation((cmd, opts, callback) => {
+                const cb = resolveExecCallback(opts, callback);
+                if (typeof cb !== 'function') {
+                    return;
+                }
+                cb(new Error('not found'));
+            });
+            mockExecFile.mockImplementation((file, args, opts, callback) => {
+                const cb = resolveExecCallback(opts, callback);
+                if (typeof cb === 'function') {
+                    cb(null, {stdout: '/usr/share/applications/flatpak-browser.desktop', stderr: ''});
+                }
+            });
+            fs.readFileSync.mockReturnValue(
+                '[Desktop Entry]\nName=Flatpak Browser\nExec=/usr/bin/flatpak run org.example.browser %u\nMimeType=x-scheme-handler/https;\n',
+            );
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers.length).toBe(1);
+            expect(browsers[0].name).toBe('Flatpak Browser');
+            expect(browsers[0].executable).toBe('/usr/bin/flatpak');
+            expect(browsers[0].args).toEqual(['run', 'org.example.browser']);
+        });
     });
 
     describe('getInstalledBrowsers - unsupported platform', () => {
