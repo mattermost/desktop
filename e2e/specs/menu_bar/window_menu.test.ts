@@ -141,32 +141,6 @@ async function clickWindowMenuItem(
     throw new Error(`Timed out clicking window menu item: ${JSON.stringify(matcher)}`);
 }
 
-async function clickAppMenuItem(
-    app: ElectronApplication,
-    matcher: {label?: string; role?: string},
-) {
-    await app.evaluate(({app, BrowserWindow}, expected) => {
-        const appMenu = app.applicationMenu.getMenuItemById('app');
-        const items = appMenu?.submenu?.items ?? [];
-        const item = items.find((candidate: any) => {
-            if (expected.role && candidate.role !== expected.role) {
-                return false;
-            }
-            const label = typeof candidate.label === 'string' ? candidate.label.trim() : '';
-            if (expected.label && label !== expected.label) {
-                return false;
-            }
-            return true;
-        });
-
-        if (!item) {
-            throw new Error(`App menu item not found: ${JSON.stringify(expected)}`);
-        }
-
-        item.click(undefined, BrowserWindow.getFocusedWindow(), undefined);
-    }, matcher);
-}
-
 async function evaluateWithRetry<T>(
     app: ElectronApplication,
     pageFunction: () => T,
@@ -348,7 +322,7 @@ test.describe('Menu/window_menu', () => {
 
     test.describe('MM-T826 should switch to servers when keyboard shortcuts are pressed', () => {
         test('MM-T826_1 should show the second server', {tag: ['@P2', '@all']}, async () => {
-            let dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
+            const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
             expect(dropdownButtonText).toContain('example');
 
             await clickWindowMenuItem(electronApp, {label: 'github'});
@@ -386,7 +360,7 @@ test.describe('Menu/window_menu', () => {
             await thirdView!.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
             await thirdView!.click('#sidebarItem_town-square');
 
-            let tabViewButton = await mainWindow.innerText('.active');
+            const tabViewButton = await mainWindow.innerText('.active');
             expect(tabViewButton).toContain('Town Square');
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});

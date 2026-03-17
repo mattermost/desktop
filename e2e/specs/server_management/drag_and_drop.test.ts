@@ -348,7 +348,7 @@ test.describe('server_management/drag_and_drop', () => {
         });
 
         test('MM-T2634_3 should update the config file', {tag: ['@P2', '@all']}, async () => {
-            const dropdownView = await openServerDropdown();
+            await openServerDropdown();
 
             await mainWindow.evaluate(async () => {
                 const servers = await window.desktop.getOrderedServers();

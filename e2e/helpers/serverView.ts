@@ -172,10 +172,12 @@ function parseKeyPress(shortcut: string) {
 }
 
 export class ServerLocator {
-    constructor(
-        private readonly view: ServerView,
-        private readonly descriptor: LocatorDescriptor,
-    ) {
+    private readonly view: ServerView;
+    private readonly descriptor: LocatorDescriptor;
+
+    constructor(view: ServerView, descriptor: LocatorDescriptor) {
+        this.view = view;
+        this.descriptor = descriptor;
     }
 
     locator(selector: string) {
@@ -347,7 +349,10 @@ export class ServerLocator {
 }
 
 export class ServerKeyboard {
-    constructor(private readonly view: ServerView) {
+    private readonly view: ServerView;
+
+    constructor(view: ServerView) {
+        this.view = view;
     }
 
     async press(shortcut: string) {
