@@ -4,20 +4,43 @@
 import {test, expect} from '../../fixtures/index';
 
 const SHOW_SETTINGS_WINDOW = 'show-settings-window';
+type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
+
+async function openSettingsWindow(electronApp: ElectronApplication) {
+    const existingWindow = electronApp.windows().find((window) => window.url().includes('settings'));
+    if (existingWindow) {
+        await existingWindow.waitForLoadState().catch(() => {});
+        return existingWindow;
+    }
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            await electronApp.evaluate(({ipcMain}, showWindow) => {
+                ipcMain.emit(showWindow);
+            }, SHOW_SETTINGS_WINDOW);
+            break;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (!message.includes('Execution context was destroyed') || attempt === 4) {
+                throw error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+    }
+
+    const settingsWindow = electronApp.windows().find((window) => window.url().includes('settings')) ??
+        await electronApp.waitForEvent('window', {
+            predicate: (window) => window.url().includes('settings'),
+            timeout: 15_000,
+        });
+
+    await settingsWindow.waitForLoadState().catch(() => {});
+    return settingsWindow;
+}
 
 test.describe('permissions/ipc', () => {
     test('E2E-P01: should return a valid media access status via GET_MEDIA_ACCESS_STATUS IPC', {tag: ['@P2', '@all']}, async ({electronApp}) => {
-        await electronApp.evaluate(({ipcMain}, showWindow) => {
-            ipcMain.emit(showWindow);
-        }, SHOW_SETTINGS_WINDOW);
-        let settingsWindow = electronApp.windows().find((w) => w.url().includes('settings'));
-        if (!settingsWindow) {
-            settingsWindow = await electronApp.waitForEvent('window', {
-                predicate: (w) => w.url().includes('settings'),
-                timeout: 30_000,
-            });
-        }
-        await settingsWindow.waitForLoadState('domcontentloaded');
+        const settingsWindow = await openSettingsWindow(electronApp);
 
         const status = await settingsWindow.evaluate(
             () => (window as any).desktop.getMediaAccessStatus('microphone'),
@@ -31,17 +54,7 @@ test.describe('permissions/ipc', () => {
             return;
         }
 
-        await electronApp.evaluate(({ipcMain}, showWindow) => {
-            ipcMain.emit(showWindow);
-        }, SHOW_SETTINGS_WINDOW);
-        let settingsWindow = electronApp.windows().find((w) => w.url().includes('settings'));
-        if (!settingsWindow) {
-            settingsWindow = await electronApp.waitForEvent('window', {
-                predicate: (w) => w.url().includes('settings'),
-                timeout: 30_000,
-            });
-        }
-        await settingsWindow.waitForLoadState('domcontentloaded');
+        const settingsWindow = await openSettingsWindow(electronApp);
 
         await electronApp.evaluate(({shell}) => {
             (global as any).__testCapturedExternalURL = null;
@@ -67,17 +80,7 @@ test.describe('permissions/ipc', () => {
             return;
         }
 
-        await electronApp.evaluate(({ipcMain}, showWindow) => {
-            ipcMain.emit(showWindow);
-        }, SHOW_SETTINGS_WINDOW);
-        let settingsWindow = electronApp.windows().find((w) => w.url().includes('settings'));
-        if (!settingsWindow) {
-            settingsWindow = await electronApp.waitForEvent('window', {
-                predicate: (w) => w.url().includes('settings'),
-                timeout: 30_000,
-            });
-        }
-        await settingsWindow.waitForLoadState('domcontentloaded');
+        const settingsWindow = await openSettingsWindow(electronApp);
 
         await electronApp.evaluate(({shell}) => {
             (global as any).__testCapturedExternalURL = null;

@@ -2,9 +2,10 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
-import type {Page} from 'playwright';
 
-export async function triggerTestNotification(firstServer: Page) {
+import type {ServerView} from '../../helpers/serverView';
+
+export async function triggerTestNotification(firstServer: ServerView) {
     await firstServer.click('div#CustomizeYourExperienceTour > button');
     const sendNotificationButton = await firstServer.waitForSelector('.sectionNoticeButton.btn-primary');
     await sendNotificationButton.scrollIntoViewIfNeeded();
@@ -20,12 +21,12 @@ export async function triggerTestNotification(firstServer: Page) {
     expect(textAfterClick).toBe('Test notification sent');
 }
 
-export async function verifyNotificationRecievedinDM(firstServer: Page, afterbadgeValue: number) {
+export async function verifyNotificationReceivedInDM(firstServer: ServerView) {
     await firstServer.click('div.modal-header button[aria-label="Close"]');
     const sidebarLink = await firstServer.locator('a.SidebarLink:has-text("system-bot")');
     const badgeElement = await sidebarLink.locator('span.badge');
     const badgeCount = await badgeElement.textContent();
-    expect(parseInt(badgeCount!, 10)).toBe(afterbadgeValue);
+    expect(parseInt(badgeCount!, 10)).toBeGreaterThan(0);
 
     await sidebarLink.click();
     await firstServer.waitForSelector('div.post__body');

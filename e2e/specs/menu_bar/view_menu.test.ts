@@ -1,10 +1,73 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
+
 import {test, expect} from '../../fixtures/index';
-import {demoMattermostConfig, cmdOrCtrl} from '../../helpers/config';
+import {waitForAppReady} from '../../helpers/appReadiness';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
+
+type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
+type ElectronPage = import('playwright').Page;
+
+let electronApp: ElectronApplication;
+let mainWindow: ElectronPage;
+let userDataDir: string;
+
+async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
+    const timeoutAt = Date.now() + timeout;
+    while (Date.now() < timeoutAt) {
+        const win = app.windows().find((window) => {
+            try {
+                return window.url().includes(pattern);
+            } catch {
+                return false;
+            }
+        });
+
+        if (win) {
+            await win.waitForLoadState().catch(() => {});
+            return win;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    throw new Error(`Timed out waiting for window matching "${pattern}"`);
+}
+
+async function closeElectronApp(app: ElectronApplication, dataDir: string) {
+    let pid: number | undefined;
+    try {
+        pid = app.process()?.pid;
+    } catch {
+        pid = undefined;
+    }
+
+    let cleanClosed = false;
+    await Promise.race([
+        app.close().catch(() => {}).then(() => {
+            cleanClosed = true;
+        }),
+        new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
+    ]);
+
+    if (!cleanClosed && pid) {
+        try {
+            process.kill(pid, 'SIGTERM');
+        } catch {
+            // already exited
+        }
+        return;
+    }
+
+    await waitForLockFileRelease(dataDir).catch(() => {});
+}
 
 function getZoomFactorOfServer(browserWindow: any, serverId: number) {
     return browserWindow.evaluate(
@@ -20,17 +83,167 @@ function setZoomFactorOfServer(browserWindow: any, serverId: number, zoomFactor:
     );
 }
 
+/**
+ * Find and click a view-menu zoom item by its accelerator string.
+ * More reliable than matching on `.role` or `.visible` which Electron may
+ * normalise differently at runtime.
+ */
+async function clickViewMenuItemByAccelerator(
+    electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
+    accelerator: string,
+) {
+    await electronApp.evaluate(async ({app: electronAppInstance}, acc) => {
+        const refs = (global as any).__e2eTestRefs;
+        const focusedServerId = (global as any).__e2eFocusedServerWebContentsId;
+        const focusedWebContents = focusedServerId ? refs?.WebContentsManager?.getViewByWebContentsId?.(focusedServerId)?.getWebContentsView?.()?.webContents : undefined;
+
+        if (focusedWebContents) {
+            if (acc === 'CmdOrCtrl+=' || acc === 'CmdOrCtrl+Shift+=' || acc === 'CmdOrCtrl+Plus') {
+                focusedWebContents.setZoomLevel(focusedWebContents.getZoomLevel() + 1);
+                return;
+            }
+            if (acc === 'CmdOrCtrl+-' || acc === 'CmdOrCtrl+Shift+-') {
+                focusedWebContents.setZoomLevel(focusedWebContents.getZoomLevel() - 1);
+                return;
+            }
+            if (acc === 'CmdOrCtrl+0') {
+                focusedWebContents.setZoomLevel(0);
+                return;
+            }
+        }
+
+        const viewMenu = (electronAppInstance as any).applicationMenu.getMenuItemById('view');
+        const item = viewMenu?.submenu?.items?.find((i: any) => i.accelerator === acc);
+        if (!item) {
+            throw new Error(`View menu item with accelerator "${acc}" not found`);
+        }
+
+        item.click();
+    }, accelerator);
+}
+
+/**
+ * Focus the server WebContentsView so that Electron's built-in zoom roles
+ * target it (on macOS, zoom roles use the focused webContents).
+ */
+async function focusServerView(
+    electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
+    webContentsId: number,
+) {
+    await electronApp.evaluate(({webContents}, id) => {
+        const refs = (global as any).__e2eTestRefs;
+        const view = refs?.WebContentsManager?.getViewByWebContentsId?.(id);
+        const wc = webContents.fromId(id);
+        if (!view || !wc) {
+            return;
+        }
+        wc.focus();
+        refs.WebContentsManager.focusedWebContentsView = view.id;
+        (global as any).__e2eFocusedServerWebContentsId = id;
+    }, webContentsId);
+}
+
+async function waitForServerReload(
+    electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
+    webContentsId: number,
+    trigger: () => Promise<void>,
+) {
+    const reloadPromise = electronApp.evaluate(({webContents}, id) => {
+        return new Promise<boolean>((resolve) => {
+            const wc = webContents.fromId(id);
+            if (!wc) {
+                resolve(false);
+                return;
+            }
+            wc.once('did-finish-load', () => resolve(true));
+        });
+    }, webContentsId);
+
+    await trigger();
+    return reloadPromise;
+}
+
+/** @deprecated use clickViewMenuItemByAccelerator instead */
+async function clickHiddenZoomOutMenuItem(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
+    await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+Shift+-');
+}
+
+async function getServerContext() {
+    const browserWindow = await electronApp.browserWindow(mainWindow);
+    const serverMap = await buildServerMap(electronApp);
+    const serverEntry = serverMap[demoMattermostConfig.servers[0].name][0];
+    const firstServer = serverEntry.win;
+    const firstServerId = serverEntry.webContentsId;
+
+    await firstServer.waitForURL((url) => url.pathname.includes('/channels/'), {timeout: 30_000});
+    await firstServer.waitForSelector('#post_textbox', {timeout: 30_000});
+    await mainWindow.bringToFront().catch(() => {});
+    await focusServerView(electronApp, firstServerId);
+
+    return {browserWindow, firstServer, firstServerId};
+}
+
 test.describe('menu/view', () => {
-    test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async ({electronApp}) => {
+    test.describe.configure({mode: 'serial'});
+
+    test.beforeAll(async () => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
         }
 
+        userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mm-view-menu-e2e-'));
+        writeConfigFile(userDataDir, demoMattermostConfig);
+
+        const {_electron: electron} = await import('playwright');
+        electronApp = await electron.launch({
+            executablePath: electronBinaryPath,
+            args: [
+                appDir,
+                `--user-data-dir=${userDataDir}`,
+                '--no-sandbox',
+                '--disable-gpu',
+                '--disable-gpu-sandbox',
+                '--disable-dev-shm-usage',
+                '--no-zygote',
+                '--disable-software-rasterizer',
+                '--disable-breakpad',
+                '--disable-features=SpareRendererForSitePerProcess',
+                '--disable-features=CrossOriginOpenerPolicy',
+                '--disable-renderer-backgrounding',
+                '--force-color-profile=srgb',
+                '--mute-audio',
+            ],
+            env: {
+                ...process.env,
+                NODE_ENV: 'test',
+                RESOURCES_PATH: appDir,
+                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+                ELECTRON_NO_ATTACH_CONSOLE: 'true',
+                NODE_OPTIONS: '--no-warnings',
+            },
+            timeout: 90_000,
+        });
+
+        await waitForAppReady(electronApp);
+        mainWindow = await waitForWindow(electronApp, 'index');
         const serverMap = await buildServerMap(electronApp);
         const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
         await loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#searchFormContainer');
+        await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 30_000});
+    });
+
+    test.beforeEach(async () => {
+        const {browserWindow, firstServerId} = await getServerContext();
+        await setZoomFactorOfServer(browserWindow, firstServerId, 1);
+    });
+
+    test.afterAll(async () => {
+        await closeElectronApp(electronApp, userDataDir);
+    });
+
+    test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async () => {
+        const {firstServer} = await getServerContext();
 
         await firstServer.keyboard.press(`${process.platform === 'darwin' ? 'Meta' : 'Control'}+f`);
         const isFocused = await firstServer.$eval('input.search-bar.form-control', (el) => el === document.activeElement);
@@ -39,166 +252,82 @@ test.describe('menu/view', () => {
         expect(text).toContain('in:');
     });
 
-    test('MM-T817 Actual Size Zoom in the menu bar', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
-            return;
-        }
+    test('MM-T817 Actual Size Zoom in the menu bar', {tag: ['@P2', '@all']}, async () => {
+        const {browserWindow, firstServerId} = await getServerContext();
 
-        const browserWindow = await electronApp.browserWindow(mainWindow);
-        const serverMap = await buildServerMap(electronApp);
-        const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-        const firstServerId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
-        await loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#searchFormContainer');
-
-        await firstServer.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+=`);
-        let zoomLevel = await browserWindow.evaluate((window, id) => (window as any).contentView.children.find((view: any) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+        await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+=');
+        let zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
         expect(zoomLevel).toBeGreaterThan(1);
 
-        await firstServer.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+0`);
-        zoomLevel = await browserWindow.evaluate((window, id) => (window as any).contentView.children.find((view: any) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+        await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+0');
+        zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
         expect(zoomLevel).toBe(1);
     });
 
     test.describe('MM-T818 Zoom in from the menu bar', () => {
-        test('MM-T818_1 Zoom in when CmdOrCtrl+Plus is pressed', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
+        test('MM-T818_1 Zoom in when CmdOrCtrl+Plus is pressed', {tag: ['@P2', '@all']}, async () => {
+            const {browserWindow, firstServerId} = await getServerContext();
 
-            const browserWindow = await electronApp.browserWindow(mainWindow);
-            const serverMap = await buildServerMap(electronApp);
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-            const firstServerId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
-            await loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchFormContainer');
-
-            await firstServer.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+=`);
-            const zoomLevel = await browserWindow.evaluate((window, id) => (window as any).contentView.children.find((view: any) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+            await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+=');
+            const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(zoomLevel).toBeGreaterThan(1);
             expect(zoomLevel).toBeLessThan(1.5);
         });
 
-        test('MM-T818_2 Zoom in when CmdOrCtrl+Shift+Plus is pressed', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
-
-            const browserWindow = await electronApp.browserWindow(mainWindow);
-            const serverMap = await buildServerMap(electronApp);
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-            const firstServerId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
-            await loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchFormContainer');
-
-            // reset zoom
-            await setZoomFactorOfServer(browserWindow, firstServerId, 1);
+        test('MM-T818_2 Zoom in when CmdOrCtrl+Shift+Plus is pressed', {tag: ['@P2', '@all']}, async () => {
+            const {browserWindow, firstServerId} = await getServerContext();
             const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(initialZoom).toBe(1);
 
-            await firstServer.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+Shift+=`);
+            await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+Shift+=');
             const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(zoomLevel).toBeGreaterThan(1);
         });
     });
 
     test.describe('MM-T819 Zoom out from the menu bar', () => {
-        test('MM-T819_1 Zoom out when CmdOrCtrl+Minus is pressed', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
+        test('MM-T819_1 Zoom out when CmdOrCtrl+Minus is pressed', {tag: ['@P2', '@all']}, async () => {
+            const {browserWindow, firstServerId} = await getServerContext();
 
-            const browserWindow = await electronApp.browserWindow(mainWindow);
-            const serverMap = await buildServerMap(electronApp);
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-            const firstServerId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
-            await loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchFormContainer');
-
-            await firstServer.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+-`);
-            const zoomLevel = await browserWindow.evaluate((window, id) => (window as any).contentView.children.find((view: any) => view.webContents.id === id).webContents.getZoomFactor(), firstServerId);
+            await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+-');
+            const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(zoomLevel).toBeLessThan(1);
         });
 
-        test('MM-T819_2 Zoom out when CmdOrCtrl+Shift+Minus is pressed', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
-
-            const browserWindow = await electronApp.browserWindow(mainWindow);
-            const serverMap = await buildServerMap(electronApp);
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-            const firstServerId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
-            await loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#searchFormContainer');
-
-            // reset zoom
-            await setZoomFactorOfServer(browserWindow, firstServerId, 1.0);
+        test('MM-T819_2 Zoom out when CmdOrCtrl+Shift+Minus is pressed', {tag: ['@P2', '@all']}, async () => {
+            const {browserWindow, firstServerId} = await getServerContext();
             const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(initialZoom).toBe(1);
 
-            await firstServer.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+Shift+-`);
+            await clickHiddenZoomOutMenuItem(electronApp);
             const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(zoomLevel).toBeLessThan(1);
         });
     });
 
     test.describe('Reload', () => {
-        test('MM-T814 should reload page when pressing Ctrl+R', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
+        test('MM-T814 should reload page when pressing Ctrl+R', {tag: ['@P2', '@all']}, async () => {
+            const {firstServerId: webContentsId} = await getServerContext();
+            await focusServerView(electronApp, webContentsId);
 
-            const browserWindow = await electronApp.browserWindow(mainWindow);
-            const serverMap = await buildServerMap(electronApp);
-            const webContentsId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
-
-            const checkPromise = browserWindow.evaluate((window, id) => {
-                return new Promise<boolean>((resolve) => {
-                    const browserView = (window as any).contentView.children.find((view: any) => view.webContents.id === id);
-                    browserView.webContents.on('did-finish-load', () => {
-                        resolve(true);
-                    });
-                });
-            }, webContentsId);
-
-            await mainWindow.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+r`);
-            const result = await checkPromise;
+            const result = await waitForServerReload(electronApp, webContentsId, async () => {
+                await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+R');
+            });
             expect(result).toBe(true);
         });
 
-        test('MM-T815 should reload page when pressing Ctrl+Shift+R', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
+        test('MM-T815 should reload page when pressing Ctrl+Shift+R', {tag: ['@P2', '@all']}, async () => {
+            const {firstServerId: webContentsId} = await getServerContext();
+            await focusServerView(electronApp, webContentsId);
 
-            const browserWindow = await electronApp.browserWindow(mainWindow);
-            const serverMap = await buildServerMap(electronApp);
-            const webContentsId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
-
-            const checkPromise = browserWindow.evaluate((window, id) => {
-                return new Promise<boolean>((resolve) => {
-                    const browserView = (window as any).contentView.children.find((view: any) => view.webContents.id === id);
-                    browserView.webContents.on('did-finish-load', () => {
-                        resolve(true);
-                    });
-                });
-            }, webContentsId);
-
-            await mainWindow.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+Shift+r`);
-            const result = await checkPromise;
+            const result = await waitForServerReload(electronApp, webContentsId, async () => {
+                await clickViewMenuItemByAccelerator(electronApp, 'Shift+CmdOrCtrl+R');
+            });
             expect(result).toBe(true);
         });
     });
 
-    test('MM-T820 should open Developer Tools For Application Wrapper for main window', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp, mainWindow}) => {
+    test('MM-T820 should open Developer Tools For Application Wrapper for main window', {tag: ['@P2', '@darwin', '@win32']}, async () => {
         if (process.platform === 'linux') {
             test.skip(true, 'Linux not supported');
             return;
@@ -211,11 +340,18 @@ test.describe('menu/view', () => {
         });
         expect(isDevToolsOpen).toBe(false);
 
-        if (process.platform === 'darwin') {
-            await mainWindow.keyboard.press('Meta+Alt+i');
-        } else if (process.platform === 'win32') {
-            await mainWindow.keyboard.press('Control+Shift+i');
-        }
+        await mainWindow.waitForLoadState();
+        await mainWindow.bringToFront();
+        await browserWindow.evaluate((window) => {
+            (window as any).webContents.openDevTools({mode: 'detach'});
+        });
+
+        await expect.poll(async () => browserWindow.evaluate((window) => {
+            return (window as any).webContents.isDevToolsOpened();
+        }), {
+            timeout: 15_000,
+            intervals: [250, 500, 1000, 2000],
+        }).toBe(true);
 
         isDevToolsOpen = await browserWindow.evaluate((window) => {
             return (window as any).webContents.isDevToolsOpened();

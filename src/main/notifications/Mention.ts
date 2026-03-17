@@ -36,7 +36,8 @@ export class Mention extends Notification {
             Reflect.deleteProperty(options, 'icon');
         }
         const isWin7 = (process.platform === 'win32' && !Utils.isVersionGreaterThanOrEqualTo(os.release(), '6.3') && DEFAULT_WIN7);
-        const customSound = String(!options.silent && ((options.soundName !== 'None' && options.soundName) || isWin7));
+        const soundValue = !options.silent && ((options.soundName !== 'None' && options.soundName) || isWin7);
+        const customSound = soundValue || '';
         if (customSound) {
             options.silent = true;
         }

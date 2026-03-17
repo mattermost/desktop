@@ -12,7 +12,7 @@ import {waitForLockFileRelease} from '../../helpers/cleanup';
 const file1 = {
     addedAt: Date.UTC(2022, 8, 8, 10), // Aug 08, 2022 10:00AM UTC
     filename: 'file1.txt',
-    mimeType: 'plain/text',
+    mimeType: 'text/plain',
     progress: 100,
     receivedBytes: 3917388,
     state: 'completed',
@@ -22,7 +22,7 @@ const file1 = {
 const file2 = {
     addedAt: Date.UTC(2022, 8, 8, 11), // Aug 08, 2022 11:00AM UTC
     filename: 'file2.txt',
-    mimeType: 'plain/text',
+    mimeType: 'text/plain',
     progress: 100,
     receivedBytes: 7917388,
     state: 'completed',
@@ -53,7 +53,11 @@ async function launchAppWithDownloads(userDataDir: string, downloads: Record<str
 }
 
 async function openDownloadsDropdown(app: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
-    const mainWindow = app.windows().find((window) => window.url().includes('index'));
+    const mainWindow = app.windows().find((window) => window.url().includes('index')) ??
+        await app.waitForEvent('window', {
+            predicate: (window) => window.url().includes('index'),
+            timeout: 15_000,
+        });
     if (!mainWindow) {
         throw new Error('No main window found');
     }
@@ -63,15 +67,17 @@ async function openDownloadsDropdown(app: Awaited<ReturnType<typeof import('play
     const dlButtonLocator = await mainWindow.waitForSelector('.DownloadsDropdownButton');
     await dlButtonLocator.click();
 
-    let downloadsWindow = app.windows().find((w) => w.url().includes('downloadsDropdown'));
+    let downloadsWindow = app.windows().find((w) => w.url().includes('downloadsDropdown.html'));
     if (!downloadsWindow) {
         downloadsWindow = await app.waitForEvent('window', {
-            predicate: (w) => w.url().includes('downloadsDropdown'),
+            predicate: (w) => w.url().includes('downloadsDropdown.html'),
             timeout: 10_000,
         });
     }
     await downloadsWindow.waitForLoadState();
     await downloadsWindow.bringToFront();
+    // Wait for the React component to fully mount (renders null until appName is resolved via IPC)
+    await downloadsWindow.waitForSelector('.DownloadsDropdown', {state: 'visible', timeout: 15_000});
     return downloadsWindow;
 }
 
@@ -86,9 +92,10 @@ test.describe('downloads/downloads_dropdown_items', () => {
             },
         };
 
-        const {app} = await launchAppWithDownloads(userDataDir, downloads);
+        // Create the file BEFORE launching the app so checkForDeletedFiles() finds it
         fs.mkdirSync(downloadsLocation, {recursive: true});
         fs.writeFileSync(path.join(downloadsLocation, 'file1.txt'), 'file1 content');
+        const {app} = await launchAppWithDownloads(userDataDir, downloads);
 
         try {
             const downloadsWindow = await openDownloadsDropdown(app);
@@ -195,14 +202,17 @@ test.describe('downloads/downloads_dropdown_items', () => {
             'file2.txt': {...file2, location: path.join(downloadsLocation, 'file2.txt')},
         };
 
-        const {app} = await launchAppWithDownloads(userDataDir, downloads);
+        // Create files BEFORE launching so checkForDeletedFiles() finds them as 'completed'
         fs.mkdirSync(downloadsLocation, {recursive: true});
         fs.writeFileSync(path.join(downloadsLocation, 'file1.txt'), 'file1 content');
         fs.writeFileSync(path.join(downloadsLocation, 'file2.txt'), 'file2 content');
+        const {app} = await launchAppWithDownloads(userDataDir, downloads);
 
         try {
             const downloadsWindow = await openDownloadsDropdown(app);
 
+            // Wait for both items to render, then verify order (newest first)
+            await downloadsWindow.waitForSelector('.DownloadsDropdown__File__Body__Details__Filename', {timeout: 10_000});
             const filenameTextLocators = downloadsWindow.locator('.DownloadsDropdown__File__Body__Details__Filename');
             expect(await filenameTextLocators.count()).toBe(2);
             const firstItemLocator = filenameTextLocators.first();

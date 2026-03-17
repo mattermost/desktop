@@ -11,7 +11,7 @@ import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('application', () => {
-    test('MM-T1304/MM-T1306 should open the app on the requested deep link', {tag: ['@P2', '@all', '@darwin', '@win32']}, async ({}, testInfo) => {
+    test('MM-T1304/MM-T1306 should open the app on the requested deep link', {tag: ['@P2', '@win32']}, async ({}, testInfo) => {
         if (process.platform !== 'win32') {
             test.skip(true, 'Windows only deep link test');
             return;

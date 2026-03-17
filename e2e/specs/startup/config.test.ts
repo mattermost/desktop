@@ -26,8 +26,8 @@ test.describe('startup/config', () => {
             const secondServer = serverMap.github?.[0]?.win;
             expect(firstServer).toBeDefined();
             expect(secondServer).toBeDefined();
-            expect(firstServer!.url()).toContain('example.com');
-            expect(secondServer!.url()).toContain('github.com');
+            await expect.poll(() => firstServer!.url(), {timeout: 10_000}).toContain('example.com');
+            await expect.poll(() => secondServer!.url(), {timeout: 10_000}).toContain('github.com');
         },
     );
 

@@ -4,10 +4,38 @@
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
 
+async function openDropdown(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>, mainWindow: any) {
+    await mainWindow.click('.ServerDropdownButton');
+    const dropdownView = electronApp.windows().find((window) => window.url().includes('dropdown')) ??
+        await electronApp.waitForEvent('window', {
+            predicate: (window) => window.url().includes('dropdown'),
+            timeout: 10_000,
+        });
+    await dropdownView.waitForLoadState().catch(() => {});
+    return dropdownView;
+}
+
+async function getDropdownHeight(browserWindow: any) {
+    return browserWindow.evaluate((window) => {
+        const dropdownView = (window as any).contentView.children.find((view: any) => {
+            try {
+                return view.webContents.getURL().includes('dropdown');
+            } catch {
+                return false;
+            }
+        });
+
+        if (!dropdownView) {
+            return 0;
+        }
+
+        return dropdownView.getBounds().height;
+    });
+}
+
 test.describe('menu_bar/dropdown', () => {
     test('MM-T4405 should set name of menu item from config file', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-        const dropdownView = electronApp.windows().find((window) => window.url().includes('dropdown'));
-        await mainWindow.click('.ServerDropdownButton');
+        const dropdownView = await openDropdown(electronApp, mainWindow);
         const firstMenuItem = await dropdownView!.innerText('.ServerDropdown button.ServerDropdown__button:nth-child(1) span');
         const secondMenuItem = await dropdownView!.innerText('.ServerDropdown button.ServerDropdown__button:nth-child(2) span');
 
@@ -19,12 +47,14 @@ test.describe('menu_bar/dropdown', () => {
         test('MM-T4406_1 should show the dropdown', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
             const browserWindow = await electronApp.browserWindow(mainWindow);
 
-            let dropdownHeight = await browserWindow.evaluate((window) => (window as any).contentView.children.find((view: any) => view.webContents.getURL().includes('dropdown')).getBounds().height);
+            let dropdownHeight = await getDropdownHeight(browserWindow);
             expect(dropdownHeight).toBe(0);
 
             await mainWindow.click('.ServerDropdownButton');
-            dropdownHeight = await browserWindow.evaluate((window) => (window as any).contentView.children.find((view: any) => view.webContents.getURL().includes('dropdown')).getBounds().height);
-            expect(dropdownHeight).toBeGreaterThan(0);
+            await expect.poll(
+                () => getDropdownHeight(browserWindow),
+                {timeout: 10_000},
+            ).toBeGreaterThan(0);
         });
 
         test('MM-T4406_2 should hide the dropdown', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
@@ -35,14 +65,15 @@ test.describe('menu_bar/dropdown', () => {
 
             // Then hide it by clicking elsewhere
             await mainWindow.click('.TabBar');
-            const dropdownHeight = await browserWindow.evaluate((window) => (window as any).contentView.children.find((view: any) => view.webContents.getURL().includes('dropdown')).getBounds().height);
-            expect(dropdownHeight).toBe(0);
+            await expect.poll(
+                () => getDropdownHeight(browserWindow),
+                {timeout: 10_000},
+            ).toBe(0);
         });
     });
 
     test('MM-T4407 should open the new server prompt after clicking the add button', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
-        const dropdownView = electronApp.windows().find((window) => window.url().includes('dropdown'));
-        await mainWindow.click('.ServerDropdownButton');
+        const dropdownView = await openDropdown(electronApp, mainWindow);
         await dropdownView!.click('.ServerDropdown__button.addServer');
 
         const newServerModal = await electronApp.waitForEvent('window', {
@@ -91,15 +122,18 @@ test.describe('menu_bar/dropdown', () => {
 
         test('MM-T4408_2 should show the second view after clicking the menu item', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
             const browserWindow = await electronApp.browserWindow(mainWindow);
-            const dropdownView = electronApp.windows().find((window) => window.url().includes('dropdown'));
-
-            await mainWindow.click('.ServerDropdownButton');
+            const dropdownView = await openDropdown(electronApp, mainWindow);
             await dropdownView!.click('.ServerDropdown button.ServerDropdown__button:nth-child(2)');
 
-            const firstViewIsAttached = await browserWindow.evaluate((window, urlFragment) => Boolean((window as any).contentView.children.find((view: any) => view.webContents.getURL().includes(urlFragment))), 'example.com');
-            expect(firstViewIsAttached).toBe(false);
-            const secondViewIsAttached = await browserWindow.evaluate((window) => Boolean((window as any).contentView.children.find((view: any) => view.webContents.getURL() === 'https://github.com/')));
-            expect(secondViewIsAttached).toBe(true);
+            await expect.poll(async () => {
+                return browserWindow.evaluate((window) => {
+                    const children = (window as any).contentView.children;
+                    return {
+                        first: Boolean(children.find((view: any) => view.webContents.getURL().includes('example.com'))),
+                        second: Boolean(children.find((view: any) => view.webContents.getURL() === 'https://github.com/')),
+                    };
+                });
+            }, {timeout: 10_000}).toEqual({first: false, second: true});
         });
     });
 });

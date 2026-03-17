@@ -28,7 +28,7 @@ export const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
 // ---- Config shapes ----
 
-type AppConfig = {
+export type AppConfig = {
     version: number;
     servers: Array<{name: string; url: string; order: number}>;
     showTrayIcon: boolean;

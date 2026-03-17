@@ -2,23 +2,62 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {cmdOrCtrl} from '../../helpers/config';
+
+async function openPreferencesFromAppMenu(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
+    await electronApp.evaluate(async ({app}) => {
+        const appMenu = (app as any).applicationMenu.getMenuItemById('app');
+        const preferencesItem = appMenu?.submenu?.items?.find((item: any) => item.accelerator?.includes(','));
+        if (!preferencesItem) {
+            throw new Error('Preferences menu item not found');
+        }
+        preferencesItem.click();
+    });
+}
+
+async function waitForSettingsWindow(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
+    let settingsWindow = electronApp.windows().find((window) => window.url().includes('settings'));
+    if (!settingsWindow) {
+        settingsWindow = await electronApp.waitForEvent('window', {
+            predicate: (window) => window.url().includes('settings'),
+            timeout: 30_000,
+        });
+    }
+
+    await settingsWindow.waitForLoadState();
+    await settingsWindow.bringToFront();
+    await settingsWindow.waitForSelector('.SettingsModal', {state: 'visible', timeout: 30_000});
+    return settingsWindow;
+}
+
+async function quitFromAppMenu(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
+    await electronApp.evaluate(async ({app}) => {
+        app.quit();
+    });
+}
+
+async function waitForAppExit(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
+    const appProcess = electronApp.process();
+    if (!appProcess) {
+        return;
+    }
+
+    if (appProcess.exitCode !== null) {
+        return;
+    }
+
+    await new Promise<void>((resolve) => {
+        appProcess.once('exit', () => resolve());
+    });
+}
 
 test.describe('file_menu/dropdown', () => {
     test('MM-T1313 Open Settings modal using keyboard shortcuts', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
         expect(mainWindow).toBeDefined();
 
+        await mainWindow.waitForLoadState();
         await mainWindow.bringToFront();
-
-        await mainWindow.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+,`);
-
-        let settingsWindow = electronApp.windows().find((window) => window.url().includes('settings'));
-        if (!settingsWindow) {
-            settingsWindow = await electronApp.waitForEvent('window', {
-                predicate: (window) => window.url().includes('settings'),
-                timeout: 30_000,
-            });
-        }
+        await openPreferencesFromAppMenu(electronApp);
+        const settingsWindow = await waitForSettingsWindow(electronApp);
         expect(settingsWindow).toBeDefined();
     });
 
@@ -68,15 +107,14 @@ test.describe('file_menu/dropdown', () => {
         }
 
         expect(mainWindow).toBeDefined();
+        await mainWindow.waitForLoadState();
+        await mainWindow.bringToFront();
 
-        if (process.platform === 'darwin') {
-            await mainWindow.keyboard.press('Meta+q');
-        } else if (process.platform === 'linux') {
-            await mainWindow.keyboard.press('Control+q');
-        }
+        await quitFromAppMenu(electronApp);
+        await waitForAppExit(electronApp);
 
-        // After quit, no index window should remain
-        const indexWindow = electronApp.windows().find((window) => window.url().includes('index'));
-        expect(indexWindow).toBeUndefined();
+        await expect.poll(() => {
+            return electronApp.windows().some((window) => window.url().includes('index'));
+        }).toBe(false);
     });
 });

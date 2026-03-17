@@ -103,6 +103,19 @@ test.describe('Configure Server Modal', () => {
             expect(existing).toBe(false);
 
             const configPath = path.join(userDataDir, 'config.json');
+            await expect.poll(() => {
+                try {
+                    const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                    return savedConfig.servers?.some((server: {url: string; name: string; order: number}) =>
+                        server.url === 'http://example.org/' &&
+                        server.name === 'TestServer' &&
+                        server.order === 0,
+                    );
+                } catch {
+                    return false;
+                }
+            }, {timeout: 10_000}).toBe(true);
+
             const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
             expect(savedConfig.servers).toContainEqual(expect.objectContaining({
                 url: 'http://example.org/',

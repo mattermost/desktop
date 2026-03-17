@@ -65,8 +65,7 @@ test(
             expect(serverWin2).toBeDefined();
 
             // Login page should NOT appear
-            const loginVisible = await serverWin2!.locator('#input_loginId').isVisible().
-                catch(() => false);
+            const loginVisible = await serverWin2!.locator('#input_loginId').isVisible().catch(() => false);
             expect(loginVisible).toBe(false);
 
             // App channel should be visible

@@ -35,8 +35,15 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
 
 async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
-    const dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
     await mainView!.click('.ServerDropdownButton');
+    let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
+    if (!dropdownView) {
+        dropdownView = await app.waitForEvent('window', {
+            predicate: (w) => w.url().includes('dropdown'),
+            timeout: 10_000,
+        });
+    }
+    await dropdownView.waitForLoadState().catch(() => {});
     await dropdownView!.click('.ServerDropdown .ServerDropdown__button.addServer');
     const newServerView = await app.waitForEvent('window', {
         predicate: (w) => w.url().includes('newServer'),
@@ -44,7 +51,27 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
     return newServerView;
 }
 
+async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
+    const mainView = app.windows().find((w) => w.url().includes('index'));
+    expect(mainView).toBeDefined();
+
+    await mainView!.click('.ServerDropdownButton');
+
+    let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
+    if (!dropdownView) {
+        dropdownView = await app.waitForEvent('window', {
+            predicate: (w) => w.url().includes('dropdown'),
+            timeout: 10_000,
+        });
+    }
+
+    await dropdownView.waitForLoadState().catch(() => {});
+    return dropdownView;
+}
+
 test.describe('Bad Server Configurations', () => {
+    test.describe.configure({mode: 'serial'});
+
     test.describe('Adding servers via Add Server Modal', () => {
         test('should handle server with unresolvable DNS', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const {app, userDataDir} = await launchWithConfig(testInfo, demoConfig);
@@ -218,8 +245,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
 
-                const dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
-                await mainWindow!.click('.ServerDropdownButton');
+                const dropdownView = await openServerDropdown(app);
                 await dropdownView!.click('.ServerDropdown .ServerDropdown__button:nth-child(2)');
 
                 const serverMap = await buildServerMap(app);

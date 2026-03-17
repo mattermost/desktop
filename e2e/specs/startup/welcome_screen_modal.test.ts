@@ -7,6 +7,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
+import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 // All welcome screen tests need a no-servers app. This helper launches one.
 async function launchEmptyApp(testInfo: {outputDir: string; title: string}) {
@@ -32,18 +33,46 @@ async function launchEmptyApp(testInfo: {outputDir: string; title: string}) {
     return {app, modal, userDataDir};
 }
 
+async function getCurrentSlideTitle(modal: any) {
+    return modal.locator('.Carousel__slide-current .WelcomeScreenSlide__title').innerText();
+}
+
+function normalizeTitle(title: string) {
+    return title.toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 test.describe('startup/welcome_screen_modal', () => {
+    test.describe.configure({mode: 'serial'});
+
     test(
         'MM-T4976 should show the slides in the expected order',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
-            const {app, modal, userDataDir} = await launchEmptyApp(testInfo);
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let app;
+            let modal;
+            let userDataDir = '';
             try {
-                const title = await modal.innerText('.WelcomeScreenSlide__title');
-                expect(title.length).toBeGreaterThan(0);
+                ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
+                const titles = [await getCurrentSlideTitle(modal)];
+
+                for (let i = 0; i < 3; i++) {
+                    await modal.click('#nextCarouselButton');
+                    titles.push(await getCurrentSlideTitle(modal));
+                }
+
+                expect(titles.map(normalizeTitle)).toEqual([
+                    'welcome',
+                    'collaborate in real time',
+                    'start secure calls instantly',
+                    'integrate with tools you love',
+                ]);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await app?.close().catch(() => {});
+                if (userDataDir) {
+                    await waitForLockFileRelease(userDataDir).catch(() => {});
+                }
+                await releaseLock();
             }
         },
     );
@@ -52,18 +81,34 @@ test.describe('startup/welcome_screen_modal', () => {
         'MM-T4977 should be able to move through slides clicking navigation buttons',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
-            const {app, modal, userDataDir} = await launchEmptyApp(testInfo);
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let app;
+            let modal;
+            let userDataDir = '';
             try {
-                const nextBtn = modal.locator('.WelcomeScreen__button--next');
-                if (await nextBtn.isVisible()) {
-                    const firstTitle = await modal.innerText('.WelcomeScreenSlide__title');
-                    await nextBtn.click();
-                    const secondTitle = await modal.innerText('.WelcomeScreenSlide__title');
-                    expect(secondTitle).not.toBe(firstTitle);
-                }
+                ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
+                const nextBtn = modal.locator('#nextCarouselButton');
+                const prevBtn = modal.locator('#prevCarouselButton');
+                await expect(nextBtn).toBeVisible({timeout: 10_000});
+                const firstTitle = await getCurrentSlideTitle(modal);
+                await nextBtn.click();
+                await expect.poll(
+                    async () => getCurrentSlideTitle(modal),
+                    {timeout: 10_000},
+                ).not.toBe(firstTitle);
+                const secondTitle = await getCurrentSlideTitle(modal);
+                expect(secondTitle).not.toBe(firstTitle);
+                await prevBtn.click();
+                await expect.poll(
+                    async () => getCurrentSlideTitle(modal),
+                    {timeout: 10_000},
+                ).toBe(firstTitle);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await app?.close().catch(() => {});
+                if (userDataDir) {
+                    await waitForLockFileRelease(userDataDir).catch(() => {});
+                }
+                await releaseLock();
             }
         },
     );
@@ -72,23 +117,21 @@ test.describe('startup/welcome_screen_modal', () => {
         'MM-T4983 should click Get Started and open new server modal',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
-            const {app, modal, userDataDir} = await launchEmptyApp(testInfo);
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let app;
+            let modal;
+            let userDataDir = '';
             try {
-                // Navigate to last slide
-                let hasNext = await modal.locator('.WelcomeScreen__button--next').isVisible();
-                while (hasNext) {
-                    await modal.locator('.WelcomeScreen__button--next').click();
-                    hasNext = await modal.locator('.WelcomeScreen__button--next').isVisible();
-                }
-
-                await modal.click('.WelcomeScreen .WelcomeScreen__button');
-
-                // Should open new server modal or close welcome screen
-                await modal.waitForSelector('.WelcomeScreen', {state: 'detached', timeout: 5_000}).
-                    catch(() => {/* modal may close in a different way */});
+                ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
+                await modal.click('#getStartedWelcomeScreen');
+                await modal.waitForSelector('#input_name', {timeout: 10_000});
+                await modal.waitForSelector('#input_url', {timeout: 10_000});
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await app?.close().catch(() => {});
+                if (userDataDir) {
+                    await waitForLockFileRelease(userDataDir).catch(() => {});
+                }
+                await releaseLock();
             }
         },
     );

@@ -17,7 +17,20 @@ import type {ElectronApplication} from 'playwright';
  */
 export async function waitForAppReady(app: ElectronApplication): Promise<void> {
     await expect.poll(
-        () => app.evaluate(() => (global as any).__e2eAppReady === true),
+        async () => {
+            try {
+                return await app.evaluate(() => (global as any).__e2eAppReady === true);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                if (
+                    message.includes('Execution context was destroyed') ||
+                    message.includes('Target page, context or browser has been closed')
+                ) {
+                    return false;
+                }
+                throw error;
+            }
+        },
         {
             message: 'Timed out waiting for __e2eAppReady. Check that initialize.ts sets it after handleMainWindowIsShown().',
             timeout: 30_000,

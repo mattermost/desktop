@@ -14,7 +14,9 @@ import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
+import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
+import ViewManager from 'common/views/viewManager';
 import {
     QUIT,
     NOTIFY_MENTION,
@@ -210,11 +212,13 @@ function initializeBeforeAppReady() {
 
     Tray.refreshImages(Config.trayIconTheme);
 
+    // E2E tests intentionally launch multiple Electron instances in parallel.
+    // Skip the single-instance lock in test mode so secondary workers do not exit during startup.
     // If there is already an instance, quit this one
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    if (!__IS_MAC_APP_STORE__) {
+    if (!__IS_MAC_APP_STORE__ && (process.env.NODE_ENV !== 'test' || process.env.MM_E2E_USE_SINGLE_INSTANCE_LOCK === 'true')) {
         const gotTheLock = app.requestSingleInstanceLock();
         if (!gotTheLock) {
             app.exit();
@@ -271,6 +275,16 @@ function initializeInterCommunicationEventListeners() {
 }
 
 async function initializeAfterAppReady() {
+    if (process.env.NODE_ENV === 'test') {
+        (global as any).__e2eTestRefs = {
+            MainWindow,
+            ServerManager,
+            TabManager,
+            ViewManager,
+            WebContentsManager,
+        };
+    }
+
     protocol.handle('mattermost-desktop', (request: Request) => {
         const url = parseURL(request.url);
         if (!url) {

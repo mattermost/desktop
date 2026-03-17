@@ -7,17 +7,83 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 
+async function waitForMainBrowserWindow(app: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
+    await expect.poll(
+        async () => {
+            try {
+                return await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows().length);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                if (message.includes('Execution context was destroyed')) {
+                    return 0;
+                }
+                throw error;
+            }
+        },
+        {timeout: 10_000},
+    ).toBeGreaterThan(0);
+}
+
+async function resizeMainBrowserWindow(app: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            await app.evaluate(({BrowserWindow}) => {
+                const win = BrowserWindow.getAllWindows()[0];
+                if (!win) {
+                    throw new Error('Main BrowserWindow not available');
+                }
+                win.setSize(800, 600);
+                win.setPosition(100, 100);
+            });
+            return;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (
+                attempt < 4 &&
+                (message.includes('Execution context was destroyed') || message.includes('Main BrowserWindow not available'))
+            ) {
+                await new Promise((resolve) => setTimeout(resolve, 250));
+                continue;
+            }
+            throw error;
+        }
+    }
+}
+
+async function getMainBrowserWindowBounds(app: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            return await app.evaluate(({BrowserWindow}) => {
+                const win = BrowserWindow.getAllWindows()[0];
+                if (!win) {
+                    throw new Error('Main BrowserWindow not available');
+                }
+                return win.getBounds();
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (
+                attempt < 4 &&
+                (message.includes('Execution context was destroyed') || message.includes('Main BrowserWindow not available'))
+            ) {
+                await new Promise((resolve) => setTimeout(resolve, 250));
+                continue;
+            }
+            throw error;
+        }
+    }
+
+    throw new Error('Main BrowserWindow bounds were not available');
+}
+
 test.describe('startup/window', () => {
     test(
         'MM-T4403_1 should restore window bounds on restart',
         {tag: ['@P2', '@darwin', '@win32']}, // skipped on Linux
         async ({electronApp}, testInfo) => {
             // Resize to a known size
-            await electronApp.evaluate(({BrowserWindow}) => {
-                const win = BrowserWindow.getAllWindows()[0];
-                win.setSize(800, 600);
-                win.setPosition(100, 100);
-            });
+            await waitForMainBrowserWindow(electronApp);
+            await resizeMainBrowserWindow(electronApp);
 
             // Save bounds by closing (app persists bounds on close)
             const userDataDir = path.join(testInfo.outputDir, 'userdata');
@@ -38,10 +104,8 @@ test.describe('startup/window', () => {
 
             try {
                 await waitForAppReady(app2);
-                const bounds = await app2.evaluate(({BrowserWindow}) => {
-                    const w = BrowserWindow.getAllWindows()[0];
-                    return w.getBounds();
-                });
+                await waitForMainBrowserWindow(app2);
+                const bounds = await getMainBrowserWindowBounds(app2);
 
                 // Allow tolerance for OS window decoration differences
                 const tolerance = process.platform === 'darwin' ? 250 : 10;
@@ -79,9 +143,8 @@ test.describe('startup/window', () => {
 
             try {
                 await waitForAppReady(app2);
-                const bounds = await app2.evaluate(({BrowserWindow}) => {
-                    return BrowserWindow.getAllWindows()[0].getBounds();
-                });
+                await waitForMainBrowserWindow(app2);
+                const bounds = await getMainBrowserWindowBounds(app2);
 
                 // Window should be on-screen (x >= 0)
                 expect(bounds.x).toBeGreaterThanOrEqual(0);
@@ -117,9 +180,8 @@ test.describe('startup/window', () => {
 
             try {
                 await waitForAppReady(app2);
-                const bounds = await app2.evaluate(({BrowserWindow}) => {
-                    return BrowserWindow.getAllWindows()[0].getBounds();
-                });
+                await waitForMainBrowserWindow(app2);
+                const bounds = await getMainBrowserWindowBounds(app2);
                 expect(bounds.y).toBeGreaterThanOrEqual(0);
             } finally {
                 await app2.close();

@@ -4,7 +4,11 @@
 import {execSync} from 'child_process';
 
 import {test, expect} from '../../fixtures/index';
-import {mattermostURL} from '../../helpers/config';
+import {mattermostURL, demoMattermostConfig} from '../../helpers/config';
+import {loginToMattermost} from '../../helpers/login';
+
+// Use a real Mattermost server config so serverMap.example points to localhost:8065
+test.use({appConfig: demoMattermostConfig});
 
 test(
     'deep link navigates to correct server while app is running',
@@ -21,10 +25,13 @@ test(
             return;
         }
 
+        await loginToMattermost(serverWin);
+        await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+
+        // Trigger deep link from the OS
         const channelName = 'town-square';
         const deepLink = `mattermost://${new URL(mattermostURL).host}/channels/${channelName}`;
 
-        // Trigger deep link from the OS
         if (process.platform === 'darwin') {
             execSync(`open "${deepLink}"`);
         } else if (process.platform === 'win32') {

@@ -28,9 +28,12 @@ test(
             timeout: 60_000,
         });
 
-        await waitForAppReady(app);
-        await app.close();
-        await waitForLockFileRelease(userDataDir);
+        try {
+            await waitForAppReady(app);
+        } finally {
+            await app.close();
+            await waitForLockFileRelease(userDataDir);
+        }
 
         // Config file must exist and be valid JSON
         const configPath = path.join(userDataDir, 'config.json');
