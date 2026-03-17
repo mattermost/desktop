@@ -189,6 +189,17 @@ describe('main/browserManager', () => {
             expect(browsers[0].args).toEqual(['--single-argument']);
         });
 
+        it('should filter out quoted placeholders like "%1"', async () => {
+            mockExecResolveByPattern({
+                'Google Chrome': '    (Default)    REG_SZ    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --single-argument "%1"',
+            });
+
+            const browsers = await getInstalledBrowsers();
+            expect(browsers.length).toBe(1);
+            expect(browsers[0].executable).toBe('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe');
+            expect(browsers[0].args).toEqual(['--single-argument']);
+        });
+
         it('should parse unquoted registry command path', async () => {
             mockExecResolveByPattern({
                 'Google Chrome': '    (Default)    REG_SZ    C:\\Chrome\\chrome.exe',

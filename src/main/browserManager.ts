@@ -128,8 +128,14 @@ function parseRegistryCommand(raw: string): {executable: string; args: string[]}
         }
     }
 
-    // Filter out placeholders like %1, %*, etc. and keep real arguments
-    const args = rest.split(/\s+/).filter((token) => token && !(/(%\d|%\*)/).test(token));
+    // Filter out placeholders like %1, %*, "%1", '%1', etc. and keep real arguments
+    const args = rest.split(/\s+/).filter((token) => {
+        if (!token) {
+            return false;
+        }
+        const normalized = token.replace(/^["']|["']$/g, '');
+        return !(/(%\d|%\*)/).test(normalized);
+    });
 
     return {executable, args};
 }
