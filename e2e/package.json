@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "E2E tests for the Desktop App",
   "scripts": {
-    "clean": "rm -rf node_modules/ testUserData/ playwright-report/",
-    "test": "playwright test",
-    "postinstall": "patch-package && cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs"
+    "clean": "rm -rf node_modules/ testUserData/ playwright-report/ playwright-report-merged/ blob-report/ test-results/ mochawesome-report/",
+    "test": "playwright test"
   },
   "repository": {
     "type": "git",
@@ -18,18 +17,9 @@
   },
   "homepage": "https://github.com/mattermost/desktop#readme",
   "dependencies": {
-    "@aws-sdk/client-s3": "3.972.0",
-    "@aws-sdk/lib-storage": "3.972.0",
-    "@electron/rebuild": "4.0.3",
-    "axios": "1.13.4",
     "chai": "6.2.2",
     "fast-xml-parser": "5.3.3",
-    "nan": "2.25.0",
-    "node-abi": "4.26.0",
-    "playwright": "1.58.0",
-    "ps-node": "0.1.6",
-    "recursive-readdir": "2.2.3",
-    "robotjs": "0.6.0"
+    "ps-node": "0.1.6"
   },
   "devDependencies": {
     "@playwright/test": "1.58.0"

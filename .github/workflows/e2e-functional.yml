@@ -29,6 +29,10 @@ on:
         required: false
         default: false
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   prepare-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
@@ -44,6 +48,9 @@ jobs:
     name: Update initial status
     needs: prepare-matrix
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -78,23 +85,169 @@ jobs:
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
+  merge-e2e-report:
+    name: Merge E2E report
+    runs-on: ubuntu-22.04
+    needs:
+      - prepare-matrix
+      - e2e-tests
+    if: always() && !cancelled()
+    permissions:
+      contents: read
+    outputs:
+      merged-report-ready: ${{ steps.merge.outputs.merged_report_ready }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '22.x'
+          cache: "npm"
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E dependencies
+        run: |
+          cd e2e
+          npm ci
+
+      - name: Download blob reports
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+          if-no-files-found: warn
+
+      - name: Merge Playwright reports
+        id: merge
+        run: |
+          if find all-blob-reports -type f -name '*.zip' | grep -q .; then
+            cd e2e
+            npx playwright merge-reports --config=merge.playwright.config.ts ../all-blob-reports
+            echo "merged_report_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No blob reports found to merge." >> "$GITHUB_STEP_SUMMARY"
+            echo "merged_report_ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload merged Playwright report artifact
+        if: always() && steps.merge.outputs.merged_report_ready == 'true'
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: playwright-report-merged
+          path: e2e/playwright-report-merged
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-e2e-report:
+    name: Publish E2E report
+    runs-on: ubuntu-22.04
+    needs:
+      - prepare-matrix
+      - e2e-tests
+      - merge-e2e-report
+    if: always() && !cancelled()
+    permissions:
+      contents: write
+    outputs:
+      merged-report-url: ${{ steps.publish.outputs.report_url }}
+      merged-report-published: ${{ steps.publish.outputs.published }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Download merged Playwright report artifact
+        if: needs.merge-e2e-report.outputs.merged-report-ready == 'true'
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: playwright-report-merged
+          path: merged-report
+
+      - name: Publish merged report to GitHub Pages branch
+        id: publish
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          REPORT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          PUBLISHED=false
+          RUN_PATH="e2e-reports/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}/${RUN_PATH}/"
+
+          if [ ! -f merged-report/index.html ]; then
+            echo "Merged report artifact is unavailable; using workflow run URL." >> "$GITHUB_STEP_SUMMARY"
+            echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
+            echo "published=${PUBLISHED}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "${REPO_URL}" gh-pages >/dev/null 2>&1; then
+            git clone --depth 1 --branch gh-pages "${REPO_URL}" gh-pages-site
+          else
+            mkdir gh-pages-site
+            cd gh-pages-site
+            git init
+            git checkout -b gh-pages
+            git remote add origin "${REPO_URL}"
+            cd ..
+          fi
+
+          mkdir -p "gh-pages-site/${RUN_PATH}"
+          rm -rf "gh-pages-site/${RUN_PATH}"
+          mkdir -p "gh-pages-site/${RUN_PATH}"
+          cp -R merged-report/. "gh-pages-site/${RUN_PATH}/"
+          touch gh-pages-site/.nojekyll
+
+          cd gh-pages-site
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add .
+
+          if git diff --cached --quiet; then
+            echo "No report changes detected; reusing existing Pages content." >> "$GITHUB_STEP_SUMMARY"
+            REPORT_URL="${PAGES_URL}"
+            PUBLISHED=true
+          else
+            git commit -m "Publish E2E report for run ${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            if git push origin HEAD:gh-pages; then
+              PUBLISHED=true
+              REPORT_URL="${PAGES_URL}"
+              echo "Published merged Playwright report: ${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "GitHub Pages publish failed; using workflow run URL." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+
+          echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
+          echo "published=${PUBLISHED}" >> "$GITHUB_OUTPUT"
+
   update-final-status:
     name: Update final status
     runs-on: ubuntu-22.04
     needs:
       - prepare-matrix
       - e2e-tests
+      - publish-e2e-report
     if: always()
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Update final status for all platforms
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          MERGED_REPORT_URL: ${{ needs.publish-e2e-report.outputs.merged-report-url }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            await updateFinalStatus({ github, context, platforms, outputs });
+            const mergedReportUrl = process.env.MERGED_REPORT_URL || undefined;
+            await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
