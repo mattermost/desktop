@@ -1,6 +1,8 @@
 {
   "app.menus.contextMenu.openInNewTab": "Öppna i ny flik",
   "app.menus.contextMenu.openInNewWindow": "Öppna i nytt fönster",
+  "app.navigationManager.invalidLinkDescription": "Länken du klickade på verkar vara felformad och kan inte öppnas. Kontrollera om det finns några fel i webbadressen innan du försöker igen.",
+  "app.navigationManager.invalidLinkTitle": "Ogiltig länk",
   "app.navigationManager.viewLimitReached": "Visningsgränsen nådd",
   "app.navigationManager.viewLimitReached.description": "Du har öppnat maximala antalet öppna fönster och flikar för den här servern. Stäng ett fönster eller en flik eller justera visningsgränsen bland Inställningar.",
   "callsWidgetWindow.cannotStartCall.message": "Det finns ett pågående samtal på en annan server som måste avslutas innan det går att ansluta till ett nytt samtal.",
