@@ -120,7 +120,7 @@ test.describe('downloads/downloads_manager', () => {
         } finally {
             await app.close().catch(() => {});
             await waitForLockFileRelease(userDataDir).catch(() => {});
-            await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+            await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
             fs.rmSync(downloadsDir, {recursive: true, force: true});
         }
     });

@@ -18,7 +18,6 @@ import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
-import ViewManager from 'common/views/viewManager';
 import {
     QUIT,
     NOTIFY_MENTION,
@@ -46,6 +45,7 @@ import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
+import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import {configPath, updatePaths} from 'main/constants';

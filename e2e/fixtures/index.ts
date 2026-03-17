@@ -112,16 +112,22 @@ export const test = base.extend<Fixtures>({
         //   SIGTERM does not. Global teardown (pkill targeting main process only)
         //   will reap any lingering orphans after the full suite completes.
         let pid: number | undefined;
-        try { pid = app.process()?.pid; } catch { /* app already disconnected */ }
+        try {
+            pid = app.process()?.pid;
+        } catch { /* app already disconnected */ }
 
         let cleanClosed = false;
         await Promise.race([
-            app.close().catch(() => {}).then(() => { cleanClosed = true; }),
+            app.close().catch(() => {}).then(() => {
+                cleanClosed = true;
+            }),
             new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
         ]);
 
         if (!cleanClosed && pid) {
-            try { process.kill(pid, 'SIGTERM'); } catch { /* already gone */ }
+            try {
+                process.kill(pid, 'SIGTERM');
+            } catch { /* already gone */ }
             // Return immediately — don't wait for the process to exit.
             // Lock-file cleanup is not needed: each test has a unique userDataDir
             // so a lingering lock never blocks the next test.

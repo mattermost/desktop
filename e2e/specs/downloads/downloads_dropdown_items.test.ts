@@ -76,6 +76,7 @@ async function openDownloadsDropdown(app: Awaited<ReturnType<typeof import('play
     }
     await downloadsWindow.waitForLoadState();
     await downloadsWindow.bringToFront();
+
     // Wait for the React component to fully mount (renders null until appName is resolved via IPC)
     await downloadsWindow.waitForSelector('.DownloadsDropdown', {state: 'visible', timeout: 15_000});
     return downloadsWindow;

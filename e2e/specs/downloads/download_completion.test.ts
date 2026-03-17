@@ -41,7 +41,9 @@ async function startDownloadServer(filename: string, contents: string) {
         `);
     });
 
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', () => resolve()),
+    );
     const address = server.address();
     if (!address || typeof address === 'string') {
         throw new Error('Failed to start local download server');
@@ -70,12 +72,20 @@ test(
 
         fs.mkdirSync(userDataDir, {recursive: true});
         fs.mkdirSync(downloadsDir, {recursive: true});
-        fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(config));
+        fs.writeFileSync(
+            path.join(userDataDir, 'config.json'),
+            JSON.stringify(config),
+        );
 
         const {_electron: electron} = await import('playwright');
         const app = await electron.launch({
             executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+            args: [
+                appDir,
+                `--user-data-dir=${userDataDir}`,
+                '--no-sandbox',
+                '--disable-gpu',
+            ],
             env: {...process.env, NODE_ENV: 'test'},
             timeout: 60_000,
         });
@@ -84,7 +94,9 @@ test(
 
         try {
             await waitForAppReady(app);
-            const mainWindow = app.windows().find((window) => window.url().includes('index'));
+            const mainWindow = app.
+                windows().
+                find((window) => window.url().includes('index'));
             expect(mainWindow).toBeDefined();
             await mainWindow!.waitForLoadState();
 
@@ -106,16 +118,29 @@ test(
             const popupWindow = await popupPromise;
             await popupWindow.waitForLoadState();
             await popupWindow.click('#download-link');
-            await expect.poll(() => fs.existsSync(savedPath), {timeout: 15_000}).toBe(true);
-            await expect.poll(() => fs.readFileSync(savedPath, 'utf-8'), {timeout: 15_000}).toBe(fileContents);
-            await expect.poll(() => {
-                const downloads = readJsonFile<Record<string, {state?: string}>>(path.join(userDataDir, 'downloads.json'));
-                return downloads?.[filename]?.state;
-            }, {timeout: 15_000}).toBe('completed');
+            await expect.
+                poll(() => fs.existsSync(savedPath), {timeout: 15_000}).
+                toBe(true);
+            await expect.
+                poll(() => fs.readFileSync(savedPath, 'utf-8'), {timeout: 15_000}).
+                toBe(fileContents);
+            await expect.
+                poll(
+                    () => {
+                        const downloads = readJsonFile<Record<string, { state?: string }>>(
+                            path.join(userDataDir, 'downloads.json'),
+                        );
+                        return downloads?.[filename]?.state;
+                    },
+                    {timeout: 15_000},
+                ).
+                toBe('completed');
         } finally {
             await app.close().catch(() => {});
             await waitForLockFileRelease(userDataDir).catch(() => {});
-            await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+            await new Promise<void>((resolve, reject) =>
+                server.close((error) => (error ? reject(error) : resolve())),
+            );
             fs.rmSync(downloadsDir, {recursive: true, force: true});
         }
     },

@@ -47,7 +47,7 @@ test.describe('menu_bar/dropdown', () => {
         test('MM-T4406_1 should show the dropdown', {tag: ['@P2', '@all']}, async ({electronApp, mainWindow}) => {
             const browserWindow = await electronApp.browserWindow(mainWindow);
 
-            let dropdownHeight = await getDropdownHeight(browserWindow);
+            const dropdownHeight = await getDropdownHeight(browserWindow);
             expect(dropdownHeight).toBe(0);
 
             await mainWindow.click('.ServerDropdownButton');
