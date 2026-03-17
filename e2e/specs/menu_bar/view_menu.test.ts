@@ -10,6 +10,7 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {clickApplicationMenuItem} from '../../helpers/menu';
 import {buildServerMap} from '../../helpers/serverMap';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
@@ -90,36 +91,15 @@ function setZoomFactorOfServer(browserWindow: any, serverId: number, zoomFactor:
  */
 async function clickViewMenuItemByAccelerator(
     electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
+    webContentsId: number,
     accelerator: string,
 ) {
-    await electronApp.evaluate(async ({app: electronAppInstance}, acc) => {
-        const refs = (global as any).__e2eTestRefs;
-        const focusedServerId = (global as any).__e2eFocusedServerWebContentsId;
-        const focusedWebContents = focusedServerId ? refs?.WebContentsManager?.getViewByWebContentsId?.(focusedServerId)?.getWebContentsView?.()?.webContents : undefined;
-
-        if (focusedWebContents) {
-            if (acc === 'CmdOrCtrl+=' || acc === 'CmdOrCtrl+Shift+=' || acc === 'CmdOrCtrl+Plus') {
-                focusedWebContents.setZoomLevel(focusedWebContents.getZoomLevel() + 1);
-                return;
-            }
-            if (acc === 'CmdOrCtrl+-' || acc === 'CmdOrCtrl+Shift+-') {
-                focusedWebContents.setZoomLevel(focusedWebContents.getZoomLevel() - 1);
-                return;
-            }
-            if (acc === 'CmdOrCtrl+0') {
-                focusedWebContents.setZoomLevel(0);
-                return;
-            }
-        }
-
-        const viewMenu = (electronAppInstance as any).applicationMenu.getMenuItemById('view');
-        const item = viewMenu?.submenu?.items?.find((i: any) => i.accelerator === acc);
-        if (!item) {
-            throw new Error(`View menu item with accelerator "${acc}" not found`);
-        }
-
-        item.click();
-    }, accelerator);
+    await clickApplicationMenuItem(
+        electronApp,
+        'view',
+        {accelerator},
+        {webContentsId},
+    );
 }
 
 /**
@@ -139,7 +119,6 @@ async function focusServerView(
         }
         wc.focus();
         refs.WebContentsManager.focusedWebContentsView = view.id;
-        (global as any).__e2eFocusedServerWebContentsId = id;
     }, webContentsId);
 }
 
@@ -161,11 +140,6 @@ async function waitForServerReload(
 
     await trigger();
     return reloadPromise;
-}
-
-/** @deprecated use clickViewMenuItemByAccelerator instead */
-async function clickHiddenZoomOutMenuItem(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
-    await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+Shift+-');
 }
 
 async function getServerContext() {
@@ -255,11 +229,11 @@ test.describe('menu/view', () => {
     test('MM-T817 Actual Size Zoom in the menu bar', {tag: ['@P2', '@all']}, async () => {
         const {browserWindow, firstServerId} = await getServerContext();
 
-        await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+=');
+        await clickViewMenuItemByAccelerator(electronApp, firstServerId, 'CmdOrCtrl+=');
         let zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
         expect(zoomLevel).toBeGreaterThan(1);
 
-        await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+0');
+        await clickViewMenuItemByAccelerator(electronApp, firstServerId, 'CmdOrCtrl+0');
         zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
         expect(zoomLevel).toBe(1);
     });
@@ -268,7 +242,7 @@ test.describe('menu/view', () => {
         test('MM-T818_1 Zoom in when CmdOrCtrl+Plus is pressed', {tag: ['@P2', '@all']}, async () => {
             const {browserWindow, firstServerId} = await getServerContext();
 
-            await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+=');
+            await clickViewMenuItemByAccelerator(electronApp, firstServerId, 'CmdOrCtrl+=');
             const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(zoomLevel).toBeGreaterThan(1);
             expect(zoomLevel).toBeLessThan(1.5);
@@ -279,7 +253,7 @@ test.describe('menu/view', () => {
             const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(initialZoom).toBe(1);
 
-            await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+Shift+=');
+            await clickViewMenuItemByAccelerator(electronApp, firstServerId, 'CmdOrCtrl+Shift+=');
             const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(zoomLevel).toBeGreaterThan(1);
         });
@@ -289,7 +263,7 @@ test.describe('menu/view', () => {
         test('MM-T819_1 Zoom out when CmdOrCtrl+Minus is pressed', {tag: ['@P2', '@all']}, async () => {
             const {browserWindow, firstServerId} = await getServerContext();
 
-            await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+-');
+            await clickViewMenuItemByAccelerator(electronApp, firstServerId, 'CmdOrCtrl+-');
             const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(zoomLevel).toBeLessThan(1);
         });
@@ -299,7 +273,7 @@ test.describe('menu/view', () => {
             const initialZoom = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(initialZoom).toBe(1);
 
-            await clickHiddenZoomOutMenuItem(electronApp);
+            await clickViewMenuItemByAccelerator(electronApp, firstServerId, 'CmdOrCtrl+Shift+-');
             const zoomLevel = await getZoomFactorOfServer(browserWindow, firstServerId);
             expect(zoomLevel).toBeLessThan(1);
         });
@@ -311,7 +285,7 @@ test.describe('menu/view', () => {
             await focusServerView(electronApp, webContentsId);
 
             const result = await waitForServerReload(electronApp, webContentsId, async () => {
-                await clickViewMenuItemByAccelerator(electronApp, 'CmdOrCtrl+R');
+                await clickViewMenuItemByAccelerator(electronApp, webContentsId, 'CmdOrCtrl+R');
             });
             expect(result).toBe(true);
         });
@@ -321,7 +295,7 @@ test.describe('menu/view', () => {
             await focusServerView(electronApp, webContentsId);
 
             const result = await waitForServerReload(electronApp, webContentsId, async () => {
-                await clickViewMenuItemByAccelerator(electronApp, 'Shift+CmdOrCtrl+R');
+                await clickViewMenuItemByAccelerator(electronApp, webContentsId, 'Shift+CmdOrCtrl+R');
             });
             expect(result).toBe(true);
         });
@@ -342,9 +316,7 @@ test.describe('menu/view', () => {
 
         await mainWindow.waitForLoadState();
         await mainWindow.bringToFront();
-        await browserWindow.evaluate((window) => {
-            (window as any).webContents.openDevTools({mode: 'detach'});
-        });
+        await clickApplicationMenuItem(electronApp, 'view', {label: 'Developer Tools for Main Window'});
 
         await expect.poll(async () => browserWindow.evaluate((window) => {
             return (window as any).webContents.isDevToolsOpened();

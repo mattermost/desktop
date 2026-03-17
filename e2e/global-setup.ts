@@ -2,6 +2,11 @@
 // See LICENSE.txt for license information.
 
 import {execSync} from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
 
 /**
  * Disable macOS window-restoration (Resume) for the Electron binary used in tests.
@@ -16,6 +21,12 @@ import {execSync} from 'child_process';
  * ApplePersistenceIgnoreState = YES — skip saved-state restoration on every launch
  */
 export default async function globalSetup() {
+    try {
+        fs.rmSync(E2E_PROCESS_REGISTRY, {force: true});
+    } catch {
+        // ignore stale registry cleanup failures
+    }
+
     if (process.platform === 'darwin') {
         try {
             execSync('defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false', {stdio: 'ignore'});

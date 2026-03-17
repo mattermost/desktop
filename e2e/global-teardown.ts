@@ -1,34 +1,83 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {execSync} from 'child_process';
+import {execFileSync} from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
-import {appDir} from './helpers/config';
+const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
 
 /**
  * Kill any main Electron processes still running from this test suite.
  *
- * Uses `ps | grep | kill` instead of `pkill -f` to avoid killing Electron helper
- * processes (GPU, renderer, plugin). Helper processes share the same app path in
- * their command line (--app-path=e2e/dist) but always include a --type= flag.
- * Killing helpers causes the main Electron process to detect unexpected child death
- * and crash, which triggers the macOS "Electron quit unexpectedly" dialog.
- *
- * Filter: match appDir in command line AND exclude --type= (helpers always have it).
+ * Main test processes append their PID to a temp registry during startup.
+ * Teardown kills only those registered main-process PIDs, avoiding broad shell
+ * matching across unrelated Electron helper processes.
  */
 export default async function globalTeardown() {
+    let pids: number[] = [];
     try {
-        if (process.platform === 'win32') {
-            // /FI filters by command line on Windows — kill any electron.exe with appDir in args
-            execSync(`taskkill /F /IM electron.exe /FI "COMMANDLINE eq *${appDir}*" 2>nul`, {stdio: 'ignore'});
-        } else {
-            // Find PIDs whose command line contains appDir but NOT --type= (helpers always have --type=)
-            execSync(
-                `ps aux | grep "${appDir}" | grep -v -- "--type=" | grep -v grep | awk '{print $2}' | xargs kill 2>/dev/null || true`,
-                {stdio: 'ignore'},
-            );
+        if (fs.existsSync(E2E_PROCESS_REGISTRY)) {
+            pids = Array.from(new Set(
+                fs.readFileSync(E2E_PROCESS_REGISTRY, 'utf8').
+                    split(/\s+/).
+                    map((value) => Number.parseInt(value, 10)).
+                    filter((value) => Number.isInteger(value) && value > 0),
+            ));
         }
+        fs.rmSync(E2E_PROCESS_REGISTRY, {force: true});
     } catch {
-        // No matching processes is expected — not an error
+        pids = [];
     }
+
+    for (const pid of pids) {
+        if (process.platform === 'win32') {
+            try {
+                execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], {stdio: 'ignore'});
+            } catch {
+                // already exited
+            }
+            continue;
+        }
+
+        if (!isProcessAlive(pid)) {
+            continue;
+        }
+
+        try {
+            process.kill(pid, 'SIGTERM');
+        } catch {
+            continue;
+        }
+
+        const deadline = Date.now() + 5_000;
+        while (Date.now() < deadline) {
+            if (!isProcessAlive(pid)) {
+                break;
+            }
+            await sleep(200);
+        }
+
+        if (isProcessAlive(pid)) {
+            try {
+                process.kill(pid, 'SIGKILL');
+            } catch {
+                // already exited
+            }
+        }
+    }
+}
+
+function isProcessAlive(pid: number) {
+    try {
+        process.kill(pid, 0);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }

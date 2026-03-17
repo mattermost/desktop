@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import {pathToFileURL} from 'url';
 
@@ -105,6 +107,7 @@ import {
 } from './windows';
 
 const log = new Logger('App.Initialize');
+const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -199,6 +202,15 @@ function initializeBeforeAppReady() {
         log.error('No config loaded');
         return;
     }
+
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            fs.appendFileSync(E2E_PROCESS_REGISTRY, `${process.pid}\n`, 'utf8');
+        } catch (error) {
+            log.warn('Failed to register E2E main process PID', {error});
+        }
+    }
+
     if (process.env.NODE_ENV !== 'test') {
         app.enableSandbox();
     }

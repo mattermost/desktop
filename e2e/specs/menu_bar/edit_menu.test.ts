@@ -19,6 +19,7 @@ type ElectronPage = import('playwright').Page;
 let electronApp: ElectronApplication;
 let mainWindow: ElectronPage;
 let firstServer: ServerView;
+let firstServerId: number;
 let userDataDir: string;
 
 async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
@@ -75,6 +76,11 @@ async function focusPostTextbox(server: ServerView) {
     await textbox.focus();
 }
 
+async function focusEditor() {
+    await mainWindow.bringToFront().catch(() => {});
+    await focusPostTextbox(firstServer);
+}
+
 async function movePostTextboxCursorToEnd(server: ServerView) {
     await focusPostTextbox(server);
     await server.evaluate(() => {
@@ -90,118 +96,52 @@ async function movePostTextboxCursorToEnd(server: ServerView) {
 
 async function typeInPostTextbox(server: ServerView, text: string) {
     await focusPostTextbox(server);
-    await server.evaluate((value: string) => {
-        const element = document.querySelector('#post_textbox');
-        if (!(element instanceof HTMLInputElement) && !(element instanceof HTMLTextAreaElement)) {
-            throw new Error('#post_textbox is not a text input');
-        }
-
-        const state = (window as any).__e2eEditMenuState ??= {
-            clipboard: '',
-            redo: [] as Array<{value: string; selectionStart: number; selectionEnd: number}>,
-            undo: [] as Array<{value: string; selectionStart: number; selectionEnd: number}>,
-        };
-
-        for (const character of value) {
-            state.undo.push({
-                selectionEnd: element.selectionEnd ?? element.value.length,
-                selectionStart: element.selectionStart ?? element.value.length,
-                value: element.value,
-            });
-            state.redo = [];
-
-            const selectionStart = element.selectionStart ?? element.value.length;
-            const selectionEnd = element.selectionEnd ?? element.value.length;
-            const nextValue = element.value.slice(0, selectionStart) + character + element.value.slice(selectionEnd);
-            element.value = nextValue;
-            const cursor = selectionStart + character.length;
-            element.setSelectionRange(cursor, cursor);
-            element.dispatchEvent(new Event('input', {bubbles: true}));
-        }
-    }, text);
+    for (const character of text) {
+        await server.keyboard.type(character);
+    }
 }
 
-async function runEditAction(server: ServerView, action: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll') {
-    return server.evaluate((requestedAction: string) => {
+async function clickEditMenuItem(role: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll') {
+    await focusEditor();
+
+    if (process.platform === 'darwin') {
+        await electronApp.evaluate(({webContents}, payload) => {
+            const wc = webContents.fromId(payload.id);
+            if (!wc || wc.isDestroyed()) {
+                throw new Error(`webContents ${payload.id} is not available`);
+            }
+
+            wc.focus();
+            const action = payload.role as 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll';
+            wc[action]();
+        }, {id: firstServerId, role});
+        return;
+    }
+
+    await electronApp.evaluate(({app, BrowserWindow, webContents}, payload) => {
+        const editMenu = app.applicationMenu?.getMenuItemById('edit');
+        const item = editMenu?.submenu?.items?.find((candidate: any) => candidate.role === payload.role);
+        if (!item) {
+            throw new Error(`Edit menu item not found for role ${payload.role}`);
+        }
+
+        const targetWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+        const targetWebContents = webContents.fromId(payload.id);
+        item.click(undefined, targetWindow, targetWebContents);
+    }, {id: firstServerId, role});
+}
+
+async function getSelectedText(server: ServerView) {
+    return server.evaluate(() => {
         const element = document.querySelector('#post_textbox');
         if (!(element instanceof HTMLInputElement) && !(element instanceof HTMLTextAreaElement)) {
             throw new Error('#post_textbox is not a text input');
         }
 
-        const state = (window as any).__e2eEditMenuState ??= {
-            clipboard: '',
-            redo: [] as Array<{value: string; selectionStart: number; selectionEnd: number}>,
-            undo: [] as Array<{value: string; selectionStart: number; selectionEnd: number}>,
-        };
-
-        const snapshot = () => ({
-            selectionEnd: element.selectionEnd ?? element.value.length,
-            selectionStart: element.selectionStart ?? element.value.length,
-            value: element.value,
-        });
-
-        const applySnapshot = (nextState: {value: string; selectionStart: number; selectionEnd: number}) => {
-            element.value = nextState.value;
-            element.setSelectionRange(nextState.selectionStart, nextState.selectionEnd);
-            element.dispatchEvent(new Event('input', {bubbles: true}));
-        };
-
-        const getSelectedText = () => {
-            const selectionStart = element.selectionStart ?? 0;
-            const selectionEnd = element.selectionEnd ?? 0;
-            return element.value.slice(selectionStart, selectionEnd);
-        };
-
-        const replaceSelection = (replacement: string) => {
-            const selectionStart = element.selectionStart ?? 0;
-            const selectionEnd = element.selectionEnd ?? 0;
-            element.value = element.value.slice(0, selectionStart) + replacement + element.value.slice(selectionEnd);
-            const cursor = selectionStart + replacement.length;
-            element.setSelectionRange(cursor, cursor);
-            element.dispatchEvent(new Event('input', {bubbles: true}));
-        };
-
-        switch (requestedAction) {
-        case 'undo': {
-            const previous = state.undo.pop();
-            if (!previous) {
-                return null;
-            }
-            state.redo.push(snapshot());
-            applySnapshot(previous);
-            return null;
-        }
-        case 'redo': {
-            const next = state.redo.pop();
-            if (!next) {
-                return null;
-            }
-            state.undo.push(snapshot());
-            applySnapshot(next);
-            return null;
-        }
-        case 'cut': {
-            state.undo.push(snapshot());
-            state.redo = [];
-            state.clipboard = getSelectedText();
-            replaceSelection('');
-            return null;
-        }
-        case 'copy':
-            state.clipboard = getSelectedText();
-            return null;
-        case 'paste':
-            state.undo.push(snapshot());
-            state.redo = [];
-            replaceSelection(state.clipboard);
-            return null;
-        case 'selectAll':
-            element.setSelectionRange(0, element.value.length);
-            return getSelectedText();
-        default:
-            throw new Error(`Unknown edit action: ${requestedAction}`);
-        }
-    }, action);
+        const selectionStart = element.selectionStart ?? 0;
+        const selectionEnd = element.selectionEnd ?? 0;
+        return element.value.slice(selectionStart, selectionEnd);
+    });
 }
 
 test.describe('edit_menu', () => {
@@ -250,6 +190,7 @@ test.describe('edit_menu', () => {
         mainWindow = await waitForWindow(electronApp, 'index');
         const serverMap = await buildServerMap(electronApp);
         firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
+        firstServerId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
         await loginToMattermost(firstServer);
         await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 30_000});
     });
@@ -258,9 +199,6 @@ test.describe('edit_menu', () => {
         await mainWindow.bringToFront().catch(() => {});
         await focusPostTextbox(firstServer);
         await firstServer.fill('#post_textbox', '');
-        await firstServer.evaluate(() => {
-            delete (window as any).__e2eEditMenuState;
-        });
     });
 
     test.afterAll(async () => {
@@ -269,52 +207,53 @@ test.describe('edit_menu', () => {
 
     test('MM-T807 Undo in the post textbox', {tag: ['@P2', '@all']}, async () => {
         await typeInPostTextbox(firstServer, 'Mattermost');
-        await runEditAction(firstServer, 'undo');
+        await clickEditMenuItem('undo');
         const content = await firstServer.inputValue('#post_textbox');
         expect(content).toBe('Mattermos');
     });
 
     test('MM-T808 Redo in the post textbox', {tag: ['@P2', '@all']}, async () => {
         await typeInPostTextbox(firstServer, 'Mattermost');
-        await runEditAction(firstServer, 'undo');
+        await clickEditMenuItem('undo');
         const textAfterUndo = await firstServer.inputValue('#post_textbox');
         expect(textAfterUndo).toBe('Mattermos');
-        await runEditAction(firstServer, 'redo');
+        await clickEditMenuItem('redo');
         const content = await firstServer.inputValue('#post_textbox');
         expect(content).toBe('Mattermost');
     });
 
     test('MM-T809 Cut in the post textbox', {tag: ['@P2', '@all']}, async () => {
         await typeInPostTextbox(firstServer, 'Mattermost');
-        await runEditAction(firstServer, 'selectAll');
-        await runEditAction(firstServer, 'cut');
+        await clickEditMenuItem('selectAll');
+        await clickEditMenuItem('cut');
         const content = await firstServer.inputValue('#post_textbox');
         expect(content).toBe('');
     });
 
     test('MM-T810 Copy in the post textbox', {tag: ['@P2', '@all']}, async () => {
         await typeInPostTextbox(firstServer, 'Mattermost');
-        await runEditAction(firstServer, 'selectAll');
-        await runEditAction(firstServer, 'copy');
+        await clickEditMenuItem('selectAll');
+        await clickEditMenuItem('copy');
         await movePostTextboxCursorToEnd(firstServer);
-        await runEditAction(firstServer, 'paste');
+        await clickEditMenuItem('paste');
         const content = await firstServer.inputValue('#post_textbox');
         expect(content).toBe('MattermostMattermost');
     });
 
     test('MM-T811 Paste in the post textbox', {tag: ['@P2', '@all']}, async () => {
         await typeInPostTextbox(firstServer, 'Mattermost');
-        await runEditAction(firstServer, 'selectAll');
-        await runEditAction(firstServer, 'copy');
-        await runEditAction(firstServer, 'selectAll');
-        await runEditAction(firstServer, 'paste');
+        await clickEditMenuItem('selectAll');
+        await clickEditMenuItem('copy');
+        await clickEditMenuItem('selectAll');
+        await clickEditMenuItem('paste');
         const content = await firstServer.inputValue('#post_textbox');
         expect(content).toBe('Mattermost');
     });
 
     test('MM-T812 Select All in the post textbox', {tag: ['@P2', '@all']}, async () => {
         await firstServer.fill('#post_textbox', 'Mattermost');
-        const channelHeaderText = await runEditAction(firstServer, 'selectAll');
+        await clickEditMenuItem('selectAll');
+        const channelHeaderText = await getSelectedText(firstServer);
         expect(channelHeaderText).toBe('Mattermost');
     });
 });
