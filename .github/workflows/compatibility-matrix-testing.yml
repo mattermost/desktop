@@ -158,8 +158,10 @@ jobs:
             echo "ERROR: cmt_run_id '${CMT_RUN_ID}' is not a valid numeric ID"
             exit 1
           fi
-          curl -s -X POST "${MATTERWICK_URL}/cleanup_e2e" \
+          curl -S -X POST "${MATTERWICK_URL}/cleanup_e2e" \
             -H "Content-Type: application/json" \
             -H "X-Cleanup-Token: ${CLEANUP_TOKEN}" \
             -d "{\"repo\": \"desktop\", \"run_id\": ${CMT_RUN_ID}}" \
-            --fail-with-body
+            --fail-with-body \
+            --retry 3 --retry-delay 5 --retry-connrefused \
+            --connect-timeout 10 --max-time 30
