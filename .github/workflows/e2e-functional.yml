@@ -83,7 +83,7 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
-      TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(github.ref_name, 'release-') && 'RELEASE' || 'PR' }}
+      TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(inputs.version_name, 'release-') && 'RELEASE' || 'PR' }}
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
@@ -115,6 +115,8 @@ jobs:
       issues: write
     needs:
       - e2e-tests
+      - e2e-policy-tests
+      - update-final-status
     if: always() && inputs.pr_number != ''
     steps:
       - name: e2e/remove-label-from-pr

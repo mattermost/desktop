@@ -154,8 +154,12 @@ jobs:
           CLEANUP_TOKEN: ${{ secrets.MATTERWICK_CLEANUP_SECRET }}
           CMT_RUN_ID: ${{ inputs.cmt_run_id }}
         run: |
+          if ! [[ "${CMT_RUN_ID}" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: cmt_run_id '${CMT_RUN_ID}' is not a valid numeric ID"
+            exit 1
+          fi
           curl -s -X POST "${MATTERWICK_URL}/cleanup_e2e" \
             -H "Content-Type: application/json" \
             -H "X-Cleanup-Token: ${CLEANUP_TOKEN}" \
             -d "{\"repo\": \"desktop\", \"run_id\": ${CMT_RUN_ID}}" \
-            --fail-with-body || echo "Cleanup request failed (non-fatal)"
+            --fail-with-body
