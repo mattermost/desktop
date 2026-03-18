@@ -75,5 +75,19 @@ describe('main/views/loadingScreen', () => {
             expect(loadingScreen.view.webContents.send).toHaveBeenCalledWith(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
             expect(mainWindow.contentView.addChildView).toHaveBeenCalledWith(loadingScreen.view);
         });
+
+        it('should not show the loading screen if fade() is called before did-finish-load fires', () => {
+            loadingScreen.view.webContents.send.mockClear();
+            mainWindow.contentView.addChildView.mockClear();
+
+            loadingScreen.view.webContents.isLoading.mockReturnValue(true);
+            loadingScreen.show();
+            loadingScreen.fade();
+
+            loadingScreen.view.webContents.emit('did-finish-load');
+
+            expect(loadingScreen.view.webContents.send).not.toHaveBeenCalledWith(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+            expect(mainWindow.contentView.addChildView).not.toHaveBeenCalled();
+        });
     });
 });
