@@ -204,6 +204,10 @@ function initializeBeforeAppReady() {
     }
 
     if (process.env.NODE_ENV === 'test') {
+        // Write the PID to a file rather than relying on electronApp.process().pid from Playwright.
+        // Global teardown (e2e/global-teardown.ts) has no access to fixture instances or electronApp
+        // references, so it cannot call app.process().pid there. The file acts as an out-of-band
+        // channel so teardown can kill any orphaned Electron processes after the suite finishes.
         try {
             fs.appendFileSync(E2E_PROCESS_REGISTRY, `${process.pid}\n`, 'utf8');
         } catch (error) {

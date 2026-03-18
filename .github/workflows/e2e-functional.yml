@@ -47,7 +47,7 @@ jobs:
   update-initial-status:
     name: Update initial status
     needs: prepare-matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       statuses: write
@@ -87,7 +87,7 @@ jobs:
 
   merge-e2e-report:
     name: Merge E2E report
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-tests
@@ -143,7 +143,7 @@ jobs:
 
   publish-e2e-report:
     name: Publish E2E report
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-tests
@@ -165,6 +165,9 @@ jobs:
           name: playwright-report-merged
           path: merged-report
 
+      # GitHub Pages provides a persistent, interactively browsable HTML report URL.
+      # Unlike CI artifact downloads, the Pages URL renders inline (screenshots, traces, test details)
+      # and is shareable without requiring GitHub login or artifact access permissions.
       - name: Publish merged report to GitHub Pages branch
         id: publish
         env:
@@ -226,7 +229,7 @@ jobs:
 
   update-final-status:
     name: Update final status
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-tests

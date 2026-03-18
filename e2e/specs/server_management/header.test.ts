@@ -12,7 +12,7 @@ import {waitForLockFileRelease} from '../../helpers/cleanup';
 test.describe('header', () => {
     test.describe('MM-T2637 Double-Clicking on the header should minimize/maximize the app', () => {
         if (process.platform !== 'linux') {
-            test('MM-T2637_1 should maximize on double-clicking the header', {tag: ['@P2', '@all']}, async (_, testInfo) => {
+            test('MM-T2637_1 should maximize on double-clicking the header', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
                 const userDataDir = path.join(testInfo.outputDir, 'custom-userdata');
                 fs.mkdirSync(userDataDir, {recursive: true});
                 writeConfigFile(userDataDir, demoConfig);
@@ -47,7 +47,7 @@ test.describe('header', () => {
                 }
             });
 
-            test('MM-T2637_2 should restore on double-clicking the header when maximized', {tag: ['@P2', '@all']}, async (_, testInfo) => {
+            test('MM-T2637_2 should restore on double-clicking the header when maximized', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
                 const userDataDir = path.join(testInfo.outputDir, 'custom-userdata');
                 fs.mkdirSync(userDataDir, {recursive: true});
                 writeConfigFile(userDataDir, demoConfig);
