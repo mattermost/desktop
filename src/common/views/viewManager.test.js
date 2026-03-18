@@ -253,6 +253,55 @@ describe('ViewManager', () => {
         });
     });
 
+    describe('updateViewTitleTemplate', () => {
+        let viewManager;
+        beforeEach(() => {
+            viewManager = new ViewManager();
+        });
+
+        it('should update title template and emit event', () => {
+            const view = viewManager.createView(mockServer, ViewType.WINDOW);
+            viewManager.updateViewTitle(view.id, 'Test Channel', 'Test Team');
+            const emitSpy = jest.spyOn(viewManager, 'emit');
+
+            viewManager.updateViewTitleTemplate(view.id, '{channelName} | {teamName}');
+
+            expect(view.props.titleTemplate).toBe('{channelName} | {teamName}');
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view.id);
+        });
+
+        it('should create props if they do not exist', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            expect(view.props).toBeUndefined();
+
+            viewManager.updateViewTitleTemplate(view.id, '{channelName}');
+
+            expect(view.props).toBeDefined();
+            expect(view.props.titleTemplate).toBe('{channelName}');
+        });
+
+        it('should do nothing for non-existent view', () => {
+            const emitSpy = jest.spyOn(viewManager, 'emit');
+
+            viewManager.updateViewTitleTemplate('non-existent-id', '{channelName}');
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should cause getViewTitle to use the new template', () => {
+            const view = viewManager.createView(mockServer, ViewType.WINDOW);
+            viewManager.updateViewTitle(view.id, 'General', 'Engineering');
+
+            const titleBefore = viewManager.getViewTitle(view.id);
+            expect(titleBefore).toBe('Test Server - General');
+
+            viewManager.updateViewTitleTemplate(view.id, '[{serverName}] {teamName} > {channelName}');
+
+            const titleAfter = viewManager.getViewTitle(view.id);
+            expect(titleAfter).toBe('[Test Server] Engineering > General');
+        });
+    });
+
     describe('getViewTitle', () => {
         let viewManager;
         let otherServer;
