@@ -186,6 +186,8 @@ jobs:
               ;;
             "push")
               echo "BUILD_SUFFIX=desktop-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "TYPE=${{ inputs.TYPE }}" >> $GITHUB_ENV
+              echo "ZEPHYR_ENABLE=false" >> $GITHUB_ENV
               ;;
           esac
           
