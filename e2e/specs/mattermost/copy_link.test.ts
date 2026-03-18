@@ -8,13 +8,9 @@ import {loginToMattermost} from '../../helpers/login';
 test.describe('copylink', () => {
     test.use({appConfig: demoMattermostConfig});
     test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
+    test.skip(process.platform === 'linux', 'Not supported on Linux');
 
     test('MM-T125 Copy Link can be used from channel LHS', {tag: ['@P2', '@all']}, async ({electronApp, serverMap}) => {
-        if (process.platform === 'linux') {
-            test.skip(true, 'Not supported on Linux');
-            return;
-        }
-
         const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
         if (!firstServer) {
             throw new Error('No server view available');

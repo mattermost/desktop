@@ -12,10 +12,6 @@ import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
-if (!process.env.MM_TEST_SERVER_URL) {
-    test.skip(true, 'MM_TEST_SERVER_URL required');
-}
-
 const config = {
     ...demoMattermostConfig,
     alwaysMinimize: false,
@@ -141,6 +137,7 @@ async function closeAllPopouts() {
 
 test.describe('server_management/popout_windows', () => {
     test.describe.configure({mode: 'serial'});
+    test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
     test.beforeAll(async () => {
         userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mm-popout-e2e-'));

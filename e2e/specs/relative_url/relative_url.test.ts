@@ -20,7 +20,19 @@ test.describe('copylink', () => {
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', 'https://electronjs.org/apps/mattermost');
         await firstServer.press('#post_textbox', 'Enter');
-        const newPageWindow = electronApp.windows().find((window) => window.url().includes('apps/mattermost'));
-        expect(newPageWindow === undefined).toBeTruthy();
+
+        // Use waitForEvent with a short timeout to reliably detect any window that might open.
+        // Expect the wait to time out (i.e. no new window opens for external links).
+        let externalWindowOpened = false;
+        try {
+            await electronApp.waitForEvent('window', {
+                predicate: (w) => w.url().includes('apps/mattermost'),
+                timeout: 2000,
+            });
+            externalWindowOpened = true;
+        } catch {
+            // Expected: timeout means no window opened
+        }
+        expect(externalWindowOpened).toBe(false);
     });
 });

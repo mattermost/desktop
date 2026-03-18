@@ -8,14 +8,9 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
-
-if (!process.env.MM_TEST_SERVER_URL) {
-    test.skip(true, 'MM_TEST_SERVER_URL required');
-}
 
 const config = demoMattermostConfig;
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
@@ -67,6 +62,7 @@ async function resetTabs() {
 
 test.describe('server_management/tab_management', () => {
     test.describe.configure({mode: 'serial'});
+    test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
     test.beforeAll(async () => {
         userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mm-tab-management-e2e-'));

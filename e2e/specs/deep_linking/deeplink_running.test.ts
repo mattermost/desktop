@@ -14,6 +14,11 @@ test(
     'deep link navigates to correct server while app is running',
     {tag: ['@P1', '@darwin', '@win32']},
     async ({serverMap}) => {
+        if (process.platform === 'linux') {
+            test.skip(true, 'Deep link not supported on Linux');
+            return;
+        }
+
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;

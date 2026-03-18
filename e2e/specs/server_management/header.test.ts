@@ -62,7 +62,10 @@ test.describe('header', () => {
                 });
                 try {
                     await waitForAppReady(app);
-                    const mainWindow = app.windows().find((w) => w.url().includes('index'))!;
+                    const mainWindow = app.windows().find((w) => w.url().includes('index'));
+                    if (!mainWindow) {
+                        throw new Error('Main window not found');
+                    }
                     const browserWindow = await app.browserWindow(mainWindow);
                     const header = mainWindow.locator('div.topBar');
 

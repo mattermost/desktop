@@ -7,8 +7,8 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
+import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {clickApplicationMenuItem} from '../../helpers/menu';
 import {buildServerMap} from '../../helpers/serverMap';
@@ -19,56 +19,6 @@ type ElectronPage = import('playwright').Page;
 let electronApp: ElectronApplication;
 let mainWindow: ElectronPage;
 let userDataDir: string;
-
-async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
-    const timeoutAt = Date.now() + timeout;
-    while (Date.now() < timeoutAt) {
-        const win = app.windows().find((window) => {
-            try {
-                return window.url().includes(pattern);
-            } catch {
-                return false;
-            }
-        });
-
-        if (win) {
-            await win.waitForLoadState().catch(() => {});
-            return win;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
-
-async function closeElectronApp(app: ElectronApplication, dataDir: string) {
-    let pid: number | undefined;
-    try {
-        pid = app.process()?.pid;
-    } catch {
-        pid = undefined;
-    }
-
-    let cleanClosed = false;
-    await Promise.race([
-        app.close().catch(() => {}).then(() => {
-            cleanClosed = true;
-        }),
-        new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
-    ]);
-
-    if (!cleanClosed && pid) {
-        try {
-            process.kill(pid, 'SIGTERM');
-        } catch {
-            // already exited
-        }
-        return;
-    }
-
-    await waitForLockFileRelease(dataDir).catch(() => {});
-}
 
 function getZoomFactorOfServer(browserWindow: any, serverId: number) {
     return browserWindow.evaluate(

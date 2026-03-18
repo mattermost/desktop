@@ -41,7 +41,7 @@ test.describe('startup/config', () => {
             const v0Config = {
                 url: exampleURL,
             };
-            const v0Dir = testInfo.outputDir + '/v0-userdata';
+            const v0Dir = path.join(testInfo.outputDir, 'v0-userdata');
             fs.mkdirSync(v0Dir, {recursive: true});
             fs.writeFileSync(path.join(v0Dir, 'config.json'), JSON.stringify(v0Config));
 
