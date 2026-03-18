@@ -154,28 +154,34 @@ jobs:
           echo "CI_ENVIRONMENT_NAME=@${RUNNER_OS}" >> $GITHUB_ENV
           
           # Define build type and suffix
-          case "${{ github.event_name }}" in
-            "pull_request")
-              echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
-              echo "TYPE=PR" >> $GITHUB_ENV
-              ;;
-            "workflow_dispatch")
-              if ${{ inputs.cmt }}; then
-                echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=CMT" >> $GITHUB_ENV
-              else
-                echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=MANUAL" >> $GITHUB_ENV
-              fi
-              ;;
-            "push")
-              if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-                echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=MASTER" >> $GITHUB_ENV
-              fi
-              ;;
-          esac
-          
+          # inputs.TYPE takes precedence over event-derived logic when provided by the caller.
+          if [[ -n "${{ inputs.TYPE }}" ]]; then
+            echo "TYPE=${{ inputs.TYPE }}" >> $GITHUB_ENV
+            echo "BUILD_SUFFIX=desktop-${{ inputs.TYPE }}-${RUNNER_OS}" >> $GITHUB_OUTPUT
+          else
+            case "${{ github.event_name }}" in
+              "pull_request")
+                echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=PR" >> $GITHUB_ENV
+                ;;
+              "workflow_dispatch")
+                if ${{ inputs.cmt }}; then
+                  echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                  echo "TYPE=CMT" >> $GITHUB_ENV
+                else
+                  echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                  echo "TYPE=MANUAL" >> $GITHUB_ENV
+                fi
+                ;;
+              "push")
+                if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+                  echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                  echo "TYPE=MASTER" >> $GITHUB_ENV
+                fi
+                ;;
+            esac
+          fi
+
           if ${{ inputs.nightly }}; then
             echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
