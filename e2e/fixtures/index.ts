@@ -2,6 +2,8 @@
 // See LICENSE.txt for license information.
 
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 import {test as base, type Page} from '@playwright/test';
@@ -68,6 +70,8 @@ export const test = base.extend<Fixtures>({
             launchTimeout = 60_000;
         }
 
+        const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
+
         const app = await electron.launch({
             executablePath: electronBinaryPath,
             args: [
@@ -102,6 +106,16 @@ export const test = base.extend<Fixtures>({
             },
             timeout: launchTimeout,
         });
+
+        // Register PID for global teardown orphan cleanup.
+        // electronApp.process().pid is available here from Playwright at runtime,
+        // so we write it from the test side rather than from inside the app.
+        const launchPid = app.process()?.pid;
+        if (launchPid) {
+            try {
+                fsSync.appendFileSync(E2E_PROCESS_REGISTRY, `${launchPid}\n`, 'utf8');
+            } catch { /* non-fatal */ }
+        }
 
         await use(app);
 

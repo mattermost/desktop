@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import {pathToFileURL} from 'url';
 
@@ -107,7 +106,6 @@ import {
 } from './windows';
 
 const log = new Logger('App.Initialize');
-const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
 
 /**
  * Main entry point for the application, ensures that everything initializes in the proper order
@@ -203,17 +201,6 @@ function initializeBeforeAppReady() {
         return;
     }
 
-    if (process.env.NODE_ENV === 'test') {
-        // Write the PID to a file rather than relying on electronApp.process().pid from Playwright.
-        // Global teardown (e2e/global-teardown.ts) has no access to fixture instances or electronApp
-        // references, so it cannot call app.process().pid there. The file acts as an out-of-band
-        // channel so teardown can kill any orphaned Electron processes after the suite finishes.
-        try {
-            fs.appendFileSync(E2E_PROCESS_REGISTRY, `${process.pid}\n`, 'utf8');
-        } catch (error) {
-            log.warn('Failed to register E2E main process PID', {error});
-        }
-    }
 
     if (process.env.NODE_ENV !== 'test') {
         app.enableSandbox();
