@@ -10,6 +10,11 @@ on:
       DESKTOP_VERSION:
         description: "The desktop version to test"
         required: true
+      cmt_run_id:
+        description: "CMT provisioner run ID used for instance cleanup"
+        required: false
+        default: "0"
+        type: string
 
 jobs:
   ## This is picked up after the finish for cleanup
@@ -135,3 +140,28 @@ jobs:
           context: e2e/compatibility-matrix-testing
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: success
+
+  cleanup-cmt-instances:
+    runs-on: ubuntu-22.04
+    if: always()
+    needs:
+      - e2e
+    steps:
+      - name: cmt/cleanup-instances
+        if: ${{ inputs.cmt_run_id != '0' && inputs.cmt_run_id != '' }}
+        env:
+          MATTERWICK_URL: ${{ vars.MATTERWICK_URL }}
+          CLEANUP_TOKEN: ${{ secrets.MATTERWICK_CLEANUP_SECRET }}
+          CMT_RUN_ID: ${{ inputs.cmt_run_id }}
+        run: |
+          if ! [[ "${CMT_RUN_ID}" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: cmt_run_id '${CMT_RUN_ID}' is not a valid numeric ID"
+            exit 1
+          fi
+          curl -S -X POST "${MATTERWICK_URL}/cleanup_e2e" \
+            -H "Content-Type: application/json" \
+            -H "X-Cleanup-Token: ${CLEANUP_TOKEN}" \
+            -d "{\"repo\": \"desktop\", \"run_id\": ${CMT_RUN_ID}}" \
+            --fail-with-body \
+            --retry 3 --retry-delay 5 --retry-connrefused \
+            --connect-timeout 10 --max-time 30
