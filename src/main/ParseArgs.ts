@@ -4,11 +4,10 @@
 import {app} from 'electron';
 import yargs from 'yargs';
 
+import {MATTERMOST_PROTOCOL} from 'common/constants';
 import * as Validator from 'common/Validator';
 
 import type {Args} from 'types/args';
-
-import {protocols} from '../../electron-builder.json';
 
 export default function parse(args: string[]) {
     return validateArgs(parseArgs(triageArgs(args)));
@@ -16,12 +15,9 @@ export default function parse(args: string[]) {
 
 function triageArgs(args: string[]) {
     // ensure any args following a possible deeplink are discarded
-    if (protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0]) {
-        const scheme = protocols[0].schemes[0].toLowerCase();
-        const deeplinkIndex = args.findIndex((arg) => arg.toLowerCase().includes(`${scheme}:`));
-        if (deeplinkIndex !== -1) {
-            return args.slice(0, deeplinkIndex + 1);
-        }
+    const deeplinkIndex = args.findIndex((arg) => arg.toLowerCase().includes(`${MATTERMOST_PROTOCOL}:`));
+    if (deeplinkIndex !== -1) {
+        return args.slice(0, deeplinkIndex + 1);
     }
     return args;
 }

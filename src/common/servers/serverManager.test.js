@@ -314,4 +314,163 @@ describe('common/servers/serverManager', () => {
             expect(serverManager.getCurrentServerId()).toBe(nextServer.id);
         });
     });
+
+    describe('reordering with predefined servers', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            Config.predefinedServers = [
+                {name: 'Predefined 1', url: 'http://predefined-1.com'},
+                {name: 'Predefined 2', url: 'http://predefined-2.com'},
+            ];
+            Config.localServers = [
+                {name: 'Local 1', url: 'http://local-1.com', order: 0},
+            ];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+            Config.setServers.mockClear();
+            parseURL.mockImplementation((url) => new URL(url));
+
+            serverManager = new ServerManager();
+            serverManager.init();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should allow reordering so predefined servers can move in the list', () => {
+            const ordered = serverManager.getOrderedServers();
+            expect(ordered.length).toBe(3);
+            const ids = ordered.map((s) => s.id);
+            const reversed = [...ids].reverse();
+            serverManager.updateServerOrder(reversed);
+            const afterReorder = serverManager.getOrderedServers().map((s) => s.id);
+            expect(afterReorder).toEqual(reversed);
+            expect(Config.setServers).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({name: 'Predefined 1', url: 'http://predefined-1.com/', isPredefined: true}),
+                    expect.objectContaining({name: 'Predefined 2', url: 'http://predefined-2.com/', isPredefined: true}),
+                    expect.objectContaining({name: 'Local 1', url: 'http://local-1.com/', isPredefined: false}),
+                ]),
+                expect.any(Number),
+            );
+        });
+    });
+
+    describe('predefined and non-predefined server with same URL', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            parseURL.mockImplementation((url) => new URL(url));
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should keep predefined server and drop non-predefined when URLs match', () => {
+            const sameUrl = 'http://same-url.com';
+            Config.predefinedServers = [
+                {name: 'Predefined', url: sameUrl},
+            ];
+            Config.localServers = [
+                {name: 'User Added Same', url: sameUrl, order: 0, isPredefined: false},
+            ];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+
+            serverManager = new ServerManager();
+            serverManager.init();
+
+            const ordered = serverManager.getOrderedServers();
+            expect(ordered.length).toBe(1);
+            expect(ordered[0].name).toBe('Predefined');
+            expect(ordered[0].isPredefined).toBe(true);
+        });
+    });
+
+    describe('init load order from config', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            Config.predefinedServers = [];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+            parseURL.mockImplementation((url) => new URL(url));
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should order local servers by config order field', () => {
+            Config.localServers = [
+                {name: 'Third', url: 'http://third.com', order: 2},
+                {name: 'First', url: 'http://first.com', order: 0},
+                {name: 'Second', url: 'http://second.com', order: 1},
+            ];
+
+            serverManager = new ServerManager();
+            serverManager.init();
+
+            const names = serverManager.getOrderedServers().map((s) => s.name);
+            expect(names).toEqual(['First', 'Second', 'Third']);
+        });
+
+        it('should put unordered predefined first then rest by order', () => {
+            Config.predefinedServers = [
+                {name: 'Predefined Only', url: 'http://predefined-only.com'},
+            ];
+            Config.localServers = [
+                {name: 'Local Second', url: 'http://local-2.com', order: 1, isPredefined: false},
+                {name: 'Local First', url: 'http://local-1.com', order: 0, isPredefined: false},
+            ];
+
+            serverManager = new ServerManager();
+            serverManager.init();
+
+            const names = serverManager.getOrderedServers().map((s) => s.name);
+            expect(names[0]).toBe('Predefined Only');
+            expect(names.slice(1)).toEqual(['Local First', 'Local Second']);
+        });
+
+        it('should order predefined-in-local by their order field with non-predefined', () => {
+            Config.predefinedServers = [
+                {name: 'Predefined A', url: 'http://predefined-a.com'},
+                {name: 'Predefined B', url: 'http://predefined-b.com'},
+            ];
+            Config.localServers = [
+                {name: 'Predefined B', url: 'http://predefined-b.com', order: 1, isPredefined: true},
+                {name: 'Local', url: 'http://local.com', order: 2, isPredefined: false},
+                {name: 'Predefined A', url: 'http://predefined-a.com', order: 0, isPredefined: true},
+            ];
+
+            serverManager = new ServerManager();
+            serverManager.init();
+
+            const names = serverManager.getOrderedServers().map((s) => s.name);
+            expect(names).toEqual(['Predefined A', 'Predefined B', 'Local']);
+        });
+
+        it('should keep predefined servers when URLs match and should override name with predefined name', () => {
+            Config.predefinedServers = [
+                {name: 'Predefined', url: 'http://predefined.com'},
+                {name: 'Predefined 2', url: 'http://predefined2.com'},
+            ];
+            Config.localServers = [
+                {name: 'Predefined Local', url: 'http://predefined2.com', order: 1, isPredefined: true},
+                {name: 'Local', url: 'http://predefined.com', order: 0, isPredefined: false},
+            ];
+
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+
+            serverManager = new ServerManager();
+            serverManager.init();
+
+            const names = serverManager.getOrderedServers().map((s) => s.name);
+            expect(names).toEqual(['Predefined', 'Predefined 2']);
+        });
+    });
 });

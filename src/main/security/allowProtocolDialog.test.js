@@ -98,6 +98,28 @@ describe('main/allowProtocolDialog', () => {
 
             expect(allowProtocolDialog.allowedProtocols).toStrictEqual(['test:', 'test2:']);
         });
+
+        it('should not add blocked protocols', () => {
+            const allowProtocolDialog = new AllowProtocolDialog();
+            allowProtocolDialog.addScheme('file');
+            allowProtocolDialog.addScheme('javascript');
+            allowProtocolDialog.addScheme('data');
+            allowProtocolDialog.addScheme('vbscript');
+            allowProtocolDialog.addScheme('ms-msdt');
+            allowProtocolDialog.addScheme('search-ms');
+            allowProtocolDialog.addScheme('ms-appinstaller');
+            allowProtocolDialog.addScheme('ms-officecmd');
+
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('file:');
+            // eslint-disable-next-line no-script-url
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('javascript:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('data:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('vbscript:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-msdt:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('search-ms:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-appinstaller:');
+            expect(allowProtocolDialog.allowedProtocols).not.toContain('ms-officecmd:');
+        });
     });
 
     describe('handleDialogEvent', () => {
@@ -112,13 +134,13 @@ describe('main/allowProtocolDialog', () => {
         });
 
         it('should open protocol that is already allowed', () => {
-            allowProtocolDialog.handleDialogEvent('spotify:', 'spotify:album:3AQgdwMNCiN7awXch5fAaG');
+            allowProtocolDialog.handleDialogEvent(new URL('spotify:album:3AQgdwMNCiN7awXch5fAaG'));
             expect(shell.openExternal).toBeCalledWith('spotify:album:3AQgdwMNCiN7awXch5fAaG');
         });
 
         it('should not open message box if main window is missing', () => {
             MainWindow.get.mockImplementation(() => null);
-            allowProtocolDialog.handleDialogEvent('mattermost:', 'mattermost://community.mattermost.com');
+            allowProtocolDialog.handleDialogEvent(new URL('mattermost://community.mattermost.com'));
             expect(shell.openExternal).not.toBeCalled();
             expect(dialog.showMessageBox).not.toBeCalled();
         });
@@ -131,7 +153,7 @@ describe('main/allowProtocolDialog', () => {
             it('should open the window but not save when clicking Yes', async () => {
                 const promise = Promise.resolve({response: 0});
                 dialog.showMessageBox.mockImplementation(() => promise);
-                allowProtocolDialog.handleDialogEvent('mattermost:', 'mattermost://community.mattermost.com');
+                allowProtocolDialog.handleDialogEvent(new URL('mattermost://community.mattermost.com'));
                 await promise;
 
                 expect(shell.openExternal).toBeCalledWith('mattermost://community.mattermost.com');
@@ -142,7 +164,7 @@ describe('main/allowProtocolDialog', () => {
             it('should open the window and save when clicking Yes and Save', async () => {
                 const promise = Promise.resolve({response: 1});
                 dialog.showMessageBox.mockImplementation(() => promise);
-                allowProtocolDialog.handleDialogEvent('mattermost:', 'mattermost://community.mattermost.com');
+                allowProtocolDialog.handleDialogEvent(new URL('mattermost://community.mattermost.com'));
                 await promise;
 
                 expect(shell.openExternal).toBeCalledWith('mattermost://community.mattermost.com');
@@ -153,7 +175,7 @@ describe('main/allowProtocolDialog', () => {
             it('should do nothing when clicking No', async () => {
                 const promise = Promise.resolve({response: 2});
                 dialog.showMessageBox.mockImplementation(() => promise);
-                allowProtocolDialog.handleDialogEvent('mattermost:', 'mattermost://community.mattermost.com');
+                allowProtocolDialog.handleDialogEvent(new URL('mattermost://community.mattermost.com'));
                 await promise;
 
                 expect(shell.openExternal).not.toBeCalled();
@@ -165,11 +187,36 @@ describe('main/allowProtocolDialog', () => {
                 const promise = Promise.resolve({response: 0});
                 dialog.showMessageBox.mockImplementation(() => promise);
                 shell.openExternal.mockReturnValue(Promise.reject(new Error('bad protocol')));
-                allowProtocolDialog.handleDialogEvent('bad-protocol:', 'bad-protocol://community.mattermost.com');
+                allowProtocolDialog.handleDialogEvent(new URL('bad-protocol://community.mattermost.com'));
                 await promise;
 
                 expect(shell.openExternal).toBeCalledWith('bad-protocol://community.mattermost.com');
             });
+        });
+    });
+
+    describe('blocked protocols', () => {
+        let allowProtocolDialog;
+        beforeEach(() => {
+            MainWindow.get.mockImplementation(() => ({}));
+            allowProtocolDialog = new AllowProtocolDialog();
+        });
+
+        it.each([
+            ['file:///etc/passwd'],
+            // eslint-disable-next-line no-script-url
+            ['javascript:alert(1)'],
+            ['data:text/html,<script>alert(1)</script>'],
+            ['vbscript:msgbox("hello")'],
+            ['ms-msdt:/id PCWDiagnostic'],
+            ['search-ms:query=test'],
+            ['ms-appinstaller://example.com/package.appinstaller'],
+            ['ms-officecmd://example.com/open?url=file.docx'],
+        ])('should silently block %s without opening dialog or shell', async (urlStr) => {
+            await allowProtocolDialog.handleDialogEvent(new URL(urlStr));
+
+            expect(dialog.showMessageBox).not.toBeCalled();
+            expect(shell.openExternal).not.toBeCalled();
         });
     });
 });

@@ -102,14 +102,9 @@ jest.mock('electron-devtools-installer', () => {
 const isDev = false;
 jest.mock('electron-is-dev', () => isDev);
 
-jest.mock('../../../electron-builder.json', () => ([
-    {
-        name: 'Mattermost',
-        schemes: [
-            'mattermost',
-        ],
-    },
-]));
+jest.mock('common/constants', () => ({
+    MATTERMOST_PROTOCOL: 'mattermost',
+}));
 
 jest.mock('app/serverHub', () => ({
     init: jest.fn(),

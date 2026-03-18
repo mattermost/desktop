@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {dialog} from 'electron';
+
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -18,6 +20,9 @@ import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {NavigationManager} from './navigationManager';
 
 jest.mock('electron', () => ({
+    dialog: {
+        showErrorBox: jest.fn(),
+    },
     ipcMain: {
         handle: jest.fn(),
         on: jest.fn(),
@@ -55,6 +60,7 @@ jest.mock('common/communication', () => ({
 jest.mock('common/log', () => ({
     Logger: jest.fn().mockImplementation(() => ({
         error: jest.fn(),
+        warn: jest.fn(),
         debug: jest.fn(),
         silly: jest.fn(),
     })),
@@ -104,6 +110,10 @@ jest.mock('main/app/intercom', () => ({
 
 jest.mock('app/windows/popoutManager', () => ({
     getWindow: jest.fn(),
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
 }));
 
 describe('app/navigationManager', () => {
@@ -198,6 +208,13 @@ describe('app/navigationManager', () => {
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
         });
+
+        it('should handle unparseable URL gracefully and show error dialog', () => {
+            navigationManager.openLinkInPrimaryTab('not-a-valid-url');
+
+            expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
+        });
     });
 
     describe('openLinkInNewTab', () => {
@@ -276,6 +293,13 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInNewTab('');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+        });
+
+        it('should handle unparseable URL gracefully and show error dialog', () => {
+            navigationManager.openLinkInNewTab('not-a-valid-url');
+
+            expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
         });
 
         it('should handle missing view gracefully', () => {
