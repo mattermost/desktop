@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import fs from 'fs';
 import path from 'path';
 import {pathToFileURL} from 'url';
 
@@ -200,7 +199,6 @@ function initializeBeforeAppReady() {
         log.error('No config loaded');
         return;
     }
-
 
     if (process.env.NODE_ENV !== 'test') {
         app.enableSandbox();
