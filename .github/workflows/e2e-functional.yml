@@ -28,6 +28,15 @@ on:
         description: "True if this is nightly build"
         required: false
         default: false
+      run_type:
+        type: string
+        description: "Run type for test reporting (PR/RELEASE). Auto-detected from branch if not provided."
+        required: false
+        default: ""
+      pr_number:
+        type: string
+        description: "PR number to remove E2E label from after tests complete"
+        required: false
 
 jobs:
   prepare-matrix:
@@ -74,7 +83,7 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
-      TYPE: ${{ startsWith(github.ref_name, 'release-') && 'RELEASE' || (github.ref_name == 'master' && 'MASTER') || 'PR' }}
+      TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(inputs.version_name, 'release-') && 'RELEASE' || 'PR' }}
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
@@ -98,6 +107,34 @@ jobs:
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
             await updateFinalStatus({ github, context, platforms, outputs });
+
+  remove-e2e-label:
+    name: Remove E2E label from PR
+    runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+    needs:
+      - e2e-tests
+      - e2e-policy-tests
+      - update-final-status
+    if: always() && inputs.pr_number != ''
+    steps:
+      - name: e2e/remove-label-from-pr
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        continue-on-error: true # Label might have been removed manually
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const prNumber = parseInt(process.env.PR_NUMBER);
+            if (!prNumber) return;
+            await github.rest.issues.removeLabel({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'E2E/Run',
+            });
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}
