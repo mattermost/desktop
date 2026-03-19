@@ -127,7 +127,6 @@ jobs:
           pattern: blob-report-*
           path: all-blob-reports
           merge-multiple: true
-          if-no-files-found: warn
 
       - name: Merge Playwright reports
         id: merge

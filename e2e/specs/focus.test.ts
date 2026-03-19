@@ -31,17 +31,21 @@ type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_elec
 type ServerWin = ServerMap[string][number]['win'];
 
 async function focusMainWindow(app: ElectronApplication) {
-    const mainWindowPage = app.windows().find((w) => {
-        try {
-            return w.url().includes('index');
-        } catch {
-            return false;
+    await app.evaluate(({app: electronApp}) => {
+        const refs = (global as any).__e2eTestRefs;
+        const mainWindow = refs?.MainWindow?.get?.();
+        if (!mainWindow || mainWindow.isDestroyed()) {
+            return;
         }
-    });
-    if (mainWindowPage) {
-        const bw = await app.browserWindow(mainWindowPage);
-        await bw.evaluate((win) => (win as Electron.BrowserWindow).focus()).catch(() => {});
-    }
+        if (process.platform === 'darwin') {
+            electronApp.show();
+        }
+        if (mainWindow.isMinimized()) {
+            mainWindow.restore();
+        }
+        mainWindow.show();
+        mainWindow.focus();
+    }).catch(() => {});
 }
 
 async function openSettingsWindow(electronApp: ElectronApplication) {

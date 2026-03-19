@@ -95,8 +95,10 @@ async function clickFileMenuItem(app: ElectronApplication, label: string) {
             throw new Error(`File menu item not found: ${expectedLabel}`);
         }
 
-        // getFocusedWindow() may return null in headless CI; fall back to the first open window
+        // getFocusedWindow() may return null in headless CI; use the main window ref
+        const refs = (global as any).__e2eTestRefs;
         const targetWindow = BrowserWindow.getFocusedWindow() ??
+            refs?.MainWindow?.get?.() ??
             BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
             null;
         item.click(undefined, targetWindow, undefined);

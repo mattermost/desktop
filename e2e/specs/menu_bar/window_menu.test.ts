@@ -126,8 +126,10 @@ async function clickWindowMenuItem(
                     throw new Error(`Window menu item not found: ${JSON.stringify(expected)}`);
                 }
 
-                // getFocusedWindow() may return null in headless CI; fall back to the first open window
+                // getFocusedWindow() may return null in headless CI; use the main window ref
+                const refs = (global as any).__e2eTestRefs;
                 const targetWindow = BrowserWindow.getFocusedWindow() ??
+                    refs?.MainWindow?.get?.() ??
                     BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
                     null;
                 item.click(undefined, targetWindow, undefined);
