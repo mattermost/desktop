@@ -50,10 +50,18 @@ test.describe('application', () => {
         await waitForAppReady(app!);
         const serverMap = await buildServerMap(app!);
 
-        if (!app!.windows().some((window) => { try { return window.url().includes('github.com'); } catch { return false; } })) {
+        const hasGithubWindow = () => app!.windows().some((window) => {
+            try {
+                return window.url().includes('github.com');
+            } catch {
+                return false;
+            }
+        });
+
+        if (!hasGithubWindow()) {
             const deadline = Date.now() + 15_000;
             while (Date.now() < deadline) {
-                if (app!.windows().some((window) => { try { return window.url().includes('github.com'); } catch { return false; } })) {
+                if (hasGithubWindow()) {
                     break;
                 }
                 await new Promise((resolve) => setTimeout(resolve, 500));
