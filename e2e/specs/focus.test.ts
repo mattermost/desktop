@@ -186,6 +186,14 @@ test.describe('focus', () => {
     });
 
     test.describe('Focus textbox tests', () => {
+        // BrowserWindow.isFocused() returns false in headless CI environments (Linux Xvfb,
+        // GitHub Actions macOS runners), so MattermostWebContentsView.focus() silently
+        // skips webContents.focus(). These tests require a real interactive desktop session.
+        test.skip(
+            process.platform === 'linux' || !!process.env.CI,
+            'OS window focus unreliable in headless CI environments',
+        );
+
         test('MM-T1315 should return focus to the message box when closing the settings modal', {tag: ['@P2', '@all']}, async () => {
             const textbox = await firstServer.waitForSelector('#post_textbox');
             await textbox.focus();

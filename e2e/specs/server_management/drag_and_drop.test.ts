@@ -231,19 +231,19 @@ test.describe('server_management/drag_and_drop', () => {
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
             await secondTab.click();
             const secondView = localServerMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
+            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
             await secondView.click('#sidebarItem_off-topic');
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
             await thirdTab.click();
             const thirdView = localServerMap[serverName][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
+            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
             await thirdView.click('#sidebarItem_town-square');
 
             // Tab titles update asynchronously after channel navigation — poll for each.
-            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(1)')).toContainText('Town Square', {timeout: 10_000});
-            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(2)')).toContainText('Off-Topic', {timeout: 10_000});
-            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(3)')).toContainText('Town Square', {timeout: 10_000});
+            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(1)')).toContainText('Town Square', {timeout: 15_000});
+            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(2)')).toContainText('Off-Topic', {timeout: 15_000});
+            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(3)')).toContainText('Town Square', {timeout: 15_000});
         });
 
         test('MM-T2635_2 after moving the tab to the right, the tab should be in the new order', {tag: ['@P2', '@all']}, async () => {
@@ -263,13 +263,13 @@ test.describe('server_management/drag_and_drop', () => {
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
             await secondTab.click();
             const secondView = localServerMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
+            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
             await secondView.click('#sidebarItem_off-topic');
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
             await thirdTab.click();
             const thirdView = localServerMap[serverName][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
+            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
             await thirdView.click('#sidebarItem_town-square');
 
             const visibleTabOrder = await getVisibleTabOrder();

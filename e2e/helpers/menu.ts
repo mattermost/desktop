@@ -85,7 +85,13 @@ export async function clickApplicationMenuItem(
                     throw new Error(`Menu item not found in ${payload.menuId}: ${JSON.stringify(payload.matcher)}`);
                 }
 
-                const targetWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+                // getFocusedWindow() returns null on headless CI; fall back to the
+                // main window ref set by the app's E2E test hooks.
+                const refs = (global as any).__e2eTestRefs;
+                const targetWindow = BrowserWindow.getFocusedWindow() ??
+                    refs?.MainWindow?.get?.() ??
+                    BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
+                    null;
                 const targetWebContents = payload.webContentsId ? webContents.fromId(payload.webContentsId) : targetWindow?.webContents;
 
                 if (process.platform === 'darwin' && payload.menuId === 'edit' && payload.matcher.role) {

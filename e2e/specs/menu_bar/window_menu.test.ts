@@ -123,7 +123,9 @@ async function clickWindowMenuItem(
                 });
 
                 if (!item) {
-                    throw new Error(`Window menu item not found: ${JSON.stringify(expected)}`);
+                    // Use a sentinel that the outer catch can recognise and retry on,
+                    // since MenuManager rebuilds the menu asynchronously after TAB_ADDED.
+                    throw new Error(`__MENU_ITEM_NOT_FOUND__: ${JSON.stringify(expected)}`);
                 }
 
                 // getFocusedWindow() may return null in headless CI; use the main window ref
@@ -137,7 +139,11 @@ async function clickWindowMenuItem(
             return;
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            if (!message.includes('Execution context was destroyed')) {
+            // Retry on context destruction (navigation) or menu not yet rebuilt after TAB_ADDED.
+            if (
+                !message.includes('Execution context was destroyed') &&
+                !message.includes('__MENU_ITEM_NOT_FOUND__')
+            ) {
                 throw error;
             }
             await new Promise((resolve) => setTimeout(resolve, 100));

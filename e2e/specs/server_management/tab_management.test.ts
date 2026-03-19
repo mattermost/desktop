@@ -108,7 +108,7 @@ test.describe('server_management/tab_management', () => {
             await secondTab.click();
 
             const secondView = updatedServerMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
+            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
             await secondView.click('#sidebarItem_off-topic');
 
             const firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');

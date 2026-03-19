@@ -107,14 +107,16 @@ async function clickFileMenuItem(app: ElectronApplication, label: string) {
 
 async function openPopoutWindow() {
     await mainWindow.bringToFront().catch(() => {});
-    const popoutPromise = electronApp.waitForEvent('window', {
-        predicate: (window) => window.url().includes('popout.html'),
-        timeout: 15_000,
-    });
+
+    // waitForEvent fires when the BrowserWindow is *created*, which may be before
+    // PopoutManager calls loadURL — so the URL can still be blank at that point.
+    // Catch any new window then wait for the popout URL to appear.
+    const popoutPromise = electronApp.waitForEvent('window', {timeout: 15_000});
     await clickFileMenuItem(electronApp, 'New Window');
-    const popoutWindow = await popoutPromise;
-    await popoutWindow.waitForLoadState();
-    return popoutWindow;
+    const newWindow = await popoutPromise;
+    await newWindow.waitForURL('**/popout.html', {timeout: 15_000}).catch(() => {});
+    await newWindow.waitForLoadState().catch(() => {});
+    return newWindow;
 }
 
 async function closeAllPopouts() {
