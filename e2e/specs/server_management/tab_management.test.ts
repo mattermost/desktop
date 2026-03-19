@@ -108,7 +108,7 @@ test.describe('server_management/tab_management', () => {
             await secondTab.click();
 
             const secondView = updatedServerMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic');
+            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
             await secondView.click('#sidebarItem_off-topic');
 
             const firstTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
@@ -116,7 +116,7 @@ test.describe('server_management/tab_management', () => {
             expect(firstTab).toBeDefined();
             expect(secondTabEl).toBeDefined();
 
-            const secondTabCloseButton = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2) .serverTabItem__close');
+            const secondTabCloseButton = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2) .serverTabItem__close', {timeout: 15_000});
             await secondTabCloseButton.click();
 
             const remainingTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');

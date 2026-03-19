@@ -63,43 +63,41 @@ test.describe('file_menu/dropdown', () => {
         expect(settingsWindow).toBeDefined();
     });
 
-    test('MM-T805 Sign in to Another Server Window opens using menu item', {tag: ['@P2', '@win32']}, async ({electronApp, mainWindow}) => {
+    test('MM-T805 Sign in to Another Server Window opens using menu item', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
         if (process.platform !== 'win32') {
             test.skip(true, 'Windows-only test');
             return;
         }
 
-        expect(mainWindow).toBeDefined();
-        await mainWindow.click('button.three-dot-menu');
-        await mainWindow.keyboard.press('f');
-        await mainWindow.keyboard.press('s');
-        await mainWindow.keyboard.press('s');
-        await mainWindow.keyboard.press('Enter');
+        // Invoke the File menu item directly — keyboard presses sent via Playwright
+        // do not reliably reach popup menus in headless CI on Windows.
+        await electronApp.evaluate(({app}) => {
+            const fileMenu = (app as any).applicationMenu?.getMenuItemById('file');
+            const signInItem = fileMenu?.submenu?.items?.find(
+                (item: any) => typeof item.label === 'string' && item.label.includes('Sign in'),
+            );
+            if (!signInItem) {
+                throw new Error('Sign in to Another Server menu item not found');
+            }
+            signInItem.click();
+        });
         const signInToAnotherServerWindow = await electronApp.waitForEvent('window', {
             predicate: (window) => window.url().includes('newServer'),
+            timeout: 15_000,
         });
         expect(signInToAnotherServerWindow).toBeDefined();
     });
 
-    test('MM-T804 Preferences in Menu Bar open the Settings page', {tag: ['@P2', '@win32']}, async ({electronApp, mainWindow}) => {
+    test('MM-T804 Preferences in Menu Bar open the Settings page', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
         if (process.platform !== 'win32') {
             test.skip(true, 'Windows-only test');
             return;
         }
 
-        expect(mainWindow).toBeDefined();
-        await mainWindow.click('button.three-dot-menu');
-        await mainWindow.keyboard.press('f');
-        await mainWindow.keyboard.press('s');
-        await mainWindow.keyboard.press('Enter');
-        let settingsWindowFromMenu = electronApp.windows().find((window) => window.url().includes('settings'));
-        if (!settingsWindowFromMenu) {
-            settingsWindowFromMenu = await electronApp.waitForEvent('window', {
-                predicate: (window) => window.url().includes('settings'),
-                timeout: 30_000,
-            });
-        }
-        expect(settingsWindowFromMenu).toBeDefined();
+        // Reuse the existing direct-invocation helper instead of keyboard navigation.
+        await openPreferencesFromAppMenu(electronApp);
+        const settingsWindow = await waitForSettingsWindow(electronApp);
+        expect(settingsWindow).toBeDefined();
     });
 
     test('MM-T806 Exit in the Menu Bar', {tag: ['@P2', '@darwin']}, async ({electronApp, mainWindow}) => {

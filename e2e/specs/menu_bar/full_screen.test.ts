@@ -44,7 +44,11 @@ test.describe('menu/view', () => {
         });
 
         await electronApp.evaluate(async ({BrowserWindow}) => {
-            const win = BrowserWindow.getAllWindows()[0];
+            const refs = (global as any).__e2eTestRefs;
+            const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
+            if (!win) {
+                throw new Error('Main window not found');
+            }
             await new Promise<void>((resolve, reject) => {
                 const timeout = setTimeout(() => reject(new Error('Timed out waiting for fullscreen')), 15000);
                 const check = () => {
@@ -73,7 +77,11 @@ test.describe('menu/view', () => {
         });
 
         await electronApp.evaluate(async ({BrowserWindow}) => {
-            const win = BrowserWindow.getAllWindows()[0];
+            const refs = (global as any).__e2eTestRefs;
+            const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
+            if (!win) {
+                throw new Error('Main window not found');
+            }
             await new Promise<void>((resolve, reject) => {
                 const timeout = setTimeout(() => reject(new Error('Timed out waiting for exit fullscreen')), 15000);
                 const check = () => {

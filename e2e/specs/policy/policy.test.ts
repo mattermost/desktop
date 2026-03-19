@@ -244,6 +244,9 @@ test.describe('policy', () => {
         const {app, userDataDir} = await launchPolicyApp(testInfo, {configName: 'policy-default-server'});
         try {
             const mainWindow = await getMainWindow(app);
+
+            // Wait for the dropdown button to render before reading its text.
+            await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000});
             const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
             expect(dropdownButtonText).toBe(policyServer.name);
         } finally {

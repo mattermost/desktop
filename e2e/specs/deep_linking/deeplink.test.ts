@@ -78,15 +78,10 @@ test.describe('application', () => {
         // Wait for server map to have the github server populated
         const serverName = demoConfig.servers[1].name;
         let resolvedServerMap = serverMap;
-        if (!resolvedServerMap[serverName] || resolvedServerMap[serverName].length === 0) {
-            // Retry getting server map if github server is not ready
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+        await expect.poll(async () => {
             resolvedServerMap = await buildServerMap(app!);
-        }
-
-        // Ensure we have the server data before accessing webContentsId
-        expect(resolvedServerMap).toHaveProperty(serverName);
-        expect(resolvedServerMap[serverName].length).toBeGreaterThanOrEqual(1);
+            return resolvedServerMap[serverName]?.length ?? 0;
+        }, {timeout: 15_000}).toBeGreaterThanOrEqual(1);
 
         const webContentsId = resolvedServerMap[serverName][0].webContentsId;
         const isActive = await browserWindow.evaluate((window, id: number) => {
