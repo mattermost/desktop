@@ -4,7 +4,9 @@
   "description": "E2E tests for the Desktop App",
   "scripts": {
     "clean": "rm -rf node_modules/ testUserData/ playwright-report/ playwright-report-merged/ blob-report/ test-results/ mochawesome-report/",
-    "test": "playwright test"
+    "test": "playwright test",
+    "run:policy": "RUN_POLICY_E2E=true playwright test specs/policy/policy.test.ts",
+    "send-report": "playwright merge-reports --reporter=html blob-report"
   },
   "repository": {
     "type": "git",

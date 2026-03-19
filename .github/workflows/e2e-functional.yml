@@ -280,7 +280,6 @@ jobs:
         run: |
           npm ci
           cd e2e && npm ci
-          npx electron-rebuild -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/build-test-bundle
         run: npm run build-test
@@ -289,8 +288,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd e2e
-          npm run run:policy || true
-          npm run send-report
+          set +e
+          npm run run:policy
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
+          npm run send-report || true
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
@@ -299,21 +300,43 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd e2e
-          npm run run:policy || true
-          npm run send-report
+          set +e
+          npm run run:policy
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
+          npm run send-report || true
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
 
       - name: e2e/check-for-failures
         id: check-failures
+        if: always()
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests && newFailedTests.length > 0) {
+
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const platform = process.platform === 'darwin' ? 'macos' : 'windows';
+            const hasFailed = newFailedTests && newFailedTests.length > 0;
+
+            try {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: context.sha,
+                state: hasFailed ? 'failure' : 'success',
+                context: `policy-test/${platform}`,
+                description: `Policy tests completed with ${hasFailed ? newFailedTests.length : 0} failures`,
+                target_url: runUrl,
+              });
+            } catch (e) {
+              console.log(`Could not update commit status: ${e.message}`);
+            }
+
+            if (hasFailed) {
               core.setFailed(`${newFailedTests.length} policy test(s) failed:\n${newFailedTests.join('\n')}`);
             }
 
@@ -322,5 +345,5 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: policy-test-results-${{ runner.os }}
-          path: e2e/mochawesome-report
+          path: e2e/playwright-report
           retention-days: 7
