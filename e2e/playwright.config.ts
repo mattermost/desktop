@@ -24,7 +24,7 @@ const workers = process.env.E2E_WORKERS ? parseInt(process.env.E2E_WORKERS, 10) 
 const ciEnvironmentTag = process.env.CI_ENVIRONMENT_NAME;
 const reporters = process.env.CI ? [
     ['blob', {outputDir: 'blob-report'}],
-    ['dot'],
+    ['line'],
     ['junit', {outputFile: 'test-results/e2e-junit.xml'}],
 ] as const : [
     ['html', {open: 'never', outputFolder: 'playwright-report'}],

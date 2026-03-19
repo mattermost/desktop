@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf node_modules/ testUserData/ playwright-report/ playwright-report-merged/ blob-report/ test-results/ mochawesome-report/",
     "test": "playwright test",
-    "run:policy": "RUN_POLICY_E2E=true playwright test specs/policy/policy.test.ts",
+    "run:policy": "cross-env RUN_POLICY_E2E=true playwright test specs/policy/policy.test.ts",
     "send-report": "playwright merge-reports --reporter=html blob-report"
   },
   "repository": {
@@ -24,6 +24,7 @@
     "ps-node": "0.1.6"
   },
   "devDependencies": {
-    "@playwright/test": "1.58.0"
+    "@playwright/test": "1.58.0",
+    "cross-env": "^10.1.0"
   }
 }
