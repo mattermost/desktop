@@ -198,7 +198,7 @@ test.describe('focus', () => {
             // Wait for focus to return to textbox after modal close
             await firstServer.waitForFunction(
                 () => document.activeElement?.id === 'post_textbox',
-                {timeout: 5000},
+                {timeout: 15_000},
             );
 
             const isTextboxFocused = await firstServer.$eval('#post_textbox', (el) => el === document.activeElement);

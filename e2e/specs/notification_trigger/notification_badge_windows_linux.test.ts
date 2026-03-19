@@ -39,6 +39,17 @@ async function resetBadgeState(app: import('playwright').ElectronApplication) {
 }
 
 test.describe('notification_badge/windows_and_linux', () => {
+    // Reset showUnreadBadgeSetting to false before each test to prevent state bleed
+    // when a test sets the setting to true but fails before resetting it.
+    test.beforeEach(async ({electronApp}) => {
+        await electronApp.evaluate(() => {
+            (global as any).__testTriggerSetUnreadBadgeSetting?.(false);
+        });
+        await electronApp.evaluate(() => {
+            (global as any).__testBadgeState = null;
+        });
+    });
+
     // --- Windows: overlay icon badge ---
 
     test('MM-T_BADGE_WIN_01 - should show a mention count badge on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {

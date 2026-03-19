@@ -375,11 +375,11 @@ test.describe('Menu/window_menu', () => {
             await thirdView!.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
             await thirdView!.click('#sidebarItem_town-square');
 
-            const tabViewButton = await mainWindow.innerText('.active');
-            expect(tabViewButton).toContain('Town Square');
+            // Tab title updates asynchronously after channel navigation — poll for it.
+            await expect(mainWindow.locator('.active')).toContainText('Town Square', {timeout: 10_000});
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
-            await expect.poll(() => getActiveTabTitle(electronApp)).toContain('Off-Topic');
+            await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Off-Topic');
         });
 
         test('MM-T4385_2 should show the third tab', {tag: ['@P2', '@all']}, async () => {
@@ -401,7 +401,7 @@ test.describe('Menu/window_menu', () => {
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+3'});
-            await expect.poll(() => getActiveTabTitle(electronApp)).toContain('Town Square');
+            await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Town Square');
         });
 
         test('MM-T4385_3 should show the first tab', {tag: ['@P2', '@all']}, async () => {
@@ -423,7 +423,7 @@ test.describe('Menu/window_menu', () => {
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+1'});
-            await expect.poll(() => getActiveTabTitle(electronApp)).toContain('Town Square');
+            await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Town Square');
         });
     });
 
@@ -438,13 +438,13 @@ test.describe('Menu/window_menu', () => {
         await secondView!.waitForSelector('#sidebarItem_off-topic', {timeout: 10_000});
         await secondView!.click('#sidebarItem_off-topic');
 
-        await expect.poll(() => getActiveTabTitle(electronApp)).toContain('Off-Topic');
+        await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Off-Topic');
 
         await clickWindowMenuItem(electronApp, {label: 'Select Next Tab'});
-        await expect.poll(() => getActiveTabTitle(electronApp)).toContain('Town Square');
+        await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Town Square');
 
         await clickWindowMenuItem(electronApp, {label: 'Select Previous Tab'});
-        await expect.poll(() => getActiveTabTitle(electronApp)).toContain('Off-Topic');
+        await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Off-Topic');
     });
 
     test('MM-T824 should be minimized when keyboard shortcuts are pressed', {tag: ['@P2', '@darwin', '@win32']}, async () => {

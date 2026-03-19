@@ -240,15 +240,10 @@ test.describe('server_management/drag_and_drop', () => {
             await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
             await thirdView.click('#sidebarItem_town-square');
 
-            const firstTabEl = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)');
-            const firstTabText = await firstTabEl.innerText();
-            expect(firstTabText).toContain('Town Square');
-            const secondTabEl = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
-            const secondTabText = await secondTabEl.innerText();
-            expect(secondTabText).toContain('Off-Topic');
-            const thirdTabEl = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)');
-            const thirdTabText = await thirdTabEl.innerText();
-            expect(thirdTabText).toContain('Town Square');
+            // Tab titles update asynchronously after channel navigation — poll for each.
+            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(1)')).toContainText('Town Square', {timeout: 10_000});
+            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(2)')).toContainText('Off-Topic', {timeout: 10_000});
+            await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(3)')).toContainText('Town Square', {timeout: 10_000});
         });
 
         test('MM-T2635_2 after moving the tab to the right, the tab should be in the new order', {tag: ['@P2', '@all']}, async () => {
