@@ -13,6 +13,7 @@ on:
 
 permissions:
   issues: write
+  pull-requests: write
   actions: read
 
 jobs:
