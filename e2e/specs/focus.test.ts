@@ -114,9 +114,19 @@ test.describe('focus', () => {
             timeout: 60_000,
         });
         await waitForAppReady(electronApp);
-        serverMap = await buildServerMap(electronApp);
 
-        const primaryServer = serverMap[config.servers[0].name]?.[0]?.win;
+        // Poll until both servers are registered in WebContentsManager
+        const primaryServerName = config.servers[0].name;
+        const deadline = Date.now() + 30_000;
+        while (Date.now() < deadline) {
+            serverMap = await buildServerMap(electronApp);
+            if (serverMap[primaryServerName]?.[0] && serverMap.community?.[0]) {
+                break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        const primaryServer = serverMap[primaryServerName]?.[0]?.win;
         const communityServer = serverMap.community?.[0]?.win;
         if (!primaryServer || !communityServer) {
             throw new Error('Required server views not found');

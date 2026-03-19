@@ -169,11 +169,13 @@ test.describe('menu/view', () => {
     test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async () => {
         const {firstServer, firstServerId} = await getServerContext();
 
-        // Trigger via menu item click — this calls openFind() which sends Ctrl/Cmd+Shift+F
-        // to the webapp, which is the actual Mattermost search shortcut. Direct keyboard.press()
-        // bypasses Electron menu accelerators and sends the key directly to the web content,
-        // which behaves inconsistently across platforms.
-        await clickApplicationMenuItem(electronApp, 'view', {accelerator: 'CmdOrCtrl+F'}, {webContentsId: firstServerId});
+        // On macOS, Cmd+F sent directly to the web content focuses the search bar.
+        // On other platforms, trigger via menu item which calls openFind() → Ctrl+Shift+F.
+        if (process.platform === 'darwin') {
+            await firstServer.keyboard.press('Meta+f');
+        } else {
+            await clickApplicationMenuItem(electronApp, 'view', {accelerator: 'CmdOrCtrl+F'}, {webContentsId: firstServerId});
+        }
         const isFocused = await firstServer.$eval('input.search-bar.form-control', (el) => el === document.activeElement);
         expect(isFocused).toBe(true);
         const text = await firstServer.inputValue('input.search-bar.form-control');

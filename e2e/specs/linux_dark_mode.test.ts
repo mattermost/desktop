@@ -28,24 +28,19 @@ test.describe('dark_mode', () => {
         // Toggle Dark Mode
         await toggleDarkMode(electronApp);
 
-        // Wait for dark mode class to be applied
-        // Linux needs more time for dark mode to propagate through the window manager
-        await mainWindow.waitForSelector('.topBar.darkMode', {timeout: 10000});
+        // The darkMode class is applied to document.body, not to .topBar directly
+        await mainWindow.waitForSelector('body.darkMode', {timeout: 10000});
 
-        const topBarElementWithDarkMode = await mainWindow.waitForSelector('.topBar');
-        const topBarElementClassWithDarkMode = await topBarElementWithDarkMode.getAttribute('class');
-
-        expect(topBarElementClassWithDarkMode).toContain('darkMode');
+        const bodyClassWithDarkMode = await mainWindow.evaluate(() => document.body.className);
+        expect(bodyClassWithDarkMode).toContain('darkMode');
 
         // Toggle Light Mode
         await toggleDarkMode(electronApp);
 
         // Wait for dark mode class to be removed
-        await mainWindow.waitForSelector('.topBar:not(.darkMode)', {timeout: 10000});
+        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10000});
 
-        const topBarElementWithLightMode = await mainWindow.waitForSelector('.topBar');
-        const topBarElementClassWithLightMode = await topBarElementWithLightMode.getAttribute('class');
-
-        expect(topBarElementClassWithLightMode).not.toContain('darkMode');
+        const bodyClassWithLightMode = await mainWindow.evaluate(() => document.body.className);
+        expect(bodyClassWithLightMode).not.toContain('darkMode');
     });
 });

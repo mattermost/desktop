@@ -40,6 +40,11 @@ async function openSettingsWindow(electronApp: ElectronApplication) {
 
 test.describe('permissions/ipc', () => {
     test('E2E-P01: should return a valid media access status via GET_MEDIA_ACCESS_STATUS IPC', {tag: ['@P2', '@all']}, async ({electronApp}) => {
+        if (process.platform === 'linux') {
+            test.skip(true, 'systemPreferences.getMediaAccessStatus is not available on Linux');
+            return;
+        }
+
         const settingsWindow = await openSettingsWindow(electronApp);
 
         const status = await settingsWindow.evaluate(
