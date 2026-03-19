@@ -72,7 +72,7 @@ function setupWindowsPolicy({servers = [], enableServerManagement, enableAutoUpd
         '-EncodedCommand', psEncode(script),
     ]);
 
-    run(`Remove-Item -Path '${WIN_REG_PATH_HKCU}' -Recurse -Force -ErrorAction SilentlyContinue`);
+    run(`if (Test-Path -Path '${WIN_REG_PATH_HKCU}') { Remove-Item -Path '${WIN_REG_PATH_HKCU}' -Recurse -Force }`);
     run(`New-Item -Path '${WIN_REG_PATH_HKCU}' -Force | Out-Null`);
 
     if (servers.length > 0) {
@@ -144,9 +144,9 @@ function cleanupPolicy() {
             '-EncodedCommand', psEncode(script),
         ]);
 
-        run(`Remove-Item -Path '${WIN_REG_PATH_HKCU}' -Recurse -Force -ErrorAction SilentlyContinue`);
+        run(`if (Test-Path -Path '${WIN_REG_PATH_HKCU}') { Remove-Item -Path '${WIN_REG_PATH_HKCU}' -Recurse -Force }`);
         try {
-            run(`Remove-Item -Path '${WIN_REG_PATH_HKLM}' -Recurse -Force -ErrorAction SilentlyContinue`);
+            run(`if (Test-Path -Path '${WIN_REG_PATH_HKLM}') { Remove-Item -Path '${WIN_REG_PATH_HKLM}' -Recurse -Force }`);
         } catch {
             // no admin access
         }
