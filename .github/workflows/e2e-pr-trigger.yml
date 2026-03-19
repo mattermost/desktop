@@ -1,0 +1,62 @@
+name: E2E PR Trigger
+
+# Automatically adds the E2E/Run label to non-draft PRs targeting master.
+# Adding the label is what signals Matterwick to provision cloud servers and
+# dispatch the Electron Playwright Tests (e2e-functional.yml) workflow.
+# After tests complete, e2e-functional.yml and e2e-label-cleanup.yml remove the label.
+#
+# The label is removed-then-re-added on every qualifying event so that the
+# pull_request:labeled webhook always fires, even when a previous test run is
+# still in progress (label already present). This ensures Matterwick is notified
+# for every new commit on the PR.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+    branches:
+      - master
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  add-e2e-label:
+    name: Add E2E/Run label
+    runs-on: ubuntu-22.04
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Add E2E/Run label to trigger tests
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            // Remove first so re-adding always fires a labeled event — Matterwick
+            // uses that event to know a new test run is needed. Without this,
+            // pushes to a PR while tests are already running would be silently skipped.
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'E2E/Run',
+              });
+            } catch (e) {
+              if (e.status !== 404) {
+                throw e; // 404 = label wasn't present; anything else is unexpected
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['E2E/Run'],
+            });
