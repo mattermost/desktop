@@ -29,10 +29,19 @@ test.describe('menu/view', () => {
         await firstServer.waitForSelector('#post_textbox');
         const currentWidth = await firstServer.evaluate(() => window.outerWidth);
         const currentHeight = await firstServer.evaluate(() => window.outerHeight);
-        await mainWindow.click('button.three-dot-menu');
-        await mainWindow.keyboard.press('v');
-        await mainWindow.keyboard.press('t');
-        await mainWindow.keyboard.press('Enter');
+
+        // Use direct menu invocation — keyboard events sent via Playwright CDP to the
+        // web contents do not reliably reach the native Electron popup menu on Windows.
+        await electronApp.evaluate(({app}) => {
+            const viewMenu = (app as any).applicationMenu?.getMenuItemById('view');
+            const toggleItem = viewMenu?.submenu?.items?.find(
+                (item: any) => item.role === 'togglefullscreen' || item.accelerator === 'F11',
+            );
+            if (!toggleItem) {
+                throw new Error('Toggle Full Screen menu item not found');
+            }
+            toggleItem.click();
+        });
 
         await electronApp.evaluate(async ({BrowserWindow}) => {
             const win = BrowserWindow.getAllWindows()[0];
@@ -54,10 +63,14 @@ test.describe('menu/view', () => {
         const fullScreenHeight = await firstServer.evaluate(() => window.outerHeight);
         expect(fullScreenWidth).toBeGreaterThan(currentWidth as number);
         expect(fullScreenHeight).toBeGreaterThan(currentHeight as number);
-        await mainWindow.click('button.three-dot-menu');
-        await mainWindow.keyboard.press('v');
-        await mainWindow.keyboard.press('t');
-        await mainWindow.keyboard.press('Enter');
+
+        await electronApp.evaluate(({app}) => {
+            const viewMenu = (app as any).applicationMenu?.getMenuItemById('view');
+            const toggleItem = viewMenu?.submenu?.items?.find(
+                (item: any) => item.role === 'togglefullscreen' || item.accelerator === 'F11',
+            );
+            toggleItem?.click();
+        });
 
         await electronApp.evaluate(async ({BrowserWindow}) => {
             const win = BrowserWindow.getAllWindows()[0];

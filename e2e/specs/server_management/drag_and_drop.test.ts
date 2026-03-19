@@ -168,21 +168,30 @@ async function getCurrentActiveTabId() {
 }
 
 async function getCurrentActiveTabView() {
-    const webContentsId = await electronApp.evaluate(() => {
-        const refs = (global as any).__e2eTestRefs;
-        const currentServerId = refs?.ServerManager?.getCurrentServerId?.();
-        if (!currentServerId) {
-            return undefined;
-        }
+    const deadline = Date.now() + 15_000;
+    let webContentsId: number | undefined;
 
-        const activeTab = refs.TabManager.getCurrentTabForServer(currentServerId);
-        if (!activeTab) {
-            return undefined;
-        }
+    while (!webContentsId && Date.now() < deadline) {
+        webContentsId = await electronApp.evaluate(() => {
+            const refs = (global as any).__e2eTestRefs;
+            const currentServerId = refs?.ServerManager?.getCurrentServerId?.();
+            if (!currentServerId) {
+                return undefined;
+            }
 
-        const webContentsView = refs.WebContentsManager.getView(activeTab.id);
-        return webContentsView?.webContentsId;
-    });
+            const activeTab = refs.TabManager.getCurrentTabForServer(currentServerId);
+            if (!activeTab) {
+                return undefined;
+            }
+
+            const webContentsView = refs.WebContentsManager.getView(activeTab.id);
+            return webContentsView?.webContentsId;
+        });
+
+        if (!webContentsId) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+    }
 
     expect(webContentsId).toBeDefined();
     return new ServerView(electronApp, webContentsId!);

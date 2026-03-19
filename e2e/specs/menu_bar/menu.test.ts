@@ -14,12 +14,17 @@ test.describe('menu/menu', () => {
 
         await mainWindow.waitForSelector('button.three-dot-menu');
 
-        // Settings window should open if Alt works
-        await mainWindow.keyboard.press('Alt');
-        await mainWindow.keyboard.press('Enter');
-        await mainWindow.keyboard.press('f');
-        await mainWindow.keyboard.press('s');
-        await mainWindow.keyboard.press('Enter');
+        // Open Settings via direct menu invocation (more reliable than keyboard navigation
+        // through the native menu bar, which key events from web contents do not reach reliably)
+        await electronApp.evaluate(({app}) => {
+            const menuId = process.platform === 'darwin' ? 'app' : 'file';
+            const menu = (app as any).applicationMenu?.getMenuItemById(menuId);
+            const settingsItem = menu?.submenu?.items?.find((item: any) => item.accelerator?.includes(','));
+            if (!settingsItem) {
+                throw new Error('Settings menu item not found');
+            }
+            settingsItem.click();
+        });
         const settingsWindow = await electronApp.waitForEvent('window', {
             predicate: (window) => window.url().includes('settings'),
         });

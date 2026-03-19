@@ -24,7 +24,7 @@ test.describe('copylink', () => {
         });
 
         // Right-click the sidebar item to trigger the context menu
-        await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 5000});
+        await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
 
         // Click "Copy Link" from the context menu

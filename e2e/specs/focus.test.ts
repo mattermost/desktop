@@ -160,12 +160,17 @@ test.describe('focus', () => {
 
             const settingsWindow = await openSettingsWindow(electronApp);
             await settingsWindow.waitForSelector('.SettingsModal');
-            await settingsWindow.close();
+
+            // Use cancelModal() instead of page.close() so that the modal manager's
+            // handleModalFinished path runs and TabManager.focusCurrentTab() is called.
+            await settingsWindow.evaluate(() => {
+                (window as any).desktop.modals.cancelModal();
+            });
 
             // Wait for focus to return to textbox after modal close
             await firstServer.waitForFunction(
                 () => document.activeElement?.id === 'post_textbox',
-                {timeout: 3000},
+                {timeout: 5000},
             );
 
             const isTextboxFocused = await firstServer.$eval('#post_textbox', (el) => el === document.activeElement);

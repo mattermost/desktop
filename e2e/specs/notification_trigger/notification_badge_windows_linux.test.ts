@@ -68,6 +68,9 @@ test.describe('notification_badge/windows_and_linux', () => {
         expect(state!.mentionCount).toBe(0);
         expect(state!.showUnreadBadge).toBe(true);
         expect(state!.sessionExpired).toBe(false);
+        await electronApp.evaluate(() => {
+            (global as any).__testTriggerSetUnreadBadgeSetting(false);
+        });
     });
 
     test('MM-T_BADGE_WIN_03 - should show a session-expired badge on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {

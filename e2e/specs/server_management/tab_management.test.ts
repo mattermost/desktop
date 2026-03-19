@@ -96,9 +96,11 @@ test.describe('server_management/tab_management', () => {
 
             await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
 
-            let updatedServerMap = await buildServerMap(electronApp);
             const serverName = config.servers[0].name;
-            if (!updatedServerMap[serverName] || updatedServerMap[serverName].length < 2) {
+            let updatedServerMap = await buildServerMap(electronApp);
+            const tabDeadline = Date.now() + 15_000;
+            while ((!updatedServerMap[serverName] || updatedServerMap[serverName].length < 2) && Date.now() < tabDeadline) {
+                await new Promise((resolve) => setTimeout(resolve, 200));
                 updatedServerMap = await buildServerMap(electronApp);
             }
 

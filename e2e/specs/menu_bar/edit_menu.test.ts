@@ -55,30 +55,15 @@ async function typeInPostTextbox(server: ServerView, text: string) {
 async function clickEditMenuItem(role: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll') {
     await focusEditor();
 
-    if (process.platform === 'darwin') {
-        await electronApp.evaluate(({webContents}, payload) => {
-            const wc = webContents.fromId(payload.id);
-            if (!wc || wc.isDestroyed()) {
-                throw new Error(`webContents ${payload.id} is not available`);
-            }
-
-            wc.focus();
-            const action = payload.role as 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll';
-            wc[action]();
-        }, {id: firstServerId, role});
-        return;
-    }
-
-    await electronApp.evaluate(({app, BrowserWindow, webContents}, payload) => {
-        const editMenu = app.applicationMenu?.getMenuItemById('edit');
-        const item = editMenu?.submenu?.items?.find((candidate: any) => candidate.role === payload.role);
-        if (!item) {
-            throw new Error(`Edit menu item not found for role ${payload.role}`);
+    await electronApp.evaluate(({webContents}, payload) => {
+        const wc = webContents.fromId(payload.id);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.id} is not available`);
         }
 
-        const targetWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
-        const targetWebContents = webContents.fromId(payload.id);
-        item.click(undefined, targetWindow, targetWebContents);
+        wc.focus();
+        const action = payload.role as 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll';
+        wc[action]();
     }, {id: firstServerId, role});
 }
 

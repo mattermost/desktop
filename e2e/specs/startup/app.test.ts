@@ -109,6 +109,10 @@ test.describe('startup/app', () => {
         'MM-T4985 should show app name in title bar when no servers exist',
         {tag: ['@P2', '@darwin', '@win32']}, // skipped on Linux
         async ({}, testInfo) => {
+            if (process.platform === 'linux') {
+                test.skip(true, 'Linux not supported');
+                return;
+            }
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
             let emptyApp;
             let userDataDir = '';

@@ -5,8 +5,10 @@ import {test, expect} from '../../fixtures/index';
 
 async function openPreferencesFromAppMenu(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
     await electronApp.evaluate(async ({app}) => {
-        const appMenu = (app as any).applicationMenu.getMenuItemById('app');
-        const preferencesItem = appMenu?.submenu?.items?.find((item: any) => item.accelerator?.includes(','));
+        // On macOS the Preferences item lives in the app menu; on other platforms it's in the file menu
+        const menuId = process.platform === 'darwin' ? 'app' : 'file';
+        const menu = (app as any).applicationMenu.getMenuItemById(menuId);
+        const preferencesItem = menu?.submenu?.items?.find((item: any) => item.accelerator?.includes(','));
         if (!preferencesItem) {
             throw new Error('Preferences menu item not found');
         }

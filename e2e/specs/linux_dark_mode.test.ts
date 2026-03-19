@@ -3,18 +3,21 @@
 
 import {test, expect} from '../fixtures/index';
 
-async function toggleDarkMode(page: import('playwright').Page) {
-    await page.keyboard.press('Alt');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('v');
-    await page.keyboard.press('t');
-    await new Promise((resolve) => setTimeout(resolve, 500)); // sometimes the second 't' doesn't fire
-    await page.keyboard.press('t'); // Click on "Toggle Dark Mode" menu item
-    await page.keyboard.press('Enter');
+async function toggleDarkMode(electronApp: import('playwright').ElectronApplication) {
+    await electronApp.evaluate(({app}) => {
+        const viewMenu = (app as any).applicationMenu?.getMenuItemById('view');
+        const darkModeItem = viewMenu?.submenu?.items?.find(
+            (item: any) => item.label?.toLowerCase().includes('dark mode'),
+        );
+        if (!darkModeItem) {
+            throw new Error('Toggle Dark Mode menu item not found in View menu');
+        }
+        darkModeItem.click();
+    });
 }
 
 test.describe('dark_mode', () => {
-    test('MM-T2465 Linux Dark Mode Toggle', {tag: ['@P2', '@linux']}, async ({mainWindow}) => {
+    test('MM-T2465 Linux Dark Mode Toggle', {tag: ['@P2', '@linux']}, async ({mainWindow, electronApp}) => {
         if (process.platform !== 'linux') {
             test.skip(true, 'Linux only');
             return;
@@ -23,7 +26,7 @@ test.describe('dark_mode', () => {
         expect(mainWindow).not.toBeNull();
 
         // Toggle Dark Mode
-        await toggleDarkMode(mainWindow);
+        await toggleDarkMode(electronApp);
 
         // Wait for dark mode class to be applied
         // Linux needs more time for dark mode to propagate through the window manager
@@ -35,7 +38,7 @@ test.describe('dark_mode', () => {
         expect(topBarElementClassWithDarkMode).toContain('darkMode');
 
         // Toggle Light Mode
-        await toggleDarkMode(mainWindow);
+        await toggleDarkMode(electronApp);
 
         // Wait for dark mode class to be removed
         await mainWindow.waitForSelector('.topBar:not(.darkMode)', {timeout: 10000});

@@ -260,8 +260,19 @@ async function resetWindowMenuState() {
 
 async function createExtraTabs() {
     await mainWindow.click('#newTabButton');
+    await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
     await mainWindow.click('#newTabButton');
-    return buildServerMap(electronApp);
+    await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
+
+    // Wait until WebContentsManager has registered all 3 views
+    const serverName = windowMenuConfig.servers[0].name;
+    let map = await buildServerMap(electronApp);
+    const deadline = Date.now() + 15_000;
+    while ((map[serverName]?.length ?? 0) < 3 && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        map = await buildServerMap(electronApp);
+    }
+    return map;
 }
 
 test.describe('Menu/window_menu', () => {
