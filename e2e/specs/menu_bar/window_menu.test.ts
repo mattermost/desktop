@@ -440,8 +440,8 @@ test.describe('Menu/window_menu', () => {
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         if (process.platform === 'darwin') {
-            // macOS: call minimize() directly on the BrowserWindow
-            await browserWindow.evaluate((window) => (window as any).minimize());
+            // macOS: Cmd+M is the standard minimize shortcut
+            await mainWindow.keyboard.press('Meta+m');
         } else {
             // Windows: navigate the three-dot menu (Window > Minimize)
             await mainWindow.click('button.three-dot-menu');

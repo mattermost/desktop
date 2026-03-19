@@ -52,6 +52,11 @@ export async function clickApplicationMenuItem(
                     stack.push(...submenuItems);
                 }
 
+                const {id, role, accelerator, label, labelIncludes} = payload.matcher;
+                if (!id && !role && !accelerator && !label && !labelIncludes) {
+                    throw new Error('Menu item matcher must specify at least one criterion (id, role, accelerator, label, or labelIncludes)');
+                }
+
                 const item = items.find((candidate: any) => {
                     if (payload.matcher.id && candidate.id !== payload.matcher.id) {
                         return false;

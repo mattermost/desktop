@@ -69,6 +69,7 @@ async function closeElectronApp(app: ElectronApplication, dataDir: string) {
         } catch {
             // already exited
         }
+        return;
     }
 
     await waitForLockFileRelease(dataDir).catch(() => {});

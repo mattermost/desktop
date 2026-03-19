@@ -14,7 +14,7 @@ type WaitForFunctionOptions = {
 };
 
 type ClickOptions = {
-    button?: 'left' | 'right' | 'middle';
+    button?: 'left' | 'right';
 };
 
 type InputFile = {
