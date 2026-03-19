@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import * as path from 'path';
+
 import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
@@ -13,7 +15,7 @@ test(
     {tag: ['@P0', '@all']},
     async ({}, testInfo) => {
         const {mkdirSync} = await import('fs');
-        const userDataDir = testInfo.outputDir + '/tray-userdata';
+        const userDataDir = path.join(testInfo.outputDir, 'tray-userdata');
         mkdirSync(userDataDir, {recursive: true});
 
         // Enable tray + minimize-to-tray

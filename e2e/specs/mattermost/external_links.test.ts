@@ -70,6 +70,15 @@ test.describe('external_links', () => {
             }
         });
         expect(internalWindowOpened).toBe(false);
+
+        await electronApp.evaluate(({shell}) => {
+            const original = (shell as any).__e2eOriginalOpenExternal;
+            if (original) {
+                shell.openExternal = original;
+            }
+            delete (shell as any).__e2eOpenExternalCalls;
+            delete (shell as any).__e2eOriginalOpenExternal;
+        });
     });
 
     test('MM-T_EL_2 clicking an internal Mattermost channel link stays in the app', {tag: ['@P2', '@all']}, async ({electronApp, serverMap}) => {
@@ -112,5 +121,14 @@ test.describe('external_links', () => {
         const openExternalCalls = await electronApp.evaluate(({shell}) => (shell as any).__e2eOpenExternalCalls ?? []);
         expect(openExternalCalls).toHaveLength(0);
         await expect.poll(async () => firstServer!.url(), {timeout: 10_000}).toContain('/channels/');
+
+        await electronApp.evaluate(({shell}) => {
+            const original = (shell as any).__e2eOriginalOpenExternal;
+            if (original) {
+                shell.openExternal = original;
+            }
+            delete (shell as any).__e2eOpenExternalCalls;
+            delete (shell as any).__e2eOriginalOpenExternal;
+        });
     });
 });

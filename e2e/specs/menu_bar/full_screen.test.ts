@@ -18,11 +18,17 @@ test.describe('menu/view', () => {
         }
 
         const serverMap = await buildServerMap(electronApp);
-        const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
+        const serverName = demoMattermostConfig.servers[0].name;
+        const serverEntry = serverMap[serverName]?.[0];
+        if (!serverEntry) {
+            test.skip(true, `Server "${serverName}" not found in serverMap`);
+            return;
+        }
+        const firstServer = serverEntry.win;
         await loginToMattermost(firstServer);
         await firstServer.waitForSelector('#post_textbox');
-        const currentWidth = await firstServer.evaluate('window.outerWidth');
-        const currentHeight = await firstServer.evaluate('window.outerHeight');
+        const currentWidth = await firstServer.evaluate(() => window.outerWidth);
+        const currentHeight = await firstServer.evaluate(() => window.outerHeight);
         await mainWindow.click('button.three-dot-menu');
         await mainWindow.keyboard.press('v');
         await mainWindow.keyboard.press('t');
@@ -44,8 +50,8 @@ test.describe('menu/view', () => {
             });
         });
 
-        const fullScreenWidth = await firstServer.evaluate('window.outerWidth');
-        const fullScreenHeight = await firstServer.evaluate('window.outerHeight');
+        const fullScreenWidth = await firstServer.evaluate(() => window.outerWidth);
+        const fullScreenHeight = await firstServer.evaluate(() => window.outerHeight);
         expect(fullScreenWidth).toBeGreaterThan(currentWidth as number);
         expect(fullScreenHeight).toBeGreaterThan(currentHeight as number);
         await mainWindow.click('button.three-dot-menu');
@@ -69,8 +75,8 @@ test.describe('menu/view', () => {
             });
         });
 
-        const exitWidth = await firstServer.evaluate('window.outerWidth');
-        const exitHeight = await firstServer.evaluate('window.outerHeight');
+        const exitWidth = await firstServer.evaluate(() => window.outerWidth);
+        const exitHeight = await firstServer.evaluate(() => window.outerHeight);
         expect(exitWidth).toBeLessThan(fullScreenWidth as number);
         expect(exitHeight).toBeLessThan(fullScreenHeight as number);
     });

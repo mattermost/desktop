@@ -64,7 +64,9 @@ test(
         }, webContentsId);
 
         // The view should attempt to reconnect (URL still points to server)
-        const urlAfterRestore = await serverWin.url();
-        expect(urlAfterRestore).toContain(new URL(process.env.MM_TEST_SERVER_URL!).host);
+        await expect.poll(
+            () => serverWin.url(),
+            {timeout: 10_000, message: 'URL should contain server host after restore'},
+        ).toContain(new URL(process.env.MM_TEST_SERVER_URL!).host);
     },
 );
