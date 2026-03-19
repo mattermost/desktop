@@ -30,6 +30,20 @@ const config = {
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 type ServerWin = ServerMap[string][number]['win'];
 
+async function focusMainWindow(app: ElectronApplication) {
+    const mainWindowPage = app.windows().find((w) => {
+        try {
+            return w.url().includes('index');
+        } catch {
+            return false;
+        }
+    });
+    if (mainWindowPage) {
+        const bw = await app.browserWindow(mainWindowPage);
+        await bw.evaluate((win) => (win as Electron.BrowserWindow).focus()).catch(() => {});
+    }
+}
+
 async function openSettingsWindow(electronApp: ElectronApplication) {
     const existingWindow = electronApp.windows().find((window) => window.url().includes('settings'));
     if (existingWindow) {
@@ -161,6 +175,10 @@ test.describe('focus', () => {
         await firstServer.focus('#post_textbox');
 
         await switchToServer(electronApp, 'example');
+
+        // Ensure the main BrowserWindow has OS focus so that parentWindow.isFocused()
+        // returns true when TabManager.focusCurrentTab() is called after modal close.
+        await focusMainWindow(electronApp);
     });
 
     test.describe('Focus textbox tests', () => {

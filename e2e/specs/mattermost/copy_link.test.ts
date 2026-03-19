@@ -27,8 +27,13 @@ test.describe('copylink', () => {
         await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
 
-        // Click "Copy Link" from the context menu
-        const copyLinkItem = await firstServer.waitForSelector('button:has-text("Copy Link")', {timeout: 5000});
+        // Click "Copy Link" from the context menu.
+        // Use a longer timeout to accommodate CI latency, and match both "Copy Link"
+        // and "Copy link" (capitalization varies by Mattermost version).
+        const copyLinkItem = await firstServer.waitForSelector(
+            'button:has-text("Copy Link"), button:has-text("Copy link")',
+            {timeout: 15_000},
+        );
         await copyLinkItem.click();
 
         const clipboardText = await electronApp.evaluate(({clipboard}) => {

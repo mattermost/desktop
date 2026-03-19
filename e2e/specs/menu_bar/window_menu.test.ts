@@ -126,7 +126,11 @@ async function clickWindowMenuItem(
                     throw new Error(`Window menu item not found: ${JSON.stringify(expected)}`);
                 }
 
-                item.click(undefined, BrowserWindow.getFocusedWindow(), undefined);
+                // getFocusedWindow() may return null in headless CI; fall back to the first open window
+                const targetWindow = BrowserWindow.getFocusedWindow() ??
+                    BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
+                    null;
+                item.click(undefined, targetWindow, undefined);
             }, matcher);
             return;
         } catch (error) {

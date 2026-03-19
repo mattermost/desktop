@@ -176,6 +176,12 @@ test.describe('menu/view', () => {
         } else {
             await clickApplicationMenuItem(electronApp, 'view', {accelerator: 'CmdOrCtrl+F'}, {webContentsId: firstServerId});
         }
+
+        // The search bar opens asynchronously — wait for it to become the active element.
+        await firstServer.waitForFunction(
+            () => document.querySelector('input.search-bar.form-control') === document.activeElement,
+            {timeout: 5_000},
+        );
         const isFocused = await firstServer.$eval('input.search-bar.form-control', (el) => el === document.activeElement);
         expect(isFocused).toBe(true);
         const text = await firstServer.inputValue('input.search-bar.form-control');

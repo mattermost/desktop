@@ -43,7 +43,9 @@ test.describe('application', () => {
 
     test.afterAll(async () => {
         await app?.close();
-        await waitForLockFileRelease(userDataDir);
+        if (userDataDir) {
+            await waitForLockFileRelease(userDataDir).catch(() => {});
+        }
     });
 
     test('MM-T1304/MM-T1306 should open the app on the requested deep link', {tag: ['@P2', '@win32']}, async () => {

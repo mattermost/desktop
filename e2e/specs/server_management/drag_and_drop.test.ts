@@ -12,7 +12,6 @@ import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from 
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
-import {ServerView} from '../../helpers/serverView';
 
 if (!process.env.MM_TEST_SERVER_URL) {
     test.skip(true, 'MM_TEST_SERVER_URL required');
@@ -167,36 +166,6 @@ async function getCurrentActiveTabId() {
     return tabId!;
 }
 
-async function getCurrentActiveTabView() {
-    const deadline = Date.now() + 15_000;
-    let webContentsId: number | undefined;
-
-    while (!webContentsId && Date.now() < deadline) {
-        webContentsId = await electronApp.evaluate(() => {
-            const refs = (global as any).__e2eTestRefs;
-            const currentServerId = refs?.ServerManager?.getCurrentServerId?.();
-            if (!currentServerId) {
-                return undefined;
-            }
-
-            const activeTab = refs.TabManager.getCurrentTabForServer(currentServerId);
-            if (!activeTab) {
-                return undefined;
-            }
-
-            const webContentsView = refs.WebContentsManager.getView(activeTab.id);
-            return webContentsView?.webContentsId;
-        });
-
-        if (!webContentsId) {
-            await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-    }
-
-    expect(webContentsId).toBeDefined();
-    return new ServerView(electronApp, webContentsId!);
-}
-
 async function getVisibleTabOrder() {
     const tabs = mainWindow.locator('.TabBar li.serverTabItem');
     const tabCount = await tabs.count();
@@ -248,15 +217,26 @@ test.describe('server_management/drag_and_drop', () => {
             await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
             await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
 
+            // Wait until all 3 views are registered in WebContentsManager before accessing them.
+            // Using buildServerMap by index avoids a race condition where the IPC tab-switch
+            // message from the renderer hasn't yet been processed by the main process when
+            // getCurrentActiveTabView() runs.
+            const serverName = config.servers[0].name;
+            let localServerMap = await buildServerMap(electronApp);
+            await expect.poll(async () => {
+                localServerMap = await buildServerMap(electronApp);
+                return localServerMap[serverName]?.length ?? 0;
+            }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
+
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
             await secondTab.click();
-            const secondView = await getCurrentActiveTabView();
+            const secondView = localServerMap[serverName][1].win;
             await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
             await secondView.click('#sidebarItem_off-topic');
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
             await thirdTab.click();
-            const thirdView = await getCurrentActiveTabView();
+            const thirdView = localServerMap[serverName][2].win;
             await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
             await thirdView.click('#sidebarItem_town-square');
 
@@ -278,15 +258,22 @@ test.describe('server_management/drag_and_drop', () => {
             await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
             await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
 
+            const serverName = config.servers[0].name;
+            let localServerMap = await buildServerMap(electronApp);
+            await expect.poll(async () => {
+                localServerMap = await buildServerMap(electronApp);
+                return localServerMap[serverName]?.length ?? 0;
+            }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
+
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
             await secondTab.click();
-            const secondView = await getCurrentActiveTabView();
+            const secondView = localServerMap[serverName][1].win;
             await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
             await secondView.click('#sidebarItem_off-topic');
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
             await thirdTab.click();
-            const thirdView = await getCurrentActiveTabView();
+            const thirdView = localServerMap[serverName][2].win;
             await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
             await thirdView.click('#sidebarItem_town-square');
 

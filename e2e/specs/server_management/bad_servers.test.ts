@@ -51,6 +51,43 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
     return newServerView;
 }
 
+/**
+ * Wait for the renderer's MainPage to fully mount (so its onLoadFailed listener is
+ * registered), then reload the current server view so any load failure that fired
+ * before the listener was ready is re-triggered and properly propagated to the UI.
+ *
+ * Pre-configured bad-server tests fail without this because Chromium can reject an
+ * SSL certificate before the renderer finishes mounting and registering IPC listeners,
+ * causing the ErrorView never to appear.
+ */
+async function waitForRendererThenReload(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
+    const mainWindow = app.windows().find((w) => w.url().includes('index'));
+    if (!mainWindow) {
+        return;
+    }
+
+    // ServerDropdownButton renders once componentDidMount has finished and IPC listeners
+    // are registered, so waiting for it is a reliable proxy for "renderer is ready".
+    await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000}).catch(() => {});
+
+    // Reload the current server view so the load-failure fires after the listener is set.
+    await app.evaluate(({webContents}) => {
+        const refs = (global as any).__e2eTestRefs;
+        const currentServerId = refs?.ServerManager?.getCurrentServerId?.();
+        if (!currentServerId) {
+            return;
+        }
+        const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(currentServerId) ?? [];
+        if (views.length === 0) {
+            return;
+        }
+        const wcEntry = refs.WebContentsManager?.getView?.(views[0].id);
+        if (wcEntry?.webContentsId) {
+            webContents.fromId(wcEntry.webContentsId)?.reload?.();
+        }
+    });
+}
+
 async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
     expect(mainView).toBeDefined();
@@ -276,6 +313,10 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: badCertUserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
+                // Ensure the renderer has mounted its IPC listeners before the load failure
+                // fires, then reload to re-trigger the failure so it reaches the UI.
+                await waitForRendererThenReload(app);
+
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
                 await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
@@ -383,6 +424,10 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: rc4UserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
+                // Ensure the renderer has mounted its IPC listeners before the load failure
+                // fires, then reload to re-trigger the failure so it reaches the UI.
+                await waitForRendererThenReload(app);
+
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
                 await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});

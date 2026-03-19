@@ -95,7 +95,11 @@ async function clickFileMenuItem(app: ElectronApplication, label: string) {
             throw new Error(`File menu item not found: ${expectedLabel}`);
         }
 
-        item.click(undefined, BrowserWindow.getFocusedWindow(), undefined);
+        // getFocusedWindow() may return null in headless CI; fall back to the first open window
+        const targetWindow = BrowserWindow.getFocusedWindow() ??
+            BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
+            null;
+        item.click(undefined, targetWindow, undefined);
     }, label);
 }
 

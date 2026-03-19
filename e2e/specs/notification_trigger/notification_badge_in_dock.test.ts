@@ -34,6 +34,14 @@ test.describe('Trigger Notification From desktop', () => {
             const textbox = await firstServer.waitForSelector('#post_textbox');
             await textbox.focus();
 
+            // The notification trigger depends on the Customize Your Experience tour button.
+            // Skip if it's not available in this server version.
+            const tourButton = await firstServer.$('div#CustomizeYourExperienceTour > button');
+            if (!tourButton) {
+                test.skip(true, 'CustomizeYourExperienceTour not available in this server version');
+                return;
+            }
+
             const beforeBadgeValue = await electronApp.evaluate(async ({app}) => {
                 const badge = (app as any).dock.getBadge();
                 return badge === '' || isNaN(badge) ? 0 : parseInt(badge, 10);
