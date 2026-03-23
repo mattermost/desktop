@@ -393,8 +393,13 @@ export class PopoutManager {
         }
         view.sendToRenderer(MESSAGE_FROM_PARENT, channel, ...args);
     };
-  
+
     private handleWindowClose = (event: IpcMainEvent) => {
+        const webContentsView = WebContentsManager.getViewByWebContentsId(event.sender.id);
+        if (!webContentsView) {
+            return;
+        }
+
         const view = ViewManager.getView(webContentsView.id);
         if (!view || view.type !== ViewType.WINDOW) {
             return;
