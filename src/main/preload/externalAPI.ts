@@ -172,3 +172,16 @@ const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 setInterval(() => {
     webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
+
+// Do not allow window.close to be called from the renderer process
+// Instead, force it through the main process
+contextBridge.executeInMainWorld({
+    func: () => {
+        Object.defineProperty(window, 'close', {
+            configurable: false,
+            enumerable: false,
+            writable: false,
+            value: () => {},
+        });
+    },
+});
