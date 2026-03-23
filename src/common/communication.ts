@@ -243,6 +243,9 @@ export const MESSAGE_FROM_POPOUT = 'message-from-popout';
 export const POPOUT_CLOSED = 'popout-closed';
 export const UPDATE_POPOUT_TITLE_TEMPLATE = 'update-popout-title-template';
 
+// View close
+export const WINDOW_CLOSE = 'window-close';
+
 // View limit events
 export const VIEW_LIMIT_UPDATED = 'view-limit-updated';
 export const GET_IS_VIEW_LIMIT_REACHED = 'get-is-view-limit-reached';
