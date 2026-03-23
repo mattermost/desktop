@@ -842,6 +842,43 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(views.get('server-1_view-1').sendToRenderer).not.toHaveBeenCalled();
         });
 
+        it('should return sources for a non-Calls view when no call is active', async () => {
+            callsWidgetWindow.mainView = undefined;
+            callsWidgetWindow.options = undefined;
+            callsWidgetWindow.getViewURL = jest.fn().mockReturnValue(undefined);
+            WebContentsManager.getServerURLByViewId.mockReturnValue('http://server-1.com');
+
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+            ]);
+
+            const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 3}}, null);
+            expect(sources).toEqual([
+                {
+                    id: 'screen0',
+                },
+            ]);
+            expect(PermissionsManager.doPermissionRequest).toHaveBeenCalledWith(
+                3,
+                'screenShare',
+                {requestingUrl: 'http://server-1.com', isMainFrame: false},
+            );
+        });
+
+        it('should throw when no call is active and view has no server URL', async () => {
+            callsWidgetWindow.mainView = undefined;
+            callsWidgetWindow.options = undefined;
+            callsWidgetWindow.getViewURL = jest.fn().mockReturnValue(undefined);
+            WebContentsManager.getServerURLByViewId.mockReturnValue(undefined);
+
+            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 3}}, null)).rejects.toThrow('serverURL not found');
+        });
+
         it('macos - no permissions', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
