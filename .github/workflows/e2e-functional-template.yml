@@ -36,7 +36,7 @@ on:
         default: false
       TYPE:
         type: string
-        description: "e.g. MASTER, PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
+        description: "e.g. PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
         required: false
         default: "PR"
       MM_SERVER_VERSION:
@@ -164,32 +164,29 @@ jobs:
           echo "RUNNER_OS=${RUNNER_OS}" >> $GITHUB_ENV
           
           # Define build type and suffix
+          INPUT_TYPE="${{ inputs.TYPE }}"
           case "${{ github.event_name }}" in
             "pull_request")
               echo "BUILD_SUFFIX=desktop-pr-${RUNNER_OS}" >> $GITHUB_OUTPUT
-              echo "TYPE=PR" >> $GITHUB_ENV
+              echo "TYPE=${INPUT_TYPE:-PR}" >> $GITHUB_ENV
               ;;
             "workflow_dispatch")
               if ${{ inputs.cmt }}; then
                 echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=CMT" >> $GITHUB_ENV
+                echo "TYPE=${INPUT_TYPE:-CMT}" >> $GITHUB_ENV
                 echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-                echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{ 
-                  runner.os == 'Linux' && '12358649' || 
-                  runner.os == 'macOS' && '12358650' || 
-                  '12358651' 
+                echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{
+                  runner.os == 'Linux' && '12358649' ||
+                  runner.os == 'macOS' && '12358650' ||
+                  '12358651'
                 }}" >> $GITHUB_ENV
               else
                 echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=MANUAL" >> $GITHUB_ENV
+                echo "TYPE=${INPUT_TYPE:-MANUAL}" >> $GITHUB_ENV
               fi
               ;;
             "push")
-              if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-                echo "BUILD_SUFFIX=desktop-master-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=MASTER" >> $GITHUB_ENV
-                echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-              fi
+              echo "BUILD_SUFFIX=desktop-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
               ;;
           esac
           

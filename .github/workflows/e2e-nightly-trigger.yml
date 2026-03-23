@@ -1,0 +1,16 @@
+name: E2E Nightly Trigger
+
+# This is a lightweight trigger workflow.
+# Matterwick receives the workflow_run:requested event, provisions 3 Mattermost cloud
+# instances (linux/macos/windows), and dispatches e2e-functional.yml with instance details.
+# When e2e-functional.yml completes, Matterwick destroys the provisioned instances.
+on:
+  schedule:
+    - cron: "0 0 * * 4,5" # Thursday and Friday midnight UTC
+
+jobs:
+  signal:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Signal Matterwick to provision nightly E2E servers
+        run: echo "Nightly E2E trigger started. Matterwick provisions servers via workflow_run event."

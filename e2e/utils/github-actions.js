@@ -1,5 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
+/* eslint-disable no-console -- Logging is intentional in CI utility scripts */
 
 /**
  * Update initial pending status for all platforms
@@ -63,7 +64,82 @@ async function updateFinalStatus({github, context, platforms, outputs}) {
     }));
 }
 
+/**
+ * Remove E2E/Run label when workflow triggered via Matterwick
+ * @param {Object} params - Parameters object
+ * @param {Object} params.github - GitHub API client from actions/github-script
+ * @param {Object} params.context - GitHub Actions context
+ */
+async function removeE2ELabel({github, context}) {
+    try {
+        // Get the current run to check if it was triggered by workflow_dispatch
+        const run = await github.rest.actions.getWorkflowRun({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: context.runId,
+        });
+
+        // Only remove the label if this was triggered via workflow_dispatch (Matterwick)
+        if (run.data.event !== 'workflow_dispatch') {
+            console.log('Label removal skipped - workflow run is not triggered by workflow_dispatch (Matterwick)');
+            return;
+        }
+
+        // Try to find associated PR
+        let prNumber = null;
+
+        // First try: check run.data.pull_requests (reliable for pull_request events)
+        if (run.data.pull_requests && run.data.pull_requests.length > 0) {
+            prNumber = run.data.pull_requests[0].number;
+        } else {
+            // Second try: query PRs by head branch (more reliable for workflow_dispatch)
+            const branchName = run.data.head_branch;
+            if (branchName) {
+                // Use the actual head repository owner (supports fork PRs)
+                const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
+                const prs = await github.rest.pulls.list({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    state: 'open',
+                    head: `${headOwner}:${branchName}`,
+                });
+                if (prs.data && prs.data.length > 0) {
+                    // Prefer the PR whose head SHA matches the workflow run's head SHA
+                    const matchingPr = prs.data.find(
+                        (pr) => pr.head && pr.head.sha === run.data.head_sha,
+                    );
+                    if (matchingPr) {
+                        prNumber = matchingPr.number;
+                    } else {
+                        prNumber = prs.data[0].number;
+                    }
+                }
+            }
+        }
+
+        if (prNumber) {
+            await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                name: 'E2E/Run',
+            });
+        } else {
+            console.log('Label removal skipped - could not find associated PR');
+        }
+    } catch (error) {
+        if (error && error.status === 404) {
+            console.log(`Label removal skipped - label or resource not found (404). Details: ${error.message}`);
+        } else if (error && error.status === 403) {
+            console.log(`Label removal failed - insufficient permissions (403). Details: ${error.message}`);
+        } else {
+            console.log(`Label removal failed - unexpected error: status=${error && error.status}, message=${error && error.message}`);
+        }
+    }
+}
+
 module.exports = {
     updateInitialStatus,
     updateFinalStatus,
+    removeE2ELabel,
 };

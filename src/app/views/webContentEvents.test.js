@@ -59,7 +59,7 @@ jest.mock('common/constants', () => ({
 }));
 
 jest.mock('main/security/allowProtocolDialog', () => ({
-    handleDialogEvent: jest.fn(),
+    handleDialogEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('app/views/webContentsManager', () => ({

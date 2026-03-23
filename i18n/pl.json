@@ -1,6 +1,8 @@
 {
   "app.menus.contextMenu.openInNewTab": "Otwórz w nowej karcie",
   "app.menus.contextMenu.openInNewWindow": "Otwórz w nowym oknie",
+  "app.navigationManager.invalidLinkDescription": "Link, który kliknąłeś, wydaje się być zniekształcony i nie można go otworzyć. Przed ponowną próbą sprawdź adres URL pod kątem błędów.",
+  "app.navigationManager.invalidLinkTitle": "Nieprawidłowy Link",
   "app.navigationManager.viewLimitReached": "Osiągnięto limit wyświetleń",
   "app.navigationManager.viewLimitReached.description": "Osiągnąłeś maksymalną liczbę otwartych okien i kart dla tego serwera. Zamknij istniejące okno lub kartę albo dostosuj limit widoku w modalu Ustawienia.",
   "callsWidgetWindow.cannotStartCall.message": "Na innym serwerze trwa połączenie, które musi zostać zakończone przed dołączeniem do nowego połączenia.",

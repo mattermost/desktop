@@ -16,6 +16,20 @@ import {allowedProtocolFile} from '../constants';
 
 const log = new Logger('AllowProtocolDialog');
 
+// Protocols that must never be opened via shell.openExternal regardless of user choice.
+// These are known attack vectors for remote code execution or local file access.
+const BLOCKED_PROTOCOLS = new Set([
+    'file:',
+    // eslint-disable-next-line no-script-url
+    'javascript:',
+    'data:',
+    'vbscript:',
+    'ms-msdt:', // CVE-2021-34527 / Follina — MSDT remote code execution
+    'search-ms:', // Windows Search protocol — can be abused for UNC path injection
+    'ms-appinstaller:', // CVE-2021-43890 — App Installer malware distribution vector
+    'ms-officecmd:', // Office command handler — can trigger macro execution
+]);
+
 export class AllowProtocolDialog {
     allowedProtocols: string[];
 
@@ -37,6 +51,10 @@ export class AllowProtocolDialog {
 
     addScheme = (scheme: string) => {
         const proto = `${scheme}:`;
+        if (BLOCKED_PROTOCOLS.has(proto)) {
+            log.warn(`Refusing to add blocked protocol to allowlist: ${proto}`);
+            return;
+        }
         if (!this.allowedProtocols.includes(proto)) {
             this.allowedProtocols.push(proto);
         }
@@ -45,6 +63,11 @@ export class AllowProtocolDialog {
     handleDialogEvent = async (url: URL) => {
         const protocol = url.protocol;
         const serializedURL = url.toString();
+
+        if (BLOCKED_PROTOCOLS.has(protocol)) {
+            log.warn(`Blocked attempt to open dangerous protocol: ${protocol}`);
+            return;
+        }
 
         try {
             if (this.allowedProtocols.indexOf(protocol) !== -1) {
