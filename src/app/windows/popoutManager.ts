@@ -34,6 +34,7 @@ import {
     MESSAGE_FROM_POPOUT,
     POPOUT_CLOSED,
     UPDATE_TARGET_URL,
+    WINDOW_CLOSE,
 } from 'common/communication';
 import {POPOUT_RATE_LIMIT} from 'common/constants';
 import {Logger} from 'common/log';
@@ -63,6 +64,7 @@ export class PopoutManager {
         ipcMain.handle(CAN_POPOUT, this.handleCanPopout);
         ipcMain.handle(OPEN_POPOUT, this.handleOpenPopout);
         ipcMain.handle(CAN_USE_POPOUT_OPTION, this.handleCanUsePopoutOption);
+        ipcMain.on(WINDOW_CLOSE, this.handleWindowClose);
         ipcMain.on(SEND_TO_PARENT, this.handleSendToParent);
         ipcMain.on(SEND_TO_POPOUT, this.handleSendToPopout);
         ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
@@ -370,6 +372,20 @@ export class PopoutManager {
             return;
         }
         view.sendToRenderer(MESSAGE_FROM_PARENT, channel, ...args);
+    };
+
+    private handleWindowClose = (event: IpcMainEvent) => {
+        const webContentsView = WebContentsManager.getViewByWebContentsId(event.sender.id);
+        if (!webContentsView) {
+            return;
+        }
+
+        const view = ViewManager.getView(webContentsView.id);
+        if (!view || view.type !== ViewType.WINDOW) {
+            return;
+        }
+
+        this.onClosePopout(view.id)();
     };
 
     private handleClearCacheAndReload = (event: IpcMainEvent) => {
