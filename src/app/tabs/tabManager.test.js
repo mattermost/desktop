@@ -67,6 +67,7 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
 jest.mock('app/views/webContentsManager', () => ({
     createView: jest.fn(),
     getView: jest.fn(),
+    getViewByWebContentsId: jest.fn(),
     removeView: jest.fn(),
     clearCacheAndReloadView: jest.fn(),
 }));
@@ -1222,6 +1223,61 @@ describe('TabManager', () => {
 
             // Verify switchToTab was called
             expect(switchToTabSpy).toHaveBeenCalledWith('new-tab-id');
+        });
+    });
+
+    describe('handleWindowClose', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should remove the tab when it is not the last tab for the server', () => {
+            const tabManager = new TabManager();
+            tabManager.tabOrder.set('test-server-id', ['tab1', 'tab2', 'tab3']);
+
+            ViewManager.getView.mockImplementation((id) => ({
+                id,
+                serverId: 'test-server-id',
+                type: ViewType.TAB,
+                toUniqueView: jest.fn(() => ({id, serverId: 'test-server-id', type: ViewType.TAB})),
+            }));
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'tab2'});
+
+            tabManager.handleWindowClose({sender: {id: 100}});
+
+            expect(ViewManager.removeView).toHaveBeenCalledWith('tab2');
+        });
+
+        it('should not remove the tab when it is the last tab for the server', () => {
+            const tabManager = new TabManager();
+            tabManager.tabOrder.set('test-server-id', ['tab1']);
+
+            ViewManager.getView.mockReturnValue({
+                id: 'tab1',
+                serverId: 'test-server-id',
+                type: ViewType.TAB,
+                toUniqueView: jest.fn(() => ({id: 'tab1', serverId: 'test-server-id', type: ViewType.TAB})),
+            });
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'tab1'});
+
+            tabManager.handleWindowClose({sender: {id: 100}});
+
+            expect(ViewManager.removeView).not.toHaveBeenCalled();
+        });
+
+        it('should do nothing when view is not a TAB type', () => {
+            const tabManager = new TabManager();
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'window-id'});
+            ViewManager.getView.mockReturnValue({
+                id: 'window-id',
+                serverId: 'test-server-id',
+                type: ViewType.WINDOW,
+            });
+
+            tabManager.handleWindowClose({sender: {id: 100}});
+
+            expect(ViewManager.removeView).not.toHaveBeenCalled();
         });
     });
 
