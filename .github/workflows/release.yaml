@@ -13,6 +13,7 @@ defaults:
 env:
   TERM: xterm
   MM_WIN_INSTALLERS: 1
+  MM_DESKTOP_BUILD_SENTRYDSN: ${{ secrets.MM_DESKTOP_BUILD_SENTRYDSN }}
 
 jobs:
   begin-notification:
