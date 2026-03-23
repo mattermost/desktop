@@ -36,6 +36,7 @@ import {
     POPOUT_CLOSED,
     UPDATE_TARGET_URL,
     WINDOW_CLOSE,
+    UPDATE_POPOUT_TITLE_TEMPLATE,
 } from 'common/communication';
 import Config from 'common/config';
 import {POPOUT_RATE_LIMIT} from 'common/constants';
@@ -70,6 +71,7 @@ export class PopoutManager {
         ipcMain.on(SEND_TO_PARENT, this.handleSendToParent);
         ipcMain.on(SEND_TO_POPOUT, this.handleSendToPopout);
         ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
+        ipcMain.on(UPDATE_POPOUT_TITLE_TEMPLATE, this.handleUpdatePopoutTitleTemplate);
 
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
         ViewManager.on(VIEW_REMOVED, this.handleViewRemoved);
@@ -391,19 +393,31 @@ export class PopoutManager {
         }
         view.sendToRenderer(MESSAGE_FROM_PARENT, channel, ...args);
     };
-
+  
     private handleWindowClose = (event: IpcMainEvent) => {
-        const webContentsView = WebContentsManager.getViewByWebContentsId(event.sender.id);
-        if (!webContentsView) {
-            return;
-        }
-
         const view = ViewManager.getView(webContentsView.id);
         if (!view || view.type !== ViewType.WINDOW) {
             return;
         }
 
         this.onClosePopout(view.id)();
+    };
+
+    private handleUpdatePopoutTitleTemplate = (event: IpcMainEvent, titleTemplate: string) => {
+        if (typeof titleTemplate !== 'string') {
+            return;
+        }
+
+        const webContentsView = WebContentsManager.getViewByWebContentsId(event.sender.id);
+        if (!webContentsView) {
+            return;
+        }
+
+        if (ViewManager.getView(webContentsView.id)?.type !== ViewType.WINDOW) {
+            return;
+        }
+
+        ViewManager.updateViewTitleTemplate(webContentsView.id, titleTemplate);
     };
 
     private handleClearCacheAndReload = (event: IpcMainEvent) => {

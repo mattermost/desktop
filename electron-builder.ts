@@ -10,7 +10,7 @@ function getMacVersions() {
     if (process.env.GITHUB_RUN_ID) {
         buildVersion = `${process.env.GITHUB_RUN_ID}${process.env.GITHUB_RUN_ATTEMPT || ''}`;
     } else {
-        const match = pkg.version.match(/-\d+\.(\d+)$/);
+        const match = pkg.version.match(/-[^.]+\.(\d+)$/);
         if (match) {
             buildVersion = match[1];
         }
@@ -127,7 +127,6 @@ const config = {
         ],
         hardenedRuntime: true,
         gatekeeperAssess: true,
-        provisioningProfile: process.env.MAC_PROVISIONING_PROFILE || './mac.provisionprofile',
         entitlements: './resources/mac/entitlements.mac.plist',
         entitlementsInherit: './resources/mac/entitlements.mac.inherit.plist',
         extendInfo: {
@@ -136,6 +135,7 @@ const config = {
             NSFocusStatusUsageDescription: 'Focus status is used by Mattermost to determine whether to send notifications or not.',
             LSFileQuarantineEnabled: true,
         },
+        ...getMacVersions(),
     },
     mas: {
         entitlements: './resources/mac/entitlements.mas.plist',
@@ -147,7 +147,6 @@ const config = {
             NSUserActivityTypes: ['INSendMessageIntent'],
         },
         singleArchFiles: '*',
-        ...getMacVersions(),
     },
     masDev: {
         provisioningProfile: './dev.provisionprofile',

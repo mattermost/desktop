@@ -132,6 +132,20 @@ export class ViewManager extends EventEmitter {
         this.emit(VIEW_TITLE_UPDATED, view.id);
     };
 
+    updateViewTitleTemplate = (viewId: string, titleTemplate: string) => {
+        log.debug('updateViewTitleTemplate', {viewId});
+
+        const view = this.views.get(viewId);
+        if (!view) {
+            return;
+        }
+        if (!view.props) {
+            view.props = {};
+        }
+        view.props.titleTemplate = titleTemplate;
+        this.emit(VIEW_TITLE_UPDATED, view.id);
+    };
+
     updateViewType = (viewId: string, type: ViewType) => {
         log.debug('updateViewType', {viewId, type});
 
