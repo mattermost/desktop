@@ -30,6 +30,9 @@ export const MINIMUM_CALLS_WIDGET_WIDTH = 284;
 export const MINIMUM_CALLS_WIDGET_HEIGHT = 90;
 export const CALLS_PLUGIN_ID = 'com.mattermost.calls';
 
+// Agents
+export const AGENTS_PLUGIN_ID = 'mattermost-ai';
+
 export const DOWNLOADS_DROPDOWN_HEIGHT = 360;
 export const DOWNLOADS_DROPDOWN_WIDTH = 280;
 export const DOWNLOADS_DROPDOWN_PADDING = 24;

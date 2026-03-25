@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {MattermostServer} from 'common/servers/MattermostServer';
+import {AGENTS_PLUGIN_ID} from 'common/utils/constants';
 import {parseURL} from 'common/utils/url';
 
 import type {ClientConfig, RemoteInfo} from 'types/server';
@@ -93,5 +94,13 @@ export class ServerInfo {
         this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.some((plugin) => plugin.id === 'focalboard');
         this.remoteInfo.hasPlaybooks = data.some((plugin) => plugin.id === 'playbooks');
         this.remoteInfo.hasUserSurvey = data.some((plugin) => plugin.id === 'com.mattermost.nps');
+
+        const hasAgents = data.some((plugin) => plugin.id === AGENTS_PLUGIN_ID);
+        if (hasAgents) {
+            this.remoteInfo.plugins = {
+                ...this.remoteInfo.plugins,
+                agents: {enabled: true},
+            };
+        }
     };
 }

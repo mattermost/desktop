@@ -29,6 +29,8 @@ export type UniqueView = {
 export type AgentConfig = {
     enabled: boolean;
     shortcut: string;
+    selectedAgentId?: string;
+    selectedServerId?: string;
 };
 
 export type CurrentConfig = ConfigV4;

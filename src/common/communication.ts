@@ -254,6 +254,7 @@ export const GET_IS_VIEW_LIMIT_REACHED = 'get-is-view-limit-reached';
 export const SECURE_STORAGE_GET = 'secure-storage-get';
 
 // Agent Window
+export const GET_AVAILABLE_AGENTS = 'get-available-agents';
 export const TOGGLE_AGENT_WINDOW = 'toggle-agent-window';
 export const HIDE_AGENT_WINDOW = 'hide-agent-window';
 export const AGENT_WINDOW_SUBMIT = 'agent-window-submit';

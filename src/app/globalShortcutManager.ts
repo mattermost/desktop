@@ -15,9 +15,13 @@ export class GlobalShortcutManager {
     private currentShortcut?: string;
     private currentEnabled?: boolean;
 
+    private isFullyConfigured = (agent?: AgentConfig): boolean => {
+        return Boolean(agent?.enabled && agent?.shortcut && agent?.selectedAgentId && agent?.selectedServerId);
+    };
+
     init = () => {
         const agent = Config.agent;
-        this.currentEnabled = agent?.enabled ?? false;
+        this.currentEnabled = this.isFullyConfigured(agent);
 
         if (this.currentEnabled && agent?.shortcut) {
             this.registerShortcut(agent.shortcut);
@@ -28,11 +32,11 @@ export class GlobalShortcutManager {
 
     private handleConfigUpdate = (config: CombinedConfig) => {
         const agent: AgentConfig | undefined = config.agent;
-        const enabled = agent?.enabled ?? false;
+        const nowEnabled = this.isFullyConfigured(agent);
         const shortcut = agent?.shortcut ?? '';
 
-        if (!enabled && this.currentEnabled) {
-            // Disabled — unregister shortcut and destroy window
+        if (!nowEnabled && this.currentEnabled) {
+            // Disabled or agent deselected — unregister shortcut and destroy window
             this.unregisterShortcut();
             AgentWindow.destroy();
             this.currentEnabled = false;
@@ -41,8 +45,8 @@ export class GlobalShortcutManager {
             return;
         }
 
-        if (enabled && !this.currentEnabled) {
-            // Enabled — init window and register shortcut
+        if (nowEnabled && !this.currentEnabled) {
+            // Enabled with agent selected — init window and register shortcut
             AgentWindow.init();
             if (shortcut) {
                 this.registerShortcut(shortcut);
@@ -52,7 +56,7 @@ export class GlobalShortcutManager {
             return;
         }
 
-        if (enabled && shortcut !== this.currentShortcut) {
+        if (nowEnabled && shortcut !== this.currentShortcut) {
             // Shortcut changed — re-register
             this.unregisterShortcut();
             if (shortcut) {

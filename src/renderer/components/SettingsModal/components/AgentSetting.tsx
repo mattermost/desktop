@@ -5,6 +5,7 @@ import classNames from 'classnames';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
+import type {AvailableAgent} from 'types/agent';
 import type {AgentConfig, CurrentConfig} from 'types/config';
 
 import './AgentSetting.scss';
@@ -48,17 +49,14 @@ function keyboardEventToAccelerator(e: KeyboardEvent): string | null {
         parts.push('Shift');
     }
 
-    // Ignore standalone modifier keys
     if (['Meta', 'Control', 'Alt', 'Shift'].includes(e.key)) {
         return null;
     }
 
-    // Require at least one modifier
     if (parts.length === 0) {
         return null;
     }
 
-    // Normalize key name
     let key = e.key;
     if (key === ' ') {
         key = 'Space';
@@ -67,7 +65,6 @@ function keyboardEventToAccelerator(e: KeyboardEvent): string | null {
     }
     parts.push(key);
 
-    // Normalize CommandOrControl for cross-platform
     const ctrlIdx = parts.indexOf('Control');
     const cmdIdx = parts.indexOf('Command');
     if (window.process.platform === 'darwin' && cmdIdx !== -1) {
@@ -89,17 +86,50 @@ export default function AgentSetting({
     const intl = useIntl();
     const [enabled, setEnabled] = useState(value?.enabled ?? true);
     const [shortcut, setShortcut] = useState(value?.shortcut ?? DEFAULT_SHORTCUT);
+    const [selectedAgentId, setSelectedAgentId] = useState(value?.selectedAgentId ?? '');
+    const [selectedServerId, setSelectedServerId] = useState(value?.selectedServerId ?? '');
     const [recording, setRecording] = useState(false);
     const recordingRef = useRef(false);
+    const [agents, setAgents] = useState<AvailableAgent[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        window.desktop.getAvailableAgents().then((result: AvailableAgent[]) => {
+            setAgents(result);
+            setLoading(false);
+        }).catch(() => {
+            setLoading(false);
+        });
+    }, []);
+
+    const hasAgents = agents.length > 0;
 
     const save = useCallback((newValue: AgentConfig) => {
         onSave('agent', newValue);
     }, [onSave]);
 
     const toggleEnabled = useCallback(() => {
+        if (!hasAgents) {
+            return;
+        }
         const newEnabled = !enabled;
         setEnabled(newEnabled);
-        save({enabled: newEnabled, shortcut});
+        save({enabled: newEnabled, shortcut, selectedAgentId, selectedServerId});
+    }, [enabled, shortcut, selectedAgentId, selectedServerId, save, hasAgents]);
+
+    const handleAgentChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (!val) {
+            setSelectedAgentId('');
+            setSelectedServerId('');
+            save({enabled, shortcut, selectedAgentId: undefined, selectedServerId: undefined});
+            return;
+        }
+
+        const [agentId, serverId] = val.split('::');
+        setSelectedAgentId(agentId);
+        setSelectedServerId(serverId);
+        save({enabled, shortcut, selectedAgentId: agentId, selectedServerId: serverId});
     }, [enabled, shortcut, save]);
 
     const startRecording = useCallback(() => {
@@ -114,8 +144,8 @@ export default function AgentSetting({
 
     const resetToDefault = useCallback(() => {
         setShortcut(DEFAULT_SHORTCUT);
-        save({enabled, shortcut: DEFAULT_SHORTCUT});
-    }, [enabled, save]);
+        save({enabled, shortcut: DEFAULT_SHORTCUT, selectedAgentId, selectedServerId});
+    }, [enabled, selectedAgentId, selectedServerId, save]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -136,26 +166,61 @@ export default function AgentSetting({
                 setShortcut(accelerator);
                 setRecording(false);
                 recordingRef.current = false;
-                save({enabled, shortcut: accelerator});
+                save({enabled, shortcut: accelerator, selectedAgentId, selectedServerId});
             }
         };
 
         window.addEventListener('keydown', handleKeyDown, true);
         return () => window.removeEventListener('keydown', handleKeyDown, true);
-    }, [enabled, save, cancelRecording]);
+    }, [enabled, selectedAgentId, selectedServerId, save, cancelRecording]);
 
     const keys = shortcut ? acceleratorToKeys(shortcut) : [];
 
+    // Group agents by server
+    const serverGroups = agents.reduce<Record<string, AvailableAgent[]>>((acc, agent) => {
+        const key = agent.serverName;
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        acc[key].push(agent);
+        return acc;
+    }, {});
+
+    if (loading) {
+        return (
+            <div className='AgentSetting'>
+                <div className='AgentSetting__loading'>
+                    <i className='icon-spinner'/>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.agent.loading'
+                        defaultMessage='Loading agents...'
+                    />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className='AgentSetting'>
+            {!hasAgents && (
+                <div className='AgentSetting__unavailable'>
+                    <i className='icon-alert-outline'/>
+                    <FormattedMessage
+                        id='renderer.components.settingsPage.agent.unavailable'
+                        defaultMessage='No servers with the Agents plugin configured. Install and configure the Agents plugin on a connected server to use this feature.'
+                    />
+                </div>
+            )}
+
             <div className='AgentSetting__toggle'>
                 <div className='AgentSetting__toggle-content'>
                     <button
-                        className={classNames('AgentSetting__checkbox', {checked: enabled})}
+                        className={classNames('AgentSetting__checkbox', {checked: enabled && hasAgents, disabled: !hasAgents})}
                         onClick={toggleEnabled}
                         role='checkbox'
-                        aria-checked={enabled}
+                        aria-checked={enabled && hasAgents}
                         aria-labelledby='agentSetting-enabled'
+                        disabled={!hasAgents}
                     >
                         <input
                             id='agentSetting-enabled'
@@ -168,7 +233,7 @@ export default function AgentSetting({
                     </button>
                     <label
                         htmlFor='agentSetting-enabled'
-                        className='AgentSetting__label'
+                        className={classNames('AgentSetting__label', {disabled: !hasAgents})}
                         onClick={toggleEnabled}
                     >
                         <FormattedMessage
@@ -185,82 +250,126 @@ export default function AgentSetting({
                 </div>
             </div>
 
-            {enabled && (
-                <div className='AgentSetting__keybind'>
-                    <div className='AgentSetting__keybind-label'>
-                        <FormattedMessage
-                            id='renderer.components.settingsPage.agent.shortcut'
-                            defaultMessage='Global keyboard shortcut'
-                        />
-                        <div className='AgentSetting__sublabel'>
+            {enabled && hasAgents && (
+                <>
+                    <div className='AgentSetting__agent-select'>
+                        <div className='AgentSetting__agent-select-label'>
                             <FormattedMessage
-                                id='renderer.components.settingsPage.agent.shortcut.description'
-                                defaultMessage='Keyboard shortcut to open the agent prompt window from anywhere. Works even when the app is not focused.'
+                                id='renderer.components.settingsPage.agent.selectAgent'
+                                defaultMessage='Agent'
                             />
+                            <div className='AgentSetting__sublabel'>
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.agent.selectAgent.description'
+                                    defaultMessage='Select which agent to use when opening the prompt window.'
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <div className='AgentSetting__keybind-controls'>
-                        <div className={classNames('AgentSetting__keybind-display', {recording})}>
-                            {recording ? (
-                                <span className='AgentSetting__recording-text'>
-                                    <FormattedMessage
-                                        id='renderer.components.settingsPage.agent.shortcut.recording'
-                                        defaultMessage='Press a key combination...'
-                                    />
-                                </span>
-                            ) : (
-                                <div className='AgentSetting__keys'>
-                                    {keys.map((key, i) => (
-                                        <kbd
-                                            key={i}
-                                            className='AgentSetting__key'
-                                        >
-                                            {key}
-                                        </kbd>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <div className='AgentSetting__keybind-actions'>
-                            {recording ? (
-                                <button
-                                    className='AgentSetting__button'
-                                    onClick={cancelRecording}
+                        <select
+                            className='AgentSetting__select'
+                            value={selectedAgentId && selectedServerId ? `${selectedAgentId}::${selectedServerId}` : ''}
+                            onChange={handleAgentChange}
+                        >
+                            <option value=''>
+                                {intl.formatMessage({
+                                    id: 'renderer.components.settingsPage.agent.selectAgent.placeholder',
+                                    defaultMessage: 'Select an agent...',
+                                })}
+                            </option>
+                            {Object.entries(serverGroups).map(([serverName, serverAgents]) => (
+                                <optgroup
+                                    key={serverName}
+                                    label={serverName}
                                 >
-                                    <FormattedMessage
-                                        id='renderer.components.settingsPage.agent.shortcut.cancel'
-                                        defaultMessage='Cancel'
-                                    />
-                                </button>
-                            ) : (
-                                <>
+                                    {serverAgents.map((agent) => (
+                                        <option
+                                            key={`${agent.id}::${agent.serverId}`}
+                                            value={`${agent.id}::${agent.serverId}`}
+                                        >
+                                            {agent.displayName}
+                                        </option>
+                                    ))}
+                                </optgroup>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className='AgentSetting__keybind'>
+                        <div className='AgentSetting__keybind-label'>
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.agent.shortcut'
+                                defaultMessage='Global keyboard shortcut'
+                            />
+                            <div className='AgentSetting__sublabel'>
+                                <FormattedMessage
+                                    id='renderer.components.settingsPage.agent.shortcut.description'
+                                    defaultMessage='Keyboard shortcut to open the agent prompt window from anywhere. Works even when the app is not focused.'
+                                />
+                            </div>
+                        </div>
+                        <div className='AgentSetting__keybind-controls'>
+                            <div className={classNames('AgentSetting__keybind-display', {recording})}>
+                                {recording ? (
+                                    <span className='AgentSetting__recording-text'>
+                                        <FormattedMessage
+                                            id='renderer.components.settingsPage.agent.shortcut.recording'
+                                            defaultMessage='Press a key combination...'
+                                        />
+                                    </span>
+                                ) : (
+                                    <div className='AgentSetting__keys'>
+                                        {keys.map((key, i) => (
+                                            <kbd
+                                                key={i}
+                                                className='AgentSetting__key'
+                                            >
+                                                {key}
+                                            </kbd>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className='AgentSetting__keybind-actions'>
+                                {recording ? (
                                     <button
                                         className='AgentSetting__button'
-                                        onClick={startRecording}
+                                        onClick={cancelRecording}
                                     >
                                         <FormattedMessage
-                                            id='renderer.components.settingsPage.agent.shortcut.record'
-                                            defaultMessage='Record shortcut'
+                                            id='renderer.components.settingsPage.agent.shortcut.cancel'
+                                            defaultMessage='Cancel'
                                         />
                                     </button>
-                                    <button
-                                        className='AgentSetting__button AgentSetting__button--secondary'
-                                        onClick={resetToDefault}
-                                        title={intl.formatMessage({
-                                            id: 'renderer.components.settingsPage.agent.shortcut.reset',
-                                            defaultMessage: 'Reset to default',
-                                        })}
-                                    >
-                                        <FormattedMessage
-                                            id='renderer.components.settingsPage.agent.shortcut.reset'
-                                            defaultMessage='Reset to default'
-                                        />
-                                    </button>
-                                </>
-                            )}
+                                ) : (
+                                    <>
+                                        <button
+                                            className='AgentSetting__button'
+                                            onClick={startRecording}
+                                        >
+                                            <FormattedMessage
+                                                id='renderer.components.settingsPage.agent.shortcut.record'
+                                                defaultMessage='Record shortcut'
+                                            />
+                                        </button>
+                                        <button
+                                            className='AgentSetting__button AgentSetting__button--secondary'
+                                            onClick={resetToDefault}
+                                            title={intl.formatMessage({
+                                                id: 'renderer.components.settingsPage.agent.shortcut.reset',
+                                                defaultMessage: 'Reset to default',
+                                            })}
+                                        >
+                                            <FormattedMessage
+                                                id='renderer.components.settingsPage.agent.shortcut.reset'
+                                                defaultMessage='Reset to default'
+                                            />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
+                </>
             )}
         </div>
     );

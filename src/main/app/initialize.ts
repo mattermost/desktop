@@ -56,6 +56,7 @@ import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
+import AgentService from 'main/server/agentService';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
@@ -304,7 +305,8 @@ async function initializeAfterAppReady() {
 
     MainWindow.show();
 
-    if (Config.agent?.enabled) {
+    AgentService.init();
+    if (Config.agent?.enabled && Config.agent?.selectedAgentId && Config.agent?.selectedServerId) {
         AgentWindow.init();
     }
     GlobalShortcutManager.init();

@@ -1,6 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+export type PluginsRemoteInfo = {
+    agents?: {
+        enabled: boolean;
+    };
+};
+
 export type RemoteInfo = {
     serverVersion?: string;
     siteName?: string;
@@ -11,6 +17,7 @@ export type RemoteInfo = {
     hasFocalboard?: boolean;
     hasPlaybooks?: boolean;
     hasUserSurvey?: boolean;
+    plugins?: PluginsRemoteInfo;
 };
 
 export type ClientConfig = {

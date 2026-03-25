@@ -127,6 +127,7 @@ import {
     GET_IS_MAC_APP_STORE,
     OPEN_MAC_APP_STORE,
     SKIP_VERSION,
+    GET_AVAILABLE_AGENTS,
     HIDE_AGENT_WINDOW,
     AGENT_WINDOW_SUBMIT,
     AGENT_WINDOW_SHOWN,
@@ -318,6 +319,7 @@ contextBridge.exposeInMainWorld('desktop', {
         pingDomain: (url) => ipcRenderer.invoke(PING_DOMAIN, url),
     },
 
+    getAvailableAgents: () => ipcRenderer.invoke(GET_AVAILABLE_AGENTS),
     hideAgentWindow: () => ipcRenderer.send(HIDE_AGENT_WINDOW),
     agentWindowSubmit: (text) => ipcRenderer.send(AGENT_WINDOW_SUBMIT, text),
     onAgentWindowShown: (listener) => {

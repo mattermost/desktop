@@ -53,10 +53,79 @@
             }
         }
 
+        .AgentSetting__checkbox.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         .AgentSetting__label {
             font-size: 14px;
             line-height: 20px;
             cursor: pointer;
+
+            &.disabled {
+                opacity: 0.56;
+                cursor: not-allowed;
+            }
+        }
+    }
+
+    .AgentSetting__unavailable {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding: 12px;
+        border-radius: var(--radius-s);
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+        font-size: 13px;
+        line-height: 20px;
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+
+        > i {
+            flex-shrink: 0;
+            font-size: 16px;
+            margin-top: 2px;
+        }
+    }
+
+    .AgentSetting__loading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+    }
+
+    .AgentSetting__agent-select {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: var(--border-light);
+
+        .AgentSetting__agent-select-label {
+            font-size: 14px;
+            line-height: 20px;
+            margin-bottom: 12px;
+        }
+
+        .AgentSetting__select {
+            width: 100%;
+            max-width: 300px;
+            height: 36px;
+            padding: 4px 12px;
+            border: var(--border-default);
+            border-radius: var(--radius-s);
+            background: rgba(var(--center-channel-color-rgb), 0.04);
+            color: rgb(var(--center-channel-color-rgb));
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+
+            &:focus {
+                border-color: rgb(var(--button-bg-rgb));
+                box-shadow: 0 0 0 2px rgba(var(--button-bg-rgb), 0.16);
+            }
         }
     }
 
