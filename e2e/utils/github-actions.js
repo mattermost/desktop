@@ -54,12 +54,11 @@ async function updateFinalStatus({github, context, platforms, outputs, mergedRep
 
         const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
         const status = outputs[`STATUS_${osKey}`] || 'failure';
-        let reportLink = outputs[`REPORT_LINK_${osKey}`];
-        if (!reportLink && mergedReportUrl) {
+        let reportLink;
+        if (mergedReportUrl) {
             reportLink = `${mergedReportUrl}#?q=p:${playwrightProject}`;
-        }
-        if (!reportLink) {
-            reportLink = workflowUrl;
+        } else {
+            reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
         }
 
         return github.rest.repos.createCommitStatus({
