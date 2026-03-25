@@ -9,6 +9,8 @@ import {app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session} from '
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
 
+import AgentWindow from 'app/agentWindow';
+import GlobalShortcutManager from 'app/globalShortcutManager';
 import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
@@ -301,6 +303,11 @@ async function initializeAfterAppReady() {
     }
 
     MainWindow.show();
+
+    if (Config.agent?.enabled) {
+        AgentWindow.init();
+    }
+    GlobalShortcutManager.init();
 
     const updateServerInfo = (serverId: string) => {
         if (serverId) {

@@ -4,6 +4,8 @@
 import type {BrowserWindow, Event, WebContents, Certificate, Details} from 'electron';
 import {app, dialog} from 'electron';
 
+import AgentWindow from 'app/agentWindow';
+import GlobalShortcutManager from 'app/globalShortcutManager';
 import MainWindow from 'app/mainWindow/mainWindow';
 import Tray from 'app/system/tray/tray';
 import WebContentsManager from 'app/views/webContentsManager';
@@ -80,6 +82,8 @@ export function handleAppBeforeQuit() {
 
     // Make sure tray icon gets removed if the user exits via CTRL-Q
     sentryHandler.flush();
+    GlobalShortcutManager.destroy();
+    AgentWindow.destroy();
     Tray.destroy();
     global.willAppQuit = true;
 }

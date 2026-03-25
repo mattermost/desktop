@@ -56,6 +56,10 @@ const defaultPreferences: ConfigV4 = {
     viewLimit: 15,
     themeSyncing: true,
     useNativeTitleBar: false,
+    agent: {
+        enabled: true,
+        shortcut: 'CommandOrControl+Shift+Space',
+    },
 };
 
 export default defaultPreferences;

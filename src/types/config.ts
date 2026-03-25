@@ -26,6 +26,11 @@ export type UniqueView = {
     isDisabled?: boolean;
 }
 
+export type AgentConfig = {
+    enabled: boolean;
+    shortcut: string;
+};
+
 export type CurrentConfig = ConfigV4;
 
 export type ConfigV4 = {
@@ -61,6 +66,7 @@ export type ConfigV4 = {
     themeSyncing?: boolean;
     skippedVersions?: string[];
     useNativeTitleBar?: boolean;
+    agent?: AgentConfig;
 }
 
 export type ConfigV3 = Omit<ConfigV4,

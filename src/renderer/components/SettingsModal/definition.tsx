@@ -9,6 +9,7 @@ import {localeTranslations} from 'common/utils/constants';
 
 import type {SettingsDefinition} from 'types/settings';
 
+import AgentSetting from './components/AgentSetting';
 import CheckSetting from './components/CheckSetting';
 import DownloadSetting from './components/DownloadSetting';
 import NotificationSetting from './components/NotificationSetting';
@@ -536,6 +537,21 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                             </>
                         ),
                     },
+                },
+            ],
+        },
+        agentInteraction: {
+            title: (
+                <FormattedMessage
+                    id='renderer.components.settingsPage.agentInteraction'
+                    defaultMessage='Agent interaction'
+                />
+            ),
+            icon: 'robot-outline',
+            settings: [
+                {
+                    id: 'agent',
+                    component: AgentSetting,
                 },
             ],
         },

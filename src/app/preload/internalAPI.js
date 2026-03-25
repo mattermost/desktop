@@ -127,6 +127,9 @@ import {
     GET_IS_MAC_APP_STORE,
     OPEN_MAC_APP_STORE,
     SKIP_VERSION,
+    HIDE_AGENT_WINDOW,
+    AGENT_WINDOW_SUBMIT,
+    AGENT_WINDOW_SHOWN,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -313,6 +316,14 @@ contextBridge.exposeInMainWorld('desktop', {
         isModalUncloseable: () => ipcRenderer.invoke(GET_MODAL_UNCLOSEABLE),
         confirmProtocol: (protocol, url) => ipcRenderer.send('confirm-protocol', protocol, url),
         pingDomain: (url) => ipcRenderer.invoke(PING_DOMAIN, url),
+    },
+
+    hideAgentWindow: () => ipcRenderer.send(HIDE_AGENT_WINDOW),
+    agentWindowSubmit: (text) => ipcRenderer.send(AGENT_WINDOW_SUBMIT, text),
+    onAgentWindowShown: (listener) => {
+        const wrappedListener = () => listener();
+        ipcRenderer.on(AGENT_WINDOW_SHOWN, wrappedListener);
+        return () => ipcRenderer.off(AGENT_WINDOW_SHOWN, wrappedListener);
     },
 });
 

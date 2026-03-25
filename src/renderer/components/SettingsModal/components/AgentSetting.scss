@@ -1,0 +1,157 @@
+.AgentSetting {
+    .AgentSetting__toggle-content {
+        display: flex;
+
+        .AgentSetting__checkbox {
+            margin-right: 10px;
+            background: none;
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+            border-radius: var(--radius-xs);
+            width: 16px;
+            max-width: 16px;
+            min-width: 16px;
+            height: 16px;
+            margin-top: 2px;
+            flex-shrink: 0;
+
+            input {
+                appearance: none;
+                position: absolute;
+            }
+
+            > i {
+                display: block;
+                font-size: 0;
+                line-height: 16px;
+                position: relative;
+                right: -1px;
+                top: 2px;
+                width: 0;
+                height: 0;
+                border-radius: var(--radius-xs);
+                transition: all ease-in-out 0.175s;
+                background: none;
+                color: none;
+
+                &::before {
+                    margin: 0;
+                }
+            }
+
+            &.checked {
+                border: 1px solid var(--button-bg);
+
+                > i {
+                    right: 7px;
+                    top: -2px;
+                    width: 16px;
+                    height: 16px;
+                    font-size: 14.4px;
+                    background: var(--button-bg);
+                    color: var(--button-color);
+                }
+            }
+        }
+
+        .AgentSetting__label {
+            font-size: 14px;
+            line-height: 20px;
+            cursor: pointer;
+        }
+    }
+
+    .AgentSetting__sublabel {
+        margin-top: 4px;
+        font-size: 12px;
+        line-height: 16px;
+        color: rgba(var(--center-channel-color-rgb), 0.76);
+    }
+
+    .AgentSetting__keybind {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: var(--border-light);
+
+        .AgentSetting__keybind-label {
+            font-size: 14px;
+            line-height: 20px;
+            margin-bottom: 12px;
+        }
+
+        .AgentSetting__keybind-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .AgentSetting__keybind-display {
+            display: flex;
+            align-items: center;
+            min-height: 36px;
+            padding: 4px 12px;
+            border: var(--border-default);
+            border-radius: var(--radius-s);
+            background: rgba(var(--center-channel-color-rgb), 0.04);
+
+            &.recording {
+                border-color: rgb(var(--button-bg-rgb));
+                box-shadow: 0 0 0 2px rgba(var(--button-bg-rgb), 0.16);
+            }
+        }
+
+        .AgentSetting__recording-text {
+            font-size: 13px;
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+            font-style: italic;
+        }
+
+        .AgentSetting__keys {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .AgentSetting__key {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            padding: 0 6px;
+            border: var(--border-default);
+            border-radius: var(--radius-xs);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 16px;
+            color: rgb(var(--center-channel-color-rgb));
+        }
+
+        .AgentSetting__keybind-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .AgentSetting__button {
+            padding: 6px 12px;
+            border: var(--border-default);
+            border-radius: var(--radius-s);
+            background: none;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 20px;
+            color: rgb(var(--center-channel-color-rgb));
+            cursor: pointer;
+
+            &:hover {
+                background: rgba(var(--center-channel-color-rgb), 0.08);
+            }
+
+            &--secondary {
+                font-weight: 400;
+                color: rgba(var(--center-channel-color-rgb), 0.64);
+            }
+        }
+    }
+}
