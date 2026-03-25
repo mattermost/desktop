@@ -104,6 +104,7 @@ export type DesktopAPI = {
         memory?: number;
     }>) => void) => () => void;
     unregister: (channel: string) => void;
+    closeWindow: () => void;
     canPopout: () => Promise<boolean>;
     openPopout: (path: string, props: PopoutViewProps) => Promise<string>;
     canUsePopoutOption: (optionName: string) => Promise<boolean>;

@@ -50,6 +50,7 @@ import {
     MESSAGE_FROM_PARENT,
     MESSAGE_FROM_POPOUT,
     POPOUT_CLOSED,
+    WINDOW_CLOSE,
     UPDATE_POPOUT_TITLE_TEMPLATE,
 } from 'common/communication';
 
@@ -134,6 +135,7 @@ const desktopAPI: DesktopAPI = {
 
     // Utility
     unregister: (channel) => ipcRenderer.removeAllListeners(channel),
+    closeWindow: () => ipcRenderer.send(WINDOW_CLOSE),
 
     // Popouts
     canPopout: () => ipcRenderer.invoke(CAN_POPOUT),
@@ -203,6 +205,21 @@ const CLEAR_CACHE_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 setInterval(() => {
     webFrame.clearCache();
 }, CLEAR_CACHE_INTERVAL);
+
+// Do not allow window.close to be called from the renderer process
+// Instead, force it through the main process
+contextBridge.executeInMainWorld({
+    func: () => {
+        Object.defineProperty(window, 'close', {
+            configurable: false,
+            enumerable: false,
+            writable: false,
+            value: () => {
+                (window as unknown as {desktopAPI: Pick<DesktopAPI, 'closeWindow'>}).desktopAPI.closeWindow();
+            },
+        });
+    },
+});
 
 function getThemeValues() {
     const style = window.getComputedStyle(document.body);

@@ -10,6 +10,7 @@ import BaseWindow from 'app/windows/baseWindow';
 import {
     LOAD_FAILED,
     LOADSCREEN_END,
+    POPOUT_CLOSED,
     RELOAD_VIEW,
     UPDATE_POPOUT_TITLE,
     UPDATE_TARGET_URL,
@@ -99,6 +100,7 @@ jest.mock('common/views/viewManager', () => {
         emit: jest.fn((event, ...args) => mockViewManager.emit(event, ...args)),
         getView: jest.fn(),
         createView: jest.fn(),
+        removeView: jest.fn(),
         getViewTitle: jest.fn(),
         isViewLimitReached: jest.fn(),
         getViewsByServerId: jest.fn(),
@@ -1051,6 +1053,46 @@ describe('PopoutManager', () => {
             WebContentsManager.getView.mockReturnValue(null);
             popoutManager.handleSendToPopout(mockEvent, 'non-existent-id', 'test-channel', 'arg1');
             expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleWindowClose', () => {
+        it('should close the popout and notify the parent view', () => {
+            const popoutManager = new PopoutManager();
+            const mockParentView = {
+                id: 'parent-view-id',
+                sendToRenderer: jest.fn(),
+            };
+            const mockWindowView = {
+                id: 'popout-view-id',
+                serverId: 'test-server-id',
+                type: ViewType.WINDOW,
+                parentViewId: 'parent-view-id',
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'popout-view-id'});
+            ViewManager.getView.mockReturnValue(mockWindowView);
+            WebContentsManager.getView.mockReturnValue(mockParentView);
+
+            popoutManager.handleWindowClose({sender: {id: 100}});
+
+            expect(mockParentView.sendToRenderer).toHaveBeenCalledWith(POPOUT_CLOSED, 'popout-view-id');
+            expect(ViewManager.removeView).toHaveBeenCalledWith('popout-view-id');
+        });
+
+        it('should do nothing when view is not a WINDOW type', () => {
+            const popoutManager = new PopoutManager();
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'tab-id'});
+            ViewManager.getView.mockReturnValue({
+                id: 'tab-id',
+                serverId: 'test-server-id',
+                type: ViewType.TAB,
+            });
+
+            popoutManager.handleWindowClose({sender: {id: 100}});
+
+            expect(ViewManager.removeView).not.toHaveBeenCalled();
         });
     });
 
