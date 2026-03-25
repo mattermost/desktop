@@ -115,24 +115,11 @@ on:
         required: true
 
 env:
-  AWS_S3_BUCKET: "mattermost-cypress-report"
   BRANCH: ${{ github.head_ref || github.ref_name }}
   BUILD_TAG: ${{ github.event.pull_request.head.sha || github.sha }}
-  JIRA_PROJECT_KEY: "MM"
   MM_TEST_SERVER_URL: ${{ inputs.MM_TEST_SERVER_URL }}
   MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
   MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
-  PULL_REQUEST: "https://github.com/mattermost/desktop/pull/${{ github.event.number }}"
-  ZEPHYR_ENVIRONMENT_NAME: "Desktop app"
-  ZEPHYR_FOLDER_ID: "12413253"
-  TEST_CYCLE_LINK_PREFIX: ${{ secrets.MM_DESKTOP_E2E_TEST_CYCLE_LINK_PREFIX }}
-  AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
-  AWS_REGION: "us-east-1"
-  WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
-  ZEPHYR_API_KEY: ${{ secrets.MM_DESKTOP_E2E_ZEPHYR_API_KEY }}
-  REPORT_LINK: "none"
-  NODE_VERSION: 18
   SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
   DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -143,6 +130,8 @@ jobs:
   e2e:
     name: e2e-on-${{ inputs.runs-on }}
     runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
     defaults:
       run:
         shell: bash
@@ -162,8 +151,10 @@ jobs:
         run: |
           RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
           echo "RUNNER_OS=${RUNNER_OS}" >> $GITHUB_ENV
+          echo "CI_ENVIRONMENT_NAME=@${RUNNER_OS}" >> $GITHUB_ENV
           
           # Define build type and suffix
+          # inputs.TYPE takes precedence when provided by the caller (e.g. RELEASE, MASTER, PR).
           INPUT_TYPE="${{ inputs.TYPE }}"
           case "${{ github.event_name }}" in
             "pull_request")
@@ -189,16 +180,10 @@ jobs:
               echo "BUILD_SUFFIX=desktop-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
               ;;
           esac
-          
+
           if ${{ inputs.nightly }}; then
             echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
             echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-            echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-            echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{ 
-              runner.os == 'Linux' && '12363689' || 
-              runner.os == 'macOS' && '12363687' || 
-              '12363690' 
-            }}" >> $GITHUB_ENV
           fi
 
       - name: e2e/set-build-id
@@ -243,7 +228,6 @@ jobs:
         run: |
           npm ci
           cd e2e && npm ci
-          npx electron-rebuild --platform=${{ env.RUNNER_OS }} -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
@@ -253,11 +237,13 @@ jobs:
           npm run build-test
           cd e2e
           export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
-          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm run run:e2e || true
-          npm run send-report
+          set +e
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+          CI_ENVIRONMENT_NAME: ${{ env.CI_ENVIRONMENT_NAME }}
 
       - name: e2e/run-playwright-tests-macos
         if: runner.os == 'macOS'
@@ -267,25 +253,26 @@ jobs:
 
           echo "Running E2E tests…"
           cd e2e
-          npm run run:e2e || true
-          npm run send-report
+          set +e
+          npm test
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+          CI_ENVIRONMENT_NAME: ${{ env.CI_ENVIRONMENT_NAME }}
 
       - name: e2e/run-playwright-tests-windows
         if: runner.os == 'Windows'
         run: |
           npm run build-test
           cd e2e
-          npm run run:e2e || true
-          npm run send-report
+          set +e
+          npm test
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-
-      - name: Capture Report Link
-        run: echo "REPORT_LINK=$(cat e2e/report-link.txt)" >> $GITHUB_ENV
+          CI_ENVIRONMENT_NAME: ${{ env.CI_ENVIRONMENT_NAME }}
 
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
@@ -294,31 +281,45 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { newFailedTests, os } = analyzeFlakyTests();
+            const { failureCount, os } = analyzeFlakyTests();
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const testStatus = failureCount > 0 || Number(process.env.PLAYWRIGHT_EXIT_CODE || 0) !== 0 ? 'failure' : 'success';
             switch (os) {
               case 'linux':
-                core.setOutput('NEW_FAILURES_LINUX', newFailedTests.length);
-                core.setOutput('REPORT_LINK_LINUX', "${{ env.REPORT_LINK}}");
-                newFailedTests.length > 0 ? core.setOutput('STATUS_LINUX', 'failure') : core.setOutput('STATUS_LINUX', 'success');
+                core.setOutput('NEW_FAILURES_LINUX', String(failureCount));
+                core.setOutput('REPORT_LINK_LINUX', runUrl);
+                core.setOutput('STATUS_LINUX', testStatus);
                 break;
               case 'darwin':
-                core.setOutput('NEW_FAILURES_MACOS', newFailedTests.length);
-                core.setOutput('REPORT_LINK_MACOS', "${{ env.REPORT_LINK}}");
-                newFailedTests.length > 0 ? core.setOutput('STATUS_MACOS', 'failure') : core.setOutput('STATUS_MACOS', 'success');
+                core.setOutput('NEW_FAILURES_MACOS', String(failureCount));
+                core.setOutput('REPORT_LINK_MACOS', runUrl);
+                core.setOutput('STATUS_MACOS', testStatus);
                 break;
               case 'win32':
-                core.setOutput('NEW_FAILURES_WINDOWS', newFailedTests.length);
-                core.setOutput('REPORT_LINK_WINDOWS', "${{ env.REPORT_LINK}}");
-                newFailedTests.length > 0 ? core.setOutput('STATUS_WINDOWS', 'failure') : core.setOutput('STATUS_WINDOWS', 'success');
+                core.setOutput('NEW_FAILURES_WINDOWS', String(failureCount));
+                core.setOutput('REPORT_LINK_WINDOWS', runUrl);
+                core.setOutput('STATUS_WINDOWS', testStatus);
                 break;
               default:
                 throw new Error(`Unsupported OS: ${os}`);
             }
 
+      - name: Upload Playwright blob report
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: blob-report-${{ env.RUNNER_OS }}
+          path: |
+            e2e/blob-report
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: test-results-${{ runner.os }}
-          path: e2e/mochawesome-report
+          name: test-results-${{ env.RUNNER_OS }}
+          path: |
+            e2e/test-results
+          if-no-files-found: ignore
           retention-days: 7

@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {dialog, systemPreferences} from 'electron';
+import {dialog, shell, systemPreferences} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -26,6 +26,9 @@ jest.mock('electron', () => ({
     },
     dialog: {
         showMessageBox: jest.fn(),
+    },
+    shell: {
+        openExternal: jest.fn(),
     },
     systemPreferences: {
         getMediaAccessStatus: jest.fn(),
@@ -69,6 +72,11 @@ jest.mock('app/views/webContentsManager', () => ({
 
 describe('main/PermissionsManager', () => {
     describe('setForServer', () => {
+        beforeEach(() => {
+            systemPreferences.getMediaAccessStatus.mockClear();
+            systemPreferences.askForMediaAccess.mockClear();
+        });
+
         if (process.platform !== 'linux') {
             it('should ask for media permission when is not granted but the user explicitly granted it', () => {
                 systemPreferences.getMediaAccessStatus.mockReturnValue('denied');
@@ -78,6 +86,49 @@ describe('main/PermissionsManager', () => {
                 expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(2, 'camera');
             });
         }
+
+        if (process.platform !== 'linux') {
+            it('PM-U06: should not call askForMediaAccess when OS has already granted access', () => {
+                systemPreferences.getMediaAccessStatus.mockReturnValue('granted');
+                const permissionsManager = new PermissionsManager('anyfile.json');
+                permissionsManager.setForServer(
+                    {url: new URL('http://anyurl.com')},
+                    {media: {allowed: true}},
+                );
+                expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
+            });
+        }
+
+        it('PM-U07: should skip all media access checks on Linux', () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'linux', configurable: true});
+            try {
+                const permissionsManager = new PermissionsManager('anyfile.json');
+                permissionsManager.setForServer(
+                    {url: new URL('http://anyurl.com')},
+                    {media: {allowed: true}},
+                );
+                expect(systemPreferences.getMediaAccessStatus).not.toHaveBeenCalled();
+                expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
+            } finally {
+                Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
+            }
+        });
+    });
+
+    it('PM-U05: should open the correct ms-settings URLs for Windows camera and microphone', () => {
+        const {ipcMain} = require('electron');
+        // eslint-disable-next-line no-new
+        new PermissionsManager('anyfile.json');
+
+        const cameraHandler = ipcMain.on.mock.calls.find(([ch]) => ch === 'open-windows-camera-preferences')?.[1];
+        const micHandler = ipcMain.on.mock.calls.find(([ch]) => ch === 'open-windows-microphone-preferences')?.[1];
+
+        cameraHandler();
+        expect(shell.openExternal).toHaveBeenCalledWith('ms-settings:privacy-webcam');
+
+        micHandler();
+        expect(shell.openExternal).toHaveBeenCalledWith('ms-settings:privacy-microphone');
     });
 
     describe('handlePermissionRequest', () => {
@@ -284,6 +335,69 @@ describe('main/PermissionsManager', () => {
             dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
             await permissionsManager.handlePermissionRequest({id: 2}, 'openExternal', cb, {requestingUrl: 'http://anyurl.com', externalURL: 'ms-excel://differenturl.com'});
             expect(dialog.showMessageBox).toHaveBeenCalled();
+        });
+
+        it('PM-U01: should allow Calls widget request when pre-granted and not consult WebContentsManager', async () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.getViewURL.mockReturnValue(new URL('http://anyurl.com'));
+            isTrustedURL.mockReturnValue(true);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {screenShare: {allowed: true}},
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'screenShare',
+                cb,
+                {requestingUrl: 'http://anyurl.com'},
+            );
+            expect(cb).toHaveBeenCalledWith(true);
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+            expect(CallsWidgetWindow.getViewURL).toHaveBeenCalled();
+        });
+
+        it('PM-U02: should deny Calls widget request when getViewURL returns null', async () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.getViewURL.mockReturnValue(null);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'screenShare',
+                cb,
+                {requestingUrl: 'http://anyurl.com'},
+            );
+            expect(cb).toHaveBeenCalledWith(false);
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+        });
+
+        it('PM-U03: should show dialog for fullscreen from an external origin', async () => {
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'fullscreen',
+                cb,
+                {requestingUrl: 'http://youtube.com'},
+            );
+            expect(dialog.showMessageBox).toHaveBeenCalled();
+            expect(cb).toHaveBeenCalledWith(true);
+        });
+
+        it('PM-U04: should deny without crash when main window is null at dialog time', async () => {
+            MainWindow.get.mockReturnValue(null);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'notifications',
+                cb,
+                {requestingUrl: 'http://anyurl.com'},
+            );
+            expect(cb).toHaveBeenCalledWith(false);
+            expect(dialog.showMessageBox).not.toHaveBeenCalled();
         });
     });
 });

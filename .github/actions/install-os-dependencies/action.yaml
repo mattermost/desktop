@@ -70,9 +70,3 @@ runs:
       run: |
         choco install yq --version 4.15.1 -y
         choco install vcredist-all -y
-        npm i -g node-gyp
-        ELECTRON_VERSION=$(jq -r .devDependencies.electron package.json)
-        node-gyp install
-        node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$ELECTRON_VERSION --dist-url="https://electronjs.org/headers"
-        node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$ELECTRON_VERSION --dist-url="https://electronjs.org/headers" --arch arm64
-        npm install mochawesome-report-generator

@@ -2,18 +2,11 @@
   "name": "desktop-e2e",
   "version": "1.0.0",
   "description": "E2E tests for the Desktop App",
-  "main": "dist/e2e_bundle.js",
   "scripts": {
-    "clean": "rm -rf dist/ mochawesome-report/ node_modules/ testUserData/",
-    "run:e2e": "npm run build && npm run test",
-    "run:policy": "npm run build && npm run test:policy",
-    "build": "webpack-cli --config webpack.config.js",
-    "build:performance": "webpack-cli --config webpack.config.performance.js",
-    "test": "electron-mocha --no-sandbox --disable-gpu-sandbox --reporter mochawesome dist/e2e_bundle.js",
-    "test:policy": "cross-env RUN_POLICY_E2E=true electron-mocha --no-sandbox --disable-gpu-sandbox --reporter mochawesome --grep MM-T_GPO dist/e2e_bundle.js",
-    "test:performance": "electron-mocha --reporter json --reporter-option output=./performance/perf-test-report.json dist/e2e_bundle.js",
-    "send-report": "node ./save_report.js",
-    "postinstall": "patch-package && cross-env CL='/std:c++17' electron-rebuild -m ./node_modules/robotjs"
+    "clean": "rm -rf node_modules/ testUserData/ playwright-report/ playwright-report-merged/ blob-report/ test-results/ mochawesome-report/",
+    "test": "playwright test",
+    "run:policy": "cross-env RUN_POLICY_E2E=true playwright test specs/policy/policy.test.ts",
+    "send-report": "playwright merge-reports --reporter=html blob-report"
   },
   "repository": {
     "type": "git",
@@ -26,22 +19,12 @@
   },
   "homepage": "https://github.com/mattermost/desktop#readme",
   "dependencies": {
-    "@aws-sdk/client-s3": "3.972.0",
-    "@aws-sdk/lib-storage": "3.972.0",
-    "@electron/rebuild": "4.0.3",
-    "axios": "1.13.4",
     "chai": "6.2.2",
-    "electron-mocha": "13.1.0",
     "fast-xml-parser": "5.3.3",
-    "mochawesome": "7.1.4",
-    "nan": "2.25.0",
-    "node-abi": "4.26.0",
-    "playwright": "1.58.0",
-    "ps-node": "0.1.6",
-    "recursive-readdir": "2.2.3",
-    "robotjs": "0.6.0"
+    "ps-node": "0.1.6"
   },
   "devDependencies": {
-    "mochawesome-report-generator": "6.3.2"
+    "@playwright/test": "1.58.0",
+    "cross-env": "^10.1.0"
   }
 }

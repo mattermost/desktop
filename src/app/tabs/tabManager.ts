@@ -148,6 +148,7 @@ export class TabManager extends EventEmitter {
             this.tabOrder.set(serverId, viewIds);
         }
         this.emit(TAB_ORDER_UPDATED, serverId, viewIds);
+        MainWindow.window?.sendToRenderer(TAB_ORDER_UPDATED, serverId, viewIds);
     };
 
     focusCurrentTab = () => {

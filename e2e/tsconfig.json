@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "dist-ts",
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["../src/*"]
+    }
+  },
+  "include": ["fixtures/**/*", "helpers/**/*", "specs/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

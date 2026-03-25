@@ -1,0 +1,42 @@
+name: E2E Label Cleanup
+
+# Runs when the "Electron Playwright Tests" workflow completes with any
+# conclusion (success, failure, or cancelled). This is the only reliable way
+# to remove the E2E/Run label after a cancellation, because GitHub Actions
+# cancels all queued jobs — including remove-e2e-label — when a workflow run
+# is cancelled, regardless of `if: always()`.
+
+on:
+  workflow_run:
+    workflows: ["Electron Playwright Tests"]
+    types: [completed]
+
+permissions:
+  issues: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  remove-e2e-label:
+    name: Remove E2E/Run label from PR
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.workflow_run.event == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Remove E2E/Run label
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        continue-on-error: true # Label may have already been removed by remove-e2e-label job
+        with:
+          script: |
+            const { removeE2ELabel } = require('./e2e/utils/github-actions.js');
+            // Pass the original test workflow's run ID so removeE2ELabel can
+            // look up the dispatching branch and find the associated PR.
+            await removeE2ELabel({
+              github,
+              context: {
+                repo: context.repo,
+                runId: ${{ github.event.workflow_run.id }},
+              },
+            });

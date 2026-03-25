@@ -186,6 +186,7 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.onServerLoggedInChanged(this.updateServers);
         window.desktop.onTabAdded(this.updateServers);
         window.desktop.onTabRemoved(this.updateServers);
+        window.desktop.onTabOrderUpdated(this.updateServers);
         window.desktop.onViewLimitUpdated(this.updateIsViewLimitReached);
 
         // Add tab title update handler

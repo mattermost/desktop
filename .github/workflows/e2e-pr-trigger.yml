@@ -1,0 +1,112 @@
+name: E2E PR Trigger
+
+# Automatically adds the E2E/Run label to non-draft PRs targeting master.
+# Adding the label signals Matterwick to provision cloud servers and dispatch
+# the Electron Playwright Tests (e2e-functional.yml) workflow.
+# After tests complete, e2e-functional.yml / e2e-label-cleanup.yml remove the label.
+#
+# On synchronize: in-progress Electron Playwright Tests runs are cancelled before
+# re-adding the label so stale runs for the old commit don't block the new one.
+# Matterwick dispatches e2e-functional.yml via workflow_dispatch using the default
+# branch as the ref (so all E2E runs show head_branch: master). This makes it
+# impossible to distinguish runs by PR branch, so all in-progress E2E runs are
+# cancelled — which is correct behaviour since only one labelled PR triggers tests
+# at a time in this project.
+#
+# The concurrency group ensures rapid pushes to the same PR don't queue multiple
+# label operations: only the most recent push proceeds.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+    branches:
+      - master
+
+permissions:
+  issues: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: e2e-pr-trigger-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  add-e2e-label:
+    name: Add E2E/Run label
+    runs-on: ubuntu-22.04
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Cancel running E2E tests and re-trigger
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            // --- 1. Cancel in-progress / queued Electron Playwright Tests runs ---
+            //
+            // Matterwick dispatches e2e-functional.yml via workflow_dispatch using the
+            // default branch as the dispatch ref, so every E2E run has head_branch=master
+            // regardless of which PR triggered it. We therefore cancel ALL non-terminal
+            // runs of that workflow rather than trying to filter by branch.
+            // This is safe because only one labelled PR drives E2E tests at a time.
+            const { data: { workflows } } = await github.rest.actions.listRepoWorkflows({
+              owner,
+              repo,
+            });
+
+            const e2eWorkflow = workflows.find((w) => w.name === 'Electron Playwright Tests');
+            if (e2eWorkflow) {
+              for (const status of ['in_progress', 'queued', 'waiting']) {
+                const { data: { workflow_runs } } = await github.rest.actions.listWorkflowRuns({
+                  owner,
+                  repo,
+                  workflow_id: e2eWorkflow.id,
+                  status,
+                  per_page: 20,
+                });
+                for (const run of workflow_runs) {
+                  try {
+                    await github.rest.actions.cancelWorkflowRun({ owner, repo, run_id: run.id });
+                    core.info(`Cancelled E2E run ${run.id} (status: ${status})`);
+                  } catch (e) {
+                    // A run may have finished between list and cancel — that's fine.
+                    core.warning(`Could not cancel run ${run.id}: ${e.message}`);
+                  }
+                }
+              }
+            } else {
+              core.warning('Electron Playwright Tests workflow not found — skipping cancellation');
+            }
+
+            // --- 2. Remove + re-add E2E/Run label ---
+            //
+            // Remove first so re-adding always fires a pull_request:labeled webhook.
+            // Without this, if the label is already present (tests were running),
+            // addLabels is a no-op and Matterwick never sees a new event for the
+            // latest commit.
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'E2E/Run',
+              });
+            } catch (e) {
+              if (e.status !== 404) {
+                throw e; // 404 means label was absent; anything else is unexpected
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['E2E/Run'],
+            });

@@ -38,6 +38,10 @@ on:
         description: "PR number to remove E2E label from after tests complete"
         required: false
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   prepare-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
@@ -52,7 +56,10 @@ jobs:
   update-initial-status:
     name: Update initial status
     needs: prepare-matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -87,13 +94,91 @@ jobs:
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
-  update-final-status:
-    name: Update final status
-    runs-on: ubuntu-22.04
+  merge-e2e-report:
+    name: Merge E2E report
+    runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-tests
+    if: always() && !cancelled()
+    permissions:
+      contents: read
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+      AWS_S3_BUCKET: mattermost-cypress-report
+    outputs:
+      merged-report-ready: ${{ steps.merge.outputs.merged_report_ready }}
+      merged-report-url: ${{ steps.upload-s3.outputs.report_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '22.x'
+          cache: "npm"
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E dependencies
+        run: |
+          cd e2e
+          npm ci
+
+      - name: Download blob reports
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+
+      - name: Merge Playwright reports
+        id: merge
+        run: |
+          if find all-blob-reports -type f -name '*.zip' | grep -q .; then
+            cd e2e
+            npx playwright merge-reports --config=merge.playwright.config.ts ../all-blob-reports
+            echo "merged_report_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No blob reports found to merge." >> "$GITHUB_STEP_SUMMARY"
+            echo "merged_report_ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload merged Playwright report artifact
+        if: always() && steps.merge.outputs.merged_report_ready == 'true'
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: playwright-report-merged
+          path: e2e/playwright-report-merged
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload merged report to S3
+        id: upload-s3
+        if: steps.merge.outputs.merged_report_ready == 'true'
+        run: |
+          S3_PREFIX="desktop-e2e/${{ github.run_id }}-${{ github.run_attempt }}"
+          aws s3 sync e2e/playwright-report-merged/ "s3://${AWS_S3_BUCKET}/${S3_PREFIX}/" \
+            --acl public-read \
+            --content-type text/html \
+            --cache-control "no-cache"
+          REPORT_URL="https://${AWS_S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/index.html"
+          echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
+          echo "Playwright report uploaded: ${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
+
+  update-final-status:
+    name: Update final status
+    runs-on: ubuntu-24.04
+    needs:
+      - prepare-matrix
+      - e2e-tests
+      - merge-e2e-report
     if: always()
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -106,18 +191,20 @@ jobs:
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            await updateFinalStatus({ github, context, platforms, outputs });
+            const mergedReportUrl = '${{ needs.merge-e2e-report.outputs.merged-report-url }}' || undefined;
+            await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
 
   remove-e2e-label:
     name: Remove E2E label from PR
     runs-on: ubuntu-22.04
     permissions:
       issues: write
+      pull-requests: write
     needs:
       - e2e-tests
       - e2e-policy-tests
       - update-final-status
-    if: always() && inputs.pr_number != ''
+    if: always()
     steps:
       - name: e2e/remove-label-from-pr
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
@@ -125,14 +212,42 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            const prNumber = parseInt(process.env.PR_NUMBER);
-            if (!prNumber) return;
-            await github.rest.issues.removeLabel({
-              issue_number: prNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'E2E/Run',
-            });
+            // Use pr_number if provided directly by the dispatcher (e.g. Matterwick)
+            let prNumber = parseInt(process.env.PR_NUMBER) || null;
+
+            // Fall back to looking up the PR by head branch when pr_number was not passed
+            if (!prNumber) {
+              const run = await github.rest.actions.getWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId,
+              });
+              const branchName = run.data.head_branch;
+              if (branchName) {
+                const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
+                const prs = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  head: `${headOwner}:${branchName}`,
+                });
+                if (prs.data && prs.data.length > 0) {
+                  const matchingPr = prs.data.find((pr) => pr.head && pr.head.sha === run.data.head_sha);
+                  prNumber = (matchingPr || prs.data[0]).number;
+                }
+              }
+            }
+
+            if (prNumber) {
+              await github.rest.issues.removeLabel({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'E2E/Run',
+              });
+            } else {
+              console.log('Label removal skipped - could not find associated PR');
+            }
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
 
@@ -213,7 +328,6 @@ jobs:
         run: |
           npm ci
           cd e2e && npm ci
-          npx electron-rebuild -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/build-test-bundle
         run: npm run build-test
@@ -222,8 +336,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd e2e
-          npm run run:policy || true
-          npm run send-report
+          set +e
+          npm run run:policy
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
+          npm run send-report || true
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
@@ -232,21 +348,43 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd e2e
-          npm run run:policy || true
-          npm run send-report
+          set +e
+          npm run run:policy
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
+          npm run send-report || true
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
 
       - name: e2e/check-for-failures
         id: check-failures
+        if: always()
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests && newFailedTests.length > 0) {
+
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const platform = process.platform === 'darwin' ? 'macos' : 'windows';
+            const hasFailed = newFailedTests && newFailedTests.length > 0;
+
+            try {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: context.sha,
+                state: hasFailed ? 'failure' : 'success',
+                context: `policy-test/${platform}`,
+                description: `Policy tests completed with ${hasFailed ? newFailedTests.length : 0} failures`,
+                target_url: runUrl,
+              });
+            } catch (e) {
+              console.log(`Could not update commit status: ${e.message}`);
+            }
+
+            if (hasFailed) {
               core.setFailed(`${newFailedTests.length} policy test(s) failed:\n${newFailedTests.join('\n')}`);
             }
 
@@ -255,5 +393,5 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: policy-test-results-${{ runner.os }}
-          path: e2e/mochawesome-report
+          path: e2e/playwright-report
           retention-days: 7
