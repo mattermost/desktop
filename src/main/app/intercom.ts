@@ -12,8 +12,8 @@ import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
-import {setTestField} from 'common/utils/util';
 import {parseURL} from 'common/utils/url';
+import {setTestField} from 'common/utils/util';
 import NotificationManager from 'main/notifications';
 import {getLocalPreload} from 'main/utils';
 
