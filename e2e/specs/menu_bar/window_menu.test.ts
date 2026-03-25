@@ -139,6 +139,7 @@ async function clickWindowMenuItem(
             return;
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
+
             // Retry on context destruction (navigation) or menu not yet rebuilt after TAB_ADDED.
             if (
                 !message.includes('Execution context was destroyed') &&

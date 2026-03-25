@@ -190,7 +190,7 @@ test.describe('focus', () => {
         // GitHub Actions macOS runners), so MattermostWebContentsView.focus() silently
         // skips webContents.focus(). These tests require a real interactive desktop session.
         test.skip(
-            process.platform === 'linux' || !!process.env.CI,
+            process.platform === 'linux' || Boolean(process.env.CI),
             'OS window focus unreliable in headless CI environments',
         );
 

@@ -19,6 +19,12 @@ let showUnreadBadgeSetting: boolean;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TestGlobal = typeof global & Record<string, any>;
 
+function setTestField(name: string, value: unknown): void {
+    if (process.env.NODE_ENV === 'test') {
+        (global as TestGlobal)[name] = value;
+    }
+}
+
 /**
      * Badge generation for Windows
      */
@@ -146,7 +152,7 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
         } else {
             resolvedType = 'none';
         }
-        (global as TestGlobal).__testBadgeState = {sessionExpired, mentionCount, showUnreadBadge, resolvedType};
+        setTestField('__testBadgeState', {sessionExpired, mentionCount, showUnreadBadge, resolvedType});
     }
 }
 
@@ -157,9 +163,6 @@ export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
 
 export function setupBadge() {
     AppState.on(UPDATE_APPSTATE_TOTALS, showBadge);
-
-    if (process.env.NODE_ENV === 'test') {
-        (global as TestGlobal).__testTriggerBadge = showBadge;
-        (global as TestGlobal).__testTriggerSetUnreadBadgeSetting = setUnreadBadgeSetting;
-    }
+    setTestField('__testTriggerBadge', showBadge);
+    setTestField('__testTriggerSetUnreadBadgeSetting', setUnreadBadgeSetting);
 }
