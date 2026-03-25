@@ -194,6 +194,7 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
         shortcut: Joi.string().allow('').default('CommandOrControl+Shift+Space'),
         selectedAgentId: Joi.string().allow('', null),
         selectedServerId: Joi.string().allow('', null),
+        selectedAgentUsername: Joi.string().allow('', null),
     }),
 });
 

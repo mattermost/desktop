@@ -88,6 +88,7 @@ export default function AgentSetting({
     const [shortcut, setShortcut] = useState(value?.shortcut ?? DEFAULT_SHORTCUT);
     const [selectedAgentId, setSelectedAgentId] = useState(value?.selectedAgentId ?? '');
     const [selectedServerId, setSelectedServerId] = useState(value?.selectedServerId ?? '');
+    const [selectedAgentUsername, setSelectedAgentUsername] = useState(value?.selectedAgentUsername ?? '');
     const [recording, setRecording] = useState(false);
     const recordingRef = useRef(false);
     const [agents, setAgents] = useState<AvailableAgent[]>([]);
@@ -114,23 +115,27 @@ export default function AgentSetting({
         }
         const newEnabled = !enabled;
         setEnabled(newEnabled);
-        save({enabled: newEnabled, shortcut, selectedAgentId, selectedServerId});
-    }, [enabled, shortcut, selectedAgentId, selectedServerId, save, hasAgents]);
+        save({enabled: newEnabled, shortcut, selectedAgentId, selectedServerId, selectedAgentUsername});
+    }, [enabled, shortcut, selectedAgentId, selectedServerId, selectedAgentUsername, save, hasAgents]);
 
     const handleAgentChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
         const val = e.target.value;
         if (!val) {
             setSelectedAgentId('');
             setSelectedServerId('');
-            save({enabled, shortcut, selectedAgentId: undefined, selectedServerId: undefined});
+            setSelectedAgentUsername('');
+            save({enabled, shortcut, selectedAgentId: undefined, selectedServerId: undefined, selectedAgentUsername: undefined});
             return;
         }
 
         const [agentId, serverId] = val.split('::');
+        const agent = agents.find((a) => a.id === agentId && a.serverId === serverId);
+        const username = agent?.username ?? '';
         setSelectedAgentId(agentId);
         setSelectedServerId(serverId);
-        save({enabled, shortcut, selectedAgentId: agentId, selectedServerId: serverId});
-    }, [enabled, shortcut, save]);
+        setSelectedAgentUsername(username);
+        save({enabled, shortcut, selectedAgentId: agentId, selectedServerId: serverId, selectedAgentUsername: username});
+    }, [enabled, shortcut, agents, save]);
 
     const startRecording = useCallback(() => {
         setRecording(true);
@@ -144,8 +149,8 @@ export default function AgentSetting({
 
     const resetToDefault = useCallback(() => {
         setShortcut(DEFAULT_SHORTCUT);
-        save({enabled, shortcut: DEFAULT_SHORTCUT, selectedAgentId, selectedServerId});
-    }, [enabled, selectedAgentId, selectedServerId, save]);
+        save({enabled, shortcut: DEFAULT_SHORTCUT, selectedAgentId, selectedServerId, selectedAgentUsername});
+    }, [enabled, selectedAgentId, selectedServerId, selectedAgentUsername, save]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -166,7 +171,7 @@ export default function AgentSetting({
                 setShortcut(accelerator);
                 setRecording(false);
                 recordingRef.current = false;
-                save({enabled, shortcut: accelerator, selectedAgentId, selectedServerId});
+                save({enabled, shortcut: accelerator, selectedAgentId, selectedServerId, selectedAgentUsername});
             }
         };
 

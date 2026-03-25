@@ -28,9 +28,7 @@ const DownloadsDropdownItemFile = ({item, activeItem, appName}: OwnProps) => {
         window.desktop.downloadsDropdown.openFile(item);
     };
 
-    const itemFilename = item.type === 'update' ?
-        translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName}) :
-        item.filename;
+    const itemFilename = item.type === 'update' ? translate.formatMessage({id: 'renderer.downloadsDropdown.Update.MattermostVersionX', defaultMessage: `{appName} version ${item.filename}`}, {version: item.filename, appName}) : item.filename;
 
     return (
         <div

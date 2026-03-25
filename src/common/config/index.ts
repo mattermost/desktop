@@ -253,6 +253,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.useNativeTitleBar ?? false;
     }
 
+    get agent() {
+        return this.combinedData?.agent ?? defaultPreferences.agent;
+    }
+
     getWindowsSystemDarkMode = () => {
         return !policyConfigLoader.getAppsUseLightTheme();
     };

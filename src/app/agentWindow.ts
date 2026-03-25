@@ -9,7 +9,9 @@ import {
     AGENT_WINDOW_SUBMIT,
     AGENT_WINDOW_SHOWN,
 } from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
+import AgentService from 'main/server/agentService';
 import {getLocalPreload} from 'main/utils';
 
 const log = new Logger('AgentWindow');
@@ -114,9 +116,24 @@ export class AgentWindow {
         }
     };
 
-    private handleSubmit = (_event: IpcMainEvent, text: string) => {
-        log.debug('Agent prompt submitted:', text);
+    private handleSubmit = async (_event: IpcMainEvent, text: string) => {
+        const agent = Config.agent;
+        if (!agent?.selectedAgentId || !agent?.selectedServerId) {
+            log.warn('No agent selected, ignoring submit');
+            return;
+        }
+
         this.hide();
+
+        try {
+            await AgentService.sendPromptAndOpenRHS(
+                agent.selectedServerId,
+                agent.selectedAgentId,
+                text,
+            );
+        } catch (error) {
+            log.error('Failed to send agent prompt:', {error});
+        }
     };
 }
 

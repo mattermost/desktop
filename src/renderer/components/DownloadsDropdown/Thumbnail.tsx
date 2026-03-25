@@ -48,15 +48,13 @@ const Thumbnail = ({item}: OwnProps) => {
 
     return (
         <div className='DownloadsDropdown__Thumbnail__Container'>
-            {showImagePreview && item.thumbnailData ?
-                <div
-                    className='DownloadsDropdown__Thumbnail preview'
-                    style={{
-                        backgroundImage: `url("${item.thumbnailData}")`,
-                        backgroundSize: 'cover',
-                    }}
-                /> :
-                <div className={`DownloadsDropdown__Thumbnail ${getIconClassName(item)}`}/>}
+            {showImagePreview && item.thumbnailData ? <div
+                className='DownloadsDropdown__Thumbnail preview'
+                style={{
+                    backgroundImage: `url("${item.thumbnailData}")`,
+                    backgroundSize: 'cover',
+                }}
+            /> : <div className={`DownloadsDropdown__Thumbnail ${getIconClassName(item)}`}/>}
             {showBadge(item.state)}
         </div>
     );

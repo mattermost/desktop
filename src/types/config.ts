@@ -31,6 +31,7 @@ export type AgentConfig = {
     shortcut: string;
     selectedAgentId?: string;
     selectedServerId?: string;
+    selectedAgentUsername?: string;
 };
 
 export type CurrentConfig = ConfigV4;
