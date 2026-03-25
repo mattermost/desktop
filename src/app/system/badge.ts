@@ -7,6 +7,7 @@ import {app, nativeImage} from 'electron';
 import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
+import {setTestField} from 'common/utils/util';
 import {localizeMessage} from 'main/i18nManager';
 
 import MainWindow from '../mainWindow/mainWindow';
@@ -15,15 +16,6 @@ const log = new Logger('Badge');
 const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TestGlobal = typeof global & Record<string, any>;
-
-function setTestField(name: string, value: unknown): void {
-    if (process.env.NODE_ENV === 'test') {
-        (global as TestGlobal)[name] = value;
-    }
-}
 
 /**
      * Badge generation for Windows

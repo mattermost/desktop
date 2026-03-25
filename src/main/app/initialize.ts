@@ -42,6 +42,7 @@ import Config from 'common/config';
 import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
+import {setTestField} from 'common/utils/util';
 import {parseURL} from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
@@ -276,15 +277,13 @@ function initializeInterCommunicationEventListeners() {
 }
 
 async function initializeAfterAppReady() {
-    if (process.env.NODE_ENV === 'test') {
-        (global as any).__e2eTestRefs = {
-            MainWindow,
-            ServerManager,
-            TabManager,
-            ViewManager,
-            WebContentsManager,
-        };
-    }
+    setTestField('__e2eTestRefs', {
+        MainWindow,
+        ServerManager,
+        TabManager,
+        ViewManager,
+        WebContentsManager,
+    });
 
     protocol.handle('mattermost-desktop', (request: Request) => {
         const url = parseURL(request.url);
