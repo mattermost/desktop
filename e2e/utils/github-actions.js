@@ -38,19 +38,26 @@ async function updateFinalStatus({github, context, platforms, outputs, mergedRep
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
     await Promise.all(platforms.map((platform) => {
-        // Determine OS key based on runner
+        // Determine OS key and Playwright project name based on runner
         let osKey;
+        let playwrightProject;
         if (platform.runner.includes('ubuntu')) {
             osKey = 'LINUX';
+            playwrightProject = 'linux';
         } else if (platform.runner.includes('macos')) {
             osKey = 'MACOS';
+            playwrightProject = 'darwin';
         } else {
             osKey = 'WINDOWS';
+            playwrightProject = 'win32';
         }
 
         const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
         const status = outputs[`STATUS_${osKey}`] || 'failure';
-        let reportLink = mergedReportUrl || outputs[`REPORT_LINK_${osKey}`];
+        let reportLink = outputs[`REPORT_LINK_${osKey}`];
+        if (!reportLink && mergedReportUrl) {
+            reportLink = `${mergedReportUrl}#?q=p:${playwrightProject}`;
+        }
         if (!reportLink) {
             reportLink = workflowUrl;
         }

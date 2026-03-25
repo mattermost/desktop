@@ -103,8 +103,14 @@ jobs:
     if: always() && !cancelled()
     permissions:
       contents: read
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+      AWS_S3_BUCKET: mattermost-cypress-report
     outputs:
       merged-report-ready: ${{ steps.merge.outputs.merged_report_ready }}
+      merged-report-url: ${{ steps.upload-s3.outputs.report_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -149,6 +155,19 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Upload merged report to S3
+        id: upload-s3
+        if: steps.merge.outputs.merged_report_ready == 'true'
+        run: |
+          S3_PREFIX="desktop-e2e/${{ github.run_id }}-${{ github.run_attempt }}"
+          aws s3 sync e2e/playwright-report-merged/ "s3://${AWS_S3_BUCKET}/${S3_PREFIX}/" \
+            --acl public-read \
+            --content-type text/html \
+            --cache-control "no-cache"
+          REPORT_URL="https://${AWS_S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/index.html"
+          echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
+          echo "Playwright report uploaded: ${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
+
   update-final-status:
     name: Update final status
     runs-on: ubuntu-24.04
@@ -172,7 +191,8 @@ jobs:
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            await updateFinalStatus({ github, context, platforms, outputs });
+            const mergedReportUrl = '${{ needs.merge-e2e-report.outputs.merged-report-url }}' || undefined;
+            await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
 
   remove-e2e-label:
     name: Remove E2E label from PR
