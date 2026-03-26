@@ -118,7 +118,7 @@ export class AgentWindow {
 
     private handleSubmit = async (_event: IpcMainEvent, text: string) => {
         const agent = Config.agent;
-        if (!agent?.selectedAgentId || !agent?.selectedServerId) {
+        if (!agent?.selectedAgentId || !agent?.selectedServerUrl) {
             log.warn('No agent selected, ignoring submit');
             return;
         }
@@ -127,7 +127,7 @@ export class AgentWindow {
 
         try {
             await AgentService.sendPromptAndOpenRHS(
-                agent.selectedServerId,
+                agent.selectedServerUrl,
                 agent.selectedAgentId,
                 text,
             );

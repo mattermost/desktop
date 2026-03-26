@@ -59,6 +59,9 @@ const defaultPreferences: ConfigV4 = {
     agent: {
         enabled: true,
         shortcut: 'CommandOrControl+Shift+Space',
+        selectedAgentId: '',
+        selectedServerUrl: '',
+        selectedAgentUsername: '',
     },
 };
 

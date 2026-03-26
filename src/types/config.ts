@@ -30,7 +30,7 @@ export type AgentConfig = {
     enabled: boolean;
     shortcut: string;
     selectedAgentId?: string;
-    selectedServerId?: string;
+    selectedServerUrl?: string;
     selectedAgentUsername?: string;
 };
 

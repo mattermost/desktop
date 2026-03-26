@@ -67,6 +67,7 @@ export class AgentService {
                             lastIconUpdate: bot.lastIconUpdate,
                             dmChannelID: bot.dmChannelID,
                             serverId: server.id,
+                            serverUrl: server.url.toString(),
                             serverName: server.name,
                         }));
                         resolve(agents);
@@ -80,11 +81,18 @@ export class AgentService {
         });
     };
 
-    sendPromptAndOpenRHS = async (serverId: string, agentId: string, message: string) => {
+    sendPromptAndOpenRHS = async (serverUrl: string, agentId: string, message: string) => {
         // Lazy imports to avoid circular dependency
         const {default: MainWindow} = await import('app/mainWindow/mainWindow');
         const {default: TabManager} = await import('app/tabs/tabManager');
         const {default: WebContentsManager} = await import('app/views/webContentsManager');
+
+        // Look up server by URL since server IDs are regenerated on each app launch
+        const server = ServerManager.lookupServerByURL(serverUrl, true);
+        if (!server) {
+            throw new Error(`No server found for URL: ${serverUrl}`);
+        }
+        const serverId = server.id;
 
         const view = ViewManager.getPrimaryView(serverId);
         if (!view) {

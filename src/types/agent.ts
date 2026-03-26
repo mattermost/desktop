@@ -16,5 +16,6 @@ export type AgentBotsResponse = {
 
 export type AvailableAgent = AgentInfo & {
     serverId: string;
+    serverUrl: string;
     serverName: string;
 };

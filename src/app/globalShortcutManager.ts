@@ -16,7 +16,7 @@ export class GlobalShortcutManager {
     private currentEnabled?: boolean;
 
     private isFullyConfigured = (agent?: AgentConfig): boolean => {
-        return Boolean(agent?.enabled && agent?.shortcut && agent?.selectedAgentId && agent?.selectedServerId);
+        return Boolean(agent?.enabled && agent?.shortcut && agent?.selectedAgentId && agent?.selectedServerUrl);
     };
 
     init = () => {

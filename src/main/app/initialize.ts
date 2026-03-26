@@ -306,7 +306,7 @@ async function initializeAfterAppReady() {
     MainWindow.show();
 
     AgentService.init();
-    if (Config.agent?.enabled && Config.agent?.selectedAgentId && Config.agent?.selectedServerId) {
+    if (Config.agent?.enabled && Config.agent?.selectedAgentId && Config.agent?.selectedServerUrl) {
         AgentWindow.init();
     }
     GlobalShortcutManager.init();
