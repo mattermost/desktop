@@ -30,7 +30,7 @@ import {isHttpLink, isInternalURL, parseURL} from 'common/utils/url';
 import {type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
-import {getInstalledBrowsers, openLinkInBrowser} from 'main/browserManager';
+import ExternalBrowserManager from 'main/browserManager';
 import ContextMenu from 'main/contextMenu';
 import DeveloperMode from 'main/developerMode';
 import {localizeMessage} from 'main/i18nManager';
@@ -93,8 +93,6 @@ export class MattermostWebContentsView extends EventEmitter {
         });
         this.webContentsView.webContents.on('did-navigate-in-page', () => this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle()));
         this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
-
-        this.loadBrowserList();
 
         if (!DeveloperMode.get('disableContextMenu')) {
             this.contextMenu = new ContextMenu(this.generateContextMenu(), this.webContentsView.webContents);
@@ -527,8 +525,8 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     private generateOpenInBrowserMenuItems = (url: string): Electron.MenuItemConstructorOptions[] => {
-        const browsers = this.cachedBrowsers;
-        if (!browsers || browsers.length === 0) {
+        const browsers = ExternalBrowserManager.getCachedBrowsers();
+        if (browsers.length === 0) {
             return [];
         }
 
@@ -543,7 +541,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 label: localizeMessage('app.menus.contextMenu.openLinkInBrowser', 'Open Link in Browser'),
                 submenu: browsers.map((browser) => ({
                     label: browser.name,
-                    click: () => openLinkInBrowser(url, browser),
+                    click: () => ExternalBrowserManager.openLinkInBrowser(url, browser),
                 })),
             },
         ];
@@ -551,11 +549,5 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private isURLForConfiguredServer = (url: URL): boolean => {
         return ServerManager.getAllServers().some((s) => isInternalURL(url, s.url));
-    };
-
-    private cachedBrowsers: Awaited<ReturnType<typeof getInstalledBrowsers>> | null = null;
-
-    private loadBrowserList = async () => {
-        this.cachedBrowsers = await getInstalledBrowsers();
     };
 }

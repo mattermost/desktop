@@ -1,18 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {exec as execOriginal, execFile as execFileOriginal} from 'child_process';
+import {execFile as execFileOriginal} from 'child_process';
 import fs from 'fs';
-import path from 'path';
 import {promisify} from 'util';
 
 import {shell} from 'electron';
+import type {RegistryValue} from 'registry-js';
+import {HKEY, enumerateValues} from 'registry-js';
 
 import {Logger} from 'common/log';
 
-const exec = promisify(execOriginal);
 const execFile = promisify(execFileOriginal);
-const log = new Logger('BrowserManager');
+const log = new Logger('ExternalBrowserManager');
 
 export interface BrowserInfo {
     name: string;
@@ -46,9 +46,10 @@ const KNOWN_WINDOWS_BROWSERS: Array<{name: string; registryKey: string}> = [
     {name: 'Arc', registryKey: 'Arc'},
 ];
 
+const WINDOWS_REGISTRY_PATH = 'SOFTWARE\\Clients\\StartMenuInternet';
 const WINDOWS_REGISTRY_ROOTS = [
-    'HKLM\\SOFTWARE\\Clients\\StartMenuInternet',
-    'HKCU\\SOFTWARE\\Clients\\StartMenuInternet',
+    HKEY.HKEY_LOCAL_MACHINE,
+    HKEY.HKEY_CURRENT_USER,
 ];
 
 // Linux: known browsers with their executable names
@@ -63,37 +64,11 @@ const KNOWN_LINUX_BROWSERS: Array<{name: string; commands: string[]}> = [
     {name: 'Zen Browser', commands: ['zen-browser']},
 ];
 
-const LINUX_DESKTOP_DIRS = [
-    '/usr/share/applications',
-    path.join(process.env.HOME || '', '.local/share/applications'),
-];
+const stripWrappingQuotes = (token: string) => token.replace(/^["']|["']$/g, '');
 
-let cachedBrowsers: BrowserInfo[] | null = null;
-
-// macOS detection via mdfind (Spotlight)
-async function getMacOSBrowsers(): Promise<BrowserInfo[]> {
-    const results = await Promise.all(
-        KNOWN_MACOS_BROWSERS.map(async (browser) => {
-            try {
-                const {stdout} = await exec(
-                    `mdfind "kMDItemCFBundleIdentifier == '${browser.bundleId}'" | head -1`,
-                    {timeout: 5000},
-                );
-                if (stdout.trim().length > 0) {
-                    return {
-                        name: browser.name,
-                        executable: 'open',
-                        args: ['-b', browser.bundleId],
-                    };
-                }
-            } catch {
-                // browser not found
-            }
-            return null;
-        }),
-    );
-    return results.filter((b): b is BrowserInfo => b !== null);
-}
+const tokenizeCommand = (value: string): string[] => {
+    return (value.match(/"[^"]*"|'[^']*'|\S+/g) || []).map(stripWrappingQuotes);
+};
 
 /**
  * Parse a Windows registry command string (e.g. from shell\open\command).
@@ -102,242 +77,195 @@ async function getMacOSBrowsers(): Promise<BrowserInfo[]> {
  *   C:\Browser\browser.exe
  */
 function parseRegistryCommand(raw: string): {executable: string; args: string[]} | null {
-    const trimmed = raw.trim();
-    if (!trimmed) {
+    const tokens = tokenizeCommand(raw.trim());
+    if (tokens.length === 0) {
         return null;
     }
 
-    let executable: string;
-    let rest: string;
-
-    if (trimmed.startsWith('"')) {
-        const closingQuote = trimmed.indexOf('"', 1);
-        if (closingQuote === -1) {
-            return null;
-        }
-        executable = trimmed.substring(1, closingQuote);
-        rest = trimmed.substring(closingQuote + 1).trim();
-    } else {
-        const spaceIndex = trimmed.indexOf(' ');
-        if (spaceIndex === -1) {
-            executable = trimmed;
-            rest = '';
-        } else {
-            executable = trimmed.substring(0, spaceIndex);
-            rest = trimmed.substring(spaceIndex + 1).trim();
-        }
-    }
-
-    // Filter out placeholders like %1, %*, "%1", '%1', etc. and keep real arguments
-    const args = rest.split(/\s+/).filter((token) => {
-        if (!token) {
-            return false;
-        }
-        const normalized = token.replace(/^["']|["']$/g, '');
-        return !(/(%\d|%\*)/).test(normalized);
-    });
-
+    const [executable, ...rawArgs] = tokens;
+    const args = rawArgs.filter((token) => token && !(/^%(\d|\*)$/).test(token));
     return {executable, args};
 }
 
-// Windows detection via registry (checks both HKLM and HKCU)
-async function getWindowsBrowsers(): Promise<BrowserInfo[]> {
-    const seenNames = new Set<string>();
-    const found: BrowserInfo[] = [];
+/**
+ * Detects installed external browsers for the current platform and opens links in a selected browser.
+ */
+export class ExternalBrowserManager {
+    private cachedBrowsers: BrowserInfo[] | null = null;
+    private loadingBrowsers?: Promise<BrowserInfo[]>;
 
-    const results = await Promise.all(
-        WINDOWS_REGISTRY_ROOTS.flatMap((root) =>
-            KNOWN_WINDOWS_BROWSERS.map(async (browser) => {
+    init = (): void => {
+        this.getInstalledBrowsers();
+    };
+
+    getCachedBrowsers = (): BrowserInfo[] => {
+        return this.cachedBrowsers || [];
+    };
+
+    clearBrowserCache = (): void => {
+        this.cachedBrowsers = null;
+        this.loadingBrowsers = undefined;
+    };
+
+    getInstalledBrowsers = async (): Promise<BrowserInfo[]> => {
+        if (this.cachedBrowsers) {
+            return this.cachedBrowsers;
+        }
+
+        if (!this.loadingBrowsers) {
+            this.loadingBrowsers = this.loadInstalledBrowsers().finally(() => {
+                this.loadingBrowsers = undefined;
+            });
+        }
+
+        return this.loadingBrowsers;
+    };
+
+    openLinkInBrowser = async (url: string, browser: BrowserInfo): Promise<void> => {
+        log.debug('Opening link in external browser', {browser: browser.name});
+        try {
+            await execFile(browser.executable, [...browser.args, url], {timeout: 10000});
+        } catch (execError) {
+            log.error('execFile failed to open link, falling back to default browser', {browser: browser.name, error: execError});
+            try {
+                await shell.openExternal(url);
+            } catch (fallbackError) {
+                log.error('Fallback shell.openExternal also failed', {browser: browser.name, error: fallbackError});
+            }
+        }
+    };
+
+    private loadInstalledBrowsers = async (): Promise<BrowserInfo[]> => {
+        let browsers: BrowserInfo[] = [];
+
+        try {
+            switch (process.platform) {
+            case 'darwin':
+                browsers = await this.getMacOSBrowsers();
+                break;
+            case 'win32':
+                browsers = await this.getWindowsBrowsers();
+                break;
+            case 'linux':
+                browsers = await this.getLinuxBrowsers();
+                break;
+            default:
+                browsers = [];
+            }
+        } catch (error) {
+            log.error('Failed to detect installed browsers', {error});
+        }
+
+        this.cachedBrowsers = browsers;
+        log.debug('Detected installed browsers', {browsers: browsers.map((browser) => browser.name)});
+        return browsers;
+    };
+
+    private getMacOSBrowsers = async (): Promise<BrowserInfo[]> => {
+        const results = await Promise.all(
+            KNOWN_MACOS_BROWSERS.map(async (browser) => {
                 try {
-                    const {stdout} = await exec(
-                        `reg query "${root}\\${browser.registryKey}\\shell\\open\\command" /ve`,
+                    const {stdout} = await execFile(
+                        'mdfind',
+                        [`kMDItemCFBundleIdentifier == "${browser.bundleId}"`],
                         {timeout: 5000},
                     );
 
-                    const match = stdout.match(/REG_SZ\s+(.+)/);
-                    if (match) {
-                        const parsed = parseRegistryCommand(match[1].trim());
-                        if (parsed && fs.existsSync(parsed.executable)) {
-                            return {
-                                name: browser.name,
-                                executable: parsed.executable,
-                                args: parsed.args,
-                            };
-                        }
+                    if (stdout.split('\n').some((line) => line.trim().length > 0)) {
+                        return {
+                            name: browser.name,
+                            executable: 'open',
+                            args: ['-b', browser.bundleId],
+                        };
                     }
                 } catch {
-                    // browser not found in registry
+                    // browser not found
                 }
+
                 return null;
             }),
-        ),
-    );
+        );
 
-    for (const result of results) {
-        if (result && !seenNames.has(result.name)) {
-            found.push(result);
-            seenNames.add(result.name);
-        }
-    }
+        return results.filter((browser): browser is BrowserInfo => browser !== null);
+    };
 
-    return found;
-}
+    private getWindowsBrowsers = async (): Promise<BrowserInfo[]> => {
+        const seenNames = new Set<string>();
+        const found: BrowserInfo[] = [];
 
-// Linux detection via which + .desktop files
-async function getLinuxBrowsers(): Promise<BrowserInfo[]> {
-    const seenNames = new Set<string>();
-
-    // Check known browsers in parallel — for each browser, try its commands sequentially
-    const knownResults = await Promise.all(
-        KNOWN_LINUX_BROWSERS.map(async (browser) => {
-            for (const cmd of browser.commands) {
-                try {
-                    // eslint-disable-next-line no-await-in-loop
-                    const {stdout} = await exec(`which ${cmd}`, {timeout: 3000});
-                    if (stdout.trim().length > 0) {
-                        return {name: browser.name, executable: stdout.trim(), args: [] as string[]};
-                    }
-                } catch {
-                    // command not found, try next
+        for (const hive of WINDOWS_REGISTRY_ROOTS) {
+            for (const browser of KNOWN_WINDOWS_BROWSERS) {
+                if (seenNames.has(browser.name)) {
+                    continue;
                 }
-            }
-            return null;
-        }),
-    );
 
-    const found: BrowserInfo[] = [];
-    for (const result of knownResults) {
-        if (result && !seenNames.has(result.name)) {
-            found.push(result);
-            seenNames.add(result.name);
+                const command = this.getWindowsBrowserCommand(hive, browser.registryKey);
+                if (!command) {
+                    continue;
+                }
+
+                const parsed = parseRegistryCommand(command);
+                if (!parsed || !fs.existsSync(parsed.executable)) {
+                    continue;
+                }
+
+                found.push({
+                    name: browser.name,
+                    executable: parsed.executable,
+                    args: parsed.args,
+                });
+                seenNames.add(browser.name);
+            }
         }
-    }
 
-    // Also discover browsers from .desktop files that handle http(s)
-    const existingDirs = LINUX_DESKTOP_DIRS.filter((dir) => fs.existsSync(dir));
-    const desktopDirResults = await Promise.all(
-        existingDirs.map(async (dir) => {
-            try {
-                // Use execFile to avoid shell — dir may contain untrusted content from HOME
-                const {stdout} = await execFile(
-                    'grep', ['-rl', 'x-scheme-handler/https', dir],
-                    {timeout: 5000},
-                );
-                return stdout.trim().split('\n').filter(Boolean);
-            } catch {
-                // grep returns exit code 1 when no matches found
-                return [];
-            }
-        }),
-    );
+        return found;
+    };
 
-    for (const file of desktopDirResults.flat()) {
+    private getWindowsBrowserCommand = (hive: HKEY, registryKey: string): string | undefined => {
         try {
-            const content = fs.readFileSync(file, 'utf-8');
-            const nameMatch = content.match(/^Name=(.+)$/m);
-            const execMatch = content.match(/^Exec=(.+)$/m);
-            if (nameMatch && execMatch && !seenNames.has(nameMatch[1])) {
-                const execLine = execMatch[1].trim();
-                let executable: string;
-                let rest: string;
+            const values = enumerateValues(hive, `${WINDOWS_REGISTRY_PATH}\\${registryKey}\\shell\\open\\command`);
+            const defaultValue = this.findDefaultRegistryValue(values);
+            return typeof defaultValue?.data === 'string' ? defaultValue.data : undefined;
+        } catch (error) {
+            log.debug('Failed to read browser command from registry', {hive, registryKey, error});
+            return undefined;
+        }
+    };
 
-                if (execLine.startsWith('"')) {
-                    const closingQuote = execLine.indexOf('"', 1);
-                    if (closingQuote === -1) {
-                        continue;
-                    }
-                    executable = execLine.substring(1, closingQuote);
-                    rest = execLine.substring(closingQuote + 1).trim();
-                } else {
-                    const spaceIndex = execLine.indexOf(' ');
-                    if (spaceIndex === -1) {
-                        executable = execLine;
-                        rest = '';
-                    } else {
-                        executable = execLine.substring(0, spaceIndex);
-                        rest = execLine.substring(spaceIndex + 1).trim();
+    private findDefaultRegistryValue = (values: readonly RegistryValue[]): RegistryValue | undefined => {
+        return values.find((value) => value.name === '') ||
+            values.find((value) => value.name === '(Default)') ||
+            values.find((value) => typeof value.data === 'string');
+    };
+
+    private getLinuxBrowsers = async (): Promise<BrowserInfo[]> => {
+        const results: Array<BrowserInfo | null> = await Promise.all(
+            KNOWN_LINUX_BROWSERS.map(async (browser) => {
+                for (const command of browser.commands) {
+                    try {
+                        // eslint-disable-next-line no-await-in-loop
+                        const {stdout} = await execFile('which', [command], {timeout: 3000});
+                        const executable = stdout.split('\n').map((line) => line.trim()).find(Boolean);
+
+                        if (executable && fs.existsSync(executable)) {
+                            return {
+                                name: browser.name,
+                                executable,
+                                args: [] as string[],
+                            };
+                        }
+                    } catch {
+                        // command not found, try next
                     }
                 }
 
-                // Filter out .desktop field codes like %u %U %f %F %i %c %k and empty tokens
-                const args = rest ? rest.split(/\s+/).filter((token) => {
-                    if (!token) {
-                        return false;
-                    }
-                    const normalized = token.replace(/^["']|["']$/g, '');
-                    return !(/^%[uUfFickdDnNvm]$/).test(normalized);
-                }) : [];
+                return null;
+            }),
+        );
 
-                // Only accept absolute paths that point to an existing executable
-                if (path.isAbsolute(executable) && fs.existsSync(executable)) {
-                    found.push({
-                        name: nameMatch[1],
-                        executable,
-                        args,
-                    });
-                    seenNames.add(nameMatch[1]);
-                }
-            }
-        } catch {
-            // skip unreadable desktop files
-        }
-    }
-
-    return found;
-}
-
-export async function getInstalledBrowsers(): Promise<BrowserInfo[]> {
-    if (cachedBrowsers) {
-        return cachedBrowsers;
-    }
-
-    try {
-        switch (process.platform) {
-        case 'darwin':
-            cachedBrowsers = await getMacOSBrowsers();
-            break;
-        case 'win32':
-            cachedBrowsers = await getWindowsBrowsers();
-            break;
-        case 'linux':
-            cachedBrowsers = await getLinuxBrowsers();
-            break;
-        default:
-            cachedBrowsers = [];
-        }
-    } catch (error) {
-        log.error('Failed to detect installed browsers', {error});
-        cachedBrowsers = [];
-    }
-
-    log.debug('Detected installed browsers', {browsers: cachedBrowsers.map((b) => b.name)});
-    return cachedBrowsers;
-}
-
-export function clearBrowserCache(): void {
-    cachedBrowsers = null;
-}
-
-export async function openLinkInBrowser(url: string, browser: BrowserInfo): Promise<void> {
-    log.debug('Opening link in browser', {browser: browser.name});
-    try {
-        // Use execFile to avoid shell interpretation — URL is passed as an argument, not interpolated
-        await execFile(browser.executable, [...browser.args, url], {timeout: 10000});
-    } catch (execError) {
-        log.error('execFile failed to open link, falling back to default browser', {browser: browser.name, error: execError});
-        try {
-            await shell.openExternal(url);
-        } catch (fallbackError) {
-            log.error('Fallback shell.openExternal also failed', {error: fallbackError});
-        }
-    }
-}
-
-export class BrowserManager {
-    init = async () => {
-        await getInstalledBrowsers();
+        return results.filter((browser): browser is BrowserInfo => browser !== null);
     };
 }
 
-const browserManager = new BrowserManager();
-export default browserManager;
+const externalBrowserManager = new ExternalBrowserManager();
+export default externalBrowserManager;

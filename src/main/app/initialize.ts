@@ -44,6 +44,7 @@ import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
+import ExternalBrowserManager from 'main/browserManager';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
@@ -300,6 +301,7 @@ async function initializeAfterAppReady() {
         handleUpdateTheme();
     }
 
+    ExternalBrowserManager.init();
     MainWindow.show();
 
     const updateServerInfo = (serverId: string) => {
