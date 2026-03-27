@@ -225,8 +225,6 @@ jobs:
  
             let analysisBody = comments.reverse().find(c =>
               c.user.type === 'Bot' && c.body.includes('Documentation Impact Analysis')
-            );
- 
             )?.body;
             if (!analysisBody) {
               const reviews = await github.paginate(github.rest.pulls.listReviews, {
