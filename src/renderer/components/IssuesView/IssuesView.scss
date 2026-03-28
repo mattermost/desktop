@@ -1,0 +1,1051 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+// ── Root ───────────────────────────────────────────────────────────────────
+
+.IssuesView {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    font-size: 13px;
+}
+
+// ── Left sidebar ───────────────────────────────────────────────────────────
+
+.IV__sidebar {
+    width: 256px;
+    min-width: 180px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
+    overflow: hidden;
+}
+
+.IV__sidebarHeader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    flex-shrink: 0;
+}
+
+.IV__sidebarFilters {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    flex-shrink: 0;
+}
+
+.IV__sidebarList {
+    flex: 1;
+    overflow-y: auto;
+}
+
+// ── Issue list ─────────────────────────────────────────────────────────────
+
+.IV__list {
+    overflow: auto;
+}
+
+.IV__groupHeader {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 10px 5px;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover { background: rgba(var(--center-channel-color-rgb), 0.04); }
+}
+
+.IV__groupCaret {
+    font-size: 9px;
+    color: rgba(var(--center-channel-color-rgb), 0.5);
+    width: 9px;
+    flex-shrink: 0;
+}
+
+.IV__groupDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.IV__groupLabel {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    // color comes from inline style — will be STATUS/PRIORITY color, fully saturated
+}
+
+.IV__groupCount {
+    font-size: 11px;
+    opacity: 0.5;
+    margin-left: 1px;
+}
+
+.IV__issueRow {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px 5px 18px;
+    cursor: pointer;
+    transition: background 0.1s;
+
+    &:hover { background: rgba(var(--center-channel-color-rgb), 0.06); }
+
+    &--active {
+        background: rgba(22, 109, 224, 0.13);
+
+        .IV__issueTitle { font-weight: 600; }
+    }
+}
+
+.IV__priorityIcon {
+    font-size: 12px;
+    font-weight: 800;
+    width: 13px;
+    text-align: center;
+    flex-shrink: 0;
+    // color is inline — will be the priority color
+}
+
+.IV__statusDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    // background + boxShadow inline for color ring
+}
+
+.IV__issueId {
+    font-size: 10px;
+    font-family: 'Menlo', 'Monaco', monospace;
+    opacity: 0.45;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.IV__issueTitle {
+    flex: 1;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.9;
+}
+
+.IV__issueLabelRow {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.IV__labelPill {
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.IV__empty,
+.IV__loading {
+    padding: 28px 14px;
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.4;
+    font-style: italic;
+}
+
+// ── Main area + subtabs ────────────────────────────────────────────────────
+
+.IV__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.IV__subTabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    height: 40px;
+    padding: 0 16px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
+    flex-shrink: 0;
+}
+
+.IV__subTab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: rgba(var(--center-channel-color-rgb), 0.5);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+    margin-bottom: -1px;
+
+    &:hover { color: rgba(var(--center-channel-color-rgb), 0.8); }
+
+    &--active {
+        color: var(--center-channel-color);
+        font-weight: 700;
+        border-bottom-color: var(--button-bg, #166DE0);
+    }
+}
+
+.IV__mainContent {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+}
+
+// ── Agents tab (chat + right panels) ──────────────────────────────────────
+
+.IV__agentsTab {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.IV__chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    min-width: 0;
+}
+
+.IV__chatHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    height: 46px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    flex-shrink: 0;
+}
+
+.IV__chatIssueId {
+    font-size: 11px;
+    font-family: monospace;
+    opacity: 0.45;
+    flex-shrink: 0;
+}
+
+.IV__chatIssueName {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.IV__chatPlaceholder {
+    font-size: 13px;
+    opacity: 0.4;
+}
+
+.IV__chatStatusBadge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.IV__chatMessages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.IV__chatWelcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 10px;
+    opacity: 0.5;
+    text-align: center;
+    padding: 40px;
+}
+
+.IV__chatWelcomeIcon { font-size: 28px; }
+
+.IV__chatWelcomeText {
+    font-size: 13px;
+    strong { opacity: 1; font-weight: 700; }
+}
+
+.IV__chatDescription {
+    font-size: 12px;
+    max-width: 360px;
+    line-height: 1.6;
+    opacity: 0.7;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 6px;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+.IV__chatInputRow {
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.IV__chatInput {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 13px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+    border-radius: 6px;
+    background: rgba(var(--center-channel-color-rgb), 0.03);
+    color: inherit;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+
+    &:focus { border-color: var(--button-bg, #166DE0); }
+    &:disabled { opacity: 0.35; cursor: not-allowed; }
+    &::placeholder { opacity: 0.4; }
+}
+
+.IV__chatInputMeta {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.IV__chatModel {
+    font-size: 11px;
+    opacity: 0.35;
+}
+
+// ── Right column ───────────────────────────────────────────────────────────
+
+.IV__right {
+    width: 272px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.IV__panelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    height: 40px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    flex-shrink: 0;
+}
+
+.IV__panelTitle {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+}
+
+.IV__panelAction {
+    font-size: 11px;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px 7px;
+    border-radius: 4px;
+    opacity: 0.55;
+    color: inherit;
+    transition: opacity 0.1s, background 0.1s;
+
+    &:hover { opacity: 1; background: rgba(var(--center-channel-color-rgb), 0.08); }
+
+    &--run {
+        background: var(--button-bg, #166DE0);
+        color: var(--button-color, #fff);
+        opacity: 1;
+
+        &:hover { opacity: 0.88; background: var(--button-bg, #166DE0); }
+    }
+}
+
+.IV__git {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.IV__gitBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+}
+
+.IV__gitItem {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
+.IV__gitDot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &--muted  { background: rgba(var(--center-channel-color-rgb), 0.28); }
+    &--warn   { background: #f5a623; }
+    &--info   { background: #3d9ef5; }
+    &--ok     { background: #3dc779; }
+}
+
+.IV__gitItemLabel { flex: 1; opacity: 0.75; }
+
+.IV__gitLink {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--link-color, #166DE0);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+
+    &:hover { background: rgba(22, 109, 224, 0.1); }
+}
+
+.IV__gitSection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px 3px;
+}
+
+.IV__gitSectionLabel {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.45;
+}
+
+.IV__gitEmpty {
+    padding: 4px 12px 8px;
+    font-size: 12px;
+    opacity: 0.35;
+    font-style: italic;
+}
+
+.IV__terminal {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background: rgba(var(--center-channel-color-rgb), 0.02);
+}
+
+.IV__terminalTabs {
+    display: flex;
+    align-items: stretch;
+    flex: 1;
+    height: 100%;
+}
+
+.IV__terminalTab {
+    font-size: 11px;
+    font-weight: 500;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: rgba(var(--center-channel-color-rgb), 0.45);
+    padding: 0 10px;
+    cursor: pointer;
+    transition: color 0.1s;
+    margin-bottom: -1px;
+
+    &:hover { color: rgba(var(--center-channel-color-rgb), 0.8); }
+
+    &--active {
+        color: var(--center-channel-color);
+        border-bottom-color: var(--button-bg, #166DE0);
+    }
+}
+
+.IV__terminalBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.IV__terminalPrompt { color: #3dc779; font-weight: 700; }
+.IV__terminalCursor {
+    width: 7px;
+    height: 13px;
+    background: rgba(var(--center-channel-color-rgb), 0.6);
+    display: inline-block;
+    animation: blink 1.1s step-start infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
+// ── Diff tab ───────────────────────────────────────────────────────────────
+
+.IV__diffTab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.IV__diffHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    font-size: 12px;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.IV__diffSummary { font-weight: 500; }
+.IV__diffSummaryAdd { color: #3dc779; font-weight: 700; }
+.IV__diffSummaryDel { color: #e05c5c; font-weight: 700; }
+
+.IV__diffBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.IV__diffFile {
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.IV__diffFileHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.07);
+    cursor: pointer;
+    user-select: none;
+
+    &:hover { background: rgba(var(--center-channel-color-rgb), 0.07); }
+}
+
+.IV__diffFileCaret {
+    font-size: 10px;
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.IV__diffFilePath {
+    flex: 1;
+    font-size: 12px;
+    font-family: 'Menlo', 'Monaco', monospace;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.IV__diffFileMeta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.IV__diffAdd { font-size: 11px; font-weight: 700; color: #3dc779; }
+.IV__diffDel { font-size: 11px; font-weight: 700; color: #e05c5c; }
+
+.IV__diffBar {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.IV__diffBarCell {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+
+    &--add   { background: #3dc779; }
+    &--del   { background: #e05c5c; }
+    &--empty { background: rgba(var(--center-channel-color-rgb), 0.12); }
+}
+
+.IV__diffFileActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.IV__diffFileBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    opacity: 0.45;
+    color: inherit;
+
+    &:hover { opacity: 1; background: rgba(var(--center-channel-color-rgb), 0.08); }
+}
+
+.IV__diffViewed {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0.55;
+    padding: 2px 6px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.2);
+    border-radius: 4px;
+
+    &:hover { opacity: 1; }
+}
+
+.IV__diffHunks {
+    background: var(--center-channel-bg);
+}
+
+.IV__diffHunk {
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.06);
+
+    &:last-child { border-bottom: none; }
+}
+
+.IV__diffHunkHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: rgba(61, 158, 245, 0.08);
+    border-top: 1px solid rgba(61, 158, 245, 0.15);
+    border-bottom: 1px solid rgba(61, 158, 245, 0.15);
+    font-size: 11px;
+    font-family: 'Menlo', 'Monaco', monospace;
+}
+
+.IV__diffHunkExpand {
+    color: #3d9ef5;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.7;
+    &:hover { opacity: 1; }
+}
+
+.IV__diffHunkHeaderText {
+    color: #3d9ef5;
+    flex: 1;
+    opacity: 0.8;
+}
+
+.IV__diffLine {
+    display: flex;
+    align-items: stretch;
+    font-family: 'Menlo', 'Monaco', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+
+    &--add    { background: rgba(61, 199, 121, 0.12); }
+    &--remove { background: rgba(224, 92, 92, 0.12); }
+    &--context { }
+}
+
+.IV__diffLineNum {
+    width: 40px;
+    text-align: right;
+    padding: 0 8px;
+    font-size: 11px;
+    opacity: 0.3;
+    user-select: none;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(var(--center-channel-color-rgb), 0.06);
+
+    .IV__diffLine--add &    { background: rgba(61, 199, 121, 0.1); }
+    .IV__diffLine--remove & { background: rgba(224, 92, 92, 0.1); }
+}
+
+.IV__diffLineSign {
+    width: 18px;
+    text-align: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    user-select: none;
+
+    .IV__diffLine--add &    { color: #3dc779; }
+    .IV__diffLine--remove & { color: #e05c5c; }
+}
+
+.IV__diffLineContent {
+    flex: 1;
+    padding: 0 8px;
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    .IV__diffLine--add &    { color: rgba(61, 199, 121, 0.95); }
+    .IV__diffLine--remove & { color: rgba(224, 92, 92, 0.9); }
+}
+
+// ── Docs tab ───────────────────────────────────────────────────────────────
+
+.IV__docsEmpty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    opacity: 0.4;
+}
+
+.IV__docsEmptyIcon { font-size: 28px; }
+.IV__docsEmptyText { font-size: 13px; }
+
+.IV__docs {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+}
+
+.IV__docsContent {
+    max-width: 680px;
+    width: 100%;
+    padding: 36px 40px 60px;
+}
+
+.IV__docsMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.IV__docsMetaItem {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 10px;
+    white-space: nowrap;
+
+    &--id {
+        font-family: 'Menlo', 'Monaco', monospace;
+        background: rgba(var(--center-channel-color-rgb), 0.06);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
+        opacity: 0.7;
+    }
+
+    &--estimate {
+        background: rgba(var(--center-channel-color-rgb), 0.06);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
+        opacity: 0.6;
+    }
+
+    &--priority { background: none; padding-left: 0; }
+}
+
+.IV__docsTitle {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 0 0 28px;
+    letter-spacing: -0.3px;
+}
+
+.IV__docsSection {
+    margin-bottom: 28px;
+}
+
+.IV__docsH2 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    opacity: 0.45;
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+}
+
+.IV__docsText {
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 0;
+    opacity: 0.85;
+
+    &--placeholder {
+        opacity: 0.35;
+        font-style: italic;
+        cursor: text;
+    }
+}
+
+.IV__docsList {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.IV__docsListItem {
+    font-size: 14px;
+    line-height: 1.8;
+    font-family: 'Menlo', 'Monaco', monospace;
+    font-size: 13px;
+    opacity: 0.75;
+}
+
+// ── Shared form controls ───────────────────────────────────────────────────
+
+.IV__input {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.15);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+
+    &:focus { border-color: var(--button-bg, #166DE0); }
+
+    &--sm     { padding: 3px 7px; font-size: 12px; }
+    &--search { font-size: 12px; background: rgba(var(--center-channel-color-rgb), 0.04); }
+    &--prefix { width: 52px; }
+    &--textarea { resize: vertical; }
+}
+
+.IV__filterRow {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.IV__filterSelect {
+    flex: 1;
+    min-width: 0;
+    padding: 3px 4px;
+    font-size: 11px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    outline: none;
+}
+
+.IV__groupByLabel {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    opacity: 0.5;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.IV__btn {
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.1s;
+
+    &--primary {
+        background: var(--button-bg, #166DE0);
+        color: var(--button-color, #fff);
+        &:hover { opacity: 0.88; }
+    }
+
+    &--ghost {
+        background: transparent;
+        color: inherit;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.15);
+        &:hover { background: rgba(var(--center-channel-color-rgb), 0.06); }
+    }
+
+    &--danger {
+        background: transparent;
+        color: #e05c5c;
+        border: 1px solid #e05c5c;
+        &:hover { background: rgba(224, 92, 92, 0.08); }
+    }
+
+    &--sm  { padding: 4px 10px; font-size: 12px; }
+    &--xs  { padding: 2px 7px; font-size: 11px; }
+    &--disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.IV__iconBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.5;
+    padding: 2px 5px;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: 4px;
+    transition: opacity 0.1s;
+
+    &:hover { opacity: 0.9; background: rgba(var(--center-channel-color-rgb), 0.07); }
+}
+
+.IV__projectSelector {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.IV__projectSelect {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 3px 0;
+    flex: 1;
+    min-width: 0;
+    outline: none;
+}
+
+.IV__createProject {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────
+
+.IV__modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.IV__modal {
+    background: var(--center-channel-bg);
+    border-radius: 8px;
+    width: 480px;
+    max-height: 85vh;
+    overflow: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    color: var(--center-channel-color);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.1);
+}
+
+.IV__modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+}
+
+.IV__modalTitle { margin: 0; font-size: 15px; font-weight: 700; }
+
+.IV__modalBody {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.IV__modalFooter {
+    padding: 14px 20px;
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.IV__modalActions { display: flex; gap: 8px; }
+
+.IV__field { display: flex; flex-direction: column; gap: 4px; }
+
+.IV__fieldRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.IV__label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    opacity: 0.55;
+}
+
+.IV__labelPicker { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.IV__labelToggle {
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}

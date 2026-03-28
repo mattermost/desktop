@@ -128,6 +128,9 @@ import {
     GET_IS_MAC_APP_STORE,
     OPEN_MAC_APP_STORE,
     SKIP_VERSION,
+    SET_VIEW_MODE,
+    GET_AUTH_TOKEN,
+    ISSUES_API_REQUEST,
 } from 'common/communication';
 
 console.log('Preload initialized');
@@ -150,6 +153,9 @@ contextBridge.exposeInMainWorld('desktop', {
     closeServersDropdown: () => ipcRenderer.send(CLOSE_SERVERS_DROPDOWN),
     openServersDropdown: () => ipcRenderer.send(OPEN_SERVERS_DROPDOWN),
     switchTab: (viewId) => ipcRenderer.send(SWITCH_TAB, viewId),
+    setViewMode: (mode) => ipcRenderer.send(SET_VIEW_MODE, mode),
+    getAuthToken: () => ipcRenderer.invoke(GET_AUTH_TOKEN),
+    issuesApiRequest: (method, path, body) => ipcRenderer.invoke(ISSUES_API_REQUEST, method, path, body),
     closeTab: (viewId) => ipcRenderer.send(CLOSE_TAB, viewId),
     exitFullScreen: () => ipcRenderer.send(EXIT_FULLSCREEN),
     doubleClickOnWindow: () => ipcRenderer.send(DOUBLE_CLICK_ON_WINDOW),

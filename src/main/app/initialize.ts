@@ -37,6 +37,8 @@ import {
     GET_FULL_SCREEN_STATUS,
     SERVER_PRE_AUTH_SECRET_CHANGED,
     SERVER_URL_CHANGED,
+    GET_AUTH_TOKEN,
+    ISSUES_API_REQUEST,
 } from 'common/communication';
 import Config from 'common/config';
 import {MATTERMOST_PROTOCOL} from 'common/constants';
@@ -280,6 +282,57 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.handle(GET_FULL_SCREEN_STATUS, (event: IpcMainInvokeEvent) => {
         return BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
+    });
+
+    ipcMain.handle(GET_AUTH_TOKEN, async () => {
+        const currentServerId = ServerManager.getCurrentServerId();
+        const currentServer = currentServerId ? ServerManager.getServer(currentServerId) : null;
+        if (!currentServer?.url) {
+            return null;
+        }
+        const serverUrl = currentServer.url.toString().replace(/\/$/, '');
+        try {
+            const cookies = await session.defaultSession.cookies.get({url: serverUrl});
+            const authCookie = cookies.find((c) => c.name === 'MMAUTHTOKEN');
+            return authCookie?.value ?? null;
+        } catch {
+            return null;
+        }
+    });
+
+    ipcMain.handle(ISSUES_API_REQUEST, async (_event, method: string, path: string, body?: unknown) => {
+        const currentServerId = ServerManager.getCurrentServerId();
+        const currentServer = currentServerId ? ServerManager.getServer(currentServerId) : null;
+        if (!currentServer?.url) {
+            throw new Error('No active server');
+        }
+        const serverUrl = currentServer.url.toString().replace(/\/$/, '');
+        const cookies = await session.defaultSession.cookies.get({url: serverUrl});
+        const authCookie = cookies.find((c) => c.name === 'MMAUTHTOKEN');
+        const token = authCookie?.value ?? '';
+
+        const url = `${serverUrl}/plugins/com.mattermost.issues/api/v1${path}`;
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await net.fetch(url, {
+            method,
+            headers,
+            ...(body !== undefined ? {body: JSON.stringify(body)} : {}),
+        });
+
+        if (!response.ok) {
+            throw new Error(`${method} ${path} → ${response.status}`);
+        }
+        if (method === 'DELETE') {
+            return null;
+        }
+        return response.json();
     });
 }
 

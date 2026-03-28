@@ -19,6 +19,9 @@ type Props = {
     errorMessage?: string;
     openMenu: () => void;
     openPopoutMenu?: () => void;
+    activeMode?: 'strategy' | 'issues';
+    onModeChange?: (mode: 'strategy' | 'issues') => void;
+    issuesContent?: React.ReactNode;
 };
 
 export enum ErrorState {
@@ -35,6 +38,9 @@ export default function BasePage({
     title,
     errorState,
     errorMessage,
+    activeMode,
+    onModeChange,
+    issuesContent,
 }: Props) {
     let errorComponent;
     if (errorState === ErrorState.FAILED) {
@@ -65,11 +71,14 @@ export default function BasePage({
                     title={title}
                     openMenu={openMenu}
                     openPopoutMenu={openPopoutMenu}
+                    activeMode={activeMode}
+                    onModeChange={onModeChange}
                 >
                     {children}
                 </TopBar>
                 <div className='BasePage__body'>
                     {errorComponent}
+                    {activeMode === 'issues' && issuesContent}
                 </div>
             </div>
         </>

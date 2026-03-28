@@ -11,6 +11,7 @@ import type {DownloadedItems} from 'types/downloads';
 import BasePage, {ErrorState} from './BasePage';
 import DeveloperModeIndicator from './DeveloperModeIndicator';
 import DownloadsDropdownButton from './DownloadsDropdown/DownloadsDropdownButton';
+import IssuesView from './IssuesView';
 import ServerDropdownButton from './ServerDropdownButton';
 import TabBar from './TabBar';
 
@@ -50,6 +51,7 @@ type State = {
     primaryTabId?: string;
     currentServer?: UniqueServer;
     isViewLimitReached: boolean;
+    activeMode: 'strategy' | 'issues';
 };
 
 type TabViewStatus = {
@@ -79,6 +81,7 @@ class MainPage extends React.PureComponent<Props, State> {
             hasDownloads: false,
             developerMode: false,
             isViewLimitReached: false,
+            activeMode: 'strategy',
         };
     }
 
@@ -427,6 +430,11 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.openPopoutMenu(viewId);
     };
 
+    handleModeChange = (mode: 'strategy' | 'issues') => {
+        this.setState({activeMode: mode});
+        window.desktop.setViewMode(mode);
+    };
+
     render() {
         let currentTabs: UniqueView[] = [];
         if (this.state.activeServerId) {
@@ -498,6 +506,9 @@ class MainPage extends React.PureComponent<Props, State> {
                 errorState={errorState}
                 errorMessage={tabStatus?.extra?.error}
                 errorUrl={tabStatus?.extra?.url}
+                activeMode={this.state.activeMode}
+                onModeChange={this.handleModeChange}
+                issuesContent={<IssuesView/>}
             >
                 {activeServer && (
                     <>

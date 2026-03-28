@@ -97,6 +97,10 @@ export const GET_VIEW_INFO_FOR_TEST = 'get-view-info-for-test';
 
 export const GET_MODAL_UNCLOSEABLE = 'get-modal-uncloseable';
 
+export const SET_VIEW_MODE = 'set-view-mode';
+export const GET_AUTH_TOKEN = 'get-auth-token';
+export const ISSUES_API_REQUEST = 'issues-api-request';
+
 export const UPDATE_PATHS = 'update-paths';
 
 export const SET_URL_FOR_URL_VIEW = 'set-url-for-url-view';

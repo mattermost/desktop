@@ -53,6 +53,7 @@ body {
     display: flex;
     overflow: hidden;
     height: 40px;
+    position: relative;
     background: linear-gradient(0deg, rgba(var(--center-channel-color-rgb), 0.08) 0%, rgba(var(--center-channel-color-rgb), 0.08) 100%), var(--center-channel-bg);
     width: 100%;
 

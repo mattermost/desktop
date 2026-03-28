@@ -1,5 +1,38 @@
 @use 'base/css_variables';
 
+.topBar-modeTabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    -webkit-app-region: no-drag;
+}
+
+.topBar-modeTab {
+    background: none;
+    border: none;
+    color: rgba(var(--center-channel-color-rgb), 0.55);
+    padding: 4px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: background 0.1s, color 0.1s;
+
+    &:hover {
+        background: rgba(var(--center-channel-bg-rgb), 0.56);
+        color: rgba(var(--center-channel-color-rgb), 0.85);
+    }
+
+    &--active {
+        background: rgba(var(--center-channel-bg-rgb), 0.72);
+        color: var(--center-channel-color);
+        font-weight: 600;
+    }
+}
+
 .TopBar-button {
     background: none;
     border: none;

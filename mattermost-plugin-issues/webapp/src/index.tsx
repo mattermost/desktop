@@ -7,7 +7,6 @@ import client from './client/client';
 import ActionTypes from './actions/action_types';
 import {fetchProjects} from './actions';
 
-import RHSView from './components/rhs/rhs_view';
 import CreateIssueModal from './components/create_issue_modal/create_issue_modal';
 import SidebarHeader from './components/sidebar_header/sidebar_header';
 
@@ -23,13 +22,6 @@ type PluginRegistry = {
     registerWebSocketEventHandler: (event: string, handler: (msg: any) => void) => void;
 };
 
-// Channel header icon as a simple React component.
-function IssuesIcon() {
-    return (
-        <span style={{fontSize: '16px', lineHeight: 1}}>{'📋'}</span>
-    );
-}
-
 class Plugin {
     public async initialize(registry: PluginRegistry, store: Store) {
         // Set up API client.
@@ -38,28 +30,6 @@ class Plugin {
 
         // Register Redux reducer for plugin state.
         registry.registerReducer(reducer);
-
-        // Register the RHS (Right-Hand Sidebar) panel.
-        // The return value contains action creators that must be dispatched.
-        const rhsRegistration = registry.registerRightHandSidebarComponent(
-            RHSView,
-            'Issues',
-        );
-
-        // Store the toggle action — could be toggleRHSPlugin or showRHSPlugin depending on MM version.
-        const toggleAction = rhsRegistration.toggleRHSPlugin || rhsRegistration.showRHSPlugin;
-
-        // Register channel header button to toggle the RHS.
-        registry.registerChannelHeaderButtonAction(
-            IssuesIcon,
-            () => {
-                if (toggleAction) {
-                    store.dispatch(toggleAction);
-                }
-            },
-            'Issues',
-            'Toggle Issues Tracker',
-        );
 
         // Register the create/edit issue modal (rendered globally).
         registry.registerRootComponent(CreateIssueModal);

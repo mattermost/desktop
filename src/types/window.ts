@@ -36,6 +36,9 @@ declare global {
             closeServersDropdown: () => void;
             openServersDropdown: () => void;
             switchTab: (viewId: string) => void;
+            setViewMode: (mode: 'strategy' | 'issues') => void;
+            getAuthToken: () => Promise<string | null>;
+            issuesApiRequest: (method: string, path: string, body?: unknown) => Promise<unknown>;
             closeTab: (viewId: string) => void;
             exitFullScreen: () => void;
             doubleClickOnWindow: () => void;

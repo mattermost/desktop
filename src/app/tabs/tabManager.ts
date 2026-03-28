@@ -39,6 +39,7 @@ import {
     CLEAR_CACHE_AND_RELOAD,
     UPDATE_TARGET_URL,
     WINDOW_CLOSE,
+    SET_VIEW_MODE,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -77,6 +78,7 @@ export class TabManager extends EventEmitter {
         ipcMain.on(UPDATE_TAB_ORDER, (event, serverId, viewOrder) => this.updateTabOrder(serverId, viewOrder));
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.switchToTab(viewId));
         ipcMain.on(CLOSE_TAB, (event, viewId) => ViewManager.removeView(viewId));
+        ipcMain.on(SET_VIEW_MODE, (event, mode: 'strategy' | 'issues') => this.setViewMode(mode));
         ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
 
         // Subscribe to ViewManager events
@@ -401,6 +403,35 @@ export class TabManager extends EventEmitter {
 
         if (view.needsLoadingScreen()) {
             MainWindow.window?.showLoadingScreen(() => ModalManager.isModalDisplayed());
+        }
+    };
+
+    setViewMode = (mode: 'strategy' | 'issues') => {
+        const mainWindow = MainWindow.get();
+        if (!mainWindow) {
+            return;
+        }
+        if (mode === 'issues') {
+            if (this.currentVisibleTab) {
+                const view = WebContentsManager.getView(this.currentVisibleTab);
+                if (view) {
+                    mainWindow.contentView.removeChildView(view.getWebContentsView());
+                }
+            }
+            mainWindow.webContents.focus();
+        } else if (mode === 'strategy') {
+            if (this.currentVisibleTab) {
+                const view = WebContentsManager.getView(this.currentVisibleTab);
+                if (view) {
+                    if (ModalManager.isModalDisplayed()) {
+                        mainWindow.contentView.addChildView(view.getWebContentsView(), 1);
+                    } else {
+                        mainWindow.contentView.addChildView(view.getWebContentsView());
+                    }
+                    view.setBounds(getWindowBoundaries(mainWindow));
+                    view.focus();
+                }
+            }
         }
     };
 

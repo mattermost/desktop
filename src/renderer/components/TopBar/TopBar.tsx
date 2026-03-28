@@ -14,9 +14,11 @@ type Props = {
     title?: string;
     openMenu: () => void;
     openPopoutMenu?: () => void;
+    activeMode?: 'strategy' | 'issues';
+    onModeChange?: (mode: 'strategy' | 'issues') => void;
 }
 
-const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
+const TopBar = ({children, title, openMenu, openPopoutMenu, activeMode, onModeChange}: Props) => {
     const intl = useIntl();
     const {config} = useConfig();
     const [fullScreen, setFullScreen] = useState(false);
@@ -83,6 +85,22 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
                     />
                 </button>
                 {children}
+                {onModeChange && (
+                    <div className='topBar-modeTabs'>
+                        <button
+                            className={`topBar-modeTab${activeMode === 'strategy' ? ' topBar-modeTab--active' : ''}`}
+                            onClick={() => onModeChange('strategy')}
+                        >
+                            {'Strategy'}
+                        </button>
+                        <button
+                            className={`topBar-modeTab${activeMode === 'issues' ? ' topBar-modeTab--active' : ''}`}
+                            onClick={() => onModeChange('issues')}
+                        >
+                            {'Issues'}
+                        </button>
+                    </div>
+                )}
                 {title && (
                     <div className='app-title'>
                         {title}
