@@ -1,0 +1,60 @@
+{
+  "name": "@composio/ao-core",
+  "version": "0.2.0",
+  "description": "Core library — types, config, session manager, lifecycle manager, event bus",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./utils": {
+      "types": "./dist/utils.d.ts",
+      "import": "./dist/utils.js"
+    },
+    "./scm-webhook-utils": {
+      "types": "./dist/scm-webhook-utils.d.ts",
+      "import": "./dist/scm-webhook-utils.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ComposioHQ/agent-orchestrator.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/ComposioHQ/agent-orchestrator",
+  "bugs": {
+    "url": "https://github.com/ComposioHQ/agent-orchestrator/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.18",
+    "@types/node": "^25.2.3",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  }
+}

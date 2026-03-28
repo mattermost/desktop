@@ -1,0 +1,22 @@
+# Linear integration with custom team
+# Requires LINEAR_API_KEY environment variable
+
+dataDir: ~/.agent-orchestrator
+worktreeDir: ~/.worktrees
+
+projects:
+  my-app:
+    repo: owner/my-app
+    path: ~/my-app
+    defaultBranch: main
+
+    # Linear tracker integration
+    tracker:
+      plugin: linear
+      teamId: "2a6e9b1b-19cd-4e30-b5bd-7b34dc491c7e"
+
+    # Custom rules for agents
+    agentRules: |
+      Always link Linear tickets in commit messages.
+      Run tests before pushing.
+      Use conventional commits (feat:, fix:, chore:).

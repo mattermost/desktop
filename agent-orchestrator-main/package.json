@@ -1,0 +1,39 @@
+{
+  "name": "agent-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Orchestrate parallel AI coding agents across any runtime, any repo, any issue tracker",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter @composio/ao-web dev",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --filter '!@composio/ao-web' test",
+    "test:integration": "pnpm --filter @composio/ao-integration-tests test:integration",
+    "clean": "pnpm -r clean",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm -r build && changeset publish",
+    "prepare": "husky",
+    "postinstall": "node scripts/rebuild-node-pty.js"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.2.3",
+    "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.55.0"
+  }
+}

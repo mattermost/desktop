@@ -1,0 +1,87 @@
+#!/bin/bash
+# Usage: ~/claude-session-status [session-pattern]
+# Shows status of Claude sessions: working, idle, or blocked
+
+PATTERN="${1:-integrator-}"
+
+echo "Session Status Report - $(date '+%H:%M:%S')"
+echo "==========================================="
+echo ""
+
+working=()
+idle=()
+blocked=()
+not_running=()
+
+for session in $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep "^$PATTERN" | sort -V); do
+    # Capture last 15 lines of the pane
+    output=$(tmux capture-pane -t "$session" -p -S -15 2>/dev/null)
+
+    if [[ -z "$output" ]]; then
+        not_running+=("$session")
+        continue
+    fi
+
+    # Check for active processing indicators
+    if echo "$output" | grep -qE "Thinking|Roosting|Garnishing|Levitating|Baking|Whirring|⏺|esc to interrupt"; then
+        # Get what it's doing (last status line)
+        status=$(echo "$output" | grep -oE "(Thinking|Roosting|Garnishing|Levitating|Baking|Whirring|Reading|Writing|Editing|Running).*" | tail -1 | cut -c1-50)
+        working+=("$session|${status:-processing...}")
+    # Check for prompt (idle/waiting for input)
+    elif echo "$output" | grep -qE "^❯\s*$|^❯$"; then
+        # Get last assistant message snippet
+        last_msg=$(echo "$output" | grep -v "^❯" | grep -v "^─" | grep -v "^$" | tail -1 | cut -c1-60)
+        idle+=("$session|${last_msg:-ready}")
+    # Check for error/blocked states
+    elif echo "$output" | grep -qiE "error|failed|permission denied|blocked|quota|rate limit"; then
+        error=$(echo "$output" | grep -iE "error|failed|permission denied|blocked|quota|rate limit" | tail -1 | cut -c1-60)
+        blocked+=("$session|${error:-unknown error}")
+    # Check for yes/no prompts or questions
+    elif echo "$output" | grep -qE "\[y/N\]|\[Y/n\]|Continue\?|Proceed\?"; then
+        blocked+=("$session|waiting for confirmation")
+    else
+        # Unknown state - probably idle
+        last_line=$(echo "$output" | grep -v "^$" | tail -1 | cut -c1-60)
+        idle+=("$session|${last_line:-unknown}")
+    fi
+done
+
+# Print results
+if [[ ${#working[@]} -gt 0 ]]; then
+    echo "🔄 WORKING (${#working[@]})"
+    for item in "${working[@]}"; do
+        session="${item%%|*}"
+        status="${item#*|}"
+        printf "   %-20s %s\n" "$session" "$status"
+    done
+    echo ""
+fi
+
+if [[ ${#idle[@]} -gt 0 ]]; then
+    echo "✅ IDLE/DONE (${#idle[@]})"
+    for item in "${idle[@]}"; do
+        session="${item%%|*}"
+        status="${item#*|}"
+        printf "   %-20s %s\n" "$session" "$status"
+    done
+    echo ""
+fi
+
+if [[ ${#blocked[@]} -gt 0 ]]; then
+    echo "⚠️  BLOCKED/ERROR (${#blocked[@]})"
+    for item in "${blocked[@]}"; do
+        session="${item%%|*}"
+        status="${item#*|}"
+        printf "   %-20s %s\n" "$session" "$status"
+    done
+    echo ""
+fi
+
+if [[ ${#not_running[@]} -gt 0 ]]; then
+    echo "💤 NOT RUNNING (${#not_running[@]})"
+    printf "   %s\n" "${not_running[@]}"
+    echo ""
+fi
+
+echo "==========================================="
+echo "Total: $((${#working[@]} + ${#idle[@]} + ${#blocked[@]})) active sessions"

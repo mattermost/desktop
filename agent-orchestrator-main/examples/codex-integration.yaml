@@ -1,0 +1,26 @@
+# Using Codex instead of Claude Code
+# Demonstrates using a different AI agent
+
+dataDir: ~/.agent-orchestrator
+worktreeDir: ~/.worktrees
+
+defaults:
+  agent: codex # Use Codex instead of Claude Code
+  runtime: tmux
+  workspace: worktree
+
+projects:
+  my-app:
+    repo: owner/my-app
+    path: ~/my-app
+    defaultBranch: main
+
+    # Codex-specific configuration
+    agentConfig:
+      model: gpt-4
+      permissions: default
+
+    agentRules: |
+      Write clean, well-documented code.
+      Follow project conventions.
+      Run tests before pushing.

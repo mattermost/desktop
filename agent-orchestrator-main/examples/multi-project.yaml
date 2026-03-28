@@ -1,0 +1,57 @@
+# Managing multiple projects with different trackers
+# Shows how to configure multiple repos with different settings
+
+dataDir: ~/.agent-orchestrator
+worktreeDir: ~/.worktrees
+
+defaults:
+  runtime: tmux
+  agent: claude-code
+  workspace: worktree
+  notifiers: [desktop, slack]
+
+projects:
+  frontend:
+    name: Frontend
+    repo: org/frontend
+    path: ~/frontend
+    defaultBranch: main
+    sessionPrefix: fe
+
+    tracker:
+      plugin: github
+
+    agentRules: |
+      Use TypeScript strict mode.
+      Follow React best practices.
+      Always run `pnpm test` before pushing.
+
+  backend:
+    name: Backend API
+    repo: org/backend
+    path: ~/backend
+    defaultBranch: main
+    sessionPrefix: api
+
+    tracker:
+      plugin: linear
+      teamId: "your-team-id"
+
+    agentRules: |
+      All endpoints require auth middleware.
+      Add OpenAPI docs for new routes.
+      Run `pnpm test` and `pnpm lint` before pushing.
+
+# Slack notifications (requires SLACK_WEBHOOK_URL)
+notifiers:
+  slack:
+    plugin: slack
+    webhook: ${SLACK_WEBHOOK_URL}
+    channel: "#agent-updates"
+
+# Route notifications by priority
+notificationRouting:
+  urgent: [desktop, slack]
+  action: [desktop, slack]
+  warning: [slack]
+  info: [slack]

@@ -1,0 +1,77 @@
+#!/bin/bash
+# Usage: ~/claude-spawn-on-branch <project> <branch> <prompt> [--open]
+# Creates session on branch - reuses existing worktree if one exists for the branch
+
+set -e
+
+PROJECT="$1"
+BRANCH="$2"
+PROMPT="$3"
+OPEN_TAB=false
+[ "$4" = "--open" ] && OPEN_TAB=true
+
+# Normalize project name
+case "$PROJECT" in
+    i|integrator)
+        PROJECT="integrator"
+        WORKTREE_BASE=~/.worktrees/integrator
+        MAIN_REPO=~/secondary_checkouts/integrator-1
+        ;;
+    s|splitly)
+        PROJECT="splitly"
+        WORKTREE_BASE=~/.worktrees/splitly
+        MAIN_REPO=~/projects/SafeSplit
+        ;;
+    *) echo "Usage: ~/claude-spawn-on-branch <project> <branch> <prompt> [--open]"; exit 1 ;;
+esac
+
+[ -z "$BRANCH" ] || [ -z "$PROMPT" ] && { echo "Usage: ~/claude-spawn-on-branch <project> <branch> <prompt> [--open]"; exit 1; }
+
+# Check if worktree already exists for this branch
+cd "$MAIN_REPO"
+git fetch origin -q
+
+EXISTING_WORKTREE=$(git worktree list | grep "\[$BRANCH\]" | awk '{print $1}' | head -1)
+
+if [ -n "$EXISTING_WORKTREE" ]; then
+    # Reuse existing worktree - name session as <owner>-N
+    OWNER_SESSION=$(basename "$EXISTING_WORKTREE")
+    
+    # Find next sub-session number for this worktree
+    MAX_SUB=1
+    for s in $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep "^${OWNER_SESSION}-[0-9]*$" | sed "s/${OWNER_SESSION}-//"); do
+        [ "$s" -gt "$MAX_SUB" ] 2>/dev/null && MAX_SUB=$s
+    done
+    SESSION="${OWNER_SESSION}-$((MAX_SUB + 1))"
+
+    tmux new-session -d -s "$SESSION" -c "$EXISTING_WORKTREE"
+    tmux send-keys -t "$SESSION" "claude --dangerously-skip-permissions" Enter
+
+    echo "Reusing worktree: $EXISTING_WORKTREE"
+else
+    # Create new session (which creates new worktree)
+    output=$(~/claude-${PROJECT}-session new 2>&1)
+    SESSION=$(echo "$output" | grep "^SESSION=" | cut -d= -f2)
+
+    [ -z "$SESSION" ] && { echo "Failed to create session"; echo "$output"; exit 1; }
+
+    cd "$WORKTREE_BASE/$SESSION" && git checkout "$BRANCH" -q && git pull origin "$BRANCH" -q 2>/dev/null || true
+fi
+
+# Open tab if requested
+[ "$OPEN_TAB" = true ] && ~/open-iterm-tab "$SESSION"
+
+# Wait for Claude prompt
+for i in {1..60}; do
+    if tmux capture-pane -t "$SESSION" -p 2>/dev/null | grep -q "^❯"; then
+        break
+    fi
+    sleep 0.5
+done
+
+sleep 0.2
+tmux send-keys -t "$SESSION" "$PROMPT"
+sleep 0.1
+tmux send-keys -t "$SESSION" Enter
+
+echo "✓ $SESSION on $BRANCH - prompt sent"

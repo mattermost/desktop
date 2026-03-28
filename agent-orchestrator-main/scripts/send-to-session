@@ -1,0 +1,112 @@
+#!/bin/bash
+# Usage: ~/send-to-session <session-name> <message>
+#    or: ~/send-to-session <session-name> -f <file>
+# Sends a message to a Claude agent in a tmux session and submits it.
+#
+# If the session is busy (Claude is thinking), waits for it to become idle
+# before sending. Retries Enter if the message wasn't picked up.
+
+SESSION="$1"
+shift
+
+if [ -z "$SESSION" ]; then
+    echo "Usage: ~/send-to-session <session-name> <message>"
+    echo "   or: ~/send-to-session <session-name> -f <file>"
+    exit 1
+fi
+
+# Verify session exists
+if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+    echo "Error: Session '$SESSION' does not exist"
+    exit 1
+fi
+
+is_busy() {
+    # Deterministic: check if the last non-empty line has a prompt (❯) or shell ($) — means idle
+    local last_line=$(tmux capture-pane -t "$SESSION" -p -S -5 2>/dev/null | grep -v '^$' | tail -1)
+    # Idle indicators: prompt char or permission mode line
+    if echo "$last_line" | grep -qE '❯|^\$|⏵⏵|bypass permissions'; then
+        return 1  # not busy
+    fi
+    # Active indicators: "esc to interrupt" only appears during live processing
+    local output=$(tmux capture-pane -t "$SESSION" -p -S -3 2>/dev/null)
+    echo "$output" | grep -qF "esc to interrupt"
+}
+
+is_processing() {
+    local output=$(tmux capture-pane -t "$SESSION" -p -S -10 2>/dev/null)
+    echo "$output" | grep -qE "Thinking|Roosting|Garnishing|Levitating|Baking|Whirring|Musing|Cooked|Churned|Brewed|Worked|Cogitated|Frolicking|Prestidigitating|Whisking|Mustering|Percolating|Running…|esc to interrupt|⏺"
+}
+
+has_queued_message() {
+    local output=$(tmux capture-pane -t "$SESSION" -p -S -5 2>/dev/null)
+    echo "$output" | grep -qE "Press up to edit queued messages"
+}
+
+# Wait for session to be idle (up to 10 minutes)
+WAIT_COUNT=0
+MAX_WAIT=120  # 120 * 5s = 10 minutes
+while is_busy; do
+    if [ $WAIT_COUNT -eq 0 ]; then
+        echo "⏳ Waiting for $SESSION to finish current task..."
+    fi
+    WAIT_COUNT=$((WAIT_COUNT + 1))
+    if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
+        echo "⚠ Timeout waiting for $SESSION to become idle. Sending anyway."
+        break
+    fi
+    sleep 5
+done
+
+# Clear any partial input
+tmux send-keys -t "$SESSION" C-u
+sleep 0.2
+
+# Send the message
+send_message() {
+    if [ "$1" = "-f" ]; then
+        local file="$2"
+        if [ ! -f "$file" ]; then
+            echo "Error: File not found: $file"
+            exit 1
+        fi
+        tmux load-buffer "$file"
+        tmux paste-buffer -t "$SESSION"
+    else
+        local msg="$*"
+        if echo "$msg" | grep -q $'\n' || [ ${#msg} -gt 200 ]; then
+            local tmpfile=$(mktemp /tmp/send-to-session-XXXXXX.txt)
+            printf '%s' "$msg" > "$tmpfile"
+            tmux load-buffer "$tmpfile"
+            tmux paste-buffer -t "$SESSION"
+            rm -f "$tmpfile"
+        else
+            tmux send-keys -t "$SESSION" "$msg"
+        fi
+    fi
+}
+
+send_message "$@"
+sleep 0.3
+tmux send-keys -t "$SESSION" Enter
+
+# Verify it's processing, retry Enter if needed
+for attempt in 1 2 3; do
+    sleep 2
+    if is_processing; then
+        echo "✓ Message sent and processing"
+        exit 0
+    fi
+    # Check if message is sitting in queue (Claude was still wrapping up)
+    if has_queued_message; then
+        echo "✓ Message queued (session is finishing previous task)"
+        exit 0
+    fi
+    # Message might be in input buffer — retry Enter
+    if [ $attempt -lt 3 ]; then
+        tmux send-keys -t "$SESSION" Enter
+        sleep 1
+    fi
+done
+
+echo "⚠ Message sent - could not confirm it was received"

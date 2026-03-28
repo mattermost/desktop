@@ -1,0 +1,63 @@
+#!/bin/bash
+# Get Claude session info for a tmux session
+# Extracts session ID, branch, and summary directly from Claude's data
+
+TMUX_SESSION="$1"
+if [ -z "$TMUX_SESSION" ]; then
+    echo "Usage: $0 <tmux-session-name>"
+    exit 1
+fi
+
+# 1. Get the TTY for this tmux session
+TTY=$(tmux list-panes -t "$TMUX_SESSION" -F '#{pane_tty}' 2>/dev/null | head -1)
+if [ -z "$TTY" ]; then
+    echo "error: tmux session '$TMUX_SESSION' not found"
+    exit 1
+fi
+
+# 2. Find the Claude PID running on that TTY
+TTY_SHORT="${TTY#/dev/}"
+CLAUDE_PID=$(ps -eo pid,tty,comm 2>/dev/null | awk -v tty="$TTY_SHORT" '$2 == tty && $3 == "claude" {print $1; exit}')
+if [ -z "$CLAUDE_PID" ]; then
+    echo "error: no claude process on $TTY"
+    exit 1
+fi
+
+# 3. Get the working directory of that process
+CWD=$(lsof -p "$CLAUDE_PID" 2>/dev/null | awk '$4 == "cwd" {print $NF}')
+
+# 4. Get current git branch from that directory
+BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+
+# 5. Convert to Claude's project path format and find active session
+PROJECT_PATH=$(echo "$CWD" | tr '/.' '--')
+PROJECT_DIR="$HOME/.claude/projects/$PROJECT_PATH"
+
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo "session_id: unknown"
+    echo "branch: $BRANCH"
+    echo "summary: (no claude project found)"
+    exit 0
+fi
+
+# 6. Find the most recently modified session file
+ACTIVE_SESSION_FILE=$(ls -t "$PROJECT_DIR"/*.jsonl 2>/dev/null | grep -v "agent-" | head -1)
+if [ -z "$ACTIVE_SESSION_FILE" ]; then
+    echo "session_id: unknown"
+    echo "branch: $BRANCH"
+    echo "summary: (no session file)"
+    exit 0
+fi
+
+SESSION_ID=$(basename "$ACTIVE_SESSION_FILE" .jsonl)
+
+# 7. Extract the most recent summary from the session file
+SUMMARY=$(grep '"type":"summary"' "$ACTIVE_SESSION_FILE" 2>/dev/null | tail -1 | jq -r '.summary // empty')
+if [ -z "$SUMMARY" ]; then
+    # Fall back to first user message
+    SUMMARY=$(grep '"type":"user"' "$ACTIVE_SESSION_FILE" 2>/dev/null | head -1 | jq -r '.message.content' 2>/dev/null | head -c 80)
+fi
+
+echo "session_id: $SESSION_ID"
+echo "branch: $BRANCH"
+echo "summary: ${SUMMARY:-"(no summary)"}"

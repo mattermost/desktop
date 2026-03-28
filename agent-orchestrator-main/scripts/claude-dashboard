@@ -1,0 +1,1371 @@
+#!/bin/bash
+# Generate and open an HTML dashboard for all Claude orchestrator sessions
+# Usage: ~/claude-dashboard [--no-open]
+
+NO_OPEN=false
+REGEN_ONLY=false
+for arg in "$@"; do
+    case "$arg" in
+        --no-open) NO_OPEN=true ;;
+        --regen-only) REGEN_ONLY=true; NO_OPEN=true ;;
+    esac
+done
+
+DASHBOARD="/tmp/claude-dashboard.html"
+
+echo "Gathering session data..."
+
+# ─── Gather session data ───────────────────────────────────────────────────────
+
+sessions_json="["
+first=true
+
+for s in $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep -E "^integrator-" | sort -V); do
+    project="integrator"
+    meta_file="$HOME/.integrator-sessions/$s"
+    repo="ComposioHQ/integrator"
+
+    # Get branch
+    # Get pane working directory (used for both branch detection and activity)
+    pane_cwd=$(tmux display-message -t "$s" -p "#{pane_current_path}" 2>/dev/null)
+
+    # Branch detection: pane cwd (most reliable) → worktree → secondary_checkouts → metadata
+    branch=""
+    if [ -n "$pane_cwd" ] && [ -d "$pane_cwd/.git" -o -f "$pane_cwd/.git" ]; then
+        branch=$(cd "$pane_cwd" && git branch --show-current 2>/dev/null)
+    fi
+    if [ -z "$branch" ]; then
+        worktree=$(grep "^worktree=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+        if [ -d "$worktree" ]; then
+            branch=$(cd "$worktree" && git branch --show-current 2>/dev/null)
+        fi
+    fi
+    if [ -z "$branch" ]; then
+        num=$(echo "$s" | sed 's/[^0-9-]//g' | cut -d- -f1)
+        checkout="$HOME/secondary_checkouts/integrator-$num"
+        [ -d "$checkout" ] && branch=$(cd "$checkout" && git branch --show-current 2>/dev/null)
+    fi
+    [ -z "$branch" ] && branch=$(grep "^branch=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+    [ -z "$branch" ] && branch="unknown"
+
+    meta_status=$(grep "^status=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+    summary=$(grep "^summary=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+    # Capture all PRs (sessions can have multiple)
+    pr=$(grep "^pr=" "$meta_file" 2>/dev/null | cut -d= -f2- | paste -sd',' -)
+    issue=$(grep "^issue=" "$meta_file" 2>/dev/null | cut -d= -f2- | head -1)
+    slack=$(grep "^slack=" "$meta_file" 2>/dev/null | cut -d= -f2- | head -1)
+    notes=$(grep "^notes=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+
+    # Activity detection: JSONL file + process check
+    activity="idle"
+    if [ -n "$pane_cwd" ]; then
+        proj_key=$(echo "$pane_cwd" | tr '/.' '--')
+        session_dir="$HOME/.claude/projects/$proj_key"
+        jsonl=$(ls -t "$session_dir"/*.jsonl 2>/dev/null | grep -v agent- | head -1)
+        if [ -n "$jsonl" ]; then
+            mod_age=$(( $(date +%s) - $(stat -f %m "$jsonl") ))
+            last_type=$(tail -c 4096 "$jsonl" | grep -o '"type":"[^"]*"' | tail -1 | cut -d'"' -f4)
+            if [ "$mod_age" -lt 30 ] && [ "$last_type" != "assistant" ] && [ "$last_type" != "system" ]; then
+                activity="working"
+            fi
+        fi
+    fi
+    # If not working, check if claude process exists
+    if [ "$activity" != "working" ]; then
+        pane_pid=$(tmux list-panes -t "$s" -F "#{pane_pid}" 2>/dev/null | head -1)
+        if [ -n "$pane_pid" ]; then
+            has_claude=false
+            # Check if pane process itself is claude (batch-spawned sessions)
+            pane_comm=$(ps -o comm= -p "$pane_pid" 2>/dev/null)
+            if echo "$pane_comm" | grep -q claude; then
+                has_claude=true
+            else
+                # Check children and grandchildren
+                for child in $(pgrep -P "$pane_pid" 2>/dev/null); do
+                    child_comm=$(ps -o comm= -p "$child" 2>/dev/null)
+                    if echo "$child_comm" | grep -q claude; then
+                        has_claude=true
+                        break
+                    fi
+                    if pgrep -P "$child" -f claude > /dev/null 2>&1; then
+                        has_claude=true
+                        break
+                    fi
+                done
+            fi
+            if [ "$has_claude" = false ]; then
+                activity="exited"
+            fi
+        fi
+    fi
+    pane=$(tmux capture-pane -t "$s" -p -S -5 2>/dev/null)
+
+    # Extract PR number from status bar if not in metadata
+    pr_from_bar=$(echo "$pane" | grep -oE 'PR #[0-9]+' | tail -1 | sed 's/PR #//')
+    [ -z "$pr" ] && [ -n "$pr_from_bar" ] && pr="https://github.com/$repo/pull/$pr_from_bar"
+
+    # Launch background PR lookup from branch name
+    if [ -n "$branch" ] && [ "$branch" != "unknown" ] && [ "$branch" != "next" ] && [ "$branch" != "main" ]; then
+        mkdir -p /tmp/claude-dashboard-prlookup.$$
+        ( gh pr list --repo "$repo" --head "$branch" --json url --jq '.[0].url' 2>/dev/null > "/tmp/claude-dashboard-prlookup.$$/$s" ) &
+    fi
+
+    # Store session data for later JSON assembly (after PR lookups complete)
+    echo "$s|$project|$branch|$meta_status|$summary|$pr|$issue|$activity|$slack|$notes" >> /tmp/claude-dashboard-sessions.$$
+done
+
+# Wait for all background PR lookups to finish
+wait
+
+# Now build sessions_json, merging auto-detected PRs with metadata PRs
+sessions_json="["
+first=true
+while IFS='|' read -r s project branch meta_status summary pr issue activity slack notes; do
+    # Merge auto-detected PR from branch
+    detected_pr=""
+    if [ -f "/tmp/claude-dashboard-prlookup.$$/$s" ]; then
+        detected_pr=$(cat "/tmp/claude-dashboard-prlookup.$$/$s" | tr -d '[:space:]')
+    fi
+    if [ -n "$detected_pr" ] && [ "$detected_pr" != "null" ]; then
+        if [ -z "$pr" ]; then
+            pr="$detected_pr"
+        elif ! echo "$pr" | grep -qF "$detected_pr"; then
+            pr="$pr,$detected_pr"
+        fi
+        echo "  $s: branch PR $detected_pr"
+    fi
+
+    # Escape quotes for JSON
+    summary=$(echo "$summary" | sed 's/"/\\"/g')
+    meta_status=$(echo "$meta_status" | sed 's/"/\\"/g')
+    slack=$(echo "$slack" | sed 's/"/\\"/g')
+    notes=$(echo "$notes" | sed 's/"/\\"/g')
+
+    [ "$first" = true ] && first=false || sessions_json+=","
+    sessions_json+="{\"name\":\"$s\",\"project\":\"$project\",\"branch\":\"$branch\",\"status\":\"$meta_status\",\"summary\":\"$summary\",\"pr\":\"$pr\",\"issue\":\"$issue\",\"activity\":\"$activity\",\"slack\":\"$slack\",\"notes\":\"$notes\"}"
+done < /tmp/claude-dashboard-sessions.$$
+sessions_json+="]"
+rm -rf /tmp/claude-dashboard-prlookup.$$ /tmp/claude-dashboard-sessions.$$
+
+# ─── Gather PR details (with review threads, CI, comments) ────────────────────
+
+echo "Fetching PR details..."
+
+# Extract unique PR URLs
+pr_urls=$(echo "$sessions_json" | grep -oE 'https://github.com/[^",]+/pull/[0-9]+' | sort -u)
+
+# Fetch all PRs in parallel
+pr_tmp=$(mktemp -d /tmp/claude-dashboard-pr-XXXXXX)
+
+for url in $pr_urls; do
+    num=$(echo "$url" | grep -oE '[0-9]+$')
+    repo=$(echo "$url" | sed 's|https://github.com/||;s|/pull/.*||')
+    owner=$(echo "$repo" | cut -d/ -f1)
+    reponame=$(echo "$repo" | cut -d/ -f2)
+    [ -z "$num" ] || [ -z "$owner" ] && continue
+
+    # Launch each PR fetch in background
+    (
+        info=$(gh pr view "$num" --repo "$repo" --json title,state,mergeable,reviewDecision,additions,deletions,createdAt 2>/dev/null)
+        [ -z "$info" ] && exit 0
+
+        gql=$(gh api graphql -f query="query {
+          repository(owner: \"$owner\", name: \"$reponame\") {
+            pullRequest(number: $num) {
+              reviewThreads(first: 100) {
+                nodes { isResolved comments(first: 1) { nodes { url path } } }
+              }
+              commits(last: 1) {
+                nodes {
+                  commit {
+                    statusCheckRollup {
+                      contexts(first: 50) {
+                        nodes {
+                          ... on CheckRun { crName: name conclusion status: status detailsUrl }
+                          ... on StatusContext { scName: context cstate: state targetUrl }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }" 2>/dev/null)
+
+        printf '%s\n%s' "$info" "$gql" | python3 -c "
+import sys, json
+lines = sys.stdin.read().strip().split('\n')
+d = json.loads(lines[0])
+try:
+    gql = json.loads(lines[1])
+    pr = gql['data']['repository']['pullRequest']
+    threads = pr['reviewThreads']['nodes']
+    unresolved = [{'url': t.get('comments',{}).get('nodes',[{}])[0].get('url',''), 'path': t.get('comments',{}).get('nodes',[{}])[0].get('path','')} for t in threads if not t['isResolved']]
+    d['unresolvedThreads'] = len(unresolved)
+    d['unresolvedList'] = unresolved
+    nodes = pr['commits']['nodes'][0]['commit']['statusCheckRollup']['contexts']['nodes']
+    counts, checks = {}, []
+    for n in nodes:
+        name = n.get('crName') or n.get('scName') or 'unknown'
+        s = (n.get('conclusion') or n.get('status') or n.get('cstate') or 'UNKNOWN').upper()
+        url = n.get('detailsUrl') or n.get('targetUrl') or ''
+        counts[s] = counts.get(s, 0) + 1
+        checks.append({'name': name, 'status': s, 'url': url})
+    parts = []
+    for k in ['SUCCESS', 'FAILURE', 'PENDING', 'NEUTRAL', 'SKIPPED', 'IN_PROGRESS']:
+        if k in counts: parts.append(f'{counts[k]} {k.lower()}')
+    for k in counts:
+        if k not in ['SUCCESS', 'FAILURE', 'PENDING', 'NEUTRAL', 'SKIPPED', 'IN_PROGRESS']:
+            parts.append(f'{counts[k]} {k.lower()}')
+    d['ciSummary'] = ','.join(parts) if parts else 'none'
+    d['ciChecks'] = checks
+except: d.update({'unresolvedThreads': 0, 'unresolvedList': [], 'ciSummary': 'none', 'ciChecks': []})
+print(json.dumps(d))
+" > "$pr_tmp/$num.json" 2>/dev/null
+        echo "  PR #$num: done"
+    ) &
+done
+wait
+
+# Merge results
+pr_json="{"
+first_pr=true
+for f in "$pr_tmp"/*.json; do
+    [ -f "$f" ] || continue
+    num=$(basename "$f" .json)
+    unresolved=$(python3 -c "import sys,json; print(json.load(open('$f')).get('unresolvedThreads',0))" 2>/dev/null)
+    ci_label=$(python3 -c "import sys,json; print(json.load(open('$f')).get('ciSummary','none'))" 2>/dev/null)
+    echo "  PR #$num: $unresolved unresolved threads, CI: $ci_label"
+    [ "$first_pr" = true ] && first_pr=false || pr_json+=","
+    pr_json+="\"$num\":$(cat "$f")"
+done
+pr_json+="}"
+rm -rf "$pr_tmp"
+
+# ─── Counts ────────────────────────────────────────────────────────────────────
+
+total=$(echo "$sessions_json" | grep -o '"name"' | wc -l | tr -d ' ')
+working=$(echo "$sessions_json" | grep -o '"activity":"working"' | wc -l | tr -d ' ')
+open_prs=$(echo "$pr_json" | grep -o '"OPEN"' | wc -l | tr -d ' ')
+needs_review=$(echo "$pr_json" | grep -o '"REVIEW_REQUIRED"' | wc -l | tr -d ' ')
+
+# ─── Generate Markdown (machine-readable for orchestrator agent) ───────────────
+
+MD_FILE="$HOME/.claude-dashboard.md"
+
+python3 -c "
+import json, sys
+from datetime import datetime, timezone
+
+sessions = json.loads('''$sessions_json''')
+prs = json.loads('''$pr_json''')
+
+now = datetime.now(timezone.utc)
+lines = []
+lines.append('# Claude Orchestrator Dashboard')
+lines.append(f'Generated: {now.strftime(\"%Y-%m-%d %H:%M UTC\")}')
+lines.append('')
+lines.append(f'**{len(sessions)} sessions** | **{sum(1 for s in sessions if s[\"activity\"]==\"working\")} working** | **$open_prs open PRs** | **$needs_review needs review**')
+lines.append('')
+
+# Sessions grouped by activity
+for activity in ['working', 'idle', 'exited']:
+    group = [s for s in sessions if s['activity'] == activity]
+    if not group:
+        continue
+    lines.append(f'## {activity.upper()} ({len(group)})')
+    lines.append('')
+    for s in sorted(group, key=lambda x: x['name']):
+        pr_num = s['pr'].split('/')[-1] if s['pr'] else None
+        pr = prs.get(pr_num, {}) if pr_num else {}
+
+        ci = pr.get('ciSummary', 'none')
+        unresolved = pr.get('unresolvedThreads', 0)
+        review = pr.get('reviewDecision', '')
+        additions = pr.get('additions', 0)
+        deletions = pr.get('deletions', 0)
+
+        # CI status summary
+        ci_short = 'none'
+        if 'failure' in ci: ci_short = 'FAILING'
+        elif 'pending' in ci or 'in_progress' in ci: ci_short = 'PENDING'
+        elif 'success' in ci: ci_short = 'PASSING'
+
+        # Review summary
+        review_short = ''
+        if review == 'APPROVED': review_short = 'approved'
+        elif review == 'CHANGES_REQUESTED': review_short = 'changes-requested'
+        elif review == 'REVIEW_REQUIRED': review_short = 'needs-review'
+
+        lines.append(f'- **{s[\"name\"]}** ({s[\"project\"]})')
+        lines.append(f'  - Branch: \`{s[\"branch\"]}\`')
+        if s.get('summary'): lines.append(f'  - Summary: {s[\"summary\"]}')
+        if pr_num:
+            pr_line = f'  - PR: [#{pr_num}]({s[\"pr\"]}) (+{additions}/-{deletions})'
+            if review_short: pr_line += f' | {review_short}'
+            if ci_short != 'none': pr_line += f' | CI: {ci_short}'
+            if unresolved > 0: pr_line += f' | **{unresolved} unresolved comments**'
+            lines.append(pr_line)
+        else:
+            lines.append('  - PR: none')
+    lines.append('')
+
+# PR summary table
+open_pr_nums = [n for n, p in prs.items() if p.get('state') == 'OPEN']
+if open_pr_nums:
+    lines.append('## Open PRs')
+    lines.append('')
+    lines.append('| PR | Title | Size | CI | Review | Unresolved |')
+    lines.append('|----|-------|------|----|--------|------------|')
+    for num in sorted(open_pr_nums, key=int, reverse=True):
+        pr = prs[num]
+        ci = pr.get('ciSummary', 'none')
+        ci_short = 'FAIL' if 'failure' in ci else 'PENDING' if 'pending' in ci else 'PASS' if 'success' in ci else '—'
+        review = pr.get('reviewDecision', '')
+        review_short = 'approved' if review == 'APPROVED' else 'changes' if review == 'CHANGES_REQUESTED' else 'needs review'
+        unresolved = pr.get('unresolvedThreads', 0)
+        size = pr.get('additions', 0) + pr.get('deletions', 0)
+        size_label = 'XL' if size > 1000 else 'L' if size > 500 else 'M' if size > 200 else 'S' if size > 50 else 'XS'
+        sess = next((s for s in sessions if s['pr'].endswith(f'/{num}')), None)
+        repo = 'ComposioHQ/integrator'
+        title = pr.get('title', '')[:60]
+        lines.append(f'| [#{num}](https://github.com/{repo}/pull/{num}) | {title} | +{pr.get(\"additions\",0)}/-{pr.get(\"deletions\",0)} ({size_label}) | {ci_short} | {review_short} | {unresolved} |')
+    lines.append('')
+
+print('\n'.join(lines))
+" > "$MD_FILE" 2>/dev/null
+
+echo "Markdown dashboard: $MD_FILE"
+
+# ─── Generate HTML ─────────────────────────────────────────────────────────────
+
+echo "Generating HTML..."
+
+cat > "$DASHBOARD" << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integrator Orchestrator Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif; background: #0d1117; color: #e6edf3; padding: 32px; min-height: 100vh; }
+  a { color: #58a6ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28px; }
+  .header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+  .header h1 span { color: #7c8aff; }
+  .timestamp { color: #484f58; font-size: 12px; }
+
+  .stats { display: flex; gap: 32px; margin-bottom: 36px; padding: 0 4px; }
+  .stat { display: flex; align-items: baseline; gap: 8px; }
+  .stat .n { font-size: 28px; font-weight: 700; }
+  .stat .l { color: #484f58; font-size: 13px; }
+  .g { color: #3fb950; } .b { color: #58a6ff; } .y { color: #d29922; } .p { color: #bc8cff; } .r { color: #f85149; }
+
+  .section { margin-bottom: 36px; }
+  .section-head { font-size: 13px; font-weight: 600; color: #484f58; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; padding-left: 4px; }
+
+  /* Session cards */
+  .sessions { display: flex; flex-direction: column; gap: 8px; }
+  .session-group { border: 1px solid #30363d; border-radius: 12px; overflow: hidden; }
+  .session-group > .card { border-radius: 0; border-left: none; border-right: none; border-top: none; border-bottom: 1px solid #21262d; }
+  .session-group > .card:last-child { border-bottom: none; }
+  .session-group > .card.working { border-left: 3px solid #3fb950; }
+  .session-group > .card.idle { border-left: 3px solid #30363d; }
+  .session-group > .card.exited { border-left: 3px solid #f85149; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 14px 18px; cursor: pointer; transition: border-color 0.15s; }
+  .card:hover { border-color: #484f58; }
+  .card.working { border-left: 3px solid #3fb950; }
+  .card.idle { border-left: 3px solid #30363d; }
+  .card.exited { border-left: 3px solid #f85149; }
+  .card.has-alerts { border-color: rgba(210,153,34,0.4); }
+  .card.has-alerts-red { border-color: rgba(248,81,73,0.35); }
+
+  .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .card-icon { font-size: 14px; flex-shrink: 0; width: 20px; text-align: center; }
+  .card-name { font-weight: 600; font-size: 13px; color: #7d8590; flex-shrink: 0; }
+  .card-purpose { font-size: 14px; font-weight: 500; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+  .card-age { color: #484f58; font-size: 11px; flex-shrink: 0; margin-right: 4px; }
+
+  .card-meta { display: flex; align-items: center; gap: 8px; padding-left: 30px; flex-wrap: wrap; }
+  .card-branch { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; color: #484f58; }
+  .pill { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; letter-spacing: 0.2px; }
+  .pill.ci-pass { background: rgba(63,185,80,0.1); color: #3fb950; }
+  .pill.ci-fail { background: rgba(248,81,73,0.15); color: #f85149; }
+  .pill.ci-pending { background: rgba(210,153,34,0.1); color: #d29922; }
+  .pill.approved { background: rgba(63,185,80,0.1); color: #3fb950; }
+  .pill.size { background: rgba(125,133,144,0.08); color: #484f58; }
+  .pill.pr-num { background: rgba(88,166,255,0.1); color: #58a6ff; }
+  .sep { color: #30363d; font-size: 10px; }
+
+  /* Alert tags — these are the big, prominent ones */
+  .card-alerts { display: flex; align-items: center; gap: 6px; padding-left: 30px; margin-top: 8px; flex-wrap: wrap; }
+  .alert-tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.1px; cursor: pointer; }
+  .alert-tag:hover { filter: brightness(1.3); }
+  .alert-tag.review { background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.3); }
+  .alert-tag.conflict { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+  .alert-tag.comments { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+  .alert-tag.changes { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+  .alert-tag.ci-fail { background: rgba(248,81,73,0.15); color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+  .alert-tag.merge { background: rgba(63,185,80,0.2); color: #3fb950; border: 1px solid rgba(63,185,80,0.4); font-size: 13px; padding: 4px 14px; }
+  .alert-tag.merged { background: rgba(163,113,247,0.15); color: #a371f7; border: 1px solid rgba(163,113,247,0.3); font-size: 13px; padding: 4px 14px; }
+  .alert-tag .alert-num { font-size: 14px; font-weight: 800; }
+  .card.ready-to-merge { border-color: rgba(63,185,80,0.5); }
+  .card.merged { border-color: rgba(163,113,247,0.4); opacity: 0.75; }
+  .action-btn { background: none; border: 1px solid rgba(88,166,255,0.3); color: #58a6ff; font-size: 11px; padding: 2px 10px; border-radius: 6px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink: 0; white-space: nowrap; }
+  .action-btn:hover { background: rgba(88,166,255,0.1); border-color: #58a6ff; }
+  .action-btn:disabled { opacity: 0.5; cursor: default; pointer-events: none; }
+
+  .kill-btn { background: none; border: 1px solid rgba(248,81,73,0.4); color: #f85149; font-size: 11px; padding: 2px 10px; border-radius: 6px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink: 0; }
+  .kill-btn:hover { background: rgba(248,81,73,0.15); border-color: #f85149; }
+
+  .open-btn { margin-left: auto; background: none; border: 1px solid #30363d; color: #7d8590; font-size: 11px; padding: 2px 10px; border-radius: 6px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink: 0; }
+  .open-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+
+  /* Expandable detail panel */
+  .card-detail { max-height: 0; overflow: hidden; transition: max-height 0.25s ease-out, padding 0.25s ease-out; padding: 0 18px 0 30px; }
+  .card.expanded .card-detail { max-height: 5000px; padding: 12px 18px 4px 30px; }
+  .detail-content { max-height: 150px; overflow: hidden; position: relative; }
+  .detail-content.expanded { max-height: none; }
+  .detail-content:not(.expanded)::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: linear-gradient(transparent, #161b22); pointer-events: none; }
+  .show-more-btn { background: none; border: none; color: #58a6ff; font-size: 12px; cursor: pointer; padding: 4px 0; font-family: inherit; }
+  .show-more-btn:hover { text-decoration: underline; }
+  .detail-footer { border-top: 1px solid #21262d; margin-top: 8px; padding-top: 8px; display: flex; gap: 8px; }
+  .card.expanded { border-color: #484f58; }
+  .detail-section { margin-bottom: 10px; }
+  .detail-label { font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; }
+  .detail-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+  .detail-row .check-icon { width: 14px; text-align: center; flex-shrink: 0; }
+  .detail-row .check-name { color: #7d8590; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .detail-row a { color: #58a6ff; font-size: 11px; flex-shrink: 0; }
+  .detail-summary { font-size: 12px; color: #7d8590; line-height: 1.5; }
+
+  /* PR table */
+  .tbl { width: 100%; border-collapse: collapse; }
+  .tbl th { text-align: left; color: #484f58; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 12px; border-bottom: 1px solid #21262d; font-weight: 600; }
+  .tbl td { padding: 10px 12px; border-bottom: 1px solid #161b22; font-size: 13px; }
+  .tbl tr:hover td { background: rgba(88,166,255,0.03); }
+  .tbl tr.has-issues td { background: rgba(248,81,73,0.03); }
+  .tbl .title { font-weight: 500; max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tbl .dim { color: #484f58; }
+  .tbl .comments-cell { font-size: 15px; font-weight: 800; text-align: center; }
+  .tbl .comments-cell.red { color: #f85149; }
+  .tbl .comments-cell.zero { color: #30363d; font-weight: 400; }
+
+  .notes-section { margin-top: 10px; }
+  .notes-area { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-family: inherit; font-size: 12px; padding: 8px 10px; resize: vertical; min-height: 60px; line-height: 1.5; }
+  .notes-area:focus { outline: none; border-color: #58a6ff; }
+  .notes-area::placeholder { color: #484f58; }
+  .notes-bar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .notes-save { background: none; border: 1px solid rgba(63,185,80,0.3); color: #3fb950; font-size: 11px; padding: 2px 10px; border-radius: 6px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .notes-save:hover { background: rgba(63,185,80,0.1); border-color: #3fb950; }
+  .notes-save:disabled { opacity: 0.4; cursor: default; }
+  .notes-status { font-size: 11px; color: #484f58; }
+
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .pulse { animation: pulse 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1><span>Integrator</span> Orchestrator</h1>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button class="open-btn" onclick="openTerminal('orchestrator',event)" style="padding:4px 14px;font-size:12px">orchestrator terminal</button>
+    <div class="timestamp" id="timestamp"></div>
+  </div>
+</div>
+<div class="stats" id="stats"></div>
+<div class="section">
+  <div class="section-head">Sessions</div>
+  <div class="sessions" id="sessions"></div>
+</div>
+<div class="section">
+  <div class="section-head">Pull Requests</div>
+  <table class="tbl"><thead><tr><th>PR</th><th>Title</th><th>Size</th><th>CI</th><th>Review</th><th>Unresolved</th><th>Age</th></tr></thead><tbody id="pr-tbody"></tbody></table>
+</div>
+</div>
+<script>
+HTMLEOF
+
+# Inject data
+cat >> "$DASHBOARD" << DATAEOF
+const sessions = $sessions_json;
+const prDetails = $pr_json;
+const counts = {total:$total, working:$working, openPrs:$open_prs, needsReview:$needs_review};
+DATAEOF
+
+cat >> "$DASHBOARD" << 'JSEOF'
+function timeAgo(d) {
+  const h = Math.floor((Date.now() - new Date(d)) / 3600000);
+  return h < 1 ? 'now' : h < 24 ? h+'h' : Math.floor(h/24)+'d';
+}
+function mergePR(repo, num, ev) {
+  ev.stopPropagation();
+  ev.preventDefault();
+  if (!confirm('Merge PR #' + num + '?')) return;
+  const btn = ev.target.closest('.alert-tag');
+  btn.textContent = 'merging...';
+  btn.style.pointerEvents = 'none';
+  fetch('/api/merge/' + encodeURIComponent(repo) + '/' + num).then(r => r.json()).then(r => {
+    if (r.ok) {
+      btn.textContent = 'merged!';
+      btn.className = 'alert-tag merged';
+      const card = btn.closest('.card');
+      card.classList.remove('ready-to-merge');
+      card.classList.add('merged');
+      card.style.opacity = '0.75';
+    } else {
+      btn.textContent = 'failed: ' + (r.error || 'unknown');
+      btn.style.pointerEvents = '';
+    }
+  });
+}
+function prNum(url) { return url?.match(/\/pull\/(\d+)/)?.[1] || null; }
+function ci(s) {
+  if (!s || s === 'none') return {l:'—', c:''};
+  let ok=0,fail=0,pend=0;
+  s.split(',').forEach(p => { const m=p.trim().match(/(\d+)\s+(\w+)/); if(!m)return; const[,n,t]=m;
+    if(t==='success')ok+=+n; else if(t==='failure')fail+=+n; else if(t==='pending'||t==='in_progress')pend+=+n; });
+  if(fail) return {l:fail+' failed',c:'ci-fail'}; if(pend) return {l:pend+' pending',c:'ci-pending'};
+  if(ok) return {l:'passing',c:'ci-pass'}; return {l:'—',c:''};
+}
+function openSession(name) {
+  fetch('/api/open/' + encodeURIComponent(name)).then(r => r.json()).then(r => {
+    const btn = event.target.closest('.open-btn');
+    if (r.ok) {
+      btn.textContent = 'opened';
+      btn.style.borderColor = '#3fb950'; btn.style.color = '#3fb950';
+    } else {
+      btn.textContent = 'error';
+      btn.style.borderColor = '#f85149'; btn.style.color = '#f85149';
+    }
+    setTimeout(() => { btn.textContent = 'open'; btn.style.borderColor = ''; btn.style.color = ''; }, 1500);
+  });
+}
+function openTerminal(name, ev) {
+  ev.stopPropagation();
+  const btn = ev.target.closest('.open-btn');
+  btn.textContent = 'connecting...';
+  btn.disabled = true;
+  fetch('/api/terminal/' + encodeURIComponent(name)).then(r => r.json()).then(r => {
+    if (r.ok) {
+      window.open(r.url, '_blank');
+      btn.textContent = 'terminal';
+      btn.style.borderColor = '#3fb950'; btn.style.color = '#3fb950';
+    } else {
+      btn.textContent = r.error || 'error';
+      btn.style.borderColor = '#f85149'; btn.style.color = '#f85149';
+    }
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = 'terminal'; btn.style.borderColor = ''; btn.style.color = ''; }, 1500);
+  });
+}
+function killSession(name, ev) {
+  ev.stopPropagation();
+  if (!confirm('Kill session ' + name + '?')) return;
+  const card = ev.target.closest('.card');
+  fetch('/api/kill/' + encodeURIComponent(name)).then(r => r.json()).then(r => {
+    if (r.ok) {
+      card.style.transition = 'opacity 0.3s, max-height 0.3s';
+      card.style.opacity = '0';
+      card.style.maxHeight = card.offsetHeight + 'px';
+      setTimeout(() => { card.style.maxHeight = '0'; card.style.padding = '0'; card.style.margin = '0'; card.style.overflow = 'hidden'; }, 300);
+      setTimeout(() => card.remove(), 600);
+    } else {
+      ev.target.closest('.kill-btn').textContent = 'error';
+    }
+  });
+}
+
+function saveNotes(session) {
+  const textarea = document.getElementById('notes-' + session);
+  const btn = document.getElementById('notes-save-' + session);
+  const status = document.getElementById('notes-status-' + session);
+  btn.disabled = true;
+  btn.textContent = 'saving...';
+  status.textContent = '';
+  fetch('/api/notes/' + encodeURIComponent(session), {method:'POST', body: textarea.value})
+    .then(r => r.json())
+    .then(r => {
+      if (r.ok) { btn.textContent = 'saved'; status.textContent = ''; btn.style.borderColor = 'rgba(63,185,80,0.5)'; }
+      else { btn.textContent = 'error'; status.textContent = r.error || ''; btn.style.borderColor = 'rgba(248,81,73,0.4)'; }
+      setTimeout(() => { btn.textContent = 'save'; btn.disabled = false; btn.style.borderColor = ''; }, 1500);
+    })
+    .catch(() => { btn.textContent = 'error'; btn.disabled = false; });
+}
+
+function removePR(session, ev) {
+  ev.stopPropagation();
+  if (!confirm('Remove PR association from ' + session + '?')) return;
+  const btn = ev.target.closest('.action-btn');
+  btn.textContent = 'removing...';
+  btn.disabled = true;
+  fetch('/api/remove-pr/' + encodeURIComponent(session)).then(r => r.json()).then(r => {
+    if (r.ok) {
+      btn.textContent = 'removed';
+      btn.style.color = '#3fb950';
+      // Remove PR pills and alerts from the card
+      const card = btn.closest('.card');
+      const meta = card.querySelector('.card-meta');
+      if (meta) { const pills = meta.querySelectorAll('.pill.pr-num, .pill.size'); pills.forEach(p => p.remove()); }
+      const alerts = card.querySelector('.card-alerts');
+      if (alerts) alerts.innerHTML = '';
+    } else {
+      btn.textContent = 'error';
+      btn.disabled = false;
+    }
+  });
+}
+
+function askAgent(session, message, ev) {
+  ev.stopPropagation();
+  const btn = ev.target.closest('.action-btn');
+  const origText = btn.textContent;
+  btn.textContent = 'sending...';
+  btn.disabled = true;
+  fetch('/api/send/' + encodeURIComponent(session), {method:'POST', body: message})
+    .then(r => r.json())
+    .then(r => {
+      if (r.ok) { btn.textContent = 'sent!'; btn.style.borderColor = '#3fb950'; btn.style.color = '#3fb950'; }
+      else { btn.textContent = 'failed'; btn.style.borderColor = '#f85149'; btn.style.color = '#f85149'; }
+    })
+    .catch(() => { btn.textContent = 'error'; btn.disabled = false; });
+}
+
+// Merge-readiness score (lower = easier to merge = sorted first)
+function mergeScore(prList) {
+  if (!prList.length) return 100; // no PR = bottom
+  if (prList.every(pr => pr.state === 'MERGED')) return 200; // merged = very bottom
+  let score = 0;
+  for (const pr of prList) {
+    if (pr.mergeable === 'CONFLICTING') score += 40;
+    const ciR = ci(pr.ciSummary);
+    if (ciR.c === 'ci-fail') score += 30;
+    else if (ciR.c === 'ci-pending') score += 5;
+    if (pr.reviewDecision === 'CHANGES_REQUESTED') score += 20;
+    else if (pr.reviewDecision !== 'APPROVED') score += 10; // needs review
+    score += (pr.unresolvedThreads || 0) * 5;
+  }
+  return score;
+}
+
+// Build enriched session data for sorting
+function enrichSession(s) {
+  const prUrls = s.pr ? s.pr.split(',').filter(Boolean) : [];
+  const prNums = prUrls.map(u => prNum(u)).filter(Boolean);
+  const prList = prNums.map(n => ({num: n, url: prUrls.find(u => u.includes('/'+n)), ...prDetails[n]})).filter(p => p.title);
+  return { ...s, prList, _score: mergeScore(prList) };
+}
+
+// Stats
+const st = document.getElementById('stats');
+st.innerHTML = [
+  {n:counts.total, l:'sessions', c:'b'}, {n:counts.working, l:'working', c:'g'},
+  {n:counts.openPrs, l:'open PRs', c:'p'}, {n:counts.needsReview, l:'need review', c:'y'},
+].map(s => `<div class="stat"><span class="n ${s.c}">${s.n}</span><span class="l">${s.l}</span></div>`).join('');
+
+// Sessions — sorted by ease of merging (lowest score first)
+const el = document.getElementById('sessions');
+const enriched = sessions.map(enrichSession);
+enriched.sort((a, b) => {
+  // Working sessions first
+  if (a.activity === 'working' && b.activity !== 'working') return -1;
+  if (b.activity === 'working' && a.activity !== 'working') return 1;
+  // Exited last
+  if (a.activity === 'exited' && b.activity !== 'exited') return 1;
+  if (b.activity === 'exited' && a.activity !== 'exited') return -1;
+  // Then by merge readiness
+  return a._score - b._score;
+});
+
+// Expand sessions into one card per PR (sessions with no PR get one card)
+const cards = [];
+enriched.forEach(s => {
+  if (s.prList.length <= 1) {
+    cards.push({session: s, pr: s.prList[0] || null});
+  } else {
+    s.prList.forEach(pr => cards.push({session: s, pr}));
+  }
+});
+
+cards.forEach(({session: s, pr: currentPr}) => {
+  const ico = s.activity==='working' ? '<span class="pulse">⚡</span>' : s.activity==='exited' ? '💀' : '💤';
+  const purpose = currentPr?.title || s.summary || s.status || s.branch;
+  const isMerged = currentPr?.state === 'MERGED';
+  const repo = 'ComposioHQ/integrator';
+
+  // Pills
+  let pills = [];
+  let alerts = [];
+  let hasRedAlert = false;
+
+  if (currentPr) {
+    pills.push(`<a href="${currentPr.url}" target="_blank" class="pill pr-num">#${currentPr.num}</a>`);
+    const sz = (currentPr.additions||0)+(currentPr.deletions||0);
+    const sl = sz>1000?'XL':sz>500?'L':sz>200?'M':sz>50?'S':'XS';
+    pills.push(`<span class="pill size">+${currentPr.additions||0} -${currentPr.deletions||0} ${sl}</span>`);
+
+    if (isMerged) {
+      pills.push(`<span class="pill" style="background:rgba(163,113,247,0.1);color:#a371f7">merged</span>`);
+    } else {
+      // CI
+      const prCi = ci(currentPr.ciSummary);
+      if (prCi.c === 'ci-pass') pills.push(`<span class="pill ci-pass">${prCi.l}</span>`);
+      else if (prCi.c === 'ci-fail') {
+        const failCheck = (currentPr.ciChecks||[]).find(c => c.status === 'FAILURE');
+        const fUrl = failCheck?.url || currentPr.url + '/checks';
+        const failCount = (currentPr.ciChecks||[]).filter(c => c.status === 'FAILURE').length;
+        alerts.push(`<a href="${fUrl}" target="_blank" class="alert-tag ci-fail" onclick="event.stopPropagation()">${failCount} CI check${failCount > 1 ? 's' : ''} failing</a>`);
+        if (s.activity !== 'working') alerts.push(`<button class="action-btn" onclick="askAgent('${s.name}','Please fix the failing CI checks on ${currentPr.url}',event)">ask to fix CI</button>`);
+        hasRedAlert = true;
+      }
+      else if (prCi.c === 'ci-pending') pills.push(`<span class="pill ci-pending">${prCi.l}</span>`);
+
+      // Review
+      if (currentPr.reviewDecision==='APPROVED') pills.push('<span class="pill approved">approved</span>');
+      else if (currentPr.reviewDecision==='CHANGES_REQUESTED') {
+        alerts.push(`<a href="${currentPr.url}" target="_blank" class="alert-tag changes" onclick="event.stopPropagation()">changes requested</a>`);
+        hasRedAlert = true;
+      } else {
+        alerts.push(`<a href="${currentPr.url}" target="_blank" class="alert-tag review" onclick="event.stopPropagation()">needs review</a>`);
+        if (s.activity !== 'working') alerts.push(`<button class="action-btn" onclick="askAgent('${s.name}','Post ${currentPr.url} on slack asking for a review. Do not ask for permission, just post it.',event)">ask to post for review</button>`);
+      }
+
+      // Merge conflict
+      if (currentPr.mergeable==='CONFLICTING') {
+        alerts.push(`<a href="${currentPr.url}" target="_blank" class="alert-tag conflict" onclick="event.stopPropagation()">merge conflict</a>`);
+        if (s.activity !== 'working') alerts.push(`<button class="action-btn" onclick="askAgent('${s.name}','Please resolve the merge conflicts on ${currentPr.url} by checking out the branch and rebasing on the base branch',event)">ask to fix conflicts</button>`);
+        hasRedAlert = true;
+      }
+
+      // Unresolved comments
+      const unresolvedList = currentPr.unresolvedList || [];
+      if ((currentPr.unresolvedThreads||0) > 0) {
+        const firstCommentUrl = unresolvedList[0]?.url || currentPr.url + '/files';
+        alerts.push(`<a href="${firstCommentUrl}" target="_blank" class="alert-tag comments" onclick="event.stopPropagation()"><span class="alert-num">${currentPr.unresolvedThreads}</span> unresolved comments</a>`);
+        if (s.activity !== 'working') alerts.push(`<button class="action-btn" onclick="askAgent('${s.name}','Please address all unresolved review comments on ${currentPr.url}',event)">ask to resolve</button>`);
+        hasRedAlert = true;
+      }
+
+      // Ready to merge
+      const prCi2 = ci(currentPr.ciSummary);
+      if (currentPr.reviewDecision === 'APPROVED' && prCi2.c === 'ci-pass' && currentPr.mergeable !== 'CONFLICTING' && (currentPr.unresolvedThreads||0) === 0) {
+        alerts = [`<a href="#" class="alert-tag merge" onclick="mergePR('${repo}','${currentPr.num}',event)">merge PR #${currentPr.num}</a>`];
+        pills = pills.filter(p => !p.includes('approved'));
+      }
+    }
+  }
+
+  // Slack pill
+  if (s.slack) pills.push(`<a href="${s.slack}" target="_blank" class="pill" style="background:rgba(88,166,255,0.08);color:#58a6ff" onclick="event.stopPropagation()">slack</a>`);
+
+  // Detail panel — scoped to this PR only
+  let detailHtml = '';
+  if (s.summary && currentPr?.title && s.summary !== currentPr.title) {
+    detailHtml += `<div class="detail-section"><div class="detail-label">Summary</div><div class="detail-summary">${s.summary}</div></div>`;
+  }
+  if (s.issue) detailHtml += `<div class="detail-section"><div class="detail-label">Issue</div><div class="detail-summary"><a href="${s.issue}" target="_blank">${s.issue}</a></div></div>`;
+  if (s.slack) detailHtml += `<div class="detail-section"><div class="detail-label">Slack</div><div class="detail-summary"><a href="${s.slack}" target="_blank">${s.slack}</a></div></div>`;
+
+  if (currentPr) {
+    const checks = currentPr.ciChecks || [];
+    if (checks.length) {
+      detailHtml += `<div class="detail-section"><div class="detail-label">CI Checks</div>`;
+      const order = {FAILURE: 0, IN_PROGRESS: 1, PENDING: 2, SUCCESS: 3, NEUTRAL: 4, SKIPPED: 5};
+      checks.sort((a,b) => (order[a.status]??9) - (order[b.status]??9));
+      checks.forEach(c => {
+        const icon = c.status === 'SUCCESS' ? '<span class="g">✓</span>' : c.status === 'FAILURE' ? '<span class="r">✗</span>' : c.status === 'PENDING' || c.status === 'IN_PROGRESS' ? '<span class="y">●</span>' : '<span class="dim">○</span>';
+        const link = c.url ? `<a href="${c.url}" target="_blank">view</a>` : '';
+        detailHtml += `<div class="detail-row">${icon} <span class="check-name">${c.name}</span> ${link}</div>`;
+      });
+      detailHtml += `</div>`;
+    }
+    const threads = currentPr.unresolvedList || [];
+    if (threads.length) {
+      detailHtml += `<div class="detail-section"><div class="detail-label">Unresolved Comments</div>`;
+      threads.forEach(t => {
+        const file = t.path || 'general';
+        const link = t.url ? `<a href="${t.url}" target="_blank">go to comment</a>` : '';
+        detailHtml += `<div class="detail-row"><span class="r">●</span> <span class="check-name">${file}</span> ${link}</div>`;
+      });
+      detailHtml += `</div>`;
+    }
+    detailHtml += `<div class="detail-section"><div class="detail-label">PR Details</div><div class="detail-summary"><a href="${currentPr.url}" target="_blank">${currentPr.title}</a><br><span class="g">+${currentPr.additions||0}</span> <span class="r">-${currentPr.deletions||0}</span> · mergeable: ${currentPr.mergeable || 'unknown'} · review: ${currentPr.reviewDecision || 'none'}${currentPr.createdAt ? ' · opened ' + timeAgo(currentPr.createdAt) : ''}</div></div>`;
+  }
+
+  if (!detailHtml && !currentPr) detailHtml = `<div class="detail-section"><div class="detail-summary dim">No PR associated with this session.</div></div>`;
+
+  // Notes (only on first card for this session to avoid duplicates)
+  const isFirstCard = cards.findIndex(c => c.session.name === s.name) === cards.indexOf(cards.find(c => c.session === s && c.pr === currentPr));
+  const cardIdx = cards.filter(c => c.session.name === s.name).indexOf(cards.find(c => c.session === s && c.pr === currentPr));
+  if (cardIdx === 0) {
+    const escapedNotes = (s.notes || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    detailHtml += `<div class="detail-section notes-section"><div class="detail-label">Notes</div><textarea class="notes-area" id="notes-${s.name}" placeholder="Add notes..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">${escapedNotes}</textarea><div class="notes-bar"><button class="notes-save" onclick="event.stopPropagation();saveNotes('${s.name}')" id="notes-save-${s.name}">save</button><span class="notes-status" id="notes-status-${s.name}"></span></div></div>`;
+  }
+
+  const uid = currentPr ? s.name + '-pr' + currentPr.num : s.name;
+  detailHtml = `<div class="detail-content" id="detail-${uid}">${detailHtml}</div><button class="show-more-btn" onclick="event.stopPropagation();const c=document.getElementById('detail-${uid}');c.classList.toggle('expanded');this.textContent=c.classList.contains('expanded')?'Show less':'Show more'">Show more</button><div class="detail-footer">${currentPr ? `<button class="action-btn" onclick="removePR('${s.name}', event)" style="border-color:rgba(210,153,34,0.4);color:#d29922">remove PR association</button>` : ''}<button class="kill-btn" onclick="killSession('${s.name}', event)">terminate session</button></div>`;
+
+  const readyToMerge = currentPr && !isMerged && currentPr.reviewDecision === 'APPROVED' && ci(currentPr.ciSummary).c === 'ci-pass' && currentPr.mergeable !== 'CONFLICTING' && (currentPr.unresolvedThreads||0) === 0;
+  const cardClass = `card ${s.activity}${isMerged ? ' merged' : readyToMerge ? ' ready-to-merge' : hasRedAlert ? ' has-alerts-red' : alerts.length ? ' has-alerts' : ''}`;
+  const d = document.createElement('div');
+  d.className = cardClass;
+  d.onclick = (e) => { if (e.target.closest('a, button, textarea')) return; d.classList.toggle('expanded'); };
+  d.innerHTML = `<div class="card-top"><span class="card-icon">${ico}</span><span class="card-name">${s.name}</span><span class="card-purpose">${purpose}</span>${currentPr?.createdAt ? '<span class="card-age">' + timeAgo(currentPr.createdAt) + '</span>' : ''}${isMerged || s.activity === 'exited' ? `<button class="kill-btn" onclick="killSession('${s.name}', event)">kill session</button>` : ''}${currentPr ? `<button class="open-btn" onclick="event.stopPropagation();window.open('${currentPr.url}','_blank')">open PR</button>` : ''}<button class="open-btn" onclick="openTerminal('${s.name}',event)">terminal</button><button class="open-btn" onclick="event.stopPropagation();openSession('${s.name}')">open</button></div><div class="card-meta"><span class="card-branch">${s.branch}</span><span class="sep">·</span>${pills.join('')}</div>${alerts.length ? '<div class="card-alerts">' + alerts.join('') + '</div>' : ''}<div class="card-detail">${detailHtml}</div>`;
+  // Group cards from same session into a shared container
+  const sessionCount = cards.filter(c => c.session.name === s.name).length;
+  if (sessionCount > 1) {
+    let group = el.querySelector(`[data-session-group="${s.name}"]`);
+    if (!group) {
+      group = document.createElement('div');
+      group.className = 'session-group';
+      group.dataset.sessionGroup = s.name;
+      el.appendChild(group);
+    }
+    group.appendChild(d);
+  } else {
+    el.appendChild(d);
+  }
+});
+
+// PR table — sorted by ease of merge (same logic)
+const tbody = document.getElementById('pr-tbody');
+Object.keys(prDetails)
+  .filter(n => prDetails[n].state==='OPEN')
+  .sort((a,b) => {
+    // Score: lower = easier to merge = top
+    function prScore(n) {
+      const pr = prDetails[n];
+      let sc = 0;
+      if (pr.mergeable === 'CONFLICTING') sc += 40;
+      const c = ci(pr.ciSummary);
+      if (c.c === 'ci-fail') sc += 30;
+      if (pr.reviewDecision === 'CHANGES_REQUESTED') sc += 20;
+      else if (pr.reviewDecision !== 'APPROVED') sc += 10;
+      sc += (pr.unresolvedThreads || 0) * 5;
+      return sc;
+    }
+    return prScore(a) - prScore(b);
+  })
+  .forEach(num => {
+    const pr = prDetails[num];
+    const sz = pr.additions+pr.deletions;
+    const sl = sz>1000?'XL':sz>500?'L':sz>200?'M':sz>50?'S':'XS';
+    const ciR = ci(pr.ciSummary);
+    const failCheck = (pr.ciChecks||[]).find(c => c.status === 'FAILURE');
+    const rv = pr.reviewDecision==='APPROVED' ? '<span class="pill approved">approved</span>'
+             : pr.reviewDecision==='CHANGES_REQUESTED' ? '<span class="alert-tag changes" style="font-size:11px;padding:2px 8px">changes requested</span>'
+             : '<span class="alert-tag review" style="font-size:11px;padding:2px 8px">needs review</span>';
+    const ciTd = ciR.c === 'ci-fail'
+      ? `<a href="${failCheck?.url || '#'}" target="_blank" class="alert-tag ci-fail" style="font-size:11px;padding:2px 8px">${ciR.l}</a>`
+      : ciR.c ? `<span class="pill ${ciR.c}">${ciR.l}</span>` : '<span class="dim">—</span>';
+    const hasIssues = (pr.unresolvedThreads||0) > 0 || ciR.c === 'ci-fail' || pr.mergeable === 'CONFLICTING';
+    const sess = sessions.find(s => s.pr && s.pr.includes('/pull/'+num));
+    const repo = 'ComposioHQ/integrator';
+    const firstComment = (pr.unresolvedList||[])[0]?.url || `https://github.com/${repo}/pull/${num}/files`;
+    const tr = document.createElement('tr');
+    if (hasIssues) tr.className = 'has-issues';
+    tr.innerHTML = `
+      <td><a href="https://github.com/${repo}/pull/${num}" target="_blank">#${num}</a></td>
+      <td class="title">${pr.title}</td>
+      <td><span class="g">+${pr.additions}</span> <span class="r">-${pr.deletions}</span> <span class="dim">${sl}</span></td>
+      <td>${ciTd}</td>
+      <td>${rv}</td>
+      <td class="comments-cell ${(pr.unresolvedThreads||0) > 0 ? 'red' : 'zero'}">${(pr.unresolvedThreads||0) > 0 ? `<a href="${firstComment}" target="_blank" style="color:inherit">${pr.unresolvedThreads}</a>` : '0'}</td>
+      <td class="dim">${timeAgo(pr.createdAt)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+document.getElementById('timestamp').textContent = new Date().toLocaleString();
+
+// Live activity polling
+setInterval(() => {
+  fetch('/api/sessions').then(r => r.json()).then(data => {
+    let workingCount = 0;
+    document.querySelectorAll('.card').forEach(card => {
+      const nameEl = card.querySelector('.card-name');
+      if (!nameEl) return;
+      const name = nameEl.textContent;
+      const newActivity = data[name];
+      if (!newActivity) return;
+      const oldActivity = card.classList.contains('working') ? 'working'
+                        : card.classList.contains('exited') ? 'exited' : 'idle';
+      if (newActivity === oldActivity) { if (newActivity === 'working') workingCount++; return; }
+      // Update card class
+      card.classList.remove('working', 'idle', 'exited');
+      card.classList.add(newActivity);
+      // Update icon
+      const iconEl = card.querySelector('.card-icon');
+      if (iconEl) {
+        iconEl.innerHTML = newActivity === 'working' ? '<span class="pulse">⚡</span>'
+                         : newActivity === 'exited' ? '💀' : '💤';
+      }
+      // Show/hide action buttons based on new activity
+      card.querySelectorAll('.action-btn').forEach(btn => {
+        btn.style.display = newActivity === 'working' ? 'none' : '';
+      });
+      if (newActivity === 'working') workingCount++;
+    });
+    // Update working count in stats
+    const statNums = document.querySelectorAll('.stat .n.g');
+    if (statNums.length) statNums[0].textContent = workingCount;
+    document.getElementById('timestamp').textContent = new Date().toLocaleString();
+  }).catch(() => {});
+}, 5000);
+</script>
+</body>
+</html>
+JSEOF
+
+echo "Dashboard generated: $DASHBOARD"
+
+if [ "$REGEN_ONLY" = true ]; then
+    echo "Regeneration complete."
+    exit 0
+fi
+
+# Kill any previous dashboard server
+pkill -f 'claude-dashboard-server' 2>/dev/null
+sleep 0.3
+
+# Start a tiny local server that serves the dashboard + handles /api/open/:session
+PORT=9847
+cat > /tmp/claude-dashboard-server.py << 'PYEOF'
+import http.server, subprocess, json, os, urllib.parse, signal, sys, re, threading, time
+
+PORT = 9847
+DASHBOARD = "/tmp/claude-dashboard.html"
+regen_lock = threading.Lock()
+regen_proc = None
+regen_started = 0
+
+TTYD_BASE_PORT = 7682
+ttyd_procs = {}  # session_name -> {'port': int, 'proc': subprocess.Popen}
+
+def get_ttyd_port():
+    used = {v['port'] for v in ttyd_procs.values()}
+    port = TTYD_BASE_PORT
+    while port in used:
+        port += 1
+    return port
+
+def cleanup_ttyd():
+    for info in ttyd_procs.values():
+        try:
+            info['proc'].terminate()
+        except Exception:
+            pass
+    ttyd_procs.clear()
+
+LOADER_HTML = b"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Claude Orchestrator</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; background:#0d1117; color:#e6edf3;
+         display:flex; align-items:center; justify-content:center; min-height:100vh; flex-direction:column; gap:16px; }
+  .spinner { width:32px; height:32px; border:3px solid #30363d; border-top-color:#7c8aff; border-radius:50%;
+             animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .text { color:#7d8590; font-size:14px; }
+  .sub { color:#484f58; font-size:12px; }
+</style></head><body>
+<div class="spinner"></div>
+<div class="text">Refreshing dashboard...</div>
+<div class="sub" id="elapsed"></div>
+<script>
+const t0 = Date.now();
+setInterval(() => {
+  document.getElementById('elapsed').textContent = ((Date.now()-t0)/1000).toFixed(0) + 's';
+  fetch('/api/regen-status').then(r=>r.json()).then(d => {
+    if (d.done) {
+      fetch('/dashboard').then(r=>r.text()).then(html => {
+        document.open(); document.write(html); document.close();
+        history.replaceState(null, '', '/');
+      });
+    }
+  }).catch(()=>{});
+}, 1000);
+</script></body></html>"""
+
+def get_session_activities():
+    """Fast scan of tmux sessions — returns {session_name: activity} using Claude session JSONL files"""
+    import time, glob
+
+    home = os.path.expanduser('~')
+    tmux = '/opt/homebrew/bin/tmux'
+    try:
+        result = subprocess.run(
+            [tmux, 'list-sessions', '-F', '#{session_name}'],
+            capture_output=True, text=True, timeout=5
+        )
+        sessions = [s for s in result.stdout.strip().split('\n')
+                     if re.match(r'^integrator-', s)]
+    except Exception:
+        return {}
+
+    activities = {}
+    now = time.time()
+    for s in sessions:
+        # Get pane working directory directly from tmux (most reliable)
+        try:
+            cwd = subprocess.run(
+                [tmux, 'display-message', '-t', s, '-p', '#{pane_current_path}'],
+                capture_output=True, text=True, timeout=3
+            ).stdout.strip()
+        except Exception:
+            cwd = ''
+
+        found_jsonl = False
+        if cwd:
+            # Convert CWD to Claude's project dir format: tr '/.' '--'
+            proj_key = cwd.translate(str.maketrans('/.', '--'))
+            session_dir = os.path.join(home, '.claude', 'projects', proj_key)
+            jsonls = sorted(glob.glob(os.path.join(session_dir, '*.jsonl')),
+                           key=os.path.getmtime, reverse=True)
+            jsonls = [j for j in jsonls if 'agent-' not in os.path.basename(j)]
+            if jsonls:
+                found_jsonl = True
+                jsonl = jsonls[0]
+                mod_age = now - os.path.getmtime(jsonl)
+                last_type = ''
+                try:
+                    with open(jsonl, 'rb') as f:
+                        f.seek(0, 2)
+                        f.seek(max(0, f.tell() - 4096))
+                        lines = f.read().split(b'\n')
+                        for line in reversed(lines):
+                            line = line.strip()
+                            if line:
+                                last_type = json.loads(line).get('type', '')
+                                break
+                except Exception:
+                    pass
+
+                if mod_age < 30 and last_type not in ('assistant', 'system'):
+                    activities[s] = 'working'
+                    continue
+
+        # Fallback: check if claude process exists (pane itself or descendants)
+        try:
+            pane_pid = subprocess.run(
+                [tmux, 'list-panes', '-t', s, '-F', '#{pane_pid}'],
+                capture_output=True, text=True, timeout=3
+            ).stdout.strip().split('\n')[0]
+            if pane_pid:
+                ps_out = subprocess.run(
+                    ['ps', '-o', 'pid,ppid,comm'],
+                    capture_output=True, text=True, timeout=3
+                ).stdout
+                has_claude = False
+                # Check if pane process itself is claude
+                for line in ps_out.strip().split('\n')[1:]:
+                    parts = line.split()
+                    if len(parts) >= 3 and parts[0] == pane_pid and 'claude' in parts[2]:
+                        has_claude = True
+                        break
+                # Walk descendants
+                if not has_claude:
+                    pids_to_check = {pane_pid}
+                    for _ in range(3):
+                        next_pids = set()
+                        for line in ps_out.strip().split('\n')[1:]:
+                            parts = line.split()
+                            if len(parts) >= 3 and parts[1] in pids_to_check:
+                                next_pids.add(parts[0])
+                                if 'claude' in parts[2]:
+                                    has_claude = True
+                        if has_claude:
+                            break
+                        pids_to_check = next_pids
+                        if not pids_to_check:
+                            break
+                if not has_claude:
+                    activities[s] = 'exited'
+                    continue
+        except Exception:
+            pass
+
+        activities[s] = 'idle'
+    return activities
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def _json(self, code, data):
+        self.send_response(code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
+
+    def do_GET(self):
+        if self.path == '/api/sessions':
+            try:
+                self._json(200, get_session_activities())
+            except Exception as e:
+                self._json(500, {'error': str(e)})
+        elif self.path.startswith('/api/open/'):
+            session = urllib.parse.unquote(self.path[len('/api/open/'):])
+            try:
+                result = subprocess.run(
+                    [os.path.expanduser('~/open-tmux-session'), session],
+                    capture_output=True, text=True, timeout=10
+                )
+                self._json(200, {'ok': result.returncode == 0, 'error': result.stderr.strip()})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+        elif self.path.startswith('/api/terminal/'):
+            session = urllib.parse.unquote(self.path[len('/api/terminal/'):])
+            # Check if ttyd already running for this session
+            if session in ttyd_procs:
+                proc = ttyd_procs[session]['proc']
+                if proc.poll() is None:
+                    self._json(200, {'ok': True, 'url': f'http://localhost:{ttyd_procs[session]["port"]}'})
+                    return
+                else:
+                    del ttyd_procs[session]
+            # Verify tmux session exists (auto-create for orchestrator)
+            check = subprocess.run(
+                ['/opt/homebrew/bin/tmux', 'has-session', '-t', session],
+                capture_output=True, timeout=5
+            )
+            if check.returncode != 0:
+                if session == 'orchestrator':
+                    env = {k: v for k, v in os.environ.items() if k != 'CLAUDECODE'}
+                    subprocess.run(
+                        ['/opt/homebrew/bin/tmux', 'new-session', '-d', '-s', 'orchestrator',
+                         '-c', os.path.expanduser('~'), '-e', 'CLAUDECODE='],
+                        capture_output=True, timeout=5, env=env
+                    )
+                    # Verify it was created
+                    verify = subprocess.run(
+                        ['/opt/homebrew/bin/tmux', 'has-session', '-t', 'orchestrator'],
+                        capture_output=True, timeout=5
+                    )
+                    if verify.returncode != 0:
+                        self._json(500, {'ok': False, 'error': 'failed to create orchestrator session'})
+                        return
+                else:
+                    self._json(404, {'ok': False, 'error': 'tmux session not found'})
+                    return
+            port = get_ttyd_port()
+            try:
+                proc = subprocess.Popen(
+                    ['/opt/homebrew/bin/ttyd', '--writable', '--port', str(port),
+                     '/opt/homebrew/bin/tmux', 'attach-session', '-t', session],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+                ttyd_procs[session] = {'port': port, 'proc': proc}
+                time.sleep(0.3)
+                if proc.poll() is not None:
+                    del ttyd_procs[session]
+                    self._json(500, {'ok': False, 'error': 'ttyd failed to start'})
+                else:
+                    self._json(200, {'ok': True, 'url': f'http://localhost:{port}'})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+        elif self.path.startswith('/api/remove-pr/'):
+            session = urllib.parse.unquote(self.path[len('/api/remove-pr/'):])
+            try:
+                meta_file = None
+                meta_file = os.path.expanduser(f'~/.integrator-sessions/{session}')
+                if not os.path.exists(meta_file):
+                    self._json(404, {'ok': False, 'error': 'session not found'})
+                    return
+                with open(meta_file, 'r') as f:
+                    lines = f.readlines()
+                new_lines = [l for l in lines if not l.startswith('pr=')]
+                with open(meta_file, 'w') as f:
+                    f.writelines(new_lines)
+                self._json(200, {'ok': True})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+        elif self.path.startswith('/api/kill/'):
+            session = urllib.parse.unquote(self.path[len('/api/kill/'):])
+            try:
+                # Kill any ttyd for this session
+                if session in ttyd_procs:
+                    try:
+                        ttyd_procs[session]['proc'].terminate()
+                    except Exception:
+                        pass
+                    del ttyd_procs[session]
+                # Close iTerm2 tab (before killing tmux, so we can still find it)
+                # Get TTY of attached tmux client first
+                tty_result = subprocess.run(
+                    ['/opt/homebrew/bin/tmux', 'list-clients', '-t', session, '-F', '#{client_tty}'],
+                    capture_output=True, text=True, timeout=5
+                )
+                target_tty = tty_result.stdout.strip().split('\n')[0] if tty_result.stdout.strip() else ''
+                if target_tty:
+                    # Find iTerm2 tab by TTY
+                    subprocess.run(['osascript', '-e', f'''
+                        tell application "iTerm2"
+                            repeat with aWindow in windows
+                                repeat with aTab in tabs of aWindow
+                                    repeat with aSession in sessions of aTab
+                                        try
+                                            if tty of aSession is equal to "{target_tty}" then
+                                                tell aTab to close
+                                                return
+                                            end if
+                                        end try
+                                    end repeat
+                                end repeat
+                            end repeat
+                        end tell
+                    '''], capture_output=True, text=True, timeout=5)
+                else:
+                    # Fallback: try matching by profile name
+                    subprocess.run(['osascript', '-e', f'''
+                        tell application "iTerm2"
+                            repeat with aWindow in windows
+                                repeat with aTab in tabs of aWindow
+                                    repeat with aSession in sessions of aTab
+                                        try
+                                            if profile name of aSession is equal to "{session}" then
+                                                tell aTab to close
+                                                return
+                                            end if
+                                        end try
+                                    end repeat
+                                end repeat
+                            end repeat
+                        end tell
+                    '''], capture_output=True, text=True, timeout=5)
+                # Kill tmux session
+                subprocess.run(['/opt/homebrew/bin/tmux', 'kill-session', '-t', session],
+                    capture_output=True, text=True, timeout=5)
+                # Archive metadata file (instead of deleting)
+                meta = os.path.expanduser(f'~/.integrator-sessions/{session}')
+                if os.path.exists(meta):
+                    archive_dir = os.path.expanduser(f'~/.integrator-sessions/archive')
+                    os.makedirs(archive_dir, exist_ok=True)
+                    ts = time.strftime('%Y%m%d-%H%M%S')
+                    archive_path = os.path.join(archive_dir, f'{session}_{ts}')
+                    import shutil
+                    shutil.move(meta, archive_path)
+                self._json(200, {'ok': True})
+                # Regenerate HTML in background so next reload is fresh
+                subprocess.Popen([os.path.expanduser('~/claude-dashboard'), '--regen-only'],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+        elif self.path.startswith('/api/merge/'):
+            # /api/merge/owner/repo/num
+            parts = urllib.parse.unquote(self.path[len('/api/merge/'):]).split('/')
+            if len(parts) == 3:
+                repo = parts[0] + '/' + parts[1]
+                num = parts[2]
+                try:
+                    result = subprocess.run(
+                        ['gh', 'pr', 'merge', num, '--repo', repo, '--squash', '--auto'],
+                        capture_output=True, text=True, timeout=30,
+                        env={**os.environ, 'PATH': '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'}
+                    )
+                    if result.returncode == 0:
+                        self._json(200, {'ok': True})
+                    else:
+                        self._json(200, {'ok': False, 'error': result.stderr.strip()})
+                except Exception as e:
+                    self._json(500, {'ok': False, 'error': str(e)})
+            else:
+                self._json(400, {'ok': False, 'error': 'bad path, expected /api/merge/owner/repo/num'})
+        elif self.path == '/dashboard':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.end_headers()
+            with open(DASHBOARD, 'rb') as f:
+                self.wfile.write(f.read())
+        elif self.path == '/api/regen-status':
+            global regen_proc, regen_started
+            done = True
+            if regen_proc is not None:
+                done = regen_proc.poll() is not None
+            elapsed = time.time() - regen_started if regen_started else 0
+            self._json(200, {'done': done, 'elapsed': round(elapsed, 1)})
+        elif self.path.split('?')[0] in ('/', '/index.html'):
+            # Always trigger regeneration and show loader
+            with regen_lock:
+                if regen_proc is None or regen_proc.poll() is not None:
+                    regen_started = time.time()
+                    regen_proc = subprocess.Popen(
+                        [os.path.expanduser('~/claude-dashboard'), '--regen-only'],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.end_headers()
+            self.wfile.write(LOADER_HTML)
+        else:
+            self.send_error(404)
+
+    def do_POST(self):
+        if self.path.startswith('/api/notes/'):
+            session = urllib.parse.unquote(self.path[len('/api/notes/'):])
+            length = int(self.headers.get('Content-Length', 0))
+            notes = self.rfile.read(length).decode('utf-8') if length else ''
+            try:
+                # Find the metadata file
+                meta_file = None
+                meta_file = os.path.expanduser(f'~/.integrator-sessions/{session}')
+                if not os.path.exists(meta_file):
+                    self._json(404, {'ok': False, 'error': 'session not found'})
+                    return
+                # Read existing metadata, update notes line
+                with open(meta_file, 'r') as f:
+                    lines = f.readlines()
+                new_lines = [l for l in lines if not l.startswith('notes=')]
+                if notes.strip():
+                    new_lines.append(f'notes={notes.strip()}\n')
+                with open(meta_file, 'w') as f:
+                    f.writelines(new_lines)
+                self._json(200, {'ok': True})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+        elif self.path.startswith('/api/send/'):
+            session = urllib.parse.unquote(self.path[len('/api/send/'):])
+            length = int(self.headers.get('Content-Length', 0))
+            message = self.rfile.read(length).decode('utf-8') if length else ''
+            if not message:
+                self._json(400, {'ok': False, 'error': 'empty message'})
+                return
+            try:
+                result = subprocess.run(
+                    [os.path.expanduser('~/send-to-session'), session, message],
+                    capture_output=True, text=True, timeout=30
+                )
+                self._json(200, {'ok': result.returncode == 0, 'error': result.stderr.strip()})
+            except Exception as e:
+                self._json(500, {'ok': False, 'error': str(e)})
+        else:
+            self._json(404, {'ok': False, 'error': 'not found'})
+
+    def log_message(self, fmt, *args):
+        pass  # quiet
+
+def _shutdown(*a):
+    cleanup_ttyd()
+    sys.exit(0)
+signal.signal(signal.SIGTERM, _shutdown)
+signal.signal(signal.SIGINT, _shutdown)
+import atexit
+atexit.register(cleanup_ttyd)
+print(f"Dashboard server on http://localhost:{PORT}")
+http.server.HTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
+PYEOF
+
+python3 /tmp/claude-dashboard-server.py &
+SERVERPID=$!
+echo "$SERVERPID" > /tmp/claude-dashboard-server.pid
+sleep 0.5
+
+if [ "$NO_OPEN" = false ]; then
+    open "http://localhost:$PORT"
+    echo "Opened http://localhost:$PORT"
+fi
+echo "Server PID: $SERVERPID (kill with: pkill -f claude-dashboard-server)"

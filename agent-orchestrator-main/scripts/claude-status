@@ -1,0 +1,278 @@
+#!/bin/bash
+
+# Claude Unified Status
+# Shows all sessions across all projects with summary stats
+
+# Helper function to get Claude session info directly from Claude's data
+get_claude_info() {
+    local TMUX_SESSION="$1"
+
+    # Get the TTY for this tmux session
+    local TTY=$(tmux list-panes -t "$TMUX_SESSION" -F '#{pane_tty}' 2>/dev/null | head -1)
+    [ -z "$TTY" ] && return 1
+
+    # Find the Claude PID running on that TTY
+    local TTY_SHORT="${TTY#/dev/}"
+    local CLAUDE_PID=$(ps -eo pid,tty,comm 2>/dev/null | awk -v tty="$TTY_SHORT" '$2 == tty && $3 == "claude" {print $1; exit}')
+    [ -z "$CLAUDE_PID" ] && return 1
+
+    # Get the working directory of that process
+    local CWD=$(lsof -p "$CLAUDE_PID" 2>/dev/null | awk '$4 == "cwd" {print $NF}')
+    [ -z "$CWD" ] && return 1
+
+    # Get current git branch from that directory
+    local BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+
+    # Convert to Claude's project path format and find active session
+    local PROJECT_PATH=$(echo "$CWD" | tr '/_' '--')
+    local PROJECT_DIR="$HOME/.claude/projects/$PROJECT_PATH"
+
+    local SESSION_ID=""
+    local SUMMARY=""
+
+    if [ -d "$PROJECT_DIR" ]; then
+        # Find the most recently modified session file (exclude agent- files)
+        local ACTIVE_SESSION_FILE=$(ls -t "$PROJECT_DIR"/*.jsonl 2>/dev/null | grep -v "agent-" | head -1)
+        if [ -n "$ACTIVE_SESSION_FILE" ]; then
+            SESSION_ID=$(basename "$ACTIVE_SESSION_FILE" .jsonl)
+            # Extract the most recent summary from the session file
+            SUMMARY=$(grep '"type":"summary"' "$ACTIVE_SESSION_FILE" 2>/dev/null | tail -1 | jq -r '.summary // empty' 2>/dev/null)
+        fi
+    fi
+
+    # Output as key=value pairs (properly quoted for eval)
+    printf 'claude_branch=%q\n' "$BRANCH"
+    printf 'claude_session_id=%q\n' "$SESSION_ID"
+    printf 'claude_summary=%q\n' "$SUMMARY"
+}
+
+echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+echo "║                        CLAUDE ORCHESTRATOR STATUS                            ║"
+echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+echo ""
+
+# Count sessions
+INTEGRATOR_COUNT=$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep -c "^integrator-" || echo 0)
+SPLITLY_COUNT=$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep -c "^splitly-" || echo 0)
+AO_COUNT=$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep -c "^ao-" || echo 0)
+TOTAL=$((INTEGRATOR_COUNT + SPLITLY_COUNT + AO_COUNT))
+
+# Count empty checkouts
+INTEGRATOR_EMPTY=0
+for i in {0..9}; do
+    count=$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep -c "^integrator-${i}-" 2>/dev/null || true)
+    count=${count:-0}
+    count=$(echo "$count" | tr -d '[:space:]')
+    [ "$count" -eq 0 ] 2>/dev/null && ((INTEGRATOR_EMPTY++))
+done
+
+SPLITLY_EMPTY=0
+for i in {0..12}; do
+    count=$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep -c "^splitly-${i}-" 2>/dev/null || true)
+    count=${count:-0}
+    count=$(echo "$count" | tr -d '[:space:]')
+    [ "$count" -eq 0 ] 2>/dev/null && ((SPLITLY_EMPTY++))
+done
+
+echo "📊 SUMMARY: $TOTAL active sessions"
+echo "   Integrator: $INTEGRATOR_COUNT sessions, $INTEGRATOR_EMPTY empty checkouts"
+echo "   Splitly:    $SPLITLY_COUNT sessions, $SPLITLY_EMPTY empty checkouts"
+echo "   AO:         $AO_COUNT sessions"
+echo ""
+
+# Show integrator sessions
+echo "┌──────────────────────────────────────────────────────────────────────────────┐"
+echo "│ INTEGRATOR                                                                   │"
+echo "└──────────────────────────────────────────────────────────────────────────────┘"
+
+if [ "$INTEGRATOR_COUNT" -eq 0 ]; then
+    echo "  (no active sessions)"
+else
+    # Get session details from the session data files
+    for session in $(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep "^integrator-" | sort); do
+        activity=$(tmux display-message -t "$session" -p '#{session_activity}' 2>/dev/null)
+        now=$(date +%s)
+        if [ -n "$activity" ]; then
+            diff=$((now - activity))
+            if [ $diff -lt 60 ]; then
+                last_active="${diff}s ago"
+            elif [ $diff -lt 3600 ]; then
+                last_active="$((diff / 60))m ago"
+            elif [ $diff -lt 86400 ]; then
+                last_active="$((diff / 3600))h ago"
+            else
+                last_active="$((diff / 86400))d ago"
+            fi
+        else
+            last_active="-"
+        fi
+
+        data_file="$HOME/.integrator-sessions/$session"
+        meta_branch=$(grep "^branch=" "$data_file" 2>/dev/null | cut -d'=' -f2-)
+        meta_status=$(grep "^status=" "$data_file" 2>/dev/null | cut -d'=' -f2-)
+        meta_summary=$(grep "^summary=" "$data_file" 2>/dev/null | cut -d'=' -f2- | cut -c1-60)
+
+        # Get live Claude session info
+        eval "$(get_claude_info "$session" 2>/dev/null)"
+
+        echo "  📍 $session ($last_active)"
+
+        # Show branch - prefer live, show if different from metadata
+        if [ -n "$claude_branch" ]; then
+            if [ -n "$meta_branch" ] && [ "$claude_branch" != "$meta_branch" ]; then
+                echo "     Branch: $claude_branch (meta: $meta_branch)"
+            else
+                echo "     Branch: $claude_branch"
+            fi
+        elif [ -n "$meta_branch" ]; then
+            echo "     Branch: $meta_branch (stale)"
+        fi
+
+        # Show summary - prefer Claude's auto-generated, fall back to metadata
+        if [ -n "$claude_summary" ]; then
+            echo "     Claude: ${claude_summary:0:65}"
+        fi
+        if [ -n "$meta_summary" ]; then
+            echo "     Status: ${meta_summary}..."
+        fi
+
+        # Show session ID if available (useful for resuming)
+        [ -n "$claude_session_id" ] && echo "     Session: ${claude_session_id:0:8}..."
+    done
+fi
+
+echo ""
+
+# Show splitly sessions
+echo "┌──────────────────────────────────────────────────────────────────────────────┐"
+echo "│ SPLITLY / SAFESPLIT                                                          │"
+echo "└──────────────────────────────────────────────────────────────────────────────┘"
+
+if [ "$SPLITLY_COUNT" -eq 0 ]; then
+    echo "  (no active sessions)"
+else
+    for session in $(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep "^splitly-" | sort); do
+        activity=$(tmux display-message -t "$session" -p '#{session_activity}' 2>/dev/null)
+        now=$(date +%s)
+        if [ -n "$activity" ]; then
+            diff=$((now - activity))
+            if [ $diff -lt 60 ]; then
+                last_active="${diff}s ago"
+            elif [ $diff -lt 3600 ]; then
+                last_active="$((diff / 60))m ago"
+            elif [ $diff -lt 86400 ]; then
+                last_active="$((diff / 3600))h ago"
+            else
+                last_active="$((diff / 86400))d ago"
+            fi
+        else
+            last_active="-"
+        fi
+
+        data_file="$HOME/.splitly-sessions/$session"
+        meta_branch=$(grep "^branch=" "$data_file" 2>/dev/null | cut -d'=' -f2-)
+        meta_status=$(grep "^status=" "$data_file" 2>/dev/null | cut -d'=' -f2-)
+        meta_summary=$(grep "^summary=" "$data_file" 2>/dev/null | cut -d'=' -f2- | cut -c1-60)
+
+        # Get live Claude session info
+        eval "$(get_claude_info "$session" 2>/dev/null)"
+
+        echo "  📍 $session ($last_active)"
+
+        # Show branch - prefer live, show if different from metadata
+        if [ -n "$claude_branch" ]; then
+            if [ -n "$meta_branch" ] && [ "$claude_branch" != "$meta_branch" ]; then
+                echo "     Branch: $claude_branch (meta: $meta_branch)"
+            else
+                echo "     Branch: $claude_branch"
+            fi
+        elif [ -n "$meta_branch" ]; then
+            echo "     Branch: $meta_branch (stale)"
+        fi
+
+        # Show summary - prefer Claude's auto-generated, fall back to metadata
+        if [ -n "$claude_summary" ]; then
+            echo "     Claude: ${claude_summary:0:65}"
+        fi
+        if [ -n "$meta_summary" ]; then
+            echo "     Status: ${meta_summary}..."
+        fi
+
+        # Show session ID if available (useful for resuming)
+        [ -n "$claude_session_id" ] && echo "     Session: ${claude_session_id:0:8}..."
+    done
+fi
+
+echo ""
+
+# Show ao sessions
+echo "┌──────────────────────────────────────────────────────────────────────────────┐"
+echo "│ AGENT-ORCHESTRATOR                                                            │"
+echo "└──────────────────────────────────────────────────────────────────────────────┘"
+
+if [ "$AO_COUNT" -eq 0 ]; then
+    echo "  (no active sessions)"
+else
+    for session in $(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep "^ao-" | sort); do
+        activity=$(tmux display-message -t "$session" -p '#{session_activity}' 2>/dev/null)
+        now=$(date +%s)
+        if [ -n "$activity" ]; then
+            diff=$((now - activity))
+            if [ $diff -lt 60 ]; then
+                last_active="${diff}s ago"
+            elif [ $diff -lt 3600 ]; then
+                last_active="$((diff / 60))m ago"
+            elif [ $diff -lt 86400 ]; then
+                last_active="$((diff / 3600))h ago"
+            else
+                last_active="$((diff / 86400))d ago"
+            fi
+        else
+            last_active="-"
+        fi
+
+        data_file="$HOME/.ao-sessions/$session"
+        meta_branch=$(grep "^branch=" "$data_file" 2>/dev/null | cut -d'=' -f2-)
+        meta_status=$(grep "^status=" "$data_file" 2>/dev/null | cut -d'=' -f2-)
+        meta_summary=$(grep "^summary=" "$data_file" 2>/dev/null | cut -d'=' -f2- | cut -c1-60)
+
+        # Get live Claude session info
+        eval "$(get_claude_info "$session" 2>/dev/null)"
+
+        echo "  📍 $session ($last_active)"
+
+        # Show branch - prefer live, show if different from metadata
+        if [ -n "$claude_branch" ]; then
+            if [ -n "$meta_branch" ] && [ "$claude_branch" != "$meta_branch" ]; then
+                echo "     Branch: $claude_branch (meta: $meta_branch)"
+            else
+                echo "     Branch: $claude_branch"
+            fi
+        elif [ -n "$meta_branch" ]; then
+            echo "     Branch: $meta_branch (stale)"
+        fi
+
+        # Show summary - prefer Claude's auto-generated, fall back to metadata
+        if [ -n "$claude_summary" ]; then
+            echo "     Claude: ${claude_summary:0:65}"
+        fi
+        if [ -n "$meta_summary" ]; then
+            echo "     Status: ${meta_summary}..."
+        fi
+
+        # Show session ID if available (useful for resuming)
+        [ -n "$claude_session_id" ] && echo "     Session: ${claude_session_id:0:8}..."
+    done
+fi
+
+echo ""
+echo "┌──────────────────────────────────────────────────────────────────────────────┐"
+echo "│ QUICK ACTIONS                                                                │"
+echo "└──────────────────────────────────────────────────────────────────────────────┘"
+echo "  ~/claude-spawn i [linear-url]  - New integrator session in new iTerm2 tab"
+echo "  ~/claude-spawn s [issue-num]   - New splitly session in new iTerm2 tab"
+echo "  ~/claude-spawn ao [linear-id]  - New agent-orchestrator session"
+echo "  ~/claude-integrator-session cleanup"
+echo "  ~/claude-splitly-session cleanup"
+echo "  ~/claude-ao-session cleanup"
+echo ""

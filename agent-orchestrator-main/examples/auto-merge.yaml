@@ -1,0 +1,37 @@
+# Aggressive automation with auto-merge
+# Automatically merges approved PRs with passing CI
+
+dataDir: ~/.agent-orchestrator
+worktreeDir: ~/.worktrees
+
+projects:
+  my-app:
+    repo: owner/my-app
+    path: ~/my-app
+    defaultBranch: main
+
+    # Enable auto-merge for this project
+    reactions:
+      approved-and-green:
+        auto: true # Automatically merge when PR is approved and CI passes
+        action: auto-merge
+
+# Global reactions
+reactions:
+  # Auto-retry CI failures up to 3 times
+  ci-failed:
+    auto: true
+    action: send-to-agent
+    retries: 3
+
+  # Auto-address review comments
+  changes-requested:
+    auto: true
+    action: send-to-agent
+    escalateAfter: 1h # Notify human if not resolved in 1 hour
+
+  # Notify when agent is stuck
+  agent-stuck:
+    threshold: 10m
+    action: notify
+    priority: urgent

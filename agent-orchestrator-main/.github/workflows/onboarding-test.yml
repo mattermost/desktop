@@ -1,0 +1,55 @@
+name: Onboarding Integration Test
+
+on:
+  pull_request:
+    paths:
+      - 'packages/**'
+      - 'scripts/setup.sh'
+      - 'tests/integration/**'
+      - '.github/workflows/onboarding-test.yml'
+  push:
+    branches:
+      - main
+
+jobs:
+  onboarding-test:
+    name: Test Fresh Onboarding
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build test image
+        working-directory: tests/integration
+        run: docker compose build
+
+      - name: Run onboarding test
+        id: test
+        working-directory: tests/integration
+        run: |
+          docker compose up --abort-on-container-exit --exit-code-from onboarding-test
+
+      - name: Extract metrics
+        if: always()
+        run: |
+          # Extract onboarding time from container logs
+          docker logs ao-onboarding-test 2>&1 | grep "Total onboarding time" || echo "Metrics not available"
+
+      - name: Cleanup
+        if: always()
+        working-directory: tests/integration
+        run: docker compose down -v
+
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: onboarding-test-logs
+          path: |
+            tests/integration/*.log
+          retention-days: 7

@@ -1,0 +1,242 @@
+#!/bin/bash
+# claude-integrator-session-v2 - Worktree-based session manager for integrator
+
+set -e
+
+MAIN_REPO=~/integrator
+WORKTREE_DIR=~/.worktrees/integrator
+SESSION_DIR=~/.integrator-sessions
+ENV_TEMPLATE=~/.env-templates/integrator
+DEFAULT_BRANCH="next"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+usage() {
+    echo "Usage: ~/claude-integrator-session-v2 <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "  new [LINEAR-ID] [--open]  Create new session (optionally with Linear ticket)"
+    echo "  ls                        List all sessions"
+    echo "  attach <session>          Attach to session"
+    echo "  kill <session>            Kill session and remove worktree"
+    echo "  cleanup                   Kill sessions where PR is merged or ticket is done"
+    echo "  update                    Update current session metadata"
+    exit 1
+}
+
+get_next_session_number() {
+    local max=0
+    for session in $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep "^integrator-[0-9]*$" | sed 's/integrator-//'); do
+        if [ "$session" -gt "$max" ] 2>/dev/null; then
+            max=$session
+        fi
+    done
+    echo $((max + 1))
+}
+
+cmd_new() {
+    local linear_id=""
+    local open_warp=false
+    
+    # Parse args
+    for arg in "$@"; do
+        if [ "$arg" = "--open" ]; then
+            open_warp=true
+        elif [ -z "$linear_id" ] && [ "$arg" != "--open" ]; then
+            linear_id="$arg"
+        fi
+    done
+    
+    local session_num=$(get_next_session_number)
+    local session_name="integrator-$session_num"
+    local worktree_path="$WORKTREE_DIR/$session_name"
+    
+    echo -e "${BLUE}Creating session: $session_name${NC}"
+    
+    cd "$MAIN_REPO"
+    git fetch origin --quiet
+    
+    if [ -n "$linear_id" ]; then
+        local branch_name="feat/$linear_id"
+        git worktree add -b "$branch_name" "$worktree_path" "origin/$DEFAULT_BRANCH" 2>/dev/null || \
+        git worktree add "$worktree_path" "origin/$DEFAULT_BRANCH"
+    else
+        git worktree add "$worktree_path" "origin/$DEFAULT_BRANCH" --detach
+    fi
+    
+    echo -e "${GREEN}✓ Created worktree at $worktree_path${NC}"
+    
+    # Symlink shared resources from main repo
+    [ -f "$ENV_TEMPLATE/.env" ] && ln -sf "$ENV_TEMPLATE/.env" "$worktree_path/.env"
+    [ -f "$ENV_TEMPLATE/.envrc" ] && ln -sf "$ENV_TEMPLATE/.envrc" "$worktree_path/.envrc" && \
+        (cd "$worktree_path" && direnv allow 2>/dev/null || true)
+    [ -d "$MAIN_REPO/.venv" ] && ln -sf "$MAIN_REPO/.venv" "$worktree_path/.venv"
+    [ -f "$MAIN_REPO/CLAUDE.local.md" ] && ln -sf "$MAIN_REPO/CLAUDE.local.md" "$worktree_path/CLAUDE.local.md"
+    [ -d "$MAIN_REPO/.claude" ] && rm -rf "$worktree_path/.claude" && ln -s "$MAIN_REPO/.claude" "$worktree_path/.claude"
+    
+    # Add Rube MCP before starting session
+    (cd "$worktree_path" && claude mcp add rube --transport http https://rube.app/mcp &>/dev/null) || true
+
+    # Create tmux session and start Claude (unset CLAUDECODE to avoid nested session detection)
+    tmux new-session -d -s "$session_name" -c "$worktree_path" -e "INTEGRATOR_SESSION=$session_name" -e "DIRENV_LOG_FORMAT="
+    tmux send-keys -t "$session_name" "unset CLAUDECODE && claude --dangerously-skip-permissions" Enter
+    
+    # Create metadata file
+    mkdir -p "$SESSION_DIR"
+    cat > "$SESSION_DIR/$session_name" << EOF
+worktree=$worktree_path
+branch=$(cd "$worktree_path" && git branch --show-current || echo "detached")
+status=starting
+EOF
+    [ -n "$linear_id" ] && echo "issue=https://linear.app/composio/issue/$linear_id" >> "$SESSION_DIR/$session_name"
+    
+    echo -e "${GREEN}✓ Created tmux session: $session_name${NC}"
+    echo -e "${GREEN}✓ Started Claude in session${NC}"
+    echo ""
+    echo "Attach with: tmux attach -t $session_name"
+    echo "Or open in iTerm2: ~/open-iterm-tab $session_name"
+
+    # Clean output for scripting (no ANSI codes)
+    echo "SESSION=$session_name"
+
+    # Open in iTerm2 if requested
+    if [ "$open_warp" = true ]; then
+        ~/open-iterm-tab "$session_name"
+    fi
+}
+
+cmd_ls() {
+    echo -e "${BLUE}Integrator Sessions:${NC}"
+    echo ""
+    
+    for session in $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep "^integrator-" | sort -V); do
+        local meta_file="$SESSION_DIR/$session"
+        local worktree="" branch="" status="" pr=""
+        
+        if [ -f "$meta_file" ]; then
+            worktree=$(grep "^worktree=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+            branch=$(grep "^branch=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+            status=$(grep "^status=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+            pr=$(grep "^pr=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+        fi
+        
+        [ -d "$worktree" ] && branch=$(cd "$worktree" && git branch --show-current 2>/dev/null || echo "$branch")
+        
+        echo -e "${GREEN}$session${NC}"
+        [ -n "$branch" ] && echo "  Branch: $branch"
+        [ -n "$status" ] && echo "  Status: $status"
+        [ -n "$pr" ] && echo "  PR: $pr"
+        echo ""
+    done
+}
+
+cmd_attach() {
+    [ -z "$1" ] && echo "Usage: ~/claude-integrator-session-v2 attach <session>" && exit 1
+    tmux attach -t "$1"
+}
+
+cmd_kill() {
+    local session="$1"
+    [ -z "$session" ] && echo "Usage: ~/claude-integrator-session-v2 kill <session>" && exit 1
+
+    local meta_file="$SESSION_DIR/$session"
+    local worktree=""
+    [ -f "$meta_file" ] && worktree=$(grep "^worktree=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+
+    # Close iTerm tab BEFORE killing tmux (tab name changes after tmux dies)
+    osascript -e "
+        tell application \"iTerm2\"
+            repeat with w in windows
+                repeat with t in tabs of w
+                    repeat with s in sessions of t
+                        if name of s contains \"$session\" then
+                            close t
+                            return
+                        end if
+                    end repeat
+                end repeat
+            end repeat
+        end tell
+    " 2>/dev/null && echo -e "${GREEN}✓ Closed iTerm tab: $session${NC}"
+
+    tmux kill-session -t "$session" 2>/dev/null && echo -e "${GREEN}✓ Killed tmux session: $session${NC}"
+
+    if [ -n "$worktree" ] && [ -d "$worktree" ]; then
+        cd "$MAIN_REPO"
+        git worktree remove --force "$worktree" 2>/dev/null && echo -e "${GREEN}✓ Removed worktree: $worktree${NC}"
+    fi
+
+    # Archive metadata instead of deleting
+    if [ -f "$meta_file" ]; then
+        mkdir -p "$SESSION_DIR/archive"
+        mv "$meta_file" "$SESSION_DIR/archive/${session}_$(date +%Y%m%d-%H%M%S)"
+        echo -e "${GREEN}✓ Archived metadata${NC}"
+    fi
+}
+
+cmd_cleanup() {
+    echo "Checking for completed sessions..."
+
+    for session in $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep "^integrator-"); do
+        local meta_file="$SESSION_DIR/$session"
+        local pr="" issue=""
+
+        [ -f "$meta_file" ] && {
+            pr=$(grep "^pr=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+            issue=$(grep "^issue=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+        }
+
+        if [ -n "$pr" ]; then
+            local pr_num=$(echo "$pr" | grep -o '[0-9]*$')
+            if [ -n "$pr_num" ]; then
+                local state=$(gh pr view "$pr_num" --repo ComposioHQ/integrator --json state -q '.state' 2>/dev/null)
+                [ "$state" = "MERGED" ] && echo -e "${YELLOW}PR #$pr_num merged - killing $session${NC}" && cmd_kill "$session" && continue
+            fi
+        fi
+
+        # Check Linear ticket status if we have an issue URL
+        if [ -n "$issue" ] && [ -n "${LINEAR_API_KEY:-}" ]; then
+            local ticket_id=$(echo "$issue" | grep -o 'INT-[0-9]*')
+            if [ -n "$ticket_id" ]; then
+                local ticket_state=$(curl -s -X POST https://api.linear.app/graphql \
+                    -H "Authorization: $LINEAR_API_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"query\": \"{ issueSearch(filter: { identifier: { eq: \\\"$ticket_id\\\" } }) { nodes { state { type } } } }\"}" \
+                    2>/dev/null | jq -r '.data.issueSearch.nodes[0].state.type // empty' 2>/dev/null)
+                if [ "$ticket_state" = "completed" ] || [ "$ticket_state" = "canceled" ]; then
+                    echo -e "${YELLOW}$ticket_id $ticket_state - killing $session${NC}"
+                    cmd_kill "$session" && continue
+                fi
+            fi
+        fi
+    done
+    echo "Cleanup complete."
+}
+
+cmd_update() {
+    local session="${INTEGRATOR_SESSION:-}"
+    [ -z "$session" ] && echo "Error: Not in an integrator session" && exit 1
+    
+    local meta_file="$SESSION_DIR/$session"
+    local worktree=$(grep "^worktree=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+    [ -z "$worktree" ] || [ ! -d "$worktree" ] && worktree="$PWD"
+    
+    local branch=$(cd "$worktree" && git branch --show-current 2>/dev/null)
+    [ -n "$branch" ] && sed -i '' "s|^branch=.*|branch=$branch|" "$meta_file" 2>/dev/null
+    
+    echo "Updated metadata for $session"
+}
+
+case "${1:-}" in
+    new)     shift; cmd_new "$@" ;;
+    ls)      cmd_ls ;;
+    attach)  cmd_attach "$2" ;;
+    kill)    cmd_kill "$2" ;;
+    cleanup) cmd_cleanup ;;
+    update)  cmd_update ;;
+    *)       usage ;;
+esac

@@ -1,0 +1,189 @@
+#!/bin/bash
+
+# Claude Batch Session Spawner (v2 - worktree-based)
+# Delegates to session managers for worktree creation, symlinks, and MCP setup.
+# Adds duplicate detection: skips issues that already have active sessions.
+# Usage: ~/claude-batch-spawn <project> <issue1> [issue2] [issue3] ...
+
+PROJECT="${1:-}"
+shift
+ISSUES=("$@")
+
+if [ -z "$PROJECT" ] || [ ${#ISSUES[@]} -eq 0 ]; then
+    echo "Usage: ~/claude-batch-spawn <project> <issue1> [issue2] [issue3] ..."
+    echo ""
+    echo "Examples:"
+    echo "  ~/claude-batch-spawn splitly 298 299 300 301"
+    echo "  ~/claude-batch-spawn integrator INT-1020 INT-1021"
+    echo ""
+    echo "This creates worktree-based sessions for each issue."
+    echo "After creation, attach with: ~/claude-*-session attach <session-name>"
+    exit 1
+fi
+
+# Determine project settings
+case "$PROJECT" in
+    integrator|i)
+        SESSION_PREFIX="integrator"
+        SESSION_MANAGER="$HOME/claude-integrator-session"
+        SESSION_DATA_DIR="$HOME/.integrator-sessions"
+        GITHUB_REPO=""
+        ;;
+    splitly|s|safesplit)
+        SESSION_PREFIX="splitly"
+        SESSION_MANAGER="$HOME/claude-splitly-session"
+        SESSION_DATA_DIR="$HOME/.splitly-sessions"
+        GITHUB_REPO="UniverseOfThings/SafeSplit"
+        ;;
+    agent-orchestrator|ao)
+        SESSION_PREFIX="ao"
+        SESSION_MANAGER="$HOME/claude-ao-session"
+        SESSION_DATA_DIR="$HOME/.ao-sessions"
+        GITHUB_REPO="ComposioHQ/agent-orchestrator"
+        ;;
+    *)
+        echo "Unknown project: $PROJECT"
+        echo "Use 'integrator' (or 'i'), 'splitly' (or 's'), or 'agent-orchestrator' (or 'ao')"
+        exit 1
+        ;;
+esac
+
+mkdir -p "$SESSION_DATA_DIR"
+
+# Duplicate detection: check if an issue already has an active session
+issue_has_session() {
+    local issue="$1"
+    local issue_lower=$(echo "$issue" | tr '[:upper:]' '[:lower:]')
+
+    for meta_file in "$SESSION_DATA_DIR"/*; do
+        [ -f "$meta_file" ] || continue
+        local session_name=$(basename "$meta_file")
+
+        # Check if tmux session is still active
+        tmux has-session -t "$session_name" 2>/dev/null || continue
+
+        # Check issue field in metadata
+        local meta_issue=$(grep "^issue=" "$meta_file" 2>/dev/null | cut -d= -f2-)
+        local meta_issue_lower=$(echo "$meta_issue" | tr '[:upper:]' '[:lower:]')
+
+        # Match by issue ID in the URL or direct match
+        if echo "$meta_issue_lower" | grep -qi "$issue_lower"; then
+            echo "$session_name"
+            return 0
+        fi
+    done
+    return 1
+}
+
+echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+echo "║                     BATCH SESSION SPAWNER (v2)                               ║"
+echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+echo ""
+echo "Project: $PROJECT"
+echo "Issues to spawn: ${ISSUES[*]}"
+echo ""
+
+CREATED=()
+SKIPPED=()
+FAILED=()
+
+for ISSUE in "${ISSUES[@]}"; do
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    # Duplicate detection
+    existing=$(issue_has_session "$ISSUE")
+    if [ $? -eq 0 ]; then
+        echo "  ⏭️  Skipping $ISSUE — already has session: $existing"
+        SKIPPED+=("$ISSUE:$existing")
+        continue
+    fi
+
+    echo "  Creating session for: $ISSUE"
+
+    # Delegate to the session manager
+    output=$("$SESSION_MANAGER" new "$ISSUE" 2>&1)
+
+    if [ $? -ne 0 ]; then
+        echo "  ❌ Error creating session!"
+        echo "$output" | sed 's/^/    /'
+        FAILED+=("$ISSUE")
+        continue
+    fi
+
+    # Extract session name from session manager output
+    SESSION=$(echo "$output" | grep "^SESSION=" | cut -d= -f2)
+
+    if [ -z "$SESSION" ]; then
+        echo "  ❌ Error: Could not determine session name!"
+        echo "$output" | sed 's/^/    /'
+        FAILED+=("$ISSUE")
+        continue
+    fi
+
+    # Update metadata with issue info
+    if [ "$SESSION_PREFIX" = "splitly" ]; then
+        ISSUE_NUM=$(echo "$ISSUE" | sed 's/#//' | grep -o '[0-9]*')
+        ISSUE_URL="https://github.com/$GITHUB_REPO/issues/$ISSUE_NUM"
+    else
+        ISSUE_URL="$ISSUE"
+    fi
+    # Append issue to metadata (session manager may have already set it)
+    grep -q "^issue=" "$SESSION_DATA_DIR/$SESSION" 2>/dev/null || \
+        echo "issue=$ISSUE_URL" >> "$SESSION_DATA_DIR/$SESSION"
+
+    # Wait for Claude to start, then send the work prompt
+    sleep 1
+
+    # Build initial prompt
+    if [ "$SESSION_PREFIX" = "splitly" ]; then
+        INITIAL_PROMPT="Please start working on GitHub issue #$ISSUE_NUM. First, fetch the issue details using: gh issue view $ISSUE_NUM --repo $GITHUB_REPO. Then create an appropriate feature branch (e.g., fix/issue-$ISSUE_NUM-short-description or feat/issue-$ISSUE_NUM-short-description), and start implementing the solution."
+    else
+        INITIAL_PROMPT="Please start working on $ISSUE, fetch ticket info, create the appropriate branch so that github auto links to linear, and start working on the task"
+    fi
+
+    # Send prompt to the running Claude session
+    tmux send-keys -t "$SESSION" "$INITIAL_PROMPT" Enter
+
+    echo "  ✅ Session $SESSION created and prompted"
+    CREATED+=("$SESSION:$ISSUE")
+
+    # Small delay between spawns
+    sleep 0.5
+done
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📊 SUMMARY"
+echo "  Created: ${#CREATED[@]} sessions"
+echo "  Skipped: ${#SKIPPED[@]} (duplicate)"
+echo "  Failed:  ${#FAILED[@]}"
+echo ""
+
+if [ ${#CREATED[@]} -gt 0 ]; then
+    echo "Created sessions:"
+    for item in "${CREATED[@]}"; do
+        SESSION=$(echo "$item" | cut -d: -f1)
+        ISSUE=$(echo "$item" | cut -d: -f2-)
+        echo "  • $SESSION → $ISSUE"
+    done
+fi
+
+if [ ${#SKIPPED[@]} -gt 0 ]; then
+    echo ""
+    echo "Skipped (already has session):"
+    for item in "${SKIPPED[@]}"; do
+        ISSUE=$(echo "$item" | cut -d: -f1)
+        EXISTING=$(echo "$item" | cut -d: -f2-)
+        echo "  • $ISSUE → existing session: $EXISTING"
+    done
+fi
+
+if [ ${#FAILED[@]} -gt 0 ]; then
+    echo ""
+    echo "Failed issues: ${FAILED[*]}"
+fi
+
+echo ""
+echo "To see all sessions: ~/claude-status"
+echo "To open all tabs: ~/claude-open-all $SESSION_PREFIX"

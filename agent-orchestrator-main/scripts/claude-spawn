@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# Claude Session Spawner
+# Opens a new iTerm2 window and starts a Claude session
+# Usage: ~/claude-spawn [integrator|splitly] [issue-url-or-number]
+
+PROJECT="${1:-}"
+ISSUE="${2:-}"
+
+show_help() {
+    cat << 'EOF'
+CLAUDE-SPAWN(1)                    User Commands                    CLAUDE-SPAWN(1)
+
+NAME
+    claude-spawn - Spawn a new Claude session in a new iTerm2 window
+
+SYNOPSIS
+    ~/claude-spawn <project> [issue]
+
+DESCRIPTION
+    Opens a new iTerm2 terminal window and starts a Claude Code session for the
+    specified project. Useful when you want to spawn work without leaving
+    your current terminal.
+
+ARGUMENTS
+    project     Required. One of:
+                  integrator  - Start an integrator session (Linear-based)
+                  splitly     - Start a splitly/SafeSplit session (GitHub-based)
+                  i           - Alias for integrator
+                  s           - Alias for splitly
+
+    issue       Optional. Issue to work on:
+                  - Linear URL for integrator (e.g., https://linear.app/team/issue/INT-123)
+                  - GitHub issue number or URL for splitly (e.g., 294)
+
+EXAMPLES
+    # Spawn a new integrator session (auto-picks checkout)
+    ~/claude-spawn integrator
+
+    # Spawn integrator session for a Linear ticket
+    ~/claude-spawn integrator https://linear.app/composio/issue/INT-1020
+
+    # Spawn splitly session for GitHub issue #294
+    ~/claude-spawn splitly 294
+
+    # Using aliases
+    ~/claude-spawn i INT-1020
+    ~/claude-spawn s 294
+
+REQUIREMENTS
+    - iTerm2 must be installed
+
+SEE ALSO
+    ~/claude-integrator-session-v2
+    ~/claude-splitly-session-v2
+    ~/claude-status
+
+                                    2026-02-01                      CLAUDE-SPAWN(1)
+EOF
+}
+
+# Handle help
+if [[ "$PROJECT" == "help" || "$PROJECT" == "--help" || "$PROJECT" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
+# Validate project
+case "$PROJECT" in
+    integrator|i)
+        SESSION_SCRIPT="$HOME/claude-integrator-session-v2"
+        PROJECT_NAME="integrator"
+        ;;
+    splitly|s|safesplit)
+        SESSION_SCRIPT="$HOME/claude-splitly-session-v2"
+        PROJECT_NAME="splitly"
+        ;;
+    agent-orchestrator|ao)
+        SESSION_SCRIPT="$HOME/claude-ao-session"
+        PROJECT_NAME="ao"
+        ;;
+    "")
+        echo "Usage: ~/claude-spawn <integrator|splitly|ao> [issue]"
+        echo ""
+        echo "Examples:"
+        echo "  ~/claude-spawn integrator"
+        echo "  ~/claude-spawn integrator https://linear.app/composio/issue/INT-1020"
+        echo "  ~/claude-spawn splitly 294"
+        echo "  ~/claude-spawn ao AO-1"
+        echo ""
+        echo "Run '~/claude-spawn help' for more information."
+        exit 1
+        ;;
+    *)
+        echo "Unknown project: $PROJECT"
+        echo "Use 'integrator' (or 'i'), 'splitly' (or 's'), or 'agent-orchestrator' (or 'ao')"
+        exit 1
+        ;;
+esac
+
+# Build the command to run in the new window
+if [ -n "$ISSUE" ]; then
+    COMMAND="$SESSION_SCRIPT new '$ISSUE'"
+else
+    COMMAND="$SESSION_SCRIPT new"
+fi
+
+echo "Spawning $PROJECT_NAME session in new iTerm2 window..."
+if [ -n "$ISSUE" ]; then
+    echo "  Issue: $ISSUE"
+fi
+
+# Open new iTerm2 window and run the command
+osascript -e "
+tell application \"iTerm2\"
+    activate
+    set newWindow to (create window with default profile)
+    tell current session of newWindow
+        write text \"$COMMAND\"
+    end tell
+end tell
+"
+
+echo "Done! Check your iTerm2 windows."

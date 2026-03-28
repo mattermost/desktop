@@ -1,0 +1,169 @@
+#!/bin/bash
+
+# Check all sessions with PRs for review comments and trigger agents to address them
+# Usage: ~/claude-review-check [integrator|splitly]
+
+PROJECT="${1:-splitly}"
+
+case "$PROJECT" in
+    integrator|i)
+        SESSION_PREFIX="integrator"
+        SESSION_DATA_DIR="$HOME/.integrator-sessions"
+        ;;
+    splitly|s|safesplit)
+        SESSION_PREFIX="splitly"
+        SESSION_DATA_DIR="$HOME/.splitly-sessions"
+        ;;
+    agent-orchestrator|ao)
+        SESSION_PREFIX="ao"
+        SESSION_DATA_DIR="$HOME/.ao-sessions"
+        ;;
+    *)
+        echo "Usage: ~/claude-review-check [integrator|splitly|ao]"
+        exit 1
+        ;;
+esac
+
+echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+echo "║                        PR REVIEW COMMENT CHECKER                             ║"
+echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+echo ""
+echo "Project: $PROJECT"
+echo ""
+
+# Get all sessions
+sessions=$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep "^${SESSION_PREFIX}-" | sort)
+
+if [ -z "$sessions" ]; then
+    echo "No active sessions found."
+    exit 0
+fi
+
+TRIGGERED=()
+SKIPPED_NO_PR=()
+SKIPPED_NO_COMMENTS=()
+ERRORS=()
+
+for session in $sessions; do
+    data_file="$SESSION_DATA_DIR/$session"
+
+    if [ ! -f "$data_file" ]; then
+        SKIPPED_NO_PR+=("$session (no metadata)")
+        continue
+    fi
+
+    pr_url=$(grep "^pr=" "$data_file" 2>/dev/null | cut -d'=' -f2-)
+    branch=$(grep "^branch=" "$data_file" 2>/dev/null | cut -d'=' -f2-)
+
+    if [ -z "$pr_url" ]; then
+        SKIPPED_NO_PR+=("$session")
+        continue
+    fi
+
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "📍 $session"
+    echo "   Branch: ${branch:--}"
+    echo "   PR: $pr_url"
+
+    # Extract PR number and repo from URL
+    # Format: https://github.com/owner/repo/pull/123
+    if [[ "$pr_url" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]]; then
+        owner="${BASH_REMATCH[1]}"
+        repo="${BASH_REMATCH[2]}"
+        pr_number="${BASH_REMATCH[3]}"
+    else
+        echo "   ⚠️  Could not parse PR URL"
+        ERRORS+=("$session: invalid PR URL")
+        continue
+    fi
+
+    # Check for review comments using gh
+    # Get pending review comments (not resolved)
+    echo "   Checking for review comments..."
+
+    # Get PR review comments
+    review_data=$(gh pr view "$pr_number" --repo "$owner/$repo" --json reviewDecision,reviews,comments 2>/dev/null)
+
+    if [ $? -ne 0 ]; then
+        echo "   ⚠️  Failed to fetch PR data"
+        ERRORS+=("$session: gh command failed")
+        continue
+    fi
+
+    # Check review decision
+    review_decision=$(echo "$review_data" | jq -r '.reviewDecision // "NONE"')
+
+    # Count reviews that requested changes
+    changes_requested=$(echo "$review_data" | jq '[.reviews[] | select(.state == "CHANGES_REQUESTED")] | length')
+
+    # Get review comments (these are inline code comments)
+    # We'll use the gh api to get pending review comments
+    pending_comments=$(gh api "repos/$owner/$repo/pulls/$pr_number/comments" --jq '[.[] | select(.in_reply_to_id == null)] | length' 2>/dev/null || echo "0")
+
+    # Also check for regular PR comments that might be review feedback
+    pr_comments=$(gh pr view "$pr_number" --repo "$owner/$repo" --json comments --jq '.comments | length' 2>/dev/null || echo "0")
+
+    echo "   Review decision: $review_decision"
+    echo "   Review comments: $pending_comments"
+    echo "   PR comments: $pr_comments"
+
+    # Determine if we need to trigger the agent
+    should_trigger=false
+    trigger_reason=""
+
+    if [ "$review_decision" = "CHANGES_REQUESTED" ]; then
+        should_trigger=true
+        trigger_reason="Changes requested"
+    elif [ "$changes_requested" -gt 0 ]; then
+        should_trigger=true
+        trigger_reason="$changes_requested review(s) requested changes"
+    elif [ "$pending_comments" -gt 0 ]; then
+        should_trigger=true
+        trigger_reason="$pending_comments review comment(s) to address"
+    fi
+
+    if [ "$should_trigger" = true ]; then
+        echo "   🔔 $trigger_reason - triggering agent..."
+
+        # Send prompt to the tmux session
+        prompt="There are review comments on your PR ($pr_url). Please check the PR review comments using 'gh pr view $pr_number --repo $owner/$repo --comments' and 'gh api repos/$owner/$repo/pulls/$pr_number/comments', address each comment, commit and push your fixes, then reply to the comments indicating what you fixed."
+
+        # Send to tmux - first send Ctrl+C to interrupt if busy, then the prompt
+        tmux send-keys -t "$session" C-c 2>/dev/null
+        sleep 0.5
+        tmux send-keys -t "$session" "$prompt" Enter
+
+        TRIGGERED+=("$session: $trigger_reason")
+        echo "   ✅ Agent triggered"
+    else
+        echo "   ✓ No pending review comments"
+        SKIPPED_NO_COMMENTS+=("$session")
+    fi
+done
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📊 SUMMARY"
+echo "   Triggered: ${#TRIGGERED[@]}"
+echo "   No PR: ${#SKIPPED_NO_PR[@]}"
+echo "   No comments: ${#SKIPPED_NO_COMMENTS[@]}"
+echo "   Errors: ${#ERRORS[@]}"
+
+if [ ${#TRIGGERED[@]} -gt 0 ]; then
+    echo ""
+    echo "Triggered sessions:"
+    for item in "${TRIGGERED[@]}"; do
+        echo "   • $item"
+    done
+fi
+
+if [ ${#ERRORS[@]} -gt 0 ]; then
+    echo ""
+    echo "Errors:"
+    for item in "${ERRORS[@]}"; do
+        echo "   • $item"
+    done
+fi
+
+echo ""

@@ -1,0 +1,93 @@
+#!/bin/bash
+# Check open PRs for unaddressed bugbot (cursor[bot]) comments
+# and send fix instructions to the relevant sessions.
+#
+# Usage: ~/claude-bugbot-fix [project] [--dry-run]
+#
+# Examples:
+#   ~/claude-bugbot-fix integrator          # Check and send fix instructions
+#   ~/claude-bugbot-fix integrator --dry-run  # Just report, don't send
+#   ~/claude-bugbot-fix splitly
+
+PROJECT="${1:-integrator}"
+DRY_RUN=false
+[ "$2" = "--dry-run" ] && DRY_RUN=true
+
+case "$PROJECT" in
+    integrator|i) 
+        REPO="ComposioHQ/integrator"
+        SESSIONS_DIR="$HOME/.integrator-sessions"
+        SESSION_PREFIX="integrator"
+        ;;
+    splitly|s|safesplit)
+        REPO="UniverseOfThings/SafeSplit"
+        SESSIONS_DIR="$HOME/.splitly-sessions"
+        SESSION_PREFIX="splitly"
+        ;;
+    agent-orchestrator|ao)
+        REPO="ComposioHQ/agent-orchestrator"
+        SESSIONS_DIR="$HOME/.ao-sessions"
+        SESSION_PREFIX="ao"
+        ;;
+    *)
+        echo "Usage: $0 [integrator|splitly|ao] [--dry-run]"
+        exit 1
+        ;;
+esac
+
+echo "Checking $REPO for bugbot comments..."
+echo ""
+
+# Build PR → session map from metadata
+declare -A PR_SESSION_MAP
+for s in $(ls "$SESSIONS_DIR" 2>/dev/null | grep "^${SESSION_PREFIX}-"); do
+    pr_num=$(grep "^pr=" "$SESSIONS_DIR/$s" 2>/dev/null | grep -oE "[0-9]+" | tail -1)
+    [ -n "$pr_num" ] && PR_SESSION_MAP[$pr_num]="$s"
+done
+
+# Get all open PRs
+OPEN_PRS=$(gh pr list --repo "$REPO" --state open --json number -q '.[].number' --limit 50)
+
+FOUND=0
+for pr in $OPEN_PRS; do
+    # Check if latest cursor[bot] review reports issues
+    latest_review=$(gh api "repos/$REPO/pulls/$pr/reviews" --jq '[.[] | select(.user.login == "cursor[bot]")] | last | .body // ""' 2>/dev/null)
+    
+    if echo "$latest_review" | grep -q "potential issue"; then
+        issue_count=$(echo "$latest_review" | grep -oE "found [0-9]+" | grep -oE "[0-9]+")
+        session="${PR_SESSION_MAP[$pr]:-none}"
+        
+        # Get the actual inline comments
+        review_id=$(gh api "repos/$REPO/pulls/$pr/reviews" --jq '[.[] | select(.user.login == "cursor[bot]")] | last | .id' 2>/dev/null)
+        comments=""
+        if [ -n "$review_id" ]; then
+            comments=$(gh api "repos/$REPO/pulls/$pr/reviews/$review_id/comments" --jq '.[] | "- [\(.path)] \(.body | split("\n")[0] | gsub("### "; ""))"' 2>/dev/null)
+        fi
+        
+        echo "PR #$pr: $issue_count bugbot issue(s) → session: $session"
+        echo "$comments" | head -5
+        echo ""
+        
+        FOUND=$((FOUND + 1))
+        
+        # Send fix instruction if session exists and not dry-run
+        if [ "$session" != "none" ] && [ "$DRY_RUN" = "false" ]; then
+            if tmux has-session -t "$session" 2>/dev/null; then
+                # Build a concise fix message
+                comment_summary=$(gh api "repos/$REPO/pulls/$pr/reviews/$review_id/comments" --jq '.[] | "(\(.path | split("/") | last)): \(.body | split("\n")[0] | gsub("### "; ""))"' 2>/dev/null | tr '\n' '; ')
+                
+                tmux send-keys -t "$session" "You have $issue_count unaddressed bugbot comment(s) on PR #$pr. Please run: gh api repos/$REPO/pulls/$pr/comments --jq '.[] | select(.user.login == \"cursor[bot]\") | .body' to see full details. Issues: $comment_summary Fix and push." Enter
+                echo "  → Sent fix instruction to $session"
+            else
+                echo "  → Session $session not running"
+            fi
+        fi
+    fi
+done
+
+if [ "$FOUND" -eq 0 ]; then
+    echo "No unaddressed bugbot comments found."
+fi
+
+echo ""
+echo "Done. $FOUND PR(s) with bugbot issues."

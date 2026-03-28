@@ -1,0 +1,109 @@
+#!/bin/bash
+# Spawn a Claude session with custom context/prompt (v2 - worktree-based)
+# Delegates to session managers for worktree creation, symlinks, and MCP setup.
+# Usage: ~/claude-spawn-with-context <project> <ticket-id> <prompt-file> [--open]
+#
+# Examples:
+#   ~/claude-spawn-with-context integrator INT-1020 /tmp/prompt.txt --open
+#   ~/claude-spawn-with-context i INT-1020 /tmp/prompt.txt --open
+#   ~/claude-spawn-with-context splitly 295 /tmp/prompt.txt
+#   ~/claude-spawn-with-context s 295 /tmp/prompt.txt
+
+set -e
+
+# Parse args - support --open anywhere
+PROJECT=""
+TICKET=""
+PROMPT_FILE=""
+OPEN_TAB=false
+
+for arg in "$@"; do
+    if [ "$arg" = "--open" ]; then
+        OPEN_TAB=true
+    elif [ -z "$PROJECT" ]; then
+        PROJECT="$arg"
+    elif [ -z "$TICKET" ]; then
+        TICKET="$arg"
+    elif [ -z "$PROMPT_FILE" ]; then
+        PROMPT_FILE="$arg"
+    fi
+done
+
+if [ -z "$PROJECT" ] || [ -z "$TICKET" ] || [ -z "$PROMPT_FILE" ]; then
+    echo "Usage: ~/claude-spawn-with-context <project> <ticket-id> <prompt-file> [--open]"
+    echo ""
+    echo "  project:      integrator (or i) / splitly (or s)"
+    echo "  ticket-id:    Linear ticket (INT-XXXX) or GitHub issue number"
+    echo "  prompt-file:  path to file containing the prompt"
+    echo "  --open:       open in new iTerm2 tab after spawning"
+    echo ""
+    echo "Examples:"
+    echo "  ~/claude-spawn-with-context i INT-1020 /tmp/prompt.txt --open"
+    echo "  ~/claude-spawn-with-context s 295 /tmp/prompt.txt"
+    exit 1
+fi
+
+if [ ! -f "$PROMPT_FILE" ]; then
+    echo "Error: prompt file not found: $PROMPT_FILE"
+    exit 1
+fi
+
+# Determine session manager
+case "$PROJECT" in
+    integrator|i)
+        PROJECT="integrator"
+        SESSION_MANAGER="$HOME/claude-integrator-session"
+        SESSIONS_DIR="$HOME/.integrator-sessions"
+        ;;
+    splitly|s|safesplit)
+        PROJECT="splitly"
+        SESSION_MANAGER="$HOME/claude-splitly-session"
+        SESSIONS_DIR="$HOME/.splitly-sessions"
+        ;;
+    *)
+        echo "Error: unknown project '$PROJECT'. Use 'integrator' (i) or 'splitly' (s)."
+        exit 1
+        ;;
+esac
+
+echo "Creating session via $PROJECT session manager..."
+
+# Delegate session creation to the session manager (handles worktree, symlinks, MCP, tmux, Claude)
+OPEN_FLAG=""
+[ "$OPEN_TAB" = true ] && OPEN_FLAG="--open"
+output=$("$SESSION_MANAGER" new "$TICKET" $OPEN_FLAG 2>&1)
+echo "$output"
+
+# Extract session name from manager output
+SESSION=$(echo "$output" | grep "^SESSION=" | cut -d= -f2)
+
+if [ -z "$SESSION" ]; then
+    echo "Error: Could not determine session name from session manager output!"
+    exit 1
+fi
+
+# Update metadata with ticket info
+if [ "$PROJECT" = "integrator" ]; then
+    grep -q "^issue=" "$SESSIONS_DIR/$SESSION" 2>/dev/null || \
+        echo "issue=https://linear.app/composio/issue/$TICKET" >> "$SESSIONS_DIR/$SESSION"
+    grep -q "^summary=" "$SESSIONS_DIR/$SESSION" 2>/dev/null && \
+        sed -i '' "s|^summary=.*|summary=Starting work on $TICKET (custom context)|" "$SESSIONS_DIR/$SESSION" || \
+        echo "summary=Starting work on $TICKET (custom context)" >> "$SESSIONS_DIR/$SESSION"
+else
+    grep -q "^issue=" "$SESSIONS_DIR/$SESSION" 2>/dev/null || \
+        echo "issue=https://github.com/UniverseOfThings/SafeSplit/issues/$TICKET" >> "$SESSIONS_DIR/$SESSION"
+fi
+
+# Wait for Claude to start, then send the custom prompt
+sleep 2
+
+# Use load-buffer + paste-buffer for multi-line prompts (handles special chars safely)
+tmux load-buffer "$PROMPT_FILE"
+tmux paste-buffer -t "$SESSION"
+sleep 0.3
+tmux send-keys -t "$SESSION" Enter
+
+echo ""
+echo "Custom prompt sent to $SESSION"
+echo "Attach with: tmux attach -t $SESSION"
+echo "Done!"

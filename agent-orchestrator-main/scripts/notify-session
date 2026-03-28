@@ -1,0 +1,30 @@
+#!/bin/bash
+# Usage: ~/notify-session [message]
+#
+# Sends an iTerm2 notification that navigates to THIS tab when clicked.
+# Works when called from Claude Code's Bash tool (which captures stdout).
+#
+# Examples:
+#   ~/notify-session "PR comments addressed, ready for review"
+#   ~/notify-session "Build complete"
+#   ~/notify-session  # defaults to "Task complete"
+#
+# Writes directly to the tmux pane's TTY so the escape sequence reaches
+# iTerm2 even when stdout is captured by Claude's Bash tool.
+
+MESSAGE="${1:-Task complete}"
+SESSION_NAME=$(tmux display-message -p '#S' 2>/dev/null || echo "Claude")
+
+# Get the TTY of the current tmux pane
+PANE_TTY=$(tmux display-message -p '#{pane_tty}' 2>/dev/null)
+
+if [ -n "$PANE_TTY" ]; then
+    # Write directly to the pane's TTY with tmux passthrough
+    printf '\033Ptmux;\033\033]9;%s\007\033\\' "$MESSAGE" > "$PANE_TTY"
+elif [ -n "$TMUX" ]; then
+    # Fallback: we're in tmux but can't find pane TTY
+    printf '\033Ptmux;\033\033]9;%s\007\033\\' "$MESSAGE"
+else
+    # Outside tmux: send OSC 9 directly
+    printf '\033]9;%s\007' "$MESSAGE"
+fi

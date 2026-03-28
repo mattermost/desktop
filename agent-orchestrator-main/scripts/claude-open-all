@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# Open iTerm2 tabs for all active sessions (or a specific project)
+# Usage: ~/claude-open-all [--new-window] [integrator|splitly|all]
+
+NEW_WINDOW=false
+PROJECT=""
+
+# Parse arguments
+for arg in "$@"; do
+    case "$arg" in
+        --new-window|-w)
+            NEW_WINDOW=true
+            ;;
+        integrator|i|splitly|s|safesplit|agent-orchestrator|ao|all)
+            PROJECT="$arg"
+            ;;
+        *)
+            echo "Unknown argument: $arg"
+            echo "Usage: ~/claude-open-all [--new-window] [integrator|splitly|ao|all]"
+            exit 1
+            ;;
+    esac
+done
+
+PROJECT="${PROJECT:-all}"
+
+get_sessions() {
+    local prefix="$1"
+    tmux list-sessions -F '#{session_name}' 2>/dev/null | grep "^${prefix}-" | sort
+}
+
+open_session_new_window() {
+    local session="$1"
+    osascript -e "
+    tell application \"iTerm2\"
+        activate
+        set newWindow to (create window with default profile)
+        tell current session of newWindow
+            set name to \"$session\"
+            write text \"printf '\\\\033]0;$session\\\\007' && tmux attach -t $session\"
+        end tell
+    end tell
+    "
+}
+
+open_session_new_tab() {
+    local session="$1"
+    osascript -e "
+    tell application \"iTerm2\"
+        activate
+        tell current window
+            create tab with default profile
+            tell current session
+                set name to \"$session\"
+                write text \"printf '\\\\033]0;$session\\\\007' && tmux attach -t $session\"
+            end tell
+        end tell
+    end tell
+    "
+}
+
+switch_to_existing_tab() {
+    local session="$1"
+    osascript -e "
+    tell application \"iTerm2\"
+        activate
+        repeat with aWindow in windows
+            repeat with aTab in tabs of aWindow
+                repeat with aSession in sessions of aTab
+                    try
+                        if profile name of aSession is equal to \"$session\" then
+                            select aWindow
+                            select aTab
+                            return \"FOUND\"
+                        end if
+                    end try
+                end repeat
+            end repeat
+        end repeat
+        return \"NOT_FOUND\"
+    end tell
+    "
+}
+
+SESSIONS=()
+
+case "$PROJECT" in
+    integrator|i)
+        SESSIONS=($(get_sessions "integrator"))
+        echo "Opening ${#SESSIONS[@]} integrator sessions..."
+        ;;
+    splitly|s|safesplit)
+        SESSIONS=($(get_sessions "splitly"))
+        echo "Opening ${#SESSIONS[@]} splitly sessions..."
+        ;;
+    agent-orchestrator|ao)
+        SESSIONS=($(get_sessions "ao"))
+        echo "Opening ${#SESSIONS[@]} ao sessions..."
+        ;;
+    all|"")
+        SESSIONS=($(get_sessions "integrator") $(get_sessions "splitly") $(get_sessions "ao"))
+        echo "Opening ${#SESSIONS[@]} total sessions..."
+        ;;
+esac
+
+if [ ${#SESSIONS[@]} -eq 0 ]; then
+    echo "No sessions found."
+    exit 0
+fi
+
+if [ "$NEW_WINDOW" = true ]; then
+    echo "(in new window)"
+fi
+echo ""
+
+FIRST=true
+for session in "${SESSIONS[@]}"; do
+    # Check if tab already exists
+    existing=$(switch_to_existing_tab "$session" 2>/dev/null)
+
+    if [ "$existing" = "FOUND" ]; then
+        echo "  Switched to existing: $session"
+    elif [ "$NEW_WINDOW" = true ] && [ "$FIRST" = true ]; then
+        echo "  Opening (new window): $session"
+        open_session_new_window "$session"
+        FIRST=false
+    else
+        echo "  Opening (new tab): $session"
+        open_session_new_tab "$session"
+    fi
+    sleep 0.3
+done
+
+echo ""
+echo "Done! Opened ${#SESSIONS[@]} iTerm2 tabs."
+echo "Use Cmd+Shift+[ or ] to switch between tabs."

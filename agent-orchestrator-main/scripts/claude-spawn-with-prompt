@@ -1,0 +1,32 @@
+#!/bin/bash
+# Usage: ~/claude-spawn-with-prompt <project> <prompt> [--open]
+set -e
+
+PROJECT="$1"; PROMPT="$2"; OPEN_TAB=false
+[[ "$3" == "--open" ]] && OPEN_TAB=true
+
+case "$PROJECT" in
+    i|integrator) SCRIPT=~/claude-integrator-session ;;
+    s|splitly) SCRIPT=~/claude-splitly-session ;;
+    *) echo "Usage: ~/claude-spawn-with-prompt <i|s> \"prompt\" [--open]"; exit 1 ;;
+esac
+
+[[ -z "$PROMPT" ]] && { echo "Usage: ~/claude-spawn-with-prompt <i|s> \"prompt\" [--open]"; exit 1; }
+
+# Create session WITHOUT --open to avoid race condition
+# We'll open the tab AFTER sending the message
+SESSION=$($SCRIPT new 2>&1 | grep "^SESSION=" | cut -d= -f2)
+[[ -z "$SESSION" ]] && { echo "Failed to create session"; exit 1; }
+
+# Wait for Claude prompt to appear (up to 6 seconds)
+for _ in {1..30}; do tmux capture-pane -t "$SESSION" -p 2>/dev/null | grep -q "^❯" && break; sleep 0.2; done
+
+# Send the message
+~/send-to-session "$SESSION" "$PROMPT"
+
+# NOW open the iTerm tab if requested (after message is sent)
+if [[ "$OPEN_TAB" == true ]]; then
+    ~/open-iterm-tab "$SESSION"
+fi
+
+echo "✓ $SESSION"

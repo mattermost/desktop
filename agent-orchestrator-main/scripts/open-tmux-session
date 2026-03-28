@@ -1,0 +1,53 @@
+#!/bin/bash
+# Switch to the iTerm tab running a given tmux session
+# Usage: ~/open-tmux-session <session-name>
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+SESSION="$1"
+[ -z "$SESSION" ] && echo "Usage: open-tmux-session <session-name>" && exit 1
+
+# Find the tty attached to this tmux session
+TARGET_TTY=$(tmux list-clients -t "$SESSION" -F "#{client_tty}" 2>/dev/null | head -1)
+
+if [ -n "$TARGET_TTY" ]; then
+    # Find and switch to the iTerm tab with this tty
+    osascript << APPLESCRIPT
+tell application "iTerm2"
+    activate
+    set foundIt to false
+    repeat with w in windows
+        tell w
+            set tabCount to count of tabs
+            repeat with i from 1 to tabCount
+                set theTab to item i of tabs
+                repeat with theSession in sessions of theTab
+                    set sessionTTY to tty of theSession
+                    if sessionTTY is "$TARGET_TTY" then
+                        set index of w to 1
+                        select theTab
+                        set foundIt to true
+                        exit repeat
+                    end if
+                end repeat
+                if foundIt then exit repeat
+            end repeat
+        end tell
+        if foundIt then exit repeat
+    end repeat
+end tell
+APPLESCRIPT
+else
+    # No client attached — create a new iTerm tab and attach
+    osascript << APPLESCRIPT
+tell application "iTerm2"
+    activate
+    tell current window
+        set newTab to (create tab with default profile)
+        tell current session of newTab
+            write text "tmux attach -t $SESSION"
+        end tell
+    end tell
+end tell
+APPLESCRIPT
+fi

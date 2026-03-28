@@ -1,0 +1,66 @@
+node_modules/
+dist/
+.pnpm-store/
+.next/
+*.tsbuildinfo
+coverage/
+*.patch
+*-context.md
+packages/web/screenshots/
+
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+.env.production.local
+.env.development.local
+.env.test.local
+
+# Credentials and secrets
+*.key
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+*.csr
+secrets.yaml
+secrets.yml
+credentials.json
+credentials.yaml
+*-credentials.*
+.secrets/
+.credentials/
+
+# API keys and tokens
+.token
+.api-key
+*-token.txt
+*-api-key.txt
+
+# Cloud provider credentials
+.aws/
+.gcloud/
+.azure/
+
+# SSH keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.ppk
+
+# Development symlinks (created per-worktree, not committed)
+.claude
+.sisyphus
+packages/web/agent-orchestrator.yaml
+
+# Local agent orchestrator config (may contain secrets)
+agent-orchestrator.yaml
+
+# Agent configuration and tracking (personal, not for repo)
+CLAUDE.md
+AGENTS.md
+.claude/
+.opencode/
