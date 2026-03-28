@@ -42,6 +42,11 @@ func (p *Plugin) initRouter() *mux.Router {
 	api.HandleFunc("/cycles/{id}", p.handleUpdateCycle).Methods(http.MethodPut)
 	api.HandleFunc("/cycles/{id}", p.handleDeleteCycle).Methods(http.MethodDelete)
 
+	// Context (aggregated read-only views for agents)
+	api.HandleFunc("/context/general", p.handleGetGeneralContext).Methods(http.MethodGet)
+	api.HandleFunc("/projects/{id}/context", p.handleGetProjectContext).Methods(http.MethodGet)
+	api.HandleFunc("/issues/{id}/context", p.handleGetIssueContext).Methods(http.MethodGet)
+
 	return router
 }
 
