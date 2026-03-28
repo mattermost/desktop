@@ -205,6 +205,13 @@ function initializeBeforeAppReady() {
         app.enableSandbox();
     }
 
+    if (isDev) {
+        app.commandLine.appendSwitch(
+            'unsafely-treat-insecure-origin-as-secure',
+            'http://localhost:8065,http://10.2.64.150:8065',
+        );
+    }
+
     // prevent using a different working directory, which happens on windows running after installation.
     const expectedPath = path.dirname(process.execPath);
     if (process.cwd() !== expectedPath && !isDev) {
