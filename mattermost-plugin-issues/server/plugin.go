@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -206,8 +207,17 @@ func (p *Plugin) onConversationEnd(conv *conversationState, usernameCache map[st
 
 // MessageHasBeenPosted is invoked after a message is posted. It feeds the
 // post into the conversation monitor to track DM conversation lifecycles.
+// If the message mentions @fiona, the conversation is flushed immediately.
 func (p *Plugin) MessageHasBeenPosted(_ *plugin.Context, post *model.Post) {
 	p.conversationMonitor.HandlePost(post)
+
+	if containsFionaMention(post.Message) {
+		p.conversationMonitor.FlushConversation(post.ChannelId)
+	}
+}
+
+func containsFionaMention(message string) bool {
+	return strings.Contains(strings.ToLower(message), "@fiona")
 }
 
 // ensureNotificationChannel finds or creates the "oli-notificacions" channel.

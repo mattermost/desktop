@@ -4,4 +4,5 @@ server/server
 webapp/dist/
 webapp/node_modules/
 ai-service/node_modules/
+ai-service/.env
 *.tar.gz

@@ -123,6 +123,29 @@ func (cm *ConversationMonitor) HandlePost(post *model.Post) {
 	conv.timer.Reset(conversationTimeout)
 }
 
+// FlushConversation immediately ends the conversation in the given channel,
+// stopping its inactivity timer and triggering the summary + AI callback.
+// Returns true if a conversation existed and was flushed.
+func (cm *ConversationMonitor) FlushConversation(channelID string) bool {
+	cm.mu.Lock()
+	conv, exists := cm.conversations[channelID]
+	if !exists {
+		cm.mu.Unlock()
+		return false
+	}
+	conv.timer.Stop()
+	delete(cm.conversations, channelID)
+	cm.mu.Unlock()
+
+	cm.api.LogInfo("[ConversationMonitor] conversation flushed by @fiona mention",
+		"channel_id", channelID,
+		"messages", fmt.Sprintf("%d", len(conv.messages)),
+	)
+
+	cm.postConversationSummary(conv)
+	return true
+}
+
 // endConversation is called when the inactivity timer fires.
 func (cm *ConversationMonitor) endConversation(channelID string) {
 	cm.mu.Lock()
