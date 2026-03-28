@@ -46,6 +46,11 @@ class Client {
     updateCycle = (id: string, data: Partial<CreateCycleRequest & {is_active: boolean}>): Promise<Cycle> => this.doPut(`/cycles/${id}`, data);
     deleteCycle = (id: string): Promise<void> => this.doDelete(`/cycles/${id}`);
 
+    // Context (aggregated views)
+    getGeneralContext = (): Promise<any> => this.doGet('/context/general');
+    getProjectContext = (projectId: string): Promise<any> => this.doGet(`/projects/${projectId}/context`);
+    getIssueContext = (issueId: string): Promise<any> => this.doGet(`/issues/${issueId}/context`);
+
     // HTTP helpers
     private async doGet<T>(path: string): Promise<T> {
         const response = await fetch(`${this.baseUrl}${path}`, {
