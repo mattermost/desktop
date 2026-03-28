@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: mmuser
+      POSTGRES_PASSWORD: mostest
+      POSTGRES_DB: mattermost_test
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mattermost:
+    image: mattermost/mattermost-enterprise-edition:release-10.5
+    depends_on:
+      - postgres
+    environment:
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@postgres:5432/mattermost_test?sslmode=disable"
+      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+      MM_SERVICESETTINGS_ENABLELOCALMODE: "true"
+      MM_PLUGINSETTINGS_ENABLEUPLOADS: "true"
+      MM_LOGSETTINGS_CONSOLELEVEL: INFO
+      MM_SERVICESETTINGS_ENABLETESTING: "true"
+      MM_SERVICESETTINGS_ENABLEDEVELOPER: "true"
+    ports:
+      - "8065:8065"
+    volumes:
+      - mmdata:/mattermost/data
+      - mmconfig:/mattermost/config
+      - mmplugins:/mattermost/plugins
+
+volumes:
+  pgdata:
+  mmdata:
+  mmconfig:
+  mmplugins:

@@ -22,6 +22,28 @@
     "settings_schema": {
         "header": "Issues Tracker Plugin Settings",
         "footer": "",
-        "settings": []
+        "settings": [
+            {
+                "key": "AIServiceURL",
+                "display_name": "AI Service URL",
+                "type": "text",
+                "help_text": "URL of the AI analysis service (e.g. http://host.docker.internal:3001).",
+                "default": ""
+            },
+            {
+                "key": "AIServiceSecret",
+                "display_name": "AI Service Shared Secret",
+                "type": "text",
+                "help_text": "Shared secret for authenticating requests between the plugin and the AI service.",
+                "default": ""
+            },
+            {
+                "key": "OpenAIAPIKey",
+                "display_name": "OpenAI API Key",
+                "type": "text",
+                "help_text": "OpenAI API key used by the AI service for conversation analysis (gpt-4o-mini).",
+                "default": ""
+            }
+        ]
     }
 }

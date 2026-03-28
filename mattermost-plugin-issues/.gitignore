@@ -1,5 +1,7 @@
 dist/
 server/dist/
+server/server
 webapp/dist/
 webapp/node_modules/
+ai-service/node_modules/
 *.tar.gz
