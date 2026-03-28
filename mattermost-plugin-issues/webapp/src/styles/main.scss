@@ -1,0 +1,83 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+// Scoped under .issues- prefix to avoid CSS conflicts with Mattermost webapp.
+
+.issues-rhs {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.issues-card {
+    &:hover {
+        background: rgba(0, 0, 0, 0.04);
+    }
+}
+
+.issues-group-header {
+    &:hover {
+        background: rgba(0, 0, 0, 0.02);
+    }
+}
+
+.issues-status-badge {
+    display: inline-block;
+    line-height: 1.4;
+}
+
+.issues-modal-backdrop {
+    animation: issuesFadeIn 0.15s ease-out;
+}
+
+.issues-modal {
+    animation: issuesSlideIn 0.2s ease-out;
+}
+
+@keyframes issuesFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes issuesSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.issues-new-issue-btn {
+    &:hover {
+        background: #1564ca !important;
+    }
+}
+
+.issues-project-select {
+    &:hover {
+        opacity: 0.8;
+    }
+}
+
+.issues-sidebar-header {
+    &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+    }
+}
+
+// Scrollbar styling for the issue list.
+.issues-list {
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 3px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+}

@@ -1,0 +1,5 @@
+dist/
+server/dist/
+webapp/dist/
+webapp/node_modules/
+*.tar.gz
