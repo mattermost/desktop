@@ -48,7 +48,7 @@ jobs:
       - name: Analyze documentation impact
         id: docs-analysis
         if: ${{ env.HAS_ANTHROPIC_KEY == 'true' }}
-        uses: anthropics/claude-code-action@88c168b39e7e64da0286d812b6e9fbebb6708185 # v1.0.82
+        uses: anthropics/claude-code-action@6e2bd52842c65e914eba5c8badd17560bd26b5de # v1.0.89
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           use_sticky_comment: "true"
