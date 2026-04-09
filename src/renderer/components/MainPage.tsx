@@ -280,10 +280,18 @@ class MainPage extends React.PureComponent<Props, State> {
             const {mentionsPerServer, unreadsPerServer} = this.state;
 
             const newMentionsPerServer = {...mentionsPerServer};
-            newMentionsPerServer[serverId] = mentions || 0;
+            if (mentions) {
+                newMentionsPerServer[serverId] = mentions;
+            } else {
+                delete newMentionsPerServer[serverId];
+            }
 
             const newUnreadsPerServer = {...unreadsPerServer};
-            newUnreadsPerServer[serverId] = unreads || false;
+            if (unreads) {
+                newUnreadsPerServer[serverId] = unreads;
+            } else {
+                delete newUnreadsPerServer[serverId];
+            }
 
             this.setState({mentionsPerServer: newMentionsPerServer, unreadsPerServer: newUnreadsPerServer});
         });
