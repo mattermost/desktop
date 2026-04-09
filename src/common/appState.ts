@@ -8,9 +8,11 @@ import {
     UPDATE_APPSTATE_TOTALS,
     UPDATE_APPSTATE_FOR_VIEW_ID,
     SERVER_LOGGED_IN_CHANGED,
+    SERVER_REMOVED,
     UPDATE_APPSTATE_FOR_SERVER_ID,
 } from 'common/communication';
 import {Logger} from 'common/log';
+import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import ViewManager from 'common/views/viewManager';
 
@@ -35,12 +37,20 @@ export class AppState extends EventEmitter {
         this.unreadsPerServer = new Map();
 
         ServerManager.on(SERVER_LOGGED_IN_CHANGED, this.handleServerLoggedInChanged);
+        ServerManager.on(SERVER_REMOVED, this.handleServerRemoved);
     }
 
     private handleServerLoggedInChanged = (serverId: string, loggedIn: boolean) => {
         if (!loggedIn) {
             this.clearServer(serverId);
         }
+    };
+
+    private handleServerRemoved = (server: MattermostServer) => {
+        this.expired.delete(server.id);
+        this.mentionsPerServer.delete(server.id);
+        this.unreadsPerServer.delete(server.id);
+        this.emitStatusForServer(server.id);
     };
 
     getExpired = () => {
