@@ -116,7 +116,7 @@ export class WebContentsEventManager {
             }
 
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(parsedURL).catch((err) => {
+                allowProtocolDialog.handleDialogEvent(url).catch((err) => {
                     this.log(webContentsId).warn('Error handling custom protocol dialog', err);
                 });
                 event.preventDefault();
@@ -168,7 +168,7 @@ export class WebContentsEventManager {
 
             // Check for other custom protocols
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(parsedURL).catch((err) => {
+                allowProtocolDialog.handleDialogEvent(details.url).catch((err) => {
                     this.log(webContentsId).warn('Error handling custom protocol dialog', err);
                 });
                 return {action: 'deny'};
