@@ -10,6 +10,7 @@ import {
     VIEW_REMOVED,
     SERVER_ADDED,
     SERVER_REMOVED,
+    SERVER_NAME_CHANGED,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
@@ -250,6 +251,53 @@ describe('ViewManager', () => {
             ServerManager.mockServerManager.emit(SERVER_ADDED, mockServer.id, true);
 
             expect(createViewSpy).toHaveBeenCalledWith(mockServer, ViewType.TAB);
+        });
+    });
+
+    describe('handleServerNameChanged', () => {
+        it('should update serverName on all views for that server', () => {
+            const viewManager = new ViewManager();
+            const view1 = viewManager.createView(mockServer, ViewType.TAB);
+            const view2 = viewManager.createView(mockServer, ViewType.TAB);
+            viewManager.updateViewTitle(view1.id, 'Channel 1', 'Team 1');
+
+            ServerManager.getServer.mockReturnValue({...mockServer, name: 'Renamed Server'});
+            const emitSpy = jest.spyOn(viewManager, 'emit');
+
+            ServerManager.mockServerManager.emit(SERVER_NAME_CHANGED, mockServer.id);
+
+            expect(view1.title.serverName).toBe('Renamed Server');
+            expect(view1.title.channelName).toBe('Channel 1');
+            expect(view1.title.teamName).toBe('Team 1');
+            expect(view2.title.serverName).toBe('Renamed Server');
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view1.id);
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view2.id);
+
+            ServerManager.getServer.mockReturnValue(mockServer);
+        });
+
+        it('should not update views for other servers', () => {
+            const viewManager = new ViewManager();
+            const otherServer = {
+                id: 'other-server-id',
+                name: 'Other Server',
+                url: new URL('https://other.com'),
+                initialLoadURL: new URL('https://other.com'),
+            };
+            const view1 = viewManager.createView(mockServer, ViewType.TAB);
+            const view2 = viewManager.createView(otherServer, ViewType.TAB);
+
+            ServerManager.getServer.mockReturnValue({...mockServer, name: 'Renamed Server'});
+            const emitSpy = jest.spyOn(viewManager, 'emit');
+
+            ServerManager.mockServerManager.emit(SERVER_NAME_CHANGED, mockServer.id);
+
+            expect(view1.title.serverName).toBe('Renamed Server');
+            expect(view2.title.serverName).toBe('Other Server');
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view1.id);
+            expect(emitSpy).not.toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view2.id);
+
+            ServerManager.getServer.mockReturnValue(mockServer);
         });
     });
 
