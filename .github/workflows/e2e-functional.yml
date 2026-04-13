@@ -41,8 +41,6 @@ on:
 permissions:
   contents: read
   statuses: write
-  issues: write
-  pull-requests: write
 
 jobs:
   prepare-matrix:
@@ -70,6 +68,11 @@ jobs:
 
       - name: Post provisioned server URLs as PR comment
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        continue-on-error: true
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          ADMIN_USERNAME: ${{ inputs.MM_TEST_USER_NAME }}
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
         with:
           github-token: ${{ github.token }}
           script: |
@@ -78,20 +81,24 @@ jobs:
             const prNumber = await findPrNumber({
               github,
               context,
-              prNumberInput: '${{ inputs.pr_number }}',
+              prNumberInput: process.env.PR_NUMBER,
             });
             if (!prNumber) {
               core.warning('Could not resolve PR number — skipping server info comment');
               return;
             }
-            await postServerInfoComment({
-              github,
-              context,
-              platforms,
-              adminUsername: '${{ inputs.MM_TEST_USER_NAME }}',
-              serverVersion: '${{ inputs.MM_SERVER_VERSION }}',
-              prNumber,
-            });
+            try {
+              await postServerInfoComment({
+                github,
+                context,
+                platforms,
+                adminUsername: process.env.ADMIN_USERNAME,
+                serverVersion: process.env.SERVER_VERSION,
+                prNumber,
+              });
+            } catch (err) {
+              core.warning(`Failed to post server info comment: ${err.message}`);
+            }
 
   update-initial-status:
     name: Update initial status
