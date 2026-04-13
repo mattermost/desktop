@@ -351,26 +351,33 @@ describe('main/views/MattermostWebContentsView', () => {
             clipboard.writeText.mockClear();
         });
 
-        it('should add copy email address item for mailto links', () => {
+        it('should place copy email address right after copy link for mailto links', () => {
             const contextMenuOptions = mattermostView.generateContextMenu();
-            const menuItems = contextMenuOptions.prepend(null, {
+            const defaultActions = {
+                copyLink: jest.fn().mockReturnValue({label: 'Copy Link'}),
+            };
+            const menuItems = contextMenuOptions.append(defaultActions, {
                 linkURL: 'mailto:first%40mattermost.com,second%40mattermost.com?subject=Hello',
             });
 
-            expect(menuItems).toHaveLength(1);
-            expect(menuItems[0].label).toBe('Copy Email Address');
+            expect(menuItems).toHaveLength(2);
+            expect(menuItems[0].label).toBe('Copy Link');
+            expect(menuItems[1].label).toBe('Copy Email Address');
 
-            menuItems[0].click();
+            menuItems[1].click();
             expect(clipboard.writeText).toHaveBeenCalledWith('first@mattermost.com,second@mattermost.com');
         });
 
-        it('should not add copy email address item for non-mailto links', () => {
+        it('should keep copy link without adding copy email address for non-mailto links', () => {
             const contextMenuOptions = mattermostView.generateContextMenu();
-            const menuItems = contextMenuOptions.prepend(null, {
+            const defaultActions = {
+                copyLink: jest.fn().mockReturnValue({label: 'Copy Link'}),
+            };
+            const menuItems = contextMenuOptions.append(defaultActions, {
                 linkURL: 'https://mattermost.com',
             });
 
-            expect(menuItems).toEqual([]);
+            expect(menuItems).toEqual([{label: 'Copy Link'}]);
         });
     });
 

@@ -501,23 +501,23 @@ export class MattermostWebContentsView extends EventEmitter {
         }
 
         return {
-            prepend: (_, parameters) => {
+            showCopyLink: false,
+            append: (defaultActions, parameters) => {
+                const items = [defaultActions.copyLink({})];
+
                 const emailAddress = getEmailAddressFromMailtoLink(parameters.linkURL);
-                if (!emailAddress) {
-                    return [];
+                if (emailAddress) {
+                    items.push({
+                        label: localizeMessage('app.menus.contextMenu.copyEmailAddress', 'Copy Email Address'),
+                        click() {
+                            clipboard.writeText(emailAddress);
+                        },
+                    });
                 }
 
-                return [{
-                    label: localizeMessage('app.menus.contextMenu.copyEmailAddress', 'Copy Email Address'),
-                    click() {
-                        clipboard.writeText(emailAddress);
-                    },
-                }];
-            },
-            append: (_, parameters) => {
                 const parsedURL = parseURL(parameters.linkURL);
                 if (parsedURL && isInternalURL(parsedURL, server.url)) {
-                    return [
+                    items.push(
                         {
                             type: 'separator' as const,
                         },
@@ -535,9 +535,9 @@ export class MattermostWebContentsView extends EventEmitter {
                                 NavigationManager.openLinkInNewWindow(parsedURL.toString());
                             },
                         },
-                    ];
+                    );
                 }
-                return [];
+                return items;
             },
         };
     };
