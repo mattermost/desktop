@@ -5,9 +5,15 @@ import type {ServerView} from './serverView';
 
 async function waitForAppShell(win: ServerView, timeout: number) {
     const results = await Promise.allSettled([
+        // Standard channel view indicators
         win.waitForSelector('#post_textbox', {timeout}),
         win.waitForSelector('#channelHeaderTitle', {timeout}),
         win.waitForSelector('input.search-bar.form-control', {timeout}),
+        // Fresh servers with no team yet land on /select_team or /create_team.
+        // The user is authenticated; treat these pages as a successful login.
+        win.waitForURL((url) =>
+            url.pathname.startsWith('/select_team') ||
+            url.pathname.startsWith('/create_team'), {timeout}),
     ]);
 
     return results.some((result) => result.status === 'fulfilled');
