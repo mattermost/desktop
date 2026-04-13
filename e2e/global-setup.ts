@@ -6,6 +6,9 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const {provisionServer} = require('./utils/server-setup');
+
 const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
 
 /**
@@ -35,4 +38,10 @@ export default async function globalSetup() {
             // Non-fatal — tests still run, just potentially with the Resume dialog
         }
     }
+
+    // Provision the Mattermost test server once before any tests run.
+    // Creates the default team and adds the admin user so login lands in a
+    // channel (not /select_team) on fresh CI servers.
+    // No-ops when MM_TEST_SERVER_URL or MM_TEST_PASSWORD are absent.
+    await provisionServer();
 }
