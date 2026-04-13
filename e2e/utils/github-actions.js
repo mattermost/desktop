@@ -74,6 +74,150 @@ async function updateFinalStatus({github, context, platforms, outputs, mergedRep
 }
 
 /**
+ * Resolve the PR number for a workflow run.
+ *
+ * Resolution order:
+ *   1. prNumberInput — explicit value passed by the workflow dispatcher (e.g. Matterwick).
+ *   2. run.pull_requests — populated for pull_request-triggered runs.
+ *   3. Branch/SHA lookup — queries open PRs whose head matches the run's head branch and SHA.
+ *      This is the reliable path for workflow_dispatch runs where pull_requests is empty.
+ *
+ * @param {Object} params
+ * @param {Object} params.github - GitHub API client from actions/github-script
+ * @param {Object} params.context - GitHub Actions context (context.runId must be set)
+ * @param {string|number} [params.prNumberInput] - Explicit PR number from a workflow input
+ * @returns {Promise<number|null>} Resolved PR number, or null if not found
+ */
+async function findPrNumber({github, context, prNumberInput}) {
+    const explicit = parseInt(prNumberInput, 10);
+    if (explicit) {
+        return explicit;
+    }
+
+    try {
+        const run = await github.rest.actions.getWorkflowRun({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: context.runId,
+        });
+
+        if (run.data.pull_requests && run.data.pull_requests.length > 0) {
+            return run.data.pull_requests[0].number;
+        }
+
+        const branchName = run.data.head_branch;
+        if (branchName) {
+            const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
+            const prs = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                head: `${headOwner}:${branchName}`,
+            });
+            if (prs.data && prs.data.length > 0) {
+                const matching = prs.data.find((pr) => pr.head && pr.head.sha === run.data.head_sha);
+                return (matching || prs.data[0]).number;
+            }
+        }
+    } catch (error) {
+        console.log(`Could not resolve PR number: ${error.message}`);
+    }
+
+    return null;
+}
+
+/**
+ * Post (or update) a PR comment listing the provisioned Mattermost server URLs so
+ * developers can connect to those servers to reproduce and debug failing tests.
+ *
+ * The comment is idempotent: if a previous comment with the hidden HTML marker already
+ * exists on the PR (e.g. from a previous run triggered by a push to the same branch),
+ * it is updated in place rather than a new one being created.
+ *
+ * The admin password is intentionally omitted from the comment. Use the
+ * MM_DESKTOP_E2E_USER_CREDENTIALS repository secret or contact the team.
+ *
+ * @param {Object} params
+ * @param {Object} params.github - GitHub API client from actions/github-script
+ * @param {Object} params.context - GitHub Actions context
+ * @param {Array}  params.platforms - Array of platform objects from the matrix
+ *                                    (each must have at least `platform` and `url`)
+ * @param {string} [params.adminUsername] - Admin username for the test instances
+ * @param {string} [params.serverVersion] - Mattermost server version under test
+ * @param {number} params.prNumber - PR number to comment on
+ */
+async function postServerInfoComment({github, context, platforms, adminUsername, serverVersion, prNumber}) {
+    const MARKER = '<!-- e2e-server-info -->';
+    const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+    const platformRows = platforms.
+        map((p) => `| \`${p.platform}\` | ${p.url} |`).
+        join('\n');
+
+    const lines = [
+        MARKER,
+        '### :test_tube: E2E Test Servers Ready',
+        '',
+        'Matterwick has provisioned the following Mattermost instances for this PR.',
+        'Use them to reproduce and debug failing tests against the exact same servers:',
+        '',
+        '| Platform | Server URL |',
+        '|----------|------------|',
+        platformRows,
+        '',
+    ];
+
+    if (adminUsername) {
+        lines.push(`**Admin username:** \`${adminUsername}\``);
+    }
+    if (serverVersion) {
+        lines.push(`**Server version:** \`${serverVersion}\``);
+    }
+
+    lines.push(
+        '',
+        '**Run a single spec against one of these servers:**',
+        '```sh',
+        'MM_TEST_SERVER_URL=<url above> \\',
+        '  MM_TEST_USER_NAME=<username above> \\',
+        '  MM_TEST_PASSWORD=<MM_DESKTOP_E2E_USER_CREDENTIALS secret> \\',
+        '  npx playwright test <spec-file> --reporter=list --workers=1',
+        '```',
+        '',
+        '> Servers are active for the duration of this workflow run and destroyed afterwards.',
+        '',
+        `**Workflow run:** ${workflowUrl}`,
+    );
+
+    const body = lines.join('\n');
+    const {owner, repo} = context.repo;
+
+    let existingCommentId = null;
+    try {
+        const {data: comments} = await github.rest.issues.listComments({
+            owner,
+            repo,
+            issue_number: prNumber,
+            per_page: 100,
+        });
+        const existing = comments.find((c) => c.body && c.body.includes(MARKER));
+        if (existing) {
+            existingCommentId = existing.id;
+        }
+    } catch (err) {
+        console.log(`Could not list PR comments: ${err.message}`);
+    }
+
+    if (existingCommentId) {
+        await github.rest.issues.updateComment({owner, repo, comment_id: existingCommentId, body});
+        console.log(`Updated existing E2E server info comment ${existingCommentId} on PR #${prNumber}`);
+    } else {
+        await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body});
+        console.log(`Posted E2E server info comment on PR #${prNumber}`);
+    }
+}
+
+/**
  * Remove E2E/Run label when workflow triggered via Matterwick
  * @param {Object} params - Parameters object
  * @param {Object} params.github - GitHub API client from actions/github-script
@@ -148,7 +292,9 @@ async function removeE2ELabel({github, context}) {
 }
 
 module.exports = {
-    updateInitialStatus,
-    updateFinalStatus,
+    findPrNumber,
+    postServerInfoComment,
     removeE2ELabel,
+    updateFinalStatus,
+    updateInitialStatus,
 };
