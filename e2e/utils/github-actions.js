@@ -89,9 +89,12 @@ async function updateFinalStatus({github, context, platforms, outputs, mergedRep
  * @returns {Promise<number|null>} Resolved PR number, or null if not found
  */
 async function findPrNumber({github, context, prNumberInput}) {
-    const explicit = parseInt(prNumberInput, 10);
-    if (explicit) {
-        return explicit;
+    const trimmed = String(prNumberInput ?? '').trim();
+    if ((/^\d+$/).test(trimmed)) {
+        const parsed = Number(trimmed);
+        if (Number.isInteger(parsed) && parsed > 0) {
+            return parsed;
+        }
     }
 
     try {

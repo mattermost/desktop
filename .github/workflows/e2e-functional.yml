@@ -41,8 +41,6 @@ on:
 permissions:
   contents: read
   statuses: write
-  issues: write
-  pull-requests: write
 
 jobs:
   prepare-matrix:
@@ -88,14 +86,18 @@ jobs:
               core.warning('Could not resolve PR number — skipping server info comment');
               return;
             }
-            await postServerInfoComment({
-              github,
-              context,
-              platforms,
-              adminUsername: process.env.ADMIN_USERNAME,
-              serverVersion: process.env.SERVER_VERSION,
-              prNumber,
-            });
+            try {
+              await postServerInfoComment({
+                github,
+                context,
+                platforms,
+                adminUsername: process.env.ADMIN_USERNAME,
+                serverVersion: process.env.SERVER_VERSION,
+                prNumber,
+              });
+            } catch (err) {
+              core.warning(`Failed to post server info comment: ${err.message}`);
+            }
 
   update-initial-status:
     name: Update initial status
