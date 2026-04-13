@@ -333,6 +333,10 @@ test.describe('Menu/window_menu', () => {
         serverMap = await buildServerMap(electronApp);
 
         await loginToMattermost(getMattermostServer());
+
+        // Wait for SERVER_LOGGED_IN_CHANGED to propagate to the renderer so
+        // tabsDisabled becomes false and #newTabButton becomes enabled.
+        await mainWindow.waitForSelector('#newTabButton:not([disabled])', {timeout: 30_000});
         await focusMainWindow();
     });
 
