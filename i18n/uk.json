@@ -1,6 +1,7 @@
 {
   "app.menus.contextMenu.openInNewTab": "Відкрити в новій вкладці",
   "app.menus.contextMenu.openInNewWindow": "Відкрити в новому вікні",
+  "app.navigationManager.invalidLinkDescription": "Посилання, на яке ви натиснули, має неправильний формат і не може бути відкрите. Перевірте URL-адресу на наявність помилок, перш ніж спробувати знову.",
   "app.navigationManager.viewLimitReached": "Досягнуто обмеження перегляду",
   "app.navigationManager.viewLimitReached.description": "Ви досягли максимальної кількості відкритих вікон і вкладок для цього сервера. Закрийте одне з існуючих вікон або вкладок або налаштуйте обмеження перегляду в Налаштуваннях.",
   "callsWidgetWindow.cannotStartCall.message": "На іншому сервері триває дзвінок, який необхідно завершити перед тим, як приєднатися до нового дзвінка.",
@@ -168,7 +169,7 @@
   "main.tray.tray.unread": "У вас є непрочитані канали",
   "main.views.viewManager.handleDeepLink.error.body": "У додатку немає налаштованого сервера, який відповідає запитуваному URL: {url}",
   "main.views.viewManager.handleDeepLink.error.title": "Немає відповідного сервера",
-  "main.webContentEvents.invalidLinkDescription": "Посилання, на яке ви натиснули, має неправильний формат і не може бути відкрите. Перевірте URL-адресу на наявність помилок, перш ніж спробувати знову.",
+  "main.webContentEvents.invalidLinkDescription": "Натиснуте посилання сформоване некорректно і не може бути відкрите. Будь ласка, перевірте URL на наявність помилок перед новою спробою.",
   "main.webContentEvents.invalidLinkTitle": "Недійсне посилання",
   "main.windows.mainWindow.closeApp.dialog.checkboxLabel": "Не запитувати знову",
   "main.windows.mainWindow.closeApp.dialog.detail": "Ви більше не будете отримувати сповіщення про повідомлення. Якщо ви хочете залишити {appName} запущеним у фоновому режимі, ви можете увімкнути цю опцію у Налаштуваннях.",
