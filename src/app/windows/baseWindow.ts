@@ -157,7 +157,10 @@ export default class BaseWindow {
     };
 
     private sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
-        if (!this.win || !this.ready) {
+        if (!this.win || this.win.isDestroyed()) {
+            return;
+        }
+        if (!this.ready) {
             if (maxRetries > 0) {
                 log.debug(`Can't send ${channel}, will retry`);
                 setTimeout(() => {
