@@ -66,11 +66,14 @@ async function waitForRendererThenReload(app: Awaited<ReturnType<typeof launchWi
         return;
     }
 
-    // ServerDropdownButton renders once componentDidMount has finished and IPC listeners
-    // are registered, so waiting for it is a reliable proxy for "renderer is ready".
-    await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000}).catch(() => {});
+    // Wait for the renderer's BasePage — a reliable proxy for componentDidMount completing
+    // and IPC listeners being registered. BasePage always renders (even on error), making
+    // it a more robust proxy than ServerDropdownButton which requires activeServer to be set.
+    await mainWindow.waitForSelector('.BasePage', {timeout: 20_000}).catch(() => {});
 
     // Reload the current server view so the load-failure fires after the listener is set.
+    // NOTE: WebContentsManager.getView() returns a class instance whose getter properties
+    // (like webContentsId) are not serialized by app.evaluate(). Read the id inline instead.
     await app.evaluate(({webContents}) => {
         const refs = (global as any).__e2eTestRefs;
         const currentServerId = refs?.ServerManager?.getCurrentServerId?.();
@@ -81,9 +84,12 @@ async function waitForRendererThenReload(app: Awaited<ReturnType<typeof launchWi
         if (views.length === 0) {
             return;
         }
-        const wcEntry = refs.WebContentsManager?.getView?.(views[0].id);
-        if (wcEntry?.webContentsId) {
-            webContents.fromId(wcEntry.webContentsId)?.reload?.();
+        const wcView = refs.WebContentsManager?.getView?.(views[0].id);
+        if (wcView) {
+            const wcId: number | undefined = wcView.webContentsId;
+            if (wcId) {
+                webContents.fromId(wcId)?.reload?.();
+            }
         }
     });
 }

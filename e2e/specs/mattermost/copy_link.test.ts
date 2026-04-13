@@ -27,13 +27,16 @@ test.describe('copylink', () => {
         await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
 
-        // Click "Copy Link" from the context menu.
-        // Use a longer timeout to accommodate CI latency, and match both "Copy Link"
-        // and "Copy link" (capitalization varies by Mattermost version).
-        const copyLinkItem = await firstServer.waitForSelector(
-            'button:has-text("Copy Link"), button:has-text("Copy link")',
-            {timeout: 15_000},
-        );
+        // Click "Copy Link" from the context menu. The text varies by Mattermost
+        // version: "Copy Link", "Copy link", "Copy Channel Link", etc.
+        // Use a broad CSS selector and filter by partial text match.
+        const copyLinkSelector = [
+            'button:has-text("Copy Link")',
+            'button:has-text("Copy link")',
+            'button:has-text("Copy Channel Link")',
+            'button:has-text("Copy channel link")',
+        ].join(', ');
+        const copyLinkItem = await firstServer.waitForSelector(copyLinkSelector, {timeout: 15_000});
         await copyLinkItem.click();
 
         const clipboardText = await electronApp.evaluate(({clipboard}) => {

@@ -10,7 +10,7 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {buildServerMap} from '../../helpers/serverMap';
 import {appDir, cmdOrCtrl, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
-import {loginToMattermost} from '../../helpers/login';
+import {loginToMattermost, waitForTabBarEnabled} from '../../helpers/login';
 
 const windowMenuConfig = {
     ...demoMattermostConfig,
@@ -333,10 +333,7 @@ test.describe('Menu/window_menu', () => {
         serverMap = await buildServerMap(electronApp);
 
         await loginToMattermost(getMattermostServer());
-
-        // Wait for SERVER_LOGGED_IN_CHANGED to propagate to the renderer so
-        // tabsDisabled becomes false and #newTabButton becomes enabled.
-        await mainWindow.waitForSelector('#newTabButton:not([disabled])', {timeout: 30_000});
+        await waitForTabBarEnabled(electronApp, mainWindow);
         await focusMainWindow();
     });
 

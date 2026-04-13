@@ -9,7 +9,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
 import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
-import {loginToMattermost} from '../../helpers/login';
+import {loginToMattermost, waitForTabBarEnabled} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const config = demoMattermostConfig;
@@ -79,10 +79,7 @@ test.describe('server_management/tab_management', () => {
         mainWindow = await waitForWindow(electronApp, 'index');
         const mmServer = await getMattermostServer();
         await loginToMattermost(mmServer);
-
-        // Wait for SERVER_LOGGED_IN_CHANGED to propagate to the renderer so
-        // tabsDisabled becomes false and #newTabButton becomes enabled.
-        await mainWindow.waitForSelector('#newTabButton:not([disabled])', {timeout: 30_000});
+        await waitForTabBarEnabled(electronApp, mainWindow);
     });
 
     test.beforeEach(async () => {

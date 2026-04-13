@@ -42,12 +42,14 @@ test.describe('notification_badge/windows_and_linux', () => {
     // Reset showUnreadBadgeSetting to false before each test to prevent state bleed
     // when a test sets the setting to true but fails before resetting it.
     test.beforeEach(async ({electronApp}) => {
+        // Wrap in try/catch: evaluate() can throw "Execution context was destroyed"
+        // if the app navigates between the previous test and this beforeEach.
         await electronApp.evaluate(() => {
             (global as any).__testTriggerSetUnreadBadgeSetting?.(false);
-        });
+        }).catch(() => {});
         await electronApp.evaluate(() => {
             (global as any).__testBadgeState = null;
-        });
+        }).catch(() => {});
     });
 
     // --- Windows: overlay icon badge ---
