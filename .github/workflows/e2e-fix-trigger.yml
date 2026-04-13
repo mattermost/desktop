@@ -1,0 +1,367 @@
+name: E2E Fix Trigger
+
+# Fires when "Electron Playwright Tests" completes. If there are new failures
+# AND the failure count is below the mass-failure threshold, this workflow
+# launches a Cursor cloud agent on the PR branch to inspect the CI run, read
+# the failing test source files, and either fix test bugs or post a comment
+# describing product bugs — all without human intervention.
+#
+# Token / prompt efficiency decisions
+# ------------------------------------
+# 1. SKIP when ALL platforms failed (>= MASS_FAILURE_THRESHOLD failures total).
+#    That pattern almost always means a build/infra breakage, not individual
+#    test bugs. A Cursor agent would waste tokens trying to fix 30+ tests at
+#    once. Instead we post a single PR comment explaining why the agent was
+#    skipped so a developer can investigate the root cause first.
+#
+# 2. SKIP nightly runs — they have no PR to fix.
+#
+# 3. The prompt passed to the Cursor API contains only:
+#    - The failing test names grouped by platform (not full logs)
+#    - The server URLs from the existing PR comment (already posted by
+#      post-server-info) so the agent can reproduce failures
+#    - Clear triage instructions so the agent classifies each failure as a
+#      test bug (fix it) or a product bug (post a comment, do not retry)
+#
+# 4. source.prUrl is used (not source.repository + ref) so the agent works
+#    directly on the PR's head branch and pushes fixes there, triggering
+#    another CI run automatically.
+#
+# 5. target.autoBranch: false — push to the PR's existing head branch rather
+#    than creating a new branch.
+
+on:
+  workflow_run:
+    workflows: ["Electron Playwright Tests"]
+    types: [completed]
+
+# workflow_run always runs from the default branch — no PR secrets available
+# here. CURSOR_API_KEY must be a repository secret, not a PR/environment secret.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+
+env:
+  # Skip the agent if the total failure count across all platforms reaches
+  # this threshold — it indicates a systemic build/infra issue, not individual
+  # test bugs that an agent can fix efficiently.
+  MASS_FAILURE_THRESHOLD: 15
+  # Cursor API endpoint
+  CURSOR_API_URL: https://api.cursor.com/v0/agents
+
+jobs:
+  triage-and-fix:
+    name: Triage E2E failures and launch Cursor fix agent
+    runs-on: ubuntu-22.04
+    # Only run for workflow_dispatch-triggered runs (Matterwick) that failed.
+    # Nightly runs don't have an associated PR so skip those too.
+    if: |
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Collect failure details and decide whether to launch agent
+        id: triage
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          MASS_FAILURE_THRESHOLD: ${{ env.MASS_FAILURE_THRESHOLD }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const runId = ${{ github.event.workflow_run.id }};
+            const threshold = parseInt(process.env.MASS_FAILURE_THRESHOLD, 10);
+
+            // ── 1. Resolve the PR ────────────────────────────────────────────
+            const run = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: runId });
+            const headSha  = run.data.head_sha;
+            const headBranch = run.data.head_branch;
+            const headOwner  = run.data.head_repository?.owner?.login || owner;
+
+            let prNumber = null;
+            let prUrl    = null;
+            if (run.data.pull_requests && run.data.pull_requests.length > 0) {
+              prNumber = run.data.pull_requests[0].number;
+            } else if (headBranch) {
+              const prs = await github.rest.pulls.list({
+                owner, repo, state: 'open',
+                head: `${headOwner}:${headBranch}`,
+              });
+              const match = (prs.data || []).find((p) => p.head && p.head.sha === headSha);
+              if (match) {
+                prNumber = match.number;
+              }
+            }
+
+            if (!prNumber) {
+              core.warning('Could not resolve PR number — skipping agent launch');
+              core.setOutput('skip', 'true');
+              core.setOutput('skip_reason', 'no_pr');
+              return;
+            }
+
+            prUrl = `https://github.com/${owner}/${repo}/pull/${prNumber}`;
+            core.setOutput('pr_number', String(prNumber));
+            core.setOutput('pr_url', prUrl);
+
+            // ── 2. Collect per-platform failure counts from run outputs ──────
+            // The e2e-tests matrix job exposes NEW_FAILURES_{LINUX,MACOS,WINDOWS}
+            // as workflow outputs via the reusable template.
+            const jobs = await github.rest.actions.listJobsForWorkflowRun({
+              owner, repo, run_id: runId, per_page: 100,
+            });
+
+            // Extract NEW_FAILURES from step outputs if available, otherwise
+            // use job conclusion to estimate.
+            const platformFailures = { linux: 0, macos: 0, windows: 0 };
+            const platformJobIds   = { linux: null, macos: null, windows: null };
+
+            for (const job of jobs.data.jobs) {
+              const nameLower = job.name.toLowerCase();
+              let platform = null;
+              if (nameLower.includes('linux') || nameLower.includes('ubuntu')) {
+                platform = 'linux';
+              } else if (nameLower.includes('macos') || nameLower.includes('darwin')) {
+                platform = 'macos';
+              } else if (nameLower.includes('windows') || nameLower.includes('win32')) {
+                platform = 'windows';
+              }
+              if (!platform) {
+                continue;
+              }
+              platformJobIds[platform] = job.id;
+              if (job.conclusion === 'failure') {
+                // We don't have direct access to the NEW_FAILURES output here;
+                // mark as at least 1. The actual count is in the JUnit artifact
+                // but downloading it here would be expensive.
+                platformFailures[platform] = platformFailures[platform] || 1;
+              }
+            }
+
+            const totalFailures = Object.values(platformFailures).reduce((a, b) => a + b, 0);
+            core.info(`Failure counts — linux:${platformFailures.linux} macos:${platformFailures.macos} windows:${platformFailures.windows} total:${totalFailures}`);
+            core.setOutput('total_failures', String(totalFailures));
+            core.setOutput('failures_linux', String(platformFailures.linux));
+            core.setOutput('failures_macos', String(platformFailures.macos));
+            core.setOutput('failures_windows', String(platformFailures.windows));
+
+            // ── 3. Mass-failure check ────────────────────────────────────────
+            // If every platform failed we almost certainly have an infra issue,
+            // not individual test bugs. Skip the agent to avoid wasting tokens.
+            const allPlatformsFailed =
+              platformFailures.linux > 0 &&
+              platformFailures.macos > 0 &&
+              platformFailures.windows > 0;
+
+            if (allPlatformsFailed || totalFailures >= threshold) {
+              core.warning(`Mass-failure detected (total=${totalFailures}, threshold=${threshold}) — skipping agent`);
+              core.setOutput('skip', 'true');
+              core.setOutput('skip_reason', 'mass_failure');
+              return;
+            }
+
+            core.setOutput('skip', 'false');
+
+            // ── 4. Collect server URLs from the PR comment ───────────────────
+            // post-server-info already posted the server URLs; read them back
+            // so we can include them in the agent prompt without fetching
+            // anything extra.
+            const MARKER = '<!-- e2e-server-info -->';
+            let serverBlock = '(server URLs not found in PR comment)';
+            try {
+              const comments = await github.rest.issues.listComments({
+                owner, repo, issue_number: prNumber, per_page: 100,
+              });
+              const infoComment = (comments.data || []).find(
+                (c) => c.body && c.body.includes(MARKER),
+              );
+              if (infoComment) {
+                // Extract just the table lines — skip the header and trailing lines
+                const tableLines = infoComment.body.
+                  split('\n').
+                  filter((l) => l.startsWith('|') && !l.startsWith('| Platform')).
+                  slice(0, 4); // at most 3 platform rows + divider
+                serverBlock = tableLines.join('\n');
+              }
+            } catch (err) {
+              core.warning(`Could not read PR comments: ${err.message}`);
+            }
+
+            // ── 5. Build the failing-platform summary (short, no full logs) ──
+            const failingSummary = Object.entries(platformFailures).
+              filter(([, count]) => count > 0).
+              map(([platform, count]) => `- ${platform}: ${count} failure(s)`).
+              join('\n');
+
+            core.setOutput('failing_summary', failingSummary);
+            core.setOutput('server_block', serverBlock);
+            core.setOutput('workflow_run_url', `https://github.com/${owner}/${repo}/actions/runs/${runId}`);
+
+      - name: Post skip notice for mass failures
+        if: steps.triage.outputs.skip == 'true' && steps.triage.outputs.skip_reason == 'mass_failure'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const prNumber = parseInt('${{ steps.triage.outputs.pr_number }}', 10);
+            if (!prNumber) { return; }
+            const total = '${{ steps.triage.outputs.total_failures }}';
+            const runUrl = '${{ steps.triage.outputs.workflow_run_url }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: [
+                '### :warning: E2E Fix Agent Skipped — Mass Failure Detected',
+                '',
+                `All platforms reported failures (${total} total) which typically indicates a **build or infrastructure issue** rather than individual test bugs.`,
+                '',
+                'The Cursor agent was not launched to avoid wasting tokens on a systemic problem.',
+                '',
+                '**What to do:**',
+                '1. Check the [workflow run](' + runUrl + ') for build errors or server provisioning failures.',
+                '2. If it was a transient CI issue, push an empty commit to re-trigger E2E.',
+                '3. If it is a real product regression, investigate the failing tests manually.',
+              ].join('\n'),
+            });
+
+      - name: Launch Cursor agent to fix E2E failures
+        if: steps.triage.outputs.skip == 'false' && steps.triage.outputs.pr_url != ''
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          PR_URL: ${{ steps.triage.outputs.pr_url }}
+          FAILING_SUMMARY: ${{ steps.triage.outputs.failing_summary }}
+          SERVER_BLOCK: ${{ steps.triage.outputs.server_block }}
+          WORKFLOW_RUN_URL: ${{ steps.triage.outputs.workflow_run_url }}
+        run: |
+          # Build the prompt as a file to avoid shell quoting issues with
+          # multi-line strings and special characters.
+          cat > /tmp/agent-prompt.txt << 'PROMPT_EOF'
+          E2E tests failed on this PR. Your job is to investigate each failure,
+          classify it, and act accordingly.
+
+          FAILING PLATFORMS
+          -----------------
+          ${FAILING_SUMMARY}
+
+          SERVER URLS (provisioned by Matterwick — still live)
+          -----------------------------------------------------
+          ${SERVER_BLOCK}
+
+          WORKFLOW RUN (for full logs and JUnit artifacts)
+          -------------------------------------------------
+          ${WORKFLOW_RUN_URL}
+
+          INSTRUCTIONS
+          ------------
+          1. Read the CI workflow run logs to find the exact failing test names
+             and error messages. Download the JUnit XML artifact if available.
+
+          2. For each failing test, open the test source file in e2e/specs/ and
+             classify the failure:
+
+             TEST BUG — the test itself is wrong:
+             Examples: stale selector, wrong timeout, missing wait, wrong
+             assertion value, race condition in setup/teardown.
+             Action: Fix the test code and push a commit to this branch.
+
+             PRODUCT BUG — the app behavior does not match what the test expects:
+             Examples: UI element removed/renamed, IPC channel changed, feature
+             regression in src/.
+             Action: Do NOT modify the test. Instead post a PR comment describing:
+             - Which test failed
+             - What the test expected vs what actually happened
+             - Which src/ file is likely responsible
+             Label the comment "Product Bug: <test name>".
+
+          3. IMPORTANT RULES to avoid wasting tokens:
+             - Fix at most 8 test files per run. If more than 8 distinct test
+               files are failing, fix the 8 most-common failure patterns and
+               post a comment listing the remaining ones as product bugs or
+               deferred test bugs.
+             - Do NOT rewrite tests from scratch. Make the smallest change that
+               fixes the failure.
+             - Do NOT touch any file in src/ (app source). Your scope is
+               e2e/specs/, e2e/helpers/, e2e/fixtures/, and e2e/utils/.
+             - If a selector is missing from the live server (checked via
+               MM_TEST_SERVER_URL), that is a product bug — report it.
+             - Run each fixed spec against the live server to confirm it passes
+               before committing.
+
+          4. After all fixes are committed (or all bugs reported), post a single
+             summary comment on the PR with:
+             - List of test bugs fixed (file name + one-line description)
+             - List of product bugs reported (test name + symptom)
+          PROMPT_EOF
+
+          # Substitute the env vars into the prompt
+          PROMPT=$(sed \
+            -e "s|\${FAILING_SUMMARY}|${FAILING_SUMMARY}|g" \
+            -e "s|\${SERVER_BLOCK}|${SERVER_BLOCK}|g" \
+            -e "s|\${WORKFLOW_RUN_URL}|${WORKFLOW_RUN_URL}|g" \
+            /tmp/agent-prompt.txt)
+
+          # Launch the Cursor agent
+          RESPONSE=$(curl --silent --fail \
+            --request POST \
+            --url "${CURSOR_API_URL}" \
+            -u "${CURSOR_API_KEY}:" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n \
+              --arg prompt "${PROMPT}" \
+              --arg prUrl "${PR_URL}" \
+              '{
+                prompt: { text: $prompt },
+                source: { prUrl: $prUrl },
+                target: { autoBranch: false }
+              }'
+            )")
+
+          AGENT_ID=$(echo "${RESPONSE}" | jq -r '.id // empty')
+          if [ -z "${AGENT_ID}" ]; then
+            echo "::error::Failed to launch Cursor agent. Response: ${RESPONSE}"
+            exit 1
+          fi
+
+          AGENT_URL=$(echo "${RESPONSE}" | jq -r '.target.url // empty')
+          echo "Cursor agent launched: ${AGENT_ID}"
+          echo "Agent URL: ${AGENT_URL}"
+          echo "AGENT_ID=${AGENT_ID}" >> "$GITHUB_OUTPUT"
+          echo "AGENT_URL=${AGENT_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Post agent launch notice on PR
+        if: steps.triage.outputs.skip == 'false' && steps.triage.outputs.pr_url != ''
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          AGENT_URL: ${{ env.AGENT_URL }}
+          FAILING_SUMMARY: ${{ steps.triage.outputs.failing_summary }}
+          WORKFLOW_RUN_URL: ${{ steps.triage.outputs.workflow_run_url }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const prNumber = parseInt('${{ steps.triage.outputs.pr_number }}', 10);
+            if (!prNumber) { return; }
+            const agentUrl   = process.env.AGENT_URL    || '(pending)';
+            const runUrl     = process.env.WORKFLOW_RUN_URL;
+            const summary    = process.env.FAILING_SUMMARY;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: [
+                '### :robot: Cursor Agent Launched to Fix E2E Failures',
+                '',
+                '**Failing platforms:**',
+                summary,
+                '',
+                'The agent will investigate each failure, fix test bugs, and report product bugs.',
+                'It will push fixes directly to this branch (which will trigger a new E2E run).',
+                '',
+                agentUrl ? `**Agent:** ${agentUrl}` : '',
+                `**CI run:** ${runUrl}`,
+              ].filter(Boolean).join('\n'),
+            });
