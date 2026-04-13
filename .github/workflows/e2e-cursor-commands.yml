@@ -1,0 +1,397 @@
+name: Cursor E2E Commands
+
+# Allows PR authors and contributors to invoke Cursor agents via PR comments.
+#
+# Supported commands (case-insensitive, anywhere in the comment):
+#
+#   @cursor fix e2e              — fix all currently failing E2E tests on this PR,
+#                                  including mass failures. Use this after a large
+#                                  change that caused widespread failures.
+#
+#   @cursor fix e2e failures     — alias for the above
+#
+#   @cursor add e2e tests        — generate new E2E test cases that cover the
+#                                  changes introduced by this PR.
+#
+#   @cursor add e2e tests for pr — alias for the above
+#
+# The workflow replies to the comment immediately with a :eyes: reaction so the
+# user knows it was received, then launches the appropriate Cursor agent.
+# The agent pushes results (fixes or new test files) directly to the PR branch.
+#
+# Requires: CURSOR_API_KEY repository secret.
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+
+jobs:
+  handle-command:
+    name: Handle @cursor command
+    runs-on: ubuntu-22.04
+    # Only run on PR comments (not issue comments) from users with write access.
+    # github.event.issue.pull_request is set only for PR comments.
+    if: |
+      github.event.issue.pull_request != null &&
+      (
+        contains(github.event.comment.body, '@cursor fix e2e') ||
+        contains(github.event.comment.body, '@cursor add e2e')
+      )
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: React to comment so the user knows it was received
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: 'eyes',
+            });
+
+      - name: Parse command and gather context
+        id: context
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const commentBody = `${{ github.event.comment.body }}`.toLowerCase();
+            const prNumber    = ${{ github.event.issue.number }};
+
+            // Determine which command was invoked
+            const isFix = commentBody.includes('@cursor fix e2e');
+            const isAdd = commentBody.includes('@cursor add e2e');
+            core.setOutput('command', isFix ? 'fix' : 'add');
+            core.setOutput('pr_number', String(prNumber));
+
+            // Get PR metadata
+            const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+            const prUrl      = pr.data.html_url;
+            const headBranch = pr.data.head.ref;
+            const headSha    = pr.data.head.sha;
+            core.setOutput('pr_url', prUrl);
+            core.setOutput('head_branch', headBranch);
+
+            // ── Find the latest E2E run for this PR branch ───────────────────
+            // Look for the most recent completed "Electron Playwright Tests"
+            // workflow_dispatch run whose head_sha matches the PR.
+            let latestRunUrl = '';
+            let failingSummary = '';
+            let serverBlock = '(not available)';
+
+            try {
+              const workflows = await github.rest.actions.listRepoWorkflows({ owner, repo });
+              const e2eWf = workflows.data.workflows.find(
+                (w) => w.name === 'Electron Playwright Tests'
+              );
+              if (e2eWf) {
+                const runs = await github.rest.actions.listWorkflowRuns({
+                  owner, repo,
+                  workflow_id: e2eWf.id,
+                  event: 'workflow_dispatch',
+                  per_page: 20,
+                });
+                const matchingRun = runs.data.workflow_runs.find(
+                  (r) => r.head_sha === headSha || r.head_branch === headBranch
+                );
+                if (matchingRun) {
+                  latestRunUrl = matchingRun.html_url;
+
+                  if (isFix) {
+                    // Collect per-platform job conclusions
+                    const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                      owner, repo, run_id: matchingRun.id, per_page: 100,
+                    });
+                    const lines = [];
+                    for (const job of jobs.data.jobs) {
+                      if (job.conclusion === 'failure') {
+                        const n = job.name.toLowerCase();
+                        const plat = n.includes('linux') || n.includes('ubuntu') ? 'linux'
+                          : n.includes('macos') || n.includes('darwin')          ? 'macos'
+                          : n.includes('windows')                                ? 'windows'
+                          : null;
+                        if (plat) {
+                          lines.push(`- ${plat}: failed`);
+                        }
+                      }
+                    }
+                    failingSummary = lines.length > 0
+                      ? lines.join('\n')
+                      : 'All platforms may have failed — treating as mass-failure scenario.';
+                  }
+                }
+              }
+            } catch (err) {
+              core.warning(`Could not fetch E2E run info: ${err.message}`);
+            }
+
+            core.setOutput('latest_run_url', latestRunUrl);
+            core.setOutput('failing_summary', failingSummary);
+
+            // ── Read server URLs from the PR comment ─────────────────────────
+            try {
+              const comments = await github.rest.issues.listComments({
+                owner, repo, issue_number: prNumber, per_page: 100,
+              });
+              const infoComment = (comments.data || []).find(
+                (c) => c.body && c.body.includes('<!-- e2e-server-info -->')
+              );
+              if (infoComment) {
+                const tableLines = infoComment.body.
+                  split('\n').
+                  filter((l) => l.startsWith('|') && !l.startsWith('| Platform')).
+                  slice(0, 4);
+                serverBlock = tableLines.join('\n');
+              }
+            } catch (err) {
+              core.warning(`Could not read PR comments: ${err.message}`);
+            }
+
+            core.setOutput('server_block', serverBlock);
+
+            // ── Collect the PR diff summary for "add tests" command ──────────
+            // List only the changed file paths — cheap and keeps the prompt small.
+            let changedFiles = '';
+            if (isAdd) {
+              try {
+                const files = await github.rest.pulls.listFiles({
+                  owner, repo, pull_number: prNumber, per_page: 100,
+                });
+                changedFiles = files.data.
+                  filter((f) => !f.filename.startsWith('e2e/')).
+                  map((f) => `${f.status.padEnd(9)} ${f.filename}`).
+                  join('\n');
+              } catch (err) {
+                core.warning(`Could not list PR files: ${err.message}`);
+              }
+            }
+            core.setOutput('changed_files', changedFiles);
+
+      # ── FIX command ──────────────────────────────────────────────────────────
+      - name: Build fix-e2e prompt
+        if: steps.context.outputs.command == 'fix'
+        id: fix_prompt
+        env:
+          PR_URL: ${{ steps.context.outputs.pr_url }}
+          FAILING_SUMMARY: ${{ steps.context.outputs.failing_summary }}
+          SERVER_BLOCK: ${{ steps.context.outputs.server_block }}
+          LATEST_RUN_URL: ${{ steps.context.outputs.latest_run_url }}
+          REQUESTER: ${{ github.event.comment.user.login }}
+        run: |
+          cat > /tmp/prompt.txt << 'PROMPT_EOF'
+          A developer (@${REQUESTER}) has asked you to fix ALL failing E2E tests on
+          this PR, including mass failures that the automatic trigger skipped.
+
+          This was likely caused by a large change to the codebase. Treat widespread
+          failures as potentially having a shared root cause (e.g. a renamed selector,
+          a changed IPC channel, a modified config shape) before fixing each test
+          individually.
+
+          FAILING PLATFORMS
+          -----------------
+          ${FAILING_SUMMARY}
+
+          SERVER URLS (provisioned by Matterwick — still live)
+          -----------------------------------------------------
+          ${SERVER_BLOCK}
+
+          LATEST E2E WORKFLOW RUN (for full logs and JUnit artifacts)
+          ------------------------------------------------------------
+          ${LATEST_RUN_URL}
+
+          INSTRUCTIONS
+          ------------
+          1. Read the CI workflow run logs to identify ALL failing test names and
+             their error messages.
+
+          2. Look for a SHARED ROOT CAUSE first:
+             - Same selector missing across many tests → likely a renamed component
+             - Same IPC channel / API call failing → likely a changed interface
+             - Same timeout pattern → likely a new async flow or loading state
+             If you find a shared cause, fix it at the shared layer (helper,
+             fixture, or app-side test hook) rather than patching every spec.
+
+          3. For each remaining failure, classify as TEST BUG or PRODUCT BUG:
+             TEST BUG  → Fix in e2e/specs/, e2e/helpers/, e2e/fixtures/ only.
+                         Run the spec against the live server to confirm it passes.
+             PRODUCT BUG → Do NOT modify the test. Post a PR comment:
+                           "Product Bug: <test name> — expected X, got Y, likely in <src/ file>"
+
+          4. HARD LIMITS to keep token usage reasonable:
+             - Fix at most 10 distinct test files per run.
+             - If more than 10 files need fixing, fix the most common pattern,
+               post a comment listing the rest, and stop.
+             - Never touch src/ files. Only e2e/.
+
+          5. After all fixes and reports, post a single summary comment on the PR.
+          PROMPT_EOF
+
+          PROMPT=$(sed \
+            -e "s|\${REQUESTER}|${REQUESTER}|g" \
+            -e "s|\${FAILING_SUMMARY}|${FAILING_SUMMARY}|g" \
+            -e "s|\${SERVER_BLOCK}|${SERVER_BLOCK}|g" \
+            -e "s|\${LATEST_RUN_URL}|${LATEST_RUN_URL}|g" \
+            /tmp/prompt.txt)
+
+          # Write to file for the launch step to read
+          echo "${PROMPT}" > /tmp/final-prompt.txt
+          echo "prompt_file=/tmp/final-prompt.txt" >> "$GITHUB_OUTPUT"
+
+      # ── ADD TESTS command ────────────────────────────────────────────────────
+      - name: Build add-e2e-tests prompt
+        if: steps.context.outputs.command == 'add'
+        id: add_prompt
+        env:
+          PR_URL: ${{ steps.context.outputs.pr_url }}
+          CHANGED_FILES: ${{ steps.context.outputs.changed_files }}
+          SERVER_BLOCK: ${{ steps.context.outputs.server_block }}
+          REQUESTER: ${{ github.event.comment.user.login }}
+        run: |
+          cat > /tmp/prompt.txt << 'PROMPT_EOF'
+          A developer (@${REQUESTER}) has asked you to add E2E test cases that cover
+          the changes introduced by this PR.
+
+          CHANGED FILES IN THIS PR (non-e2e only)
+          ----------------------------------------
+          ${CHANGED_FILES}
+
+          SERVER URLS (to run and validate your new tests against)
+          ---------------------------------------------------------
+          ${SERVER_BLOCK}
+
+          INSTRUCTIONS
+          ------------
+          1. Read each changed file to understand what behavior was added or modified.
+
+          2. For each meaningful behavioral change, write a new Playwright E2E test
+             (or extend an existing spec if one already covers that area).
+
+          3. Test placement rules:
+             - New specs go in e2e/specs/ under the most relevant subdirectory.
+             - Tests that require a live Mattermost server must use demoMattermostConfig
+               and be tagged @all so they run in CI.
+             - Use the fixture layer (e2e/fixtures/index.ts) — do not re-implement
+               launch / login logic.
+             - Follow patterns in existing e2e/specs/ files for style and structure.
+             - Tag each new test with @P2 @all or the appropriate priority.
+
+          4. After writing tests, run each new spec against the live server URL to
+             confirm it passes before committing.
+
+          5. HARD LIMITS:
+             - Add at most 3 new spec files per run.
+             - Do not modify src/ files.
+             - If you cannot determine a clear, testable behavior from the diff,
+               post a comment explaining what is ambiguous rather than writing
+               a low-quality test.
+
+          6. After committing, post a PR comment listing each new test file with a
+             one-line description of what it covers.
+          PROMPT_EOF
+
+          PROMPT=$(sed \
+            -e "s|\${REQUESTER}|${REQUESTER}|g" \
+            -e "s|\${CHANGED_FILES}|${CHANGED_FILES}|g" \
+            -e "s|\${SERVER_BLOCK}|${SERVER_BLOCK}|g" \
+            /tmp/prompt.txt)
+
+          echo "${PROMPT}" > /tmp/final-prompt.txt
+          echo "prompt_file=/tmp/final-prompt.txt" >> "$GITHUB_OUTPUT"
+
+      # ── Launch Cursor agent (shared for both commands) ───────────────────────
+      - name: Launch Cursor agent
+        id: launch
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          PR_URL: ${{ steps.context.outputs.pr_url }}
+          CURSOR_API_URL: https://api.cursor.com/v0/agents
+        run: |
+          PROMPT=$(cat /tmp/final-prompt.txt)
+
+          RESPONSE=$(curl --silent --fail \
+            --request POST \
+            --url "${CURSOR_API_URL}" \
+            -u "${CURSOR_API_KEY}:" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n \
+              --arg prompt "${PROMPT}" \
+              --arg prUrl "${PR_URL}" \
+              '{
+                prompt: { text: $prompt },
+                source: { prUrl: $prUrl },
+                target: { autoBranch: false }
+              }'
+            )")
+
+          AGENT_ID=$(echo "${RESPONSE}" | jq -r '.id // empty')
+          if [ -z "${AGENT_ID}" ]; then
+            echo "::error::Failed to launch Cursor agent. Response: ${RESPONSE}"
+            exit 1
+          fi
+
+          AGENT_URL=$(echo "${RESPONSE}" | jq -r '.target.url // empty')
+          echo "Agent launched: ${AGENT_ID} — ${AGENT_URL}"
+          echo "agent_url=${AGENT_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Reply to comment with agent link
+        if: always() && steps.launch.outcome == 'success'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          AGENT_URL: ${{ steps.launch.outputs.agent_url }}
+          COMMAND: ${{ steps.context.outputs.command }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const prNumber  = ${{ github.event.issue.number }};
+            const agentUrl  = process.env.AGENT_URL || '(pending)';
+            const command   = process.env.COMMAND;
+            const action    = command === 'fix'
+              ? 'fix failing E2E tests (including mass failures)'
+              : 'add E2E tests for the current PR changes';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: [
+                `### :robot: Cursor Agent Launched`,
+                '',
+                `Task: **${action}**`,
+                '',
+                'The agent will push results directly to this branch.',
+                agentUrl ? `\n**Agent:** ${agentUrl}` : '',
+              ].filter(Boolean).join('\n'),
+            });
+
+      - name: Reply to comment on failure
+        if: always() && steps.launch.outcome == 'failure'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: [
+                '### :x: Cursor Agent Launch Failed',
+                '',
+                'Could not launch the agent. Possible causes:',
+                '- `CURSOR_API_KEY` repository secret is missing or invalid.',
+                '- Cursor API is temporarily unavailable.',
+                '',
+                'Check the [workflow run](' +
+                  `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` +
+                  ') for details.',
+              ].join('\n'),
+            });
