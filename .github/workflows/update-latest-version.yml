@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch to read the version from (e.g. release-6.3)'
+        description: 'Branch to read the version from: master or release-X.Y'
         required: true
         type: string
 
@@ -21,7 +21,18 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    env:
+      REF: ${{ inputs.ref }}
     steps:
+      # This is a lightweight guard to ensure the input ref is valid.
+      - name: Verify input ref
+        run: |
+          if ! [[ "$REF" == "master" || "$REF" =~ ^release-[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Input ref must be master or release-X.Y (got '${REF}')"
+            exit 1
+          fi
+          echo "OK: Input ref is valid ($REF)"
+
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
