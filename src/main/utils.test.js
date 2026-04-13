@@ -138,6 +138,12 @@ describe('main/utils', () => {
         it('should return undefined for empty string', () => {
             expect(Utils.getEmailAddressFromMailtoLink('')).toBeUndefined();
         });
+
+        it('should strip control characters from the email address', () => {
+            expect(Utils.getEmailAddressFromMailtoLink('mailto:user@example.com\r\ninjection')).toBe('user@example.cominjection');
+            expect(Utils.getEmailAddressFromMailtoLink('mailto:user\t@example.com')).toBe('user@example.com');
+            expect(Utils.getEmailAddressFromMailtoLink('mailto:user\0@example.com')).toBe('user@example.com');
+        });
     });
 
     describe('isInsideRectangle', () => {

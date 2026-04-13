@@ -20,7 +20,8 @@ export function getEmailAddressFromMailtoLink(link: string): string | undefined 
     if (!link.toLowerCase().startsWith(MAILTO_PREFIX)) {
         return undefined;
     }
-    return link.slice(MAILTO_PREFIX.length).split('?')[0];
+    const email = link.slice(MAILTO_PREFIX.length).split('?')[0];
+    return email.replace(/[\r\n\t\0]/g, '');
 }
 
 export function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
