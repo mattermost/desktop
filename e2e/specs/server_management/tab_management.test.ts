@@ -79,7 +79,9 @@ test.describe('server_management/tab_management', () => {
         mainWindow = await waitForWindow(electronApp, 'index');
         const mmServer = await getMattermostServer();
         await loginToMattermost(mmServer);
-        await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
+        // Wait for SERVER_LOGGED_IN_CHANGED to propagate to the renderer so
+        // tabsDisabled becomes false and #newTabButton becomes enabled.
+        await mainWindow.waitForSelector('#newTabButton:not([disabled])', {timeout: 30_000});
     });
 
     test.beforeEach(async () => {
