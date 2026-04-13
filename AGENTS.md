@@ -40,3 +40,204 @@ E2E tests live in `e2e/` with a separate `package.json`. See `e2e/AGENTS.md` for
 ### Native modules
 
 The `postinstall` script runs `electron-builder install-app-deps` to rebuild native modules (registry-js, cf-prefs, etc.) for the current Electron version. If you see native module errors after `npm install`, ensure postinstall completed successfully.
+
+---
+
+## GitHub Actions coding practice
+
+Every rule below was derived from a concrete CodeRabbit or DryRun Security finding raised on PRs in this repository. Violating any of these will cause the same review comment to re-appear.
+
+### Security — script injection
+
+**Rule: Never interpolate `${{ inputs.* }}` or `${{ steps.*.outputs.* }}` directly inside a `github-script` `script:` block.**
+
+Interpolation happens before the JS is parsed. A single-quote in the value breaks out of the string literal and executes arbitrary JavaScript on the runner.
+
+```yaml
+# WRONG — ${{ inputs.foo }} is injected into JS source text
+script: |
+  doSomething('${{ inputs.foo }}');
+
+# CORRECT — pass via env:, read as process.env.*
+env:
+  FOO: ${{ inputs.foo }}
+script: |
+  doSomething(process.env.FOO);
+```
+
+The **only** safe interpolation inside `script:` is for trusted internal job outputs (e.g. `${{ needs.job.outputs.value }}` that was produced by your own workflow step, not derived from user input).
+
+**Rule: When passing a JSON array from a job output into a `github-script`, use `env:` + `JSON.parse()`.**
+
+```yaml
+# WRONG
+script: |
+  const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+
+# CORRECT
+env:
+  PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
+script: |
+  const platforms = JSON.parse(process.env.PLATFORMS);
+```
+
+### Security — Markdown injection in PR comments
+
+**Rule: Always sanitize values before inserting them into Markdown tables or fenced blocks.**
+
+Unsanitized `platform` or `url` values can inject pipe characters to break a table, or inject HTML/links. Use a helper like:
+
+```js
+const sanitizeMd = (str) => String(str ?? '').
+  replace(/[\r\n]/g, ' ').      // no newline injection
+  replace(/&/g, '&amp;').       // no HTML entities
+  replace(/</g, '&lt;').
+  replace(/>/g, '&gt;').
+  replace(/[|`[\]]/g, (ch) => `\\${ch}`); // no table/code breaks
+```
+
+### Permissions — least privilege
+
+**Rule: Declare `issues: write` and `pull-requests: write` at job level only, never at workflow top level.**
+
+Top-level permissions apply to every job in the file, including jobs that only need `contents: read`. Grant write scopes only on the specific job that calls the API:
+
+```yaml
+# WRONG — every job gets write access to issues and PRs
+permissions:
+  contents: read
+  statuses: write
+  issues: write
+  pull-requests: write
+
+# CORRECT — broad reads at top level, writes scoped to the job that needs them
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  post-comment:
+    permissions:
+      issues: write
+      pull-requests: write
+```
+
+**Rule: Disabled/noop jobs must set `permissions: {}` and `if: ${{ false }}`.**
+
+A noop job that still has `issues: write` holds a live permission unnecessarily. If a job is disabled, clear its permissions and gate it with `if: false` so it never allocates a runner:
+
+```yaml
+noop:
+  runs-on: ubuntu-22.04
+  if: ${{ false }}
+  permissions: {}
+  steps:
+    - run: echo "disabled"
+```
+
+### Fault tolerance — `continue-on-error` on auxiliary steps
+
+**Rule: Auxiliary side-effect steps (posting comments, removing labels, sending notifications) must set `continue-on-error: true`.**
+
+A comment-posting failure is not a test failure. If the auxiliary step throws, it should warn but not mark the entire job as failed:
+
+```yaml
+- name: Post PR comment
+  uses: actions/github-script@...
+  continue-on-error: true   # ← required for all non-critical steps
+  with:
+    script: |
+      try {
+        await postComment(...);
+      } catch (err) {
+        core.warning(`Comment failed: ${err.message}`);
+      }
+```
+
+### Job condition gates
+
+**Rule: Do not gate a job on `inputs.pr_number != ''` if the job has fallback resolution logic that can find the PR without the input.**
+
+Gating on an optional input prevents the fallback from ever running, silently skipping the job for valid runs where the input was not provided:
+
+```yaml
+# WRONG — skips even when findPrNumber() can resolve via branch/SHA lookup
+if: ${{ !inputs.nightly && inputs.pr_number != '' }}
+
+# CORRECT — only skip nightly runs; let the fallback handle missing pr_number
+if: ${{ !inputs.nightly }}
+```
+
+### Dead code in workflow files
+
+**Rule: Do not leave commented-out job blocks in workflow YAML files.**
+
+Git history preserves the implementation. Commented blocks drift from the live logic, mislead future readers, and generate repeated review noise. Remove the block entirely and add a one-line comment pointing to git history if the reason needs explaining:
+
+```yaml
+# WRONG — 60 lines of commented-out job YAML
+# remove-e2e-label:
+#   runs-on: ubuntu-22.04
+#   steps:
+#     ...
+
+# CORRECT — single explanatory line
+# remove-e2e-label is intentionally omitted: see e2e-label-cleanup.yml for context.
+```
+
+### Input validation in JavaScript utilities
+
+**Rule: Always use strict positive-integer validation when parsing PR numbers or other numeric inputs.**
+
+`parseInt("123abc", 10)` returns `123`. `parseInt("-42", 10)` returns `-42`. Both pass a truthiness check. Use the pattern below:
+
+```js
+// WRONG
+const n = parseInt(input, 10);
+if (n) { use(n); }
+
+// CORRECT
+const trimmed = String(input ?? '').trim();
+if ((/^\d+$/).test(trimmed)) {
+  const parsed = Number(trimmed);
+  if (Number.isInteger(parsed) && parsed > 0) {
+    use(parsed);
+  }
+}
+```
+
+**Rule: Do not fall back to `prs.data[0]` when a SHA-based match fails.**
+
+Falling back to the first open PR on a branch can post to the wrong PR if multiple PRs share the same head branch. Return `null` and skip the action:
+
+```js
+// WRONG — may post to wrong PR
+return (matching || prs.data[0]).number;
+
+// CORRECT — return null and let caller skip
+return matching ? matching.number : null;
+```
+
+### `workflow_run` execution context
+
+**Rule: `workflow_run` workflows always execute from the DEFAULT BRANCH, not from the triggering PR branch.**
+
+This means: any JS utility called via `require('./e2e/utils/...')` inside a `workflow_run` workflow will be the version on `master`, not the PR branch version — unless the checkout step explicitly checks out the triggering commit. When disabling label-removal or other behavior, the change must land on the default branch to take effect.
+
+### Fenced code blocks in Markdown
+
+**Rule: Always specify a language tag on fenced code blocks.**
+
+Bare triple-backtick blocks are flagged by markdown linters and render without syntax highlighting. Use `bash`, `yaml`, `typescript`, `js`, etc.:
+
+```markdown
+<!-- WRONG -->
+\```
+npm install
+\```
+
+<!-- CORRECT -->
+\```bash
+npm install
+\```
+```
