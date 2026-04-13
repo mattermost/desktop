@@ -10,7 +10,7 @@ Mattermost Desktop is an Electron app (v40.x) wrapping the Mattermost web app. S
 
 The project requires Node.js v20.15.0 (specified in `.nvmrc`). Use `nvm` to switch:
 
-```
+```bash
 source ~/.nvm/nvm.sh && nvm use 20.15.0
 ```
 
