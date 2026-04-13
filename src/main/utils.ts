@@ -11,9 +11,17 @@ const exec = promisify(execOriginal);
 import type {BrowserWindow} from 'electron';
 import {app} from 'electron';
 
+import {MAILTO_PREFIX} from 'common/constants';
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 
 import type {Args} from 'types/args';
+
+export function getEmailAddressFromMailtoLink(link: string): string | undefined {
+    if (!link.toLowerCase().startsWith(MAILTO_PREFIX)) {
+        return undefined;
+    }
+    return link.slice(MAILTO_PREFIX.length).split('?')[0];
+}
 
 export function isInsideRectangle(container: Electron.Rectangle, rect: Electron.Rectangle) {
     if (container.x > rect.x) {
