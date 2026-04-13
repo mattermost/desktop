@@ -153,8 +153,12 @@ async function postServerInfoComment({github, context, platforms, adminUsername,
     const MARKER = '<!-- e2e-server-info -->';
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
+    // Sanitize values before inserting into a Markdown table to prevent
+    // table-breaking pipe characters or other Markdown injection.
+    const sanitizeMd = (str) => String(str ?? '').replace(/[|`[\]]/g, (ch) => `\\${ch}`);
+
     const platformRows = platforms.
-        map((p) => `| \`${p.platform}\` | ${p.url} |`).
+        map((p) => `| \`${sanitizeMd(p.platform)}\` | ${sanitizeMd(p.url)} |`).
         join('\n');
 
     const lines = [

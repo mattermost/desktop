@@ -56,8 +56,10 @@ jobs:
   post-server-info:
     name: Post server info to PR
     needs: prepare-matrix
-    # Only comment on PR-triggered runs (nightly runs have no PR to comment on).
-    if: ${{ !inputs.nightly && inputs.pr_number != '' }}
+    # Skip nightly runs — they have no PR to comment on.
+    # Do not gate on inputs.pr_number because findPrNumber has fallback
+    # resolution paths that can recover the PR number from the run context.
+    if: ${{ !inputs.nightly }}
     runs-on: ubuntu-24.04
     permissions:
       issues: write
@@ -73,11 +75,14 @@ jobs:
           PR_NUMBER: ${{ inputs.pr_number }}
           ADMIN_USERNAME: ${{ inputs.MM_TEST_USER_NAME }}
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          # Pass the trusted internal job output via env so it is never
+          # interpolated directly into the JS string (prevents injection).
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { findPrNumber, postServerInfoComment } = require('./e2e/utils/github-actions.js');
-            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            const platforms = JSON.parse(process.env.PLATFORMS);
             const prNumber = await findPrNumber({
               github,
               context,
@@ -241,64 +246,7 @@ jobs:
             const mergedReportUrl = '${{ needs.merge-e2e-report.outputs.merged-report-url }}' || undefined;
             await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
 
-  # remove-e2e-label is intentionally disabled.
-  # Removing E2E/Run causes Matterwick to destroy the provisioned servers immediately,
-  # which prevents agents from connecting to those servers to reproduce and fix
-  # failing tests in the same PR run. Re-enable once automated fix-and-rerun is no
-  # longer needed.
-  #
-  # remove-e2e-label:
-  #   name: Remove E2E label from PR
-  #   runs-on: ubuntu-22.04
-  #   permissions:
-  #     issues: write
-  #     pull-requests: write
-  #   needs:
-  #     - e2e-tests
-  #     - e2e-policy-tests
-  #     - update-final-status
-  #   if: always()
-  #   steps:
-  #     - name: e2e/remove-label-from-pr
-  #       uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-  #       continue-on-error: true
-  #       with:
-  #         github-token: ${{ github.token }}
-  #         script: |
-  #           let prNumber = parseInt(process.env.PR_NUMBER) || null;
-  #           if (!prNumber) {
-  #             const run = await github.rest.actions.getWorkflowRun({
-  #               owner: context.repo.owner,
-  #               repo: context.repo.repo,
-  #               run_id: context.runId,
-  #             });
-  #             const branchName = run.data.head_branch;
-  #             if (branchName) {
-  #               const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
-  #               const prs = await github.rest.pulls.list({
-  #                 owner: context.repo.owner,
-  #                 repo: context.repo.repo,
-  #                 state: 'open',
-  #                 head: `${headOwner}:${branchName}`,
-  #               });
-  #               if (prs.data && prs.data.length > 0) {
-  #                 const matchingPr = prs.data.find((pr) => pr.head && pr.head.sha === run.data.head_sha);
-  #                 prNumber = (matchingPr || prs.data[0]).number;
-  #               }
-  #             }
-  #           }
-  #           if (prNumber) {
-  #             await github.rest.issues.removeLabel({
-  #               issue_number: prNumber,
-  #               owner: context.repo.owner,
-  #               repo: context.repo.repo,
-  #               name: 'E2E/Run',
-  #             });
-  #           } else {
-  #             console.log('Label removal skipped - could not find associated PR');
-  #           }
-  #       env:
-  #         PR_NUMBER: ${{ inputs.pr_number }}
+  # remove-e2e-label is intentionally omitted: see e2e-label-cleanup.yml for context.
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}

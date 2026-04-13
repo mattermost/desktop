@@ -15,17 +15,16 @@ on:
     workflows: ["Electron Playwright Tests"]
     types: [completed]
 
-permissions:
-  issues: write
-  pull-requests: write
-  actions: read
+permissions: {}
 
 jobs:
   # remove-e2e-label is disabled — see comment at the top of this file.
+  # if: false ensures no runner is allocated and no permissions are used.
   noop:
     name: Label cleanup disabled
     runs-on: ubuntu-22.04
-    if: ${{ github.event.workflow_run.event == 'workflow_dispatch' }}
+    if: ${{ false }}
+    permissions: {}
     steps:
       - name: Skip label removal
-        run: echo "E2E/Run label removal is disabled. Servers remain active for agent-driven test fixing."
+        run: echo "E2E/Run label removal is disabled."
