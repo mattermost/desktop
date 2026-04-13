@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {type BrowserWindow, WebContentsView, app, ipcMain} from 'electron';
+import {type BrowserWindow, WebContentsView, app, clipboard, ipcMain} from 'electron';
 import type {WebContentsViewConstructorOptions, Event} from 'electron/main';
 import type {Options} from 'electron-context-menu';
 import {EventEmitter} from 'events';
@@ -46,6 +46,16 @@ enum Status {
     WAITING_MM,
     ERROR = -1,
 }
+
+const getEmailAddressFromMailtoLink = (linkURL: string) => {
+    const parsedURL = parseURL(linkURL);
+    if (!parsedURL || parsedURL.protocol !== 'mailto:') {
+        return '';
+    }
+
+    return decodeURIComponent(parsedURL.pathname.replace(/^\/+/, ''));
+};
+
 export class MattermostWebContentsView extends EventEmitter {
     private view: MattermostView;
     private parentWindow: BrowserWindow;
@@ -491,6 +501,19 @@ export class MattermostWebContentsView extends EventEmitter {
         }
 
         return {
+            prepend: (_, parameters) => {
+                const emailAddress = getEmailAddressFromMailtoLink(parameters.linkURL);
+                if (!emailAddress) {
+                    return [];
+                }
+
+                return [{
+                    label: localizeMessage('app.menus.contextMenu.copyEmailAddress', 'Copy Email Address'),
+                    click() {
+                        clipboard.writeText(emailAddress);
+                    },
+                }];
+            },
             append: (_, parameters) => {
                 const parsedURL = parseURL(parameters.linkURL);
                 if (parsedURL && isInternalURL(parsedURL, server.url)) {

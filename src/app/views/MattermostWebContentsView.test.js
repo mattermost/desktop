@@ -3,6 +3,8 @@
 
 'use strict';
 
+import {clipboard} from 'electron';
+
 import AppState from 'common/appState';
 import {LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -10,6 +12,7 @@ import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
+import {localizeMessage} from 'main/i18nManager';
 import {getServerAPI} from 'main/server/serverAPI';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
@@ -21,6 +24,9 @@ jest.mock('electron', () => ({
     app: {
         getVersion: () => '5.0.0',
         getPath: jest.fn(() => '/valid/downloads/path'),
+    },
+    clipboard: {
+        writeText: jest.fn(),
     },
     WebContentsView: jest.fn().mockImplementation(() => ({
         webContents: {
@@ -98,6 +104,7 @@ jest.mock('main/server/serverAPI', () => ({
     getServerAPI: jest.fn(),
 }));
 jest.mock('common/views/viewManager', () => ({
+    isViewLimitReached: jest.fn(),
     updateViewTitle: jest.fn(),
     getViewLog: jest.fn().mockReturnValue({
         info: jest.fn(),
@@ -331,6 +338,39 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.updateHistoryButton();
             expect(mattermostView.webContentsView.webContents.navigationHistory.clear).toHaveBeenCalled();
             expect(mattermostView.isAtRoot).toBe(true);
+        });
+    });
+
+    describe('generateContextMenu', () => {
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const mattermostView = new MattermostWebContentsView(view, {}, window);
+
+        beforeEach(() => {
+            ServerManager.getServer.mockReturnValue(server);
+            localizeMessage.mockImplementation((id, defaultMessage) => defaultMessage);
+            clipboard.writeText.mockClear();
+        });
+
+        it('should add copy email address item for mailto links', () => {
+            const contextMenuOptions = mattermostView.generateContextMenu();
+            const menuItems = contextMenuOptions.prepend(null, {
+                linkURL: 'mailto:first%40mattermost.com,second%40mattermost.com?subject=Hello',
+            });
+
+            expect(menuItems).toHaveLength(1);
+            expect(menuItems[0].label).toBe('Copy Email Address');
+
+            menuItems[0].click();
+            expect(clipboard.writeText).toHaveBeenCalledWith('first@mattermost.com,second@mattermost.com');
+        });
+
+        it('should not add copy email address item for non-mailto links', () => {
+            const contextMenuOptions = mattermostView.generateContextMenu();
+            const menuItems = contextMenuOptions.prepend(null, {
+                linkURL: 'https://mattermost.com',
+            });
+
+            expect(menuItems).toEqual([]);
         });
     });
 
