@@ -282,12 +282,17 @@ jobs:
         env:
           INSTANCE_DETAILS: ${{ inputs.instance_details }}
         run: |
-          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          URL=""
-          if [ -n "${INSTANCE_DETAILS}" ]; then
-            URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
+          if [ -z "${INSTANCE_DETAILS}" ]; then
+            echo "Error: instance_details input is required but was not provided" >&2
+            exit 1
           fi
-          echo "MM_TEST_SERVER_URL=${URL:-https://mobile-e2e-site-2.test.mattermost.cloud/}" >> $GITHUB_ENV
+          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
+          if [ -z "${URL}" ]; then
+            echo "Error: No server URL found in instance_details for runner OS: ${RUNNER_OS}" >&2
+            exit 1
+          fi
+          echo "MM_TEST_SERVER_URL=${URL}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
