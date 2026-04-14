@@ -18,6 +18,7 @@ export const UPDATE_DOWNLOAD_ITEM: Omit<DownloadedItem, 'filename' | 'state'> = 
     totalBytes: 0,
 };
 
+export const MAILTO_PREFIX = 'mailto:';
 export const MATTERMOST_PROTOCOL = 'mattermost';
 
 // Regular expressions

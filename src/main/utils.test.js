@@ -118,6 +118,34 @@ describe('main/utils', () => {
         });
     });
 
+    describe('getEmailAddressFromMailtoLink', () => {
+        it('should extract email from mailto link', () => {
+            expect(Utils.getEmailAddressFromMailtoLink('mailto:user@example.com')).toBe('user@example.com');
+        });
+
+        it('should strip query parameters', () => {
+            expect(Utils.getEmailAddressFromMailtoLink('mailto:user@example.com?subject=Hello&body=Hi')).toBe('user@example.com');
+        });
+
+        it('should handle case-insensitive mailto prefix', () => {
+            expect(Utils.getEmailAddressFromMailtoLink('MAILTO:user@example.com')).toBe('user@example.com');
+        });
+
+        it('should return undefined for non-mailto links', () => {
+            expect(Utils.getEmailAddressFromMailtoLink('https://example.com')).toBeUndefined();
+        });
+
+        it('should return undefined for empty string', () => {
+            expect(Utils.getEmailAddressFromMailtoLink('')).toBeUndefined();
+        });
+
+        it('should strip control characters from the email address', () => {
+            expect(Utils.getEmailAddressFromMailtoLink('mailto:user@example.com\r\ninjection')).toBe('user@example.cominjection');
+            expect(Utils.getEmailAddressFromMailtoLink('mailto:user\t@example.com')).toBe('user@example.com');
+            expect(Utils.getEmailAddressFromMailtoLink('mailto:user\0@example.com')).toBe('user@example.com');
+        });
+    });
+
     describe('isInsideRectangle', () => {
         it.each([
             [{x: 0, y: 0, width: 1920, height: 1080}, {x: 100, y: 100, width: 1280, height: 720}, true],

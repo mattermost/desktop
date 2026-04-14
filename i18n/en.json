@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Copy Email Address",
   "app.menus.contextMenu.openInNewTab": "Open in new tab",
   "app.menus.contextMenu.openInNewWindow": "Open in new window",
   "app.navigationManager.invalidLinkDescription": "The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.",

@@ -360,27 +360,27 @@ export class MainWindow extends EventEmitter {
      * Server Manager atomic event handlers
      */
     private handleServerAdded = (serverId: string, setAsCurrentServer: boolean) => {
-        this.win?.browserWindow.webContents.send(SERVER_ADDED, serverId, setAsCurrentServer);
+        this.sendToRenderer(SERVER_ADDED, serverId, setAsCurrentServer);
     };
 
     private handleServerRemoved = (server: MattermostServer) => {
-        this.win?.browserWindow.webContents.send(SERVER_REMOVED, server.id);
+        this.sendToRenderer(SERVER_REMOVED, server.id);
     };
 
     private handleServerUrlChanged = (serverId: string) => {
-        this.win?.browserWindow.webContents.send(SERVER_URL_CHANGED, serverId);
+        this.sendToRenderer(SERVER_URL_CHANGED, serverId);
     };
 
     private handleServerNameChanged = (serverId: string) => {
-        this.win?.browserWindow.webContents.send(SERVER_NAME_CHANGED, serverId);
+        this.sendToRenderer(SERVER_NAME_CHANGED, serverId);
     };
 
     private handleServerSwitched = (serverId: string) => {
-        this.win?.browserWindow.webContents.send(SERVER_SWITCHED, serverId);
+        this.sendToRenderer(SERVER_SWITCHED, serverId);
     };
 
     private handleServerLoggedInChanged = (serverId: string, loggedIn: boolean) => {
-        this.win?.browserWindow.webContents.send(SERVER_LOGGED_IN_CHANGED, serverId, loggedIn);
+        this.sendToRenderer(SERVER_LOGGED_IN_CHANGED, serverId, loggedIn);
     };
 
     /**
@@ -388,11 +388,11 @@ export class MainWindow extends EventEmitter {
      */
 
     private handleUpdateAppStateForViewId = (viewId: string, isExpired: boolean, newMentions: number, newUnreads: boolean) => {
-        this.win?.browserWindow.webContents.send(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
+        this.sendToRenderer(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
     };
 
     private handleUpdateAppStateForServerId = (serverId: string, expired: boolean, newMentions: number, newUnreads: boolean) => {
-        this.win?.browserWindow.webContents.send(UPDATE_MENTIONS_FOR_SERVER, serverId, expired, newMentions, newUnreads);
+        this.sendToRenderer(UPDATE_MENTIONS_FOR_SERVER, serverId, expired, newMentions, newUnreads);
     };
 
     private handleEmitConfiguration = () => {
@@ -400,7 +400,7 @@ export class MainWindow extends EventEmitter {
     };
 
     private sendViewLimitUpdated = () => {
-        this.win?.browserWindow.webContents.send(VIEW_LIMIT_UPDATED);
+        this.sendToRenderer(VIEW_LIMIT_UPDATED);
     };
 
     private handleGetIsViewLimitReached = () => {
