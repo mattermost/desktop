@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Kopier e-postadresse",
   "app.menus.contextMenu.openInNewTab": "Åpne i ny fane",
   "app.menus.contextMenu.openInNewWindow": "Åpne i et nytt vindu",
   "app.navigationManager.invalidLinkDescription": "Lenken du klikket på, ser ut til å være ugyldig og kan ikke åpnes. Vennligst sjekk nettadressen for feil før du prøver på nytt.",
