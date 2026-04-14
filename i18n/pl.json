@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Kopiuj adres e-mail",
   "app.menus.contextMenu.openInNewTab": "Otwórz w nowej karcie",
   "app.menus.contextMenu.openInNewWindow": "Otwórz w nowym oknie",
   "app.navigationManager.invalidLinkDescription": "Link, który kliknąłeś, wydaje się być zniekształcony i nie można go otworzyć. Przed ponowną próbą sprawdź adres URL pod kątem błędów.",
