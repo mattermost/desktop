@@ -3,6 +3,9 @@
 
 import type {ServerView} from './serverView';
 
+// Team provisioned by e2e/utils/server-setup.js in globalSetup.
+const PROVISIONED_TEAM = 'e2e-team';
+
 async function waitForAppShell(win: ServerView, timeout: number) {
     const results = await Promise.allSettled([
         win.waitForSelector('#post_textbox', {timeout}),
@@ -11,6 +14,27 @@ async function waitForAppShell(win: ServerView, timeout: number) {
     ]);
 
     return results.some((result) => result.status === 'fulfilled');
+}
+
+/**
+ * When the Mattermost server redirects to /select_team after login (e.g. on a
+ * freshly provisioned server where team membership hasn't propagated yet),
+ * navigate directly to the provisioned team's town-square channel.
+ *
+ * No-ops if the URL is already on a channel page.
+ */
+async function navigateFromSelectTeam(win: ServerView, timeout: number): Promise<void> {
+    const url = await win.url();
+    if (!url.includes('/select_team') && !url.includes('/create_team')) {
+        return;
+    }
+
+    // Navigate to the provisioned team's default channel using window.location
+    // assignment (ServerView doesn't have a goto() API; evaluate() runs JS in
+    // the renderer context of the WebContentsView).
+    const targetPath = `/${PROVISIONED_TEAM}/channels/town-square`;
+    await win.evaluate(`window.location.pathname = ${JSON.stringify(targetPath)};`);
+    await win.waitForURL((u) => u.pathname.includes('/channels/'), {timeout});
 }
 
 /**
@@ -52,6 +76,13 @@ export async function loginToMattermost(win: ServerView): Promise<void> {
 
     // Wait for login to complete: URL leaves /login
     await win.waitForURL((url) => !url.pathname.startsWith('/login'), {timeout});
+
+    // Some freshly-provisioned servers redirect to /select_team because team
+    // membership isn't yet visible to the web app at redirect time.  Navigate
+    // directly to the provisioned team's town-square channel so the web app
+    // fires onLogin() (TAB_LOGIN_CHANGED) and isLoggedIn becomes true.
+    await navigateFromSelectTeam(win, timeout);
+
     if (!await waitForAppShell(win, timeout)) {
         throw new Error(`loginToMattermost: login succeeded but the app shell never became ready. Current URL: ${await win.url()}`);
     }
