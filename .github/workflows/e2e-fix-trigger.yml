@@ -346,8 +346,9 @@ jobs:
             Linux   server: ${SERVER_URL_LINUX}
             macOS   server: ${SERVER_URL_MACOS}
             Windows server: ${SERVER_URL_WINDOWS}
-            Admin username: ${ADMIN_USERNAME}
-            Admin password: read the MM_TEST_PASSWORD environment variable
+            Admin username: read the MM_DESKTOP_E2E_USER_NAME environment variable
+                            (injected as a Cursor secret — do NOT hardcode it)
+            Admin password: read the MM_DESKTOP_E2E_USER_CREDENTIALS environment variable
                             (injected as a Cursor secret — do NOT hardcode it)
 
           CI run (for full logs and trace artifacts): ${WORKFLOW_RUN_URL}
@@ -391,8 +392,8 @@ jobs:
             cd e2e
             export DISPLAY=:1
             export MM_TEST_SERVER_URL="${SERVER_URL_LINUX}"
-            export MM_TEST_USER_NAME="${ADMIN_USERNAME}"
-            export MM_TEST_PASSWORD="${MM_TEST_PASSWORD}"
+            export MM_TEST_USER_NAME="${MM_DESKTOP_E2E_USER_NAME}"
+            export MM_TEST_PASSWORD="${MM_DESKTOP_E2E_USER_CREDENTIALS}"
             xvfb-run --auto-servernum --server-args='-screen 0 1280x960x24' \
               npx playwright test <spec-file-relative-to-e2e/> \
               --reporter=list --workers=1

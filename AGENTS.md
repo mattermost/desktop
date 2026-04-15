@@ -43,9 +43,10 @@ When a Cursor cloud agent is launched by `e2e-fix-trigger.yml` or `e2e-cursor-co
 
 | Secret name | Value |
 |---|---|
-| `MM_TEST_PASSWORD` | The admin password for the Matterwick-provisioned E2E servers (same value as the `MM_DESKTOP_E2E_USER_CREDENTIALS` GitHub repo secret) |
+| `MM_DESKTOP_E2E_USER_NAME` | The admin username for the Matterwick-provisioned E2E servers (same value as the `MM_DESKTOP_E2E_USER_NAME` GitHub repo secret) |
+| `MM_DESKTOP_E2E_USER_CREDENTIALS` | The admin password for the Matterwick-provisioned E2E servers (same value as the `MM_DESKTOP_E2E_USER_CREDENTIALS` GitHub repo secret) |
 
-The `MM_TEST_SERVER_URL` and `MM_TEST_USER_NAME` values are injected into the agent prompt directly by the workflow (read from the server-info PR comment). Only `MM_TEST_PASSWORD` must be a Cursor secret because it cannot be safely embedded in a PR comment.
+These are exposed to the agent directly as environment variables. The agent uses them verbatim as `MM_TEST_USER_NAME` and `MM_TEST_PASSWORD` when running specs. `MM_TEST_SERVER_URL` is still injected into the agent prompt from the server-info PR comment (it is not secret).
 
 ### Running E2E tests locally on this Linux VM
 
@@ -59,8 +60,8 @@ npm run build-test
 cd e2e
 export DISPLAY=:1
 export MM_TEST_SERVER_URL=<server-url>
-export MM_TEST_USER_NAME=<admin-username>
-export MM_TEST_PASSWORD=<admin-password>
+export MM_TEST_USER_NAME="${MM_DESKTOP_E2E_USER_NAME}"
+export MM_TEST_PASSWORD="${MM_DESKTOP_E2E_USER_CREDENTIALS}"
 xvfb-run --auto-servernum --server-args='-screen 0 1280x960x24' \
   npx playwright test <spec-file-relative-to-e2e/> --reporter=list --workers=1
 cd ..
