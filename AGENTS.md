@@ -1,4 +1,4 @@
-# CLAUDE.md — Mattermost Desktop App
+# AGENTS.md — Mattermost Desktop App
 
 ## Project overview
 
@@ -55,7 +55,7 @@ src/
 └── types/          # Shared TypeScript type definitions
 ```
 
-Module-specific documentation lives in `CLAUDE.md` files within each subdirectory.
+Module-specific documentation lives in `AGENTS.md` files within each subdirectory.
 
 ## Development
 
