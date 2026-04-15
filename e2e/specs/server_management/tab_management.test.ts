@@ -9,7 +9,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
 import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
-import {loginToMattermost} from '../../helpers/login';
+import {loginToMattermost, waitForLoggedIn} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const config = demoMattermostConfig;
@@ -79,7 +79,7 @@ test.describe('server_management/tab_management', () => {
         mainWindow = await waitForWindow(electronApp, 'index');
         const mmServer = await getMattermostServer();
         await loginToMattermost(mmServer);
-        await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
+        await waitForLoggedIn(electronApp, mainWindow);
     });
 
     test.beforeEach(async () => {
