@@ -447,17 +447,26 @@ jobs:
             - Any flakes: test name + why you concluded it is a flake
           PROMPT_EOF
 
-          # Substitute env vars into the prompt
-          PROMPT=$(sed \
-            -e "s|\${FAILING_SUMMARY}|${FAILING_SUMMARY}|g" \
-            -e "s|\${SERVER_TABLE_BLOCK}|${SERVER_TABLE_BLOCK}|g" \
-            -e "s|\${SERVER_URL_LINUX}|${SERVER_URL_LINUX}|g" \
-            -e "s|\${SERVER_URL_MACOS}|${SERVER_URL_MACOS}|g" \
-            -e "s|\${SERVER_URL_WINDOWS}|${SERVER_URL_WINDOWS}|g" \
-            -e "s|\${ADMIN_USERNAME}|${ADMIN_USERNAME}|g" \
-            -e "s|\${WORKFLOW_RUN_URL}|${WORKFLOW_RUN_URL}|g" \
-            -e "s|\${WORKFLOW_RUN_ID}|${WORKFLOW_RUN_ID}|g" \
-            /tmp/agent-prompt.txt)
+          # Substitute env vars into the prompt using python3 literal str.replace().
+          # sed with shell-expanded double-quoted -e expressions is vulnerable to
+          # delimiter injection (e.g. the sed 'e' flag) when variable values come
+          # from external sources such as JUnit test names or PR comments.
+          # All values are passed through jq so they are safely JSON-encoded first.
+          # The python3 -c script is single-quoted so the shell never expands it.
+          jq -n \
+            --arg FAILING_SUMMARY    "${FAILING_SUMMARY}" \
+            --arg SERVER_TABLE_BLOCK "${SERVER_TABLE_BLOCK}" \
+            --arg SERVER_URL_LINUX   "${SERVER_URL_LINUX}" \
+            --arg SERVER_URL_MACOS   "${SERVER_URL_MACOS}" \
+            --arg SERVER_URL_WINDOWS "${SERVER_URL_WINDOWS}" \
+            --arg ADMIN_USERNAME     "${ADMIN_USERNAME}" \
+            --arg WORKFLOW_RUN_URL   "${WORKFLOW_RUN_URL}" \
+            --arg WORKFLOW_RUN_ID    "${WORKFLOW_RUN_ID}" \
+            '{"FAILING_SUMMARY":$FAILING_SUMMARY,"SERVER_TABLE_BLOCK":$SERVER_TABLE_BLOCK,"SERVER_URL_LINUX":$SERVER_URL_LINUX,"SERVER_URL_MACOS":$SERVER_URL_MACOS,"SERVER_URL_WINDOWS":$SERVER_URL_WINDOWS,"ADMIN_USERNAME":$ADMIN_USERNAME,"WORKFLOW_RUN_URL":$WORKFLOW_RUN_URL,"WORKFLOW_RUN_ID":$WORKFLOW_RUN_ID}' \
+            > /tmp/prompt-vars.json
+
+          PROMPT=$(python3 -c \
+            'import json,sys;t=open("/tmp/agent-prompt.txt").read();v=json.load(open("/tmp/prompt-vars.json"));[t:=t.replace("${"+k+"}",val) for k,val in v.items()];sys.stdout.write(t)')
 
           # Launch the Cursor agent
           RESPONSE=$(curl --silent --fail \
