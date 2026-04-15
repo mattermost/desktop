@@ -37,6 +37,38 @@ All standard commands are documented in `CLAUDE.md` and `package.json`. Quick re
 
 E2E tests live in `e2e/` with a separate `package.json`. See `e2e/AGENTS.md` for detailed guidance. Server-backed E2E tests require a running Mattermost server and env vars `MM_TEST_SERVER_URL`, `MM_TEST_USER_NAME`, `MM_TEST_PASSWORD`. Startup/UI-only E2E tests can run without a server.
 
+### Cursor secrets required for E2E fix agents
+
+When a Cursor cloud agent is launched by `e2e-fix-trigger.yml` or `e2e-cursor-commands.yml` to fix failing E2E tests, it needs credentials to connect to the provisioned Mattermost test servers. Add the following secrets in the Cursor Dashboard (Cloud Agents → Secrets):
+
+| Secret name | Value |
+|---|---|
+| `MM_DESKTOP_E2E_USER_NAME` | The admin username for the Matterwick-provisioned E2E servers (same value as the `MM_DESKTOP_E2E_USER_NAME` GitHub repo secret) |
+| `MM_DESKTOP_E2E_USER_CREDENTIALS` | The admin password for the Matterwick-provisioned E2E servers (same value as the `MM_DESKTOP_E2E_USER_CREDENTIALS` GitHub repo secret) |
+
+These are exposed to the agent directly as environment variables. The agent uses them verbatim as `MM_TEST_USER_NAME` and `MM_TEST_PASSWORD` when running specs. `MM_TEST_SERVER_URL` is still injected into the agent prompt from the server-info PR comment (it is not secret).
+
+### Running E2E tests locally on this Linux VM
+
+To run a single spec file against a live server:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 20.15.0
+npm ci && cd e2e && npm ci && cd ..
+npm run build-test
+
+cd e2e
+export DISPLAY=:1
+export MM_TEST_SERVER_URL=<server-url>
+export MM_TEST_USER_NAME="${MM_DESKTOP_E2E_USER_NAME}"
+export MM_TEST_PASSWORD="${MM_DESKTOP_E2E_USER_CREDENTIALS}"
+xvfb-run --auto-servernum --server-args='-screen 0 1280x960x24' \
+  npx playwright test <spec-file-relative-to-e2e/> --reporter=list --workers=1
+cd ..
+```
+
+If a run leaves Electron hanging: `killall Electron 2>/dev/null || true`
+
 ### Native modules
 
 The `postinstall` script runs `electron-builder install-app-deps` to rebuild native modules (registry-js, cf-prefs, etc.) for the current Electron version. If you see native module errors after `npm install`, ensure postinstall completed successfully.

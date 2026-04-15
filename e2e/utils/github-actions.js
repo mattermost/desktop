@@ -204,17 +204,31 @@ async function postServerInfoComment({github, context, platforms, adminUsername,
     const body = lines.join('\n');
     const {owner, repo} = context.repo;
 
+    // Search all pages of comments so the marker is never missed on busy PRs.
+    // Without full pagination a PR with > 100 comments would fail to find the
+    // existing comment and create a duplicate on every subsequent E2E run.
     let existingCommentId = null;
     try {
-        const {data: comments} = await github.rest.issues.listComments({
-            owner,
-            repo,
-            issue_number: prNumber,
-            per_page: 100,
-        });
-        const existing = comments.find((c) => c.body && c.body.includes(MARKER));
-        if (existing) {
-            existingCommentId = existing.id;
+        let page = 1;
+        while (!existingCommentId) {
+            const {data: comments} = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: prNumber,
+                per_page: 100,
+                page,
+            });
+            if (comments.length === 0) {
+                break;
+            }
+            const found = comments.find((c) => c.body && c.body.includes(MARKER));
+            if (found) {
+                existingCommentId = found.id;
+            } else if (comments.length < 100) {
+                // Reached the last page without finding the marker.
+                break;
+            }
+            page++;
         }
     } catch (err) {
         console.log(`Could not list PR comments: ${err.message}`);
