@@ -105,11 +105,12 @@ jobs:
             core.setOutput('head_branch', headBranch);
 
             // ── Find the latest E2E run for this PR branch ───────────────────
-            // Look for the most recent completed "Electron Playwright Tests"
-            // workflow_dispatch run whose head_sha matches the PR.
             let latestRunUrl = '';
-            let failingSummary = '';
-            let serverBlock = '(not available)';
+            let latestRunId  = '';
+            let failingSummary = '(no failing test data found — check CI logs manually)';
+            const serverUrls   = { linux: '', macos: '', windows: '' };
+            let adminUsername  = '';
+            let serverTableBlock = '(server URLs not found)';
 
             try {
               const workflows = await github.rest.actions.listRepoWorkflows({ owner, repo });
@@ -128,28 +129,79 @@ jobs:
                 );
                 if (matchingRun) {
                   latestRunUrl = matchingRun.html_url;
+                  latestRunId  = String(matchingRun.id);
 
                   if (isFix) {
-                    // Collect per-platform job conclusions
-                    const jobs = await github.rest.actions.listJobsForWorkflowRun({
-                      owner, repo, run_id: matchingRun.id, per_page: 100,
-                    });
-                    const lines = [];
-                    for (const job of jobs.data.jobs) {
-                      if (job.conclusion === 'failure') {
-                        const n = job.name.toLowerCase();
-                        const plat = n.includes('linux') || n.includes('ubuntu') ? 'linux'
-                          : n.includes('macos') || n.includes('darwin')          ? 'macos'
-                          : n.includes('windows')                                ? 'windows'
-                          : null;
-                        if (plat) {
-                          lines.push(`- ${plat}: failed`);
+                    // ── Download JUnit artifacts for exact test names ─────────
+                    const failingTests = { linux: [], macos: [], windows: [] };
+
+                    try {
+                      const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+                        owner, repo, run_id: matchingRun.id, per_page: 50,
+                      });
+
+                      for (const artifact of artifacts.data.artifacts) {
+                        const aName = artifact.name.toLowerCase();
+                        let platform = null;
+                        if (aName.startsWith('test-results-linux') || aName.startsWith('test-results-ubuntu')) {
+                          platform = 'linux';
+                        } else if (aName.startsWith('test-results-macos') || aName.startsWith('test-results-darwin')) {
+                          platform = 'macos';
+                        } else if (aName.startsWith('test-results-windows')) {
+                          platform = 'windows';
+                        }
+                        if (!platform) { continue; }
+
+                        try {
+                          const dl = await github.rest.actions.downloadArtifact({
+                            owner, repo, artifact_id: artifact.id, archive_format: 'zip',
+                          });
+                          const resp = await fetch(dl.url);
+                          const buf  = Buffer.from(await resp.arrayBuffer());
+                          const AdmZip = require('adm-zip');
+                          const zip = new AdmZip(buf);
+                          const xmlEntry = zip.getEntries().find(
+                            (e) => e.entryName.endsWith('e2e-junit.xml'),
+                          );
+                          if (!xmlEntry) { continue; }
+                          const xml = xmlEntry.getData().toString('utf8');
+                          const suiteMatches = xml.matchAll(/<testcase[^>]+name="([^"]+)"[^>]*>[\s\S]*?<(?:failure|error)[^/]/g);
+                          for (const m of suiteMatches) {
+                            failingTests[platform].push(m[1]);
+                          }
+                        } catch (err) {
+                          core.warning(`Could not parse JUnit for ${platform}: ${err.message}`);
                         }
                       }
+                    } catch (err) {
+                      core.warning(`Could not fetch artifacts: ${err.message}`);
                     }
-                    failingSummary = lines.length > 0
-                      ? lines.join('\n')
-                      : 'All platforms may have failed — treating as mass-failure scenario.';
+
+                    const failingTestsBlock = Object.entries(failingTests)
+                      .filter(([, names]) => names.length > 0)
+                      .map(([plat, names]) => `${plat}:\n${names.map((n) => `  - ${n}`).join('\n')}`)
+                      .join('\n\n');
+
+                    if (failingTestsBlock) {
+                      failingSummary = failingTestsBlock;
+                    } else {
+                      // Fall back to job-level conclusion if JUnit is unavailable
+                      const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                        owner, repo, run_id: matchingRun.id, per_page: 100,
+                      });
+                      const lines = [];
+                      for (const job of jobs.data.jobs) {
+                        if (job.conclusion === 'failure') {
+                          const n = job.name.toLowerCase();
+                          const plat = n.includes('linux') || n.includes('ubuntu') ? 'linux'
+                            : n.includes('macos') || n.includes('darwin')          ? 'macos'
+                            : n.includes('windows')                                ? 'windows'
+                            : null;
+                          if (plat) { lines.push(`- ${plat}: failed (JUnit unavailable — check CI logs)`); }
+                        }
+                      }
+                      if (lines.length > 0) { failingSummary = lines.join('\n'); }
+                    }
                   }
                 }
               }
@@ -158,9 +210,10 @@ jobs:
             }
 
             core.setOutput('latest_run_url', latestRunUrl);
+            core.setOutput('latest_run_id',  latestRunId);
             core.setOutput('failing_summary', failingSummary);
 
-            // ── Read server URLs from the PR comment ─────────────────────────
+            // ── Read per-platform server info from the PR comment ─────────────
             try {
               const comments = await github.rest.issues.listComments({
                 owner, repo, issue_number: prNumber, per_page: 100,
@@ -169,20 +222,30 @@ jobs:
                 (c) => c.body && c.body.includes('<!-- e2e-server-info -->')
               );
               if (infoComment) {
-                const tableLines = infoComment.body.
-                  split('\n').
-                  filter((l) => l.startsWith('|') && !l.startsWith('| Platform')).
-                  slice(0, 4);
-                serverBlock = tableLines.join('\n');
+                const body = infoComment.body;
+                const rowRe = /^\|\s*`(linux|macos|windows)`\s*\|\s*(\S+)\s*\|/im;
+                for (const line of body.split('\n')) {
+                  const m = line.match(rowRe);
+                  if (m) { serverUrls[m[1].toLowerCase()] = m[2]; }
+                }
+                const userMatch = body.match(/\*\*Admin username:\*\*\s*`([^`]+)`/);
+                if (userMatch) { adminUsername = userMatch[1]; }
+                const tableLines = body.split('\n').filter(
+                  (l) => l.startsWith('|') && !l.startsWith('| Platform'),
+                ).slice(0, 5);
+                serverTableBlock = tableLines.join('\n');
               }
             } catch (err) {
               core.warning(`Could not read PR comments: ${err.message}`);
             }
 
-            core.setOutput('server_block', serverBlock);
+            core.setOutput('server_url_linux',   serverUrls.linux);
+            core.setOutput('server_url_macos',   serverUrls.macos);
+            core.setOutput('server_url_windows', serverUrls.windows);
+            core.setOutput('admin_username',     adminUsername);
+            core.setOutput('server_table_block', serverTableBlock);
 
             // ── Collect the PR diff summary for "add tests" command ──────────
-            // List only the changed file paths — cheap and keeps the prompt small.
             let changedFiles = '';
             if (isAdd) {
               try {
@@ -204,68 +267,140 @@ jobs:
         if: steps.context.outputs.command == 'fix'
         id: fix_prompt
         env:
-          PR_URL: ${{ steps.context.outputs.pr_url }}
           FAILING_SUMMARY: ${{ steps.context.outputs.failing_summary }}
-          SERVER_BLOCK: ${{ steps.context.outputs.server_block }}
+          SERVER_TABLE_BLOCK: ${{ steps.context.outputs.server_table_block }}
+          SERVER_URL_LINUX: ${{ steps.context.outputs.server_url_linux }}
+          SERVER_URL_MACOS: ${{ steps.context.outputs.server_url_macos }}
+          SERVER_URL_WINDOWS: ${{ steps.context.outputs.server_url_windows }}
+          ADMIN_USERNAME: ${{ steps.context.outputs.admin_username }}
           LATEST_RUN_URL: ${{ steps.context.outputs.latest_run_url }}
+          LATEST_RUN_ID: ${{ steps.context.outputs.latest_run_id }}
           REQUESTER: ${{ github.event.comment.user.login }}
         run: |
           cat > /tmp/prompt.txt << 'PROMPT_EOF'
-          A developer (@${REQUESTER}) has asked you to fix ALL failing E2E tests on
-          this PR, including mass failures that the automatic trigger skipped.
+          @${REQUESTER} asked you to fix ALL failing E2E tests on this PR,
+          including mass failures that the automatic trigger skipped.
+          You are running on a Linux agent with an X server on DISPLAY=:1.
 
-          This was likely caused by a large change to the codebase. Treat widespread
-          failures as potentially having a shared root cause (e.g. a renamed selector,
-          a changed IPC channel, a modified config shape) before fixing each test
-          individually.
-
-          FAILING PLATFORMS
-          -----------------
+          ══════════════════════════════════════════════════
+          FAILING TESTS (from CI JUnit XML)
+          ══════════════════════════════════════════════════
           ${FAILING_SUMMARY}
 
-          SERVER URLS (provisioned by Matterwick — still live)
-          -----------------------------------------------------
-          ${SERVER_BLOCK}
+          ══════════════════════════════════════════════════
+          PROVISIONED TEST SERVERS (still live)
+          ══════════════════════════════════════════════════
+          ${SERVER_TABLE_BLOCK}
 
-          LATEST E2E WORKFLOW RUN (for full logs and JUnit artifacts)
-          ------------------------------------------------------------
-          ${LATEST_RUN_URL}
+          Individual URLs for use in run commands:
+            Linux   server: ${SERVER_URL_LINUX}
+            macOS   server: ${SERVER_URL_MACOS}
+            Windows server: ${SERVER_URL_WINDOWS}
+            Admin username: ${ADMIN_USERNAME}
+            Admin password: read the MM_TEST_PASSWORD environment variable
+                            (injected as a Cursor secret — do NOT hardcode it)
 
-          INSTRUCTIONS
-          ------------
-          1. Read the CI workflow run logs to identify ALL failing test names and
-             their error messages.
+          CI run (for full logs and trace artifacts): ${LATEST_RUN_URL}
 
-          2. Look for a SHARED ROOT CAUSE first:
-             - Same selector missing across many tests → likely a renamed component
-             - Same IPC channel / API call failing → likely a changed interface
-             - Same timeout pattern → likely a new async flow or loading state
-             If you find a shared cause, fix it at the shared layer (helper,
-             fixture, or app-side test hook) rather than patching every spec.
+          ══════════════════════════════════════════════════
+          STEP-BY-STEP INSTRUCTIONS
+          ══════════════════════════════════════════════════
 
-          3. For each remaining failure, classify as TEST BUG or PRODUCT BUG:
-             TEST BUG  → Fix in e2e/specs/, e2e/helpers/, e2e/fixtures/ only.
-                         Run the spec against the live server to confirm it passes.
-             PRODUCT BUG → Do NOT modify the test. Post a PR comment:
-                           "Product Bug: <test name> — expected X, got Y, likely in <src/ file>"
+          ## Step 1 — Build the app
 
-          4. HARD LIMITS to keep token usage reasonable:
-             - Fix at most 10 distinct test files per run.
-             - If more than 10 files need fixing, fix the most common pattern,
-               post a comment listing the rest, and stop.
-             - Never touch src/ files. Only e2e/.
+          Run this once at the start:
 
-          5. After all fixes and reports, post a single summary comment on the PR.
+            source ~/.nvm/nvm.sh && nvm use 20.15.0
+            npm ci
+            cd e2e && npm ci && cd ..
+            npm run build-test
+
+          If the build fails, stop and post a PR comment with the error.
+
+          ## Step 2 — Identify exact failing spec files
+
+          The failing test names are listed above. Map each name to a file in
+          e2e/specs/. If the JUnit block is empty, download the artifacts:
+
+            gh run download ${LATEST_RUN_ID} \
+              --name test-results-linux \
+              --dir /tmp/results-linux
+            cat /tmp/results-linux/test-results/e2e-junit.xml | grep 'testcase name'
+
+          Repeat for test-results-macos / test-results-windows.
+
+          ## Step 3 — Look for a SHARED ROOT CAUSE first
+
+          Widespread failures often share one root cause:
+            - Same selector missing across tests → renamed UI component
+            - Same IPC channel failing           → changed interface
+            - Same timeout pattern               → new async loading state
+
+          If you find a shared cause, fix it at the shared layer (helper or
+          fixture) rather than patching every spec individually.
+
+          ## Step 4 — Reproduce BEFORE editing
+
+          Run the failing spec against the Linux server:
+
+            cd e2e
+            export DISPLAY=:1
+            export MM_TEST_SERVER_URL="${SERVER_URL_LINUX}"
+            export MM_TEST_USER_NAME="${ADMIN_USERNAME}"
+            export MM_TEST_PASSWORD="${MM_TEST_PASSWORD}"
+            xvfb-run --auto-servernum --server-args='-screen 0 1280x960x24' \
+              npx playwright test <spec-file-relative-to-e2e/> \
+              --reporter=list --workers=1
+            cd ..
+
+          You MUST see the failure before touching code.
+          If you cannot reproduce, classify as "flake" and post a PR comment.
+
+          ## Step 5 — Fix and re-run
+
+          After each edit, run the same command from Step 4. Confirm the test
+          passes before committing that file.
+
+          DO NOT COMMIT a fix unless the re-run shows "X passed".
+
+          For macOS/Windows-only failures:
+            Run the spec against the Linux server to validate the logic.
+            If it passes on Linux, commit with a note about the platform gap.
+            CI will confirm on the real platform after push.
+
+          ## Step 6 — Classify failures you cannot fix locally
+
+          PRODUCT BUG → Post a PR comment:
+            "Product Bug: <test name> — expected X, got Y, likely in <src/ file>"
+
+          ## Step 7 — Hard limits
+
+          - Fix at most 10 distinct spec files per run.
+          - Never touch src/ files.
+          - Scope: e2e/specs/, e2e/helpers/, e2e/fixtures/, e2e/utils/ only.
+          - Never add long sleeps (> 2 s) as a fix.
+
+          ## Step 8 — Summary comment
+
+          After committing all fixes, post a single PR comment:
+            - Each fix: spec file path + root-cause description +
+              exact run command + "PASSED" result
+            - Each product bug: test name + symptom + suspected src/ file
+            - Any flakes: test name + reason
           PROMPT_EOF
 
           PROMPT=$(sed \
             -e "s|\${REQUESTER}|${REQUESTER}|g" \
             -e "s|\${FAILING_SUMMARY}|${FAILING_SUMMARY}|g" \
-            -e "s|\${SERVER_BLOCK}|${SERVER_BLOCK}|g" \
+            -e "s|\${SERVER_TABLE_BLOCK}|${SERVER_TABLE_BLOCK}|g" \
+            -e "s|\${SERVER_URL_LINUX}|${SERVER_URL_LINUX}|g" \
+            -e "s|\${SERVER_URL_MACOS}|${SERVER_URL_MACOS}|g" \
+            -e "s|\${SERVER_URL_WINDOWS}|${SERVER_URL_WINDOWS}|g" \
+            -e "s|\${ADMIN_USERNAME}|${ADMIN_USERNAME}|g" \
             -e "s|\${LATEST_RUN_URL}|${LATEST_RUN_URL}|g" \
+            -e "s|\${LATEST_RUN_ID}|${LATEST_RUN_ID}|g" \
             /tmp/prompt.txt)
 
-          # Write to file for the launch step to read
           echo "${PROMPT}" > /tmp/final-prompt.txt
           echo "prompt_file=/tmp/final-prompt.txt" >> "$GITHUB_OUTPUT"
 
@@ -274,57 +409,83 @@ jobs:
         if: steps.context.outputs.command == 'add'
         id: add_prompt
         env:
-          PR_URL: ${{ steps.context.outputs.pr_url }}
           CHANGED_FILES: ${{ steps.context.outputs.changed_files }}
-          SERVER_BLOCK: ${{ steps.context.outputs.server_block }}
+          SERVER_TABLE_BLOCK: ${{ steps.context.outputs.server_table_block }}
+          SERVER_URL_LINUX: ${{ steps.context.outputs.server_url_linux }}
+          ADMIN_USERNAME: ${{ steps.context.outputs.admin_username }}
           REQUESTER: ${{ github.event.comment.user.login }}
         run: |
           cat > /tmp/prompt.txt << 'PROMPT_EOF'
-          A developer (@${REQUESTER}) has asked you to add E2E test cases that cover
-          the changes introduced by this PR.
+          @${REQUESTER} asked you to add E2E test cases that cover the changes
+          introduced by this PR. You are running on a Linux agent (DISPLAY=:1).
 
           CHANGED FILES IN THIS PR (non-e2e only)
           ----------------------------------------
           ${CHANGED_FILES}
 
-          SERVER URLS (to run and validate your new tests against)
-          ---------------------------------------------------------
-          ${SERVER_BLOCK}
+          PROVISIONED TEST SERVERS
+          -------------------------
+          ${SERVER_TABLE_BLOCK}
+
+          Linux server for local verification:
+            MM_TEST_SERVER_URL: ${SERVER_URL_LINUX}
+            MM_TEST_USER_NAME:  ${ADMIN_USERNAME}
+            MM_TEST_PASSWORD:   read MM_TEST_PASSWORD env var (Cursor secret)
 
           INSTRUCTIONS
           ------------
-          1. Read each changed file to understand what behavior was added or modified.
 
-          2. For each meaningful behavioral change, write a new Playwright E2E test
-             (or extend an existing spec if one already covers that area).
+          ## Step 1 — Build
+            source ~/.nvm/nvm.sh && nvm use 20.15.0
+            npm ci && cd e2e && npm ci && cd .. && npm run build-test
 
-          3. Test placement rules:
-             - New specs go in e2e/specs/ under the most relevant subdirectory.
-             - Tests that require a live Mattermost server must use demoMattermostConfig
-               and be tagged @all so they run in CI.
-             - Use the fixture layer (e2e/fixtures/index.ts) — do not re-implement
-               launch / login logic.
-             - Follow patterns in existing e2e/specs/ files for style and structure.
-             - Tag each new test with @P2 @all or the appropriate priority.
+          ## Step 2 — Understand the changes
+          Read each changed file to understand what behavior was added or modified.
 
-          4. After writing tests, run each new spec against the live server URL to
-             confirm it passes before committing.
+          ## Step 3 — Write tests
+          For each meaningful behavioral change, write a new Playwright E2E spec
+          (or extend an existing spec if one already covers that area).
 
-          5. HARD LIMITS:
-             - Add at most 3 new spec files per run.
-             - Do not modify src/ files.
-             - If you cannot determine a clear, testable behavior from the diff,
-               post a comment explaining what is ambiguous rather than writing
-               a low-quality test.
+          Placement rules:
+            - New specs go in e2e/specs/ under the most relevant subdirectory.
+            - Use the fixture layer (e2e/fixtures/index.ts) — do not re-implement
+              launch or login logic.
+            - Follow patterns in existing e2e/specs/ files.
+            - Tag each new test with @P2 @all or the appropriate priority.
 
-          6. After committing, post a PR comment listing each new test file with a
-             one-line description of what it covers.
+          ## Step 4 — Run each new spec before committing
+
+            cd e2e
+            export DISPLAY=:1
+            export MM_TEST_SERVER_URL="${SERVER_URL_LINUX}"
+            export MM_TEST_USER_NAME="${ADMIN_USERNAME}"
+            export MM_TEST_PASSWORD="${MM_TEST_PASSWORD}"
+            xvfb-run --auto-servernum --server-args='-screen 0 1280x960x24' \
+              npx playwright test <new-spec-file> --reporter=list --workers=1
+            cd ..
+
+          A new test MUST pass before you commit it.
+          If it cannot be made to pass locally, explain why in a PR comment.
+
+          ## Step 5 — Hard limits
+            - Add at most 3 new spec files per run.
+            - Do not modify src/ files.
+            - If you cannot determine a clear, testable behavior, post a PR
+              comment explaining the ambiguity instead of writing a weak test.
+
+          ## Step 6 — Summary comment
+          After committing, post a PR comment listing each new file with:
+            - File path
+            - What behavior it covers
+            - Exact run command used + "PASSED" confirmation
           PROMPT_EOF
 
           PROMPT=$(sed \
             -e "s|\${REQUESTER}|${REQUESTER}|g" \
             -e "s|\${CHANGED_FILES}|${CHANGED_FILES}|g" \
-            -e "s|\${SERVER_BLOCK}|${SERVER_BLOCK}|g" \
+            -e "s|\${SERVER_TABLE_BLOCK}|${SERVER_TABLE_BLOCK}|g" \
+            -e "s|\${SERVER_URL_LINUX}|${SERVER_URL_LINUX}|g" \
+            -e "s|\${ADMIN_USERNAME}|${ADMIN_USERNAME}|g" \
             /tmp/prompt.txt)
 
           echo "${PROMPT}" > /tmp/final-prompt.txt
@@ -394,7 +555,7 @@ jobs:
                 '',
                 `Task: **${action}**`,
                 '',
-                'The agent will push results directly to this branch.',
+                'The agent will reproduce each failure before editing, confirm the fix passes, then push to this branch.',
                 agentUrl ? `\n**Agent:** ${agentUrl}` : '',
               ].filter(Boolean).join('\n'),
             });
