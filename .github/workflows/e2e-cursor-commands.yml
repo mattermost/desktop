@@ -489,7 +489,20 @@ jobs:
             -e "s|\${ADMIN_USERNAME}|${ADMIN_USERNAME}|g" \
             /tmp/prompt.txt)
 
-          echo "${PROMPT}" > /tmp/final-prompt.txt
+          # Use python3 literal str.replace() instead of sed to prevent
+          # delimiter injection via CHANGED_FILES (attacker-controlled filenames).
+          jq -n \
+            --arg REQUESTER          "${REQUESTER}" \
+            --arg CHANGED_FILES      "${CHANGED_FILES}" \
+            --arg SERVER_TABLE_BLOCK "${SERVER_TABLE_BLOCK}" \
+            --arg SERVER_URL_LINUX   "${SERVER_URL_LINUX}" \
+            --arg ADMIN_USERNAME     "${ADMIN_USERNAME}" \
+            '{"REQUESTER":$REQUESTER,"CHANGED_FILES":$CHANGED_FILES,"SERVER_TABLE_BLOCK":$SERVER_TABLE_BLOCK,"SERVER_URL_LINUX":$SERVER_URL_LINUX,"ADMIN_USERNAME":$ADMIN_USERNAME}' \
+            > /tmp/prompt-vars.json
+
+          python3 -c \
+            'import json,sys;t=open("/tmp/prompt.txt").read();v=json.load(open("/tmp/prompt-vars.json"));[t:=t.replace("${"+k+"}",val) for k,val in v.items()];sys.stdout.write(t)' \
+            > /tmp/final-prompt.txt
           echo "prompt_file=/tmp/final-prompt.txt" >> "$GITHUB_OUTPUT"
 
       # ── Launch Cursor agent (shared for both commands) ───────────────────────
