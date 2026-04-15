@@ -390,24 +390,19 @@ jobs:
             - Any flakes: test name + reason
           PROMPT_EOF
 
-          # Use python3 literal str.replace() instead of sed to prevent
-          # delimiter injection via JUnit test names or PR comment content.
-          jq -n \
-            --arg REQUESTER          "${REQUESTER}" \
-            --arg FAILING_SUMMARY    "${FAILING_SUMMARY}" \
-            --arg SERVER_TABLE_BLOCK "${SERVER_TABLE_BLOCK}" \
-            --arg SERVER_URL_LINUX   "${SERVER_URL_LINUX}" \
-            --arg SERVER_URL_MACOS   "${SERVER_URL_MACOS}" \
-            --arg SERVER_URL_WINDOWS "${SERVER_URL_WINDOWS}" \
-            --arg ADMIN_USERNAME     "${ADMIN_USERNAME}" \
-            --arg LATEST_RUN_URL     "${LATEST_RUN_URL}" \
-            --arg LATEST_RUN_ID      "${LATEST_RUN_ID}" \
-            '{"REQUESTER":$REQUESTER,"FAILING_SUMMARY":$FAILING_SUMMARY,"SERVER_TABLE_BLOCK":$SERVER_TABLE_BLOCK,"SERVER_URL_LINUX":$SERVER_URL_LINUX,"SERVER_URL_MACOS":$SERVER_URL_MACOS,"SERVER_URL_WINDOWS":$SERVER_URL_WINDOWS,"ADMIN_USERNAME":$ADMIN_USERNAME,"LATEST_RUN_URL":$LATEST_RUN_URL,"LATEST_RUN_ID":$LATEST_RUN_ID}' \
-            > /tmp/prompt-vars.json
+          PROMPT=$(sed \
+            -e "s|\${REQUESTER}|${REQUESTER}|g" \
+            -e "s|\${FAILING_SUMMARY}|${FAILING_SUMMARY}|g" \
+            -e "s|\${SERVER_TABLE_BLOCK}|${SERVER_TABLE_BLOCK}|g" \
+            -e "s|\${SERVER_URL_LINUX}|${SERVER_URL_LINUX}|g" \
+            -e "s|\${SERVER_URL_MACOS}|${SERVER_URL_MACOS}|g" \
+            -e "s|\${SERVER_URL_WINDOWS}|${SERVER_URL_WINDOWS}|g" \
+            -e "s|\${ADMIN_USERNAME}|${ADMIN_USERNAME}|g" \
+            -e "s|\${LATEST_RUN_URL}|${LATEST_RUN_URL}|g" \
+            -e "s|\${LATEST_RUN_ID}|${LATEST_RUN_ID}|g" \
+            /tmp/prompt.txt)
 
-          python3 -c \
-            'import json,sys;t=open("/tmp/prompt.txt").read();v=json.load(open("/tmp/prompt-vars.json"));[t:=t.replace("${"+k+"}",val) for k,val in v.items()];sys.stdout.write(t)' \
-            > /tmp/final-prompt.txt
+          echo "${PROMPT}" > /tmp/final-prompt.txt
           echo "prompt_file=/tmp/final-prompt.txt" >> "$GITHUB_OUTPUT"
 
       # ── ADD TESTS command ────────────────────────────────────────────────────
@@ -485,6 +480,14 @@ jobs:
             - What behavior it covers
             - Exact run command used + "PASSED" confirmation
           PROMPT_EOF
+
+          PROMPT=$(sed \
+            -e "s|\${REQUESTER}|${REQUESTER}|g" \
+            -e "s|\${CHANGED_FILES}|${CHANGED_FILES}|g" \
+            -e "s|\${SERVER_TABLE_BLOCK}|${SERVER_TABLE_BLOCK}|g" \
+            -e "s|\${SERVER_URL_LINUX}|${SERVER_URL_LINUX}|g" \
+            -e "s|\${ADMIN_USERNAME}|${ADMIN_USERNAME}|g" \
+            /tmp/prompt.txt)
 
           # Use python3 literal str.replace() instead of sed to prevent
           # delimiter injection via CHANGED_FILES (attacker-controlled filenames).
