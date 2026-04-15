@@ -328,6 +328,7 @@ jobs:
           os: ${{ runner.os }}
 
       - name: e2e/install-node-dependencies
+        id: install-deps
         run: |
           npm ci
           cd e2e && npm ci
@@ -361,7 +362,7 @@ jobs:
 
       - name: e2e/check-for-failures
         id: check-failures
-        if: always()
+        if: always() && steps.install-deps.outcome == 'success'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
