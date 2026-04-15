@@ -118,11 +118,13 @@ jobs:
 
       - name: Update initial status for all platforms
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateInitialStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            const platforms = JSON.parse(process.env.PLATFORMS);
             await updateInitialStatus({ github, context, platforms });
 
   e2e-tests:
@@ -237,13 +239,17 @@ jobs:
 
       - name: Update final status for all platforms
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
+          E2E_OUTPUTS: ${{ toJSON(needs.e2e-tests.outputs) }}
+          MERGED_REPORT_URL: ${{ needs.merge-e2e-report.outputs.merged-report-url }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
-            const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            const mergedReportUrl = '${{ needs.merge-e2e-report.outputs.merged-report-url }}' || undefined;
+            const platforms = JSON.parse(process.env.PLATFORMS);
+            const outputs = JSON.parse(process.env.E2E_OUTPUTS);
+            const mergedReportUrl = process.env.MERGED_REPORT_URL || undefined;
             await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
 
   # remove-e2e-label is intentionally omitted: see e2e-label-cleanup.yml for context.

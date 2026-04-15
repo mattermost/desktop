@@ -37,10 +37,9 @@ on:
 
 # workflow_run always runs from the default branch — no PR secrets available
 # here. CURSOR_API_KEY must be a repository secret, not a PR/environment secret.
+# Write permissions are scoped to the single job that posts PR comments.
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
   actions: read
 
 env:
@@ -60,6 +59,11 @@ jobs:
     if: |
       github.event.workflow_run.conclusion == 'failure' &&
       github.event.workflow_run.event == 'workflow_dispatch'
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -69,11 +73,12 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           MASS_FAILURE_THRESHOLD: ${{ env.MASS_FAILURE_THRESHOLD }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { owner, repo } = context.repo;
-            const runId = ${{ github.event.workflow_run.id }};
+            const runId = Number(process.env.WORKFLOW_RUN_ID);
             const threshold = parseInt(process.env.MASS_FAILURE_THRESHOLD, 10);
 
             // ── 1. Resolve the PR ────────────────────────────────────────────
@@ -203,14 +208,21 @@ jobs:
 
       - name: Post skip notice for mass failures
         if: steps.triage.outputs.skip == 'true' && steps.triage.outputs.skip_reason == 'mass_failure'
+        continue-on-error: true
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          PR_NUMBER: ${{ steps.triage.outputs.pr_number }}
+          TOTAL_FAILURES: ${{ steps.triage.outputs.total_failures }}
+          WORKFLOW_RUN_URL: ${{ steps.triage.outputs.workflow_run_url }}
         with:
           github-token: ${{ github.token }}
           script: |
-            const prNumber = parseInt('${{ steps.triage.outputs.pr_number }}', 10);
-            if (!prNumber) { return; }
-            const total = '${{ steps.triage.outputs.total_failures }}';
-            const runUrl = '${{ steps.triage.outputs.workflow_run_url }}';
+            const trimmed = String(process.env.PR_NUMBER ?? '').trim();
+            if (!(/^\d+$/).test(trimmed)) { return; }
+            const prNumber = Number(trimmed);
+            if (!Number.isInteger(prNumber) || prNumber <= 0) { return; }
+            const total = process.env.TOTAL_FAILURES;
+            const runUrl = process.env.WORKFLOW_RUN_URL;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -231,6 +243,7 @@ jobs:
 
       - name: Launch Cursor agent to fix E2E failures
         if: steps.triage.outputs.skip == 'false' && steps.triage.outputs.pr_url != ''
+        id: launch
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           PR_URL: ${{ steps.triage.outputs.pr_url }}
@@ -330,21 +343,25 @@ jobs:
           AGENT_URL=$(echo "${RESPONSE}" | jq -r '.target.url // empty')
           echo "Cursor agent launched: ${AGENT_ID}"
           echo "Agent URL: ${AGENT_URL}"
-          echo "AGENT_ID=${AGENT_ID}" >> "$GITHUB_OUTPUT"
-          echo "AGENT_URL=${AGENT_URL}" >> "$GITHUB_OUTPUT"
+          echo "agent_id=${AGENT_ID}" >> "$GITHUB_OUTPUT"
+          echo "agent_url=${AGENT_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Post agent launch notice on PR
         if: steps.triage.outputs.skip == 'false' && steps.triage.outputs.pr_url != ''
+        continue-on-error: true
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
-          AGENT_URL: ${{ env.AGENT_URL }}
+          AGENT_URL: ${{ steps.launch.outputs.agent_url }}
           FAILING_SUMMARY: ${{ steps.triage.outputs.failing_summary }}
           WORKFLOW_RUN_URL: ${{ steps.triage.outputs.workflow_run_url }}
+          PR_NUMBER: ${{ steps.triage.outputs.pr_number }}
         with:
           github-token: ${{ github.token }}
           script: |
-            const prNumber = parseInt('${{ steps.triage.outputs.pr_number }}', 10);
-            if (!prNumber) { return; }
+            const trimmed = String(process.env.PR_NUMBER ?? '').trim();
+            if (!(/^\d+$/).test(trimmed)) { return; }
+            const prNumber = Number(trimmed);
+            if (!Number.isInteger(prNumber) || prNumber <= 0) { return; }
             const agentUrl   = process.env.AGENT_URL    || '(pending)';
             const runUrl     = process.env.WORKFLOW_RUN_URL;
             const summary    = process.env.FAILING_SUMMARY;

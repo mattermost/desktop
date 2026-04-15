@@ -25,10 +25,9 @@ on:
   issue_comment:
     types: [created]
 
+# Write permissions are scoped to the job that posts comments / reactions.
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
   actions: read
 
 jobs:
@@ -43,31 +42,53 @@ jobs:
         contains(github.event.comment.body, '@cursor fix e2e') ||
         contains(github.event.comment.body, '@cursor add e2e')
       )
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: React to comment so the user knows it was received
+        continue-on-error: true
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          COMMENT_ID: ${{ github.event.comment.id }}
         with:
           github-token: ${{ github.token }}
           script: |
             await github.rest.reactions.createForIssueComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              comment_id: ${{ github.event.comment.id }},
+              comment_id: Number(process.env.COMMENT_ID),
               content: 'eyes',
             });
 
       - name: Parse command and gather context
         id: context
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          # Pass user-controlled comment body via env to prevent script injection.
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          PR_NUMBER: ${{ github.event.issue.number }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { owner, repo } = context.repo;
-            const commentBody = `${{ github.event.comment.body }}`.toLowerCase();
-            const prNumber    = ${{ github.event.issue.number }};
+            const commentBody = (process.env.COMMENT_BODY || '').toLowerCase();
+
+            const trimmed = String(process.env.PR_NUMBER ?? '').trim();
+            if (!(/^\d+$/).test(trimmed)) {
+              core.setFailed('Invalid PR number');
+              return;
+            }
+            const prNumber = Number(trimmed);
+            if (!Number.isInteger(prNumber) || prNumber <= 0) {
+              core.setFailed('Invalid PR number');
+              return;
+            }
 
             // Determine which command was invoked
             const isFix = commentBody.includes('@cursor fix e2e');
@@ -346,14 +367,19 @@ jobs:
 
       - name: Reply to comment with agent link
         if: always() && steps.launch.outcome == 'success'
+        continue-on-error: true
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           AGENT_URL: ${{ steps.launch.outputs.agent_url }}
           COMMAND: ${{ steps.context.outputs.command }}
+          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
         with:
           github-token: ${{ github.token }}
           script: |
-            const prNumber  = ${{ github.event.issue.number }};
+            const trimmed = String(process.env.PR_NUMBER ?? '').trim();
+            if (!(/^\d+$/).test(trimmed)) { return; }
+            const prNumber = Number(trimmed);
+            if (!Number.isInteger(prNumber) || prNumber <= 0) { return; }
             const agentUrl  = process.env.AGENT_URL || '(pending)';
             const command   = process.env.COMMAND;
             const action    = command === 'fix'
@@ -375,14 +401,21 @@ jobs:
 
       - name: Reply to comment on failure
         if: always() && steps.launch.outcome == 'failure'
+        continue-on-error: true
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
         with:
           github-token: ${{ github.token }}
           script: |
+            const trimmed = String(process.env.PR_NUMBER ?? '').trim();
+            if (!(/^\d+$/).test(trimmed)) { return; }
+            const prNumber = Number(trimmed);
+            if (!Number.isInteger(prNumber) || prNumber <= 0) { return; }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: ${{ github.event.issue.number }},
+              issue_number: prNumber,
               body: [
                 '### :x: Cursor Agent Launch Failed',
                 '',
