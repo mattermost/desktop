@@ -53,58 +53,6 @@ jobs:
         run: |
           echo "platforms=$(echo '${{ inputs.instance_details }}' | jq -c)" >> $GITHUB_OUTPUT
 
-  post-server-info:
-    name: Post server info to PR
-    needs: prepare-matrix
-    # Skip nightly runs — they have no PR to comment on.
-    # Do not gate on inputs.pr_number because findPrNumber has fallback
-    # resolution paths that can recover the PR number from the run context.
-    if: ${{ !inputs.nightly }}
-    runs-on: ubuntu-24.04
-    permissions:
-      issues: write
-      pull-requests: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Post provisioned server URLs as PR comment
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        continue-on-error: true
-        env:
-          PR_NUMBER: ${{ inputs.pr_number }}
-          ADMIN_USERNAME: ${{ inputs.MM_TEST_USER_NAME }}
-          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
-          # Pass the trusted internal job output via env so it is never
-          # interpolated directly into the JS string (prevents injection).
-          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
-        with:
-          github-token: ${{ github.token }}
-          script: |
-            const { findPrNumber, postServerInfoComment } = require('./e2e/utils/github-actions.js');
-            const platforms = JSON.parse(process.env.PLATFORMS);
-            const prNumber = await findPrNumber({
-              github,
-              context,
-              prNumberInput: process.env.PR_NUMBER,
-            });
-            if (!prNumber) {
-              core.warning('Could not resolve PR number — skipping server info comment');
-              return;
-            }
-            try {
-              await postServerInfoComment({
-                github,
-                context,
-                platforms,
-                adminUsername: process.env.ADMIN_USERNAME,
-                serverVersion: process.env.SERVER_VERSION,
-                prNumber,
-              });
-            } catch (err) {
-              core.warning(`Failed to post server info comment: ${err.message}`);
-            }
-
   update-initial-status:
     name: Update initial status
     needs: prepare-matrix
@@ -118,13 +66,11 @@ jobs:
 
       - name: Update initial status for all platforms
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateInitialStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = JSON.parse(process.env.PLATFORMS);
+            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             await updateInitialStatus({ github, context, platforms });
 
   e2e-tests:
@@ -239,20 +185,71 @@ jobs:
 
       - name: Update final status for all platforms
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
-          E2E_OUTPUTS: ${{ toJSON(needs.e2e-tests.outputs) }}
-          MERGED_REPORT_URL: ${{ needs.merge-e2e-report.outputs.merged-report-url }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = JSON.parse(process.env.PLATFORMS);
-            const outputs = JSON.parse(process.env.E2E_OUTPUTS);
-            const mergedReportUrl = process.env.MERGED_REPORT_URL || undefined;
+            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
+            const mergedReportUrl = '${{ needs.merge-e2e-report.outputs.merged-report-url }}' || undefined;
             await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
 
-  # remove-e2e-label is intentionally omitted: see e2e-label-cleanup.yml for context.
+  remove-e2e-label:
+    name: Remove E2E label from PR
+    runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+      pull-requests: write
+    needs:
+      - e2e-tests
+      - e2e-policy-tests
+      - update-final-status
+    if: always()
+    steps:
+      - name: e2e/remove-label-from-pr
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        continue-on-error: true # Label might have been removed manually
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            // Use pr_number if provided directly by the dispatcher (e.g. Matterwick)
+            let prNumber = parseInt(process.env.PR_NUMBER) || null;
+
+            // Fall back to looking up the PR by head branch when pr_number was not passed
+            if (!prNumber) {
+              const run = await github.rest.actions.getWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId,
+              });
+              const branchName = run.data.head_branch;
+              if (branchName) {
+                const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
+                const prs = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  head: `${headOwner}:${branchName}`,
+                });
+                if (prs.data && prs.data.length > 0) {
+                  const matchingPr = prs.data.find((pr) => pr.head && pr.head.sha === run.data.head_sha);
+                  prNumber = (matchingPr || prs.data[0]).number;
+                }
+              }
+            }
+
+            if (prNumber) {
+              await github.rest.issues.removeLabel({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'E2E/Run',
+              });
+            } else {
+              console.log('Label removal skipped - could not find associated PR');
+            }
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}
@@ -285,12 +282,17 @@ jobs:
         env:
           INSTANCE_DETAILS: ${{ inputs.instance_details }}
         run: |
-          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          URL=""
-          if [ -n "${INSTANCE_DETAILS}" ]; then
-            URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
+          if [ -z "${INSTANCE_DETAILS}" ]; then
+            echo "Error: instance_details input is required but was not provided" >&2
+            exit 1
           fi
-          echo "MM_TEST_SERVER_URL=${URL:-https://mobile-e2e-site-2.test.mattermost.cloud/}" >> $GITHUB_ENV
+          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
+          if [ -z "${URL}" ]; then
+            echo "Error: No server URL found in instance_details for runner OS: ${RUNNER_OS}" >&2
+            exit 1
+          fi
+          echo "MM_TEST_SERVER_URL=${URL}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -328,7 +330,6 @@ jobs:
           os: ${{ runner.os }}
 
       - name: e2e/install-node-dependencies
-        id: install-deps
         run: |
           npm ci
           cd e2e && npm ci
@@ -362,7 +363,7 @@ jobs:
 
       - name: e2e/check-for-failures
         id: check-failures
-        if: always() && steps.install-deps.outcome == 'success'
+        if: always()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |

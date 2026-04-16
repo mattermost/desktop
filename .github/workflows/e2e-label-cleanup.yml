@@ -1,30 +1,42 @@
 name: E2E Label Cleanup
 
-# Intentionally disabled: removing E2E/Run causes Matterwick to destroy the
-# provisioned servers immediately, which prevents agents from connecting to
-# those servers to reproduce and fix failing tests in the same PR run.
-# Re-enable once automated fix-and-rerun is no longer needed.
-#
-# Original behaviour: runs when "Electron Playwright Tests" completes with any
-# conclusion (success, failure, or cancelled) and removes the E2E/Run label.
-# This was the safety net for cancellations where the remove-e2e-label job in
-# e2e-functional.yml would be skipped by GitHub Actions.
+# Runs when the "Electron Playwright Tests" workflow completes with any
+# conclusion (success, failure, or cancelled). This is the only reliable way
+# to remove the E2E/Run label after a cancellation, because GitHub Actions
+# cancels all queued jobs — including remove-e2e-label — when a workflow run
+# is cancelled, regardless of `if: always()`.
 
 on:
   workflow_run:
     workflows: ["Electron Playwright Tests"]
     types: [completed]
 
-permissions: {}
+permissions:
+  issues: write
+  pull-requests: write
+  actions: read
 
 jobs:
-  # remove-e2e-label is disabled — see comment at the top of this file.
-  # if: false ensures no runner is allocated and no permissions are used.
-  noop:
-    name: Label cleanup disabled
+  remove-e2e-label:
+    name: Remove E2E/Run label from PR
     runs-on: ubuntu-22.04
-    if: ${{ false }}
-    permissions: {}
+    if: ${{ github.event.workflow_run.event == 'workflow_dispatch' }}
     steps:
-      - name: Skip label removal
-        run: echo "E2E/Run label removal is disabled."
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Remove E2E/Run label
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        continue-on-error: true # Label may have already been removed by remove-e2e-label job
+        with:
+          script: |
+            const { removeE2ELabel } = require('./e2e/utils/github-actions.js');
+            // Pass the original test workflow's run ID so removeE2ELabel can
+            // look up the dispatching branch and find the associated PR.
+            await removeE2ELabel({
+              github,
+              context: {
+                repo: context.repo,
+                runId: ${{ github.event.workflow_run.id }},
+              },
+            });
