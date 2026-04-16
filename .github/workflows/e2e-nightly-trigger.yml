@@ -5,6 +5,10 @@ name: E2E Nightly Trigger
 # instances (linux/macos/windows), and dispatches e2e-functional.yml with instance details.
 # When e2e-functional.yml completes, Matterwick destroys the provisioned instances.
 on:
+  push:
+    branches:
+      - master
+      - 'release-*'
   schedule:
     - cron: "0 0 * * 4,5" # Thursday and Friday midnight UTC
 

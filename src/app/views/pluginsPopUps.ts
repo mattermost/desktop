@@ -79,7 +79,7 @@ export class PluginsPopUpsManager {
 
             // Check for custom protocol
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(parsedURL);
+                allowProtocolDialog.handleDialogEvent(url);
                 return {action: 'deny'};
             }
 
