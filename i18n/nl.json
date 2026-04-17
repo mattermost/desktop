@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "E-mailadres kopiëren",
   "app.menus.contextMenu.openInNewTab": "In nieuw tabblad openen",
   "app.menus.contextMenu.openInNewWindow": "Openen in nieuw venster",
   "app.navigationManager.invalidLinkDescription": "De link waarop je hebt geklikt lijkt foutief gevormd en kan niet worden geopend. Controleer de URL op fouten voordat je het opnieuw probeert.",
