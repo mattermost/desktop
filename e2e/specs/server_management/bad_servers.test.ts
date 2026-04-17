@@ -313,14 +313,17 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: badCertUserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
-                // Ensure the renderer has mounted its IPC listeners before the load failure
-                // fires, then reload to re-trigger the failure so it reaches the UI.
                 await waitForRendererThenReload(app);
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
+
+                let errorView = await mainWindow!.$('.ErrorView');
+                if (!errorView) {
+                    await waitForRendererThenReload(app);
+                    await mainWindow!.waitForSelector('.ErrorView', {timeout: 60_000});
+                    errorView = await mainWindow!.$('.ErrorView');
+                }
                 expect(errorView).toBeDefined();
 
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');

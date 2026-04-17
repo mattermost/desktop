@@ -10,7 +10,7 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {buildServerMap} from '../../helpers/serverMap';
 import {appDir, cmdOrCtrl, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
-import {loginToMattermost} from '../../helpers/login';
+import {loginToMattermost, waitForLoggedIn} from '../../helpers/login';
 
 const windowMenuConfig = {
     ...demoMattermostConfig,
@@ -333,6 +333,7 @@ test.describe('Menu/window_menu', () => {
         serverMap = await buildServerMap(electronApp);
 
         await loginToMattermost(getMattermostServer());
+        await waitForLoggedIn(electronApp, mainWindow);
         await focusMainWindow();
     });
 
