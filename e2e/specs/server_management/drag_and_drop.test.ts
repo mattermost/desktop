@@ -10,7 +10,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
-import {loginToMattermost} from '../../helpers/login';
+import {loginToMattermost, waitForLoggedIn} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 if (!process.env.MM_TEST_SERVER_URL) {
@@ -198,7 +198,7 @@ test.describe('server_management/drag_and_drop', () => {
         mainWindow = await waitForWindow(electronApp, 'index');
         const mmServer = await getMattermostServer();
         await loginToMattermost(mmServer);
-        await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
+        await waitForLoggedIn(electronApp, mainWindow);
     });
 
     test.beforeEach(async () => {

@@ -266,3 +266,94 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 3. **Restart** app (and computer if needed).
 4. **Reset data** — **View → Clear All Data**, or delete the config directory.
 5. **Collect debug logs and heap snapshots**.
+
+## Cursor Cloud-specific instructions
+
+### Node version
+
+The project requires Node.js v20.15.0 (specified in `.nvmrc`). Use `nvm` to switch:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 20.15.0
+```
+
+### Running on headless Linux (Cloud VM)
+
+- The VM has an X server on display `:1`. Set `DISPLAY=:1` before launching Electron.
+- Chrome sandbox requires root ownership: `sudo chown root:root ./node_modules/electron/dist/chrome-sandbox && sudo chmod 4755 ./node_modules/electron/dist/chrome-sandbox`. This is normally handled by `npm run linux-dev-setup` (called by `npm start` and `npm run watch`), but that script uses `sudo` which may prompt.
+- To launch the built app directly: `DISPLAY=:1 npx electron dist/ --disable-dev-mode --no-sandbox`
+- DBus errors in the container logs are expected and harmless (no system bus in containers).
+- The "Failed to load configuration file" message on first run is normal — the app creates defaults.
+
+### Native modules
+
+The `postinstall` script runs `electron-builder install-app-deps` to rebuild native modules (registry-js, cf-prefs, etc.) for the current Electron version. If you see native module errors after `npm install`, ensure postinstall completed successfully.
+
+### Starting a local Mattermost server with Docker
+
+Server-backed E2E tests require a running Mattermost instance. Use Docker to spin one up locally:
+
+```bash
+docker run -d \
+  --name mattermost-e2e \
+  -p 8065:8065 \
+  --restart unless-stopped \
+  mattermost/mattermost-preview:latest
+
+until curl -sf http://localhost:8065/api/v4/system/ping >/dev/null 2>&1; do
+  echo "Waiting for Mattermost to start..."
+  sleep 3
+done
+echo "Mattermost is ready at http://localhost:8065"
+```
+
+On first launch, create the admin user and team via the API:
+
+```bash
+curl -sf http://localhost:8065/api/v4/users \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@test.com","username":"admin","password":"admin","auth_service":""}' || true
+
+TOKEN=$(curl -sf http://localhost:8065/api/v4/users/login \
+  -H 'Content-Type: application/json' \
+  -d '{"login_id":"admin","password":"admin"}' \
+  -D - 2>/dev/null | grep -i '^token:' | awk '{print $2}' | tr -d '\r')
+
+curl -sf http://localhost:8065/api/v4/teams \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"e2e-team","display_name":"E2E Team","type":"O"}' || true
+```
+
+### Running E2E tests
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 20.15.0
+npm ci && cd e2e && npm ci && cd ..
+npm run build-test
+
+cd e2e
+export DISPLAY=:1
+export MM_TEST_SERVER_URL=http://localhost:8065
+export MM_TEST_USER_NAME=admin
+export MM_TEST_PASSWORD=admin
+npx playwright test <spec-file> --reporter=list --workers=1
+cd ..
+```
+
+If a run leaves Electron hanging: `killall Electron 2>/dev/null || true`
+
+### Fixing E2E tests
+
+When asked to fix E2E failures:
+
+1. **Start the Mattermost server** using the Docker instructions above.
+2. **Read the CI logs** to identify which spec files failed. Use `gh run view --job <job-id> --log-failed`.
+3. **Build the test bundle**: `npm run build-test`
+4. **Reproduce** each failure locally before editing.
+5. **Fix the test** — see `e2e/AGENTS.md` for classification and design rules.
+6. **Re-run the spec** to confirm the fix, then commit.
+
+### Login state propagation (common E2E flake)
+
+After `loginToMattermost()` completes, the desktop app's `isLoggedIn` flag must travel through a multi-hop IPC chain before the renderer enables tab-bar interactions (`#newTabButton`). The `waitForLoggedIn()` helper in `e2e/helpers/login.ts` polls the main-process `ServerManager` directly, which is more reliable than waiting for the DOM element. Use it in `beforeAll` blocks for any test that interacts with the tab bar after login.
