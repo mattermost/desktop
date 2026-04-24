@@ -26,19 +26,19 @@ import {
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
-import {isInternalURL, parseURL} from 'common/utils/url';
+import {isHttpLink, isInternalURL, parseURL} from 'common/utils/url';
 import {type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
+import ExternalBrowserManager from 'main/browserManager';
+import ContextMenu from 'main/contextMenu';
 import DeveloperMode from 'main/developerMode';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import {getServerAPI} from 'main/server/serverAPI';
+import {getWindowBoundaries, getLocalPreload, composeUserAgent} from 'main/utils';
 
 import WebContentsEventManager from './webContentEvents';
-
-import ContextMenu from '../../main/contextMenu';
-import {getWindowBoundaries, getLocalPreload, composeUserAgent} from '../../main/utils';
 
 enum Status {
     LOADING,
@@ -493,7 +493,11 @@ export class MattermostWebContentsView extends EventEmitter {
         return {
             append: (_, parameters) => {
                 const parsedURL = parseURL(parameters.linkURL);
-                if (parsedURL && isInternalURL(parsedURL, server.url)) {
+                if (!parsedURL) {
+                    return [];
+                }
+
+                if (this.isURLForConfiguredServer(parsedURL)) {
                     return [
                         {
                             type: 'separator' as const,
@@ -514,8 +518,36 @@ export class MattermostWebContentsView extends EventEmitter {
                         },
                     ];
                 }
-                return [];
+
+                return this.generateOpenInBrowserMenuItems(parsedURL.toString());
             },
         };
+    };
+
+    private generateOpenInBrowserMenuItems = (url: string): Electron.MenuItemConstructorOptions[] => {
+        const browsers = ExternalBrowserManager.getCachedBrowsers();
+        if (browsers.length === 0) {
+            return [];
+        }
+
+        // Only allow http/https URLs to be opened in external browsers
+        if (!isHttpLink(url)) {
+            return [];
+        }
+
+        return [
+            {type: 'separator'},
+            {
+                label: localizeMessage('app.menus.contextMenu.openLinkInBrowser', 'Open Link in Browser'),
+                submenu: browsers.map((browser) => ({
+                    label: browser.name,
+                    click: () => ExternalBrowserManager.openLinkInBrowser(url, browser),
+                })),
+            },
+        ];
+    };
+
+    private isURLForConfiguredServer = (url: URL): boolean => {
+        return ServerManager.getAllServers().some((s) => isInternalURL(url, s.url));
     };
 }
