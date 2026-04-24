@@ -118,7 +118,10 @@ export class ThemeManager {
             });
             return;
         }
-        if (!server.theme.isUsingSystemTheme) {
+        if (server.theme.isUsingSystemTheme) {
+            // Ensure we reset the theme source in case the user is switching themes
+            this.resetThemeSource();
+        } else {
             const themeSource = isLightColor(server.theme.centerChannelBg) ? 'light' : 'dark';
             if (nativeTheme.themeSource !== themeSource) {
                 nativeTheme.themeSource = themeSource;
