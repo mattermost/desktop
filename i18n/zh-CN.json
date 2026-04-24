@@ -1,6 +1,9 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "复制邮箱地址",
   "app.menus.contextMenu.openInNewTab": "在新标签页中打开",
   "app.menus.contextMenu.openInNewWindow": "在新窗口中打开",
+  "app.navigationManager.invalidLinkDescription": "你点击的链接似乎格式不正确，无法打开。请在重试之前检查该 URL 是否有错误。",
+  "app.navigationManager.invalidLinkTitle": "无效链接",
   "app.navigationManager.viewLimitReached": "查看次数已达上限",
   "app.navigationManager.viewLimitReached.description": "你已达到该服务器允许的最大窗口和标签页数。请关闭一个已有的窗口或标签页，或在设置弹窗中调整查看上限。",
   "callsWidgetWindow.cannotStartCall.message": "在另一个服务器上有一个正在进行的通话，必须先结束该通话才能加入新通话。",
