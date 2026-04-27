@@ -4,12 +4,16 @@
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from 'common/config/buildConfig';
+import {MAX_URL_LENGTH} from 'common/constants';
 import {nonTeamUrlPaths, CALLS_PLUGIN_ID} from 'common/utils/constants';
 
 export const getFormattedPathName = (pn: string) => (pn.endsWith('/') ? pn : `${pn}/`);
 export const parseURL = (inputURL: string | URL) => {
     if (inputURL instanceof URL) {
         return inputURL;
+    }
+    if (inputURL.length > MAX_URL_LENGTH) {
+        return undefined;
     }
     if (inputURL.includes('\0') || inputURL.toLowerCase().includes('%00')) {
         return undefined;
