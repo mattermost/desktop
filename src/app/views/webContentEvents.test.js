@@ -56,6 +56,7 @@ jest.mock('main/app/utils', () => ({
 
 jest.mock('common/constants', () => ({
     MATTERMOST_PROTOCOL: 'mattermost',
+    MAX_URL_LENGTH: 8192,
 }));
 
 jest.mock('main/security/allowProtocolDialog', () => ({
@@ -227,6 +228,14 @@ describe('main/views/webContentsEvents', () => {
 
             it('should reject completely malformed URIs with no scheme and show dialog', () => {
                 expect(newWindow({url: 'not-a-url-at-all'})).toStrictEqual({action: 'deny'});
+                expect(dialog.showErrorBox).toHaveBeenCalled();
+                expect(shell.openExternal).not.toBeCalled();
+                expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
+            });
+
+            it('should reject oversized URLs from window.open and show dialog', () => {
+                const oversizedURL = `http://example.com/${'A'.repeat(1000000)}`;
+                expect(newWindow({url: oversizedURL})).toStrictEqual({action: 'deny'});
                 expect(dialog.showErrorBox).toHaveBeenCalled();
                 expect(shell.openExternal).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
