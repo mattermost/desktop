@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 'use strict';
 
+import {MAX_URL_LENGTH} from 'common/constants';
 import {
     getFormattedPathName,
     isUrlType,
@@ -45,6 +46,19 @@ describe('common/utils/url', () => {
             const parsedURL = parseURL(urlWithExtraSlashes);
 
             expect(parsedURL.toString()).toBe('https://mattermost.com/sub/path/example');
+        });
+
+        it('should reject URLs longer than the maximum allowed length', () => {
+            const oversizedURL = `http://example.com/${'A'.repeat(MAX_URL_LENGTH)}`;
+            expect(parseURL(oversizedURL)).toBeUndefined();
+        });
+
+        it('should accept URLs at exactly the maximum allowed length', () => {
+            const prefix = 'http://example.com/';
+            const padding = 'A'.repeat(MAX_URL_LENGTH - prefix.length);
+            const maxLengthURL = `${prefix}${padding}`;
+            expect(maxLengthURL.length).toBe(MAX_URL_LENGTH);
+            expect(parseURL(maxLengthURL)).toBeDefined();
         });
     });
 

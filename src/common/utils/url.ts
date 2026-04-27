@@ -4,12 +4,17 @@
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from 'common/config/buildConfig';
+import {MAX_URL_LENGTH} from 'common/constants';
 import {nonTeamUrlPaths, CALLS_PLUGIN_ID} from 'common/utils/constants';
 
 export const getFormattedPathName = (pn: string) => (pn.endsWith('/') ? pn : `${pn}/`);
 export const parseURL = (inputURL: string | URL) => {
     if (inputURL instanceof URL) {
         return inputURL;
+    }
+    const inputURLBytes = new TextEncoder().encode(inputURL).length;
+    if (inputURLBytes > MAX_URL_LENGTH) {
+        return undefined;
     }
     try {
         return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1')); // Regex here to remove extra slashes
