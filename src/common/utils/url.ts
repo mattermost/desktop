@@ -12,10 +12,6 @@ export const parseURL = (inputURL: string | URL) => {
     if (inputURL instanceof URL) {
         return inputURL;
     }
-export const parseURL = (inputURL: string | URL) => {
-    if (inputURL instanceof URL) {
-        return inputURL;
-    }
     const inputURLBytes = new TextEncoder().encode(inputURL).length;
     if (inputURLBytes > MAX_URL_LENGTH) {
         return undefined;
