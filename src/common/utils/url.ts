@@ -12,7 +12,12 @@ export const parseURL = (inputURL: string | URL) => {
     if (inputURL instanceof URL) {
         return inputURL;
     }
-    if (inputURL.length > MAX_URL_LENGTH) {
+export const parseURL = (inputURL: string | URL) => {
+    if (inputURL instanceof URL) {
+        return inputURL;
+    }
+    const inputURLBytes = new TextEncoder().encode(inputURL).length;
+    if (inputURLBytes > MAX_URL_LENGTH) {
         return undefined;
     }
     if (inputURL.includes('\0') || inputURL.toLowerCase().includes('%00')) {
