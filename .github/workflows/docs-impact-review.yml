@@ -1,21 +1,17 @@
 name: Documentation Impact Review
-
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
       - master
-
 concurrency:
   group: ${{ format('docs-impact-{0}', github.event.pull_request.number) }}
   cancel-in-progress: true
-
 permissions:
   contents: read
   pull-requests: write
   issues: write
   id-token: write
-
 jobs:
   docs-impact-review:
     if: github.event.pull_request.draft == false && !startsWith(github.event.pull_request.user.login, 'unified-ci-app')
@@ -27,7 +23,6 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-
       - name: Checkout documentation repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -48,7 +43,6 @@ jobs:
             source/conf.py
             source/index.rst
           sparse-checkout-cone-mode: false
-
       - name: Analyze documentation impact
         id: docs-analysis
         if: ${{ env.HAS_ANTHROPIC_KEY == 'true' }}
@@ -59,16 +53,12 @@ jobs:
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
-
             ## Task
             You are a documentation impact analyst for the Mattermost project. Your job is to determine whether a pull request to the **mattermost/desktop** repository requires updates to the public documentation hosted at https://docs.mattermost.com (source repo: mattermost/docs).
-
             ## Repository Layout
             The PR code is checked out at the workspace root. The documentation source is checked out at `./docs/source/` (RST files, Sphinx-based).
-
             <desktop_paths>
             ### Code Paths and Documentation Relevance
-
             - `src/main/` — Electron main process; handles app lifecycle, window management, system tray, notifications, auto-update, deep linking → admin/deployment/end-user docs
             - `src/main/windows/` — Window creation and management logic → end-user guide (e.g., multi-window, tabs)
             - `src/main/notifications/` — Desktop notification handling → end-user guide (notification settings, OS permissions)
@@ -89,7 +79,6 @@ jobs:
             - `*.json` in `src/common/config/` — Default settings changes → admin config docs
             - `src/types/` — New TypeScript interfaces for config or IPC → may indicate new features
             </desktop_paths>
-
             <docs_directories>
             ### Documentation Directories (`./docs/source/`)
             - `administration-guide/` — Server config, admin console, upgrade notes, CLI, server management, support packet, audit events
@@ -102,41 +91,33 @@ jobs:
             - `product-overview/` — Product overview and feature descriptions
             - `use-case-guide/` — Use case specific guides
             </docs_directories>
-
             ## Documentation Personas
             Each code change can impact multiple audiences. Identify all affected personas and prioritize by breadth of impact.
-
             <personas>
             ### System Administrator
             Deploys, configures, and manages the Mattermost Desktop App across an organization.
             - **Reads:** `administration-guide/`, `deployment-guide/`, `security-guide/`
             - **Cares about:** MSI/enterprise deployment, Group Policy / managed config, auto-update settings, certificate management, allowed origins, proxy configuration, push notification handling, silent install flags, system requirements (OS versions, Electron version)
             - **Impact signals:** changes to `src/main/autoupdate/`, `src/main/config/`, `src/main/certificateManager.ts`, `src/main/trustedOrigins.ts`, `src/common/config/`, `package.json` (Electron version bumps), new CLI flags or environment variables
-
             ### End User
             Uses the Mattermost Desktop App daily for messaging and collaboration.
             - **Reads:** `end-user-guide/`, `get-help/`
             - **Cares about:** UI changes, keyboard shortcuts, notification behavior, system tray features, multi-server/tab management, spell check, screen sharing, deep link handling, accessibility changes
             - **Impact signals:** changes to `src/renderer/components/`, `src/main/windows/`, `src/main/tray/`, `src/main/notifications/`, `src/common/tabs/`
-
             ### IT / Security Officer
             Evaluates security posture of the desktop app for enterprise deployments.
             - **Reads:** `security-guide/`, relevant sections of `administration-guide/`
             - **Cares about:** certificate pinning/management, trusted origin controls, protocol allowlists, preload script surface area, permissions requested from the OS, auto-update signing
             - **Impact signals:** changes to `src/main/certificateManager.ts`, `src/main/certificateStore.ts`, `src/main/trustedOrigins.ts`, `src/main/allowedProtocols.ts`, `src/preload/`
-
             ### Developer / Integrator
             Builds integrations with or extensions for the Mattermost Desktop App.
             - **Reads:** `integrations-guide/`, developer docs
             - **Cares about:** IPC APIs exposed via preload, deep link protocol registration, custom URL schemes, desktop app JS bridge for plugins/integrations
             - **Impact signals:** changes to `src/preload/`, IPC channel definitions, custom protocol registration in `src/main/`
             </personas>
-
             ## Analysis Steps
             Follow these steps in order. Complete each step before moving to the next.
-
             1. **Read the PR diff** using `gh pr diff ${{ github.event.pull_request.number }}` to understand what changed.
-
             2. **Categorize each changed file** by documentation relevance using one or more of these labels:
                - New or changed user-facing UI feature
                - Configuration setting added or changed
@@ -152,58 +133,49 @@ jobs:
                - System requirements changed (OS, Node, Electron)
                - Keyboard shortcut added or changed
                - Deployment / install process changed (MSI, managed config, Group Policy)
-
             3. **Identify affected personas** for each documentation-relevant change using the impact signals defined above.
-
             4. **Search `./docs/source/`** for existing documentation covering each affected feature/area. Search for related RST files by name patterns and content.
-
             5. **Evaluate documentation impact** for each change by applying these two criteria:
                - **Documented behavior changed:** The PR modifies behavior that is currently described in the documentation. The existing docs would become inaccurate or misleading if not updated. Flag these as **"Documentation Updates Required"**.
                - **Documentation gap identified:** The PR introduces new functionality, settings, or behavioral changes not covered anywhere in the current documentation, and that are highly relevant to one or more identified personas. Flag these as **"Documentation Updates Recommended"** and note that new documentation is needed.
-
             6. **Determine the documentation action** for each flagged change: does an existing page need updating (cite the exact RST file), or is an entirely new page needed (suggest the appropriate directory and a proposed filename)?
-
             Only flag changes that meet at least one of the two criteria above. Internal refactors, test-only changes, CI/build configuration changes, and implementation details that do not alter documented behavior or create a persona-relevant gap should not be flagged.
-
             **Important distinctions to apply during analysis:**
+ 
+            - **The guiding principle for skipping documentation:** docs are **not** needed when the PR does not introduce or change a user/admin capability, documented setting, workflow, UI string, troubleshooting signal, or supported behavior claim. When in doubt, ask: "Would a system administrator, end user, IT/security officer, or developer need to read or update any documentation to understand or work with this change?" If no, classify as "No Documentation Changes Needed."
+ 
+            - **Common no-docs-needed patterns** (classify these as "No Documentation Changes Needed" and keep the response brief):
+              - Internal performance improvements or implementation-only refactors with no externally observable behavioral change
+              - Developer-facing renames, internal restructuring, or code organization changes that do not affect any capability, workflow, or behavior visible to admins or end users
+              - Changes where existing documentation already accurately covers the behavior generically and no update is needed to remain accurate
+              - Dependency or library upgrades that have no user/admin-observable effect (e.g., internal build tooling, test dependencies)
+ 
             - Electron **patch** version bumps (e.g. `28.1.3` → `28.1.4`) generally do not need documentation; **major or minor** bumps (e.g. `28.x` → `29.0`) may affect system requirements and should be reviewed.
             - Changes to `src/common/config/` default values are equivalent to configuration setting changes and should be documented in the admin config reference.
             - Preload script changes that add or remove APIs bridged to the renderer are integration-relevant and should be flagged for the Developer/Integrator persona.
-
             ## Output
-
             Use the `Write` tool to write your analysis to `${{ runner.temp }}/docs-impact-result.md`. The file content must follow this exact markdown structure:
-
             ```
             ---
             ### Documentation Impact Analysis
-
             **Overall Assessment:** [One of: "No Documentation Changes Needed", "Documentation Updates Recommended", "Documentation Updates Required"]
-
             #### Changes Summary
             [1–3 sentence summary of what this PR does from a documentation perspective]
-
             #### Documentation Impact Details
-
             | Change Type | Files Changed | Affected Personas | Documentation Action | Docs Location |
             |---|---|---|---|---|
             | [e.g., New Configuration Setting] | [e.g., src/common/config/defaultPreferences.ts] | [e.g., System Administrator] | [e.g., Add setting to config reference] | [e.g., docs/source/administration-guide/desktop-app-install.rst or "New page needed"] |
-
             (Include rows only for changes with documentation impact. If none, write "No documentation-relevant changes detected.")
-
             #### Recommended Actions
             - [ ] [Specific action item with exact file path, e.g., "Update docs/source/administration-guide/desktop-app-install.rst to document new managed config option `EnableAutoupdate`"]
             - [ ] [Another action item with file path]
-
             #### Confidence
             [High/Medium/Low] — [Brief explanation of confidence level]
-
             ---
             ```
-
             ## Rules
             - Name exact RST file paths in `./docs/source/` when you find relevant documentation.
-            - Classify as "No Documentation Changes Needed" and keep the response brief when the PR only modifies test files, internal utilities, internal refactors with no behavioral change, or CI/build configuration.
+            - Classify as "No Documentation Changes Needed" and keep the response brief when the PR only modifies test files, internal utilities, internal refactors with no behavioral change, CI/build configuration, internal performance improvements, implementation-only changes, or developer-facing renames that do not affect any user/admin capability or documented behavior.
             - When uncertain whether a change needs documentation, recommend a review rather than staying silent.
             - Keep analysis focused and actionable so developers can act on recommendations directly.
             - This is a READ-ONLY analysis except for writing the output file. Never modify source code, push branches, or create PRs.
@@ -214,7 +186,6 @@ jobs:
             --model claude-sonnet-4-20250514
             --max-turns 30
             --allowedTools "Bash(gh pr diff*),Bash(gh pr view*),Read,Write,Glob,Grep"
-
       - name: Post analysis and manage label
         if: ${{ always() && env.HAS_ANTHROPIC_KEY == 'true' }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -226,12 +197,10 @@ jobs:
             const marker = '<!-- docs-impact-analysis -->';
             const prNumber = context.payload.pull_request.number;
             const analysisFile = `${process.env.RUNNER_TEMP}/docs-impact-result.md`;
-
             let body = '';
             if (fs.existsSync(analysisFile)) {
               body = fs.readFileSync(analysisFile, 'utf8').trim();
             }
-
             const validAssessments = new Set([
               'No Documentation Changes Needed',
               'Documentation Updates Recommended',
@@ -246,7 +215,6 @@ jobs:
              const needsDocs =
                overallAssessment === 'Documentation Updates Recommended' ||
                overallAssessment === 'Documentation Updates Required';
-
             let commentBody;
             if (!analysisFailed && needsDocs) {
               commentBody = `${marker}\n<details>\n<summary>Documentation Impact Analysis — updates needed</summary>\n\n${body}\n</details>`;
@@ -257,14 +225,12 @@ jobs:
                 `Please review this PR manually for documentation impact.\n\n` +
                 `[View workflow run](${runUrl})\n</details>`;
             }
-
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
             });
             const existing = comments.find(c => c.body?.includes(marker));
-
             if (commentBody) {
               if (existing) {
                 await github.rest.issues.updateComment({
@@ -292,7 +258,6 @@ jobs:
                 body: staleBody,
               });
             }
-
             const label = 'Docs/Needed';
             const { data: issueLabels } = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
@@ -300,7 +265,6 @@ jobs:
               issue_number: prNumber,
             });
             const hasLabel = issueLabels.some(l => l.name === label);
-
             if (needsDocs && !hasLabel) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
