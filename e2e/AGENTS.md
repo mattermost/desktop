@@ -1,5 +1,5 @@
 # E2E Agent Guide
-
+# test
 This directory contains the Mattermost Desktop E2E test suite.
 
 Follow these instructions when writing, fixing, optimizing, or running tests in this folder.
