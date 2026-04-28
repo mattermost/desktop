@@ -60,9 +60,15 @@ export class ServerHub {
 
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
         ServerManager.on(SERVER_REMOVED, this.handleServerCleanup);
-        ServerManager.on(SERVER_ADDED, this.updateAuthServerAllowlist);
         ServerManager.on(SERVER_URL_CHANGED, this.updateAuthServerAllowlist);
+        ServerManager.on(SERVER_ADDED, this.handleServerAdded);
     }
+
+    private handleServerAdded = () => {
+        ModalManager.removeModal(ModalConstants.WELCOME_SCREEN_MODAL);
+
+        this.updateAuthServerAllowlist();
+    };
 
     // TODO: Move me somewhere else later
     handleServerCurrentChanged = () => {
