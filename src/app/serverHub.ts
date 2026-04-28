@@ -23,6 +23,7 @@ import {
     SERVER_SWITCHED,
     GET_CURRENT_SERVER,
     SERVER_REMOVED,
+    SERVER_ADDED,
 } from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
@@ -58,7 +59,12 @@ export class ServerHub {
 
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
         ServerManager.on(SERVER_REMOVED, this.handleServerCleanup);
+        ServerManager.on(SERVER_ADDED, this.handleServerAdded);
     }
+
+    private handleServerAdded = () => {
+        ModalManager.removeModal(ModalConstants.WELCOME_SCREEN_MODAL);
+    };
 
     // TODO: Move me somewhere else later
     handleServerCurrentChanged = () => {
