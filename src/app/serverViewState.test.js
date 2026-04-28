@@ -23,6 +23,11 @@ jest.mock('electron', () => ({
         handle: jest.fn(),
         emit: jest.fn(),
     },
+    session: {
+        defaultSession: {
+            allowNTLMCredentialsForDomains: jest.fn(),
+        },
+    },
 }));
 
 jest.mock('common/servers/serverManager', () => ({
@@ -38,6 +43,7 @@ jest.mock('common/servers/serverManager', () => ({
     getServerLog: jest.fn(),
     lookupViewByURL: jest.fn(),
     getOrderedServers: jest.fn(),
+    on: jest.fn(),
 }));
 jest.mock('common/servers/MattermostServer', () => ({
     MattermostServer: jest.fn(),
@@ -600,6 +606,32 @@ describe('app/serverViewState', () => {
         it('should open the specified view', () => {
             serverViewState.handleOpenView(null, 'view-1');
             expect(ViewManager.showById).toBeCalledWith('view-1');
+        });
+    });
+
+    describe('updateAuthServerAllowlist', () => {
+        const {session} = jest.requireMock('electron');
+
+        beforeEach(() => {
+            session.defaultSession.allowNTLMCredentialsForDomains.mockClear();
+        });
+
+        it('should set the allowlist to the configured server hostnames', () => {
+            ServerManager.getAllServers.mockReturnValue([
+                {url: new URL('https://server-1.com')},
+                {url: new URL('https://server-2.example.org:8443/subpath')},
+            ]);
+            const state = new ServerViewState();
+            state.updateAuthServerAllowlist();
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).
+                toHaveBeenCalledWith('server-1.com,server-2.example.org');
+        });
+
+        it('should set an empty allowlist when there are no configured servers', () => {
+            ServerManager.getAllServers.mockReturnValue([]);
+            const state = new ServerViewState();
+            state.updateAuthServerAllowlist();
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).toHaveBeenCalledWith('');
         });
     });
 });

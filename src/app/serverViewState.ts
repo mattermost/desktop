@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain} from 'electron';
+import {ipcMain, session} from 'electron';
 
 import {
     CLOSE_VIEW,
@@ -10,6 +10,8 @@ import {
     GET_ORDERED_SERVERS,
     GET_ORDERED_TABS_FOR_SERVER,
     OPEN_VIEW,
+    SERVERS_UPDATE,
+    SERVERS_URL_MODIFIED,
     SHOW_EDIT_SERVER_MODAL,
     SHOW_NEW_SERVER_MODAL,
     SHOW_REMOVE_SERVER_MODAL,
@@ -66,7 +68,17 @@ export class ServerViewState {
         ipcMain.on(ADD_SERVER, this.handleAddServer);
         ipcMain.on(EDIT_SERVER, this.handleEditServer);
         ipcMain.on(REMOVE_SERVER, this.handleRemoveServer);
+
+        ServerManager.on(SERVERS_UPDATE, this.updateAuthServerAllowlist);
+        ServerManager.on(SERVERS_URL_MODIFIED, this.updateAuthServerAllowlist);
     }
+
+    private updateAuthServerAllowlist = () => {
+        const hostnames = ServerManager.getAllServers().
+            map((server) => server.url.hostname).
+            filter(Boolean);
+        session.defaultSession.allowNTLMCredentialsForDomains(hostnames.join(','));
+    };
 
     init = () => {
         // Don't need to init twice
