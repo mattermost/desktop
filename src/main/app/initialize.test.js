@@ -71,6 +71,7 @@ jest.mock('electron', () => ({
             setSpellCheckerDictionaryDownloadURL: jest.fn(),
             setPermissionRequestHandler: jest.fn(),
             on: jest.fn(),
+            allowNTLMCredentialsForDomains: jest.fn(),
         },
     },
     protocol: {
