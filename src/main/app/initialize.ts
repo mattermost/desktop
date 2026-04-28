@@ -285,6 +285,9 @@ async function initializeAfterAppReady() {
         WebContentsManager,
     });
 
+    // Block all NTLM/Negotiate requests by default
+    session.defaultSession.allowNTLMCredentialsForDomains('');
+
     protocol.handle('mattermost-desktop', (request: Request) => {
         const url = parseURL(request.url);
         if (!url) {

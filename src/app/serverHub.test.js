@@ -21,6 +21,12 @@ jest.mock('electron', () => ({
         handle: jest.fn(),
         emit: jest.fn(),
     },
+    session: {
+        defaultSession: {
+            allowNTLMCredentialsForDomains: jest.fn(),
+            clearData: jest.fn(),
+        },
+    },
 }));
 
 jest.mock('common/servers/serverManager', () => ({
@@ -563,6 +569,42 @@ describe('app/serverViewState', () => {
             expect(result.status).toBe(URLValidationStatus.URLExists);
             expect(result.validatedURL).toBe('https://mainserver.com/');
             expect(result.existingServerName).toBe('Test Server 1');
+        });
+    });
+
+    describe('updateAuthServerAllowlist', () => {
+        const {session} = jest.requireMock('electron');
+
+        beforeEach(() => {
+            session.defaultSession.allowNTLMCredentialsForDomains.mockClear();
+        });
+
+        it('should set the allowlist to the configured server hostnames', () => {
+            ServerManager.getAllServers.mockReturnValue([
+                {url: new URL('https://server-1.com')},
+                {url: new URL('https://server-2.example.org:8443/subpath')},
+            ]);
+            const hub = new ServerHub();
+            hub.updateAuthServerAllowlist();
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).
+                toHaveBeenCalledWith('server-1.com,server-2.example.org');
+        });
+
+        it('should set an empty allowlist when there are no configured servers', () => {
+            ServerManager.getAllServers.mockReturnValue([]);
+            const hub = new ServerHub();
+            hub.updateAuthServerAllowlist();
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).toHaveBeenCalledWith('');
+        });
+
+        it('should clear server data and refresh the allowlist when a server is removed', () => {
+            ServerManager.getAllServers.mockReturnValue([
+                {url: new URL('https://server-1.com')},
+            ]);
+            const hub = new ServerHub();
+            hub.handleServerCleanup({id: 'server-2', url: new URL('https://server-2.com')});
+            expect(session.defaultSession.clearData).toHaveBeenCalledWith({origins: ['https://server-2.com']});
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).toHaveBeenCalledWith('server-1.com');
         });
     });
 });
