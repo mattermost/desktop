@@ -47,6 +47,7 @@ jest.mock('main/server/serverInfo', () => ({
 }));
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+    removeModal: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
