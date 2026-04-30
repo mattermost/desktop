@@ -266,3 +266,32 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 3. **Restart** app (and computer if needed).
 4. **Reset data** — **View → Clear All Data**, or delete the config directory.
 5. **Collect debug logs and heap snapshots**.
+
+## Cursor Cloud specific instructions
+
+### Environment
+
+- Node.js v20.15.0 and npm 10.7.0 are pre-installed (matching `.nvmrc`).
+- The update script runs `npm install` which handles `patch-package` and `electron-builder install-app-deps` via the postinstall hook.
+- Chrome-sandbox requires SUID permissions on Linux. Before running the app, execute:
+  ```
+  sudo chown root:root ./node_modules/electron/dist/chrome-sandbox
+  sudo chmod 4755 ./node_modules/electron/dist/chrome-sandbox
+  ```
+
+### Running the app
+
+- Use `./node_modules/.bin/electron dist/ --disable-dev-mode` after `npm run build` to launch.
+- `npm run watch` provides dev mode with auto-rebuild and restart; it also runs the linux-dev-setup script (requires sudo).
+- In headless environments (no dbus), expect harmless dbus errors in logs. These do not affect functionality.
+- Modal windows (e.g. "Add Server" dialog) may not render in environments without a compositor. Core app functionality still works.
+
+### Key commands reference
+
+See `package.json` scripts and the "Common commands" table above. Summary:
+- Lint: `npm run lint:js`
+- Type check: `npm run check-types`
+- Unit tests: `npm run test:unit`
+- All checks: `npm run check`
+- Dev build: `npm run build`
+- Dev mode with watch: `npm run watch`
