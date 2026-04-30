@@ -1,0 +1,55 @@
+name: Update Latest Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch to read the version from: master or release-X.Y'
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TERM: xterm
+
+jobs:
+  update-latest-version:
+    runs-on: ubuntu-22.04
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      REF: ${{ inputs.ref }}
+    steps:
+      # This is a lightweight guard to ensure the input ref is valid.
+      - name: Verify input ref
+        run: |
+          if ! [[ "$REF" == "master" || "$REF" =~ ^release-[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Input ref must be master or release-X.Y (got '${REF}')"
+            exit 1
+          fi
+          echo "OK: Input ref is valid ($REF)"
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ROLE_TO_ASSUME }}
+
+      - name: Generate latest version file
+        id: generate-latest
+        run: bash -x ./scripts/generate_latest_version.sh
+
+      - name: Upload latest version to S3
+        env:
+          FILENAME: ${{ steps.generate-latest.outputs.FILENAME }}
+          BUCKET: ${{ secrets.MM_DESKTOP_RELEASE_BUCKET }}
+        run: aws s3 cp ./"$FILENAME" "s3://${BUCKET}${FILENAME}" --cache-control "no-cache"

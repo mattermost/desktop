@@ -191,7 +191,7 @@ export function handleShowSettingsModal() {
         return;
     }
 
-    ModalManager.addModal(
+    ModalManager.addPriorityModal(
         ModalConstants.SETTINGS_MODAL,
         'mattermost-desktop://renderer/settings.html',
         getLocalPreload('internalAPI.js'),

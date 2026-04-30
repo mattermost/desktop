@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Скопировать адрес e-mail",
   "app.menus.contextMenu.openInNewTab": "Открыть в новой вкладке",
   "app.menus.contextMenu.openInNewWindow": "Открыть в новом окне",
   "app.navigationManager.invalidLinkDescription": "Ссылка, на которую вы нажали, похоже, имеет неправильный формат и не может быть открыта. Пожалуйста, проверьте URL на наличие ошибок перед повторной попыткой.",

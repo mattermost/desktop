@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "E-Mail Adresse kopieren",
   "app.menus.contextMenu.openInNewTab": "In neuem Tab öffnen",
   "app.menus.contextMenu.openInNewWindow": "In neuem Fenster öffnen",
   "app.navigationManager.invalidLinkDescription": "Der Link, auf den du geklickt hast, scheint fehlerhaft zu sein und kann nicht geöffnet werden. Bitte überprüfe die URL auf Fehler, bevor du es erneut versuchst.",

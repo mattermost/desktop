@@ -107,6 +107,14 @@ export class ModalView<T, T2> {
         }
     };
 
+    suspend = () => {
+        if (this.windowAttached) {
+            this.windowAttached.contentView.removeChildView(this.view);
+            delete this.windowAttached;
+            this.status = Status.ACTIVE;
+        }
+    };
+
     handleInfoRequest = () => {
         return this.data;
     };
