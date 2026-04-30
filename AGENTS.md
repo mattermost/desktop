@@ -287,6 +287,14 @@ E2E failures are only actionable when **Mattermost and the desktop app run toget
 
 **Product vs test bugs:** If the same assertion fails with a healthy server and a fresh `build-test`, decide using `e2e/AGENTS.md` (reproduce in browser, main-process vs renderer, fixture vs spec). Prefer fixes in `src/` when the desktop regresses; prefer test/helper changes when the spec was wrong or flaky.
 
+**When Docker is missing on the agent VM:** Prefer the PR’s **Matterwick** server URL from the “E2E Test Servers Ready” comment (see above) — `curl` must succeed to `/api/v4/system/ping` before you claim server-backed tests passed. Do **not** rely on a `SKIP_SERVER` environment variable: this repository’s E2E suite does not read it; many specs skip or fail without `MM_TEST_SERVER_URL`. If you truly cannot reach any server, you may still run **non-server** smoke tests (for example `e2e/specs/startup/app.test.ts`), read CI failure logs, and propose code changes — but the report must state clearly which flows were **not** exercised against a live Mattermost.
+
+**Git / branch policy for PR-assigned agents:** Push commits only to the **pull request’s head branch** (for example `cursor/setup-agents-md-c5d4` for PR `#3773`). Never push to `master` or unrelated base branches. Avoid opening duplicate PRs or parallel fix branches for the same change set unless a maintainer asks for a split.
+
+**Automation report expectations:** If your runbook asks for screenshots or a “visual verification” table, either capture them when Electron runs on a host that supports it or mark scenarios **not run** with a one-line reason (no server, no display capture, etc.). A passing `npm run check` or startup-only Playwright run does **not** substitute for server-backed verification when the task was to fix login or server UI tests.
+
+**Playwright harness:** Prefer the shared fixtures in `e2e/fixtures/index.ts` — they already use an isolated per-test `userDataDir` (never the default `~/.config/Electron`). After `loginToMattermost()`, use **`waitForLoggedIn()`** from `e2e/helpers/login.ts` before tab-bar or menu tests that assume login has propagated.
+
 ### Node version
 
 The project requires Node.js v20.15.0 (specified in `.nvmrc`). Use `nvm` to switch:

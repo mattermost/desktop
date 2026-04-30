@@ -20,6 +20,12 @@ When fixing E2E failures (including automations triggered from PR comments or CI
 
 3. On Linux cloud VMs set **`DISPLAY=:1`** and follow sandbox steps in root `AGENTS.md`.
 
-4. Many simultaneous failures usually mean **infrastructure** (server down, wrong env, missing build). Confirm `curl` to `/api/v4/system/ping` and a clean `build-test` before editing many specs. Use `e2e/AGENTS.md` to classify product vs test bugs.
+4. **Electron user data:** Use the shared Playwright fixtures (each run gets an isolated `userDataDir` under the test output dir). If launching Electron manually, always pass `--user-data-dir` to a **fresh** temp directory — never `~/.config/Electron`.
+
+5. Many simultaneous failures usually mean **infrastructure** (server down, wrong env, missing build). Confirm `curl` to `/api/v4/system/ping` and a clean `build-test` before editing many specs. Use `e2e/AGENTS.md` to classify product vs test bugs.
+
+6. **No `SKIP_SERVER` in this repo** — E2E does not honor that variable; use Matterwick URLs when Docker is unavailable, or document unverified server flows.
+
+7. **Git:** push only to the PR’s head branch (never `master`); avoid duplicate PRs for the same fix unless asked.
 
 Do not post a fix or commit until the target spec has been re-run with the correct `MM_TEST_*` environment and passes.
