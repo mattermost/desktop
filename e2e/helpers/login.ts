@@ -95,30 +95,6 @@ export async function waitForLoggedIn(
             break;
         }
 
-        // Updated by AI QA Agent: resync missed login IPC only after the web app shell is visibly ready.
-        const syncedFromLoadedServer = await electronApp.evaluate(async () => {
-            const refs = (global as any).__e2eTestRefs; // eslint-disable-line @typescript-eslint/no-explicit-any
-            const serverId = refs?.ServerManager?.getCurrentServerId?.();
-            const primaryView = serverId ? refs?.ViewManager?.getPrimaryView?.(serverId) : undefined;
-            const webContentsView = primaryView ? refs?.WebContentsManager?.getView?.(primaryView.id) : undefined;
-            const shellReady = await webContentsView?.webContents?.executeJavaScript?.(`
-                Boolean(
-                    document.querySelector('#post_textbox') ||
-                    document.querySelector('#channelHeaderTitle') ||
-                    document.querySelector('input.search-bar.form-control')
-                )
-            `).catch(() => false);
-            if (!serverId || !shellReady) {
-                return false;
-            }
-            refs.ServerManager.setLoggedIn(serverId, true);
-            return true;
-        }).catch(() => false);
-
-        if (syncedFromLoadedServer) {
-            break;
-        }
-
         if (Date.now() + pollInterval > deadline) {
             throw new Error(
                 `waitForLoggedIn: ServerManager.isLoggedIn never became true within ${timeout}ms`,
