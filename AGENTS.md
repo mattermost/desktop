@@ -271,6 +271,8 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 
 ### Cursor automations and PR-assigned agents for E2E
 
+The **full human-style PR QA prompt** (when to run, phases, report template, security checklist) should live in **Cursor → Automations** for this repo so it can evolve without a PR every time. A **pointer** to that split and links to technical docs: [`docs/cursor-pr-qa-automation.md`](docs/cursor-pr-qa-automation.md).
+
 E2E failures are only actionable when **Mattermost and the desktop app run together** the same way CI does. An agent that edits tests without a reachable server, or runs Playwright without the **test** build, will look like it is “fixing” things while reproducing nothing.
 
 **Required stack (do all of these before changing code):**
