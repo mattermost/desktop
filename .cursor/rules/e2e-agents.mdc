@@ -1,0 +1,25 @@
+---
+description: Mattermost + desktop must run together for E2E triage; use PR server URLs or Docker; always build-test before Playwright.
+globs:
+  - e2e/**
+  - AGENTS.md
+---
+
+# Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+# See LICENSE.txt for license information.
+
+# E2E fixes for Cursor agents
+
+When fixing E2E failures (including automations triggered from PR comments or CI):
+
+1. **Mattermost must be running and reachable** at `MM_TEST_SERVER_URL`. Playwright launches Electron, which loads that URL — there is no valid E2E fix without it.
+   - If the PR has an **E2E Test Servers Ready** (or similar) comment with per-platform URLs, use the **`linux`** URL on Cursor Cloud unless matching another OS is required. Use the admin username and password from that comment or from the workflow inputs.
+   - Otherwise run Mattermost via Docker as documented in the root `AGENTS.md` (Mattermost preview on port 8065, bootstrap user and team).
+
+2. **Before `npx playwright test`**, from repo root run **`npm run build-test`**. The suite expects the test-mode desktop build; skipping this produces misleading failures.
+
+3. On Linux cloud VMs set **`DISPLAY=:1`** and follow sandbox steps in root `AGENTS.md`.
+
+4. Many simultaneous failures usually mean **infrastructure** (server down, wrong env, missing build). Confirm `curl` to `/api/v4/system/ping` and a clean `build-test` before editing many specs. Use `e2e/AGENTS.md` to classify product vs test bugs.
+
+Do not post a fix or commit until the target spec has been re-run with the correct `MM_TEST_*` environment and passes.
