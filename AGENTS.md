@@ -269,6 +269,24 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 
 ## Cursor Cloud-specific instructions
 
+### Cursor automations and PR-assigned agents for E2E
+
+E2E failures are only actionable when **Mattermost and the desktop app run together** the same way CI does. An agent that edits tests without a reachable server, or runs Playwright without the **test** build, will look like it is “fixing” things while reproducing nothing.
+
+**Required stack (do all of these before changing code):**
+
+1. **Reachable Mattermost** — The Playwright harness drives a real Electron app that loads a real server URL from `MM_TEST_SERVER_URL`.
+   - **PR runs (Matterwick):** If the PR has a comment such as “E2E Test Servers Ready” with a table of URLs, use the URL for the platform you are validating (for Cursor Cloud VMs use the **`linux`** URL unless you have a reason to match another OS). Copy **`MM_TEST_USER_NAME`** and **`MM_TEST_PASSWORD`** from that same comment (or from the failing workflow’s configured secrets/inputs). Before running tests, confirm the server is up, for example: `curl -sf "$MM_TEST_SERVER_URL/api/v4/system/ping"`.
+   - **No PR server comment:** Start local Mattermost with Docker under [Starting a local Mattermost server with Docker](#starting-a-local-mattermost-server-with-docker), then set `MM_TEST_SERVER_URL=http://localhost:8065` (and the same admin bootstrap / team steps as in that section).
+
+2. **Built desktop test binary** — From the repository root, after `npm ci` (and `cd e2e && npm ci && cd ..` if needed), run **`npm run build-test`**. This is what wires `NODE_ENV=test` and produces the binary Playwright launches. Running `npx playwright test` without this step usually fails immediately or flakes in ways that are not product bugs.
+
+3. **Headless display (Linux agents)** — Set `DISPLAY=:1` (and sandbox steps under [Running on headless Linux (Cloud VM)](#running-on-headless-linux-cloud-vm)) before any Electron or Playwright command.
+
+**Mass failure on CI:** When many unrelated specs fail at once, still verify (a) `curl` ping to `MM_TEST_SERVER_URL` and (b) a clean `npm run build-test` locally. Only treat failures as narrow test bugs after the shared harness is confirmed good; see `e2e/AGENTS.md` (sections on app launch and readiness).
+
+**Product vs test bugs:** If the same assertion fails with a healthy server and a fresh `build-test`, decide using `e2e/AGENTS.md` (reproduce in browser, main-process vs renderer, fixture vs spec). Prefer fixes in `src/` when the desktop regresses; prefer test/helper changes when the spec was wrong or flaky.
+
 ### Node version
 
 The project requires Node.js v20.15.0 (specified in `.nvmrc`). Use `nvm` to switch:
@@ -347,11 +365,11 @@ If a run leaves Electron hanging: `killall Electron 2>/dev/null || true`
 
 When asked to fix E2E failures:
 
-1. **Start the Mattermost server** using the Docker instructions above.
+1. **Mattermost available** — Prefer URLs and credentials from the PR’s E2E server comment when present; otherwise start Docker Mattermost as in [Starting a local Mattermost server with Docker](#starting-a-local-mattermost-server-with-docker). Do not skip this step.
 2. **Read the CI logs** to identify which spec files failed. Use `gh run view --job <job-id> --log-failed`.
-3. **Build the test bundle**: `npm run build-test`
-4. **Reproduce** each failure locally before editing.
-5. **Fix the test** — see `e2e/AGENTS.md` for classification and design rules.
+3. **Build the test bundle**: `npm run build-test` (required for Playwright; see [Cursor automations and PR-assigned agents for E2E](#cursor-automations-and-pr-assigned-agents-for-e2e)).
+4. **Reproduce** each failure locally with the same `MM_TEST_*` values as CI before editing.
+5. **Fix the smallest useful layer** (spec, helper, fixture, or app) — see `e2e/AGENTS.md` for classification and design rules.
 6. **Re-run the spec** to confirm the fix, then commit.
 
 ### Login state propagation (common E2E flake)
