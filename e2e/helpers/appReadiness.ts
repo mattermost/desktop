@@ -19,7 +19,21 @@ export async function waitForAppReady(app: ElectronApplication): Promise<void> {
     await expect.poll(
         async () => {
             try {
-                return await app.evaluate(() => (global as any).__e2eAppReady === true);
+                const ready = await app.evaluate(() => {
+                    // In headless/VNC CI environments, the main window may not auto-show.
+                    // Force-show it so the 'show' event fires and __e2eAppReady gets set.
+                    if (!(global as any).__e2eAppReady) {
+                        const refs = (global as any).__e2eTestRefs;
+                        if (refs) {
+                            const mainWin = refs.MainWindow.get();
+                            if (mainWin && !mainWin.isVisible()) {
+                                mainWin.show();
+                            }
+                        }
+                    }
+                    return (global as any).__e2eAppReady === true;
+                });
+                return ready;
             } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
                 if (

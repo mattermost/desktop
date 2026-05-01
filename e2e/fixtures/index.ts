@@ -83,8 +83,9 @@ export const test = base.extend<Fixtures>({
                 '--disable-gpu',
                 '--disable-gpu-sandbox',
                 '--disable-dev-shm-usage',
-                '--no-zygote',
                 '--disable-software-rasterizer',
+                '--in-process-gpu',
+                '--enable-features=NetworkServiceInProcess2',
 
                 // Stability
                 '--disable-breakpad',
