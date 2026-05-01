@@ -34,6 +34,8 @@ async function waitForAppShell(win: ServerView, timeout: number) {
     const results = await Promise.allSettled([
         win.waitForSelector('#post_textbox', {timeout}),
         win.waitForSelector('#channelHeaderTitle', {timeout}),
+        win.waitForSelector('[data-testid="channel-header-title"]', {timeout}),
+        win.waitForSelector('#sidebarItem_town-square', {timeout}),
         win.waitForSelector('input.search-bar.form-control', {timeout}),
     ]);
 
@@ -41,7 +43,9 @@ async function waitForAppShell(win: ServerView, timeout: number) {
 }
 
 async function syncMainProcessLoginFromWebShell(electronApp: ElectronApplication, webContentsId: number) {
-    await electronApp.evaluate((id) => {
+    // Playwright passes the required `electron` module as the first callback argument;
+    // the harness argument is the second (see other specs: `evaluate(({webContents}, id) => …)`).
+    await electronApp.evaluate((_, id: number) => {
         const refs = (global as any).__e2eTestRefs; // eslint-disable-line @typescript-eslint/no-explicit-any
         refs?.WebContentsManager?.markTabLoginForE2e?.(id, true);
     }, webContentsId);
@@ -73,7 +77,8 @@ export async function loginToMattermost(electronApp: ElectronApplication, win: S
         await win.waitForSelector(loginSelector, {timeout});
         onLoginPage = true;
     } catch {
-        if (await waitForAppShell(win, 5_000)) {
+        // Already logged in / landing page: wait for shell with the same budget as login (slow cloud servers).
+        if (await waitForAppShell(win, timeout)) {
             await syncMainProcessLoginFromWebShell(electronApp, win.webContentsId);
             return;
         }
