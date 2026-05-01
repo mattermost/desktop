@@ -317,9 +317,10 @@ npx playwright test --list                                                     #
 - `MM_TEST_PASSWORD` — e.g. `Sys@dmin-sample1`
 
 **Known limitations in Cloud Agent VMs:**
-- Tests that load external URLs (example.com, github.com) may time out on `waitForAppReady` because the Chromium network service subprocess crashes in the container environment. The fixture already passes `--no-sandbox --disable-gpu --disable-gpu-sandbox --no-zygote` etc., but some tests still need live network connectivity.
+- A few download-item tests that depend on specific download completion states may be flaky.
 - Keyboard-shortcut-based tests may fail in headless/container environments (the `e2e/AGENTS.md` recommends IPC invocations over keyboard shortcuts for this reason).
 - Tests tagged `@darwin` or `@win32` are platform-specific and won't run on Linux.
+- Tests requiring a live Mattermost server need `MM_TEST_SERVER_URL`, `MM_TEST_USER_NAME`, `MM_TEST_PASSWORD` env vars.
 
 ### Gotchas
 
