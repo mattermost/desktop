@@ -293,8 +293,37 @@ All standard commands are documented in the table at the top of this file. Quick
 - **Dev mode (watch)**: `npm run watch` (auto-rebuild + Electron restart on file changes)
 - **All checks**: `npm run check` (lint + type-check + build-config + unit tests in parallel)
 
+### E2E tests (Playwright)
+
+The E2E suite lives in `e2e/` with its own `package.json`. It uses Playwright's Electron support (not browser testing — no Playwright browsers needed). See `e2e/AGENTS.md` for full guidance.
+
+**Setup (one-time after npm install):**
+```bash
+cd e2e && npm install && cd ..
+npm run build-test   # builds webpack with NODE_ENV=test → outputs to e2e/dist/
+```
+
+**Running tests:**
+```bash
+cd e2e
+DISPLAY=:1 npx playwright test --reporter=list --workers=1                    # all tests
+DISPLAY=:1 npx playwright test specs/startup/welcome_screen_modal.test.ts --reporter=list --workers=1  # single file
+npx playwright test --list                                                     # list all tests
+```
+
+**Environment variables for server-backed tests:**
+- `MM_TEST_SERVER_URL` — e.g. `http://localhost:8065`
+- `MM_TEST_USER_NAME` — e.g. `sysadmin`
+- `MM_TEST_PASSWORD` — e.g. `Sys@dmin-sample1`
+
+**Known limitations in Cloud Agent VMs:**
+- Tests that load external URLs (example.com, github.com) may time out on `waitForAppReady` because the Chromium network service subprocess crashes in the container environment. The fixture already passes `--no-sandbox --disable-gpu --disable-gpu-sandbox --no-zygote` etc., but some tests still need live network connectivity.
+- Keyboard-shortcut-based tests may fail in headless/container environments (the `e2e/AGENTS.md` recommends IPC invocations over keyboard shortcuts for this reason).
+- Tests tagged `@darwin` or `@win32` are platform-specific and won't run on Linux.
+
 ### Gotchas
 
 - `npm run linux-dev-setup` requires `sudo` to set SUID on `chrome-sandbox`. It runs automatically before `npm start` and `npm run watch`.
 - The `postinstall` script runs `patch-package && electron-builder install-app-deps`. If native module compilation fails, ensure build tools (gcc, make, python3) are available.
 - Electron 41 uses Chromium's utility process model; in constrained environments (Docker/Firecracker), child processes may segfault. The `--enable-features=NetworkServiceInProcess2` flag moves the network service in-process to work around this.
+- `DISPLAY=:1` must be set for any command that launches Electron (including E2E tests). The X server is managed by TigerVNC under the `ubuntu` user; run `su - ubuntu -c "DISPLAY=:1 xhost +local:"` once per session to allow root processes to connect.
