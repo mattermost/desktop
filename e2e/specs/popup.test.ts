@@ -109,7 +109,7 @@ test.describe('popup', () => {
             throw new Error('No server view available for popup tests');
         }
 
-        await loginToMattermost(firstServer);
+        await loginToMattermost(electronApp, firstServer);
         await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 30_000});
     });
 

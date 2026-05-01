@@ -16,7 +16,7 @@ test.describe('copylink', () => {
             throw new Error('No server view available');
         }
 
-        await loginToMattermost(firstServer);
+        await loginToMattermost(electronApp, firstServer);
 
         // Clear clipboard to prevent pollution from other tests
         await electronApp.evaluate(({clipboard}) => {

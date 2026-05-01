@@ -153,7 +153,7 @@ test.describe('menu/view', () => {
         mainWindow = await waitForWindow(electronApp, 'index');
         const serverMap = await buildServerMap(electronApp);
         const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-        await loginToMattermost(firstServer);
+        await loginToMattermost(electronApp, firstServer);
         await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 30_000});
     });
 

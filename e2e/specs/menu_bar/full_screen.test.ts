@@ -25,7 +25,7 @@ test.describe('menu/view', () => {
             return;
         }
         const firstServer = serverEntry.win;
-        await loginToMattermost(firstServer);
+        await loginToMattermost(electronApp, firstServer);
         await firstServer.waitForSelector('#post_textbox');
         const currentWidth = await firstServer.evaluate(() => window.outerWidth);
         const currentHeight = await firstServer.evaluate(() => window.outerHeight);

@@ -1,9 +1,34 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {expect} from '@playwright/test';
+
+import {mattermostURL} from './config';
 import type {ServerView} from './serverView';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
+
+function primaryTestServerHost(): string | undefined {
+    try {
+        const host = new URL(mattermostURL).hostname;
+        return host || undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+/**
+ * Ensure the embedded server view has navigated to MM_TEST_SERVER_URL (not an
+ * intermediate tab like github.com) before interacting with login selectors.
+ */
+async function waitForConfiguredServerOrigin(win: ServerView, timeout: number) {
+    const host = primaryTestServerHost();
+    if (!host) {
+        return;
+    }
+
+    await win.waitForURL((url) => url.hostname === host, {timeout});
+}
 
 async function waitForAppShell(win: ServerView, timeout: number) {
     const results = await Promise.allSettled([
@@ -15,12 +40,19 @@ async function waitForAppShell(win: ServerView, timeout: number) {
     return results.some((result) => result.status === 'fulfilled');
 }
 
+async function syncMainProcessLoginFromWebShell(electronApp: ElectronApplication, webContentsId: number) {
+    await electronApp.evaluate((id) => {
+        const refs = (global as any).__e2eTestRefs; // eslint-disable-line @typescript-eslint/no-explicit-any
+        refs?.WebContentsManager?.markTabLoginForE2e?.(id, true);
+    }, webContentsId);
+}
+
 /**
  * Log in to a Mattermost server in the given window/page.
  * Requires MM_TEST_USER_NAME and MM_TEST_PASSWORD env vars.
  * Requires MM_TEST_SERVER_URL to be set in the app config (use demoMattermostConfig).
  */
-export async function loginToMattermost(win: ServerView): Promise<void> {
+export async function loginToMattermost(electronApp: ElectronApplication, win: ServerView): Promise<void> {
     const username = process.env.MM_TEST_USER_NAME;
     const password = process.env.MM_TEST_PASSWORD;
 
@@ -29,6 +61,8 @@ export async function loginToMattermost(win: ServerView): Promise<void> {
     }
 
     const timeout = process.platform === 'win32' ? 60_000 : 30_000;
+
+    await waitForConfiguredServerOrigin(win, timeout);
 
     const loginSelector = '#input_loginId';
     const passwordSelector = '#input_password-input, input[type="password"]';
@@ -40,6 +74,7 @@ export async function loginToMattermost(win: ServerView): Promise<void> {
         onLoginPage = true;
     } catch {
         if (await waitForAppShell(win, 5_000)) {
+            await syncMainProcessLoginFromWebShell(electronApp, win.webContentsId);
             return;
         }
     }
@@ -57,17 +92,17 @@ export async function loginToMattermost(win: ServerView): Promise<void> {
     if (!await waitForAppShell(win, timeout)) {
         throw new Error(`loginToMattermost: login succeeded but the app shell never became ready. Current URL: ${await win.url()}`);
     }
+    await syncMainProcessLoginFromWebShell(electronApp, win.webContentsId);
 }
 
 /**
- * Poll the main process until ServerManager reports isLoggedIn=true for the
- * current server, then wait for the renderer to reflect it (the #newTabButton
- * appearing in the main window DOM).
+ * Poll until ServerManager reports isLoggedIn=true for the current server, or the
+ * main-window tab bar exposes an enabled **#newTabButton** (renderer caught up).
  *
- * The web app's desktopAPI.onLogin() → TAB_LOGIN_CHANGED → ServerManager.setLoggedIn
- * chain can lag behind the web app shell becoming visible. Tests that interact
- * with the tab bar (new tab, drag-and-drop, close tab) need isLoggedIn=true in
- * the renderer before proceeding.
+ * Some Mattermost server builds do not emit the desktop **onLogin** hook reliably;
+ * in that case **ServerManager.isLoggedIn** can stay false even though the web app
+ * shell is visible. Preferring **#newTabButton** enabled avoids hanging **beforeAll**
+ * while still ensuring tab-bar interactions are safe.
  */
 export async function waitForLoggedIn(
     electronApp: ElectronApplication,
@@ -76,6 +111,7 @@ export async function waitForLoggedIn(
 ): Promise<void> {
     const pollInterval = 500;
     const deadline = Date.now() + timeout;
+    const newTabButton = mainWindow.locator('#newTabButton').first();
 
     while (Date.now() < deadline) {
         const loggedIn = await electronApp.evaluate(() => {
@@ -91,17 +127,28 @@ export async function waitForLoggedIn(
             return Boolean(server?.isLoggedIn);
         }).catch(() => false);
 
-        if (loggedIn) {
+        let tabBarReady = false;
+        try {
+            tabBarReady = await newTabButton.isVisible() && await newTabButton.isEnabled();
+        } catch {
+            tabBarReady = false;
+        }
+
+        if (loggedIn || tabBarReady) {
             break;
         }
 
         if (Date.now() + pollInterval > deadline) {
             throw new Error(
-                `waitForLoggedIn: ServerManager.isLoggedIn never became true within ${timeout}ms`,
+                `waitForLoggedIn: login did not propagate within ${timeout}ms ` +
+                '(ServerManager.isLoggedIn stayed false and #newTabButton never became enabled)',
             );
         }
         await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
     await mainWindow.waitForSelector('#newTabButton', {timeout: Math.max(deadline - Date.now(), 5_000)});
+    await expect.poll(async () => newTabButton.isEnabled(), {
+        timeout: Math.max(deadline - Date.now(), 15_000),
+    }).toBe(true);
 }

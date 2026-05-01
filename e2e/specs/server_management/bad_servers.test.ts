@@ -6,7 +6,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoConfig, demoMattermostConfig} from '../../helpers/config';
+import {electronBinaryPath, appDir, demoConfig, demoMattermostConfig, electronTestChromeArgs, electronTestProcessEnv} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
@@ -25,8 +25,8 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     const {_electron: electron} = await import('playwright');
     const app = await electron.launch({
         executablePath: electronBinaryPath,
-        args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-        env: {...process.env, NODE_ENV: 'test'},
+        args: [appDir, `--user-data-dir=${userDataDir}`, ...electronTestChromeArgs],
+        env: electronTestProcessEnv(),
         timeout: 60_000,
     });
     await waitForAppReady(app);
@@ -44,6 +44,7 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
         });
     }
     await dropdownView.waitForLoadState().catch(() => {});
+    await dropdownView.waitForSelector('.ServerDropdown .ServerDropdown__button.addServer', {timeout: 15_000});
     await dropdownView!.click('.ServerDropdown .ServerDropdown__button.addServer');
     const newServerView = await app.waitForEvent('window', {
         predicate: (w) => w.url().includes('newServer'),
@@ -287,7 +288,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const serverMap = await buildServerMap(app);
                 const mmServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-                await loginToMattermost(mmServer);
+                await loginToMattermost(app, mmServer);
 
                 await mmServer.waitForSelector('#post_textbox');
                 const postTextbox = await mmServer.$('#post_textbox');

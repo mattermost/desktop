@@ -9,7 +9,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {buildServerMap} from '../../helpers/serverMap';
-import {appDir, cmdOrCtrl, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
+import {appDir, cmdOrCtrl, demoMattermostConfig, electronBinaryPath, electronTestChromeArgs, electronTestProcessEnv, writeConfigFile} from '../../helpers/config';
 import {loginToMattermost, waitForLoggedIn} from '../../helpers/login';
 
 const windowMenuConfig = {
@@ -225,14 +225,16 @@ async function focusMainWindow() {
                 mainWindow.focus();
                 return true;
             });
-            break;
+            if (focused) {
+                break;
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             if (!message.includes('Execution context was destroyed')) {
                 throw error;
             }
-            await new Promise((resolve) => setTimeout(resolve, 100));
         }
+        await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     expect(focused, 'Failed to focus the main window').toBe(true);
@@ -304,35 +306,17 @@ test.describe('Menu/window_menu', () => {
             args: [
                 appDir,
                 `--user-data-dir=${userDataDir}`,
-                '--no-sandbox',
-                '--disable-gpu',
-                '--disable-gpu-sandbox',
-                '--disable-dev-shm-usage',
-                '--no-zygote',
-                '--disable-software-rasterizer',
-                '--disable-breakpad',
-                '--disable-features=SpareRendererForSitePerProcess',
-                '--disable-features=CrossOriginOpenerPolicy',
-                '--disable-renderer-backgrounding',
-                '--force-color-profile=srgb',
-                '--mute-audio',
+                ...electronTestChromeArgs,
             ],
-            env: {
-                ...process.env,
-                NODE_ENV: 'test',
-                RESOURCES_PATH: appDir,
-                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
-                ELECTRON_NO_ATTACH_CONSOLE: 'true',
-                NODE_OPTIONS: '--no-warnings',
-            },
+            env: electronTestProcessEnv(),
             timeout: 90_000,
         });
 
         await waitForAppReady(electronApp);
-        mainWindow = await waitForWindow(electronApp, 'index');
+        mainWindow = await waitForWindow(electronApp, 'index', 90_000);
         serverMap = await buildServerMap(electronApp);
 
-        await loginToMattermost(getMattermostServer());
+        await loginToMattermost(electronApp, getMattermostServer());
         await waitForLoggedIn(electronApp, mainWindow);
         await focusMainWindow();
     });

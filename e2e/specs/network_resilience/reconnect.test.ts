@@ -23,7 +23,7 @@ test(
             return;
         }
 
-        await loginToMattermost(serverWin);
+        await loginToMattermost(electronApp, serverWin);
         await serverWin.waitForSelector('#post_textbox');
 
         const baseUrl = new URL(process.env.MM_TEST_SERVER_URL!).origin;
