@@ -266,3 +266,35 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 3. **Restart** app (and computer if needed).
 4. **Reset data** — **View → Clear All Data**, or delete the config directory.
 5. **Collect debug logs and heap snapshots**.
+
+## Cursor Cloud specific instructions
+
+### Running the Electron app in Cloud Agent VMs
+
+The Cloud Agent VM has a TigerVNC X server on `:1` (owned by user `ubuntu`). To launch the app:
+
+1. Allow local X connections: `su - ubuntu -c "DISPLAY=:1 xhost +local:"`
+2. Run with in-process network service (required to avoid network service subprocess crashes in this container environment):
+   ```
+   export DISPLAY=:1
+   /workspace/node_modules/electron/dist/electron dist/ --disable-dev-mode --no-sandbox --disable-gpu --disable-software-rasterizer --in-process-gpu --enable-features=NetworkServiceInProcess2
+   ```
+3. GTK and dbus warnings are expected and harmless in this environment.
+
+### Key development commands
+
+All standard commands are documented in the table at the top of this file. Quick reference:
+
+- **Lint**: `npm run lint:js-quiet`
+- **Type check**: `npm run check-types`
+- **Unit tests**: `npm run test:unit` (Jest, 1140+ tests, ~3s)
+- **Build (dev)**: `npm run build` (webpack, ~4s)
+- **Run app**: `npm start` (builds + launches; on Linux runs `linux-dev-setup` first)
+- **Dev mode (watch)**: `npm run watch` (auto-rebuild + Electron restart on file changes)
+- **All checks**: `npm run check` (lint + type-check + build-config + unit tests in parallel)
+
+### Gotchas
+
+- `npm run linux-dev-setup` requires `sudo` to set SUID on `chrome-sandbox`. It runs automatically before `npm start` and `npm run watch`.
+- The `postinstall` script runs `patch-package && electron-builder install-app-deps`. If native module compilation fails, ensure build tools (gcc, make, python3) are available.
+- Electron 41 uses Chromium's utility process model; in constrained environments (Docker/Firecracker), child processes may segfault. The `--enable-features=NetworkServiceInProcess2` flag moves the network service in-process to work around this.
