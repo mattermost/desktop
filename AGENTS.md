@@ -283,7 +283,7 @@ E2E failures are only actionable when **Mattermost and the desktop app run toget
 
 2. **Built desktop test binary** — From the repository root, after `npm ci` (and `cd e2e && npm ci && cd ..` if needed), run **`npm run build-test`**. This is what wires `NODE_ENV=test` and produces the binary Playwright launches. Running `npx playwright test` without this step usually fails immediately or flakes in ways that are not product bugs.
 
-3. **Headless display (Linux agents)** — Set `DISPLAY=:1` (and sandbox steps under [Running on headless Linux (Cloud VM)](#running-on-headless-linux-cloud-vm)) before any Electron or Playwright command.
+3. **Headless display (Linux agents)** — **Canonical default:** wrap Electron and Playwright with **`xvfb-run -a`** when no working X server is already available (typical CI and ephemeral Linux agents). **`DISPLAY=:1`** is valid **only** when an X server on `:1` is reachable — verify with `xdpyinfo -display :1` (or your provider’s docs). If you see `Missing X server or $DISPLAY`, `Authorization required`, or similar, **do not** keep trying random `DISPLAY` values; use **`xvfb-run -a`** and sandbox steps under [Running on headless Linux (Cloud VM)](#running-on-headless-linux-cloud-vm).
 
 **Mass failure on CI:** When many unrelated specs fail at once, still verify (a) `curl` ping to `MM_TEST_SERVER_URL` and (b) a clean `npm run build-test` locally. Only treat failures as narrow test bugs after the shared harness is confirmed good; see `e2e/AGENTS.md` (sections on app launch and readiness).
 
@@ -307,9 +307,16 @@ source ~/.nvm/nvm.sh && nvm use 20.15.0
 
 ### Running on headless Linux (Cloud VM)
 
-- The VM has an X server on display `:1`. Set `DISPLAY=:1` before launching Electron.
+**Which display setup is canonical**
+
+| Situation | Use |
+|-----------|-----|
+| No verified X server (most automation VMs, many containers) | **`xvfb-run -a`** before `electron` / `playwright test` — **default / canonical** for E2E in headless Linux |
+| Provider documents a working display (e.g. some Cursor Cloud VMs expose `:1`) | Set **`DISPLAY`** to that server **after** confirming access (`xdpyinfo` succeeds). Do **not** assume `:1` works everywhere |
+
+- Some VMs expose an X server on **`:1`**. That is **optional**, not universal — unauthenticated or missing servers cause **`Missing X server or $DISPLAY`** or **`Authorization required`**. When that happens, switch to **`xvfb-run -a`** instead of rediscovering display settings each run.
 - Chrome sandbox requires root ownership: `sudo chown root:root ./node_modules/electron/dist/chrome-sandbox && sudo chmod 4755 ./node_modules/electron/dist/chrome-sandbox`. This is normally handled by `npm run linux-dev-setup` (called by `npm start` and `npm run watch`), but that script uses `sudo` which may prompt.
-- To launch the built app directly: `DISPLAY=:1 npx electron dist/ --disable-dev-mode --no-sandbox`
+- To launch the built app directly when **`DISPLAY` is verified**: `DISPLAY=:1 npx electron dist/ --disable-dev-mode --no-sandbox` — or headless-first: `xvfb-run -a npx electron dist/ --disable-dev-mode --no-sandbox`
 - DBus errors in the container logs are expected and harmless (no system bus in containers).
 - The "Failed to load configuration file" message on first run is normal — the app creates defaults.
 
@@ -361,11 +368,11 @@ npm ci && cd e2e && npm ci && cd ..
 npm run build-test
 
 cd e2e
-export DISPLAY=:1
 export MM_TEST_SERVER_URL=http://localhost:8065
 export MM_TEST_USER_NAME=admin
 export MM_TEST_PASSWORD=admin
-npx playwright test <spec-file> --reporter=list --workers=1
+# Headless Linux: prefer xvfb-run when DISPLAY is not pre-configured (see "Running on headless Linux").
+xvfb-run -a npx playwright test <spec-file> --reporter=list --workers=1
 cd ..
 ```
 

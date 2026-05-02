@@ -89,7 +89,7 @@ From the threat model, derive a **numbered test plan**. Each item must include:
 
 - Prefer **Matterwick** `linux` server URL and credentials from the PR’s E2E server comment when present; otherwise follow `AGENTS.md` (Docker) if available.
 - From repo root: **`npm run build-test`** before any scenario that needs the real app with servers.
-- On Linux agents: **`DISPLAY=:1`** (or the environment’s documented display) and sandbox notes from `AGENTS.md`.
+- On Linux agents: **canonical default for headless E2E:** **`xvfb-run -a`** before Electron / Playwright when no verified X server exists — see `AGENTS.md` table *(xvfb-run vs DISPLAY)*. Use **`DISPLAY=...`** only after **`xdpyinfo`** succeeds for that display (some VMs expose `:1`; many do not).
 - Do **not** rely on `SKIP_SERVER`.
 
 **Per scenario, capture evidence** (minimum bar):
