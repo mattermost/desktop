@@ -27,7 +27,7 @@ jobs:
         run: echo "VERSION=$(jq -r .version package.json)" >> ${GITHUB_OUTPUT}
 
       - name: release/notify-channel
-        uses: mattermost/action-mattermost-notify@d317daebed2a792679f68fd0248557a8d21d82b6
+        uses: mattermost/action-mattermost-notify@ae31bb6f9e26a54336e79696f108a2c91cf55b4e
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }}
           MATTERMOST_USERNAME: MattermostRelease
@@ -247,7 +247,7 @@ jobs:
           echo "EOF" >> "${GITHUB_OUTPUT}"
 
       - name: release/notify-channel
-        uses: mattermost/action-mattermost-notify@d317daebed2a792679f68fd0248557a8d21d82b6
+        uses: mattermost/action-mattermost-notify@ae31bb6f9e26a54336e79696f108a2c91cf55b4e
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_RELEASE_WEBHOOK_URL }}
           MATTERMOST_USERNAME: MattermostRelease
