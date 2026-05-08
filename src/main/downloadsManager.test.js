@@ -192,6 +192,20 @@ describe('main/downloadsManager', () => {
         expect(dl.fileSizes.get('file.txt')).toBe('4242');
     });
 
+    it('MM-68690 - should not throw when content-disposition header is missing', () => {
+        const dl = new DownloadsManager({});
+        const details = {
+            responseHeaders: {
+                'content-encoding': ['gzip'],
+                'x-uncompressed-content-length': ['4242'],
+            },
+        };
+        const cb = jest.fn();
+        expect(() => dl.webRequestOnHeadersReceivedHandler(details, cb)).not.toThrow();
+        expect(cb).toHaveBeenCalledWith({});
+        expect(dl.fileSizes.size).toBe(0);
+    });
+
     it('should clear the downloads list', () => {
         const dl = new DownloadsManager(JSON.stringify(downloadsJson));
         dl.clearDownloadsDropDown();
