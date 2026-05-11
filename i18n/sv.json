@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Kopiera mejladress",
   "app.menus.contextMenu.openInNewTab": "Öppna i ny flik",
   "app.menus.contextMenu.openInNewWindow": "Öppna i nytt fönster",
   "app.navigationManager.invalidLinkDescription": "Länken du klickade på verkar vara felformad och kan inte öppnas. Kontrollera om det finns några fel i webbadressen innan du försöker igen.",
