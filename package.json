@@ -177,7 +177,7 @@
     "react-intl": "6.6.2",
     "react-select": "5.8.0",
     "registry-js": "1.16.1",
-    "uuid": "9.0.1",
+    "uuid": "11.1.1",
     "valid-url": "1.0.9",
     "windows-focus-assist": "1.4.0",
     "yargs": "17.7.2"
