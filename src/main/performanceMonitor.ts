@@ -58,6 +58,9 @@ export class PerformanceMonitor {
         log.debug('registerView', webContents.id, name);
 
         webContents.on('did-finish-load', () => {
+            if (webContents.isDestroyed()) {
+                return;
+            }
             this.views.set(webContents.id, {name, webContents, serverId});
         });
     };
@@ -66,6 +69,9 @@ export class PerformanceMonitor {
         log.debug('registerServerView', {webContentsId: webContents.id, serverId});
 
         webContents.on('did-finish-load', () => {
+            if (webContents.isDestroyed()) {
+                return;
+            }
             this.serverViews.set(webContents.id, {name, webContents, serverId});
         });
     };
@@ -120,12 +126,20 @@ export class PerformanceMonitor {
             viewResolves.get(event.sender.id)?.();
         };
         ipcMain.on(METRICS_RECEIVE, listener);
-        const viewPromises = [...this.views.values(), ...this.serverViews.values()].map((view) => {
-            return new Promise<void>((resolve) => {
-                viewResolves.set(view.webContents.id, resolve);
-                view.webContents.send(METRICS_REQUEST, view.name, view.serverId);
+        const viewPromises = [...this.views.values(), ...this.serverViews.values()].
+            filter((view) => {
+                if (view.webContents.isDestroyed()) {
+                    this.unregisterView(view.webContents.id);
+                    return false;
+                }
+                return true;
+            }).
+            map((view) => {
+                return new Promise<void>((resolve) => {
+                    viewResolves.set(view.webContents.id, resolve);
+                    view.webContents.send(METRICS_REQUEST, view.name, view.serverId);
+                });
             });
-        });
 
         // After 5 seconds, if all the promises are not resolved, resolve them so we don't block the send
         // This can happen if a view doesn't send back metrics information
@@ -148,6 +162,11 @@ export class PerformanceMonitor {
 
             if (!view.webContents) {
                 log.error(`Cannot send metrics for ${view.name}  - missing web contents`);
+                continue;
+            }
+
+            if (view.webContents.isDestroyed()) {
+                this.unregisterView(view.webContents.id);
                 continue;
             }
 
