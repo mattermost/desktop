@@ -91,7 +91,7 @@ export class MainWindow extends EventEmitter {
         }
 
         this.win.browserWindow.webContents.once('did-finish-load', () => {
-            if (!this.win) {
+            if (!this.win || this.win.browserWindow.isDestroyed()) {
                 return;
             }
 

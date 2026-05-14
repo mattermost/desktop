@@ -71,6 +71,9 @@ export default class BaseWindow {
         this.win.setMenuBarVisibility(false);
 
         this.win.webContents.once('did-finish-load', () => {
+            if (!this.win || this.win.isDestroyed() || this.win.webContents.isDestroyed()) {
+                return;
+            }
             this.win.webContents.zoomLevel = 0;
             this.ready = true;
         });
