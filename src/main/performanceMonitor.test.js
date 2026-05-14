@@ -43,7 +43,7 @@ describe('main/performanceMonitor', () => {
             }
         });
 
-        makeWebContents = (id, resolve) => ({
+        makeWebContents = (id, resolve, {destroyed = false} = {}) => ({
             send: jest.fn().mockImplementation((channel, arg1, arg2) => {
                 if (channel === METRICS_REQUEST) {
                     cb({sender: {id}}, arg1, {serverId: arg2, cpu: id, memory: id * 100});
@@ -53,6 +53,7 @@ describe('main/performanceMonitor', () => {
                 }
             }),
             on: (_, listener) => listener(),
+            isDestroyed: jest.fn(() => destroyed),
             id,
         });
     });
@@ -250,6 +251,64 @@ describe('main/performanceMonitor', () => {
 
             jest.runOnlyPendingTimers();
             expect(await sendValue2).toEqual(new Map([['view-1', {cpu: 1, memory: 100, serverId: 'server-1'}]]));
+        });
+    });
+
+    describe('destroyed view handling', () => {
+        it('should not register a view when its webContents is already destroyed at did-finish-load', () => {
+            const performanceMonitor = new PerformanceMonitor();
+            performanceMonitor.init();
+
+            const destroyedWebContents = makeWebContents(42, jest.fn(), {destroyed: true});
+            performanceMonitor.registerView('view-1', destroyedWebContents);
+            performanceMonitor.registerServerView('view-2', destroyedWebContents, 'server-1');
+
+            expect(performanceMonitor.views.has(42)).toBe(false);
+            expect(performanceMonitor.serverViews.has(42)).toBe(false);
+        });
+
+        it('runMetrics should unregister and skip destroyed views', async () => {
+            const performanceMonitor = new PerformanceMonitor();
+            performanceMonitor.init();
+
+            const liveResolve = jest.fn();
+            const liveWebContents = makeWebContents(1, liveResolve);
+            const destroyedWebContents = makeWebContents(2, jest.fn());
+
+            performanceMonitor.registerServerView('view-live', liveWebContents, 'server-1');
+            performanceMonitor.registerServerView('view-destroyed', destroyedWebContents, 'server-1');
+
+            // Mark as destroyed only after registration so the views map ends up with both entries
+            destroyedWebContents.isDestroyed.mockReturnValue(true);
+
+            const metrics = await performanceMonitor.runMetrics();
+
+            expect(performanceMonitor.serverViews.has(2)).toBe(false);
+            expect(performanceMonitor.serverViews.has(1)).toBe(true);
+            expect(destroyedWebContents.send).not.toHaveBeenCalled();
+            expect(liveWebContents.send).toHaveBeenCalledWith(METRICS_REQUEST, 'view-live', 'server-1');
+            expect(metrics.has('view-live')).toBe(true);
+            expect(metrics.has('view-destroyed')).toBe(false);
+        });
+
+        it('sendMetrics should unregister destroyed serverViews and not call send on them', async () => {
+            const performanceMonitor = new PerformanceMonitor();
+            performanceMonitor.init();
+
+            const sendValue = new Promise((resolve) => {
+                performanceMonitor.registerServerView('view-1', makeWebContents(1, resolve), 'server-1');
+            });
+            const destroyedWebContents = makeWebContents(2, jest.fn());
+            performanceMonitor.registerServerView('view-2', destroyedWebContents, 'server-1');
+
+            // After registration, mark view-2 as destroyed before the next interval fires
+            destroyedWebContents.isDestroyed.mockReturnValue(true);
+
+            jest.runOnlyPendingTimers();
+            await sendValue;
+
+            expect(performanceMonitor.serverViews.has(2)).toBe(false);
+            expect(destroyedWebContents.send).not.toHaveBeenCalledWith(METRICS_SEND, expect.anything());
         });
     });
 });

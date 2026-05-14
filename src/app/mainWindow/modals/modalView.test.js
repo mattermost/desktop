@@ -17,6 +17,7 @@ jest.mock('electron', () => ({
             isDevToolsOpened: jest.fn(),
             closeDevTools: jest.fn(),
             close: jest.fn(),
+            isDestroyed: jest.fn(() => false),
         },
         setBounds: jest.fn(),
         setAutoResize: jest.fn(),

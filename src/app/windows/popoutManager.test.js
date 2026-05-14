@@ -55,6 +55,7 @@ jest.mock('app/windows/baseWindow', () => {
     mockWebContents.on = jest.fn(mockWebContents.on);
     mockWebContents.once = jest.fn(mockWebContents.once);
     mockWebContents.emit = jest.fn(mockWebContents.emit);
+    mockWebContents.isDestroyed = jest.fn(() => false);
     const mockBrowserWindow = {
         webContents: mockWebContents,
         contentView: {
@@ -70,6 +71,7 @@ jest.mock('app/windows/baseWindow', () => {
         close: jest.fn(),
         setTitle: jest.fn(),
         loadURL: jest.fn(() => Promise.resolve()),
+        isDestroyed: jest.fn(() => false),
     };
 
     return jest.fn(() => ({
@@ -150,6 +152,7 @@ describe('PopoutManager', () => {
     mockWebContents.on = jest.fn(mockWebContents.on);
     mockWebContents.once = jest.fn(mockWebContents.once);
     mockWebContents.emit = jest.fn(mockWebContents.emit);
+    mockWebContents.isDestroyed = jest.fn(() => false);
     const mockBaseWindow = {
         browserWindow: {
             webContents: mockWebContents,
@@ -166,6 +169,7 @@ describe('PopoutManager', () => {
             close: jest.fn(),
             setTitle: jest.fn(),
             loadURL: jest.fn(() => Promise.resolve()),
+            isDestroyed: jest.fn(() => false),
         },
         showLoadingScreen: jest.fn(),
         fadeLoadingScreen: jest.fn(),

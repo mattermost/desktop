@@ -110,6 +110,7 @@ describe('main/windows/mainWindow', () => {
                 send: jest.fn(),
                 setWindowOpenHandler: jest.fn(),
                 zoomLevel: 0,
+                isDestroyed: jest.fn(() => false),
             },
             contentView: {
                 on: jest.fn(),
@@ -118,6 +119,7 @@ describe('main/windows/mainWindow', () => {
             isFullScreen: jest.fn(),
             getBounds: jest.fn(),
             isMinimized: jest.fn().mockReturnValue(false),
+            isDestroyed: jest.fn(() => false),
         };
 
         beforeEach(() => {
