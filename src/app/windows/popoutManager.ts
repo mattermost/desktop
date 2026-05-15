@@ -139,6 +139,9 @@ export class PopoutManager {
 
     private startPopoutWindow = (viewId: string, window: BaseWindow) => {
         window.browserWindow.webContents.once('did-finish-load', () => {
+            if (!window.browserWindow || window.browserWindow.isDestroyed() || window.browserWindow.webContents.isDestroyed()) {
+                return;
+            }
             this.handleViewUpdated(viewId);
             window.browserWindow.show();
         });
@@ -244,7 +247,7 @@ export class PopoutManager {
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.WINDOW) {
             const window = this.popoutWindows.get(viewId);
-            if (window) {
+            if (window?.browserWindow && !window.browserWindow.isDestroyed() && !window.browserWindow.webContents.isDestroyed()) {
                 const title = ViewManager.getViewTitle(viewId);
                 window.browserWindow.setTitle(title);
                 window.browserWindow.webContents.send(UPDATE_POPOUT_TITLE, viewId, title);

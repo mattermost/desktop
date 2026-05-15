@@ -4,7 +4,7 @@
 'use strict';
 
 import AppState from 'common/appState';
-import {LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
@@ -26,6 +26,8 @@ jest.mock('electron', () => ({
         webContents: {
             loadURL: jest.fn(),
             on: jest.fn(),
+            once: jest.fn(),
+            reload: jest.fn(),
             getTitle: () => 'title',
             getURL: () => 'http://server-1.com',
             send: jest.fn(),
@@ -36,7 +38,7 @@ jest.mock('electron', () => ({
                 goToOffset: jest.fn(),
                 canGoToOffset: jest.fn(),
             },
-            isDestroyed: jest.fn(),
+            isDestroyed: jest.fn(() => false),
         },
     })),
     ipcMain: {
@@ -99,6 +101,7 @@ jest.mock('main/server/serverAPI', () => ({
 }));
 jest.mock('common/views/viewManager', () => ({
     updateViewTitle: jest.fn(),
+    isPrimaryView: jest.fn(),
     getViewLog: jest.fn().mockReturnValue({
         info: jest.fn(),
         verbose: jest.fn(),
@@ -467,6 +470,77 @@ describe('main/views/MattermostWebContentsView', () => {
         it('should handle title with no dash', () => {
             mattermostView.handlePageTitleUpdated('Just Channel Name');
             expect(ViewManager.updateViewTitle).toHaveBeenCalledWith(mattermostView.id, 'Just Channel Name');
+        });
+    });
+
+    describe('useLastPath', () => {
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        let mattermostView;
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
+            mattermostView = new MattermostWebContentsView(view, {}, window);
+        });
+
+        it('should send BROWSER_HISTORY_PUSH immediately for the primary view', () => {
+            ViewManager.isPrimaryView.mockReturnValue(true);
+            mattermostView.setLastPath('/team/channel');
+
+            mattermostView.useLastPath();
+
+            expect(mattermostView.webContentsView.webContents.send).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
+            expect(mattermostView.webContentsView.webContents.reload).not.toHaveBeenCalled();
+            expect(mattermostView.lastPath).toBeUndefined();
+        });
+
+        it('should send the captured path after reload, even though lastPath was cleared synchronously', () => {
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            let didFinishLoadCb;
+            mattermostView.webContentsView.webContents.once.mockImplementation((event, cb) => {
+                if (event === 'did-finish-load') {
+                    didFinishLoadCb = cb;
+                }
+            });
+
+            mattermostView.setLastPath('/team/channel');
+            mattermostView.useLastPath();
+
+            expect(mattermostView.webContentsView.webContents.reload).toHaveBeenCalled();
+            expect(mattermostView.lastPath).toBeUndefined();
+
+            didFinishLoadCb();
+
+            expect(mattermostView.webContentsView.webContents.send).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
+        });
+
+        it('should not send when the webContents is destroyed before did-finish-load fires', () => {
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            let didFinishLoadCb;
+            mattermostView.webContentsView.webContents.once.mockImplementation((event, cb) => {
+                if (event === 'did-finish-load') {
+                    didFinishLoadCb = cb;
+                }
+            });
+
+            mattermostView.setLastPath('/team/channel');
+            mattermostView.useLastPath();
+
+            mattermostView.webContentsView.webContents.isDestroyed.mockReturnValue(true);
+            didFinishLoadCb();
+
+            expect(mattermostView.webContentsView.webContents.send).not.toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, expect.anything());
+        });
+
+        it('should be a no-op when lastPath is not set', () => {
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            mattermostView.useLastPath();
+
+            expect(mattermostView.webContentsView.webContents.once).not.toHaveBeenCalled();
+            expect(mattermostView.webContentsView.webContents.reload).not.toHaveBeenCalled();
+            expect(mattermostView.webContentsView.webContents.send).not.toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, expect.anything());
         });
     });
 });

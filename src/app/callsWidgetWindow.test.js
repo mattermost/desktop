@@ -448,6 +448,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 id: 'webContentsId',
                 getURL: () => ('http://myurl.com'),
                 removeListener: jest.fn(),
+                isDestroyed: jest.fn(() => false),
             },
             off: jest.fn(),
             loadURL: jest.fn(),

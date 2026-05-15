@@ -51,6 +51,9 @@ export class LoadingScreen {
 
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
+                if (this.view.webContents.isDestroyed() || this.parent.isDestroyed()) {
+                    return;
+                }
                 if (this.state !== LoadingScreenState.VISIBLE) {
                     return;
                 }
@@ -67,6 +70,9 @@ export class LoadingScreen {
                 }
             });
         } else {
+            if (this.view.webContents.isDestroyed() || this.parent.isDestroyed()) {
+                return;
+            }
             this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
             log.debug('show: not loading, adding loading screen view');
             if (condition?.()) {
@@ -83,7 +89,9 @@ export class LoadingScreen {
         if (this.state === LoadingScreenState.VISIBLE) {
             log.debug('fade: fading loading screen');
             this.state = LoadingScreenState.FADING;
-            this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+            if (!this.view.webContents.isDestroyed()) {
+                this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+            }
         }
     };
 
