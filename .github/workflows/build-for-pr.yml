@@ -15,7 +15,9 @@ env:
 jobs:
   build-linux-for-pr:
     runs-on: ubuntu-22.04
-    if: ${{ github.event.label.name == 'Build Apps for PR' }}
+    if: >-
+      github.event.label.name == 'Build Apps for PR' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -49,7 +51,9 @@ jobs:
 
   windows-install-deps:
     runs-on: windows-2022
-    if: ${{ github.event.label.name == 'Build Apps for PR' }}
+    if: >-
+      github.event.label.name == 'Build Apps for PR' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -79,7 +83,9 @@ jobs:
 
   build-win-for-pr:
     runs-on: windows-2022
-    if: ${{ github.event.label.name == 'Build Apps for PR' }}
+    if: >-
+      github.event.label.name == 'Build Apps for PR' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     needs:
       - windows-install-deps
     steps:
@@ -140,7 +146,9 @@ jobs:
     env:
       MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
       CI_MAC_ZIP_ONLY: true
-    if: ${{ github.event.label.name == 'Build Apps for PR' }}
+    if: >-
+      github.event.label.name == 'Build Apps for PR' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: ci/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
