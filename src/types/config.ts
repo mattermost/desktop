@@ -61,6 +61,7 @@ export type ConfigV4 = {
     themeSyncing?: boolean;
     skippedVersions?: string[];
     useNativeTitleBar?: boolean;
+    sendRawSlashCommandsWithCmdOrCtrlEnter?: boolean;
 }
 
 export type ConfigV3 = Omit<ConfigV4,

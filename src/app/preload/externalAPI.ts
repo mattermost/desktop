@@ -52,9 +52,13 @@ import {
     POPOUT_CLOSED,
     WINDOW_CLOSE,
     UPDATE_POPOUT_TITLE_TEMPLATE,
+    GET_CONFIGURATION,
+    RELOAD_CONFIGURATION,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
+
+import {installRawSlashCommandShortcut, setRawSlashCommandShortcutEnabled} from './rawSlashCommandShortcut';
 
 const createListener: ExternalAPI['createListener'] = (channel: string, listener: (...args: never[]) => void) => {
     const listenerWithEvent = (_: IpcRendererEvent, ...args: unknown[]) =>
@@ -64,6 +68,27 @@ const createListener: ExternalAPI['createListener'] = (channel: string, listener
         ipcRenderer.off(channel, listenerWithEvent);
     };
 };
+
+contextBridge.executeInMainWorld({
+    func: installRawSlashCommandShortcut,
+    args: [process.platform],
+});
+const updateRawSlashCommandShortcutSetting = () => {
+    ipcRenderer.invoke(GET_CONFIGURATION).then((config) => {
+        const rawSlashCommandShortcutEnabled = Boolean(config?.sendRawSlashCommandsWithCmdOrCtrlEnter);
+        contextBridge.executeInMainWorld({
+            func: setRawSlashCommandShortcutEnabled,
+            args: [rawSlashCommandShortcutEnabled],
+        });
+    }).catch(() => {
+        contextBridge.executeInMainWorld({
+            func: setRawSlashCommandShortcutEnabled,
+            args: [false],
+        });
+    });
+};
+updateRawSlashCommandShortcutSetting();
+ipcRenderer.on(RELOAD_CONFIGURATION, updateRawSlashCommandShortcutSetting);
 
 const desktopAPI: DesktopAPI = {
 

@@ -26,6 +26,8 @@ import {
     UPDATE_SERVER_THEME,
     DARK_MODE_CHANGE,
     UPDATE_THEME,
+    EMIT_CONFIGURATION,
+    RELOAD_CONFIGURATION,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
@@ -63,6 +65,7 @@ export class WebContentsManager {
         ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
         ipcMain.on(UPDATE_SERVER_THEME, this.handleUpdateServerTheme);
         ipcMain.on(UPDATE_THEME, this.handleUpdateTheme);
+        ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
 
         if (process.platform !== 'linux') {
             nativeTheme.on('updated', this.handleDarkModeChanged);
@@ -99,6 +102,10 @@ export class WebContentsManager {
                 view.sendToRenderer(channel, ...args);
             }
         });
+    };
+
+    private handleEmitConfiguration = () => {
+        this.sendToAllViews(RELOAD_CONFIGURATION);
     };
 
     createView = (view: MattermostView, parentWindow: BaseWindow): MattermostWebContentsView => {

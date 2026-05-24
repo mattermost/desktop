@@ -278,6 +278,8 @@
   "renderer.components.settingsPage.serverSetting.noServers": "No servers added",
   "renderer.components.settingsPage.serverSetting.noServers.description": "Add a server to connect to your team's communication hub",
   "renderer.components.settingsPage.serverSetting.title": "Servers",
+  "renderer.components.settingsPage.sendRawSlashCommandsWithCmdOrCtrlEnter": "Send slash commands as messages with Cmd/Ctrl+Enter",
+  "renderer.components.settingsPage.sendRawSlashCommandsWithCmdOrCtrlEnter.description": "When a message starts with '/', this shortcut sends the text as a normal message instead of running a slash command.",
   "renderer.components.settingsPage.showUnreadBadge.description.dock": "Regardless of this setting, mentions are always indicated with a red badge and item count on the Dock icon.",
   "renderer.components.settingsPage.showUnreadBadge.description.taskbar": "Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.",
   "renderer.components.settingsPage.showUnreadBadge.dock": "Show red badge on Dock icon to indicate unread messages",

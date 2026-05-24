@@ -218,6 +218,7 @@ describe('common/Validator', () => {
             enableMetrics: true,
             enableSentry: true,
             useNativeTitleBar: false,
+            sendRawSlashCommandsWithCmdOrCtrlEnter: false,
         };
 
         it('should validate v4 config data', () => {
@@ -230,6 +231,13 @@ describe('common/Validator', () => {
                 spellCheckerURL: 'a-bad>url',
             };
             expect(Validator.validateV4ConfigData(modifiedConfig)).not.toHaveProperty('spellCheckerURL');
+        });
+
+        it('should default raw slash command shortcut to disabled', () => {
+            const modifiedConfig = {...config};
+            delete modifiedConfig.sendRawSlashCommandsWithCmdOrCtrlEnter;
+
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toHaveProperty('sendRawSlashCommandsWithCmdOrCtrlEnter', false);
         });
     });
 

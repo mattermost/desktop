@@ -163,6 +163,24 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                     },
                 },
                 {
+                    id: 'sendRawSlashCommandsWithCmdOrCtrlEnter',
+                    component: CheckSetting,
+                    props: {
+                        label: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.sendRawSlashCommandsWithCmdOrCtrlEnter'
+                                defaultMessage='Send slash commands as messages with Cmd/Ctrl+Enter'
+                            />
+                        ),
+                        subLabel: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.sendRawSlashCommandsWithCmdOrCtrlEnter.description'
+                                defaultMessage="When a message starts with '/', this shortcut sends the text as a normal message instead of running a slash command."
+                            />
+                        ),
+                    },
+                },
+                {
                     id: 'minimizeToTray',
                     component: CheckSetting,
                     condition: window.process.platform === 'linux' || window.process.platform === 'win32',

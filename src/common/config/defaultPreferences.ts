@@ -56,6 +56,7 @@ const defaultPreferences: ConfigV4 = {
     viewLimit: 15,
     themeSyncing: true,
     useNativeTitleBar: false,
+    sendRawSlashCommandsWithCmdOrCtrlEnter: false,
 };
 
 export default defaultPreferences;

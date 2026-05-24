@@ -253,6 +253,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.useNativeTitleBar ?? false;
     }
 
+    get sendRawSlashCommandsWithCmdOrCtrlEnter() {
+        return this.combinedData?.sendRawSlashCommandsWithCmdOrCtrlEnter ?? false;
+    }
+
     getWindowsSystemDarkMode = () => {
         return !policyConfigLoader.getAppsUseLightTheme();
     };

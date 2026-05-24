@@ -3,6 +3,7 @@
 
 import {session} from 'electron';
 
+import {EMIT_CONFIGURATION, RELOAD_CONFIGURATION} from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
@@ -43,6 +44,13 @@ jest.mock('app/serverHub', () => ({
 
 jest.mock('common/servers/MattermostServer', () => ({
     MattermostServer: jest.fn(),
+}));
+
+jest.mock('common/config', () => ({
+    __esModule: true,
+    default: {
+        useSpellChecker: true,
+    },
 }));
 
 jest.mock('common/utils/url', () => ({
@@ -271,6 +279,33 @@ describe('app/views/webContentsManager', () => {
             expect(mockView1.sendToRenderer).toHaveBeenCalledWith('test-channel', 'arg1', 'arg2');
             expect(mockView2.sendToRenderer).toHaveBeenCalledWith('test-channel', 'arg1', 'arg2');
             expect(mockView3.sendToRenderer).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('EMIT_CONFIGURATION handler', () => {
+        const webContentsManager = new WebContentsManager();
+        const mockView = {
+            id: 'view1',
+            isDestroyed: jest.fn().mockReturnValue(false),
+            sendToRenderer: jest.fn(),
+        };
+
+        beforeEach(() => {
+            webContentsManager.webContentsViews = new Map([
+                ['view1', mockView],
+            ]);
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should send RELOAD_CONFIGURATION to server views', () => {
+            const ipcMain = require('electron').ipcMain;
+
+            ipcMain.emit(EMIT_CONFIGURATION);
+
+            expect(mockView.sendToRenderer).toHaveBeenCalledWith(RELOAD_CONFIGURATION);
         });
     });
 
