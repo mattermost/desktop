@@ -14,6 +14,7 @@ import {
     UPDATE_SHORTCUT_MENU,
     CALLS_WIDGET_OPEN_THREAD,
     CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL,
+    WINDOW_CLOSE,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {
@@ -425,6 +426,51 @@ describe('main/windows/callsWidgetWindow', () => {
             callsWidgetWindow.handlePopOutFocus();
             expect(callsWidgetWindow.popOut.restore).toBeCalled();
             expect(callsWidgetWindow.popOut.focus).toBeCalled();
+        });
+    });
+
+    describe('handlePopOutClose (WINDOW_CLOSE)', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.popOut = {
+            isDestroyed: jest.fn().mockReturnValue(false),
+            close: jest.fn(),
+            webContents: {id: 42},
+        };
+
+        afterEach(() => {
+            jest.clearAllMocks();
+            callsWidgetWindow.popOut.isDestroyed.mockReturnValue(false);
+        });
+
+        it('should register a WINDOW_CLOSE listener on construction', () => {
+            ipcMain.on.mockClear();
+            // eslint-disable-next-line no-new
+            new CallsWidgetWindow();
+            const calls = ipcMain.on.mock.calls.filter((c) => c[0] === WINDOW_CLOSE);
+            expect(calls).toHaveLength(1);
+        });
+
+        it('should close the popout when sender id matches', () => {
+            callsWidgetWindow.handlePopOutClose({sender: {id: 42}});
+            expect(callsWidgetWindow.popOut.close).toBeCalled();
+        });
+
+        // Coexists with PopoutManager's WINDOW_CLOSE handler — a non-Calls renderer
+        // sending WINDOW_CLOSE must not affect our popout.
+        it('should not close when sender id does not match (e.g. another popout)', () => {
+            callsWidgetWindow.handlePopOutClose({sender: {id: 7}});
+            expect(callsWidgetWindow.popOut.close).not.toBeCalled();
+        });
+
+        it('should not close when popout is destroyed', () => {
+            callsWidgetWindow.popOut.isDestroyed.mockReturnValue(true);
+            callsWidgetWindow.handlePopOutClose({sender: {id: 42}});
+            expect(callsWidgetWindow.popOut.close).not.toBeCalled();
+        });
+
+        it('should not throw when popout is undefined', () => {
+            const widget = new CallsWidgetWindow();
+            expect(() => widget.handlePopOutClose({sender: {id: 42}})).not.toThrow();
         });
     });
 
