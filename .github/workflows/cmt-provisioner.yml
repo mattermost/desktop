@@ -63,7 +63,7 @@ jobs:
             --arg repo     "${REPO}" \
             --arg sha      "${SHA}" \
             --arg ref      "${REF}" \
-            --argjson run_id ${RUN_ID} \
+            --argjson run_id "${RUN_ID}" \
             --arg versions "${SERVER_VERSIONS}" \
             '{owner:$owner, repo:$repo, sha:$sha, ref:$ref, run_id:$run_id, server_versions:$versions}')"
 
