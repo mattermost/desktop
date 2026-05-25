@@ -28,6 +28,7 @@ import {
     GET_DESKTOP_SOURCES,
     UPDATE_SHORTCUT_MENU,
     VIEW_REMOVED,
+    WINDOW_CLOSE,
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -72,6 +73,7 @@ export class CallsWidgetWindow {
         ipcMain.on(CALLS_WIDGET_RESIZE, this.handleResize);
         ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, this.handleShareScreen);
         ipcMain.on(CALLS_POPOUT_FOCUS, this.handlePopOutFocus);
+        ipcMain.on(WINDOW_CLOSE, this.handlePopOutClose);
         ipcMain.handle(GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
         ipcMain.handle(CALLS_JOIN_CALL, this.handleCreateCallsWidgetWindow);
         ipcMain.on(CALLS_LEAVE_CALL, this.handleCallsLeave);
@@ -421,6 +423,18 @@ export class CallsWidgetWindow {
             this.popOut.restore();
         }
         this.popOut.focus();
+    };
+
+    private handlePopOutClose = (event: IpcMainEvent) => {
+        if (!this.popOut || this.popOut.isDestroyed()) {
+            return;
+        }
+
+        if (event.sender.id !== this.popOut.webContents.id) {
+            return;
+        }
+
+        this.popOut.close();
     };
 
     private handleGetDesktopSources = async (event: IpcMainInvokeEvent, opts: Electron.SourcesOptions) => {
