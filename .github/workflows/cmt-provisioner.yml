@@ -26,6 +26,14 @@ on:
         required: true
         type: string
 
+# This workflow does not use GITHUB_TOKEN. It does not check out the repo,
+# does not call the GitHub API, and does not interact with workflow files;
+# its single step is an outbound curl to matterwick authenticated by a
+# separate shared secret. Drop all GITHUB_TOKEN scopes so the runner-issued
+# token cannot accidentally be used to modify the repo if a step is added
+# carelessly later.
+permissions: {}
+
 jobs:
   trigger-matterwick:
     runs-on: ubuntu-22.04
