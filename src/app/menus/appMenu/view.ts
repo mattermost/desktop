@@ -33,6 +33,7 @@ export default function createViewMenu() {
             click() {
                 TabManager.getCurrentActiveTabView()?.openDevTools();
             },
+            accelerator: 'f12',
         },
     ];
 
