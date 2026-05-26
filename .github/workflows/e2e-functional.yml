@@ -307,11 +307,18 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { newFailedTests } = analyzeFlakyTests();
+            const { formatStatusDescription } = require('./utils/github-actions.js');
+            const { newFailedTests, failureCount, passCount, skipCount, totalCount } = analyzeFlakyTests();
 
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const platform = process.platform === 'darwin' ? 'macos' : 'windows';
             const hasFailed = newFailedTests && newFailedTests.length > 0;
+            const description = formatStatusDescription({
+              passed: passCount,
+              failed: failureCount,
+              skipped: skipCount,
+              total: totalCount,
+            });
 
             try {
               await github.rest.repos.createCommitStatus({
@@ -320,7 +327,7 @@ jobs:
                 sha: context.sha,
                 state: hasFailed ? 'failure' : 'success',
                 context: `policy-test/${platform}`,
-                description: `Policy tests completed with ${hasFailed ? newFailedTests.length : 0} failures`,
+                description,
                 target_url: runUrl,
               });
             } catch (e) {

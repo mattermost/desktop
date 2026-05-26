@@ -33,6 +33,27 @@ async function updateInitialStatus({github, context, platforms}) {
  * @param {Array} params.platforms - Array of platform objects from matrix
  * @param {Object} params.outputs - Test outputs from e2e-tests job
  */
+/**
+ * Build the short description shown in the PR status check.
+ *   - all pass, no skips:   "All 175 tests passed"
+ *   - all pass, with skips: "100 passed, 75 skipped (175 total)"
+ *   - any failure:          "100/175 passed, 18 failed"  (+ ", 57 skipped" if non-zero)
+ */
+function formatStatusDescription({passed, failed, skipped, total}) {
+    if (total <= 0) {
+        // No counts available — preserve old wording so we never show 0/0.
+        return `Completed with ${failed} failures`;
+    }
+    if (failed === 0) {
+        if (skipped === 0) {
+            return `All ${total} tests passed`;
+        }
+        return `${passed} passed, ${skipped} skipped (${total} total)`;
+    }
+    const base = `${passed}/${total} passed, ${failed} failed`;
+    return skipped > 0 ? `${base}, ${skipped} skipped` : base;
+}
+
 async function updateFinalStatus({github, context, platforms, outputs}) {
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
@@ -48,7 +69,10 @@ async function updateFinalStatus({github, context, platforms, outputs}) {
             osKey = 'WINDOWS';
         }
 
-        const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
+        const failed = Number(outputs[`NEW_FAILURES_${osKey}`] || 0);
+        const passed = Number(outputs[`PASSED_${osKey}`] || 0);
+        const skipped = Number(outputs[`SKIPPED_${osKey}`] || 0);
+        const total = Number(outputs[`TOTAL_${osKey}`] || 0);
         const status = outputs[`STATUS_${osKey}`] || 'failure';
         const reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
 
@@ -58,7 +82,7 @@ async function updateFinalStatus({github, context, platforms, outputs}) {
             sha: context.payload.pull_request?.head?.sha || context.sha,
             state: status,
             context: `e2e/${platform.platform}`,
-            description: `${platform.platform} E2E completed with ${failures} failures`,
+            description: formatStatusDescription({passed, failed, skipped, total}),
             target_url: reportLink,
         });
     }));
@@ -142,4 +166,5 @@ module.exports = {
     updateInitialStatus,
     updateFinalStatus,
     removeE2ELabel,
+    formatStatusDescription,
 };

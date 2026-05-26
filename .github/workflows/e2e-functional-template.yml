@@ -67,6 +67,33 @@ on:
       STATUS_MACOS:
         description: "The status of the macOS test"
         value: ${{ jobs.e2e.outputs.STATUS_MACOS }}
+      PASSED_LINUX:
+        description: "Number of passed tests on Linux"
+        value: ${{ jobs.e2e.outputs.PASSED_LINUX }}
+      PASSED_MACOS:
+        description: "Number of passed tests on macOS"
+        value: ${{ jobs.e2e.outputs.PASSED_MACOS }}
+      PASSED_WINDOWS:
+        description: "Number of passed tests on Windows"
+        value: ${{ jobs.e2e.outputs.PASSED_WINDOWS }}
+      TOTAL_LINUX:
+        description: "Total tests on Linux (passed + failed + skipped)"
+        value: ${{ jobs.e2e.outputs.TOTAL_LINUX }}
+      TOTAL_MACOS:
+        description: "Total tests on macOS (passed + failed + skipped)"
+        value: ${{ jobs.e2e.outputs.TOTAL_MACOS }}
+      TOTAL_WINDOWS:
+        description: "Total tests on Windows (passed + failed + skipped)"
+        value: ${{ jobs.e2e.outputs.TOTAL_WINDOWS }}
+      SKIPPED_LINUX:
+        description: "Number of skipped tests on Linux"
+        value: ${{ jobs.e2e.outputs.SKIPPED_LINUX }}
+      SKIPPED_MACOS:
+        description: "Number of skipped tests on macOS"
+        value: ${{ jobs.e2e.outputs.SKIPPED_MACOS }}
+      SKIPPED_WINDOWS:
+        description: "Number of skipped tests on Windows"
+        value: ${{ jobs.e2e.outputs.SKIPPED_WINDOWS }}
       STATUS_WINDOWS:
         description: "The status of the windows test"
         value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
@@ -145,6 +172,15 @@ jobs:
       STATUS_LINUX: ${{ steps.analyze-flaky-tests.outputs.STATUS_LINUX }}
       STATUS_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.STATUS_WINDOWS }}
       STATUS_MACOS: ${{ steps.analyze-flaky-tests.outputs.STATUS_MACOS }}
+      PASSED_LINUX: ${{ steps.analyze-flaky-tests.outputs.PASSED_LINUX }}
+      PASSED_MACOS: ${{ steps.analyze-flaky-tests.outputs.PASSED_MACOS }}
+      PASSED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.PASSED_WINDOWS }}
+      TOTAL_LINUX: ${{ steps.analyze-flaky-tests.outputs.TOTAL_LINUX }}
+      TOTAL_MACOS: ${{ steps.analyze-flaky-tests.outputs.TOTAL_MACOS }}
+      TOTAL_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.TOTAL_WINDOWS }}
+      SKIPPED_LINUX: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_LINUX }}
+      SKIPPED_MACOS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_MACOS }}
+      SKIPPED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_WINDOWS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -332,25 +368,27 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { failureCount, os } = analyzeFlakyTests();
+            const { failureCount, passCount, skipCount, totalCount, os } = analyzeFlakyTests();
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const reportUrl = process.env.PER_OS_REPORT_URL || runUrl;
             const testStatus = failureCount > 0 || Number(process.env.PLAYWRIGHT_EXIT_CODE || 0) !== 0 ? 'failure' : 'success';
+            const setOSOutputs = (suffix) => {
+              core.setOutput(`NEW_FAILURES_${suffix}`, String(failureCount));
+              core.setOutput(`REPORT_LINK_${suffix}`, reportUrl);
+              core.setOutput(`STATUS_${suffix}`, testStatus);
+              core.setOutput(`PASSED_${suffix}`, String(passCount));
+              core.setOutput(`SKIPPED_${suffix}`, String(skipCount));
+              core.setOutput(`TOTAL_${suffix}`, String(totalCount));
+            };
             switch (os) {
               case 'linux':
-                core.setOutput('NEW_FAILURES_LINUX', String(failureCount));
-                core.setOutput('REPORT_LINK_LINUX', reportUrl);
-                core.setOutput('STATUS_LINUX', testStatus);
+                setOSOutputs('LINUX');
                 break;
               case 'darwin':
-                core.setOutput('NEW_FAILURES_MACOS', String(failureCount));
-                core.setOutput('REPORT_LINK_MACOS', reportUrl);
-                core.setOutput('STATUS_MACOS', testStatus);
+                setOSOutputs('MACOS');
                 break;
               case 'win32':
-                core.setOutput('NEW_FAILURES_WINDOWS', String(failureCount));
-                core.setOutput('REPORT_LINK_WINDOWS', reportUrl);
-                core.setOutput('STATUS_WINDOWS', testStatus);
+                setOSOutputs('WINDOWS');
                 break;
               default:
                 throw new Error(`Unsupported OS: ${os}`);

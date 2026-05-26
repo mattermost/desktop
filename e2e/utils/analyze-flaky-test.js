@@ -97,6 +97,80 @@ function getFailureCountFromReport(report) {
     return getSuiteFailureCount(report.testsuite);
 }
 
+/**
+ * Collect every testcase across every suite into a flat array.
+ */
+function collectAllCases(report) {
+    if (!report || typeof report !== 'object') {
+        return [];
+    }
+    const suites = report.testsuites ?
+        asArray(report.testsuites.testsuite) :
+        asArray(report.testsuite);
+    const all = [];
+    for (const suite of suites) {
+        if (!suite || typeof suite !== 'object') {
+            continue;
+        }
+        for (const tc of asArray(suite.testcase)) {
+            all.push(tc);
+        }
+    }
+    return all;
+}
+
+/**
+ * Compute pass / fail / skip / total at the UNIQUE-TEST level (collapsing
+ * retries into a single outcome per test, mirroring how Playwright's HTML
+ * report reports stats). A test that failed once then passed on retry counts
+ * once as "passed" — not as both.
+ */
+function getOutcomeCounts(report) {
+    const cases = collectAllCases(report);
+    if (cases.length === 0) {
+        return {passed: 0, failed: 0, skipped: 0, total: 0};
+    }
+
+    // Group every case (including retries) by its base name.
+    const byBase = new Map();
+    for (const tc of cases) {
+        const name = tc.name || '';
+        const m = name.match(/^(.*) \(retry #\d+\)$/);
+        const base = m ? m[1] : name;
+        if (!byBase.has(base)) {
+            byBase.set(base, []);
+        }
+        byBase.get(base).push(tc);
+    }
+
+    let passed = 0;
+    let failed = 0;
+    let skipped = 0;
+    for (const attempts of byBase.values()) {
+        // Empty self-closing tags parse to "" — check for property presence.
+        const anyPass = attempts.some(
+            (tc) =>
+                tc.failure === undefined &&
+                tc.error === undefined &&
+                tc.skipped === undefined,
+        );
+        const anyFail = attempts.some(
+            (tc) => tc.failure !== undefined || tc.error !== undefined,
+        );
+        const allSkipped = attempts.every((tc) => tc.skipped !== undefined);
+
+        if (anyPass) {
+            passed += 1;
+        } else if (anyFail) {
+            failed += 1;
+        } else if (allSkipped) {
+            skipped += 1;
+        }
+    }
+
+    return {passed, failed, skipped, total: passed + failed + skipped};
+}
+
 function analyzeFlakyTests() {
     const exitCode = toNumber(process.env.PLAYWRIGHT_EXIT_CODE || '0');
 
@@ -104,6 +178,9 @@ function analyzeFlakyTests() {
         const failureCount = exitCode === 0 ? 0 : 1;
         return {
             failureCount,
+            passCount: 0,
+            skipCount: 0,
+            totalCount: failureCount,
             newFailedTests: new Array(failureCount).fill('unknown'),
             os: process.platform,
         };
@@ -116,9 +193,20 @@ function analyzeFlakyTests() {
 
     const report = parser.parse(fs.readFileSync(JUNIT_REPORT_PATH, 'utf8'));
     const failureCount = getFailureCountFromReport(report);
+    const outcomes = getOutcomeCounts(report);
+
+    // `failureCount` is the authoritative number (it applies the retry-pass
+    // filter + honours PLAYWRIGHT_EXIT_CODE). When they disagree (rare —
+    // summary-only junit, or exit-code 0 with stale aggregates), trust
+    // `failureCount` and reconcile the rest.
+    const reconciledFailed = failureCount;
+    const reconciledPassed = Math.max(0, outcomes.total - reconciledFailed - outcomes.skipped);
 
     return {
         failureCount,
+        passCount: reconciledPassed,
+        skipCount: outcomes.skipped,
+        totalCount: outcomes.total,
         newFailedTests: new Array(failureCount).fill('failed'),
         os: process.platform,
     };
