@@ -108,15 +108,31 @@ async function clickFileMenuItem(app: ElectronApplication, label: string) {
 async function openPopoutWindow() {
     await mainWindow.bringToFront().catch(() => {});
 
-    // waitForEvent fires when the BrowserWindow is *created*, which may be before
-    // PopoutManager calls loadURL — so the URL can still be blank at that point.
-    // Catch any new window then wait for the popout URL to appear.
-    const popoutPromise = electronApp.waitForEvent('window', {timeout: 15_000});
+    // Snapshot existing windows so we can identify *new* ones after the action.
+    // Every BaseWindow constructs a child URLView (loads urlView.html) on creation,
+    // so naively taking the first new `window` event would return the URLView
+    // page — not the popout BrowserWindow we want. Filter explicitly by popout.html.
+    const before = new Set(electronApp.windows().map((w) => {
+        try { return w.url(); } catch { return ''; }
+    }));
+
     await clickFileMenuItem(electronApp, 'New Window');
-    const newWindow = await popoutPromise;
-    await newWindow.waitForURL('**/popout.html', {timeout: 15_000}).catch(() => {});
-    await newWindow.waitForLoadState().catch(() => {});
-    return newWindow;
+
+    let popout: import('playwright').Page | undefined;
+    await expect.poll(() => {
+        popout = electronApp.windows().find((w) => {
+            try {
+                const u = w.url();
+                return u.includes('popout.html') && !before.has(u);
+            } catch {
+                return false;
+            }
+        });
+        return Boolean(popout);
+    }, {timeout: 15_000, message: 'popout window with popout.html URL did not appear'}).toBe(true);
+
+    await popout!.waitForLoadState().catch(() => {});
+    return popout!;
 }
 
 async function closeAllPopouts() {

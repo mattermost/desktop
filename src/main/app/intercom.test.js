@@ -125,26 +125,27 @@ describe('main/app/intercom', () => {
             expect(MainWindow.once).not.toHaveBeenCalled();
         });
 
-        it('should set __e2eAppReady exactly once when both show and ready-to-show fire (done guard)', () => {
+        it('should set __e2eAppReady when show fires, and only once even if show fires again (done guard)', () => {
             ServerManager.hasServers.mockReturnValue(true);
             const win = makeWindow(false);
             MainWindow.get.mockReturnValue(win);
 
             handleMainWindowIsShown();
 
-            // Both listeners must have been attached against the racing events.
+            // We listen to `show` only — never `ready-to-show`, which fires
+            // *before* the window is visible.
             expect(win.once).toHaveBeenCalledWith('show', expect.any(Function));
-            expect(win.once).toHaveBeenCalledWith('ready-to-show', expect.any(Function));
+            expect(win.once).not.toHaveBeenCalledWith('ready-to-show', expect.any(Function));
             expect(global.__e2eAppReady).toBeUndefined();
 
             // First event fires — flag goes true.
             win.fire('show');
             expect(global.__e2eAppReady).toBe(true);
 
-            // The second event fires later. The done guard should prevent any
-            // double-invocation side effects.
+            // If something fires the show listener again (e.g. via the polling
+            // path), the done guard should prevent any double-invocation side effects.
             ModalManager.addModal.mockClear();
-            win.fire('ready-to-show');
+            win.fire('show');
             expect(ModalManager.addModal).not.toHaveBeenCalled();
         });
 

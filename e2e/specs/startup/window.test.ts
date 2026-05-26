@@ -146,8 +146,22 @@ test.describe('startup/window', () => {
                 await waitForMainBrowserWindow(app2);
                 const bounds = await getMainBrowserWindowBounds(app2);
 
-                // Window should be on-screen (x >= 0)
-                expect(bounds.x).toBeGreaterThanOrEqual(0);
+                // The off-screen x=-9999 must be rejected and the window placed
+                // on some real display. Don't compare to 0 — macOS CI runners
+                // can have a primary display whose workArea.x is negative
+                // (HiDPI/virtual-display origin offset), and `bounds.x` is then
+                // legitimately a small negative number. Instead, assert the
+                // window's centre is inside *some* display's workArea.
+                const displays: Array<{x: number; y: number; width: number; height: number}> =
+                    await app2.evaluate(({screen}) =>
+                        screen.getAllDisplays().map((d) => d.workArea),
+                    );
+                const midX = bounds.x + (bounds.width / 2);
+                const midY = bounds.y + (bounds.height / 2);
+                const onScreen = displays.some(
+                    (d) => midX >= d.x && midX <= d.x + d.width && midY >= d.y && midY <= d.y + d.height,
+                );
+                expect(onScreen, `bounds ${JSON.stringify(bounds)} not inside any display ${JSON.stringify(displays)}`).toBe(true);
             } finally {
                 await app2.close();
             }
@@ -182,7 +196,19 @@ test.describe('startup/window', () => {
                 await waitForAppReady(app2);
                 await waitForMainBrowserWindow(app2);
                 const bounds = await getMainBrowserWindowBounds(app2);
-                expect(bounds.y).toBeGreaterThanOrEqual(0);
+
+                // Same rationale as MM-T4403_2: assert "on some display" instead
+                // of bounds.y >= 0 to tolerate displays with non-zero origins.
+                const displays: Array<{x: number; y: number; width: number; height: number}> =
+                    await app2.evaluate(({screen}) =>
+                        screen.getAllDisplays().map((d) => d.workArea),
+                    );
+                const midX = bounds.x + (bounds.width / 2);
+                const midY = bounds.y + (bounds.height / 2);
+                const onScreen = displays.some(
+                    (d) => midX >= d.x && midX <= d.x + d.width && midY >= d.y && midY <= d.y + d.height,
+                );
+                expect(onScreen, `bounds ${JSON.stringify(bounds)} not inside any display ${JSON.stringify(displays)}`).toBe(true);
             } finally {
                 await app2.close();
             }

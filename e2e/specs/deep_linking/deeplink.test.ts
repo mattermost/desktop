@@ -84,13 +84,19 @@ test.describe('application', () => {
         }, {timeout: 15_000}).toBeGreaterThanOrEqual(1);
 
         const webContentsId = resolvedServerMap[serverName][0].webContentsId;
-        const isActive = await browserWindow.evaluate((window, id: number) => {
-            const view = (window as any).contentView.children.find(
-                (v: any) => v.webContents && v.webContents.id === id,
-            );
-            return view ? view.webContents.getURL() : null;
-        }, webContentsId);
-        expect(isActive).toBe('https://github.com/test/url/');
+
+        // The deeplink view's webContents is created synchronously when the
+        // protocol is handled, but loadURL is async — `getURL()` returns null
+        // for a brief window between view creation and the first load tick.
+        // Poll until the expected URL is present rather than sampling once.
+        await expect.poll(async () => {
+            return browserWindow.evaluate((window, id: number) => {
+                const view = (window as any).contentView.children.find(
+                    (v: any) => v.webContents && v.webContents.id === id,
+                );
+                return view ? view.webContents.getURL() : null;
+            }, webContentsId);
+        }, {timeout: 15_000, message: 'deep-linked webContents did not navigate to the expected URL'}).toBe('https://github.com/test/url/');
         const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
         expect(dropdownButtonText).toBe('github');
     });

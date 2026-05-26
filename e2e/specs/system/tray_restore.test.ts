@@ -35,11 +35,16 @@ test(
         try {
             await waitForAppReady(app);
 
-            // Verify main window is visible
-            const isVisible1 = await app.evaluate(({BrowserWindow}) =>
-                BrowserWindow.getAllWindows().some((w) => w.isVisible()),
-            );
-            expect(isVisible1).toBe(true);
+            // Verify main window is visible. Poll rather than asserting once —
+            // `waitForAppReady` resolves when the `show` event fires, but on some
+            // Linux WMs (xvfb in CI) `isVisible()` can briefly report false right
+            // after the event before the WM has fully mapped the window.
+            await expect.poll(
+                () => app.evaluate(({BrowserWindow}) =>
+                    BrowserWindow.getAllWindows().some((w) => w.isVisible()),
+                ),
+                {timeout: 10_000, message: 'Main window should be visible after launch'},
+            ).toBe(true);
 
             // Simulate "close to tray": hide the main window
             // (the actual close handler calls win.hide() when minimizeToTray is true)

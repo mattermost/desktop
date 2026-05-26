@@ -94,10 +94,12 @@ export function handleMainWindowIsShown() {
             return;
         }
 
-        // Listen to any signal that the window has become / is becoming visible.
-        // The `done` guard ensures only the first one to fire takes effect.
+        // The `show` event fires when `browserWindow.show()` is called and the
+        // window becomes visible. We deliberately do NOT listen to
+        // `ready-to-show` here: that event fires *before* the window is shown
+        // (so the renderer can call `.show()` without a white flash), and using
+        // it would set `__e2eAppReady=true` while the window is still hidden.
         mainWindow.once('show', () => markReady(false));
-        mainWindow.once('ready-to-show', () => markReady(false));
 
         // Belt-and-suspenders: the 'show' event can fire between MainWindow.show()
         // (called earlier in initialize) and the listener attach above, especially

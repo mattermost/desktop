@@ -17,8 +17,17 @@ import type {ElectronApplication} from 'playwright';
  */
 export async function waitForAppReady(app: ElectronApplication): Promise<void> {
     // macOS CI runners are slower and may show Resume dialogs that delay startup.
-    // Use a longer timeout to accommodate this.
-    const timeout = process.platform === 'darwin' ? 60_000 : 30_000;
+    // Windows GitHub-hosted runners are similarly slow (cold-start Electron +
+    // Visual Studio environment); 30s consistently timed out on `windows-2022`.
+    // Linux (xvfb) is fastest. 60s on Windows matches the macOS budget.
+    let timeout: number;
+    if (process.platform === 'darwin') {
+        timeout = 60_000;
+    } else if (process.platform === 'win32') {
+        timeout = 60_000;
+    } else {
+        timeout = 30_000;
+    }
 
     await expect.poll(
         async () => {
