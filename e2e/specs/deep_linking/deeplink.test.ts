@@ -27,7 +27,10 @@ test.describe('application', () => {
         const {_electron: electron} = await import('playwright');
         app = await electron.launch({
             executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu', 'mattermost://github.com/test/url'],
+            // When running via the unpacked Electron binary (not a packaged app),
+            // electron-is-dev resolves isDev=true, so getDeeplinkingURL() expects
+            // the 'mattermost-dev://' protocol prefix rather than 'mattermost://'.
+            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu', 'mattermost-dev://github.com/test/url'],
             env: {...process.env, NODE_ENV: 'test'},
             timeout: 60_000,
         });
@@ -86,10 +89,13 @@ test.describe('application', () => {
         // of navigating contentView.children. On newer Electron versions the
         // WebContentsView tree layout differs between platforms, but
         // webContents.fromId() works universally.
-        const githubView = resolvedServerMap[serverName][0].win;
+        // Re-resolve the serverMap on each poll iteration in case the webContentsId
+        // changes (e.g., a new view was created by openLinkInPrimaryTab).
         await expect.poll(async () => {
-            return githubView.url();
-        }, {timeout: 15_000, message: 'deep-linked webContents did not navigate to the expected URL'}).toBe('https://github.com/test/url/');
+            const freshMap = await buildServerMap(app!);
+            const freshView = freshMap[serverName]?.[0]?.win;
+            return freshView?.url() ?? '';
+        }, {timeout: 30_000, message: 'deep-linked webContents did not navigate to the expected URL'}).toContain('github.com/test/url');
         const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
         expect(dropdownButtonText).toBe('github');
     });

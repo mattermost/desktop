@@ -314,6 +314,14 @@ test.describe('server_management/popout_windows', () => {
                     expect(popoutWindows.length).toBe(1);
 
                     const mainBrowserWindow = await app.browserWindow(mainWindows[0]);
+
+                    // On Windows, mainWindow.onClose calls event.preventDefault() when
+                    // global.willAppQuit is false (shows "Are you sure?" dialog that
+                    // nobody clicks in headless CI).  Set willAppQuit = true first so
+                    // the close actually propagates and triggers popout cleanup.
+                    await app.evaluate(() => {
+                        (global as any).willAppQuit = true;
+                    });
                     await mainBrowserWindow.evaluate((w) => (w as Electron.BrowserWindow).close());
 
                     await expect.poll(() => {

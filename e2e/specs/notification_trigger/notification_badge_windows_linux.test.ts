@@ -16,8 +16,27 @@ async function triggerBadge(
     mentionCount: number,
     showUnreadBadge: boolean,
 ) {
+    // Wait for setupBadge() to have registered the test hook (it runs after app
+    // is ready but the fixture's waitForAppReady may return slightly before it).
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+        try {
+            const isReady = await app.evaluate(() => typeof (global as any).__testTriggerBadge === 'function');
+            if (isReady) {
+                break;
+            }
+        } catch {
+            // "Execution context was destroyed" — app still initialising, retry
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
     await app.evaluate((_, args: {sessionExpired: boolean; mentionCount: number; showUnreadBadge: boolean}) => {
-        (global as any).__testTriggerBadge(args.sessionExpired, args.mentionCount, args.showUnreadBadge);
+        const trigger = (global as any).__testTriggerBadge;
+        if (typeof trigger !== 'function') {
+            throw new Error('__testTriggerBadge is not registered — setupBadge() may not have run yet');
+        }
+        trigger(args.sessionExpired, args.mentionCount, args.showUnreadBadge);
     }, {sessionExpired, mentionCount, showUnreadBadge});
 
     // Windows canvas drawing in setOverlayIcon is async — give it time to settle
@@ -41,13 +60,27 @@ async function resetBadgeState(app: import('playwright').ElectronApplication) {
 test.describe('notification_badge/windows_and_linux', () => {
     // Reset showUnreadBadgeSetting to false before each test to prevent state bleed
     // when a test sets the setting to true but fails before resetting it.
+    // Retry on "Execution context was destroyed" which can occur when the Electron
+    // main process is still completing initialisation at the start of the suite.
     test.beforeEach(async ({electronApp}) => {
-        await electronApp.evaluate(() => {
-            (global as any).__testTriggerSetUnreadBadgeSetting?.(false);
-        });
-        await electronApp.evaluate(() => {
-            (global as any).__testBadgeState = null;
-        });
+        const deadline = Date.now() + 10_000;
+        while (Date.now() < deadline) {
+            try {
+                await electronApp.evaluate(() => {
+                    (global as any).__testTriggerSetUnreadBadgeSetting?.(false);
+                });
+                await electronApp.evaluate(() => {
+                    (global as any).__testBadgeState = null;
+                });
+                break;
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                if (!msg.includes('Execution context was destroyed')) {
+                    throw err;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 200));
+            }
+        }
     });
 
     // --- Windows: overlay icon badge ---

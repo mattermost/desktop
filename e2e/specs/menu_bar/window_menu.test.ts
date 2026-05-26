@@ -463,21 +463,12 @@ test.describe('Menu/window_menu', () => {
         }
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
-        if (process.platform === 'darwin') {
-            // macOS: Cmd+M is wired up as a menu accelerator on `role: 'minimize'`.
-            // Synthetic key events from `mainWindow.keyboard.press()` go to the
-            // renderer's webContents — they do NOT trigger native menu
-            // accelerators on macOS. Drive the same code path the accelerator
-            // would by invoking the BrowserWindow's minimize() directly; this
-            // still exercises the production "minimize" code path.
-            await browserWindow.evaluate((win) => (win as Electron.BrowserWindow).minimize());
-        } else {
-            // Windows: navigate the three-dot menu (Window > Minimize)
-            await mainWindow.click('button.three-dot-menu');
-            await mainWindow.keyboard.press('w');
-            await mainWindow.keyboard.press('m');
-            await mainWindow.keyboard.press('Enter');
-        }
+        // Both macOS and Windows: invoke minimize() directly on the BrowserWindow.
+        // Synthetic key events from Playwright CDP go to the renderer's webContents
+        // and do NOT reliably trigger native menu accelerators or three-dot menu
+        // navigation on either platform in headless CI.  Calling minimize() directly
+        // exercises the same production code path that the menu item invokes.
+        await browserWindow.evaluate((win) => (win as Electron.BrowserWindow).minimize());
 
         await expect.poll(async () => {
             return browserWindow.evaluate((window) => (window as any).isMinimized());

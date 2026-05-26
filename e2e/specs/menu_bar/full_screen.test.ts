@@ -34,7 +34,10 @@ test.describe('menu/view', () => {
 
         // Use direct menu invocation — keyboard events sent via Playwright CDP to the
         // web contents do not reliably reach the native Electron popup menu on Windows.
-        await electronApp.evaluate(({app}) => {
+        // Pass the main window to item.click() so the role-based 'togglefullscreen'
+        // action knows which window to target (getFocusedWindow() may be null in
+        // headless CI).
+        await electronApp.evaluate(({app, BrowserWindow}) => {
             const viewMenu = (app as any).applicationMenu?.getMenuItemById('view');
             const toggleItem = viewMenu?.submenu?.items?.find(
                 (item: any) => item.role === 'togglefullscreen' || item.accelerator === 'F11',
@@ -42,7 +45,12 @@ test.describe('menu/view', () => {
             if (!toggleItem) {
                 throw new Error('Toggle Full Screen menu item not found');
             }
-            toggleItem.click();
+            const refs = (global as any).__e2eTestRefs;
+            const targetWindow = BrowserWindow.getFocusedWindow() ??
+                refs?.MainWindow?.get?.() ??
+                BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
+                null;
+            toggleItem.click(undefined, targetWindow, undefined);
         });
 
         await electronApp.evaluate(async ({BrowserWindow}) => {
@@ -53,15 +61,15 @@ test.describe('menu/view', () => {
             }
             await new Promise<void>((resolve, reject) => {
                 const timeout = setTimeout(() => reject(new Error('Timed out waiting for fullscreen')), 15000);
-                const check = () => {
-                    if (win.isFullScreen()) {
-                        clearTimeout(timeout);
-                        resolve();
-                    } else {
-                        setTimeout(check, 100);
-                    }
-                };
-                check();
+                if (win.isFullScreen()) {
+                    clearTimeout(timeout);
+                    resolve();
+                    return;
+                }
+                win.once('enter-full-screen', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                });
             });
         });
 
@@ -70,12 +78,19 @@ test.describe('menu/view', () => {
         expect(fullScreenWidth).toBeGreaterThan(currentWidth as number);
         expect(fullScreenHeight).toBeGreaterThan(currentHeight as number);
 
-        await electronApp.evaluate(({app}) => {
+        await electronApp.evaluate(({app, BrowserWindow}) => {
             const viewMenu = (app as any).applicationMenu?.getMenuItemById('view');
             const toggleItem = viewMenu?.submenu?.items?.find(
                 (item: any) => item.role === 'togglefullscreen' || item.accelerator === 'F11',
             );
-            toggleItem?.click();
+            if (toggleItem) {
+                const refs = (global as any).__e2eTestRefs;
+                const targetWindow = BrowserWindow.getFocusedWindow() ??
+                    refs?.MainWindow?.get?.() ??
+                    BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
+                    null;
+                toggleItem.click(undefined, targetWindow, undefined);
+            }
         });
 
         await electronApp.evaluate(async ({BrowserWindow}) => {
@@ -86,15 +101,15 @@ test.describe('menu/view', () => {
             }
             await new Promise<void>((resolve, reject) => {
                 const timeout = setTimeout(() => reject(new Error('Timed out waiting for exit fullscreen')), 15000);
-                const check = () => {
-                    if (win.isFullScreen()) {
-                        setTimeout(check, 100);
-                    } else {
-                        clearTimeout(timeout);
-                        resolve();
-                    }
-                };
-                check();
+                if (!win.isFullScreen()) {
+                    clearTimeout(timeout);
+                    resolve();
+                    return;
+                }
+                win.once('leave-full-screen', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                });
             });
         });
 
