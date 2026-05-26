@@ -1,0 +1,21 @@
+# QA run commands — PR #3829 (local agent)
+# Format: CMD || EXIT — stderr tail (last 20 lines max)
+
+date -u +"%Y-%m-%dT%H:%M:%SZ"  ## exit 0
+
+# Env presence check (no secret values echoed)
+printf 'QA_POST_COMMENTS=%s\n' "${QA_POST_COMMENTS:-unset}"  ## exit 0
+# MM_TEST_SERVER_URL intentionally not printed (empty)
+
+gh pr view 3829 --repo mattermost/desktop --json title,body,...  ## exit 0
+
+gh pr diff 3829 --repo mattermost/desktop  ## exit 0
+
+# Before e2e npm ci — module resolution from root eval
+cd /workspace && node -e "process.chdir('e2e'); require('./utils/analyze-flaky-test.js');"  ## exit 1
+# stderr: Error: Cannot find module './utils/analyze-flaky-test.js' (eval context)
+
+cd /workspace/e2e && npm ci  ## exit 0
+
+cd /workspace/e2e && node -e "const m=require('./utils/analyze-flaky-test.js'); process.env.PLAYWRIGHT_EXIT_CODE='0'; console.log(JSON.stringify(m.analyzeFlakyTests()));"  ## exit 0
+# stdout: {"failureCount":0,"newFailedTests":[],"os":"linux"}

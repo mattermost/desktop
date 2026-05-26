@@ -1,0 +1,1 @@
+No Playwright traces, HAR files, or console dumps were produced in this run (Tier A scenarios blocked: missing MM_TEST_SERVER_URL). Scrubber not invoked. No categories or counts to report.
