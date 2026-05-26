@@ -52,6 +52,8 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
+    once: jest.fn(),
+    on: jest.fn(),
 }));
 
 jest.mock('./app', () => ({}));
@@ -75,15 +77,113 @@ describe('main/app/intercom', () => {
     });
 
     describe('handleMainWindowIsShown', () => {
+        // Helper: build a BrowserWindow mock whose `once` records listeners so
+        // tests can fire them on demand.
+        const makeWindow = (initialVisible) => {
+            const listeners = {};
+            let visible = initialVisible;
+            return {
+                listeners,
+                setVisible: (v) => {
+                    visible = v;
+                },
+                isVisible: jest.fn(() => visible),
+                once: jest.fn((event, cb) => {
+                    listeners[event] = cb;
+                }),
+                fire: (event) => listeners[event] && listeners[event](),
+            };
+        };
+
+        afterEach(() => {
+            delete global.__e2eAppReady;
+            jest.useRealTimers();
+            jest.clearAllMocks();
+        });
+
         it('MM-48079 should not show onboarding screen or server screen if GPO server is pre-configured', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({
                 isVisible: () => true,
+                once: jest.fn(),
             });
             ServerManager.hasServers.mockReturnValue(true);
 
             handleMainWindowIsShown();
             expect(ModalManager.addModal).not.toHaveBeenCalled();
+        });
+
+        it('should mark __e2eAppReady synchronously without attaching listeners when the main window is already visible', () => {
+            ServerManager.hasServers.mockReturnValue(true);
+            const win = makeWindow(true);
+            MainWindow.get.mockReturnValue(win);
+
+            handleMainWindowIsShown();
+
+            expect(global.__e2eAppReady).toBe(true);
+            expect(win.once).not.toHaveBeenCalled();
+            expect(MainWindow.once).not.toHaveBeenCalled();
+        });
+
+        it('should set __e2eAppReady exactly once when both show and ready-to-show fire (done guard)', () => {
+            ServerManager.hasServers.mockReturnValue(true);
+            const win = makeWindow(false);
+            MainWindow.get.mockReturnValue(win);
+
+            handleMainWindowIsShown();
+
+            // Both listeners must have been attached against the racing events.
+            expect(win.once).toHaveBeenCalledWith('show', expect.any(Function));
+            expect(win.once).toHaveBeenCalledWith('ready-to-show', expect.any(Function));
+            expect(global.__e2eAppReady).toBeUndefined();
+
+            // First event fires — flag goes true.
+            win.fire('show');
+            expect(global.__e2eAppReady).toBe(true);
+
+            // The second event fires later. The done guard should prevent any
+            // double-invocation side effects.
+            ModalManager.addModal.mockClear();
+            win.fire('ready-to-show');
+            expect(ModalManager.addModal).not.toHaveBeenCalled();
+        });
+
+        it('should mark ready from the polling fallback if isVisible() flips true without an event firing', () => {
+            jest.useFakeTimers();
+            ServerManager.hasServers.mockReturnValue(true);
+            const win = makeWindow(false);
+            MainWindow.get.mockReturnValue(win);
+
+            handleMainWindowIsShown();
+            expect(global.__e2eAppReady).toBeUndefined();
+
+            // Simulate the 'show' event having fired before the listener was
+            // attached — events never come, but isVisible() now reports true.
+            win.setVisible(true);
+            jest.advanceTimersByTime(250);
+
+            expect(global.__e2eAppReady).toBe(true);
+        });
+
+        it('should defer to MAIN_WINDOW_CREATED if no main window exists yet, then mark ready when it appears', () => {
+            ServerManager.hasServers.mockReturnValue(true);
+            MainWindow.get.mockReturnValue(undefined);
+
+            handleMainWindowIsShown();
+
+            // No window yet — should have registered a one-shot listener.
+            expect(MainWindow.once).toHaveBeenCalledWith('main-window-created', expect.any(Function));
+            expect(global.__e2eAppReady).toBeUndefined();
+
+            // Window comes into existence (and happens to already be visible).
+            const win = makeWindow(true);
+            MainWindow.get.mockReturnValue(win);
+
+            // Invoke the captured listener (simulating MainWindow emitting).
+            const createdCb = MainWindow.once.mock.calls[0][1];
+            createdCb();
+
+            expect(global.__e2eAppReady).toBe(true);
         });
     });
 

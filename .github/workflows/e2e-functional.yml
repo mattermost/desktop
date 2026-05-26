@@ -183,7 +183,11 @@ jobs:
           - platform: macos
             runner: macos-26
           - platform: windows
-            runner: windows-2025
+            # Pinned to windows-2022 (not -2025) because the 2025 image ships
+            # Visual Studio 18 / "2026", which current node-gyp doesn't recognise —
+            # `npm ci` then fails to build the registry-js native module.
+            # The main e2e-tests matrix also runs on windows-2022; keep them aligned.
+            runner: windows-2022
       fail-fast: false
     runs-on: ${{ matrix.runner }}
     defaults:
