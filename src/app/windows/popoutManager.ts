@@ -101,6 +101,7 @@ export class PopoutManager {
 
     private closeAllPopouts = () => {
         log.debug('closeAllPopouts: main window closed, destroying all popout windows');
+
         // Snapshot keys before iterating to avoid mutating the Map while walking it.
         const viewIds = [...this.popoutWindows.keys()];
         for (const viewId of viewIds) {

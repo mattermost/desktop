@@ -44,7 +44,6 @@ test.describe('copylink', () => {
             }
         })()`);
 
-
         // Click "Copy Link" from the context menu.
         // Use a longer timeout to accommodate CI latency. The exact element varies
         // across Mattermost webapp versions: sometimes it's a <button>, sometimes
