@@ -229,6 +229,18 @@ jobs:
           npm ci
           cd e2e && npm ci
 
+      - name: e2e/suppress-macos-dialogs
+        if: runner.os == 'macOS'
+        run: |
+          # Suppress the "Reopen windows" dialog that blocks Electron startup
+          # when a previous test instance was killed by SIGTERM/SIGKILL.
+          # The global-setup.ts also does this, but running it here as well ensures
+          # the setting is applied even if the Playwright globalSetup step is skipped.
+          defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false || true
+          defaults write com.github.Electron ApplePersistenceIgnoreState -bool YES || true
+          defaults write com.apple.LaunchServices LSQuarantine -bool false || true
+          defaults write com.apple.CrashReporter DialogType none || true
+
       - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
         run: |

@@ -51,7 +51,10 @@ export default async function globalTeardown() {
             continue;
         }
 
-        const deadline = Date.now() + 5_000;
+        // Give the process time to exit gracefully.
+        // On macOS, use a longer wait since Electron shutdown can be slow.
+        const waitMs = process.platform === 'darwin' ? 10_000 : 5_000;
+        const deadline = Date.now() + waitMs;
         while (Date.now() < deadline) {
             if (!isProcessAlive(pid)) {
                 break;
@@ -60,10 +63,16 @@ export default async function globalTeardown() {
         }
 
         if (isProcessAlive(pid)) {
-            try {
-                process.kill(pid, 'SIGKILL');
-            } catch {
-                // already exited
+            // On macOS, SIGKILL triggers the "quit unexpectedly" crash dialog
+            // which blocks subsequent Electron launches. Skip SIGKILL and let
+            // the process linger — global-setup clears the registry, and each
+            // test uses a unique userDataDir so orphans never block new tests.
+            if (process.platform !== 'darwin') {
+                try {
+                    process.kill(pid, 'SIGKILL');
+                } catch {
+                    // already exited
+                }
             }
         }
     }

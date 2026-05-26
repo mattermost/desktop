@@ -28,11 +28,38 @@ export default async function globalSetup() {
     }
 
     if (process.platform === 'darwin') {
+        // Multiple bundle IDs may be involved: com.github.Electron (Electron binary
+        // launched directly) and the app's own bundle ID (when running signed builds).
+        const bundleIDs = ['com.github.Electron'];
+
+        for (const bundleID of bundleIDs) {
+            try {
+                execSync(`defaults write ${bundleID} NSQuitAlwaysKeepsWindows -bool false`, {stdio: 'pipe'});
+            } catch {
+                // Non-fatal — tests still run, just potentially with the Resume dialog
+            }
+            try {
+                execSync(`defaults write ${bundleID} ApplePersistenceIgnoreState -bool YES`, {stdio: 'pipe'});
+            } catch {
+                // Non-fatal
+            }
+        }
+
+        // Verify at least one bundle ID got the settings applied.
+        // Also suppress the "verification of developer" dialog that can appear
+        // on first launch of unsigned Electron builds.
         try {
-            execSync('defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false', {stdio: 'ignore'});
-            execSync('defaults write com.github.Electron ApplePersistenceIgnoreState -bool YES', {stdio: 'ignore'});
+            execSync('defaults write com.apple.LaunchServices LSQuarantine -bool false', {stdio: 'pipe'});
         } catch {
-            // Non-fatal — tests still run, just potentially with the Resume dialog
+            // Non-fatal
+        }
+
+        // Suppress the macOS crash dialog ("Electron quit unexpectedly") that
+        // appears when a process is killed by SIGKILL in global-teardown.
+        try {
+            execSync('defaults write com.apple.CrashReporter DialogType none', {stdio: 'pipe'});
+        } catch {
+            // Non-fatal
         }
     }
 }

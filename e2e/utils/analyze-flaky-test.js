@@ -27,10 +27,39 @@ function getSuiteFailureCount(suite) {
     }
 
     if (suite.failures !== undefined || suite.errors !== undefined) {
+        // These are aggregated counts. Playwright includes retried failures in them.
+        // If the exit code is 0, all tests ultimately passed — only count definitive failures.
+        const exitCode = toNumber(process.env.PLAYWRIGHT_EXIT_CODE || '0');
+        if (exitCode === 0) {
+            return 0;
+        }
         return toNumber(suite.failures) + toNumber(suite.errors);
     }
 
-    return asArray(suite.testcase).filter((testcase) => testcase.failure || testcase.error).length;
+    // When no aggregated counts exist, inspect individual testcases.
+    // Filter out failures that were later retried and passed.
+    const cases = asArray(suite.testcase);
+    const definitiveFailures = cases.filter((testcase) => {
+        if (!testcase.failure && !testcase.error) {
+            return false;
+        }
+        // If this test name ends with a retry suffix like " (retry #1)",
+        // and the base test (without suffix) also appears as a passing case,
+        // this failure was retried and resolved — don't count it.
+        const name = testcase.name || '';
+        const retryMatch = name.match(/^(.*) \(retry #\d+\)$/);
+        if (retryMatch) {
+            const baseName = retryMatch[1];
+            const hasPassingRetry = cases.some(
+                (c) => c.name === baseName && !c.failure && !c.error,
+            );
+            if (hasPassingRetry) {
+                return false;
+            }
+        }
+        return true;
+    });
+    return definitiveFailures.length;
 }
 
 function getFailureCountFromReport(report) {
