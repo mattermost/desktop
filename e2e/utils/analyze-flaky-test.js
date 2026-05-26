@@ -43,6 +43,7 @@ function getSuiteFailureCount(suite) {
         if (!testcase.failure && !testcase.error) {
             return false;
         }
+
         // If this test name ends with a retry suffix like " (retry #1)",
         // and the base test (without suffix) also appears as a passing case,
         // this failure was retried and resolved — don't count it.
