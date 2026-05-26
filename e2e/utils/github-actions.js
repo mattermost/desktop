@@ -35,23 +35,22 @@ async function updateInitialStatus({github, context, platforms}) {
  */
 /**
  * Build the short description shown in the PR status check.
- *   - all pass, no skips:   "All 175 tests passed"
- *   - all pass, with skips: "100 passed, 75 skipped (175 total)"
- *   - any failure:          "100/175 passed, 18 failed"  (+ ", 57 skipped" if non-zero)
+ * Only counts tests that actually ran on this platform (passed + failed).
+ * Skipped tests are omitted — they are cross-platform guards, not real
+ * failures, and inflate the denominator making results look worse.
+ *
+ *   - all pass:   "All 161 ran, 161 passed"
+ *   - any failure: "161 ran, 157 passed, 4 failed"
  */
-function formatStatusDescription({passed, failed, skipped, total}) {
-    if (total <= 0) {
-        // No counts available — preserve old wording so we never show 0/0.
-        return `Completed with ${failed} failures`;
+function formatStatusDescription({passed, failed}) {
+    const ran = passed + failed;
+    if (ran === 0) {
+        return failed > 0 ? `0 ran, ${failed} failed` : 'No tests ran';
     }
     if (failed === 0) {
-        if (skipped === 0) {
-            return `All ${total} tests passed`;
-        }
-        return `${passed} passed, ${skipped} skipped (${total} total)`;
+        return `All ${ran} ran, ${passed} passed`;
     }
-    const base = `${passed}/${total} passed, ${failed} failed`;
-    return skipped > 0 ? `${base}, ${skipped} skipped` : base;
+    return `${ran} ran, ${passed} passed, ${failed} failed`;
 }
 
 async function updateFinalStatus({github, context, platforms, outputs}) {
