@@ -279,7 +279,30 @@ test.describe('server_management/popout_windows', () => {
                     if (!win) {
                         throw new Error('Main window not found');
                     }
-                    await win.keyboard.press('Control+n');
+
+                    // Use direct menu invocation instead of Control+n keyboard
+                    // shortcut — synthetic key events sent via Playwright CDP go to
+                    // the renderer webContents and may not reach the native Electron
+                    // menu accelerator on Windows CI.
+                    await app.evaluate(({app: electronAppInstance, BrowserWindow}) => {
+                        const fileMenu = (electronAppInstance as any).applicationMenu.getMenuItemById('file');
+                        const items = fileMenu?.submenu?.items ?? [];
+                        const newWindowItem = items.find((candidate: any) => {
+                            const candidateLabel = typeof candidate.label === 'string' ? candidate.label.trim() : '';
+                            return candidateLabel === 'New Window';
+                        });
+
+                        if (!newWindowItem) {
+                            throw new Error('New Window menu item not found');
+                        }
+
+                        const refs = (global as any).__e2eTestRefs;
+                        const targetWindow = BrowserWindow.getFocusedWindow() ??
+                            refs?.MainWindow?.get?.() ??
+                            BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
+                            null;
+                        newWindowItem.click(undefined, targetWindow, undefined);
+                    });
 
                     await expect.poll(() => {
                         return app.windows().filter((w) => w.url().includes('popout.html')).length;

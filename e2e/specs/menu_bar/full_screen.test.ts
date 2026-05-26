@@ -7,6 +7,8 @@ import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('menu/view', () => {
+    test.use({appConfig: demoMattermostConfig});
+
     test('MM-T816 Toggle Full Screen in the Menu Bar', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
         if (process.platform !== 'win32') {
             test.skip(true, 'Windows only');

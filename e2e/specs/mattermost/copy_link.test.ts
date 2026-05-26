@@ -28,10 +28,12 @@ test.describe('copylink', () => {
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
 
         // Click "Copy Link" from the context menu.
-        // Use a longer timeout to accommodate CI latency, and match both "Copy Link"
-        // and "Copy link" (capitalization varies by Mattermost version).
+        // Use a longer timeout to accommodate CI latency. The exact element varies
+        // across Mattermost webapp versions: sometimes it's a <button>, sometimes
+        // a <li>/<div> with role="menuitem". Match any interactive container
+        // that contains the expected text.
         const copyLinkItem = await firstServer.waitForSelector(
-            'button:has-text("Copy Link"), button:has-text("Copy link")',
+            'button:has-text("Copy Link"), button:has-text("Copy link"), [role="menuitem"]:has-text("Copy Link"), [role="menuitem"]:has-text("Copy link")',
             {timeout: 15_000},
         );
         await copyLinkItem.click();

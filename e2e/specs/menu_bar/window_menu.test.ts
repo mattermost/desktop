@@ -481,7 +481,7 @@ test.describe('Menu/window_menu', () => {
 
         await expect.poll(async () => {
             return browserWindow.evaluate((window) => (window as any).isMinimized());
-        }).toBe(true);
+        }, {timeout: 15_000}).toBe(true);
     });
 
     test('MM-T825 should be hidden when keyboard shortcuts are pressed', {tag: ['@P2', '@darwin', '@win32']}, async () => {

@@ -57,8 +57,15 @@ test.describe('RemoveServerModal', () => {
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(() => {
-                const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return savedConfig.servers;
+                try {
+                    const raw = fs.readFileSync(configPath, 'utf8');
+                    if (!raw || raw.trim().length === 0) {
+                        return null;
+                    }
+                    return JSON.parse(raw).servers;
+                } catch {
+                    return null;
+                }
             }, {timeout: 10000}).toEqual(expect.arrayContaining(
                 expectedConfig.map((s: {name: string; url: string; order: number}) => expect.objectContaining(s)),
             ));

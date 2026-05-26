@@ -73,7 +73,6 @@ test.describe('application', () => {
         if (!mainWindow) {
             throw new Error('No main window found');
         }
-        const browserWindow = await app!.browserWindow(mainWindow);
 
         // Wait for server map to have the github server populated
         const serverName = demoConfig.servers[1].name;
@@ -83,19 +82,13 @@ test.describe('application', () => {
             return resolvedServerMap[serverName]?.length ?? 0;
         }, {timeout: 15_000}).toBeGreaterThanOrEqual(1);
 
-        const webContentsId = resolvedServerMap[serverName][0].webContentsId;
-
-        // The deeplink view's webContents is created synchronously when the
-        // protocol is handled, but loadURL is async — `getURL()` returns null
-        // for a brief window between view creation and the first load tick.
-        // Poll until the expected URL is present rather than sampling once.
+        // Poll the server view's URL directly via webContents.fromId() instead
+        // of navigating contentView.children. On newer Electron versions the
+        // WebContentsView tree layout differs between platforms, but
+        // webContents.fromId() works universally.
+        const githubView = resolvedServerMap[serverName][0].win;
         await expect.poll(async () => {
-            return browserWindow.evaluate((window, id: number) => {
-                const view = (window as any).contentView.children.find(
-                    (v: any) => v.webContents && v.webContents.id === id,
-                );
-                return view ? view.webContents.getURL() : null;
-            }, webContentsId);
+            return githubView.url();
         }, {timeout: 15_000, message: 'deep-linked webContents did not navigate to the expected URL'}).toBe('https://github.com/test/url/');
         const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
         expect(dropdownButtonText).toBe('github');
