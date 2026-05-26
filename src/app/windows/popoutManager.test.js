@@ -44,6 +44,7 @@ jest.mock('app/views/webContentsManager', () => ({
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
+    on: jest.fn(),
 }));
 
 jest.mock('app/windows/baseWindow', () => {
