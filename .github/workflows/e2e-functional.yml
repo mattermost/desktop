@@ -94,87 +94,12 @@ jobs:
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
-  merge-e2e-report:
-    name: Merge E2E report
-    runs-on: ubuntu-24.04
-    needs:
-      - prepare-matrix
-      - e2e-tests
-    if: always() && !cancelled()
-    permissions:
-      contents: read
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: us-east-1
-      AWS_S3_BUCKET: mattermost-cypress-report
-    outputs:
-      merged-report-ready: ${{ steps.merge.outputs.merged_report_ready }}
-      merged-report-url: ${{ steps.upload-s3.outputs.report_url }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: '22.x'
-          cache: "npm"
-          cache-dependency-path: e2e/package-lock.json
-
-      - name: Install E2E dependencies
-        run: |
-          cd e2e
-          npm ci
-
-      - name: Download blob reports
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: blob-report-*
-          path: all-blob-reports
-          merge-multiple: true
-
-      - name: Merge Playwright reports
-        id: merge
-        run: |
-          if find all-blob-reports -type f -name '*.zip' | grep -q .; then
-            cd e2e
-            npx playwright merge-reports --config=merge.playwright.config.ts ../all-blob-reports
-            echo "merged_report_ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No blob reports found to merge." >> "$GITHUB_STEP_SUMMARY"
-            echo "merged_report_ready=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Upload merged Playwright report artifact
-        if: always() && steps.merge.outputs.merged_report_ready == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-report-merged
-          path: e2e/playwright-report-merged
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload merged report to S3
-        id: upload-s3
-        if: steps.merge.outputs.merged_report_ready == 'true'
-        run: |
-          S3_PREFIX="desktop-e2e/${{ github.run_id }}-${{ github.run_attempt }}"
-          aws s3 sync e2e/playwright-report-merged/ "s3://${AWS_S3_BUCKET}/${S3_PREFIX}/" \
-            --acl public-read \
-            --content-type text/html \
-            --cache-control "no-cache"
-          REPORT_URL="https://${AWS_S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/index.html"
-          echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
-          echo "Playwright report uploaded: ${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
-
   update-final-status:
     name: Update final status
     runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-tests
-      - merge-e2e-report
     if: always()
     permissions:
       contents: read
@@ -191,8 +116,7 @@ jobs:
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            const mergedReportUrl = '${{ needs.merge-e2e-report.outputs.merged-report-url }}' || undefined;
-            await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
+            await updateFinalStatus({ github, context, platforms, outputs });
 
   remove-e2e-label:
     name: Remove E2E label from PR

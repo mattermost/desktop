@@ -7,7 +7,7 @@ import {app, BrowserWindow, Menu} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerViewState from 'app/serverHub';
-import {APP_MENU_WILL_CLOSE} from 'common/communication';
+import {APP_MENU_WILL_CLOSE, MAIN_WINDOW_CREATED} from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -78,18 +78,59 @@ export function handleMainWindowIsShown() {
      * calls of this function will notification re-evaluate the booleans passed to "handleShowOnboardingScreens".
     */
 
-    const mainWindow = MainWindow.get();
-
-    log.debug('handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
-    if (mainWindow?.isVisible()) {
-        handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
+    let done = false;
+    const markReady = (mainWindowIsVisible: boolean) => {
+        if (done) {
+            return;
+        }
+        done = true;
+        handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), mainWindowIsVisible);
         setTestField('__e2eAppReady', true);
-    } else {
-        mainWindow?.once('show', () => {
-            handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
-            setTestField('__e2eAppReady', true);
-        });
+    };
+
+    const attachWindowListeners = (mainWindow: BrowserWindow) => {
+        if (mainWindow.isVisible()) {
+            markReady(true);
+            return;
+        }
+
+        // Listen to any signal that the window has become / is becoming visible.
+        // The `done` guard ensures only the first one to fire takes effect.
+        mainWindow.once('show', () => markReady(false));
+        mainWindow.once('ready-to-show', () => markReady(false));
+
+        // Belt-and-suspenders: the 'show' event can fire between MainWindow.show()
+        // (called earlier in initialize) and the listener attach above, especially
+        // on slower CI runners. Poll isVisible() so we don't get stuck waiting for
+        // an event that already fired.
+        const pollInterval = setInterval(() => {
+            if (done) {
+                clearInterval(pollInterval);
+                return;
+            }
+            const mw = MainWindow.get();
+            if (mw?.isVisible()) {
+                clearInterval(pollInterval);
+                markReady(true);
+            }
+        }, 250);
+    };
+
+    const mainWindow = MainWindow.get();
+    log.debug('handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
+
+    if (mainWindow) {
+        attachWindowListeners(mainWindow);
+        return;
     }
+
+    // The window hasn't been constructed yet. Wait for it, then re-enter.
+    MainWindow.once(MAIN_WINDOW_CREATED, () => {
+        const created = MainWindow.get();
+        if (created) {
+            attachWindowListeners(created);
+        }
+    });
 }
 
 export function handleWelcomeScreenModal(prefillURL?: string) {

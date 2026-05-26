@@ -26,21 +26,28 @@ function getSuiteFailureCount(suite) {
         return 0;
     }
 
-    if (suite.failures !== undefined || suite.errors !== undefined) {
-        // These are aggregated counts. Playwright includes retried failures in them.
-        // If the exit code is 0, all tests ultimately passed — only count definitive failures.
-        const exitCode = toNumber(process.env.PLAYWRIGHT_EXIT_CODE || '0');
-        if (exitCode === 0) {
-            return 0;
-        }
-        return toNumber(suite.failures) + toNumber(suite.errors);
+    // Short-circuit on the common "no failures" case: if the suite advertises
+    // 0 failures/errors AND has no testcase entries, there's nothing to walk.
+    const aggregatedFailures = toNumber(suite.failures) + toNumber(suite.errors);
+    const cases = asArray(suite.testcase);
+    if (aggregatedFailures === 0 && cases.length === 0) {
+        return 0;
     }
 
-    // When no aggregated counts exist, inspect individual testcases.
-    // Filter out failures that were later retried and passed.
-    const cases = asArray(suite.testcase);
+    // If the run ultimately succeeded (exit code 0), the only failures present
+    // are retries that later passed — don't count any of them.
+    const exitCode = toNumber(process.env.PLAYWRIGHT_EXIT_CODE || '0');
+    if (exitCode === 0) {
+        return 0;
+    }
+
+    // Walk testcases and filter out failures that were later retried and passed.
+    // Playwright's JUnit aggregate `failures` attribute over-counts these, so
+    // never trust it as a final number.
     const definitiveFailures = cases.filter((testcase) => {
-        if (!testcase.failure && !testcase.error) {
+        // Empty self-closing elements (<failure/>) parse to "" — check for
+        // presence rather than truthiness.
+        if (testcase.failure === undefined && testcase.error === undefined) {
             return false;
         }
 
@@ -52,7 +59,7 @@ function getSuiteFailureCount(suite) {
         if (retryMatch) {
             const baseName = retryMatch[1];
             const hasPassingRetry = cases.some(
-                (c) => c.name === baseName && !c.failure && !c.error,
+                (c) => c.name === baseName && c.failure === undefined && c.error === undefined,
             );
             if (hasPassingRetry) {
                 return false;
@@ -60,6 +67,14 @@ function getSuiteFailureCount(suite) {
         }
         return true;
     });
+
+    // If aggregate said failures>0 but we couldn't see any testcases (rare —
+    // summary-only reporter), fall back to the aggregate so we don't silently
+    // report 0 when something did fail.
+    if (definitiveFailures.length === 0 && cases.length === 0 && aggregatedFailures > 0) {
+        return aggregatedFailures;
+    }
+
     return definitiveFailures.length;
 }
 
@@ -70,10 +85,12 @@ function getFailureCountFromReport(report) {
 
     if (report.testsuites) {
         const testsuites = report.testsuites;
-        if (testsuites.failures !== undefined || testsuites.errors !== undefined) {
-            return toNumber(testsuites.failures) + toNumber(testsuites.errors);
-        }
 
+        // Always walk the per-suite/testcase tree. The top-level aggregate
+        // `failures` / `errors` attributes include retried-and-passed tests, so
+        // returning them directly would over-count flaky tests as failures.
+        // getSuiteFailureCount() filters retries against passing reruns and
+        // honors PLAYWRIGHT_EXIT_CODE.
         return asArray(testsuites.testsuite).reduce((total, suite) => total + getSuiteFailureCount(suite), 0);
     }
 

@@ -32,34 +32,25 @@ async function updateInitialStatus({github, context, platforms}) {
  * @param {Object} params.context - GitHub Actions context
  * @param {Array} params.platforms - Array of platform objects from matrix
  * @param {Object} params.outputs - Test outputs from e2e-tests job
- * @param {string} [params.mergedReportUrl] - Shared merged Playwright report URL
  */
-async function updateFinalStatus({github, context, platforms, outputs, mergedReportUrl}) {
+async function updateFinalStatus({github, context, platforms, outputs}) {
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
     await Promise.all(platforms.map((platform) => {
-        // Determine OS key and Playwright project name based on runner
+        // Determine OS key based on runner. Each platform's REPORT_LINK_* is its
+        // own single-OS Playwright HTML report (uploaded per-OS in the template).
         let osKey;
-        let playwrightProject;
         if (platform.runner.includes('ubuntu')) {
             osKey = 'LINUX';
-            playwrightProject = 'linux';
         } else if (platform.runner.includes('macos')) {
             osKey = 'MACOS';
-            playwrightProject = 'darwin';
         } else {
             osKey = 'WINDOWS';
-            playwrightProject = 'win32';
         }
 
         const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
         const status = outputs[`STATUS_${osKey}`] || 'failure';
-        let reportLink;
-        if (mergedReportUrl) {
-            reportLink = `${mergedReportUrl}#?q=p:${playwrightProject}`;
-        } else {
-            reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
-        }
+        const reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
 
         return github.rest.repos.createCommitStatus({
             owner: context.repo.owner,
