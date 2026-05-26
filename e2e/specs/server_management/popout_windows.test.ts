@@ -108,17 +108,13 @@ async function clickFileMenuItem(app: ElectronApplication, label: string) {
 async function openPopoutWindow() {
     await mainWindow.bringToFront().catch(() => {});
 
-    // Snapshot existing windows so we can identify *new* ones after the action.
+    // Snapshot existing window objects so we can identify *new* ones after the
+    // action by identity rather than URL — a URL-based snapshot can miss windows
+    // that navigate or have duplicate URLs.
     // Every BaseWindow constructs a child URLView (loads urlView.html) on creation,
     // so naively taking the first new `window` event would return the URLView
     // page — not the popout BrowserWindow we want. Filter explicitly by popout.html.
-    const before = new Set(electronApp.windows().map((w) => {
-        try {
-            return w.url();
-        } catch {
-            return '';
-        }
-    }));
+    const before = new Set(electronApp.windows());
 
     await clickFileMenuItem(electronApp, 'New Window');
 
@@ -126,8 +122,7 @@ async function openPopoutWindow() {
     await expect.poll(() => {
         popout = electronApp.windows().find((w) => {
             try {
-                const u = w.url();
-                return u.includes('popout.html') && !before.has(u);
+                return w.url().includes('popout.html') && !before.has(w);
             } catch {
                 return false;
             }

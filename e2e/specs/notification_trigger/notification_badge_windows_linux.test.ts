@@ -25,8 +25,13 @@ async function triggerBadge(
             if (isReady) {
                 break;
             }
-        } catch {
-            // "Execution context was destroyed" — app still initialising, retry
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (!msg.includes('Execution context was destroyed') && !msg.includes('Unable to find context')) {
+                throw err;
+            }
+
+            // transient context error during app initialisation — retry
         }
         await new Promise((resolve) => setTimeout(resolve, 200));
     }
@@ -63,11 +68,21 @@ test.describe('notification_badge/windows_and_linux', () => {
     // Retry on "Execution context was destroyed" which can occur when the Electron
     // main process is still completing initialisation at the start of the suite.
     test.beforeEach(async ({electronApp}) => {
+        // Poll for the badge-setting hook to be registered before calling it —
+        // using optional chaining (?.) would silently succeed (no-op) before
+        // setup completes and leave the setting unreset between tests.
         const deadline = Date.now() + 10_000;
         while (Date.now() < deadline) {
             try {
+                const isReady = await electronApp.evaluate(
+                    () => typeof (global as any).__testTriggerSetUnreadBadgeSetting === 'function',
+                );
+                if (!isReady) {
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+                    continue;
+                }
                 await electronApp.evaluate(() => {
-                    (global as any).__testTriggerSetUnreadBadgeSetting?.(false);
+                    (global as any).__testTriggerSetUnreadBadgeSetting(false);
                 });
                 await electronApp.evaluate(() => {
                     (global as any).__testBadgeState = null;
@@ -75,7 +90,7 @@ test.describe('notification_badge/windows_and_linux', () => {
                 break;
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
-                if (!msg.includes('Execution context was destroyed')) {
+                if (!msg.includes('Execution context was destroyed') && !msg.includes('Unable to find context')) {
                     throw err;
                 }
                 await new Promise((resolve) => setTimeout(resolve, 200));

@@ -156,12 +156,20 @@ test.describe('startup/window', () => {
                     await app2.evaluate(({screen}) =>
                         screen.getAllDisplays().map((d) => d.workArea),
                     );
-                const midX = bounds.x + (bounds.width / 2);
-                const midY = bounds.y + (bounds.height / 2);
-                const onScreen = displays.some(
-                    (d) => midX >= d.x && midX <= d.x + d.width && midY >= d.y && midY <= d.y + d.height,
-                );
-                expect(onScreen, `bounds ${JSON.stringify(bounds)} not inside any display ${JSON.stringify(displays)}`).toBe(true);
+
+                // Use expect.poll so the window has time to settle into its
+                // corrected position before we verify it is on-screen.
+                await expect.poll(async () => {
+                    const b = await getMainBrowserWindowBounds(app2);
+                    const cx = b.x + (b.width / 2);
+                    const cy = b.y + (b.height / 2);
+                    return displays.some(
+                        (d) => cx >= d.x && cx <= d.x + d.width && cy >= d.y && cy <= d.y + d.height,
+                    );
+                }, {
+                    timeout: 5_000,
+                    message: `bounds ${JSON.stringify(bounds)} not inside any display ${JSON.stringify(displays)}`,
+                }).toBe(true);
             } finally {
                 await app2.close();
             }
@@ -203,12 +211,20 @@ test.describe('startup/window', () => {
                     await app2.evaluate(({screen}) =>
                         screen.getAllDisplays().map((d) => d.workArea),
                     );
-                const midX = bounds.x + (bounds.width / 2);
-                const midY = bounds.y + (bounds.height / 2);
-                const onScreen = displays.some(
-                    (d) => midX >= d.x && midX <= d.x + d.width && midY >= d.y && midY <= d.y + d.height,
-                );
-                expect(onScreen, `bounds ${JSON.stringify(bounds)} not inside any display ${JSON.stringify(displays)}`).toBe(true);
+
+                // Use expect.poll so the window has time to settle into its
+                // corrected position before we verify it is on-screen.
+                await expect.poll(async () => {
+                    const b = await getMainBrowserWindowBounds(app2);
+                    const cx = b.x + (b.width / 2);
+                    const cy = b.y + (b.height / 2);
+                    return displays.some(
+                        (d) => cx >= d.x && cx <= d.x + d.width && cy >= d.y && cy <= d.y + d.height,
+                    );
+                }, {
+                    timeout: 5_000,
+                    message: `bounds ${JSON.stringify(bounds)} not inside any display ${JSON.stringify(displays)}`,
+                }).toBe(true);
             } finally {
                 await app2.close();
             }

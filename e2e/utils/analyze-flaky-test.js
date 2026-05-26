@@ -206,7 +206,7 @@ function analyzeFlakyTests() {
         failureCount,
         passCount: reconciledPassed,
         skipCount: outcomes.skipped,
-        totalCount: outcomes.total,
+        totalCount: reconciledFailed + reconciledPassed + outcomes.skipped,
         newFailedTests: new Array(failureCount).fill('failed'),
         os: process.platform,
     };

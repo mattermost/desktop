@@ -55,7 +55,7 @@ export default async function globalSetup() {
         }
 
         // Suppress the macOS crash dialog ("Electron quit unexpectedly") that
-        // appears when a process is killed by SIGKILL in global-teardown.
+        // appears when a process exits via SIGTERM or other unexpected quits.
         try {
             execFileSync('defaults', ['write', 'com.apple.CrashReporter', 'DialogType', 'none'], {stdio: 'pipe'});
         } catch {
