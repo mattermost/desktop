@@ -113,7 +113,11 @@ async function openPopoutWindow() {
     // so naively taking the first new `window` event would return the URLView
     // page — not the popout BrowserWindow we want. Filter explicitly by popout.html.
     const before = new Set(electronApp.windows().map((w) => {
-        try { return w.url(); } catch { return ''; }
+        try {
+            return w.url();
+        } catch {
+            return '';
+        }
     }));
 
     await clickFileMenuItem(electronApp, 'New Window');
