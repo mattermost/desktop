@@ -25,6 +25,7 @@ test.describe('application', () => {
         fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(demoConfig));
 
         const {_electron: electron} = await import('playwright');
+
         // When running via the unpacked Electron binary (not a packaged app),
         // electron-is-dev resolves isDev=true, so getDeeplinkingURL() expects
         // the 'mattermost-dev://' protocol prefix rather than 'mattermost://'.
