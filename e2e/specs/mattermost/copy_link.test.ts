@@ -23,9 +23,27 @@ test.describe('copylink', () => {
             clipboard.writeText('');
         });
 
-        // Right-click the sidebar item to trigger the context menu
+        // Right-click the sidebar item to trigger the context menu.
+        // sendInputEvent (mouseDown/mouseUp, button:'right') does not reliably fire
+        // the browser-level contextmenu event on macOS.  Dispatch it explicitly in
+        // the renderer after the low-level events so both paths are covered.
         await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         await firstServer.click('#sidebarItem_town-square', {button: 'right'});
+        await firstServer.evaluate(`(() => {
+            const el = document.querySelector('#sidebarItem_town-square');
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                el.dispatchEvent(new MouseEvent('contextmenu', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 2,
+                    buttons: 2,
+                    clientX: Math.round(rect.left + rect.width / 2),
+                    clientY: Math.round(rect.top + rect.height / 2),
+                }));
+            }
+        })()`);
+
 
         // Click "Copy Link" from the context menu.
         // Use a longer timeout to accommodate CI latency. The exact element varies
