@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {execSync} from 'child_process';
+import {execFileSync} from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -34,22 +34,22 @@ export default async function globalSetup() {
 
         for (const bundleID of bundleIDs) {
             try {
-                execSync(`defaults write ${bundleID} NSQuitAlwaysKeepsWindows -bool false`, {stdio: 'pipe'});
+                execFileSync('defaults', ['write', bundleID, 'NSQuitAlwaysKeepsWindows', '-bool', 'false'], {stdio: 'pipe'});
             } catch {
                 // Non-fatal — tests still run, just potentially with the Resume dialog
             }
             try {
-                execSync(`defaults write ${bundleID} ApplePersistenceIgnoreState -bool YES`, {stdio: 'pipe'});
+                execFileSync('defaults', ['write', bundleID, 'ApplePersistenceIgnoreState', '-bool', 'YES'], {stdio: 'pipe'});
             } catch {
                 // Non-fatal
             }
         }
 
-        // Verify at least one bundle ID got the settings applied.
-        // Also suppress the "verification of developer" dialog that can appear
-        // on first launch of unsigned Electron builds.
+        // Apply system-level settings to suppress macOS dialogs that block
+        // Electron startup. These target system domains (LaunchServices,
+        // CrashReporter) rather than per-app bundle IDs.
         try {
-            execSync('defaults write com.apple.LaunchServices LSQuarantine -bool false', {stdio: 'pipe'});
+            execFileSync('defaults', ['write', 'com.apple.LaunchServices', 'LSQuarantine', '-bool', 'false'], {stdio: 'pipe'});
         } catch {
             // Non-fatal
         }
@@ -57,7 +57,7 @@ export default async function globalSetup() {
         // Suppress the macOS crash dialog ("Electron quit unexpectedly") that
         // appears when a process is killed by SIGKILL in global-teardown.
         try {
-            execSync('defaults write com.apple.CrashReporter DialogType none', {stdio: 'pipe'});
+            execFileSync('defaults', ['write', 'com.apple.CrashReporter', 'DialogType', 'none'], {stdio: 'pipe'});
         } catch {
             // Non-fatal
         }
