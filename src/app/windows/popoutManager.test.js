@@ -10,6 +10,7 @@ import BaseWindow from 'app/windows/baseWindow';
 import {
     LOAD_FAILED,
     LOADSCREEN_END,
+    MAIN_WINDOW_CREATED,
     POPOUT_CLOSED,
     RELOAD_VIEW,
     UPDATE_POPOUT_TITLE,
@@ -1162,6 +1163,139 @@ describe('PopoutManager', () => {
             popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, '{channelName}');
 
             expect(ViewManager.updateViewTitleTemplate).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('registerMainWindowCloseHandler', () => {
+        let popoutManager;
+
+        beforeEach(() => {
+            // Create after the outer beforeEach (clearAllMocks) so MainWindow.on.mock.calls
+            // reflects only this instance's constructor call.
+            popoutManager = new PopoutManager();
+        });
+
+        function getMainWindowCreatedHandler() {
+            const call = MainWindow.on.mock.calls.find(([event]) => event === MAIN_WINDOW_CREATED);
+            if (!call) {
+                throw new Error('MAIN_WINDOW_CREATED handler not registered on MainWindow');
+            }
+            return call[1];
+        }
+
+        it('should attach a once("closed") listener when the main window exists', () => {
+            const mockWin = {once: jest.fn()};
+            MainWindow.get.mockReturnValue(mockWin);
+
+            getMainWindowCreatedHandler()();
+
+            expect(mockWin.once).toHaveBeenCalledWith('closed', expect.any(Function));
+        });
+
+        it('should do nothing when MainWindow.get() returns null', () => {
+            MainWindow.get.mockReturnValue(null);
+
+            // Should return early without error
+            expect(() => getMainWindowCreatedHandler()()).not.toThrow();
+        });
+    });
+
+    describe('closeAllPopouts', () => {
+        let popoutManager;
+
+        beforeEach(() => {
+            popoutManager = new PopoutManager();
+        });
+
+        it('should call each cleanup listener, destroy browser windows, and empty both Maps', () => {
+            const mockBw1 = {isDestroyed: jest.fn(() => false), destroy: jest.fn()};
+            const mockBw2 = {isDestroyed: jest.fn(() => false), destroy: jest.fn()};
+            const mockListener1 = jest.fn();
+            const mockListener2 = jest.fn();
+
+            popoutManager.popoutWindows.set('view-1', {browserWindow: mockBw1});
+            popoutManager.popoutWindows.set('view-2', {browserWindow: mockBw2});
+            popoutManager.popoutListeners.set('view-1', mockListener1);
+            popoutManager.popoutListeners.set('view-2', mockListener2);
+
+            popoutManager.closeAllPopouts();
+
+            expect(mockListener1).toHaveBeenCalled();
+            expect(mockListener2).toHaveBeenCalled();
+            expect(mockBw1.destroy).toHaveBeenCalled();
+            expect(mockBw2.destroy).toHaveBeenCalled();
+            expect(popoutManager.popoutWindows.size).toBe(0);
+            expect(popoutManager.popoutListeners.size).toBe(0);
+        });
+
+        it('should skip destroy() for an already-destroyed browser window', () => {
+            const mockBw = {isDestroyed: jest.fn(() => true), destroy: jest.fn()};
+            popoutManager.popoutWindows.set('view-1', {browserWindow: mockBw});
+
+            popoutManager.closeAllPopouts();
+
+            expect(mockBw.destroy).not.toHaveBeenCalled();
+            expect(popoutManager.popoutWindows.size).toBe(0);
+        });
+
+        it('should continue destroying remaining windows when one entry throws', () => {
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+            const mockBw1 = {
+                isDestroyed: jest.fn(() => false),
+                destroy: jest.fn(() => {
+                    throw new Error('destroy failed');
+                }),
+            };
+            const mockBw2 = {isDestroyed: jest.fn(() => false), destroy: jest.fn()};
+
+            popoutManager.popoutWindows.set('view-1', {browserWindow: mockBw1});
+            popoutManager.popoutWindows.set('view-2', {browserWindow: mockBw2});
+
+            expect(() => popoutManager.closeAllPopouts()).not.toThrow();
+
+            expect(mockBw1.destroy).toHaveBeenCalled();
+            expect(mockBw2.destroy).toHaveBeenCalled();
+            expect(popoutManager.popoutWindows.size).toBe(0);
+
+            consoleErrorSpy.mockRestore();
+        });
+
+        it('should handle an empty popoutWindows Map without error', () => {
+            expect(() => popoutManager.closeAllPopouts()).not.toThrow();
+            expect(popoutManager.popoutWindows.size).toBe(0);
+        });
+    });
+
+    describe('MAIN_WINDOW_CREATED integration wiring', () => {
+        let popoutManager;
+
+        beforeEach(() => {
+            popoutManager = new PopoutManager();
+        });
+
+        it('should register MainWindow.on(MAIN_WINDOW_CREATED) during construction', () => {
+            expect(MainWindow.on).toHaveBeenCalledWith(MAIN_WINDOW_CREATED, expect.any(Function));
+        });
+
+        it('triggering MAIN_WINDOW_CREATED then "closed" should invoke closeAllPopouts', () => {
+            const mockWin = {once: jest.fn()};
+            MainWindow.get.mockReturnValue(mockWin);
+
+            // Fire MAIN_WINDOW_CREATED → registerMainWindowCloseHandler attaches once('closed')
+            const [, createdHandler] = MainWindow.on.mock.calls.find(([event]) => event === MAIN_WINDOW_CREATED);
+            createdHandler();
+
+            expect(mockWin.once).toHaveBeenCalledWith('closed', expect.any(Function));
+
+            // Pre-populate a popout window, then fire 'closed' → closeAllPopouts should run
+            const mockBw = {isDestroyed: jest.fn(() => false), destroy: jest.fn()};
+            popoutManager.popoutWindows.set('view-1', {browserWindow: mockBw});
+
+            const [, closedCb] = mockWin.once.mock.calls.find(([event]) => event === 'closed');
+            closedCb();
+
+            expect(mockBw.destroy).toHaveBeenCalled();
+            expect(popoutManager.popoutWindows.size).toBe(0);
         });
     });
 
