@@ -80,11 +80,15 @@ async function fetchPrBodyFromGitHubApi(owner: string, repo: string, prNumber: n
     }
 }
 
-function fetchPrBodyFromGhCli(prNumber: number): string | null {
+function fetchPrBodyFromGhCli(prNumber: number, ownerRepo?: {owner: string; repo: string}): string | null {
     try {
+        const args = ['pr', 'view', String(prNumber), '--json', 'body', '-q', '.body'];
+        if (ownerRepo) {
+            args.push('-R', `${ownerRepo.owner}/${ownerRepo.repo}`);
+        }
         const out = execFileSync(
             'gh',
-            ['pr', 'view', String(prNumber), '--json', 'body', '-q', '.body'],
+            args,
             {encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 10 * 1024 * 1024},
         );
         const body = out.trim();
@@ -98,7 +102,8 @@ function fetchPrBodyFromGhCli(prNumber: number): string | null {
  * When MM_TEST_SERVER_URL is unset, load it from the PR body line
  * "Server for Cursor Automation: <url>" (same format CI writes). Requires a PR
  * number (MM_TEST_PR_NUMBER, GITHUB_PR_NUMBER, PR_NUMBER, or GITHUB_REF=refs/pull/N/…)
- * and either GITHUB_REPOSITORY, MM_TEST_GITHUB_OWNER+REPO, or a working `gh` CLI.
+ * and either GITHUB_REPOSITORY, MM_TEST_GITHUB_OWNER+REPO, or a working `gh` CLI
+ * (CLI fallback uses `gh pr view -R owner/repo` when that repo is known).
  */
 export async function resolveMmTestServerUrlFromPrIfNeeded(): Promise<void> {
     if (process.env.MM_TEST_SERVER_URL?.trim()) {
@@ -116,7 +121,7 @@ export async function resolveMmTestServerUrlFromPrIfNeeded(): Promise<void> {
         body = await fetchPrBodyFromGitHubApi(ownerRepo.owner, ownerRepo.repo, prNumber);
     }
     if (!body) {
-        body = fetchPrBodyFromGhCli(prNumber);
+        body = fetchPrBodyFromGhCli(prNumber, ownerRepo ?? undefined);
     }
 
     if (!body) {
