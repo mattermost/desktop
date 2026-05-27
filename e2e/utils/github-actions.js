@@ -161,7 +161,66 @@ async function removeE2ELabel({github, context}) {
     }
 }
 
+const CURSOR_AUTOMATION_SERVER_PREFIX = 'Server for Cursor Automation:';
+
+/**
+ * Ensure the PR description contains an up-to-date Linux E2E server URL for Cursor automation.
+ * Replaces an existing line with the same prefix, appends if missing, no-ops when URL unchanged.
+ * @param {Object} params
+ * @param {Object} params.github - Octokit from actions/github-script
+ * @param {string} params.owner
+ * @param {string} params.repo
+ * @param {number} params.prNumber
+ * @param {string} params.serverUrl
+ */
+async function syncCursorAutomationServerLine({github, owner, repo, prNumber, serverUrl}) {
+    if (!prNumber || !serverUrl) {
+        return;
+    }
+    const trimmed = String(serverUrl).trim();
+    if (!trimmed) {
+        return;
+    }
+
+    const {data: pr} = await github.rest.pulls.get({
+        owner,
+        repo,
+        pull_number: prNumber,
+    });
+    const body = pr.body ?? '';
+    const newLine = `${CURSOR_AUTOMATION_SERVER_PREFIX} ${trimmed}`;
+
+    const lines = body.split(/\r?\n/);
+    const idx = lines.findIndex((line) => line.trimStart().startsWith(CURSOR_AUTOMATION_SERVER_PREFIX));
+
+    let newBody;
+    if (idx === -1) {
+        const sep = body.trim() === '' ? '' : '\n\n';
+        newBody = `${body.trimEnd()}${sep}${newLine}\n`;
+    } else {
+        const current = lines[idx].trim();
+        const rest = current.slice(CURSOR_AUTOMATION_SERVER_PREFIX.length).trim();
+        if (rest === trimmed) {
+            return;
+        }
+        lines[idx] = newLine;
+        newBody = lines.join('\n');
+    }
+
+    if (newBody === body) {
+        return;
+    }
+
+    await github.rest.pulls.update({
+        owner,
+        repo,
+        pull_number: prNumber,
+        body: newBody,
+    });
+}
+
 module.exports = {
+    syncCursorAutomationServerLine,
     updateInitialStatus,
     updateFinalStatus,
     removeE2ELabel,
