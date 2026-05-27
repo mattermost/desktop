@@ -71,7 +71,9 @@ test.describe('notification_badge/windows_and_linux', () => {
         // Poll for the badge-setting hook to be registered before calling it —
         // using optional chaining (?.) would silently succeed (no-op) before
         // setup completes and leave the setting unreset between tests.
-        const deadline = Date.now() + 10_000;
+        const started = Date.now();
+        const deadline = started + 10_000;
+        let resetDone = false;
         while (Date.now() < deadline) {
             try {
                 const isReady = await electronApp.evaluate(
@@ -87,6 +89,7 @@ test.describe('notification_badge/windows_and_linux', () => {
                 await electronApp.evaluate(() => {
                     (global as any).__testBadgeState = null;
                 });
+                resetDone = true;
                 break;
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
@@ -95,6 +98,11 @@ test.describe('notification_badge/windows_and_linux', () => {
                 }
                 await new Promise((resolve) => setTimeout(resolve, 200));
             }
+        }
+        if (!resetDone) {
+            throw new Error(
+                `badge reset hook did not complete before deadline (elapsed ${Date.now() - started}ms, limit 10000ms)`,
+            );
         }
     });
 

@@ -35,12 +35,13 @@ on:
         default: ""
       pr_number:
         type: string
-        description: "PR number to remove E2E label from after tests complete"
+        description: "PR number for label cleanup; also used to write Server for Cursor Automation URL into the PR body (Linux E2E). Dispatchers should set this for PR runs."
         required: false
 
 permissions:
   contents: read
   statuses: write
+  pull-requests: write
 
 jobs:
   prepare-matrix:
@@ -92,6 +93,7 @@ jobs:
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
       TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(inputs.version_name, 'release-') && 'RELEASE' || 'PR' }}
       nightly: ${{ inputs.nightly }}
+      pr_number: ${{ inputs.pr_number }}
     secrets: inherit
 
   update-final-status:

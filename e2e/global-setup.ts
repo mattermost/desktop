@@ -6,7 +6,18 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
+import {resolveMmTestServerUrlFromPrIfNeeded} from './helpers/resolveMmTestServerUrlFromPr';
+
 const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
+const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
+
+function readMacOsDefault(domain: string, key: string): string | null {
+    try {
+        return execFileSync('defaults', ['read', domain, key], {encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']}).trim();
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Disable macOS window-restoration (Resume) for the Electron binary used in tests.
@@ -27,6 +38,8 @@ export default async function globalSetup() {
         // ignore stale registry cleanup failures
     }
 
+    await resolveMmTestServerUrlFromPrIfNeeded();
+
     if (process.platform === 'darwin') {
         // Multiple bundle IDs may be involved: com.github.Electron (Electron binary
         // launched directly) and the app's own bundle ID (when running signed builds).
@@ -43,6 +56,18 @@ export default async function globalSetup() {
             } catch {
                 // Non-fatal
             }
+        }
+
+        // Snapshot system defaults we are about to override so global-teardown
+        // can restore them (or delete keys that did not exist before).
+        try {
+            const snapshot = {
+                LSQuarantine: readMacOsDefault('com.apple.LaunchServices', 'LSQuarantine'),
+                DialogType: readMacOsDefault('com.apple.CrashReporter', 'DialogType'),
+            };
+            fs.writeFileSync(MACOS_DEFAULTS_SNAPSHOT, JSON.stringify(snapshot), 'utf8');
+        } catch {
+            // Non-fatal — teardown will skip restore if file missing
         }
 
         // Apply system-level settings to suppress macOS dialogs that block

@@ -68,6 +68,7 @@ jobs:
             '{owner:$owner, repo:$repo, sha:$sha, ref:$ref, run_id:$run_id, server_versions:$versions}')"
 
           echo "Requesting CMT provisioning for server versions: ${SERVER_VERSIONS}"
+          echo "CMT dispatch payload: ${payload}"
 
           curl -sS -X POST "${MATTERWICK_URL}/cmt_dispatch" \
             -H "Content-Type: application/json" \
