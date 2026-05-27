@@ -18,6 +18,8 @@ import {
 jest.mock('electron', () => ({
     app: {
         setSecureKeyboardEntryEnabled: jest.fn(),
+        once: jest.fn(),
+        removeListener: jest.fn(),
     },
 }));
 jest.mock('main/secureStorage', () => ({
@@ -90,6 +92,11 @@ describe('main/app/intercom', () => {
                 isVisible: jest.fn(() => visible),
                 once: jest.fn((event, cb) => {
                     listeners[event] = cb;
+                }),
+                removeListener: jest.fn((event, cb) => {
+                    if (listeners[event] === cb) {
+                        delete listeners[event];
+                    }
                 }),
                 fire: (event) => listeners[event] && listeners[event](),
             };
