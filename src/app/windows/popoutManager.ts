@@ -85,6 +85,7 @@ export class PopoutManager {
         // When the main window closes (e.g., user confirms quit, or willAppQuit is
         // true), destroy all popout windows so they do not outlive the main window.
         MainWindow.on(MAIN_WINDOW_CREATED, this.registerMainWindowCloseHandler);
+        this.registerMainWindowCloseHandler();
     }
 
     createNewWindow = (serverId: string) => {

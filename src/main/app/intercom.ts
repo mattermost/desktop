@@ -94,28 +94,80 @@ export function handleMainWindowIsShown() {
             return;
         }
 
+        const POLL_MS = 250;
+        const MAX_POLL_MS = 60_000;
+        let pollInterval: ReturnType<typeof setInterval> | undefined;
+        let pollDeadline: ReturnType<typeof setTimeout> | undefined;
+        let cleanedUp = false;
+
+        const stopPolling = () => {
+            if (pollInterval !== undefined) {
+                clearInterval(pollInterval);
+                pollInterval = undefined;
+            }
+            if (pollDeadline !== undefined) {
+                clearTimeout(pollDeadline);
+                pollDeadline = undefined;
+            }
+        };
+
+        function cleanup() {
+            if (cleanedUp) {
+                return;
+            }
+            cleanedUp = true;
+            stopPolling();
+            mainWindow.removeListener('show', onShow);
+            mainWindow.removeListener('closed', onMainWindowClosed);
+            app.removeListener('before-quit', onBeforeQuit);
+        }
+
+        function onMainWindowClosed() {
+            cleanup();
+        }
+
+        function onBeforeQuit() {
+            cleanup();
+        }
+
+        function onShow() {
+            cleanup();
+            markReady(false);
+        }
+
         // The `show` event fires when `browserWindow.show()` is called and the
         // window becomes visible. We deliberately do NOT listen to
         // `ready-to-show` here: that event fires *before* the window is shown
         // (so the renderer can call `.show()` without a white flash), and using
         // it would set `__e2eAppReady=true` while the window is still hidden.
-        mainWindow.once('show', () => markReady(false));
+        mainWindow.once('show', onShow);
+        mainWindow.once('closed', onMainWindowClosed);
+        app.once('before-quit', onBeforeQuit);
 
         // Belt-and-suspenders: the 'show' event can fire between MainWindow.show()
         // (called earlier in initialize) and the listener attach above, especially
         // on slower CI runners. Poll isVisible() so we don't get stuck waiting for
         // an event that already fired.
-        const pollInterval = setInterval(() => {
+        pollInterval = setInterval(() => {
             if (done) {
-                clearInterval(pollInterval);
+                cleanup();
                 return;
             }
             const mw = MainWindow.get();
             if (mw?.isVisible()) {
-                clearInterval(pollInterval);
+                cleanup();
                 markReady(true);
             }
-        }, 250);
+        }, POLL_MS);
+
+        pollDeadline = setTimeout(() => {
+            if (done) {
+                cleanup();
+                return;
+            }
+            cleanup();
+            markReady(false);
+        }, MAX_POLL_MS);
     };
 
     const mainWindow = MainWindow.get();

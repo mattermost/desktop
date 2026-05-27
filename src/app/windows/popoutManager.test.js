@@ -1167,12 +1167,11 @@ describe('PopoutManager', () => {
     });
 
     describe('registerMainWindowCloseHandler', () => {
-        let popoutManager;
-
         beforeEach(() => {
             // Create after the outer beforeEach (clearAllMocks) so MainWindow.on.mock.calls
             // reflects only this instance's constructor call.
-            popoutManager = new PopoutManager();
+            // eslint-disable-next-line no-new -- constructor registers listeners; instance not referenced
+            new PopoutManager();
         });
 
         function getMainWindowCreatedHandler() {

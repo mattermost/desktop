@@ -21,6 +21,10 @@ function asArray(value) {
     return Array.isArray(value) ? value : [value];
 }
 
+function escapeRegex(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function getSuiteFailureCount(suite) {
     if (!suite || typeof suite !== 'object') {
         return 0;
@@ -60,6 +64,16 @@ function getSuiteFailureCount(suite) {
             const baseName = retryMatch[1];
             const hasPassingRetry = cases.some(
                 (c) => c.name === baseName && c.failure === undefined && c.error === undefined,
+            );
+            if (hasPassingRetry) {
+                return false;
+            }
+        } else {
+            const baseName = name;
+            const retryPattern = new RegExp(`^${escapeRegex(baseName)} \\(retry #\\d+\\)$`);
+            const hasPassingRetry = cases.some(
+                (c) => Boolean(c.name && retryPattern.test(c.name)) &&
+                    c.failure === undefined && c.error === undefined,
             );
             if (hasPassingRetry) {
                 return false;

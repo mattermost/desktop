@@ -83,14 +83,15 @@ test.describe('menu/view', () => {
             const toggleItem = viewMenu?.submenu?.items?.find(
                 (item: any) => item.role === 'togglefullscreen' || item.accelerator === 'F11',
             );
-            if (toggleItem) {
-                const refs = (global as any).__e2eTestRefs;
-                const targetWindow = BrowserWindow.getFocusedWindow() ??
-                    refs?.MainWindow?.get?.() ??
-                    BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
-                    null;
-                toggleItem.click(undefined, targetWindow, undefined);
+            if (!toggleItem) {
+                throw new Error('exit fullscreen menu item not found');
             }
+            const refs = (global as any).__e2eTestRefs;
+            const targetWindow = BrowserWindow.getFocusedWindow() ??
+                refs?.MainWindow?.get?.() ??
+                BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
+                null;
+            toggleItem.click(undefined, targetWindow, undefined);
         });
 
         await electronApp.evaluate(async ({BrowserWindow}) => {
