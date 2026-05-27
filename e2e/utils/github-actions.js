@@ -164,6 +164,35 @@ async function removeE2ELabel({github, context}) {
 const CURSOR_AUTOMATION_SERVER_PREFIX = 'Server for Cursor Automation:';
 
 /**
+ * Read the Mattermost server URL from a PR body line written for Cursor automation.
+ * @param {string} body
+ * @returns {string|null}
+ */
+function parseCursorAutomationServerUrlFromBody(body) {
+    if (!body || typeof body !== 'string') {
+        return null;
+    }
+    const lines = body.split(/\r?\n/);
+    const line = lines.find((l) => l.trimStart().startsWith(CURSOR_AUTOMATION_SERVER_PREFIX));
+    if (!line) {
+        return null;
+    }
+    const rest = line.trim().slice(CURSOR_AUTOMATION_SERVER_PREFIX.length).trim();
+    if (!rest) {
+        return null;
+    }
+    try {
+        const u = new URL(rest);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+            return null;
+        }
+        return rest;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Ensure the PR description contains an up-to-date Linux E2E server URL for Cursor automation.
  * Replaces an existing line with the same prefix, appends if missing, no-ops when URL unchanged.
  * @param {Object} params
@@ -220,6 +249,7 @@ async function syncCursorAutomationServerLine({github, owner, repo, prNumber, se
 }
 
 module.exports = {
+    parseCursorAutomationServerUrlFromBody,
     syncCursorAutomationServerLine,
     updateInitialStatus,
     updateFinalStatus,
