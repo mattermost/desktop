@@ -1,83 +1,33 @@
 name: CMT Provisioner
 
-# Trigger workflow for Compatibility Matrix Testing (CMT).
+# Lightweight trigger workflow for Compatibility Matrix Testing (CMT).
 #
-# Previous design: this workflow just echoed the inputs and relied on GitHub
-# firing a workflow_run webhook to matterwick, which would then read the
-# server_versions input from the webhook payload. That path is broken --
-# GitHub's workflow_run payload does not include workflow_dispatch inputs,
-# so matterwick never received server_versions and never dispatched
-# compatibility-matrix-testing.yml.
+# Matterwick listens for this workflow's workflow_run:requested event, then provisions one
+# Mattermost cloud instance per version in its hardcoded CMT version set (Matterwick's
+# CMTServerVersions config / CMTVersions, e.g. the active ESR plus the current feature
+# release) and dispatches compatibility-matrix-testing.yml with the CMT_MATRIX input.
+# When compatibility-matrix-testing.yml completes, Matterwick destroys the provisioned
+# instances (cleanup is keyed off the completed workflow_run, matched by commit SHA).
 #
-# New design: POST directly to matterwick's /cmt_dispatch endpoint with
-# everything it needs (server_versions, run_id, sha, ref, repo, owner).
-# Matterwick returns 202 immediately and provisions instances + dispatches
-# compatibility-matrix-testing.yml asynchronously.
-#
-# Usage: Go to Actions -> CMT Provisioner -> Run workflow
-#   server_versions: comma-separated Mattermost server versions
-#   Example: "v11.1.0, v11.2.0, v12.0.0"
+# The server-version set lives in Matterwick config (managed via gitops), so this workflow
+# takes no inputs. Run it manually from the Actions tab, or let the monthly schedule fire it.
 
 on:
-  workflow_dispatch:
-    inputs:
-      server_versions:
-        description: "Comma-separated Mattermost server versions (e.g. v11.1.0, v11.2.0)"
-        required: true
-        type: string
+  schedule:
+    - cron: "0 0 1 * *" # 00:00 UTC on the 1st of every month
+  workflow_dispatch: {}
 
-# This workflow does not use GITHUB_TOKEN. It does not check out the repo,
-# does not call the GitHub API, and does not interact with workflow files;
-# its single step is an outbound curl to matterwick authenticated by a
-# separate shared secret. Drop all GITHUB_TOKEN scopes so the runner-issued
-# token cannot accidentally be used to modify the repo if a step is added
-# carelessly later.
+# This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a workflow_run event
+# that Matterwick reacts to; it does not check out the repo or call the GitHub API. Drop all
+# GITHUB_TOKEN scopes so the runner-issued token cannot modify the repo if a step is added later.
 permissions: {}
 
 jobs:
-  trigger-matterwick:
+  signal:
     runs-on: ubuntu-22.04
     steps:
-      - name: Request CMT provisioning from matterwick
-        env:
-          MATTERWICK_URL: ${{ vars.MATTERWICK_URL }}
-          CMT_TRIGGER_TOKEN: ${{ secrets.MATTERWICK_CMT_TRIGGER_SECRET }}
-          SERVER_VERSIONS: ${{ inputs.server_versions }}
-          REPO: ${{ github.event.repository.name }}
-          OWNER: ${{ github.repository_owner }}
-          SHA: ${{ github.sha }}
-          REF: ${{ github.ref_name }}
-          RUN_ID: ${{ github.run_id }}
+      - name: Signal Matterwick to provision CMT servers
         run: |
-          if [ -z "${MATTERWICK_URL}" ]; then
-            echo "ERROR: vars.MATTERWICK_URL is not set on this repository" >&2
-            exit 1
-          fi
-          if [ -z "${CMT_TRIGGER_TOKEN}" ]; then
-            echo "ERROR: secrets.MATTERWICK_CMT_TRIGGER_SECRET is not set on this repository" >&2
-            exit 1
-          fi
-
-          payload="$(jq -nc \
-            --arg owner    "${OWNER}" \
-            --arg repo     "${REPO}" \
-            --arg sha      "${SHA}" \
-            --arg ref      "${REF}" \
-            --argjson run_id "${RUN_ID}" \
-            --arg versions "${SERVER_VERSIONS}" \
-            '{owner:$owner, repo:$repo, sha:$sha, ref:$ref, run_id:$run_id, server_versions:$versions}')"
-
-          echo "Requesting CMT provisioning for server versions: ${SERVER_VERSIONS}"
-          echo "CMT dispatch payload: ${payload}"
-
-          curl -sS -X POST "${MATTERWICK_URL}/cmt_dispatch" \
-            -H "Content-Type: application/json" \
-            -H "X-Trigger-Token: ${CMT_TRIGGER_TOKEN}" \
-            --data-binary "${payload}" \
-            --fail-with-body \
-            --retry 3 --retry-delay 5 --retry-connrefused \
-            --connect-timeout 10 --max-time 30
-
-          echo "matterwick accepted the CMT dispatch request."
-          echo "Provisioning will run asynchronously (~30 min) and then"
-          echo "compatibility-matrix-testing.yml will be dispatched automatically."
+          echo "CMT trigger started."
+          echo "Matterwick provisions one server per configured version and then"
+          echo "dispatches compatibility-matrix-testing.yml automatically."
