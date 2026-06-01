@@ -38,10 +38,10 @@ on:
         description: "PR number for label cleanup; also used to write Server for Cursor Automation URL into the PR body (Linux E2E). Dispatchers should set this for PR runs."
         required: false
 
+# Least-privilege default. Jobs that need more (status checks, PR writes) grant it explicitly
+# at the job level so that jobs running untrusted PR code do not inherit write scopes.
 permissions:
   contents: read
-  statuses: write
-  pull-requests: write
 
 jobs:
   prepare-matrix:
@@ -83,6 +83,12 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
       fail-fast: false
+    # Caller permission cap for the reusable workflow. The template scopes its own jobs: the
+    # test job (untrusted npm ci/Playwright) runs contents:read only, while the isolated
+    # PR-body sync job uses pull-requests:write.
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/e2e-functional-template.yml
     with:
       runs-on: ${{ matrix.runner }}
@@ -179,6 +185,11 @@ jobs:
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}
+    # Runs untrusted PR code (npm ci / Playwright); grant only the commit-status write its
+    # check-for-failures step needs, never pull-requests: write.
+    permissions:
+      contents: read
+      statuses: write
     strategy:
       matrix:
         include:

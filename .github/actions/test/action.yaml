@@ -22,6 +22,26 @@ runs:
       run: |
         npm run i18n-extract -- --desktop-dir .
         git --no-pager diff --exit-code i18n/en.json
+    - name: ci/ensure-electron-binary
+      shell: ${{ inputs.shell }}
+      # Electron's postinstall binary download is occasionally flaky in CI. When it fails,
+      # node_modules/electron is missing path.txt and the unit suites that import the real
+      # `electron` module fail with "Electron failed to install correctly". Verify the binary
+      # is present and repair it (re-run Electron's installer) before the unit tests run.
+      run: |
+        for attempt in 1 2 3; do
+          if node -e "require('electron')" >/dev/null 2>&1; then
+            echo "electron binary present"
+            break
+          fi
+          echo "electron binary missing/broken (attempt ${attempt}); reinstalling..."
+          rm -rf node_modules/electron/dist node_modules/electron/path.txt
+          node node_modules/electron/install.js || true
+        done
+        node -e "require('electron')" >/dev/null 2>&1 || {
+          echo "::error::electron binary still not installed after retries"
+          exit 1
+        }
     - name: ci/run-unit-ci
       shell: ${{ inputs.shell }}
       env:
