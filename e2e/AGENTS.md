@@ -136,10 +136,6 @@ Many server-backed specs require:
 - `MM_TEST_USER_NAME`
 - `MM_TEST_PASSWORD`
 
-### Test server credentials (from env)
-
-Set **`MM_TEST_SERVER_URL`**, **`MM_TEST_USER_NAME`**, and **`MM_TEST_PASSWORD`** in the environment before running E2E tests against a live server. (The setup does not auto-resolve the server URL from the PR description.)
-
 Do not remove skips or platform guards unless the test can actually run in the current environment.
 
 Examples:
