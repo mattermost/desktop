@@ -11,7 +11,7 @@ on:
         description: "The desktop version to test"
         required: true
       cmt_run_id:
-        description: "CMT provisioner run ID used for instance cleanup"
+        description: "CMT provisioner run ID, passed through for traceability. Instance teardown is keyed by commit SHA and handled by Matterwick when this workflow_run completes."
         required: false
         default: "0"
         type: string
