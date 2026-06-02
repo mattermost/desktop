@@ -6,8 +6,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import {resolveMmTestServerUrlFromPrIfNeeded} from './helpers/resolveMmTestServerUrlFromPr';
-
 const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
 const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
 
@@ -37,8 +35,6 @@ export default async function globalSetup() {
     } catch {
         // ignore stale registry cleanup failures
     }
-
-    await resolveMmTestServerUrlFromPrIfNeeded();
 
     if (process.platform === 'darwin') {
         // Multiple bundle IDs may be involved: com.github.Electron (Electron binary

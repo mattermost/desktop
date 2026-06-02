@@ -136,17 +136,9 @@ Many server-backed specs require:
 - `MM_TEST_USER_NAME`
 - `MM_TEST_PASSWORD`
 
-### Cursor automation (URL from PR, credentials from env)
+### Test server credentials (from env)
 
-When **`MM_TEST_SERVER_URL` is unset**, Playwright global setup (`global-setup.ts`) tries to read the PR description and take the URL from the line **`Server for Cursor Automation: <url>`** (the same line CI writes after Linux E2E). Set **`MM_TEST_USER_NAME`** and **`MM_TEST_PASSWORD`** in Cursor env only; you do not need to duplicate the server URL there if the PR has that line.
-
-Requirements for auto-resolution:
-
-- **PR number**: `MM_TEST_PR_NUMBER`, or `GITHUB_PR_NUMBER` / `PR_NUMBER`, or `GITHUB_REF` shaped like `refs/pull/123/merge` (set `MM_TEST_PR_NUMBER` when the cloud agent has no GitHub-style ref)
-- **Repo**: `GITHUB_REPOSITORY` (`owner/repo`) or `MM_TEST_GITHUB_OWNER` + `MM_TEST_GITHUB_REPO`
-- **Access**: `GITHUB_TOKEN` or `GH_TOKEN` for `api.github.com`, or a working authenticated **`gh`** CLI
-
-If `MM_TEST_SERVER_URL` is already set, global setup does not overwrite it.
+Set **`MM_TEST_SERVER_URL`**, **`MM_TEST_USER_NAME`**, and **`MM_TEST_PASSWORD`** in the environment before running E2E tests against a live server. (The setup does not auto-resolve the server URL from the PR description.)
 
 Do not remove skips or platform guards unless the test can actually run in the current environment.
 

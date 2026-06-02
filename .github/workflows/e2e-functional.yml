@@ -35,7 +35,7 @@ on:
         default: ""
       pr_number:
         type: string
-        description: "PR number for label cleanup; also used to write Server for Cursor Automation URL into the PR body (Linux E2E). Dispatchers should set this for PR runs."
+        description: "PR number, used to remove the E2E label from the PR after tests complete. Dispatchers should set this for PR runs."
         required: false
 
 # Least-privilege default. Jobs that need more (status checks, PR writes) grant it explicitly
@@ -83,12 +83,8 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
       fail-fast: false
-    # Caller permission cap for the reusable workflow. The template scopes its own jobs: the
-    # test job (untrusted npm ci/Playwright) runs contents:read only, while the isolated
-    # PR-body sync job uses pull-requests:write.
-    permissions:
-      contents: read
-      pull-requests: write
+    # The reusable template runs only untrusted PR code (npm ci / Playwright) with a read-only
+    # token; it inherits the workflow-level contents:read default.
     uses: ./.github/workflows/e2e-functional-template.yml
     with:
       runs-on: ${{ matrix.runner }}
@@ -99,7 +95,6 @@ jobs:
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
       TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(inputs.version_name, 'release-') && 'RELEASE' || 'PR' }}
       nightly: ${{ inputs.nightly }}
-      pr_number: ${{ inputs.pr_number }}
     secrets: inherit
 
   update-final-status:

@@ -221,12 +221,6 @@ Modules extending `EventEmitter` broadcast state changes. Define event constants
 - **E2E tests**: Playwright, in `e2e/` (separate `package.json`).
 - **Test globals**: `__HASH_VERSION__`, `__IS_NIGHTLY_BUILD__`, `__IS_MAC_APP_STORE__`, `__DISABLE_GPU__`, `__SKIP_ONBOARDING_SCREENS__`, `__SENTRY_DSN__`
 
-### Cursor automation (PR Mattermost server)
-
-Linux E2E can add a line to the PR body: `Server for Cursor Automation: <https://…>`. For Cursor agents, keep **`MM_TEST_USER_NAME`** and **`MM_TEST_PASSWORD`** in Cursor env; the **server URL** is taken from that PR line when **`MM_TEST_SERVER_URL` is not set**.
-
-Before tests run, `e2e/global-setup.ts` loads the PR description and sets `MM_TEST_SERVER_URL` from that line when possible. It needs a **PR number** from `MM_TEST_PR_NUMBER`, `GITHUB_PR_NUMBER`, `PR_NUMBER`, or `GITHUB_REF` (for example `refs/pull/3834/merge`). Cloud agents that do not receive GitHub-style variables should set **`MM_TEST_PR_NUMBER`** to the PR under test. It also needs **`GITHUB_REPOSITORY`** (`owner/repo`) or **`MM_TEST_GITHUB_OWNER`** and **`MM_TEST_GITHUB_REPO`** (unless **`gh`** can resolve the repo from the checkout), and either **`GITHUB_TOKEN`** / **`GH_TOKEN`** for the GitHub API or an authenticated **`gh`** CLI as a fallback. If `MM_TEST_SERVER_URL` is already set, it is left unchanged.
-
 ### Mocking singletons
 
 Singletons use default exports. Mock them with `__esModule: true` + `default`:
