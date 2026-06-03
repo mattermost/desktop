@@ -119,7 +119,7 @@ export class ThemeManager {
             return;
         }
         if (!server.theme.isUsingSystemTheme) {
-            const themeSource = isLightColor(server.theme.centerChannelBg) ? 'light' : 'dark';
+            const themeSource = isLightColor(server.theme.centerChannelBg || '#fff') ? 'light' : 'dark';
             if (nativeTheme.themeSource !== themeSource) {
                 nativeTheme.themeSource = themeSource;
             }
