@@ -78,111 +78,47 @@ export function handleMainWindowIsShown() {
      * calls of this function will notification re-evaluate the booleans passed to "handleShowOnboardingScreens".
     */
 
-    let done = false;
-    const markReady = (mainWindowIsVisible: boolean) => {
-        if (done) {
-            return;
-        }
-        done = true;
-        handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), mainWindowIsVisible);
-        setTestField('__e2eAppReady', true);
-    };
-
-    const attachWindowListeners = (mainWindow: BrowserWindow) => {
-        if (mainWindow.isVisible()) {
-            markReady(true);
-            return;
-        }
-
-        const POLL_MS = 250;
-        const MAX_POLL_MS = 60_000;
-        let pollInterval: ReturnType<typeof setInterval> | undefined;
-        let pollDeadline: ReturnType<typeof setTimeout> | undefined;
-        let cleanedUp = false;
-
-        const stopPolling = () => {
-            if (pollInterval !== undefined) {
-                clearInterval(pollInterval);
-                pollInterval = undefined;
-            }
-            if (pollDeadline !== undefined) {
-                clearTimeout(pollDeadline);
-                pollDeadline = undefined;
-            }
-        };
-
-        function cleanup() {
-            if (cleanedUp) {
-                return;
-            }
-            cleanedUp = true;
-            stopPolling();
-            mainWindow.removeListener('show', onShow);
-            mainWindow.removeListener('closed', onMainWindowClosed);
-            app.removeListener('before-quit', onBeforeQuit);
-        }
-
-        function onMainWindowClosed() {
-            cleanup();
-        }
-
-        function onBeforeQuit() {
-            cleanup();
-        }
-
-        function onShow() {
-            cleanup();
-            markReady(false);
-        }
-
-        // The `show` event fires when `browserWindow.show()` is called and the
-        // window becomes visible. We deliberately do NOT listen to
-        // `ready-to-show` here: that event fires *before* the window is shown
-        // (so the renderer can call `.show()` without a white flash), and using
-        // it would set `__e2eAppReady=true` while the window is still hidden.
-        mainWindow.once('show', onShow);
-        mainWindow.once('closed', onMainWindowClosed);
-        app.once('before-quit', onBeforeQuit);
-
-        // Belt-and-suspenders: the 'show' event can fire between MainWindow.show()
-        // (called earlier in initialize) and the listener attach above, especially
-        // on slower CI runners. Poll isVisible() so we don't get stuck waiting for
-        // an event that already fired.
-        pollInterval = setInterval(() => {
-            if (done) {
-                cleanup();
-                return;
-            }
-            const mw = MainWindow.get();
-            if (mw?.isVisible()) {
-                cleanup();
-                markReady(true);
-            }
-        }, POLL_MS);
-
-        pollDeadline = setTimeout(() => {
-            if (done) {
-                cleanup();
-                return;
-            }
-            cleanup();
-            markReady(false);
-        }, MAX_POLL_MS);
-    };
-
     const mainWindow = MainWindow.get();
     log.debug('handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
+    if (mainWindow?.isVisible()) {
+        handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
+    } else {
+        mainWindow?.once('show', () => {
+            handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
+        });
+    }
 
-    if (mainWindow) {
-        attachWindowListeners(mainWindow);
+    signalE2EAppReadyWhenShown();
+}
+
+// E2E only: signals `__e2eAppReady` once the main window is visible so Playwright/Detox can wait
+// on app readiness. Gated on NODE_ENV==='test' (the same gate setTestField uses), so it adds no
+// listeners and is completely inert in normal app usage. Listener-based (no polling); also covers
+// the case where the main window has not been constructed yet.
+function signalE2EAppReadyWhenShown() {
+    if (process.env.NODE_ENV !== 'test') {
         return;
     }
 
-    // The window hasn't been constructed yet. Wait for it, then re-enter.
+    const markReady = () => setTestField('__e2eAppReady', true);
+    const whenVisible = (win: BrowserWindow) => {
+        if (win.isVisible()) {
+            markReady();
+        } else {
+            win.once('show', markReady);
+        }
+    };
+
+    const win = MainWindow.get();
+    if (win) {
+        whenVisible(win);
+        return;
+    }
+
     MainWindow.once(MAIN_WINDOW_CREATED, () => {
         const created = MainWindow.get();
         if (created) {
-            attachWindowListeners(created);
+            whenVisible(created);
         }
     });
 }

@@ -20,7 +20,6 @@ import {
     LOAD_FAILED,
     LOADSCREEN_END,
     CAN_POPOUT,
-    MAIN_WINDOW_CREATED,
     OPEN_POPOUT,
     RELOAD_VIEW,
     SERVER_LOGGED_IN_CHANGED,
@@ -92,46 +91,10 @@ export class PopoutManager {
         ViewManager.on(VIEW_TYPE_ADDED, this.handleViewTypeAdded);
 
         ServerManager.on(SERVER_LOGGED_IN_CHANGED, this.handleServerLoggedInChanged);
-
-        // When the main window closes (e.g., user confirms quit, or willAppQuit is
-        // true), destroy all popout windows so they do not outlive the main window.
-        MainWindow.on(MAIN_WINDOW_CREATED, this.registerMainWindowCloseHandler);
-        this.registerMainWindowCloseHandler();
     }
 
     createNewWindow = (serverId: string) => {
         this.handleCreateNewWindow(serverId);
-    };
-
-    private registerMainWindowCloseHandler = () => {
-        const win = MainWindow.get();
-        if (!win) {
-            return;
-        }
-        win.once('closed', this.closeAllPopouts);
-    };
-
-    private closeAllPopouts = () => {
-        log.debug('closeAllPopouts: main window closed, destroying all popout windows');
-
-        // Snapshot keys before iterating to avoid mutating the Map while walking it.
-        const viewIds = [...this.popoutWindows.keys()];
-        for (const viewId of viewIds) {
-            const window = this.popoutWindows.get(viewId);
-            if (!window) {
-                continue;
-            }
-            try {
-                this.popoutListeners.get(viewId)?.();
-                this.popoutListeners.delete(viewId);
-                if (!window.browserWindow.isDestroyed()) {
-                    window.browserWindow.destroy();
-                }
-            } catch (err) {
-                log.error('closeAllPopouts: error destroying popout', {viewId, err});
-            }
-            this.popoutWindows.delete(viewId);
-        }
     };
 
     getWindow = (viewId: string) => {

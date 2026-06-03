@@ -132,7 +132,7 @@ describe('main/app/intercom', () => {
             expect(MainWindow.once).not.toHaveBeenCalled();
         });
 
-        it('should set __e2eAppReady when show fires, and only once even if show fires again (done guard)', () => {
+        it('should set __e2eAppReady via a `show` listener (not `ready-to-show`) when the window is not yet visible', () => {
             ServerManager.hasServers.mockReturnValue(true);
             const win = makeWindow(false);
             MainWindow.get.mockReturnValue(win);
@@ -145,31 +145,8 @@ describe('main/app/intercom', () => {
             expect(win.once).not.toHaveBeenCalledWith('ready-to-show', expect.any(Function));
             expect(global.__e2eAppReady).toBeUndefined();
 
-            // First event fires — flag goes true.
+            // The window becomes visible and the `show` event fires.
             win.fire('show');
-            expect(global.__e2eAppReady).toBe(true);
-
-            // If something fires the show listener again (e.g. via the polling
-            // path), the done guard should prevent any double-invocation side effects.
-            ModalManager.addModal.mockClear();
-            win.fire('show');
-            expect(ModalManager.addModal).not.toHaveBeenCalled();
-        });
-
-        it('should mark ready from the polling fallback if isVisible() flips true without an event firing', () => {
-            jest.useFakeTimers();
-            ServerManager.hasServers.mockReturnValue(true);
-            const win = makeWindow(false);
-            MainWindow.get.mockReturnValue(win);
-
-            handleMainWindowIsShown();
-            expect(global.__e2eAppReady).toBeUndefined();
-
-            // Simulate the 'show' event having fired before the listener was
-            // attached — events never come, but isVisible() now reports true.
-            win.setVisible(true);
-            jest.advanceTimersByTime(250);
-
             expect(global.__e2eAppReady).toBe(true);
         });
 
