@@ -592,7 +592,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 func = callback;
             });
             browserWindow.loadURL.mockImplementation(() => {
-                func({sender: {id: 1}}, 'test');
+                func({sender: {id: 1}}, 'test', 'session-1');
                 return Promise.resolve();
             });
             BrowserWindow.mockReturnValue(browserWindow);
@@ -669,7 +669,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 func = callback;
             });
             browserWindow.loadURL.mockImplementation(() => {
-                func({sender: {id: 1}}, 'test2');
+                func({sender: {id: 1}}, 'test2', 'session-2');
                 return Promise.resolve();
             });
             BrowserWindow.mockReturnValue(browserWindow);
@@ -688,7 +688,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 func = callback;
             });
             browserWindow.loadURL.mockImplementation(() => {
-                func({sender: {id: 1}}, 'test2');
+                func({sender: {id: 1}}, 'test2', 'session-2');
                 return Promise.resolve();
             });
             BrowserWindow.mockReturnValue(browserWindow);

@@ -352,3 +352,68 @@ function validateAgainstSchema<T>(data: T, schema: Joi.ObjectSchema<T> | Joi.Arr
     }
     return value as T;
 }
+
+export function ipcValidate<E, A extends unknown[], R>(
+    handler: (event: E, ...args: A) => R,
+    schemas: Joi.Schema[],
+): (event: E, ...args: A) => R {
+    return (event: E, ...args: A) => {
+        for (let i = 0; i < schemas.length; i++) {
+            const {error} = schemas[i].validate(args[i]);
+            if (error) {
+                log.error(`IPC validation failed at argument ${i}: ${error.message}`);
+                return undefined as R;
+            }
+        }
+        return handler(event, ...args);
+    };
+}
+export const themeSchema = Joi.object({
+    sidebarBg: Joi.string(),
+    sidebarText: Joi.string(),
+    sidebarUnreadText: Joi.string(),
+    sidebarTextHoverBg: Joi.string(),
+    sidebarTextActiveBorder: Joi.string(),
+    sidebarTextActiveColor: Joi.string(),
+    sidebarHeaderBg: Joi.string(),
+    sidebarTeamBarBg: Joi.string(),
+    sidebarHeaderTextColor: Joi.string(),
+    onlineIndicator: Joi.string(),
+    awayIndicator: Joi.string(),
+    dndIndicator: Joi.string(),
+    mentionBg: Joi.string(),
+    mentionColor: Joi.string(),
+    centerChannelBg: Joi.string(),
+    centerChannelColor: Joi.string(),
+    newMessageSeparator: Joi.string(),
+    linkColor: Joi.string(),
+    buttonBg: Joi.string(),
+    buttonColor: Joi.string(),
+    errorTextColor: Joi.string(),
+    mentionHighlightBg: Joi.string(),
+    mentionHighlightLink: Joi.string(),
+    codeTheme: Joi.string(),
+    isUsingSystemTheme: Joi.boolean(),
+}).unknown(true);
+
+export const popoutViewPropsSchema = Joi.object({
+    titleTemplate: Joi.string(),
+    isRHS: Joi.boolean(),
+}).unknown(true);
+
+export const joinCallOptsSchema = Joi.object({
+    callID: Joi.string().required(),
+    title: Joi.string().allow('').required(),
+    rootID: Joi.string().allow('').required(),
+    channelURL: Joi.string().required(),
+    startingCall: Joi.boolean(),
+});
+
+export const desktopSourcesOptsSchema = Joi.object({
+    types: Joi.array().items(Joi.string().valid('screen', 'window')).required(),
+    thumbnailSize: Joi.object({
+        height: Joi.number().required(),
+        width: Joi.number().required(),
+    }),
+    fetchWindowIcons: Joi.boolean(),
+});
