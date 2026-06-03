@@ -4,6 +4,7 @@
 import type {IpcMainEvent, IpcMainInvokeEvent, View} from 'electron';
 import {WebContentsView, ipcMain, shell} from 'electron';
 import isDev from 'electron-is-dev';
+import Joi from 'joi';
 
 import ServerViewState from 'app/serverViewState';
 import AppState from 'common/appState';
@@ -43,6 +44,7 @@ import ServerManager from 'common/servers/serverManager';
 import {SECOND, TAB_BAR_HEIGHT} from 'common/utils/constants';
 import {getFormattedPathName, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import {ipcValidate} from 'common/Validator';
 import type {MattermostView} from 'common/views/View';
 import {TAB_MESSAGING} from 'common/views/View';
 import {handleWelcomeScreenModal} from 'main/app/intercom';
@@ -84,13 +86,16 @@ export class ViewManager {
         ipcMain.handle(REQUEST_BROWSER_HISTORY_STATUS, this.handleRequestBrowserHistoryStatus);
         ipcMain.on(HISTORY, this.handleHistory);
         ipcMain.on(REACT_APP_INITIALIZED, this.handleReactAppInitialized);
-        ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
+        ipcMain.on(BROWSER_HISTORY_PUSH, ipcValidate(this.handleBrowserHistoryPush, [Joi.string().required()]));
         ipcMain.on(TAB_LOGIN_CHANGED, this.handleTabLoginChanged);
         ipcMain.on(OPEN_SERVER_EXTERNALLY, this.handleOpenServerExternally);
         ipcMain.on(OPEN_SERVER_UPGRADE_LINK, this.handleOpenServerUpgradeLink);
         ipcMain.on(OPEN_CHANGELOG_LINK, this.handleOpenChangelogLink);
-        ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
-        ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
+        ipcMain.on(UNREADS_AND_MENTIONS, ipcValidate(
+            this.handleUnreadsAndMentionsChanged,
+            [Joi.boolean().required(), Joi.number().integer().min(0).required()],
+        ));
+        ipcMain.on(SESSION_EXPIRED, ipcValidate(this.handleSessionExpired, [Joi.boolean().required()]));
 
         ipcMain.on(SWITCH_TAB, (event, viewId) => this.showById(viewId));
 

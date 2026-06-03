@@ -7,6 +7,7 @@ import {pathToFileURL} from 'url';
 import {app, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
+import Joi from 'joi';
 
 import {
     FOCUS_BROWSERVIEW,
@@ -35,6 +36,7 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
+import {ipcValidate} from 'common/Validator';
 import AllowProtocolDialog from 'main/allowProtocolDialog';
 import AppVersionManager from 'main/AppVersionManager';
 import AuthManager from 'main/authManager';
@@ -259,7 +261,15 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
+    ipcMain.handle(NOTIFY_MENTION, ipcValidate(handleMentionNotification, [
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().min(1).required(),
+        Joi.string().min(1).required(),
+        Joi.string().min(1).required(),
+        Joi.boolean().required(),
+        Joi.string().allow('').required(),
+    ]));
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
     ipcMain.on(UPDATE_SHORTCUT_MENU, handleUpdateMenuEvent);
     ipcMain.on(FOCUS_BROWSERVIEW, ViewManager.focusCurrentView);
