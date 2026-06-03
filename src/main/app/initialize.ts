@@ -8,6 +8,7 @@ import type {IpcMainInvokeEvent} from 'electron';
 import {app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
+import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
@@ -44,6 +45,7 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 import {setTestField} from 'common/utils/util';
+import {ipcValidate} from 'common/Validator';
 import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
@@ -246,7 +248,15 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
+    ipcMain.handle(NOTIFY_MENTION, ipcValidate(handleMentionNotification, [
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().min(1).required(),
+        Joi.string().min(1).required(),
+        Joi.string().min(1).required(),
+        Joi.boolean().required(),
+        Joi.string().allow('').required(),
+    ]));
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
 
     if (process.platform !== 'darwin') {

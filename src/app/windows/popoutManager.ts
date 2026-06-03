@@ -3,6 +3,7 @@
 
 import type {IpcMainEvent, IpcMainInvokeEvent, WebContentsView} from 'electron';
 import {ipcMain} from 'electron';
+import Joi from 'joi';
 
 import type {PopoutViewProps} from '@mattermost/desktop-api';
 
@@ -44,6 +45,7 @@ import {POPOUT_RATE_LIMIT} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {DEFAULT_RHS_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {ipcValidate, popoutViewPropsSchema} from 'common/Validator';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
@@ -66,13 +68,22 @@ export class PopoutManager {
 
         ipcMain.handle(CREATE_NEW_WINDOW, (event, serverId) => this.handleCreateNewWindow(serverId));
         ipcMain.handle(CAN_POPOUT, this.handleCanPopout);
-        ipcMain.handle(OPEN_POPOUT, this.handleOpenPopout);
-        ipcMain.handle(CAN_USE_POPOUT_OPTION, this.handleCanUsePopoutOption);
+        ipcMain.handle(OPEN_POPOUT, ipcValidate(
+            this.handleOpenPopout,
+            [Joi.string().required(), popoutViewPropsSchema.required()],
+        ));
+        ipcMain.handle(CAN_USE_POPOUT_OPTION, ipcValidate(this.handleCanUsePopoutOption, [Joi.string().required()]));
         ipcMain.on(WINDOW_CLOSE, this.handleWindowClose);
-        ipcMain.on(SEND_TO_PARENT, this.handleSendToParent);
-        ipcMain.on(SEND_TO_POPOUT, this.handleSendToPopout);
+        ipcMain.on(SEND_TO_PARENT, ipcValidate(this.handleSendToParent, [Joi.string().required()]));
+        ipcMain.on(SEND_TO_POPOUT, ipcValidate(
+            this.handleSendToPopout,
+            [Joi.string().required(), Joi.string().required()],
+        ));
         ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
-        ipcMain.on(UPDATE_POPOUT_TITLE_TEMPLATE, this.handleUpdatePopoutTitleTemplate);
+        ipcMain.on(UPDATE_POPOUT_TITLE_TEMPLATE, ipcValidate(
+            this.handleUpdatePopoutTitleTemplate,
+            [Joi.string().required()],
+        ));
 
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
         ViewManager.on(VIEW_REMOVED, this.handleViewRemoved);

@@ -3,6 +3,7 @@
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {dialog, ipcMain} from 'electron';
+import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -15,6 +16,7 @@ import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {getFormattedPathName, isMagicLinkUrl, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import {ipcValidate} from 'common/Validator';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
@@ -35,7 +37,7 @@ export class NavigationManager {
 
         ipcMain.handle(REQUEST_BROWSER_HISTORY_STATUS, this.handleRequestBrowserHistoryStatus);
         ipcMain.on(HISTORY, this.handleHistory);
-        ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
+        ipcMain.on(BROWSER_HISTORY_PUSH, ipcValidate(this.handleBrowserHistoryPush, [Joi.string().required()]));
     }
 
     private openLinkInTab = (url: string | URL, getView: (server: MattermostServer) => MattermostView | undefined) => {
