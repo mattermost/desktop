@@ -66,7 +66,7 @@ export class WebContentsManager {
         ));
         ipcMain.on(SESSION_EXPIRED, ipcValidate(this.handleSessionExpired, [Joi.boolean().required()]));
         ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
-        ipcMain.on(UPDATE_SERVER_THEME, this.handleUpdateServerTheme);
+        ipcMain.on(UPDATE_SERVER_THEME, ipcValidate(this.handleUpdateServerTheme, [themeSchema.required()]));
         ipcMain.on(UPDATE_THEME, ipcValidate(this.handleUpdateTheme, [themeSchema.required()]));
 
         if (process.platform !== 'linux') {
