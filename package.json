@@ -181,5 +181,8 @@
     "valid-url": "1.0.9",
     "windows-focus-assist": "1.4.0",
     "yargs": "17.7.2"
+  },
+  "overrides": {
+    "yauzl": "3.3.1"
   }
 }
