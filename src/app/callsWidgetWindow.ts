@@ -3,6 +3,7 @@
 
 import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent} from 'electron';
 import {BrowserWindow, desktopCapturer, dialog, ipcMain, systemPreferences} from 'electron';
+import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
@@ -35,6 +36,7 @@ import ServerManager from 'common/servers/serverManager';
 import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import {desktopSourcesOptsSchema, ipcValidate, joinCallOptsSchema} from 'common/Validator';
 import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
@@ -70,21 +72,42 @@ export class CallsWidgetWindow {
     };
 
     constructor() {
-        ipcMain.on(CALLS_WIDGET_RESIZE, this.handleResize);
-        ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, this.handleShareScreen);
+        ipcMain.on(CALLS_WIDGET_RESIZE, ipcValidate(
+            this.handleResize,
+            [Joi.number().required(), Joi.number().required()],
+        ));
+        ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, ipcValidate(
+            this.handleShareScreen,
+            [Joi.string().required(), Joi.boolean().required()],
+        ));
         ipcMain.on(CALLS_POPOUT_FOCUS, this.handlePopOutFocus);
         ipcMain.on(WINDOW_CLOSE, this.handlePopOutClose);
-        ipcMain.handle(GET_DESKTOP_SOURCES, this.handleGetDesktopSources);
-        ipcMain.handle(CALLS_JOIN_CALL, this.handleCreateCallsWidgetWindow);
+        ipcMain.handle(GET_DESKTOP_SOURCES, ipcValidate(
+            this.handleGetDesktopSources,
+            [desktopSourcesOptsSchema.required()],
+        ));
+        ipcMain.handle(CALLS_JOIN_CALL, ipcValidate(
+            this.handleCreateCallsWidgetWindow,
+            [joinCallOptsSchema.required()],
+        ));
         ipcMain.on(CALLS_LEAVE_CALL, this.handleCallsLeave);
 
         // forwards to the main app
         ipcMain.on(DESKTOP_SOURCES_MODAL_REQUEST, this.forwardToMainApp(DESKTOP_SOURCES_MODAL_REQUEST));
-        ipcMain.on(CALLS_ERROR, this.forwardToMainApp(CALLS_ERROR));
-        ipcMain.on(CALLS_LINK_CLICK, this.handleCallsLinkClick);
-        ipcMain.on(CALLS_JOIN_REQUEST, this.forwardToMainApp(CALLS_JOIN_REQUEST));
-        ipcMain.on(CALLS_WIDGET_OPEN_THREAD, this.handleCallsOpenThread);
-        ipcMain.on(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, this.handleCallsOpenStopRecordingModal);
+        ipcMain.on(CALLS_ERROR, ipcValidate(
+            this.forwardToMainApp(CALLS_ERROR),
+            [Joi.string().required(), Joi.string(), Joi.string()],
+        ));
+        ipcMain.on(CALLS_LINK_CLICK, ipcValidate(this.handleCallsLinkClick, [Joi.string().required()]));
+        ipcMain.on(CALLS_JOIN_REQUEST, ipcValidate(
+            this.forwardToMainApp(CALLS_JOIN_REQUEST),
+            [Joi.string().required()],
+        ));
+        ipcMain.on(CALLS_WIDGET_OPEN_THREAD, ipcValidate(this.handleCallsOpenThread, [Joi.string().required()]));
+        ipcMain.on(CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL, ipcValidate(
+            this.handleCallsOpenStopRecordingModal,
+            [Joi.string().required()],
+        ));
         ipcMain.on(CALLS_WIDGET_OPEN_USER_SETTINGS, this.forwardToMainApp(CALLS_WIDGET_OPEN_USER_SETTINGS));
 
         ViewManager.on(VIEW_REMOVED, this.handleViewRemoved);
@@ -560,22 +583,25 @@ export class CallsWidgetWindow {
         }
 
         const promise = new Promise((resolve) => {
-            const connected = (ev: IpcMainEvent, incomingCallId: string, incomingSessionId: string) => {
-                log.debug('onJoinedCall', {incomingCallId});
+            const connected = ipcValidate(
+                (ev: IpcMainEvent, incomingCallId: string, incomingSessionId: string) => {
+                    log.debug('onJoinedCall', {incomingCallId});
 
-                if (!this.isCallsWidget(ev.sender.id)) {
-                    log.debug('onJoinedCall', 'blocked on wrong webContentsId');
-                    return;
-                }
+                    if (!this.isCallsWidget(ev.sender.id)) {
+                        log.debug('onJoinedCall', 'blocked on wrong webContentsId');
+                        return;
+                    }
 
-                if (msg.callID !== incomingCallId) {
-                    log.debug('onJoinedCall', 'blocked on wrong callId');
-                    return;
-                }
+                    if (msg.callID !== incomingCallId) {
+                        log.debug('onJoinedCall', 'blocked on wrong callId');
+                        return;
+                    }
 
-                ipcMain.off(CALLS_JOINED_CALL, connected);
-                resolve({callID: msg.callID, sessionID: incomingSessionId});
-            };
+                    ipcMain.off(CALLS_JOINED_CALL, connected);
+                    resolve({callID: msg.callID, sessionID: incomingSessionId});
+                },
+                [Joi.string().required(), Joi.string().required()],
+            );
             ipcMain.on(CALLS_JOINED_CALL, connected);
         });
 
