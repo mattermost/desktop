@@ -211,6 +211,22 @@ export function handleDoSomething(e: IpcMainEvent, arg: string) {
 }
 ```
 
+#### Validating renderer-supplied arguments
+
+If the handler reads any arguments that originate from the renderer (i.e. anything reachable through `externalAPI.ts`, or any internal API call carrying renderer-controlled data), wrap the registration with `ipcValidate` from `common/Validator`. The wrapper validates each positional argument against a Joi schema, drops the call and logs on failure, and only invokes the handler when every argument is well-typed.
+
+```typescript
+import Joi from 'joi';
+import {ipcValidate} from 'common/Validator';
+
+ipcMain.on(DO_SOMETHING, ipcValidate(
+    handleDoSomething,
+    [Joi.string().required()],
+));
+```
+
+Reuse the shared schema exports (`themeSchema`, `joinCallOptsSchema`, etc.) from `common/Validator` for complex payloads; add new exports there rather than declaring schemas in the handler module. Handlers whose arguments are entirely main-process-internal don't need a wrapper.
+
 ### Event-driven communication
 
 Modules extending `EventEmitter` broadcast state changes. Define event constants in `communication.ts`, emit from the source, listen from consumers. Prefer events over direct calls when multiple modules react to the same change.
