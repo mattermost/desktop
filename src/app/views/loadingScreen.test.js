@@ -19,6 +19,7 @@ jest.mock('electron', () => {
             mockWebContents.send = jest.fn();
             mockWebContents.loadURL = jest.fn();
             mockWebContents.isLoading = jest.fn();
+            mockWebContents.isDestroyed = jest.fn(() => false);
 
             return {
                 webContents: mockWebContents,
@@ -50,6 +51,7 @@ describe('main/views/loadingScreen', () => {
             webContents: {
                 id: 123,
             },
+            isDestroyed: jest.fn(() => false),
         };
         const loadingScreen = new LoadingScreen(mainWindow);
 

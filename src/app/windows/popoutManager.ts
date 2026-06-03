@@ -3,6 +3,7 @@
 
 import type {IpcMainEvent, IpcMainInvokeEvent, WebContentsView} from 'electron';
 import {ipcMain} from 'electron';
+import Joi from 'joi';
 
 import type {PopoutViewProps} from '@mattermost/desktop-api';
 
@@ -35,12 +36,15 @@ import {
     MESSAGE_FROM_POPOUT,
     POPOUT_CLOSED,
     UPDATE_TARGET_URL,
+    WINDOW_CLOSE,
+    UPDATE_POPOUT_TITLE_TEMPLATE,
 } from 'common/communication';
 import Config from 'common/config';
 import {POPOUT_RATE_LIMIT} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {DEFAULT_RHS_WINDOW_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {ipcValidate, popoutViewPropsSchema} from 'common/Validator';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
@@ -63,11 +67,22 @@ export class PopoutManager {
 
         ipcMain.handle(CREATE_NEW_WINDOW, (event, serverId) => this.handleCreateNewWindow(serverId));
         ipcMain.handle(CAN_POPOUT, this.handleCanPopout);
-        ipcMain.handle(OPEN_POPOUT, this.handleOpenPopout);
-        ipcMain.handle(CAN_USE_POPOUT_OPTION, this.handleCanUsePopoutOption);
-        ipcMain.on(SEND_TO_PARENT, this.handleSendToParent);
-        ipcMain.on(SEND_TO_POPOUT, this.handleSendToPopout);
+        ipcMain.handle(OPEN_POPOUT, ipcValidate(
+            this.handleOpenPopout,
+            [Joi.string().required(), popoutViewPropsSchema.required()],
+        ));
+        ipcMain.handle(CAN_USE_POPOUT_OPTION, ipcValidate(this.handleCanUsePopoutOption, [Joi.string().required()]));
+        ipcMain.on(WINDOW_CLOSE, this.handleWindowClose);
+        ipcMain.on(SEND_TO_PARENT, ipcValidate(this.handleSendToParent, [Joi.string().required()]));
+        ipcMain.on(SEND_TO_POPOUT, ipcValidate(
+            this.handleSendToPopout,
+            [Joi.string().required(), Joi.string().required()],
+        ));
         ipcMain.on(CLEAR_CACHE_AND_RELOAD, this.handleClearCacheAndReload);
+        ipcMain.on(UPDATE_POPOUT_TITLE_TEMPLATE, ipcValidate(
+            this.handleUpdatePopoutTitleTemplate,
+            [Joi.string().required()],
+        ));
 
         ViewManager.on(VIEW_CREATED, this.handleViewCreated);
         ViewManager.on(VIEW_REMOVED, this.handleViewRemoved);
@@ -135,6 +150,9 @@ export class PopoutManager {
 
     private startPopoutWindow = (viewId: string, window: BaseWindow) => {
         window.browserWindow.webContents.once('did-finish-load', () => {
+            if (!window.browserWindow || window.browserWindow.isDestroyed() || window.browserWindow.webContents.isDestroyed()) {
+                return;
+            }
             this.handleViewUpdated(viewId);
             window.browserWindow.show();
         });
@@ -228,9 +246,7 @@ export class PopoutManager {
     private setBounds = (window: BaseWindow, webContentsView: WebContentsView) => {
         return () => {
             if (window.browserWindow) {
-                const windowBounds = Config.useNativeTitleBar ?
-                    {...window.browserWindow.getContentBounds(), y: 0, x: 0} :
-                    getWindowBoundaries(window.browserWindow);
+                const windowBounds = Config.useNativeTitleBar ? {...window.browserWindow.getContentBounds(), y: 0, x: 0} : getWindowBoundaries(window.browserWindow);
                 webContentsView.setBounds(windowBounds);
             }
         };
@@ -242,7 +258,7 @@ export class PopoutManager {
         const view = ViewManager.getView(viewId);
         if (view && view.type === ViewType.WINDOW) {
             const window = this.popoutWindows.get(viewId);
-            if (window) {
+            if (window?.browserWindow && !window.browserWindow.isDestroyed() && !window.browserWindow.webContents.isDestroyed()) {
                 const title = ViewManager.getViewTitle(viewId);
                 window.browserWindow.setTitle(title);
                 window.browserWindow.webContents.send(UPDATE_POPOUT_TITLE, viewId, title);
@@ -390,6 +406,37 @@ export class PopoutManager {
             return;
         }
         view.sendToRenderer(MESSAGE_FROM_PARENT, channel, ...args);
+    };
+
+    private handleWindowClose = (event: IpcMainEvent) => {
+        const webContentsView = WebContentsManager.getViewByWebContentsId(event.sender.id);
+        if (!webContentsView) {
+            return;
+        }
+
+        const view = ViewManager.getView(webContentsView.id);
+        if (!view || view.type !== ViewType.WINDOW) {
+            return;
+        }
+
+        this.onClosePopout(view.id)();
+    };
+
+    private handleUpdatePopoutTitleTemplate = (event: IpcMainEvent, titleTemplate: string) => {
+        if (typeof titleTemplate !== 'string') {
+            return;
+        }
+
+        const webContentsView = WebContentsManager.getViewByWebContentsId(event.sender.id);
+        if (!webContentsView) {
+            return;
+        }
+
+        if (ViewManager.getView(webContentsView.id)?.type !== ViewType.WINDOW) {
+            return;
+        }
+
+        ViewManager.updateViewTitleTemplate(webContentsView.id, titleTemplate);
     };
 
     private handleClearCacheAndReload = (event: IpcMainEvent) => {

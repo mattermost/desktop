@@ -111,6 +111,7 @@ import {
     SERVER_LOGGED_IN_CHANGED,
     TAB_ADDED,
     TAB_REMOVED,
+    TAB_ORDER_UPDATED,
     OPEN_POPOUT_MENU,
     VIEW_LIMIT_UPDATED,
     GET_IS_VIEW_LIMIT_REACHED,
@@ -195,6 +196,7 @@ contextBridge.exposeInMainWorld('desktop', {
     onServerSwitched: (listener) => ipcRenderer.on(SERVER_SWITCHED, (_, serverId) => listener(serverId)),
     onTabAdded: (listener) => ipcRenderer.on(TAB_ADDED, (_, serverId, tabId) => listener(serverId, tabId)),
     onTabRemoved: (listener) => ipcRenderer.on(TAB_REMOVED, (_, serverId, tabId) => listener(serverId, tabId)),
+    onTabOrderUpdated: (listener) => ipcRenderer.on(TAB_ORDER_UPDATED, (_, serverId, viewIds) => listener(serverId, viewIds)),
     validateServerURL: (url, currentId) => ipcRenderer.invoke(VALIDATE_SERVER_URL, url, currentId),
 
     getUniqueServersWithPermissions: () => ipcRenderer.invoke(GET_UNIQUE_SERVERS_WITH_PERMISSIONS),

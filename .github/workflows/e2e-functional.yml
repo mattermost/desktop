@@ -28,6 +28,19 @@ on:
         description: "True if this is nightly build"
         required: false
         default: false
+      run_type:
+        type: string
+        description: "Run type for test reporting (PR/RELEASE). Auto-detected from branch if not provided."
+        required: false
+        default: ""
+      pr_number:
+        type: string
+        description: "PR number to remove E2E label from after tests complete"
+        required: false
+
+permissions:
+  contents: read
+  statuses: write
 
 jobs:
   prepare-matrix:
@@ -43,13 +56,16 @@ jobs:
   update-initial-status:
     name: Update initial status
     needs: prepare-matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Update initial status for all platforms
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ github.token }}
           script: |
@@ -74,30 +90,166 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
-      TYPE: ${{ startsWith(github.ref_name, 'release-') && 'RELEASE' || (github.ref_name == 'master' && 'MASTER') || 'PR' }}
+      TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(inputs.version_name, 'release-') && 'RELEASE' || 'PR' }}
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
-  update-final-status:
-    name: Update final status
-    runs-on: ubuntu-22.04
+  merge-e2e-report:
+    name: Merge E2E report
+    runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-tests
+    if: always() && !cancelled()
+    permissions:
+      contents: read
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+      AWS_S3_BUCKET: mattermost-cypress-report
+    outputs:
+      merged-report-ready: ${{ steps.merge.outputs.merged_report_ready }}
+      merged-report-url: ${{ steps.upload-s3.outputs.report_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22.x'
+          cache: "npm"
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E dependencies
+        run: |
+          cd e2e
+          npm ci
+
+      - name: Download blob reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+
+      - name: Merge Playwright reports
+        id: merge
+        run: |
+          if find all-blob-reports -type f -name '*.zip' | grep -q .; then
+            cd e2e
+            npx playwright merge-reports --config=merge.playwright.config.ts ../all-blob-reports
+            echo "merged_report_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No blob reports found to merge." >> "$GITHUB_STEP_SUMMARY"
+            echo "merged_report_ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload merged Playwright report artifact
+        if: always() && steps.merge.outputs.merged_report_ready == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-report-merged
+          path: e2e/playwright-report-merged
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload merged report to S3
+        id: upload-s3
+        if: steps.merge.outputs.merged_report_ready == 'true'
+        run: |
+          S3_PREFIX="desktop-e2e/${{ github.run_id }}-${{ github.run_attempt }}"
+          aws s3 sync e2e/playwright-report-merged/ "s3://${AWS_S3_BUCKET}/${S3_PREFIX}/" \
+            --acl public-read \
+            --content-type text/html \
+            --cache-control "no-cache"
+          REPORT_URL="https://${AWS_S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/index.html"
+          echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
+          echo "Playwright report uploaded: ${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
+
+  update-final-status:
+    name: Update final status
+    runs-on: ubuntu-24.04
+    needs:
+      - prepare-matrix
+      - e2e-tests
+      - merge-e2e-report
     if: always()
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Update final status for all platforms
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            await updateFinalStatus({ github, context, platforms, outputs });
+            const mergedReportUrl = '${{ needs.merge-e2e-report.outputs.merged-report-url }}' || undefined;
+            await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
+
+  remove-e2e-label:
+    name: Remove E2E label from PR
+    runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+      pull-requests: write
+    needs:
+      - e2e-tests
+      - e2e-policy-tests
+      - update-final-status
+    if: always()
+    steps:
+      - name: e2e/remove-label-from-pr
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        continue-on-error: true # Label might have been removed manually
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            // Use pr_number if provided directly by the dispatcher (e.g. Matterwick)
+            let prNumber = parseInt(process.env.PR_NUMBER) || null;
+
+            // Fall back to looking up the PR by head branch when pr_number was not passed
+            if (!prNumber) {
+              const run = await github.rest.actions.getWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId,
+              });
+              const branchName = run.data.head_branch;
+              if (branchName) {
+                const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
+                const prs = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  head: `${headOwner}:${branchName}`,
+                });
+                if (prs.data && prs.data.length > 0) {
+                  const matchingPr = prs.data.find((pr) => pr.head && pr.head.sha === run.data.head_sha);
+                  prNumber = (matchingPr || prs.data[0]).number;
+                }
+              }
+            }
+
+            if (prNumber) {
+              await github.rest.issues.removeLabel({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'E2E/Run',
+              });
+            } else {
+              console.log('Label removal skipped - could not find associated PR');
+            }
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}
@@ -130,12 +282,17 @@ jobs:
         env:
           INSTANCE_DETAILS: ${{ inputs.instance_details }}
         run: |
-          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          URL=""
-          if [ -n "${INSTANCE_DETAILS}" ]; then
-            URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
+          if [ -z "${INSTANCE_DETAILS}" ]; then
+            echo "Error: instance_details input is required but was not provided" >&2
+            exit 1
           fi
-          echo "MM_TEST_SERVER_URL=${URL:-https://mobile-e2e-site-2.test.mattermost.cloud/}" >> $GITHUB_ENV
+          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
+          if [ -z "${URL}" ]; then
+            echo "Error: No server URL found in instance_details for runner OS: ${RUNNER_OS}" >&2
+            exit 1
+          fi
+          echo "MM_TEST_SERVER_URL=${URL}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -143,7 +300,7 @@ jobs:
           ref: ${{ inputs.version_name }}
 
       - name: e2e/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22.x'
           cache: "npm"
@@ -151,7 +308,7 @@ jobs:
 
       - name: e2e/cache-node-modules
         id: cache-node-modules
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             node_modules
@@ -176,7 +333,6 @@ jobs:
         run: |
           npm ci
           cd e2e && npm ci
-          npx electron-rebuild -f -t prod,optional,dev -w robotjs --module-dir ../
 
       - name: e2e/build-test-bundle
         run: npm run build-test
@@ -185,8 +341,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd e2e
-          npm run run:policy || true
-          npm run send-report
+          set +e
+          npm run run:policy
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
+          npm run send-report || true
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
@@ -195,28 +353,50 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd e2e
-          npm run run:policy || true
-          npm run send-report
+          set +e
+          npm run run:policy
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
+          npm run send-report || true
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
 
       - name: e2e/check-for-failures
         id: check-failures
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        if: always()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
             const { newFailedTests } = analyzeFlakyTests();
-            if (newFailedTests && newFailedTests.length > 0) {
+
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const platform = process.platform === 'darwin' ? 'macos' : 'windows';
+            const hasFailed = newFailedTests && newFailedTests.length > 0;
+
+            try {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: context.sha,
+                state: hasFailed ? 'failure' : 'success',
+                context: `policy-test/${platform}`,
+                description: `Policy tests completed with ${hasFailed ? newFailedTests.length : 0} failures`,
+                target_url: runUrl,
+              });
+            } catch (e) {
+              console.log(`Could not update commit status: ${e.message}`);
+            }
+
+            if (hasFailed) {
               core.setFailed(`${newFailedTests.length} policy test(s) failed:\n${newFailedTests.join('\n')}`);
             }
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: policy-test-results-${{ runner.os }}
-          path: e2e/mochawesome-report
+          path: e2e/playwright-report
           retention-days: 7

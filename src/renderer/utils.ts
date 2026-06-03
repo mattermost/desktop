@@ -98,6 +98,9 @@ const printVersion = () => {
 };
 
 const setTheme = (theme: Theme) => {
+    if (!theme) {
+        return;
+    }
     document.body.style.setProperty('--sidebar-bg', theme.sidebarBg);
     document.body.style.setProperty('--sidebar-bg-rgb', toRgbValues(theme.sidebarBg));
     document.body.style.setProperty('--sidebar-text', theme.sidebarText);

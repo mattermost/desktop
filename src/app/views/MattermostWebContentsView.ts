@@ -291,8 +291,12 @@ export class MattermostWebContentsView extends EventEmitter {
             if (ViewManager.isPrimaryView(this.view.id)) {
                 this.webContentsView.webContents.send(BROWSER_HISTORY_PUSH, this.lastPath);
             } else {
+                const pathToPush = this.lastPath;
                 this.webContentsView.webContents.once('did-finish-load', () => {
-                    this.webContentsView.webContents.send(BROWSER_HISTORY_PUSH, this.lastPath);
+                    if (this.isDestroyed()) {
+                        return;
+                    }
+                    this.webContentsView.webContents.send(BROWSER_HISTORY_PUSH, pathToPush);
                 });
                 this.webContentsView.webContents.reload();
             }

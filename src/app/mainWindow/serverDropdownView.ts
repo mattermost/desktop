@@ -94,7 +94,11 @@ export class ServerDropdownView {
     private updateDropdown = () => {
         log.silly('updateDropdown');
 
-        this.view?.webContents.send(
+        if (!this.view || this.view.webContents.isDestroyed()) {
+            return;
+        }
+
+        this.view.webContents.send(
             UPDATE_SERVERS_DROPDOWN,
             this.servers,
             this.windowBounds,

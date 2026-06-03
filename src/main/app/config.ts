@@ -33,6 +33,7 @@ export function handleGetLocalConfiguration() {
     log.debug('handleGetLocalConfiguration');
 
     return {
+        ...Config.defaultData,
         ...Config.localData,
         appName: app.name,
         enableServerManagement: Config.enableServerManagement,

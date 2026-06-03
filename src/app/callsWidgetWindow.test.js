@@ -14,6 +14,7 @@ import {
     UPDATE_SHORTCUT_MENU,
     CALLS_WIDGET_OPEN_THREAD,
     CALLS_WIDGET_OPEN_STOP_RECORDING_MODAL,
+    WINDOW_CLOSE,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {
@@ -430,6 +431,51 @@ describe('main/windows/callsWidgetWindow', () => {
         });
     });
 
+    describe('handlePopOutClose (WINDOW_CLOSE)', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.popOut = {
+            isDestroyed: jest.fn().mockReturnValue(false),
+            close: jest.fn(),
+            webContents: {id: 42},
+        };
+
+        afterEach(() => {
+            jest.clearAllMocks();
+            callsWidgetWindow.popOut.isDestroyed.mockReturnValue(false);
+        });
+
+        it('should register a WINDOW_CLOSE listener on construction', () => {
+            ipcMain.on.mockClear();
+            // eslint-disable-next-line no-new
+            new CallsWidgetWindow();
+            const calls = ipcMain.on.mock.calls.filter((c) => c[0] === WINDOW_CLOSE);
+            expect(calls).toHaveLength(1);
+        });
+
+        it('should close the popout when sender id matches', () => {
+            callsWidgetWindow.handlePopOutClose({sender: {id: 42}});
+            expect(callsWidgetWindow.popOut.close).toBeCalled();
+        });
+
+        // Coexists with PopoutManager's WINDOW_CLOSE handler — a non-Calls renderer
+        // sending WINDOW_CLOSE must not affect our popout.
+        it('should not close when sender id does not match (e.g. another popout)', () => {
+            callsWidgetWindow.handlePopOutClose({sender: {id: 7}});
+            expect(callsWidgetWindow.popOut.close).not.toBeCalled();
+        });
+
+        it('should not close when popout is destroyed', () => {
+            callsWidgetWindow.popOut.isDestroyed.mockReturnValue(true);
+            callsWidgetWindow.handlePopOutClose({sender: {id: 42}});
+            expect(callsWidgetWindow.popOut.close).not.toBeCalled();
+        });
+
+        it('should not throw when popout is undefined', () => {
+            const widget = new CallsWidgetWindow();
+            expect(() => widget.handlePopOutClose({sender: {id: 42}})).not.toThrow();
+        });
+    });
+
     it('onPopOutCreate - should attach correct listeners and should prevent redirects', () => {
         let redirectListener;
         let closedListener;
@@ -448,6 +494,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 id: 'webContentsId',
                 getURL: () => ('http://myurl.com'),
                 removeListener: jest.fn(),
+                isDestroyed: jest.fn(() => false),
             },
             off: jest.fn(),
             loadURL: jest.fn(),
@@ -546,7 +593,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 func = callback;
             });
             browserWindow.loadURL.mockImplementation(() => {
-                func({sender: {id: 1}}, 'test');
+                func({sender: {id: 1}}, 'test', 'session-1');
                 return Promise.resolve();
             });
             BrowserWindow.mockReturnValue(browserWindow);
@@ -623,7 +670,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 func = callback;
             });
             browserWindow.loadURL.mockImplementation(() => {
-                func({sender: {id: 1}}, 'test2');
+                func({sender: {id: 1}}, 'test2', 'session-2');
                 return Promise.resolve();
             });
             BrowserWindow.mockReturnValue(browserWindow);
@@ -642,7 +689,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 func = callback;
             });
             browserWindow.loadURL.mockImplementation(() => {
-                func({sender: {id: 1}}, 'test2');
+                func({sender: {id: 1}}, 'test2', 'session-2');
                 return Promise.resolve();
             });
             BrowserWindow.mockReturnValue(browserWindow);
@@ -842,6 +889,43 @@ describe('main/windows/callsWidgetWindow', () => {
 
             expect(callsWidgetWindow.win.webContents.send).not.toHaveBeenCalled();
             expect(views.get('server-1_view-1').sendToRenderer).not.toHaveBeenCalled();
+        });
+
+        it('should return sources for a non-Calls view when no call is active', async () => {
+            callsWidgetWindow.mainView = undefined;
+            callsWidgetWindow.options = undefined;
+            callsWidgetWindow.getViewURL = jest.fn().mockReturnValue(undefined);
+            WebContentsManager.getServerURLByViewId.mockReturnValue('http://server-1.com');
+
+            jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([
+                {
+                    id: 'screen0',
+                    thumbnail: {
+                        toDataURL: jest.fn(),
+                    },
+                },
+            ]);
+
+            const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 3}}, null);
+            expect(sources).toEqual([
+                {
+                    id: 'screen0',
+                },
+            ]);
+            expect(PermissionsManager.doPermissionRequest).toHaveBeenCalledWith(
+                3,
+                'screenShare',
+                {requestingUrl: 'http://server-1.com', isMainFrame: false},
+            );
+        });
+
+        it('should throw when no call is active and view has no server URL', async () => {
+            callsWidgetWindow.mainView = undefined;
+            callsWidgetWindow.options = undefined;
+            callsWidgetWindow.getViewURL = jest.fn().mockReturnValue(undefined);
+            WebContentsManager.getServerURLByViewId.mockReturnValue(undefined);
+
+            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 3}}, null)).rejects.toThrow('serverURL not found');
         });
 
         it('macos - no permissions', async () => {

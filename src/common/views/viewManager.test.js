@@ -10,6 +10,7 @@ import {
     VIEW_REMOVED,
     SERVER_ADDED,
     SERVER_REMOVED,
+    SERVER_NAME_CHANGED,
 } from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
@@ -250,6 +251,102 @@ describe('ViewManager', () => {
             ServerManager.mockServerManager.emit(SERVER_ADDED, mockServer.id, true);
 
             expect(createViewSpy).toHaveBeenCalledWith(mockServer, ViewType.TAB);
+        });
+    });
+
+    describe('handleServerNameChanged', () => {
+        it('should update serverName on all views for that server', () => {
+            const viewManager = new ViewManager();
+            const view1 = viewManager.createView(mockServer, ViewType.TAB);
+            const view2 = viewManager.createView(mockServer, ViewType.TAB);
+            viewManager.updateViewTitle(view1.id, 'Channel 1', 'Team 1');
+
+            ServerManager.getServer.mockReturnValue({...mockServer, name: 'Renamed Server'});
+            const emitSpy = jest.spyOn(viewManager, 'emit');
+
+            ServerManager.mockServerManager.emit(SERVER_NAME_CHANGED, mockServer.id);
+
+            expect(view1.title.serverName).toBe('Renamed Server');
+            expect(view1.title.channelName).toBe('Channel 1');
+            expect(view1.title.teamName).toBe('Team 1');
+            expect(view2.title.serverName).toBe('Renamed Server');
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view1.id);
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view2.id);
+
+            ServerManager.getServer.mockReturnValue(mockServer);
+        });
+
+        it('should not update views for other servers', () => {
+            const viewManager = new ViewManager();
+            const otherServer = {
+                id: 'other-server-id',
+                name: 'Other Server',
+                url: new URL('https://other.com'),
+                initialLoadURL: new URL('https://other.com'),
+            };
+            const view1 = viewManager.createView(mockServer, ViewType.TAB);
+            const view2 = viewManager.createView(otherServer, ViewType.TAB);
+
+            ServerManager.getServer.mockReturnValue({...mockServer, name: 'Renamed Server'});
+            const emitSpy = jest.spyOn(viewManager, 'emit');
+
+            ServerManager.mockServerManager.emit(SERVER_NAME_CHANGED, mockServer.id);
+
+            expect(view1.title.serverName).toBe('Renamed Server');
+            expect(view2.title.serverName).toBe('Other Server');
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view1.id);
+            expect(emitSpy).not.toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view2.id);
+
+            ServerManager.getServer.mockReturnValue(mockServer);
+        });
+    });
+
+    describe('updateViewTitleTemplate', () => {
+        let viewManager;
+        beforeEach(() => {
+            viewManager = new ViewManager();
+        });
+
+        it('should update title template and emit event', () => {
+            const view = viewManager.createView(mockServer, ViewType.WINDOW);
+            viewManager.updateViewTitle(view.id, 'Test Channel', 'Test Team');
+            const emitSpy = jest.spyOn(viewManager, 'emit');
+
+            viewManager.updateViewTitleTemplate(view.id, '{channelName} | {teamName}');
+
+            expect(view.props.titleTemplate).toBe('{channelName} | {teamName}');
+            expect(emitSpy).toHaveBeenCalledWith(VIEW_TITLE_UPDATED, view.id);
+        });
+
+        it('should create props if they do not exist', () => {
+            const view = viewManager.createView(mockServer, ViewType.TAB);
+            expect(view.props).toBeUndefined();
+
+            viewManager.updateViewTitleTemplate(view.id, '{channelName}');
+
+            expect(view.props).toBeDefined();
+            expect(view.props.titleTemplate).toBe('{channelName}');
+        });
+
+        it('should do nothing for non-existent view', () => {
+            const emitSpy = jest.spyOn(viewManager, 'emit');
+
+            viewManager.updateViewTitleTemplate('non-existent-id', '{channelName}');
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should cause getViewTitle to use the new template', () => {
+            const view = viewManager.createView(mockServer, ViewType.WINDOW);
+            viewManager.updateViewTitle(view.id, 'General', 'Engineering');
+
+            const titleBefore = viewManager.getViewTitle(view.id);
+            expect(titleBefore).toBe('Test Server - General');
+
+            viewManager.updateViewTitleTemplate(view.id, '[{serverName}] {teamName} > {channelName}');
+
+            const titleAfter = viewManager.getViewTitle(view.id);
+            expect(titleAfter).toBe('[Test Server] Engineering > General');
         });
     });
 

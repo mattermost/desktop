@@ -80,9 +80,12 @@ export class ModalView<T, T2> {
         this.status = Status.SHOWING;
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
+                if (this.view.webContents.isDestroyed()) {
+                    return;
+                }
                 this.view.webContents.focus();
             });
-        } else {
+        } else if (!this.view.webContents.isDestroyed()) {
             this.view.webContents.focus();
         }
 
@@ -102,6 +105,14 @@ export class ModalView<T, T2> {
             this.contextMenu.dispose();
             this.view.webContents.close();
 
+            delete this.windowAttached;
+            this.status = Status.ACTIVE;
+        }
+    };
+
+    suspend = () => {
+        if (this.windowAttached) {
+            this.windowAttached.contentView.removeChildView(this.view);
             delete this.windowAttached;
             this.status = Status.ACTIVE;
         }

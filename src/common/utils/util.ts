@@ -70,6 +70,15 @@ export function copy<T>(data: T) {
     return Object.assign({}, data);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TestGlobal = typeof global & Record<string, any>;
+
+export function setTestField(name: string, value: unknown): void {
+    if (process.env.NODE_ENV === 'test') {
+        (global as TestGlobal)[name] = value;
+    }
+}
+
 export default {
     runMode,
     shorten,

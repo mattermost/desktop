@@ -10,6 +10,7 @@ import BaseWindow from 'app/windows/baseWindow';
 import {
     LOAD_FAILED,
     LOADSCREEN_END,
+    POPOUT_CLOSED,
     RELOAD_VIEW,
     UPDATE_POPOUT_TITLE,
     UPDATE_TARGET_URL,
@@ -54,6 +55,7 @@ jest.mock('app/windows/baseWindow', () => {
     mockWebContents.on = jest.fn(mockWebContents.on);
     mockWebContents.once = jest.fn(mockWebContents.once);
     mockWebContents.emit = jest.fn(mockWebContents.emit);
+    mockWebContents.isDestroyed = jest.fn(() => false);
     const mockBrowserWindow = {
         webContents: mockWebContents,
         contentView: {
@@ -69,6 +71,7 @@ jest.mock('app/windows/baseWindow', () => {
         close: jest.fn(),
         setTitle: jest.fn(),
         loadURL: jest.fn(() => Promise.resolve()),
+        isDestroyed: jest.fn(() => false),
     };
 
     return jest.fn(() => ({
@@ -99,9 +102,11 @@ jest.mock('common/views/viewManager', () => {
         emit: jest.fn((event, ...args) => mockViewManager.emit(event, ...args)),
         getView: jest.fn(),
         createView: jest.fn(),
+        removeView: jest.fn(),
         getViewTitle: jest.fn(),
         isViewLimitReached: jest.fn(),
         getViewsByServerId: jest.fn(),
+        updateViewTitleTemplate: jest.fn(),
         mockViewManager,
     };
 });
@@ -147,6 +152,7 @@ describe('PopoutManager', () => {
     mockWebContents.on = jest.fn(mockWebContents.on);
     mockWebContents.once = jest.fn(mockWebContents.once);
     mockWebContents.emit = jest.fn(mockWebContents.emit);
+    mockWebContents.isDestroyed = jest.fn(() => false);
     const mockBaseWindow = {
         browserWindow: {
             webContents: mockWebContents,
@@ -163,6 +169,7 @@ describe('PopoutManager', () => {
             close: jest.fn(),
             setTitle: jest.fn(),
             loadURL: jest.fn(() => Promise.resolve()),
+            isDestroyed: jest.fn(() => false),
         },
         showLoadingScreen: jest.fn(),
         fadeLoadingScreen: jest.fn(),
@@ -1050,6 +1057,110 @@ describe('PopoutManager', () => {
             WebContentsManager.getView.mockReturnValue(null);
             popoutManager.handleSendToPopout(mockEvent, 'non-existent-id', 'test-channel', 'arg1');
             expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleWindowClose', () => {
+        it('should close the popout and notify the parent view', () => {
+            const popoutManager = new PopoutManager();
+            const mockParentView = {
+                id: 'parent-view-id',
+                sendToRenderer: jest.fn(),
+            };
+            const mockWindowView = {
+                id: 'popout-view-id',
+                serverId: 'test-server-id',
+                type: ViewType.WINDOW,
+                parentViewId: 'parent-view-id',
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'popout-view-id'});
+            ViewManager.getView.mockReturnValue(mockWindowView);
+            WebContentsManager.getView.mockReturnValue(mockParentView);
+
+            popoutManager.handleWindowClose({sender: {id: 100}});
+
+            expect(mockParentView.sendToRenderer).toHaveBeenCalledWith(POPOUT_CLOSED, 'popout-view-id');
+            expect(ViewManager.removeView).toHaveBeenCalledWith('popout-view-id');
+        });
+
+        it('should do nothing when view is not a WINDOW type', () => {
+            const popoutManager = new PopoutManager();
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'tab-id'});
+            ViewManager.getView.mockReturnValue({
+                id: 'tab-id',
+                serverId: 'test-server-id',
+                type: ViewType.TAB,
+            });
+
+            popoutManager.handleWindowClose({sender: {id: 100}});
+
+            expect(ViewManager.removeView).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleUpdatePopoutTitleTemplate', () => {
+        const popoutManager = new PopoutManager();
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should call updateViewTitleTemplate when view is a popout', () => {
+            const mockWebContentsView = {
+                id: 'popout-view-id',
+            };
+            const mockEvent = {
+                sender: {id: 456},
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockWebContentsView);
+            ViewManager.getView.mockReturnValue({type: ViewType.WINDOW});
+
+            popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, '{channelName} - {teamName}');
+
+            expect(WebContentsManager.getViewByWebContentsId).toHaveBeenCalledWith(456);
+            expect(ViewManager.updateViewTitleTemplate).toHaveBeenCalledWith('popout-view-id', '{channelName} - {teamName}');
+        });
+
+        it('should not call updateViewTitleTemplate when view is not found', () => {
+            const mockEvent = {
+                sender: {id: 999},
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(null);
+
+            popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, '{channelName}');
+
+            expect(ViewManager.updateViewTitleTemplate).not.toHaveBeenCalled();
+        });
+
+        it('should not call updateViewTitleTemplate when titleTemplate is not a string', () => {
+            const mockEvent = {
+                sender: {id: 456},
+            };
+
+            popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, 123);
+
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+            expect(ViewManager.updateViewTitleTemplate).not.toHaveBeenCalled();
+        });
+
+        it('should not call updateViewTitleTemplate when view is a tab', () => {
+            const mockWebContentsView = {
+                id: 'tab-view-id',
+            };
+            const mockEvent = {
+                sender: {id: 456},
+            };
+
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockWebContentsView);
+            ViewManager.getView.mockReturnValue({type: ViewType.TAB});
+
+            popoutManager.handleUpdatePopoutTitleTemplate(mockEvent, '{channelName}');
+
+            expect(ViewManager.updateViewTitleTemplate).not.toHaveBeenCalled();
         });
     });
 

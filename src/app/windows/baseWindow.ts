@@ -71,6 +71,9 @@ export default class BaseWindow {
         this.win.setMenuBarVisibility(false);
 
         this.win.webContents.once('did-finish-load', () => {
+            if (!this.win || this.win.isDestroyed() || this.win.webContents.isDestroyed()) {
+                return;
+            }
             this.win.webContents.zoomLevel = 0;
             this.ready = true;
         });
@@ -157,7 +160,10 @@ export default class BaseWindow {
     };
 
     private sendToRendererWithRetry = (maxRetries: number, channel: string, ...args: unknown[]) => {
-        if (!this.win || !this.ready) {
+        if (!this.win || this.win.isDestroyed()) {
+            return;
+        }
+        if (!this.ready) {
             if (maxRetries > 0) {
                 log.debug(`Can't send ${channel}, will retry`);
                 setTimeout(() => {

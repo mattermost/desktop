@@ -104,6 +104,7 @@ export type DesktopAPI = {
         memory?: number;
     }>) => void) => () => void;
     unregister: (channel: string) => void;
+    closeWindow: () => void;
     canPopout: () => Promise<boolean>;
     openPopout: (path: string, props: PopoutViewProps) => Promise<string>;
     canUsePopoutOption: (optionName: string) => Promise<boolean>;
@@ -112,4 +113,5 @@ export type DesktopAPI = {
     sendToPopout: (id: string, channel: string, ...args: unknown[]) => void;
     onMessageFromPopout: (listener: (id: string, channel: string, ...args: unknown[]) => void) => () => void;
     onPopoutClosed: (listener: (id: string) => void) => () => void;
+    updatePopoutTitleTemplate: (titleTemplate: string) => void;
 };

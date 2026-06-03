@@ -186,6 +186,7 @@ class MainPage extends React.PureComponent<Props, State> {
         window.desktop.onServerLoggedInChanged(this.updateServers);
         window.desktop.onTabAdded(this.updateServers);
         window.desktop.onTabRemoved(this.updateServers);
+        window.desktop.onTabOrderUpdated(this.updateServers);
         window.desktop.onViewLimitUpdated(this.updateIsViewLimitReached);
 
         // Add tab title update handler
@@ -279,10 +280,18 @@ class MainPage extends React.PureComponent<Props, State> {
             const {mentionsPerServer, unreadsPerServer} = this.state;
 
             const newMentionsPerServer = {...mentionsPerServer};
-            newMentionsPerServer[serverId] = mentions || 0;
+            if (mentions) {
+                newMentionsPerServer[serverId] = mentions;
+            } else {
+                delete newMentionsPerServer[serverId];
+            }
 
             const newUnreadsPerServer = {...unreadsPerServer};
-            newUnreadsPerServer[serverId] = unreads || false;
+            if (unreads) {
+                newUnreadsPerServer[serverId] = unreads;
+            } else {
+                delete newUnreadsPerServer[serverId];
+            }
 
             this.setState({mentionsPerServer: newMentionsPerServer, unreadsPerServer: newUnreadsPerServer});
         });
@@ -504,8 +513,8 @@ class MainPage extends React.PureComponent<Props, State> {
                             isDisabled={this.state.modalOpen}
                             activeServerName={activeServer.name}
                             totalMentionCount={totalMentionCount}
-                            currentMentions={this.state.mentionsPerServer[this.state.activeServerId!]}
-                            currentUnread={this.state.unreadsPerServer[this.state.activeServerId!]}
+                            currentMentions={this.state.mentionsPerServer[this.state.activeServerId!] ?? 0}
+                            currentUnread={this.state.unreadsPerServer[this.state.activeServerId!] ?? false}
                             hasUnreads={hasAnyUnreads}
                             isMenuOpen={this.state.isMenuOpen}
                         />

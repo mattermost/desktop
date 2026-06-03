@@ -1,4 +1,3 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 'use strict';
@@ -224,13 +223,6 @@ module.exports = {
                     }
 
                     debugLog(`Checking process PID ${proc.pid}: command="${proc.command}"`);
-
-                    // Skip electron-mocha processes
-                    if (proc.arguments && proc.arguments.some &&
-                        proc.arguments.some((arg) => arg.includes('electron-mocha'))) {
-                        debugLog(`Skipping electron-mocha process ${proc.pid}`);
-                        return;
-                    }
 
                     // Match by exact path (primary method)
                     const exactMatch = this.pathsMatch(proc.command, electronBinaryPath);

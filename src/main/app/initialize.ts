@@ -8,12 +8,14 @@ import type {IpcMainInvokeEvent} from 'electron';
 import {app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
+import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
+import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     QUIT,
@@ -42,6 +44,9 @@ import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
+import {setTestField} from 'common/utils/util';
+import {ipcValidate} from 'common/Validator';
+import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import ExternalBrowserManager from 'main/browserManager';
@@ -198,6 +203,7 @@ function initializeBeforeAppReady() {
         log.error('No config loaded');
         return;
     }
+
     if (process.env.NODE_ENV !== 'test') {
         app.enableSandbox();
     }
@@ -211,11 +217,13 @@ function initializeBeforeAppReady() {
 
     Tray.refreshImages(Config.trayIconTheme);
 
+    // E2E tests intentionally launch multiple Electron instances in parallel.
+    // Skip the single-instance lock in test mode so secondary workers do not exit during startup.
     // If there is already an instance, quit this one
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    if (!__IS_MAC_APP_STORE__) {
+    if (!__IS_MAC_APP_STORE__ && (process.env.NODE_ENV !== 'test' || process.env.MM_E2E_USE_SINGLE_INSTANCE_LOCK === 'true')) {
         const gotTheLock = app.requestSingleInstanceLock();
         if (!gotTheLock) {
             app.exit();
@@ -241,7 +249,15 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
+    ipcMain.handle(NOTIFY_MENTION, ipcValidate(handleMentionNotification, [
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().min(1).required(),
+        Joi.string().min(1).required(),
+        Joi.string().min(1).required(),
+        Joi.boolean().required(),
+        Joi.string().allow('').required(),
+    ]));
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
 
     if (process.platform !== 'darwin') {
@@ -272,6 +288,17 @@ function initializeInterCommunicationEventListeners() {
 }
 
 async function initializeAfterAppReady() {
+    setTestField('__e2eTestRefs', {
+        MainWindow,
+        ServerManager,
+        TabManager,
+        ViewManager,
+        WebContentsManager,
+    });
+
+    // Block all NTLM/Negotiate requests by default
+    session.defaultSession.allowNTLMCredentialsForDomains('');
+
     protocol.handle('mattermost-desktop', (request: Request) => {
         const url = parseURL(request.url);
         if (!url) {

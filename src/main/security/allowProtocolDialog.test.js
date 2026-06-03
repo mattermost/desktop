@@ -134,13 +134,23 @@ describe('main/allowProtocolDialog', () => {
         });
 
         it('should open protocol that is already allowed', () => {
-            allowProtocolDialog.handleDialogEvent(new URL('spotify:album:3AQgdwMNCiN7awXch5fAaG'));
+            allowProtocolDialog.handleDialogEvent('spotify:album:3AQgdwMNCiN7awXch5fAaG');
             expect(shell.openExternal).toBeCalledWith('spotify:album:3AQgdwMNCiN7awXch5fAaG');
+        });
+
+        it('should preserve the original URL with embedded scheme colons', async () => {
+            const promise = Promise.resolve({response: 0});
+            MainWindow.get.mockImplementation(() => ({}));
+            dialog.showMessageBox.mockImplementation(() => promise);
+            allowProtocolDialog.handleDialogEvent('myapp://https://myapp.com/v/13123123123');
+            await promise;
+
+            expect(shell.openExternal).toBeCalledWith('myapp://https://myapp.com/v/13123123123');
         });
 
         it('should not open message box if main window is missing', () => {
             MainWindow.get.mockImplementation(() => null);
-            allowProtocolDialog.handleDialogEvent(new URL('mattermost://community.mattermost.com'));
+            allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com');
             expect(shell.openExternal).not.toBeCalled();
             expect(dialog.showMessageBox).not.toBeCalled();
         });
@@ -153,7 +163,7 @@ describe('main/allowProtocolDialog', () => {
             it('should open the window but not save when clicking Yes', async () => {
                 const promise = Promise.resolve({response: 0});
                 dialog.showMessageBox.mockImplementation(() => promise);
-                allowProtocolDialog.handleDialogEvent(new URL('mattermost://community.mattermost.com'));
+                allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com');
                 await promise;
 
                 expect(shell.openExternal).toBeCalledWith('mattermost://community.mattermost.com');
@@ -164,7 +174,7 @@ describe('main/allowProtocolDialog', () => {
             it('should open the window and save when clicking Yes and Save', async () => {
                 const promise = Promise.resolve({response: 1});
                 dialog.showMessageBox.mockImplementation(() => promise);
-                allowProtocolDialog.handleDialogEvent(new URL('mattermost://community.mattermost.com'));
+                allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com');
                 await promise;
 
                 expect(shell.openExternal).toBeCalledWith('mattermost://community.mattermost.com');
@@ -175,7 +185,7 @@ describe('main/allowProtocolDialog', () => {
             it('should do nothing when clicking No', async () => {
                 const promise = Promise.resolve({response: 2});
                 dialog.showMessageBox.mockImplementation(() => promise);
-                allowProtocolDialog.handleDialogEvent(new URL('mattermost://community.mattermost.com'));
+                allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com');
                 await promise;
 
                 expect(shell.openExternal).not.toBeCalled();
@@ -187,7 +197,7 @@ describe('main/allowProtocolDialog', () => {
                 const promise = Promise.resolve({response: 0});
                 dialog.showMessageBox.mockImplementation(() => promise);
                 shell.openExternal.mockReturnValue(Promise.reject(new Error('bad protocol')));
-                allowProtocolDialog.handleDialogEvent(new URL('bad-protocol://community.mattermost.com'));
+                allowProtocolDialog.handleDialogEvent('bad-protocol://community.mattermost.com');
                 await promise;
 
                 expect(shell.openExternal).toBeCalledWith('bad-protocol://community.mattermost.com');
@@ -213,7 +223,7 @@ describe('main/allowProtocolDialog', () => {
             ['ms-appinstaller://example.com/package.appinstaller'],
             ['ms-officecmd://example.com/open?url=file.docx'],
         ])('should silently block %s without opening dialog or shell', async (urlStr) => {
-            await allowProtocolDialog.handleDialogEvent(new URL(urlStr));
+            await allowProtocolDialog.handleDialogEvent(urlStr);
 
             expect(dialog.showMessageBox).not.toBeCalled();
             expect(shell.openExternal).not.toBeCalled();

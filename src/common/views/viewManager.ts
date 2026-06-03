@@ -12,6 +12,7 @@ import {
     VIEW_REMOVED,
     SERVER_ADDED,
     SERVER_REMOVED,
+    SERVER_NAME_CHANGED,
     VIEW_TYPE_REMOVED,
     VIEW_TYPE_ADDED,
 } from 'common/communication';
@@ -35,6 +36,7 @@ export class ViewManager extends EventEmitter {
 
         ServerManager.on(SERVER_REMOVED, this.handleServerWasRemoved);
         ServerManager.on(SERVER_ADDED, this.handleServerWasAdded);
+        ServerManager.on(SERVER_NAME_CHANGED, this.handleServerNameChanged);
     }
 
     getView = (id: string) => {
@@ -132,6 +134,20 @@ export class ViewManager extends EventEmitter {
         this.emit(VIEW_TITLE_UPDATED, view.id);
     };
 
+    updateViewTitleTemplate = (viewId: string, titleTemplate: string) => {
+        log.debug('updateViewTitleTemplate', {viewId});
+
+        const view = this.views.get(viewId);
+        if (!view) {
+            return;
+        }
+        if (!view.props) {
+            view.props = {};
+        }
+        view.props.titleTemplate = titleTemplate;
+        this.emit(VIEW_TITLE_UPDATED, view.id);
+    };
+
     updateViewType = (viewId: string, type: ViewType) => {
         log.debug('updateViewType', {viewId, type});
 
@@ -195,6 +211,25 @@ export class ViewManager extends EventEmitter {
             return new Logger(...additionalPrefixes, viewId);
         }
         return new Logger(...additionalPrefixes, server.id, viewId);
+    };
+
+    private handleServerNameChanged = (serverId: string) => {
+        log.debug('handleServerNameChanged', {serverId});
+
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            return;
+        }
+
+        this.views.forEach((view) => {
+            if (view.serverId === serverId) {
+                view.title = {
+                    ...view.title,
+                    serverName: server.name,
+                };
+                this.emit(VIEW_TITLE_UPDATED, view.id);
+            }
+        });
     };
 
     private handleServerWasRemoved = (server: MattermostServer) => {

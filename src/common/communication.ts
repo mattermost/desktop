@@ -241,6 +241,10 @@ export const MESSAGE_FROM_PARENT = 'message-from-parent';
 export const SEND_TO_POPOUT = 'send-to-popout';
 export const MESSAGE_FROM_POPOUT = 'message-from-popout';
 export const POPOUT_CLOSED = 'popout-closed';
+export const UPDATE_POPOUT_TITLE_TEMPLATE = 'update-popout-title-template';
+
+// View close
+export const WINDOW_CLOSE = 'window-close';
 
 // View limit events
 export const VIEW_LIMIT_UPDATED = 'view-limit-updated';
