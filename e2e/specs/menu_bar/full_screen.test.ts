@@ -29,8 +29,18 @@ test.describe('menu/view', () => {
         const firstServer = serverEntry.win;
         await loginToMattermost(firstServer);
         await firstServer.waitForSelector('#post_textbox');
-        const currentWidth = await firstServer.evaluate(() => window.outerWidth);
-        const currentHeight = await firstServer.evaluate(() => window.outerHeight);
+
+        // Assert on the main window's fullscreen STATE rather than the embedded server
+        // view's window.outerWidth/Height. On a fixed-resolution CI display (the Windows
+        // runner is 1024 wide, matching DEFAULT_WINDOW_WIDTH) the windowed and fullscreen
+        // widths are identical, so a "fullscreen > windowed" dimension check is a false
+        // negative. isFullScreen() reflects exactly what the menu item toggles.
+        const isMainWindowFullScreen = () => electronApp.evaluate(({BrowserWindow}) => {
+            const refs = (global as any).__e2eTestRefs;
+            const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
+            return Boolean(win && win.isFullScreen());
+        });
+        expect(await isMainWindowFullScreen()).toBe(false);
 
         // Use direct menu invocation — keyboard events sent via Playwright CDP to the
         // web contents do not reliably reach the native Electron popup menu on Windows.
@@ -73,10 +83,7 @@ test.describe('menu/view', () => {
             });
         });
 
-        const fullScreenWidth = await firstServer.evaluate(() => window.outerWidth);
-        const fullScreenHeight = await firstServer.evaluate(() => window.outerHeight);
-        expect(fullScreenWidth).toBeGreaterThan(currentWidth as number);
-        expect(fullScreenHeight).toBeGreaterThan(currentHeight as number);
+        expect(await isMainWindowFullScreen()).toBe(true);
 
         await electronApp.evaluate(({app, BrowserWindow}) => {
             const viewMenu = (app as any).applicationMenu?.getMenuItemById('view');
@@ -114,9 +121,6 @@ test.describe('menu/view', () => {
             });
         });
 
-        const exitWidth = await firstServer.evaluate(() => window.outerWidth);
-        const exitHeight = await firstServer.evaluate(() => window.outerHeight);
-        expect(exitWidth).toBeLessThan(fullScreenWidth as number);
-        expect(exitHeight).toBeLessThan(fullScreenHeight as number);
+        expect(await isMainWindowFullScreen()).toBe(false);
     });
 });

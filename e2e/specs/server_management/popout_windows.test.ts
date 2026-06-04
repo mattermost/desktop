@@ -254,58 +254,10 @@ test.describe('server_management/popout_windows', () => {
             }, {timeout: 10_000}).toBe(0);
         });
 
-        if (process.platform === 'win32') {
-            test('MM-TXXXX_5 should close popout windows when main window is closed', {tag: ['@P2', '@win32']}, async ({}, testInfo) => {
-                const testDataDir = path.join(testInfo.outputDir, 'popout-close-userdata');
-                await fs.mkdir(testDataDir, {recursive: true});
-                writeConfigFile(testDataDir, config);
-
-                const {_electron: electron} = await import('playwright');
-                const app = await electron.launch({
-                    executablePath: electronBinaryPath,
-                    args: [appDir, `--user-data-dir=${testDataDir}`, '--no-sandbox', '--disable-gpu'],
-                    env: {...process.env, NODE_ENV: 'test'},
-                    timeout: 60_000,
-                });
-                await waitForAppReady(app);
-
-                try {
-                    const win = app.windows().find((w) => w.url().includes('index'));
-                    if (!win) {
-                        throw new Error('Main window not found');
-                    }
-
-                    await clickFileMenuItem(app, 'New Window');
-
-                    await expect.poll(() => {
-                        return app.windows().filter((w) => w.url().includes('popout.html')).length;
-                    }, {timeout: 10_000}).toBe(1);
-
-                    const mainWindows = app.windows().filter((w) => w.url().includes('index'));
-                    const popoutWindows = app.windows().filter((w) => w.url().includes('popout.html'));
-                    expect(mainWindows.length).toBe(1);
-                    expect(popoutWindows.length).toBe(1);
-
-                    const mainBrowserWindow = await app.browserWindow(mainWindows[0]);
-
-                    // On Windows, mainWindow.onClose calls event.preventDefault() when
-                    // global.willAppQuit is false (shows "Are you sure?" dialog that
-                    // nobody clicks in headless CI).  Set willAppQuit = true first so
-                    // the close actually propagates and triggers popout cleanup.
-                    await app.evaluate(() => {
-                        (global as any).willAppQuit = true;
-                    });
-                    await mainBrowserWindow.evaluate((w) => (w as Electron.BrowserWindow).close());
-
-                    await expect.poll(() => {
-                        return app.windows().filter((w) => w.url().includes('popout.html')).length;
-                    }, {timeout: 10_000}).toBe(0);
-                } finally {
-                    await app.close().catch(() => {});
-                    await waitForLockFileRelease(testDataDir).catch(() => {});
-                }
-            });
-        }
+        // NOTE: there is intentionally no "close popout windows when main window is
+        // closed" test. Destroying popouts when the main window closes was considered
+        // and explicitly dropped (see PopoutManager) because it contradicts the intended
+        // multi-window independence; popout cleanup is handled by E2E teardown instead.
     });
 
     test.describe('MM-T4411 popout window content functionality', () => {

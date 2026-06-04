@@ -9,7 +9,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {buildServerMap} from '../../helpers/serverMap';
-import {appDir, cmdOrCtrl, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
+import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 
 const windowMenuConfig = {
@@ -475,22 +475,22 @@ test.describe('Menu/window_menu', () => {
         }, {timeout: 15_000}).toBe(true);
     });
 
-    test('MM-T825 should be hidden when keyboard shortcuts are pressed', {tag: ['@P2', '@darwin', '@win32']}, async () => {
-        if (process.platform === 'linux') {
-            test.skip(true, 'Linux not supported');
+    test('MM-T825 should be hidden when keyboard shortcuts are pressed', {tag: ['@P2', '@darwin']}, async () => {
+        // "Hide the app" (Cmd+H / app.hide()) is a macOS-only concept: it hides every
+        // window without closing them. Windows has no equivalent — Ctrl+W closes a tab,
+        // Ctrl+Shift+W closes the window, and closing the main window with
+        // minimizeToTray=false shows a quit confirmation dialog rather than hiding it.
+        // So this behavior is only meaningful (and only passes) on macOS.
+        if (process.platform !== 'darwin') {
+            test.skip(true, 'App hide is macOS-only');
             return;
         }
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
-        if (process.platform === 'darwin') {
-            // macOS: app.hide() hides all windows without closing (Cmd+H behavior)
-            await electronApp.evaluate(({app}) => {
-                app.hide();
-            });
-        } else {
-            // Windows: Ctrl+W closes the focused window (different semantics than macOS hide)
-            await mainWindow.keyboard.press(`${cmdOrCtrl === 'command' ? 'Meta' : 'Control'}+w`);
-        }
+        // macOS: app.hide() hides all windows without closing (Cmd+H behavior)
+        await electronApp.evaluate(({app}) => {
+            app.hide();
+        });
 
         await expect.poll(async () => {
             return browserWindow.evaluate((window) => (window as any).isVisible());
