@@ -3,17 +3,6 @@
 
 import {UserActivityMonitor} from './UserActivityMonitor';
 
-// Mock electron so the suite doesn't load the real `electron` module (which needs the
-// downloaded binary and otherwise fails with "Electron failed to install correctly" in CI).
-jest.mock('electron', () => ({
-    app: {
-        isReady: jest.fn(() => true),
-    },
-    powerMonitor: {
-        getSystemIdleTime: jest.fn(() => 0),
-    },
-}));
-
 describe('UserActivityMonitor', () => {
     describe('updateIdleTime', () => {
         it('should set idle time to provided value', () => {
