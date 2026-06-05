@@ -10,11 +10,13 @@ on:
       DESKTOP_VERSION:
         description: "The desktop version to test"
         required: true
-      cmt_run_id:
-        description: "CMT provisioner run ID, passed through for traceability. Instance teardown is keyed by commit SHA and handled by Matterwick when this workflow_run completes."
-        required: false
-        default: "0"
-        type: string
+
+# Supersede an in-flight CMT run for the same ref (e.g. rapid release-branch pushes) so we don't
+# pay for overlapping multi-version matrices. Matterwick reaps the cancelled run's provisioned
+# servers on its workflow_run "completed" (cancelled) event, matched by commit SHA.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ## This is picked up after the finish for cleanup
