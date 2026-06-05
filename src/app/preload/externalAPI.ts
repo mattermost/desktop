@@ -35,6 +35,8 @@ import {
     GET_DESKTOP_SOURCES,
     UNREADS_AND_MENTIONS,
     TAB_LOGIN_CHANGED,
+    SESSION_ATTRIBUTES_MANIFEST_INVALIDATED,
+    SESSION_ATTRIBUTES_RESEND_REQUESTED,
     METRICS_SEND,
     METRICS_REQUEST,
     METRICS_RECEIVE,
@@ -81,6 +83,8 @@ const desktopAPI: DesktopAPI = {
 
     onLogin: () => ipcRenderer.send(TAB_LOGIN_CHANGED, true),
     onLogout: () => ipcRenderer.send(TAB_LOGIN_CHANGED, false),
+    invalidateSessionAttributeManifest: () => ipcRenderer.send(SESSION_ATTRIBUTES_MANIFEST_INVALIDATED),
+    resendSessionAttributes: () => ipcRenderer.send(SESSION_ATTRIBUTES_RESEND_REQUESTED),
 
     // Unreads/mentions/notifications
     sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>

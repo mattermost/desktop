@@ -50,5 +50,23 @@ describe('main/server/serverInfo', () => {
             await expect(serverInfo.getRemoteInfo(callback)).rejects.toThrow();
             expect(callback).not.toHaveBeenCalled();
         });
+
+        it('should not fetch session attributes manifest if session attributes are not enabled', async () => {
+            getServerAPI.mockImplementation((url, auth, success) => {
+                if (url.toString() === 'http://someurl.com/api/v4/config/client?format=old') {
+                    success(JSON.stringify({FeatureFlagSessionAttributes: 'false'}));
+                } else if (url.toString() === 'http://someurl.com/api/v4/users/sessions/attributes/manifest') {
+                    success(JSON.stringify([{name: 'test', type: 'string', ttl_seconds: 30, grace_period_seconds: 60, platforms: ['desktop']}]));
+                } else if (url.toString() === 'http://someurl.com/api/v4/plugins/webapp') {
+                    success(JSON.stringify([]));
+                } else if (url.toString() === 'http://someurl.com/api/v4/license/client?format=old') {
+                    success(JSON.stringify({SkuShortName: 'professional'}));
+                } else {
+                    success(JSON.stringify({}));
+                }
+            });
+            await serverInfo.fetchRemoteInfo();
+            expect(serverInfo.remoteInfo.sessionAttributesManifest).toBeUndefined();
+        });
     });
 });

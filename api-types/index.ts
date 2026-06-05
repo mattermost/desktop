@@ -60,6 +60,8 @@ export type DesktopAPI = {
     ) => void) => () => void;
     onLogin: () => void;
     onLogout: () => void;
+    invalidateSessionAttributeManifest: () => void;
+    resendSessionAttributes: () => void;
 
     // Unreads/mentions/notifications
     sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => Promise<{status: string; reason?: string; data?: string}>;

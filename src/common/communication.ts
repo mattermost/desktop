@@ -259,3 +259,7 @@ export const UPDATE_THEME = 'update-theme';
 export const UPDATE_SERVER_THEME = 'update-server-theme';
 export const SERVER_THEME_CHANGED = 'server-theme-changed';
 export const RESET_THEME = 'reset-theme';
+
+// Session attributes events
+export const SESSION_ATTRIBUTES_MANIFEST_INVALIDATED = 'session-attributes-manifest-invalidated';
+export const SESSION_ATTRIBUTES_RESEND_REQUESTED = 'session-attributes-resend-requested';

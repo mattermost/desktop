@@ -219,8 +219,13 @@ jest.mock('app/menus', () => ({
 
 jest.mock('main/security/preAuthManager', () => ({
     handlePreAuthSecret: jest.fn(),
+    injectPreAuthSecret: jest.fn(() => ({})),
+    loadPreAuthSecretForServer: jest.fn(),
+    preAuthHeaderOnHeadersReceivedHander: jest.fn(),
 }));
-
+jest.mock('main/sessionAttributes/sessionAttributesManager', () => ({
+    injectHeader: jest.fn(() => ({})),
+}));
 jest.mock('main/sentryHandler', () => ({
     init: jest.fn(),
 }));
