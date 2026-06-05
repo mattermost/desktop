@@ -376,7 +376,7 @@ export const themeSchema = Joi.object({
     sidebarTextActiveBorder: Joi.string(),
     sidebarTextActiveColor: Joi.string(),
     sidebarHeaderBg: Joi.string(),
-    sidebarTeamBarBg: Joi.string(),
+    sidebarTeamBarBg: Joi.string().allow(''),
     sidebarHeaderTextColor: Joi.string(),
     onlineIndicator: Joi.string(),
     awayIndicator: Joi.string(),
@@ -392,7 +392,7 @@ export const themeSchema = Joi.object({
     errorTextColor: Joi.string(),
     mentionHighlightBg: Joi.string(),
     mentionHighlightLink: Joi.string(),
-    codeTheme: Joi.string(),
+    codeTheme: Joi.string().allow(''),
     isUsingSystemTheme: Joi.boolean(),
 }).unknown(true);
 
