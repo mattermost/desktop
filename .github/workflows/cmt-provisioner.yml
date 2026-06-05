@@ -10,11 +10,22 @@ name: CMT Provisioner
 # instances (cleanup is keyed off the completed workflow_run, matched by commit SHA).
 #
 # The server-version set lives in Matterwick config (managed via gitops), so this workflow
-# takes no inputs. Run it manually from the Actions tab, or let the monthly schedule fire it.
+# takes no inputs. Run it manually from the Actions tab, or let it fire automatically on
+# release branches (below).
+#
+# NOTE (intentional duplicate coverage): a release-v* push ALSO triggers Matterwick's normal
+# release E2E flow (whole suite against the single latest server version). CMT additionally
+# runs the whole suite against its multi-version matrix, whose set includes the latest server.
+# So on a release push the latest server version gets the suite run twice (once by the normal
+# release flow, once by the CMT latest-version leg). This is expected and accepted.
 
 on:
-  schedule:
-    - cron: "0 0 1 * *" # 00:00 UTC on the 1st of every month
+  # Run CMT when a release branch is cut and on every subsequent push to it. The first push
+  # that creates release-v* is the "cut"; later pushes to it re-run CMT.
+  push:
+    branches:
+      - "release-v*"
+  # Manual runs from the Actions tab (against any branch).
   workflow_dispatch: {}
 
 # This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a workflow_run event
