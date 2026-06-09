@@ -41,7 +41,7 @@ test(
             expect(serverWin1).toBeDefined();
 
             // Log in
-            await loginToMattermost(serverWin1!);
+            await loginToMattermost(app1, serverWin1!);
 
             // Verify we reached the app (not login page)
             await serverWin1!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});

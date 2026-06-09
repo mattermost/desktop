@@ -117,7 +117,7 @@ env MM_TEST_SERVER_URL=http://localhost:8065 MM_TEST_USER_NAME=sysadmin MM_TEST_
 
 Prefer these commands:
 
-- Single file:
+- Single file (headless Linux: prefix with `xvfb-run -a` when no working `DISPLAY` — see root `AGENTS.md`):
   - `env MM_TEST_SERVER_URL=http://localhost:8065 MM_TEST_USER_NAME=sysadmin MM_TEST_PASSWORD=Sys@dmin-sample1 npx playwright test <spec> --reporter=list --workers=1`
 - CI-shaped local run:
   - `CI=1 npx playwright test <spec> --workers=1`
@@ -129,6 +129,8 @@ If a failed run leaves Electron behind:
 - `killall Electron 2>/dev/null || true`
 
 ## Environment
+
+**Linux headless display** — In automation and most headless Linux hosts, the **default** is **`xvfb-run -a`** before Playwright (see root **`AGENTS.md` → “Running on headless Linux (Cloud VM)”** for *xvfb-run* vs *DISPLAY*). Do not assume `DISPLAY=:1` without verifying the X server (e.g. `xdpyinfo`).
 
 Many server-backed specs require:
 

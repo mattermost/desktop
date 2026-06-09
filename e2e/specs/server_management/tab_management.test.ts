@@ -7,9 +7,9 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
+import {electronBinaryPath, appDir, demoMattermostConfig, electronTestChromeArgs, electronTestProcessEnv, writeConfigFile} from '../../helpers/config';
 import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
-import {loginToMattermost} from '../../helpers/login';
+import {loginToMattermost, waitForLoggedIn} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const config = demoMattermostConfig;
@@ -71,15 +71,15 @@ test.describe('server_management/tab_management', () => {
         const {_electron: electron} = await import('playwright');
         electronApp = await electron.launch({
             executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-            env: {...process.env, NODE_ENV: 'test'},
+            args: [appDir, `--user-data-dir=${userDataDir}`, ...electronTestChromeArgs],
+            env: electronTestProcessEnv(),
             timeout: 60_000,
         });
         await waitForAppReady(electronApp);
         mainWindow = await waitForWindow(electronApp, 'index');
         const mmServer = await getMattermostServer();
-        await loginToMattermost(mmServer);
-        await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
+        await loginToMattermost(electronApp, mmServer);
+        await waitForLoggedIn(electronApp, mainWindow);
     });
 
     test.beforeEach(async () => {

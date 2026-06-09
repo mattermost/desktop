@@ -20,6 +20,38 @@ export const electronBinaryPath = (() => {
 // Electron is launched with this directory as args[0]
 export const appDir = path.join(sourceRootDir, 'e2e/dist');
 
+/**
+ * Chromium flags applied by the shared Playwright fixture and by specs that call
+ * electron.launch() directly. Keeps GPU/network-process behavior consistent so
+ * embedded server views load reliably in CI (especially Linux headless).
+ */
+export const electronTestChromeArgs: string[] = [
+    '--no-sandbox',
+    '--disable-gpu',
+    '--disable-gpu-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-software-rasterizer',
+    '--in-process-gpu',
+    '--enable-features=NetworkServiceInProcess2',
+    '--disable-breakpad',
+    '--disable-features=SpareRendererForSitePerProcess',
+    '--disable-features=CrossOriginOpenerPolicy',
+    '--disable-renderer-backgrounding',
+    '--force-color-profile=srgb',
+    '--mute-audio',
+];
+
+export function electronTestProcessEnv(): NodeJS.ProcessEnv {
+    return {
+        ...process.env,
+        NODE_ENV: 'test',
+        RESOURCES_PATH: appDir,
+        ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+        ELECTRON_NO_ATTACH_CONSOLE: 'true',
+        NODE_OPTIONS: '--no-warnings',
+    };
+}
+
 export const mattermostURL = process.env.MM_TEST_SERVER_URL ?? 'http://localhost:8065/';
 
 export const exampleURL = 'http://example.com/';

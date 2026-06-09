@@ -13,7 +13,7 @@ test.describe('history_menu', () => {
     test('Click back and forward from history', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         const serverMap = await buildServerMap(electronApp);
         const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-        await loginToMattermost(firstServer);
+        await loginToMattermost(electronApp, firstServer);
         await firstServer.waitForSelector('#sidebarItem_off-topic');
 
         // Click on Off-Topic channel

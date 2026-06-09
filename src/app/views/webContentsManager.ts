@@ -91,6 +91,19 @@ export class WebContentsManager {
         return this.webContentsIdToView.get(webContentsId);
     };
 
+    /**
+     * Test harness: some server builds omit **desktopAPI.onLogin()** after a successful
+     * web login, leaving **ServerManager.isLoggedIn** false and the tab bar disabled.
+     * Call from E2E after the Mattermost shell is visible to mirror **TAB_LOGIN_CHANGED**.
+     */
+    markTabLoginForE2e = (webContentsId: number, loggedIn: boolean) => {
+        const view = this.getViewByWebContentsId(webContentsId);
+        if (!view) {
+            return;
+        }
+        this.setLoggedIn(view, loggedIn);
+    };
+
     getFocusedView = (): MattermostWebContentsView | undefined => {
         if (!this.focusedWebContentsView) {
             return undefined;

@@ -15,7 +15,7 @@ test.describe('copylink', () => {
             throw new Error('No server view available');
         }
 
-        await loginToMattermost(firstServer);
+        await loginToMattermost(electronApp, firstServer);
         await firstServer.waitForSelector('#post_textbox');
         await firstServer.click('#post_textbox');
         await firstServer.fill('#post_textbox', 'https://electronjs.org/apps/mattermost');

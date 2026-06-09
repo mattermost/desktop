@@ -30,7 +30,7 @@ test.describe('Trigger Notification From desktop', () => {
                 return;
             }
 
-            await loginToMattermost(firstServer);
+            await loginToMattermost(electronApp, firstServer);
             const textbox = await firstServer.waitForSelector('#post_textbox');
             await textbox.focus();
 

@@ -282,3 +282,129 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 3. **Restart** app (and computer if needed).
 4. **Reset data** — **View → Clear All Data**, or delete the config directory.
 5. **Collect debug logs and heap snapshots**.
+
+## Cursor Cloud-specific instructions
+
+### Cursor automations and PR-assigned agents for E2E
+
+The **full human-style PR QA prompt** (when to run, phases, report template, security checklist) should live in **Cursor → Automations** for this repo so it can evolve without a PR every time. A **pointer** to that split and links to technical docs: [`docs/cursor-pr-qa-automation.md`](docs/cursor-pr-qa-automation.md).
+
+E2E failures are only actionable when **Mattermost and the desktop app run together** the same way CI does. An agent that edits tests without a reachable server, or runs Playwright without the **test** build, will look like it is “fixing” things while reproducing nothing.
+
+**Required stack (do all of these before changing code):**
+
+1. **Reachable Mattermost** — The Playwright harness drives a real Electron app that loads a real server URL from `MM_TEST_SERVER_URL`.
+   - **PR runs (Matterwick):** If the PR has a comment such as “E2E Test Servers Ready” with a table of URLs, use the URL for the platform you are validating (for Cursor Cloud VMs use the **`linux`** URL unless you have a reason to match another OS). Copy **`MM_TEST_USER_NAME`** and **`MM_TEST_PASSWORD`** from that same comment (or from the failing workflow’s configured secrets/inputs). Before running tests, confirm the server is up, for example: `curl -sf "$MM_TEST_SERVER_URL/api/v4/system/ping"`.
+   - **No PR server comment:** Start local Mattermost with Docker under [Starting a local Mattermost server with Docker](#starting-a-local-mattermost-server-with-docker), then set `MM_TEST_SERVER_URL=http://localhost:8065` (and the same admin bootstrap / team steps as in that section).
+
+2. **Built desktop test binary** — From the repository root, after `npm ci` (and `cd e2e && npm ci && cd ..` if needed), run **`npm run build-test`**. This is what wires `NODE_ENV=test` and produces the binary Playwright launches. Running `npx playwright test` without this step usually fails immediately or flakes in ways that are not product bugs.
+
+3. **Headless display (Linux agents)** — **Canonical default:** wrap Electron and Playwright with **`xvfb-run -a`** when no working X server is already available (typical CI and ephemeral Linux agents). **`DISPLAY=:1`** is valid **only** when an X server on `:1` is reachable — verify with `xdpyinfo -display :1` (or your provider’s docs). If you see `Missing X server or $DISPLAY`, `Authorization required`, or similar, **do not** keep trying random `DISPLAY` values; use **`xvfb-run -a`** and sandbox steps under [Running on headless Linux (Cloud VM)](#running-on-headless-linux-cloud-vm).
+
+**Mass failure on CI:** When many unrelated specs fail at once, still verify (a) `curl` ping to `MM_TEST_SERVER_URL` and (b) a clean `npm run build-test` locally. Only treat failures as narrow test bugs after the shared harness is confirmed good; see `e2e/AGENTS.md` (sections on app launch and readiness).
+
+**Product vs test bugs:** If the same assertion fails with a healthy server and a fresh `build-test`, decide using `e2e/AGENTS.md` (reproduce in browser, main-process vs renderer, fixture vs spec). Prefer fixes in `src/` when the desktop regresses; prefer test/helper changes when the spec was wrong or flaky.
+
+**When Docker is missing on the agent VM:** Prefer the PR’s **Matterwick** server URL from the “E2E Test Servers Ready” comment (see above) — `curl` must succeed to `/api/v4/system/ping` before you claim server-backed tests passed. Do **not** rely on a `SKIP_SERVER` environment variable: this repository’s E2E suite does not read it; many specs skip or fail without `MM_TEST_SERVER_URL`. If you truly cannot reach any server, you may still run **non-server** smoke tests (for example `e2e/specs/startup/app.test.ts`), read CI failure logs, and propose code changes — but the report must state clearly which flows were **not** exercised against a live Mattermost.
+
+**Git / branch policy for PR-assigned agents:** Push commits only to the **pull request’s head branch** (for example `cursor/setup-agents-md-c5d4` for PR `#3773`). Never push to `master` or unrelated base branches. Avoid opening duplicate PRs or parallel fix branches for the same change set unless a maintainer asks for a split.
+
+**Automation report expectations:** If your runbook asks for screenshots or a “visual verification” table, either capture them when Electron runs on a host that supports it or mark scenarios **not run** with a one-line reason (no server, no display capture, etc.). A passing `npm run check` or startup-only Playwright run does **not** substitute for server-backed verification when the task was to fix login or server UI tests.
+
+**Playwright harness:** Prefer the shared fixtures in `e2e/fixtures/index.ts` — they already use an isolated per-test `userDataDir` (never the default `~/.config/Electron`). After `loginToMattermost()`, use **`waitForLoggedIn()`** from `e2e/helpers/login.ts` before tab-bar or menu tests that assume login has propagated.
+
+### Node version
+
+The project requires Node.js v20.15.0 (specified in `.nvmrc`). Use `nvm` to switch:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 20.15.0
+```
+
+### Running on headless Linux (Cloud VM)
+
+**Which display setup is canonical**
+
+| Situation | Use |
+|-----------|-----|
+| No verified X server (most automation VMs, many containers) | **`xvfb-run -a`** before `electron` / `playwright test` — **default / canonical** for E2E in headless Linux |
+| Provider documents a working display (e.g. some Cursor Cloud VMs expose `:1`) | Set **`DISPLAY`** to that server **after** confirming access (`xdpyinfo` succeeds). Do **not** assume `:1` works everywhere |
+
+- Some VMs expose an X server on **`:1`**. That is **optional**, not universal — unauthenticated or missing servers cause **`Missing X server or $DISPLAY`** or **`Authorization required`**. When that happens, switch to **`xvfb-run -a`** instead of rediscovering display settings each run.
+- Chrome sandbox requires root ownership: `sudo chown root:root ./node_modules/electron/dist/chrome-sandbox && sudo chmod 4755 ./node_modules/electron/dist/chrome-sandbox`. This is normally handled by `npm run linux-dev-setup` (called by `npm start` and `npm run watch`), but that script uses `sudo` which may prompt.
+- To launch the built app directly when **`DISPLAY` is verified**: `DISPLAY=:1 npx electron dist/ --disable-dev-mode --no-sandbox` — or headless-first: `xvfb-run -a npx electron dist/ --disable-dev-mode --no-sandbox`
+- DBus errors in the container logs are expected and harmless (no system bus in containers).
+- The "Failed to load configuration file" message on first run is normal — the app creates defaults.
+
+### Native modules
+
+The `postinstall` script runs `electron-builder install-app-deps` to rebuild native modules (registry-js, cf-prefs, etc.) for the current Electron version. If you see native module errors after `npm install`, ensure postinstall completed successfully.
+
+### Starting a local Mattermost server with Docker
+
+Server-backed E2E tests require a running Mattermost instance. Use Docker to spin one up locally:
+
+```bash
+docker run -d \
+  --name mattermost-e2e \
+  -p 8065:8065 \
+  --restart unless-stopped \
+  mattermost/mattermost-preview:latest
+
+until curl -sf http://localhost:8065/api/v4/system/ping >/dev/null 2>&1; do
+  echo "Waiting for Mattermost to start..."
+  sleep 3
+done
+echo "Mattermost is ready at http://localhost:8065"
+```
+
+On first launch, create the admin user and team via the API:
+
+```bash
+curl -sf http://localhost:8065/api/v4/users \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@test.com","username":"admin","password":"admin","auth_service":""}' || true
+
+TOKEN=$(curl -sf http://localhost:8065/api/v4/users/login \
+  -H 'Content-Type: application/json' \
+  -d '{"login_id":"admin","password":"admin"}' \
+  -D - 2>/dev/null | grep -i '^token:' | awk '{print $2}' | tr -d '\r')
+
+curl -sf http://localhost:8065/api/v4/teams \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"e2e-team","display_name":"E2E Team","type":"O"}' || true
+```
+
+### Running E2E tests
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 20.15.0
+npm ci && cd e2e && npm ci && cd ..
+npm run build-test
+
+cd e2e
+export MM_TEST_SERVER_URL=http://localhost:8065
+export MM_TEST_USER_NAME=admin
+export MM_TEST_PASSWORD=admin
+# Headless Linux: prefer xvfb-run when DISPLAY is not pre-configured (see "Running on headless Linux").
+xvfb-run -a npx playwright test <spec-file> --reporter=list --workers=1
+cd ..
+```
+
+If a run leaves Electron hanging: `killall Electron 2>/dev/null || true`
+
+### Fixing E2E tests
+
+When asked to fix E2E failures:
+
+1. **Mattermost available** — Prefer URLs and credentials from the PR’s E2E server comment when present; otherwise start Docker Mattermost as in [Starting a local Mattermost server with Docker](#starting-a-local-mattermost-server-with-docker). Do not skip this step.
+2. **Read the CI logs** to identify which spec files failed. Use `gh run view --job <job-id> --log-failed`.
+3. **Build the test bundle**: `npm run build-test` (required for Playwright; see [Cursor automations and PR-assigned agents for E2E](#cursor-automations-and-pr-assigned-agents-for-e2e)).
+4. **Reproduce** each failure locally with the same `MM_TEST_*` values as CI before editing.
+5. **Fix the smallest useful layer** (spec, helper, fixture, or app) — see `e2e/AGENTS.md` for classification and design rules.
+6. **Re-run the spec** to confirm the fix, then commit.
+
+### Login state propagation (common E2E flake)
+
+After `loginToMattermost()` completes, the desktop app's `isLoggedIn` flag must travel through a multi-hop IPC chain before the renderer enables tab-bar interactions (`#newTabButton`). The `waitForLoggedIn()` helper in `e2e/helpers/login.ts` polls the main-process `ServerManager` directly, which is more reliable than waiting for the DOM element. Use it in `beforeAll` blocks for any test that interacts with the tab bar after login.

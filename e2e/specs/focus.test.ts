@@ -153,7 +153,7 @@ test.describe('focus', () => {
         firstServer = primaryServer;
         secondServer = communityServer;
 
-        await loginToMattermost(firstServer);
+        await loginToMattermost(electronApp, firstServer);
         await firstServer.waitForSelector('#post_textbox');
     });
 

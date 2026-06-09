@@ -13,7 +13,7 @@ test.use({appConfig: demoMattermostConfig});
 test(
     'deep link navigates to correct server while app is running',
     {tag: ['@P1', '@darwin', '@win32']},
-    async ({serverMap}) => {
+    async ({electronApp, serverMap}) => {
         if (process.platform === 'linux') {
             test.skip(true, 'Deep link not supported on Linux');
             return;
@@ -30,7 +30,7 @@ test(
             return;
         }
 
-        await loginToMattermost(serverWin);
+        await loginToMattermost(electronApp, serverWin);
         await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
         // Trigger deep link from the OS

@@ -24,7 +24,7 @@ test(
             const serverWin = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
             expect(serverWin, 'No server view available').toBeTruthy();
 
-            await loginToMattermost(serverWin!);
+            await loginToMattermost(electronApp, serverWin!);
             await serverWin!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
             const targetChannel = await serverWin!.evaluate(() => {

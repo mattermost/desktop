@@ -29,7 +29,7 @@ test.describe('external_links', () => {
         const firstServer = serverMap[externalLinksConfig.servers[0].name]?.[0]?.win;
         expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
 
-        await loginToMattermost(firstServer!);
+        await loginToMattermost(electronApp, firstServer!);
         await firstServer!.waitForSelector('#post_textbox', {timeout: 15_000});
 
         await electronApp.evaluate(({shell}) => {
@@ -94,7 +94,7 @@ test.describe('external_links', () => {
         const firstServer = serverMap[externalLinksConfig.servers[0].name]?.[0]?.win;
         expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
 
-        await loginToMattermost(firstServer!);
+        await loginToMattermost(electronApp, firstServer!);
         await firstServer!.waitForSelector('#post_textbox', {timeout: 15_000});
 
         await electronApp.evaluate(({shell}) => {

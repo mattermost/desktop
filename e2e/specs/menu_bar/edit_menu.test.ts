@@ -123,7 +123,7 @@ test.describe('edit_menu', () => {
         const serverMap = await buildServerMap(electronApp);
         firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
         firstServerId = serverMap[demoMattermostConfig.servers[0].name][0].webContentsId;
-        await loginToMattermost(firstServer);
+        await loginToMattermost(electronApp, firstServer);
         await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 30_000});
     });
 

@@ -12,7 +12,7 @@ import {_electron as electron} from 'playwright';
 
 import {waitForAppReady} from '../helpers/appReadiness';
 import {waitForLockFileRelease} from '../helpers/cleanup';
-import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
+import {electronBinaryPath, appDir, demoConfig, electronTestChromeArgs, electronTestProcessEnv, writeConfigFile, type AppConfig} from '../helpers/config';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
 
 export type {ServerMap, ServerEntry} from '../helpers/serverMap';
@@ -77,33 +77,9 @@ export const test = base.extend<Fixtures>({
             args: [
                 appDir, // test build directory (e2e/dist)
                 `--user-data-dir=${userDataDir}`,
-
-                // CI compatibility — required for Linux sandbox, GPU stability
-                '--no-sandbox',
-                '--disable-gpu',
-                '--disable-gpu-sandbox',
-                '--disable-dev-shm-usage',
-                '--no-zygote',
-                '--disable-software-rasterizer',
-
-                // Stability
-                '--disable-breakpad',
-                '--disable-features=SpareRendererForSitePerProcess',
-                '--disable-features=CrossOriginOpenerPolicy',
-                '--disable-renderer-backgrounding',
-
-                // Consistency
-                '--force-color-profile=srgb',
-                '--mute-audio',
+                ...electronTestChromeArgs,
             ],
-            env: {
-                ...process.env,
-                NODE_ENV: 'test',
-                RESOURCES_PATH: appDir,
-                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
-                ELECTRON_NO_ATTACH_CONSOLE: 'true',
-                NODE_OPTIONS: '--no-warnings',
-            },
+            env: electronTestProcessEnv(),
             timeout: launchTimeout,
         });
 
