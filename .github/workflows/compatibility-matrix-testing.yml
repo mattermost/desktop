@@ -16,6 +16,9 @@ on:
         default: "0"
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   ## This is picked up after the finish for cleanup
   upload-cmt-server-detals:

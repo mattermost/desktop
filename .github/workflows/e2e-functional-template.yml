@@ -114,6 +114,9 @@ on:
         type: string
         required: true
 
+permissions:
+  contents: read
+
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
   BUILD_TAG: ${{ github.event.pull_request.head.sha || github.sha }}
