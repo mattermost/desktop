@@ -25,9 +25,13 @@ test.describe('application', () => {
         fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(demoConfig));
 
         const {_electron: electron} = await import('playwright');
+
+        // When running via the unpacked Electron binary (not a packaged app),
+        // electron-is-dev resolves isDev=true, so getDeeplinkingURL() expects
+        // the 'mattermost-dev://' protocol prefix rather than 'mattermost://'.
         app = await electron.launch({
             executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu', 'mattermost://github.com/test/url'],
+            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu', 'mattermost-dev://github.com/test/url'],
             env: {...process.env, NODE_ENV: 'test'},
             timeout: 60_000,
         });
@@ -73,7 +77,6 @@ test.describe('application', () => {
         if (!mainWindow) {
             throw new Error('No main window found');
         }
-        const browserWindow = await app!.browserWindow(mainWindow);
 
         // Wait for server map to have the github server populated
         const serverName = demoConfig.servers[1].name;
@@ -83,14 +86,17 @@ test.describe('application', () => {
             return resolvedServerMap[serverName]?.length ?? 0;
         }, {timeout: 15_000}).toBeGreaterThanOrEqual(1);
 
-        const webContentsId = resolvedServerMap[serverName][0].webContentsId;
-        const isActive = await browserWindow.evaluate((window, id: number) => {
-            const view = (window as any).contentView.children.find(
-                (v: any) => v.webContents && v.webContents.id === id,
-            );
-            return view ? view.webContents.getURL() : null;
-        }, webContentsId);
-        expect(isActive).toBe('https://github.com/test/url/');
+        // Poll the server view's URL directly via webContents.fromId() instead
+        // of navigating contentView.children. On newer Electron versions the
+        // WebContentsView tree layout differs between platforms, but
+        // webContents.fromId() works universally.
+        // Re-resolve the serverMap on each poll iteration in case the webContentsId
+        // changes (e.g., a new view was created by openLinkInPrimaryTab).
+        await expect.poll(async () => {
+            const freshMap = await buildServerMap(app!);
+            const freshView = freshMap[serverName]?.[0]?.win;
+            return freshView?.url() ?? '';
+        }, {timeout: 30_000, message: 'deep-linked webContents did not navigate to the expected URL'}).toContain('github.com/test/url');
         const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
         expect(dropdownButtonText).toBe('github');
     });

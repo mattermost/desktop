@@ -70,20 +70,26 @@ async function waitForRendererThenReload(app: Awaited<ReturnType<typeof launchWi
     // are registered, so waiting for it is a reliable proxy for "renderer is ready".
     await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000}).catch(() => {});
 
-    // Reload the current server view so the load-failure fires after the listener is set.
-    await app.evaluate(({webContents}) => {
+    // Reload server views so the load-failure fires after IPC listeners are registered.
+    // Use getAllServers() (same API as buildServerMap) — getCurrentServerId() does not exist.
+    //
+    // IMPORTANT: reload through the MattermostWebContentsView (wcEntry.reload()), NOT the
+    // raw webContents.reload(). The app only emits LOAD_FAILED (which drives the ErrorView)
+    // from its own load() promise's .catch() on ERR_CERT_*. A raw webContents.reload()
+    // re-triggers the Chromium load outside that promise, so the certificate rejection is
+    // never surfaced to the renderer and the ErrorView never appears.
+    await app.evaluate(() => {
         const refs = (global as any).__e2eTestRefs;
-        const currentServerId = refs?.ServerManager?.getCurrentServerId?.();
-        if (!currentServerId) {
+        if (!refs) {
             return;
         }
-        const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(currentServerId) ?? [];
-        if (views.length === 0) {
-            return;
-        }
-        const wcEntry = refs.WebContentsManager?.getView?.(views[0].id);
-        if (wcEntry?.webContentsId) {
-            webContents.fromId(wcEntry.webContentsId)?.reload?.();
+        const servers: Array<{id: string}> = refs.ServerManager?.getAllServers?.() ?? [];
+        for (const server of servers) {
+            const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
+            for (const view of views) {
+                const wcEntry = refs.WebContentsManager?.getView?.(view.id);
+                wcEntry?.reload?.();
+            }
         }
     });
 }
@@ -369,6 +375,14 @@ test.describe('Bad Server Configurations', () => {
             });
             try {
                 await waitForAppReady(app);
+
+                // app.windows() can briefly lag behind app readiness while Playwright
+                // registers the freshly-shown BrowserWindow as a Page, so poll for the
+                // index window instead of reading it once.
+                await expect.poll(
+                    () => app.windows().some((w) => w.url().includes('index')),
+                    {timeout: 15_000},
+                ).toBe(true);
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
 

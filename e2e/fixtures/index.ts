@@ -92,6 +92,12 @@ export const test = base.extend<Fixtures>({
                 '--disable-features=CrossOriginOpenerPolicy',
                 '--disable-renderer-backgrounding',
 
+                // Dialogs & first-run
+                '--no-first-run',
+                '--no-default-browser-check',
+                '--disable-default-apps',
+                '--disable-crash-reporter',
+
                 // Consistency
                 '--force-color-profile=srgb',
                 '--mute-audio',

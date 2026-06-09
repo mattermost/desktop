@@ -146,8 +146,30 @@ test.describe('startup/window', () => {
                 await waitForMainBrowserWindow(app2);
                 const bounds = await getMainBrowserWindowBounds(app2);
 
-                // Window should be on-screen (x >= 0)
-                expect(bounds.x).toBeGreaterThanOrEqual(0);
+                // The off-screen x=-9999 must be rejected and the window placed
+                // on some real display. Don't compare to 0 — macOS CI runners
+                // can have a primary display whose workArea.x is negative
+                // (HiDPI/virtual-display origin offset), and `bounds.x` is then
+                // legitimately a small negative number. Instead, assert the
+                // window's centre is inside *some* display's workArea.
+                const displays: Array<{x: number; y: number; width: number; height: number}> =
+                    await app2.evaluate(({screen}) =>
+                        screen.getAllDisplays().map((d) => d.workArea),
+                    );
+
+                // Use expect.poll so the window has time to settle into its
+                // corrected position before we verify it is on-screen.
+                await expect.poll(async () => {
+                    const b = await getMainBrowserWindowBounds(app2);
+                    const cx = b.x + (b.width / 2);
+                    const cy = b.y + (b.height / 2);
+                    return displays.some(
+                        (d) => cx >= d.x && cx <= d.x + d.width && cy >= d.y && cy <= d.y + d.height,
+                    );
+                }, {
+                    timeout: 5_000,
+                    message: `bounds ${JSON.stringify(bounds)} not inside any display ${JSON.stringify(displays)}`,
+                }).toBe(true);
             } finally {
                 await app2.close();
             }
@@ -182,7 +204,27 @@ test.describe('startup/window', () => {
                 await waitForAppReady(app2);
                 await waitForMainBrowserWindow(app2);
                 const bounds = await getMainBrowserWindowBounds(app2);
-                expect(bounds.y).toBeGreaterThanOrEqual(0);
+
+                // Same rationale as MM-T4403_2: assert "on some display" instead
+                // of bounds.y >= 0 to tolerate displays with non-zero origins.
+                const displays: Array<{x: number; y: number; width: number; height: number}> =
+                    await app2.evaluate(({screen}) =>
+                        screen.getAllDisplays().map((d) => d.workArea),
+                    );
+
+                // Use expect.poll so the window has time to settle into its
+                // corrected position before we verify it is on-screen.
+                await expect.poll(async () => {
+                    const b = await getMainBrowserWindowBounds(app2);
+                    const cx = b.x + (b.width / 2);
+                    const cy = b.y + (b.height / 2);
+                    return displays.some(
+                        (d) => cx >= d.x && cx <= d.x + d.width && cy >= d.y && cy <= d.y + d.height,
+                    );
+                }, {
+                    timeout: 5_000,
+                    message: `bounds ${JSON.stringify(bounds)} not inside any display ${JSON.stringify(displays)}`,
+                }).toBe(true);
             } finally {
                 await app2.close();
             }
