@@ -32,34 +32,48 @@ async function updateInitialStatus({github, context, platforms}) {
  * @param {Object} params.context - GitHub Actions context
  * @param {Array} params.platforms - Array of platform objects from matrix
  * @param {Object} params.outputs - Test outputs from e2e-tests job
- * @param {string} [params.mergedReportUrl] - Shared merged Playwright report URL
  */
-async function updateFinalStatus({github, context, platforms, outputs, mergedReportUrl}) {
+/**
+ * Build the short description shown in the PR status check.
+ * Only counts tests that actually ran on this platform (passed + failed).
+ * Skipped tests are omitted — they are cross-platform guards, not real
+ * failures, and inflate the denominator making results look worse.
+ *
+ *   - all pass:   "All 161 ran, 161 passed"
+ *   - any failure: "161 ran, 157 passed, 4 failed"
+ */
+function formatStatusDescription({passed, failed}) {
+    const ran = passed + failed;
+    if (ran === 0) {
+        return failed > 0 ? `0 ran, ${failed} failed` : 'No tests ran';
+    }
+    if (failed === 0) {
+        return `All ${ran} ran, ${passed} passed`;
+    }
+    return `${ran} ran, ${passed} passed, ${failed} failed`;
+}
+
+async function updateFinalStatus({github, context, platforms, outputs}) {
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
     await Promise.all(platforms.map((platform) => {
-        // Determine OS key and Playwright project name based on runner
+        // Determine OS key based on runner. Each platform's REPORT_LINK_* is its
+        // own single-OS Playwright HTML report (uploaded per-OS in the template).
         let osKey;
-        let playwrightProject;
         if (platform.runner.includes('ubuntu')) {
             osKey = 'LINUX';
-            playwrightProject = 'linux';
         } else if (platform.runner.includes('macos')) {
             osKey = 'MACOS';
-            playwrightProject = 'darwin';
         } else {
             osKey = 'WINDOWS';
-            playwrightProject = 'win32';
         }
 
-        const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
+        const failed = Number(outputs[`NEW_FAILURES_${osKey}`] || 0);
+        const passed = Number(outputs[`PASSED_${osKey}`] || 0);
+        const skipped = Number(outputs[`SKIPPED_${osKey}`] || 0);
+        const total = Number(outputs[`TOTAL_${osKey}`] || 0);
         const status = outputs[`STATUS_${osKey}`] || 'failure';
-        let reportLink;
-        if (mergedReportUrl) {
-            reportLink = `${mergedReportUrl}#?q=p:${playwrightProject}`;
-        } else {
-            reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
-        }
+        const reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
 
         return github.rest.repos.createCommitStatus({
             owner: context.repo.owner,
@@ -67,7 +81,7 @@ async function updateFinalStatus({github, context, platforms, outputs, mergedRep
             sha: context.payload.pull_request?.head?.sha || context.sha,
             state: status,
             context: `e2e/${platform.platform}`,
-            description: `${platform.platform} E2E completed with ${failures} failures`,
+            description: formatStatusDescription({passed, failed, skipped, total}),
             target_url: reportLink,
         });
     }));
@@ -151,4 +165,5 @@ module.exports = {
     updateInitialStatus,
     updateFinalStatus,
     removeE2ELabel,
+    formatStatusDescription,
 };

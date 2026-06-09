@@ -16,6 +16,19 @@ import type {ElectronApplication} from 'playwright';
  * We read the global directly, not via IPC.
  */
 export async function waitForAppReady(app: ElectronApplication): Promise<void> {
+    // macOS CI runners are slower and may show Resume dialogs that delay startup.
+    // Windows GitHub-hosted runners are similarly slow (cold-start Electron +
+    // Visual Studio environment); 30s consistently timed out on `windows-2022`.
+    // Linux (xvfb) is fastest. 60s on Windows matches the macOS budget.
+    let timeout: number;
+    if (process.platform === 'darwin') {
+        timeout = 60_000;
+    } else if (process.platform === 'win32') {
+        timeout = 60_000;
+    } else {
+        timeout = 30_000;
+    }
+
     await expect.poll(
         async () => {
             try {
@@ -32,8 +45,14 @@ export async function waitForAppReady(app: ElectronApplication): Promise<void> {
             }
         },
         {
-            message: 'Timed out waiting for __e2eAppReady. Check that initialize.ts sets it after handleMainWindowIsShown().',
-            timeout: 30_000,
+            message: [
+                'Timed out waiting for __e2eAppReady.',
+                `Timeout: ${timeout}ms.`,
+                'Check that initialize.ts sets __e2eAppReady after handleMainWindowIsShown().',
+                'On macOS, verify that global-setup.ts successfully wrote NSQuitAlwaysKeepsWindows=false',
+                'to prevent the "Reopen windows" dialog from blocking startup.',
+            ].join(' '),
+            timeout,
             intervals: [200, 500, 1000, 2000],
         },
     ).toBe(true);

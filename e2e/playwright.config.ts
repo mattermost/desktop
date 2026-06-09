@@ -42,7 +42,12 @@ export default defineConfig({
 
     retries: process.env.CI ? 1 : 0,
 
-    timeout: 60_000,
+    // 90s per test/hook. The Windows GitHub-hosted runner can take 30–60s just
+    // to launch Electron + reach `__e2eAppReady`; many tests then need their
+    // own beforeAll launch. The previous 60s budget caused ~17 Windows
+    // hook/test timeouts on every run. 90s gives the launch + setup head-room
+    // while still failing reasonably fast on a genuinely-stuck test.
+    timeout: 90_000,
 
     ...(ciEnvironmentTag ? {tag: ciEnvironmentTag} : {}),
 

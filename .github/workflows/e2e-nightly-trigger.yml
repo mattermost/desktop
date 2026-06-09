@@ -4,11 +4,14 @@ name: E2E Nightly Trigger
 # Matterwick receives the workflow_run:requested event, provisions 3 Mattermost cloud
 # instances (linux/macos/windows), and dispatches e2e-functional.yml with instance details.
 # When e2e-functional.yml completes, Matterwick destroys the provisioned instances.
+#
+# Schedule-only. Pushes to master and release-* are handled by Matterwick's push-event
+# handler directly (E2EAutoTriggerOnMaster / E2EAutoTriggerOnRelease in the deployed
+# config). Previously this workflow also fired on push to those branches, which caused
+# both Matterwick paths to fire concurrently for every push -- producing 2x cloud
+# instances and 2x e2e-functional.yml runs per commit. Dropping the push trigger here
+# leaves Matterwick's native push handler as the single canonical driver for push runs.
 on:
-  push:
-    branches:
-      - master
-      - 'release-*'
   schedule:
     - cron: "0 0 * * 4,5" # Thursday and Friday midnight UTC
 

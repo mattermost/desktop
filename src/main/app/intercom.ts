@@ -7,7 +7,7 @@ import {app, BrowserWindow, Menu} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerViewState from 'app/serverHub';
-import {APP_MENU_WILL_CLOSE} from 'common/communication';
+import {APP_MENU_WILL_CLOSE, MAIN_WINDOW_CREATED} from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -79,17 +79,48 @@ export function handleMainWindowIsShown() {
     */
 
     const mainWindow = MainWindow.get();
-
     log.debug('handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
         handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
-        setTestField('__e2eAppReady', true);
     } else {
         mainWindow?.once('show', () => {
             handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
-            setTestField('__e2eAppReady', true);
         });
     }
+
+    signalE2EAppReadyWhenShown();
+}
+
+// E2E only: signals `__e2eAppReady` once the main window is visible so Playwright/Detox can wait
+// on app readiness. Gated on NODE_ENV==='test' (the same gate setTestField uses), so it adds no
+// listeners and is completely inert in normal app usage. Listener-based (no polling); also covers
+// the case where the main window has not been constructed yet.
+function signalE2EAppReadyWhenShown() {
+    if (process.env.NODE_ENV !== 'test') {
+        return;
+    }
+
+    const markReady = () => setTestField('__e2eAppReady', true);
+    const whenVisible = (win: BrowserWindow) => {
+        if (win.isVisible()) {
+            markReady();
+        } else {
+            win.once('show', markReady);
+        }
+    };
+
+    const win = MainWindow.get();
+    if (win) {
+        whenVisible(win);
+        return;
+    }
+
+    MainWindow.once(MAIN_WINDOW_CREATED, () => {
+        const created = MainWindow.get();
+        if (created) {
+            whenVisible(created);
+        }
+    });
 }
 
 export function handleWelcomeScreenModal(prefillURL?: string) {

@@ -35,12 +35,13 @@ on:
         default: ""
       pr_number:
         type: string
-        description: "PR number to remove E2E label from after tests complete"
+        description: "PR number, used to remove the E2E label from the PR after tests complete. Dispatchers should set this for PR runs."
         required: false
 
+# Least-privilege default. Jobs that need more (status checks, PR writes) grant it explicitly
+# at the job level so that jobs running untrusted PR code do not inherit write scopes.
 permissions:
   contents: read
-  statuses: write
 
 jobs:
   prepare-matrix:
@@ -82,6 +83,8 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
       fail-fast: false
+    # The reusable template runs only untrusted PR code (npm ci / Playwright) with a read-only
+    # token; it inherits the workflow-level contents:read default.
     uses: ./.github/workflows/e2e-functional-template.yml
     with:
       runs-on: ${{ matrix.runner }}
@@ -94,87 +97,12 @@ jobs:
       nightly: ${{ inputs.nightly }}
     secrets: inherit
 
-  merge-e2e-report:
-    name: Merge E2E report
-    runs-on: ubuntu-24.04
-    needs:
-      - prepare-matrix
-      - e2e-tests
-    if: always() && !cancelled()
-    permissions:
-      contents: read
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: us-east-1
-      AWS_S3_BUCKET: mattermost-cypress-report
-    outputs:
-      merged-report-ready: ${{ steps.merge.outputs.merged_report_ready }}
-      merged-report-url: ${{ steps.upload-s3.outputs.report_url }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-
-      - name: Setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: '22.x'
-          cache: "npm"
-          cache-dependency-path: e2e/package-lock.json
-
-      - name: Install E2E dependencies
-        run: |
-          cd e2e
-          npm ci
-
-      - name: Download blob reports
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: blob-report-*
-          path: all-blob-reports
-          merge-multiple: true
-
-      - name: Merge Playwright reports
-        id: merge
-        run: |
-          if find all-blob-reports -type f -name '*.zip' | grep -q .; then
-            cd e2e
-            npx playwright merge-reports --config=merge.playwright.config.ts ../all-blob-reports
-            echo "merged_report_ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No blob reports found to merge." >> "$GITHUB_STEP_SUMMARY"
-            echo "merged_report_ready=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Upload merged Playwright report artifact
-        if: always() && steps.merge.outputs.merged_report_ready == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-report-merged
-          path: e2e/playwright-report-merged
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload merged report to S3
-        id: upload-s3
-        if: steps.merge.outputs.merged_report_ready == 'true'
-        run: |
-          S3_PREFIX="desktop-e2e/${{ github.run_id }}-${{ github.run_attempt }}"
-          aws s3 sync e2e/playwright-report-merged/ "s3://${AWS_S3_BUCKET}/${S3_PREFIX}/" \
-            --acl public-read \
-            --content-type text/html \
-            --cache-control "no-cache"
-          REPORT_URL="https://${AWS_S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/index.html"
-          echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
-          echo "Playwright report uploaded: ${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
-
   update-final-status:
     name: Update final status
     runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-tests
-      - merge-e2e-report
     if: always()
     permissions:
       contents: read
@@ -191,8 +119,7 @@ jobs:
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            const mergedReportUrl = '${{ needs.merge-e2e-report.outputs.merged-report-url }}' || undefined;
-            await updateFinalStatus({ github, context, platforms, outputs, mergedReportUrl });
+            await updateFinalStatus({ github, context, platforms, outputs });
 
   remove-e2e-label:
     name: Remove E2E label from PR
@@ -253,13 +180,22 @@ jobs:
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}
+    # Runs untrusted PR code (npm ci / Playwright); grant only the commit-status write its
+    # check-for-failures step needs, never pull-requests: write.
+    permissions:
+      contents: read
+      statuses: write
     strategy:
       matrix:
         include:
           - platform: macos
             runner: macos-26
           - platform: windows
-            runner: windows-2025
+            # Pinned to windows-2022 (not -2025) because the 2025 image ships
+            # Visual Studio 18 / "2026", which current node-gyp doesn't recognise —
+            # `npm ci` then fails to build the registry-js native module.
+            # The main e2e-tests matrix also runs on windows-2022; keep them aligned.
+            runner: windows-2022
       fail-fast: false
     runs-on: ${{ matrix.runner }}
     defaults:
@@ -334,6 +270,16 @@ jobs:
           npm ci
           cd e2e && npm ci
 
+      - name: e2e/suppress-macos-dialogs
+        if: runner.os == 'macOS'
+        run: |
+          # Suppress the "Reopen windows" dialog that blocks Electron startup
+          # when a previous test instance was killed by SIGTERM/SIGKILL.
+          defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false || true
+          defaults write com.github.Electron ApplePersistenceIgnoreState -bool YES || true
+          defaults write com.apple.LaunchServices LSQuarantine -bool false || true
+          defaults write com.apple.CrashReporter DialogType none || true
+
       - name: e2e/build-test-bundle
         run: npm run build-test
 
@@ -369,11 +315,18 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { newFailedTests } = analyzeFlakyTests();
+            const { formatStatusDescription } = require('./utils/github-actions.js');
+            const { newFailedTests, failureCount, passCount, skipCount, totalCount } = analyzeFlakyTests();
 
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const platform = process.platform === 'darwin' ? 'macos' : 'windows';
             const hasFailed = newFailedTests && newFailedTests.length > 0;
+            const description = formatStatusDescription({
+              passed: passCount,
+              failed: failureCount,
+              skipped: skipCount,
+              total: totalCount,
+            });
 
             try {
               await github.rest.repos.createCommitStatus({
@@ -382,7 +335,7 @@ jobs:
                 sha: context.sha,
                 state: hasFailed ? 'failure' : 'success',
                 context: `policy-test/${platform}`,
-                description: `Policy tests completed with ${hasFailed ? newFailedTests.length : 0} failures`,
+                description,
                 target_url: runUrl,
               });
             } catch (e) {

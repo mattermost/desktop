@@ -67,6 +67,33 @@ on:
       STATUS_MACOS:
         description: "The status of the macOS test"
         value: ${{ jobs.e2e.outputs.STATUS_MACOS }}
+      PASSED_LINUX:
+        description: "Number of passed tests on Linux"
+        value: ${{ jobs.e2e.outputs.PASSED_LINUX }}
+      PASSED_MACOS:
+        description: "Number of passed tests on macOS"
+        value: ${{ jobs.e2e.outputs.PASSED_MACOS }}
+      PASSED_WINDOWS:
+        description: "Number of passed tests on Windows"
+        value: ${{ jobs.e2e.outputs.PASSED_WINDOWS }}
+      TOTAL_LINUX:
+        description: "Total tests on Linux (passed + failed + skipped)"
+        value: ${{ jobs.e2e.outputs.TOTAL_LINUX }}
+      TOTAL_MACOS:
+        description: "Total tests on macOS (passed + failed + skipped)"
+        value: ${{ jobs.e2e.outputs.TOTAL_MACOS }}
+      TOTAL_WINDOWS:
+        description: "Total tests on Windows (passed + failed + skipped)"
+        value: ${{ jobs.e2e.outputs.TOTAL_WINDOWS }}
+      SKIPPED_LINUX:
+        description: "Number of skipped tests on Linux"
+        value: ${{ jobs.e2e.outputs.SKIPPED_LINUX }}
+      SKIPPED_MACOS:
+        description: "Number of skipped tests on macOS"
+        value: ${{ jobs.e2e.outputs.SKIPPED_MACOS }}
+      SKIPPED_WINDOWS:
+        description: "Number of skipped tests on Windows"
+        value: ${{ jobs.e2e.outputs.SKIPPED_WINDOWS }}
       STATUS_WINDOWS:
         description: "The status of the windows test"
         value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
@@ -130,6 +157,7 @@ jobs:
   e2e:
     name: e2e-on-${{ inputs.runs-on }}
     runs-on: ${{ inputs.runs-on }}
+    # Runs untrusted PR code (npm ci / Playwright) with a read-only token.
     permissions:
       contents: read
     defaults:
@@ -145,6 +173,15 @@ jobs:
       STATUS_LINUX: ${{ steps.analyze-flaky-tests.outputs.STATUS_LINUX }}
       STATUS_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.STATUS_WINDOWS }}
       STATUS_MACOS: ${{ steps.analyze-flaky-tests.outputs.STATUS_MACOS }}
+      PASSED_LINUX: ${{ steps.analyze-flaky-tests.outputs.PASSED_LINUX }}
+      PASSED_MACOS: ${{ steps.analyze-flaky-tests.outputs.PASSED_MACOS }}
+      PASSED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.PASSED_WINDOWS }}
+      TOTAL_LINUX: ${{ steps.analyze-flaky-tests.outputs.TOTAL_LINUX }}
+      TOTAL_MACOS: ${{ steps.analyze-flaky-tests.outputs.TOTAL_MACOS }}
+      TOTAL_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.TOTAL_WINDOWS }}
+      SKIPPED_LINUX: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_LINUX }}
+      SKIPPED_MACOS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_MACOS }}
+      SKIPPED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_WINDOWS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -229,6 +266,18 @@ jobs:
           npm ci
           cd e2e && npm ci
 
+      - name: e2e/suppress-macos-dialogs
+        if: runner.os == 'macOS'
+        run: |
+          # Suppress the "Reopen windows" dialog that blocks Electron startup
+          # when a previous test instance was killed by SIGTERM/SIGKILL.
+          # The global-setup.ts also does this, but running it here as well ensures
+          # the setting is applied even if the Playwright globalSetup step is skipped.
+          defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false || true
+          defaults write com.github.Electron ApplePersistenceIgnoreState -bool YES || true
+          defaults write com.apple.LaunchServices LSQuarantine -bool false || true
+          defaults write com.apple.CrashReporter DialogType none || true
+
       - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
         run: |
@@ -274,31 +323,72 @@ jobs:
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
           CI_ENVIRONMENT_NAME: ${{ env.CI_ENVIRONMENT_NAME }}
 
+      - name: e2e/generate-html-report
+        id: generate-html-report
+        if: always()
+        run: |
+          cd e2e
+          if [ -d blob-report ] && find blob-report -type f | grep -q .; then
+            npx playwright merge-reports --reporter=html blob-report
+            echo "html_report_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No blob report produced for this OS — skipping HTML generation."
+            echo "html_report_ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: e2e/upload-html-report-to-s3
+        id: upload-html-report-to-s3
+        if: always() && steps.generate-html-report.outputs.html_report_ready == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+          AWS_S3_BUCKET: mattermost-cypress-report
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          # Per-OS report path so each platform's status check links to a clean,
+          # single-OS view — not an aggregated multi-OS report where counts and
+          # "skipped" totals are inflated by cross-OS tags.
+          S3_PREFIX="desktop-e2e/${RUN_ID}-${RUN_ATTEMPT}/${RUNNER_OS}"
+          aws s3 sync e2e/playwright-report/ "s3://${AWS_S3_BUCKET}/${S3_PREFIX}/" \
+            --acl public-read \
+            --cache-control "no-cache"
+          REPORT_URL="https://${AWS_S3_BUCKET}.s3.amazonaws.com/${S3_PREFIX}/index.html"
+          echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
+          echo "Playwright report (${RUNNER_OS}) uploaded: ${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
+
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests
+        if: always()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PER_OS_REPORT_URL: ${{ steps.upload-html-report-to-s3.outputs.report_url }}
         with:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { failureCount, os } = analyzeFlakyTests();
+            const { failureCount, passCount, skipCount, totalCount, os } = analyzeFlakyTests();
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const reportUrl = process.env.PER_OS_REPORT_URL || runUrl;
             const testStatus = failureCount > 0 || Number(process.env.PLAYWRIGHT_EXIT_CODE || 0) !== 0 ? 'failure' : 'success';
+            const setOSOutputs = (suffix) => {
+              core.setOutput(`NEW_FAILURES_${suffix}`, String(failureCount));
+              core.setOutput(`REPORT_LINK_${suffix}`, reportUrl);
+              core.setOutput(`STATUS_${suffix}`, testStatus);
+              core.setOutput(`PASSED_${suffix}`, String(passCount));
+              core.setOutput(`SKIPPED_${suffix}`, String(skipCount));
+              core.setOutput(`TOTAL_${suffix}`, String(totalCount));
+            };
             switch (os) {
               case 'linux':
-                core.setOutput('NEW_FAILURES_LINUX', String(failureCount));
-                core.setOutput('REPORT_LINK_LINUX', runUrl);
-                core.setOutput('STATUS_LINUX', testStatus);
+                setOSOutputs('LINUX');
                 break;
               case 'darwin':
-                core.setOutput('NEW_FAILURES_MACOS', String(failureCount));
-                core.setOutput('REPORT_LINK_MACOS', runUrl);
-                core.setOutput('STATUS_MACOS', testStatus);
+                setOSOutputs('MACOS');
                 break;
               case 'win32':
-                core.setOutput('NEW_FAILURES_WINDOWS', String(failureCount));
-                core.setOutput('REPORT_LINK_WINDOWS', runUrl);
-                core.setOutput('STATUS_WINDOWS', testStatus);
+                setOSOutputs('WINDOWS');
                 break;
               default:
                 throw new Error(`Unsupported OS: ${os}`);
