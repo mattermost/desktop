@@ -63,6 +63,7 @@ import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
+import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
 import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
@@ -364,30 +365,19 @@ async function initializeAfterAppReady() {
         downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
     });
 
-    // Inject X-Mattermost-Preauth-Secret header for all server requests
     defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
         try {
-            const server = ServerManager.lookupServerByURL(details.url);
-
-            if (server && server.preAuthSecret) {
-                const secret = server.preAuthSecret;
-
-                if (!('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
-                    const requestHeaders = {
-                        ...details.requestHeaders,
-                        'X-Mattermost-Preauth-Secret': secret,
-                    };
-
-                    callback({requestHeaders});
-                    return;
-                }
-            }
+            callback({
+                requestHeaders: {
+                    ...details.requestHeaders,
+                    ...PreAuthManager.injectPreAuthSecret(details),
+                    ...SessionAttributesManager.injectHeader(details),
+                },
+            });
         } catch (error) {
-            log.debug('Error injecting preauth secret header:', {error});
+            log.debug('Header injector error', {error});
+            callback({requestHeaders: details.requestHeaders});
         }
-
-        // If no secret found or error occurred, proceed with original headers
-        callback({requestHeaders: details.requestHeaders});
     });
 
     if (process.platform !== 'darwin') {

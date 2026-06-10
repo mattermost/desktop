@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {SAField} from 'types/sessionAttributes';
+
 export type RemoteInfo = {
     serverVersion?: string;
     siteName?: string;
@@ -11,6 +13,8 @@ export type RemoteInfo = {
     hasFocalboard?: boolean;
     hasPlaybooks?: boolean;
     hasUserSurvey?: boolean;
+    sessionAttributesEnabled?: boolean;
+    sessionAttributesManifest?: SAField[];
 };
 
 export type ClientConfig = {
@@ -20,6 +24,7 @@ export type ClientConfig = {
     BuildBoards: string;
     HelpLink: string;
     ReportAProblemLink: string;
+    FeatureFlagSessionAttributes: string;
 }
 
 export type URLValidationResult = {

@@ -53,6 +53,8 @@ export type DesktopAPI = {
     onUserActivityUpdate: (listener: (userIsActive: boolean, idleTime: number, isSystemEvent: boolean) => void) => () => void;
     onLogin: () => void;
     onLogout: () => void;
+    invalidateSessionAttributeManifest: () => void;
+    resendSessionAttributes: () => void;
     sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => Promise<{
         status: string;
         reason?: string;
