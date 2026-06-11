@@ -241,6 +241,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.enableSentry ?? true;
     }
 
+    get enableSessionAttributes() {
+        return this.combinedData?.enableSessionAttributes ?? true;
+    }
+
     get viewLimit() {
         return this.combinedData?.viewLimit ?? 15;
     }

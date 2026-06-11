@@ -53,6 +53,7 @@ const defaultPreferences: ConfigV4 = {
     logLevel: 'info',
     enableMetrics: true,
     enableSentry: true,
+    enableSessionAttributes: true,
     viewLimit: 15,
     themeSyncing: true,
     useNativeTitleBar: false,

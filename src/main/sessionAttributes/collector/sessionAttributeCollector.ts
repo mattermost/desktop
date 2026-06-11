@@ -31,7 +31,14 @@ export class SessionAttributeCollector {
     }
 
     getOSPlatform(): string {
-        return process.platform;
+        switch (process.platform) {
+        case 'darwin':
+            return 'macos';
+        case 'win32':
+            return 'windows';
+        default:
+            return process.platform;
+        }
     }
 
     getOSVersion() {

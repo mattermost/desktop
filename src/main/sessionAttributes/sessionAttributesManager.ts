@@ -12,6 +12,7 @@ import {
     SESSION_ATTRIBUTES_MANIFEST_INVALIDATED,
     SESSION_ATTRIBUTES_RESEND_REQUESTED,
 } from 'common/communication';
+import Config from 'common/config';
 import {COOKIE_NAME_AUTH_TOKEN} from 'common/constants';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
@@ -41,6 +42,10 @@ export class SessionAttributesManager {
         requestURL: string,
         requestHeaders: Record<string, string | string[]>,
     ): string | undefined => {
+        if (!Config.enableSessionAttributes) {
+            return undefined;
+        }
+
         // Without a session, we can't send session attributes.
         if (!this.hasAuthCookie(requestHeaders)) {
             return undefined;

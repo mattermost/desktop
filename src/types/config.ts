@@ -57,6 +57,7 @@ export type ConfigV4 = {
     appLanguage?: string;
     enableMetrics?: boolean;
     enableSentry?: boolean;
+    enableSessionAttributes?: boolean;
     viewLimit?: number;
     themeSyncing?: boolean;
     skippedVersions?: string[];
