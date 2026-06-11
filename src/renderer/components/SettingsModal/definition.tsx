@@ -512,6 +512,24 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                     },
                 },
                 {
+                    id: 'enableSessionAttributes',
+                    component: CheckSetting,
+                    props: {
+                        label: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.enableSessionAttributes'
+                                defaultMessage='Enable session attributes'
+                            />
+                        ),
+                        subLabel: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.enableSessionAttributes.description'
+                                defaultMessage='Sends device and network information to your configured servers for use in permission policies. Some resources may be inaccessible if this setting is disabled.'
+                            />
+                        ),
+                    },
+                },
+                {
                     id: 'enableHardwareAcceleration',
                     component: CheckSetting,
                     props: {

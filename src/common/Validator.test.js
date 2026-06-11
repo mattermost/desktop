@@ -219,6 +219,7 @@ describe('common/Validator', () => {
             themeSyncing: true,
             enableMetrics: true,
             enableSentry: true,
+            enableSessionAttributes: true,
             useNativeTitleBar: false,
         };
 

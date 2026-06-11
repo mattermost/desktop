@@ -10,6 +10,7 @@ import {
     SESSION_ATTRIBUTES_MANIFEST_INVALIDATED,
     SESSION_ATTRIBUTES_RESEND_REQUESTED,
 } from 'common/communication';
+import Config from 'common/config';
 import {COOKIE_NAME_AUTH_TOKEN} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
 import {updateServerInfos} from 'main/app/utils';
@@ -29,6 +30,13 @@ jest.mock('app/views/webContentsManager', () => ({
     __esModule: true,
     default: {
         getViewByWebContentsId: jest.fn(),
+    },
+}));
+
+jest.mock('common/config', () => ({
+    __esModule: true,
+    default: {
+        enableSessionAttributes: true,
     },
 }));
 
@@ -64,6 +72,7 @@ const server = {
     url: new URL('https://chat.example.com'),
 };
 
+const ConfigMock = jest.mocked(Config);
 const ServerManagerMock = jest.mocked(ServerManager);
 const WebContentsManagerMock = jest.mocked(WebContentsManager);
 const updateServerInfosMock = jest.mocked(updateServerInfos);
@@ -78,6 +87,7 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        ConfigMock.enableSessionAttributes = true;
         ServerManagerMock.on.mockImplementation((event, handler) => {
             if (event === SERVER_REMOVED) {
                 serverRemovedHandler = handler;
@@ -99,6 +109,17 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
         updateServerInfosMock.mockResolvedValue(undefined);
 
         manager = new SessionAttributesManager();
+    });
+
+    it('returns undefined when session attributes are disabled', () => {
+        ConfigMock.enableSessionAttributes = false;
+
+        const header = manager.getHeaderForRequest(server.url.toString(), {
+            Cookie: `${COOKIE_NAME_AUTH_TOKEN}=abc123`,
+        });
+
+        expect(header).toBeUndefined();
+        expect(SessionAttributeCollectorMock.getClientIPAddress).not.toHaveBeenCalled();
     });
 
     it('returns undefined without MMAUTHTOKEN cookie', () => {
