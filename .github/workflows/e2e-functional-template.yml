@@ -24,11 +24,6 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       cmt:
         type: boolean
         description: "True if this is Compatibility Matrix Testing"
@@ -122,11 +117,6 @@ on:
         description: "The E2E tests underlying OS"
         required: true
         default: "ubuntu-24.04"
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       cmt:
         type: boolean
         description: "True if this is Compatibility Matrix Testing"
@@ -217,11 +207,6 @@ jobs:
               echo "BUILD_SUFFIX=desktop-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
               ;;
           esac
-
-          if ${{ inputs.nightly }}; then
-            echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-          fi
 
       - name: e2e/set-build-id
         run: echo "BUILD_ID=${{ github.run_id }}-${{ steps.variables.outputs.BUILD_SUFFIX }}" >> $GITHUB_ENV
