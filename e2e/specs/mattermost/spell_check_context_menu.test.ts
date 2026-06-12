@@ -17,34 +17,28 @@ import {loginToMattermost} from '../../helpers/login';
 // NOT covered in webapp E2E suite — keeping in desktop.
 
 test.describe('mattermost/spell_check_context_menu', () => {
-    test.describe.configure({mode: 'serial'});
     test.use({appConfig: demoMattermostConfig});
     test.setTimeout(120_000);
-
-    test.beforeAll(async ({serverMap}) => {
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
-            return;
-        }
-
-        const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
-        expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
-
-        await loginToMattermost(firstServer!);
-        await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-    });
 
     test('MM-T829 Desktop App shows spell check options when you right click',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
+            if (!process.env.MM_TEST_SERVER_URL) {
+                test.skip(true, 'MM_TEST_SERVER_URL required');
+                return;
+            }
+
             const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
             expect(firstServer, 'Server view must exist').toBeTruthy();
+
+            await loginToMattermost(firstServer!);
+            await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
             // Verify spell checker is enabled in config
             const spellCheckEnabled = await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
                 const Config = refs?.Config;
-                return Config ? Config.get('useSpellChecker') === true : false;
+                return Config ? Config.useSpellChecker === true : false;
             });
             expect(spellCheckEnabled, 'Spell checker must be enabled in config').toBe(true);
 

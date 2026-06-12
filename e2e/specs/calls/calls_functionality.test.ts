@@ -35,7 +35,7 @@ test.describe('calls/calls_functionality', () => {
 
     let serverWin: ServerView;
 
-    test.beforeAll(async ({serverMap}) => {
+    test.beforeEach(async ({serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -46,11 +46,6 @@ test.describe('calls/calls_functionality', () => {
         serverWin = serverEntry!.win;
 
         await loginToMattermost(serverWin);
-        await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-    });
-
-    test.beforeEach(async () => {
-        // Return to Town Square before each test
         await serverWin.click('#sidebarItem_town-square');
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
     });

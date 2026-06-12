@@ -45,19 +45,19 @@ test.describe('notification_trigger/flash_taskbar', () => {
                     const refs = (global as any).__e2eTestRefs;
                     const Config = refs?.Config;
                     if (Config) {
-                        Config.set('notifications.flashWindow', 1); // 1 = flash until focused
+                        Config.set('notifications', {...Config.notifications, flashWindow: 1});
                     }
                 });
 
-                // Spy on BrowserWindow.flashFrame
-                await electronApp.evaluate(({BrowserWindow}) => {
-                    (BrowserWindow as any).__e2eFlashFrameCalls = [];
-                    const mainWin = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
+                await electronApp.evaluate(() => {
+                    (global as any).__e2eFlashFrameCalls = [];
+                    const refs = (global as any).__e2eTestRefs;
+                    const mainWin = refs?.MainWindow?.get?.();
                     if (mainWin) {
                         const originalFlashFrame = mainWin.flashFrame.bind(mainWin);
                         (mainWin as any).__e2eOriginalFlashFrame = originalFlashFrame;
                         mainWin.flashFrame = (flash: boolean) => {
-                            (BrowserWindow as any).__e2eFlashFrameCalls.push(flash);
+                            (global as any).__e2eFlashFrameCalls.push(flash);
                             originalFlashFrame(flash);
                         };
                     }
@@ -69,18 +69,18 @@ test.describe('notification_trigger/flash_taskbar', () => {
                 // flashFrame(true) must have been called
                 await expect.poll(
                     () => electronApp.evaluate(
-                        ({BrowserWindow}) => (BrowserWindow as any).__e2eFlashFrameCalls ?? [],
+                        () => (global as any).__e2eFlashFrameCalls ?? [],
                     ),
                     {timeout: 10_000, message: 'flashFrame(true) must be called after notification'},
                 ).toContain(true);
 
-                // Restore flashFrame
-                await electronApp.evaluate(({BrowserWindow}) => {
-                    const mainWin = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
+                await electronApp.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    const mainWin = refs?.MainWindow?.get?.();
                     if (mainWin && (mainWin as any).__e2eOriginalFlashFrame) {
                         mainWin.flashFrame = (mainWin as any).__e2eOriginalFlashFrame;
                     }
-                    delete (BrowserWindow as any).__e2eFlashFrameCalls;
+                    delete (global as any).__e2eFlashFrameCalls;
                 });
             } finally {
                 await releaseLock();

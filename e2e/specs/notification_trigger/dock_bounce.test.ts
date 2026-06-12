@@ -63,10 +63,11 @@ async function setBounceConfig(
         if (!Config) {
             return;
         }
-        Config.set('notifications.bounceIcon', payload.bounceIcon);
+        const notifications = {...Config.notifications, bounceIcon: payload.bounceIcon};
         if (payload.bounceIconType) {
-            Config.set('notifications.bounceIconType', payload.bounceIconType);
+            notifications.bounceIconType = payload.bounceIconType;
         }
+        Config.set('notifications', notifications);
     }, args);
 }
 

@@ -49,14 +49,16 @@ test.describe('startup/window_reposition', () => {
                     main?.setPosition(pos.x, pos.y);
                 }, {x: newX, y: newY});
 
-                // Wait for the move to take effect — poll until position matches
+                // Wait for the move to take effect — poll until position is near target
+                // (window managers may snap coordinates by a pixel or two).
+                const positionTolerance = 50;
                 await expect.poll(
                     async () => {
                         const b = await getMainWindowBounds(app);
-                        return {x: b!.x, y: b!.y};
+                        return Math.abs(b!.x - newX) + Math.abs(b!.y - newY);
                     },
                     {timeout: 5_000, message: 'Window position must update after setPosition'},
-                ).toEqual({x: newX, y: newY});
+                ).toBeLessThanOrEqual(positionTolerance);
 
                 // Verify the window moved
                 const movedBounds = await getMainWindowBounds(app);
@@ -69,7 +71,12 @@ test.describe('startup/window_reposition', () => {
                     `Window y should be near ${newY}`,
                 ).toBeLessThanOrEqual(50);
 
-                // Close and save bounds
+                // MainWindow saves bounds on blur; trigger that before closing so
+                // the relaunch can restore the moved position (close hides on Linux).
+                await app.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    refs?.MainWindow?.get?.()?.blur();
+                });
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
 

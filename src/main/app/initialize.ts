@@ -294,6 +294,8 @@ async function initializeAfterAppReady() {
         TabManager,
         ViewManager,
         WebContentsManager,
+        Config,
+        TrayIcon: Tray,
     });
 
     // Block all NTLM/Negotiate requests by default

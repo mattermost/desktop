@@ -1,9 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {test, expect} from '../../fixtures/index';
+import {test, expect, type ServerMap} from '../../fixtures/index';
 import type {AppConfig} from '../../helpers/config';
 import {demoMattermostConfig} from '../../helpers/config';
+import {openChannelHeaderMenu} from '../../helpers/channelMenu';
 import {loginToMattermost} from '../../helpers/login';
 
 // ── Notes on scope ─────────────────────────────────────────────────────
@@ -28,36 +29,33 @@ const bookmarksConfig: AppConfig = {
     servers: demoMattermostConfig.servers.filter((server) => !server.url.includes('github.com')),
 };
 
+async function loginToOffTopicChannel(serverMap: ServerMap) {
+    const firstServer = serverMap[bookmarksConfig.servers[0].name]?.[0]?.win;
+    expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
+    await loginToMattermost(firstServer!);
+    await firstServer!.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
+    await firstServer!.click('#sidebarItem_off-topic');
+    await firstServer!.waitForSelector('#channelHeaderTitle', {timeout: 15_000});
+    return firstServer!;
+}
+
 test.describe('mattermost/bookmarks', () => {
     test.describe.configure({mode: 'serial'});
     test.use({appConfig: bookmarksConfig});
     test.setTimeout(120_000);
 
-    test.beforeAll(async ({serverMap}) => {
-        // This gate matches the canonical pattern in external_links.test.ts
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
-            return;
-        }
-
-        const firstServer = serverMap[bookmarksConfig.servers[0].name]?.[0]?.win;
-        expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
-
-        await loginToMattermost(firstServer!);
-        await firstServer!.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
-        await firstServer!.click('#sidebarItem_off-topic');
-        await firstServer!.waitForSelector('#channelHeaderTitle', {timeout: 15_000});
-    });
-
     // ── MM-T5600: Bookmarks Bar option in channel dropdown ──────────────
     test('MM-T5600 Bookmarks Bar option IS shown in the channel drop-down menu on Enterprise and Professional licensed servers',
         {tag: ['@P2', '@all']},
         async ({serverMap}) => {
-            const firstServer = serverMap[bookmarksConfig.servers[0].name]?.[0]?.win;
-            expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
+            if (!process.env.MM_TEST_SERVER_URL) {
+                test.skip(true, 'MM_TEST_SERVER_URL required');
+                return;
+            }
 
-            // Open the channel header dropdown
-            await firstServer!.click('#channelHeaderDropdownButton');
+            const firstServer = await loginToOffTopicChannel(serverMap);
+
+            await openChannelHeaderMenu(firstServer!);
 
             // The webapp renders the Bookmarks submenu with id `channel-menu-<channelId>-bookmarks`
             // (see webapp/channels/src/components/channel_header_menu/menu_items/channel_bookmarks_submenu.tsx).
@@ -72,13 +70,16 @@ test.describe('mattermost/bookmarks', () => {
     test('MM-T5611 Open a bookmark URL/link (External and Internal links)',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
+            if (!process.env.MM_TEST_SERVER_URL) {
+                test.skip(true, 'MM_TEST_SERVER_URL required');
+                return;
+            }
             if (process.platform === 'linux') {
                 test.skip(true, 'Linux not supported for external link interception');
                 return;
             }
 
-            const firstServer = serverMap[bookmarksConfig.servers[0].name]?.[0]?.win;
-            expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
+            const firstServer = await loginToOffTopicChannel(serverMap);
 
             // Intercept shell.openExternal — canonical pattern from external_links.test.ts
             await electronApp.evaluate(({shell}) => {
@@ -98,7 +99,7 @@ test.describe('mattermost/bookmarks', () => {
                 // (see webapp/channels/src/components/channel_header_menu/menu_items/channel_bookmarks_submenu.tsx).
                 // The submenu opens on hover or trigger-click; dispatch mouseenter
                 // via the renderer since ServerLocator has no hover helper.
-                await firstServer!.click('#channelHeaderDropdownButton');
+                await openChannelHeaderMenu(firstServer!);
                 await firstServer!.waitForSelector('[id^="channel-menu-"][id$="-bookmarks"]', {timeout: 5_000});
                 await firstServer!.evaluate(() => {
                     const trigger = document.querySelector('[id^="channel-menu-"][id$="-bookmarks"]') as HTMLElement | null;

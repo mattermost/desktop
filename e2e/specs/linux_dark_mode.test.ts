@@ -4,10 +4,10 @@
 import {test, expect} from '../fixtures/index';
 
 async function toggleDarkMode(electronApp: import('playwright').ElectronApplication) {
-    await electronApp.evaluate(({app}) => {
-        const viewMenu = (app as any).applicationMenu?.getMenuItemById('view');
+    await electronApp.evaluate(({Menu}) => {
+        const viewMenu = Menu.getApplicationMenu()?.getMenuItemById('view');
         const darkModeItem = viewMenu?.submenu?.items?.find(
-            (item: any) => item.label?.toLowerCase().includes('dark mode'),
+            (item) => item.label?.toLowerCase().includes('dark mode'),
         );
         if (!darkModeItem) {
             throw new Error('Toggle Dark Mode menu item not found in View menu');

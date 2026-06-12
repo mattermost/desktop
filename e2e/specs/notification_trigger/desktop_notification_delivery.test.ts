@@ -8,6 +8,20 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
 
+async function readBadgeCount(electronApp: import('playwright').ElectronApplication): Promise<number> {
+    return electronApp.evaluate(({app}) => {
+        if (process.platform === 'darwin') {
+            const badge = app.dock?.getBadge() ?? '';
+            return badge === '' || Number.isNaN(Number(badge)) ? 0 : parseInt(badge, 10);
+        }
+        try {
+            return app.getBadgeCount();
+        } catch {
+            return 0;
+        }
+    });
+}
+
 // ── MM-T1661: Desktop notifications ────────────────────────────────────
 // Drives the real notification path via triggerTestNotification (same helper
 // used by notification_badge_in_dock.test.ts). Asserts the observable side
@@ -39,30 +53,20 @@ test.describe('notification_trigger/desktop_notification_delivery', () => {
                     return;
                 }
 
-                // Read badge count before notification
-                const beforeBadge = await electronApp.evaluate(({app}) => {
-                    try {
-                        const badge = app.getBadgeCount();
-                        return badge;
-                    } catch {
-                        return 0;
-                    }
-                });
+                const unityRunning = process.platform === 'linux' ?
+                    await electronApp.evaluate(({app}) => app.isUnityRunning()) :
+                    true;
 
-                // Trigger a real desktop notification
+                const beforeBadge = unityRunning ? await readBadgeCount(electronApp) : 0;
+
                 await triggerTestNotification(firstServer!);
 
-                // Badge count must increment
-                await expect.poll(
-                    () => electronApp.evaluate(({app}) => {
-                        try {
-                            return app.getBadgeCount();
-                        } catch {
-                            return 0;
-                        }
-                    }),
-                    {timeout: 10_000, message: 'Badge count must increment after notification'},
-                ).toBeGreaterThan(beforeBadge);
+                if (unityRunning || process.platform !== 'linux') {
+                    await expect.poll(
+                        () => readBadgeCount(electronApp),
+                        {timeout: 10_000, message: 'Badge count must increment after notification'},
+                    ).toBeGreaterThan(beforeBadge);
+                }
 
                 // Verify the notification was received in the DM from system-bot
                 await verifyNotificationReceivedInDM(firstServer!);

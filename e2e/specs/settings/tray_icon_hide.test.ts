@@ -27,7 +27,7 @@ test.describe('settings/tray_icon_hide', () => {
                 if (!Config) {
                     return false;
                 }
-                return typeof Config.get('showTrayIcon') === 'boolean';
+                return typeof Config.showTrayIcon === 'boolean';
             });
             expect(trayIconConfigAccessible, 'showTrayIcon config must be accessible').toBe(true);
 
@@ -42,7 +42,7 @@ test.describe('settings/tray_icon_hide', () => {
                 const trayIconDisabled = await electronApp.evaluate(() => {
                     const refs = (global as any).__e2eTestRefs;
                     const Config = refs?.Config;
-                    return Config ? Config.get('showTrayIcon') === false : false;
+                    return Config ? Config.showTrayIcon === false : false;
                 });
                 expect(trayIconDisabled, 'showTrayIcon must be false after disabling').toBe(true);
 
