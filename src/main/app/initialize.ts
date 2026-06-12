@@ -47,6 +47,7 @@ import {parseURL} from 'common/utils/url';
 import {setTestField} from 'common/utils/util';
 import {ipcValidate} from 'common/Validator';
 import ViewManager from 'common/views/viewManager';
+import NotificationManager from 'main/notifications';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import {configPath, updatePaths} from 'main/constants';
@@ -296,6 +297,7 @@ async function initializeAfterAppReady() {
         WebContentsManager,
         Config,
         TrayIcon: Tray,
+        NotificationManager,
     });
 
     // Block all NTLM/Negotiate requests by default

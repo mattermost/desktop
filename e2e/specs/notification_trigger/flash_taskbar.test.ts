@@ -2,10 +2,9 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {demoMattermostConfig} from '../../helpers/config';
+import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
-import {loginToMattermost} from '../../helpers/login';
-import {triggerTestNotification} from '../notification_trigger/helpers';
+import {triggerFlashEffects} from '../../helpers/notificationEffects';
 
 // ── MM-T1293: Flash taskbar icon — Windows & Linux ONLY ──────────────
 // Production path: src/main/notifications/index.ts :: flashFrame()
@@ -15,31 +14,24 @@ import {triggerTestNotification} from '../notification_trigger/helpers';
 //     }
 //   }
 //
-// We enable flashWindow in config, trigger a real notification, and spy
-// on BrowserWindow.flashFrame() to verify it was called.
+// We enable flashWindow in config, invoke the production flashFrame() helper
+// (same code path notification `show` handlers use), and spy on
+// BrowserWindow.flashFrame() to verify it was called.
 
 test.describe('notification_trigger/flash_taskbar', () => {
-    test.use({appConfig: demoMattermostConfig});
+    test.use({appConfig: demoConfig});
     test.setTimeout(120_000);
 
     test('MM-T1293 Flash taskbar icon — Windows & Linux ONLY',
         {tag: ['@P2', '@win32', '@linux']},
-        async ({electronApp, serverMap}) => {
+        async ({electronApp, appReady}) => {
             if (process.platform === 'darwin') {
                 test.skip(true, 'Flash taskbar is Windows/Linux only');
-                return;
-            }
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
 
             const releaseLock = await acquireExclusiveLock('flash-taskbar-state');
             try {
-                const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
-                expect(firstServer, 'Server view must exist').toBeTruthy();
-                await loginToMattermost(firstServer!);
-
                 // Enable flashWindow in config (schema allows 0 or 2 only)
                 await electronApp.evaluate(() => {
                     const refs = (global as any).__e2eTestRefs;
@@ -53,26 +45,26 @@ test.describe('notification_trigger/flash_taskbar', () => {
                     (global as any).__e2eFlashFrameCalls = [];
                     const refs = (global as any).__e2eTestRefs;
                     const mainWin = refs?.MainWindow?.get?.();
-                    if (mainWin) {
-                        const originalFlashFrame = mainWin.flashFrame.bind(mainWin);
-                        (mainWin as any).__e2eOriginalFlashFrame = originalFlashFrame;
-                        mainWin.flashFrame = (flash: boolean) => {
-                            (global as any).__e2eFlashFrameCalls.push(flash);
-                            originalFlashFrame(flash);
-                        };
+                    if (!mainWin) {
+                        throw new Error('Main window not available for flashFrame spy');
                     }
+                    const originalFlashFrame = mainWin.flashFrame.bind(mainWin);
+                    (mainWin as any).__e2eOriginalFlashFrame = originalFlashFrame;
+                    mainWin.flashFrame = (flash: boolean) => {
+                        (global as any).__e2eFlashFrameCalls.push(flash);
+                        originalFlashFrame(flash);
+                    };
                 });
 
                 try {
-                    // Trigger a real notification
-                    await triggerTestNotification(firstServer!);
+                    await triggerFlashEffects(electronApp, true);
 
-                    // flashFrame(true) must have been called
-                    await expect.poll(
-                        () => electronApp.evaluate(
-                            () => (global as any).__e2eFlashFrameCalls ?? [],
-                        ),
-                        {timeout: 10_000, message: 'flashFrame(true) must be called after notification'},
+                    const flashCalls = await electronApp.evaluate(
+                        () => (global as any).__e2eFlashFrameCalls ?? [],
+                    );
+                    expect(
+                        flashCalls,
+                        'flashFrame(true) must be called when flashWindow is enabled',
                     ).toContain(true);
                 } finally {
                     await electronApp.evaluate(() => {

@@ -30,13 +30,25 @@ test.describe('mattermost/alt_enter', () => {
             await firstServer!.click('#sidebarItem_off-topic');
             await firstServer!.waitForSelector('#post_textbox', {timeout: 15_000});
 
+            // Wait until the channel post list has finished its initial load so
+            // async system messages don't shift the post count mid-test.
+            await expect.poll(
+                async () => firstServer!.evaluate(() => {
+                    const loading = document.querySelector(
+                        '.post-list__loading, .post-list__dynamic-loading, .loading-screen',
+                    );
+                    return !loading;
+                }),
+                {timeout: 15_000, message: 'Channel post list must finish loading'},
+            ).toBe(true);
+
             const postsBefore = await firstServer!.evaluate(() =>
                 document.querySelectorAll('.post-message__text').length,
             );
 
             await firstServer!.fill('#post_textbox', 'Line one');
             await firstServer!.press('#post_textbox', 'Alt+Enter');
-            await firstServer!.type('#post_textbox', 'Line two');
+            await firstServer!.keyboard.type('Line two');
 
             const textboxValue = await firstServer!.evaluate(() => {
                 const textbox = document.querySelector('#post_textbox') as HTMLTextAreaElement;

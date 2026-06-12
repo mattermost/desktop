@@ -33,7 +33,7 @@ test.describe('mattermost/context_menu', () => {
             await openSidebarChannelMenu(firstServer!, '#sidebarItem_town-square');
 
             const hasCopyLink = await firstServer!.evaluate(() => {
-                const items = document.querySelectorAll('.Menu .MenuItem');
+                const items = document.querySelectorAll('.Menu .MenuItem, [role="menuitem"]');
                 return Array.from(items).some(
                     (item) => (item.textContent ?? '').trim() === 'Copy Link',
                 );
@@ -63,7 +63,7 @@ test.describe('mattermost/context_menu', () => {
 
             await firstServer!.click('#teamSidebarWrapper [id$="TeamButton"]', {button: 'right'});
 
-            const menuItem = await firstServer!.waitForSelector('.Menu .MenuItem', {timeout: 5_000});
+            const menuItem = await firstServer!.waitForSelector('.Menu .MenuItem, [role="menuitem"]', {timeout: 5_000});
             expect(menuItem, 'Team context menu must appear on right-click').toBeTruthy();
 
             await firstServer!.click('#channelHeaderTitle');

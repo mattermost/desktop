@@ -3,7 +3,7 @@
 
 import {test, expect} from '../fixtures/index';
 
-async function toggleDarkMode(electronApp: import('playwright').ElectronApplication) {
+async function toggleDarkModeLinux(electronApp: import('playwright').ElectronApplication) {
     await electronApp.evaluate(({Menu}) => {
         const viewMenu = Menu.getApplicationMenu()?.getMenuItemById('view');
         const darkModeItem = viewMenu?.submenu?.items?.find(
@@ -16,6 +16,18 @@ async function toggleDarkMode(electronApp: import('playwright').ElectronApplicat
     });
 }
 
+async function setDarkModeConfig(electronApp: import('playwright').ElectronApplication, enabled: boolean) {
+    await electronApp.evaluate(({ipcMain}, darkMode: boolean) => {
+        const refs = (global as any).__e2eTestRefs;
+        const Config = refs?.Config;
+        if (!Config) {
+            return;
+        }
+        Config.set('darkMode', darkMode);
+        ipcMain.emit('emit-configuration', null, Config.data);
+    }, enabled);
+}
+
 test.describe('dark_mode', () => {
     test('MM-T2465 Linux Dark Mode Toggle', {tag: ['@P2', '@linux']}, async ({mainWindow, electronApp}) => {
         if (process.platform !== 'linux') {
@@ -25,23 +37,13 @@ test.describe('dark_mode', () => {
 
         expect(mainWindow).not.toBeNull();
 
-        // Toggle Dark Mode
-        await toggleDarkMode(electronApp);
+        await toggleDarkModeLinux(electronApp);
+        await mainWindow.waitForSelector('body.darkMode', {timeout: 10_000});
+        expect(await mainWindow.evaluate(() => document.body.className)).toContain('darkMode');
 
-        // The darkMode class is applied to document.body, not to .topBar directly
-        await mainWindow.waitForSelector('body.darkMode', {timeout: 10000});
-
-        const bodyClassWithDarkMode = await mainWindow.evaluate(() => document.body.className);
-        expect(bodyClassWithDarkMode).toContain('darkMode');
-
-        // Toggle Light Mode
-        await toggleDarkMode(electronApp);
-
-        // Wait for dark mode class to be removed
-        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10000});
-
-        const bodyClassWithLightMode = await mainWindow.evaluate(() => document.body.className);
-        expect(bodyClassWithLightMode).not.toContain('darkMode');
+        await toggleDarkModeLinux(electronApp);
+        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10_000});
+        expect(await mainWindow.evaluate(() => document.body.className)).not.toContain('darkMode');
     });
 
     test('MM-T1310 On Mac set Appearance to Dark — macOS ONLY', {tag: ['@P2', '@darwin']}, async ({mainWindow, electronApp}) => {
@@ -52,20 +54,14 @@ test.describe('dark_mode', () => {
 
         expect(mainWindow).not.toBeNull();
 
-        // Toggle Dark Mode via View menu — same production path as Linux test
-        await toggleDarkMode(electronApp);
+        // macOS does not expose "Toggle Dark Mode" in the View menu (linux-only).
+        // Dark mode for the application chrome is driven by Config.darkMode.
+        await setDarkModeConfig(electronApp, true);
+        await mainWindow.waitForSelector('body.darkMode', {timeout: 10_000});
+        expect(await mainWindow.evaluate(() => document.body.className)).toContain('darkMode');
 
-        await mainWindow.waitForSelector('body.darkMode', {timeout: 10000});
-
-        const bodyClassWithDarkMode = await mainWindow.evaluate(() => document.body.className);
-        expect(bodyClassWithDarkMode).toContain('darkMode');
-
-        // Toggle Light Mode
-        await toggleDarkMode(electronApp);
-
-        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10000});
-
-        const bodyClassWithLightMode = await mainWindow.evaluate(() => document.body.className);
-        expect(bodyClassWithLightMode).not.toContain('darkMode');
+        await setDarkModeConfig(electronApp, false);
+        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10_000});
+        expect(await mainWindow.evaluate(() => document.body.className)).not.toContain('darkMode');
     });
 });

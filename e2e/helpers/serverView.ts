@@ -525,7 +525,11 @@ export class ServerView {
                 throw new Error(`${result.__e2eError}${result.__e2eStack ? `\n${result.__e2eStack}` : ''}`);
             }
 
-            return result?.__e2eResult;
+            let value = result?.__e2eResult;
+            if (value && typeof (value as Promise<unknown>).then === 'function') {
+                value = await value;
+            }
+            return value;
         }, {id: this.webContentsId, body, userGesture}) as Promise<T>;
     }
 

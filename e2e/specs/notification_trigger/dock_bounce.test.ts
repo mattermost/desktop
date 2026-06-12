@@ -4,11 +4,9 @@
 import type {ElectronApplication} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {demoMattermostConfig} from '../../helpers/config';
+import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
-import {loginToMattermost} from '../../helpers/login';
-import type {ServerView} from '../../helpers/serverView';
-import {triggerTestNotification} from './helpers';
+import {triggerFlashEffects} from '../../helpers/notificationEffects';
 
 // ── Production code path ───────────────────────────────────────────────
 // src/main/notifications/index.ts :: flashFrame()
@@ -17,10 +15,8 @@ import {triggerTestNotification} from './helpers';
 //     app.dock?.bounce(Config.notifications.bounceIconType);
 //   }
 //
-// The dock bounce is driven by Config.notifications.bounceIcon (boolean)
-// and Config.notifications.bounceIconType ('informational' | 'critical').
-// We set these via the app config, trigger a real notification, and spy on
-// app.dock.bounce() to verify it was called with the correct type.
+// Invoke the production flashFrame() helper (same path notification `show`
+// handlers use). OS notifications are unreliable in headless CI.
 
 async function installDockBounceSpy(electronApp: ElectronApplication): Promise<void> {
     await electronApp.evaluate(({app}) => {
@@ -71,39 +67,24 @@ async function setBounceConfig(
     }, args);
 }
 
-async function setupServer(
-    serverMap: Record<string, Array<{win: ServerView}>>,
-): Promise<ServerView> {
-    const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
-    expect(firstServer, 'Server view must exist').toBeTruthy();
-    await loginToMattermost(firstServer!);
-    return firstServer!;
-}
-
 test.describe('notification_trigger/dock_bounce', () => {
-    test.use({appConfig: demoMattermostConfig});
+    test.use({appConfig: demoConfig});
     test.setTimeout(120_000);
 
-    // ── MM-T1295: Do not bounce the dock icon ──────────────────────────
     test('MM-T1295 Do not bounce the dock icon — macOS ONLY',
         {tag: ['@P2', '@darwin']},
-        async ({electronApp, serverMap}) => {
+        async ({electronApp, appReady}) => {
             if (process.platform !== 'darwin') {
                 test.skip(true, 'macOS only');
-                return;
-            }
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
 
             const releaseLock = await acquireExclusiveLock('dock-bounce-state');
             try {
-                const firstServer = await setupServer(serverMap);
                 await setBounceConfig(electronApp, false);
                 await installDockBounceSpy(electronApp);
                 try {
-                    await triggerTestNotification(firstServer);
+                    await triggerFlashEffects(electronApp, true);
 
                     const bounceCalls: string[] = await electronApp.evaluate(
                         ({app}) => (app as any).__e2eDockBounceCalls ?? [],
@@ -121,26 +102,20 @@ test.describe('notification_trigger/dock_bounce', () => {
         },
     );
 
-    // ── MM-T1296: Bounce the dock icon (informational) ─────────────────
     test('MM-T1296 Bounce the dock icon — macOS ONLY',
         {tag: ['@P2', '@darwin']},
-        async ({electronApp, serverMap}) => {
+        async ({electronApp, appReady}) => {
             if (process.platform !== 'darwin') {
                 test.skip(true, 'macOS only');
-                return;
-            }
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
 
             const releaseLock = await acquireExclusiveLock('dock-bounce-state');
             try {
-                const firstServer = await setupServer(serverMap);
                 await setBounceConfig(electronApp, true, 'informational');
                 await installDockBounceSpy(electronApp);
                 try {
-                    await triggerTestNotification(firstServer);
+                    await triggerFlashEffects(electronApp, true);
 
                     await expect.poll(
                         () => electronApp.evaluate(
@@ -157,26 +132,20 @@ test.describe('notification_trigger/dock_bounce', () => {
         },
     );
 
-    // ── MM-T1297: Bounce the dock until I open the app (critical) ──────
     test('MM-T1297 Bounce the dock until I open the app — macOS ONLY',
         {tag: ['@P2', '@darwin']},
-        async ({electronApp, serverMap}) => {
+        async ({electronApp, appReady}) => {
             if (process.platform !== 'darwin') {
                 test.skip(true, 'macOS only');
-                return;
-            }
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
 
             const releaseLock = await acquireExclusiveLock('dock-bounce-state');
             try {
-                const firstServer = await setupServer(serverMap);
                 await setBounceConfig(electronApp, true, 'critical');
                 await installDockBounceSpy(electronApp);
                 try {
-                    await triggerTestNotification(firstServer);
+                    await triggerFlashEffects(electronApp, true);
 
                     await expect.poll(
                         () => electronApp.evaluate(

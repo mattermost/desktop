@@ -11,6 +11,7 @@ import WebContentsManager from 'app/views/webContentsManager';
 import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import {setTestField} from 'common/utils/util';
 import ServerManager from 'common/servers/serverManager';
 import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
@@ -276,6 +277,10 @@ function flashFrame(flash: boolean) {
     if (process.platform === 'darwin' && Config.notifications.bounceIcon && Config.notifications.bounceIconType) {
         app.dock?.bounce(Config.notifications.bounceIconType);
     }
+}
+
+if (process.env.NODE_ENV === 'test') {
+    setTestField('__e2eFlashEffects', flashFrame);
 }
 
 const notificationManager = new NotificationManager();

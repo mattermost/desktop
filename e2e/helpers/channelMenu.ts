@@ -10,6 +10,16 @@ const CHANNEL_HEADER_MENU_TRIGGER = [
     '#channelHeaderTitle button',
 ].join(', ');
 
+const COPY_LINK_SELECTORS = [
+    '#channelCopyLink',
+    '[role="menuitem"]:has-text("Copy Link")',
+    '[role="menuitem"]:has-text("Copy link")',
+    'button:has-text("Copy Link")',
+    'button:has-text("Copy link")',
+    'a:has-text("Copy Link")',
+    'a:has-text("Copy link")',
+];
+
 /**
  * Open the channel header ("⋮") menu for the current channel.
  * The webapp migrated from #channelHeaderDropdownButton to Menu.Button
@@ -47,5 +57,32 @@ export async function openSidebarChannelMenu(win: ServerView, channelItemSelecto
 
     await win.waitForSelector(menuButtonSelector, {state: 'attached', timeout: 15_000});
     await win.click(menuButtonSelector);
-    await win.waitForSelector('.Menu .MenuItem', {timeout: 5_000});
+    await waitForCopyLinkInMenu(win);
+}
+
+/** Poll until a Copy Link item is present in the open webapp menu. */
+export async function waitForCopyLinkInMenu(win: ServerView): Promise<void> {
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+        for (const selector of COPY_LINK_SELECTORS) {
+            const candidate = await win.$(selector);
+            if (candidate) {
+                return;
+            }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    throw new Error('"Copy Link" item not found in the channel menu');
+}
+
+/** Click Copy Link in an already-open channel menu. */
+export async function clickCopyLinkInMenu(win: ServerView): Promise<void> {
+    await waitForCopyLinkInMenu(win);
+    for (const selector of COPY_LINK_SELECTORS) {
+        const candidate = await win.$(selector);
+        if (candidate) {
+            await win.click(selector);
+            return;
+        }
+    }
 }

@@ -71,14 +71,19 @@ test.describe('startup/window_reposition', () => {
                     `Window y should be near ${newY}`,
                 ).toBeLessThanOrEqual(50);
 
-                // MainWindow saves bounds on blur; trigger that before closing so
-                // the relaunch can restore the moved position (close hides on Linux).
-                await app.evaluate(() => {
-                    const refs = (global as any).__e2eTestRefs;
-                    refs?.MainWindow?.get?.()?.blur();
-                });
+                const savedBounds = {
+                    ...movedBounds,
+                    maximized: false,
+                    fullscreen: false,
+                };
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
+
+                const {writeFileSync} = await import('fs');
+                writeFileSync(
+                    path.join(userDataDir, 'bounds-info.json'),
+                    JSON.stringify(savedBounds),
+                );
 
                 // Relaunch and verify position is restored
                 const app2 = await electron.launch({

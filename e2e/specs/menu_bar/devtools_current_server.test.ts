@@ -56,18 +56,17 @@ test.describe('menu_bar/devtools_current_server', () => {
                 {timeout: 15_000, message: 'DevTools must open for the current server webContents after menu click'},
             ).toBe(true);
 
-            await clickApplicationMenuItem(
-                electronApp,
-                'view',
-                {label: 'Developer Tools for Current Tab'},
-                {webContentsId},
-            );
+            // The View menu item calls openDevTools() (not toggle). Close explicitly.
+            await electronApp.evaluate(({webContents}, id) => {
+                const wc = webContents.fromId(id);
+                wc?.closeDevTools();
+            }, webContentsId);
             await expect.poll(
                 () => electronApp.evaluate(({webContents}, id) => {
                     const wc = webContents.fromId(id);
                     return wc && !wc.isDestroyed() ? !wc.isDevToolsOpened() : true;
                 }, webContentsId),
-                {timeout: 15_000, message: 'DevTools must close on second menu click'},
+                {timeout: 15_000, message: 'DevTools must close after closeDevTools()'},
             ).toBe(true);
 
             const serverStillFunctional = await firstServer!.evaluate(() => {
