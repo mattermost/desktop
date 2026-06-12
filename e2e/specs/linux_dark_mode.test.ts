@@ -43,4 +43,29 @@ test.describe('dark_mode', () => {
         const bodyClassWithLightMode = await mainWindow.evaluate(() => document.body.className);
         expect(bodyClassWithLightMode).not.toContain('darkMode');
     });
+
+    test('MM-T1310 On Mac set Appearance to Dark — macOS ONLY', {tag: ['@P2', '@darwin']}, async ({mainWindow, electronApp}) => {
+        if (process.platform !== 'darwin') {
+            test.skip(true, 'macOS only');
+            return;
+        }
+
+        expect(mainWindow).not.toBeNull();
+
+        // Toggle Dark Mode via View menu — same production path as Linux test
+        await toggleDarkMode(electronApp);
+
+        await mainWindow.waitForSelector('body.darkMode', {timeout: 10000});
+
+        const bodyClassWithDarkMode = await mainWindow.evaluate(() => document.body.className);
+        expect(bodyClassWithDarkMode).toContain('darkMode');
+
+        // Toggle Light Mode
+        await toggleDarkMode(electronApp);
+
+        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10000});
+
+        const bodyClassWithLightMode = await mainWindow.evaluate(() => document.body.className);
+        expect(bodyClassWithLightMode).not.toContain('darkMode');
+    });
 });
