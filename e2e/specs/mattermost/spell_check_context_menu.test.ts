@@ -61,19 +61,23 @@ test.describe('mattermost/spell_check_context_menu', () => {
             const contextMenuAppeared = await firstServer!.waitForSelector('.Menu .MenuItem', {timeout: 5_000}).then(() => true).catch(() => false);
             expect(contextMenuAppeared, 'Context menu must appear on right-click in textbox').toBe(true);
 
-            // Verify spell check suggestions are present in the menu.
-            // Chromium adds menu items like "Thiss" → "This", "miss" etc.
+            // Verify spell check suggestions are present in the menu. A real
+            // suggestion is a single alphabetic word that differs from the
+            // misspelled token ("Thiss") and isn't a standard editing action.
             const hasSpellSuggestions = await firstServer!.evaluate(() => {
-                const items = document.querySelectorAll('.Menu .MenuItem');
-                // Spell check suggestions typically appear as the first items
-                // in the context menu, before Cut/Copy/Paste
-                const firstItems = Array.from(items).slice(0, 5);
-                return firstItems.some((item) => {
+                const NON_SUGGESTION = new Set([
+                    'cut', 'copy', 'paste', 'select all', 'undo', 'redo',
+                    'add to dictionary', 'search the web', 'inspect',
+                ]);
+                const MISSPELLED = 'thiss';
+                const items = Array.from(document.querySelectorAll('.Menu .MenuItem')).slice(0, 8);
+                return items.some((item) => {
                     const text = (item.textContent ?? '').trim();
-                    // Spelling suggestions are single words that differ from the
-                    // misspelled input — they won't be "Cut", "Copy", "Paste", etc.
-                    return text.length > 0 &&
-                        !['cut', 'copy', 'paste', 'select all', 'undo', 'redo'].includes(text.toLowerCase());
+                    if (!text || !(/^[A-Za-z]+$/).test(text)) {
+                        return false;
+                    }
+                    const lower = text.toLowerCase();
+                    return lower !== MISSPELLED && !NON_SUGGESTION.has(lower);
                 });
             });
             expect(hasSpellSuggestions, 'Spell check suggestions must appear in right-click context menu').toBe(true);

@@ -91,68 +91,86 @@ test.describe('mattermost/bookmarks', () => {
                 }) as typeof shell.openExternal;
             });
 
-            // Open the channel dropdown → Bookmarks submenu → "Add a link".
-            // The submenu trigger and the "Add a link" item have stable ids
-            // `channel-menu-<channelId>-bookmarks` and `…-bookmarks-link`
-            // (see webapp/channels/src/components/channel_header_menu/menu_items/channel_bookmarks_submenu.tsx).
-            // The submenu opens on hover or trigger-click; dispatch mouseenter
-            // via the renderer since ServerLocator has no hover helper.
-            await firstServer!.click('#channelHeaderDropdownButton');
-            await firstServer!.waitForSelector('[id^="channel-menu-"][id$="-bookmarks"]', {timeout: 5_000});
-            await firstServer!.evaluate(() => {
-                const trigger = document.querySelector('[id^="channel-menu-"][id$="-bookmarks"]') as HTMLElement | null;
-                trigger?.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true}));
-                trigger?.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
-            });
-            await firstServer!.waitForSelector('[id^="channel-menu-"][id$="-bookmarks-link"]', {timeout: 5_000});
-            await firstServer!.click('[id^="channel-menu-"][id$="-bookmarks-link"]');
+            try {
+                // Open the channel dropdown → Bookmarks submenu → "Add a link".
+                // The submenu trigger and the "Add a link" item have stable ids
+                // `channel-menu-<channelId>-bookmarks` and `…-bookmarks-link`
+                // (see webapp/channels/src/components/channel_header_menu/menu_items/channel_bookmarks_submenu.tsx).
+                // The submenu opens on hover or trigger-click; dispatch mouseenter
+                // via the renderer since ServerLocator has no hover helper.
+                await firstServer!.click('#channelHeaderDropdownButton');
+                await firstServer!.waitForSelector('[id^="channel-menu-"][id$="-bookmarks"]', {timeout: 5_000});
+                await firstServer!.evaluate(() => {
+                    const trigger = document.querySelector('[id^="channel-menu-"][id$="-bookmarks"]') as HTMLElement | null;
+                    trigger?.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true}));
+                    trigger?.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
+                });
+                await firstServer!.waitForSelector('[id^="channel-menu-"][id$="-bookmarks-link"]', {timeout: 5_000});
+                await firstServer!.click('[id^="channel-menu-"][id$="-bookmarks-link"]');
 
-            // Bookmark create modal — fields have stable data-testids
-            // (see webapp/channels/src/components/channel_bookmarks/{channel_bookmarks_create_modal,create_modal_name_input}.tsx).
-            await firstServer!.waitForSelector('[data-testid="linkInput"]', {timeout: 5_000});
-            await firstServer!.fill('[data-testid="linkInput"]', EXTERNAL_BOOKMARK_URL);
-            await firstServer!.fill('[data-testid="titleInput"]', 'E2E External Bookmark');
-            await firstServer!.click('.GenericModal .GenericModal__button.confirm');
+                // Bookmark create modal — fields have stable data-testids
+                // (see webapp/channels/src/components/channel_bookmarks/{channel_bookmarks_create_modal,create_modal_name_input}.tsx).
+                await firstServer!.waitForSelector('[data-testid="linkInput"]', {timeout: 5_000});
+                await firstServer!.fill('[data-testid="linkInput"]', EXTERNAL_BOOKMARK_URL);
+                await firstServer!.fill('[data-testid="titleInput"]', 'E2E External Bookmark');
+                await firstServer!.click('.GenericModal .GenericModal__button.confirm');
 
-            // Modal closes and bookmark appears in the container
-            await firstServer!.waitForSelector('[data-testid="linkInput"]', {state: 'detached', timeout: 5_000});
-            await firstServer!.waitForSelector(
-                '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',
-                {timeout: 10_000},
-            );
+                // Modal closes and bookmark appears in the container
+                await firstServer!.waitForSelector('[data-testid="linkInput"]', {state: 'detached', timeout: 5_000});
+                await firstServer!.waitForSelector(
+                    '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',
+                    {timeout: 10_000},
+                );
 
-            // Click the bookmark link
-            await firstServer!.click(
-                '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"] a',
-            );
+                // Click the bookmark link
+                await firstServer!.click(
+                    '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"] a',
+                );
 
-            // Verify shell.openExternal was called with the bookmark URL
-            await expect.poll(
-                () => electronApp.evaluate(
-                    ({shell}) => (shell as any).__e2eOpenExternalCalls ?? [],
-                ),
-                {timeout: 10_000},
-            ).toContain(EXTERNAL_BOOKMARK_URL);
+                // Verify shell.openExternal was called with the bookmark URL
+                await expect.poll(
+                    () => electronApp.evaluate(
+                        ({shell}) => (shell as any).__e2eOpenExternalCalls ?? [],
+                    ),
+                    {timeout: 10_000},
+                ).toContain(EXTERNAL_BOOKMARK_URL);
 
-            // Verify no in-app window was opened for the external URL
-            const internalWindowOpened = electronApp.windows().some((window) => {
-                try {
-                    return window.url().includes('mattermost.com');
-                } catch {
-                    return false;
-                }
-            });
-            expect(internalWindowOpened, 'External bookmark must not open an in-app window').toBe(false);
-
-            // Restore original shell.openExternal
-            await electronApp.evaluate(({shell}) => {
-                const original = (shell as any).__e2eOriginalOpenExternal;
-                if (original) {
-                    shell.openExternal = original;
-                }
-                delete (shell as any).__e2eOpenExternalCalls;
-                delete (shell as any).__e2eOriginalOpenExternal;
-            });
+                // Verify no in-app server view navigated to the external URL.
+                // app.windows() only enumerates BrowserWindows — server panes are
+                // WebContentsView instances; query them via global.__e2eTestRefs.
+                const serverViewURLs = await electronApp.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    if (!refs?.ServerManager || !refs?.ViewManager || !refs?.WebContentsManager) {
+                        return [] as string[];
+                    }
+                    const urls: string[] = [];
+                    for (const server of refs.ServerManager.getAllServers()) {
+                        for (const view of refs.ViewManager.getViewsByServerId(server.id)) {
+                            const wcv = refs.WebContentsManager.getView(view.id);
+                            const wc = wcv?.webContents;
+                            if (wc && !wc.isDestroyed()) {
+                                urls.push(wc.getURL() ?? '');
+                            }
+                        }
+                    }
+                    return urls;
+                });
+                expect(
+                    serverViewURLs.some((url) => url.includes('mattermost.com')),
+                    'No in-app server view should have navigated to the external bookmark URL',
+                ).toBe(false);
+            } finally {
+                // Restore original shell.openExternal even if the test failed,
+                // otherwise later specs in the same Electron process see the stub.
+                await electronApp.evaluate(({shell}) => {
+                    const original = (shell as any).__e2eOriginalOpenExternal;
+                    if (original) {
+                        shell.openExternal = original;
+                    }
+                    delete (shell as any).__e2eOpenExternalCalls;
+                    delete (shell as any).__e2eOriginalOpenExternal;
+                });
+            }
 
             // Cleanup: open the per-bookmark dot menu and click Delete. Both have
             // stable element ids that don't depend on locale (see

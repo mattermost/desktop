@@ -15,64 +15,65 @@ import {loginToMattermost} from '../../helpers/login';
 // application-switch scenario.
 
 test.describe('focus/app_switch', () => {
-    test.describe.configure({mode: 'serial'});
     test.use({appConfig: demoMattermostConfig});
     test.setTimeout(120_000);
-
-    test.beforeAll(async ({serverMap}) => {
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
-            return;
-        }
-
-        const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
-        expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
-
-        await loginToMattermost(firstServer!);
-        await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-    });
 
     test('MM-T1311 Switch applications: Text input is focused within server view (webview)',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
+            if (!process.env.MM_TEST_SERVER_URL) {
+                test.skip(true, 'MM_TEST_SERVER_URL required');
+                return;
+            }
+
+            // Login + readiness — must run inside the test body because the
+            // `serverMap` fixture is test-scoped and not available in beforeAll.
             const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
             expect(firstServer, 'Server view must exist').toBeTruthy();
+            await loginToMattermost(firstServer!);
+            await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
             // Focus the post textbox
             await firstServer!.waitForSelector('#post_textbox', {timeout: 10_000});
             await firstServer!.focus('#post_textbox');
 
-            // Verify textbox is focused
             const initiallyFocused = await firstServer!.evaluate(() => {
                 const textbox = document.querySelector('#post_textbox');
                 return textbox === document.activeElement;
             });
             expect(initiallyFocused, 'Post textbox must be focused initially').toBe(true);
 
-            // Simulate switching away: hide the main window (app goes to background)
-            await electronApp.evaluate(({BrowserWindow}) => {
-                const mainWin = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
-                mainWin?.hide();
+            // Resolve the main window through the same registry the rest of
+            // the suite uses, so we don't blindly hide/show the wrong window
+            // once a second BrowserWindow exists (e.g. Calls widget, popout).
+            const mainWindowId = await electronApp.evaluate(() => {
+                const refs = (global as any).__e2eTestRefs;
+                const win = refs?.MainWindow?.get?.();
+                return win?.id ?? null;
             });
+            expect(mainWindowId, 'MainWindow must be resolvable via __e2eTestRefs').not.toBeNull();
 
-            // Simulate switching back: show and focus the main window
-            await electronApp.evaluate(({BrowserWindow}) => {
-                const mainWin = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
-                if (mainWin) {
-                    mainWin.show();
-                    mainWin.focus();
+            // Simulate switching away
+            await electronApp.evaluate(({BrowserWindow}, id: number) => {
+                BrowserWindow.fromId(id)?.hide();
+            }, mainWindowId as number);
+
+            // Simulate switching back
+            await electronApp.evaluate(({BrowserWindow}, id: number) => {
+                const win = BrowserWindow.fromId(id);
+                if (win) {
+                    win.show();
+                    win.focus();
                 }
-            });
+            }, mainWindowId as number);
 
-            // Wait for the window to be visible again
             await expect.poll(
-                () => electronApp.evaluate(({BrowserWindow}) =>
-                    BrowserWindow.getAllWindows().some((w) => w.isVisible()),
-                ),
+                () => electronApp.evaluate(({BrowserWindow}, id: number) =>
+                    Boolean(BrowserWindow.fromId(id)?.isVisible()),
+                mainWindowId as number),
                 {timeout: 10_000, message: 'Main window must be visible after switching back'},
             ).toBe(true);
 
-            // Verify the textbox is still focused after switching back
             await expect.poll(
                 () => firstServer!.evaluate(() => {
                     const textbox = document.querySelector('#post_textbox');

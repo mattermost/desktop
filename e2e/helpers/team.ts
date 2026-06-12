@@ -18,8 +18,10 @@ type Team = {id: string; name: string; display_name: string};
  * disposable. If teardown is needed, capture the returned team id and
  * DELETE `/api/v4/teams/<id>?permanent=true` as a system admin.
  */
+type EnsureResult = {teams: Team[]; created: boolean};
+
 export async function ensureMultipleTeams(win: ServerView): Promise<Team[]> {
-    const teams = await win.evaluate(async () => {
+    const result = await win.evaluate(async () => {
         const getCsrf = () => {
             const match = document.cookie.match(/(?:^|;\s*)MMCSRF=([^;]+)/);
             return match ? decodeURIComponent(match[1]) : '';
@@ -31,7 +33,7 @@ export async function ensureMultipleTeams(win: ServerView): Promise<Team[]> {
         }
         const existing = (await meTeamsRes.json()) as Team[];
         if (existing.length >= 2) {
-            return existing;
+            return {teams: existing, created: false};
         }
 
         const suffix = Math.floor(Math.random() * 1e9).toString(36);
@@ -57,8 +59,16 @@ export async function ensureMultipleTeams(win: ServerView): Promise<Team[]> {
         }
 
         const refreshed = await fetch('/api/v4/users/me/teams', {credentials: 'include'});
-        return (await refreshed.json()) as Team[];
-    });
+        return {teams: (await refreshed.json()) as Team[], created: true};
+    }) as EnsureResult;
 
-    return teams as Team[];
+    // The webapp store doesn't pick up a freshly-created team without a reload,
+    // so `#teamSidebarWrapper` would never render even though the API succeeded.
+    if (result.created) {
+        await win.evaluate(() => {
+            window.location.reload();
+        });
+    }
+
+    return result.teams;
 }

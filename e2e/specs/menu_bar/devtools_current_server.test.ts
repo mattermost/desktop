@@ -42,59 +42,62 @@ test.describe('menu_bar/devtools_current_server', () => {
     test('MM-T821 Toggle Developer Tools for Current Server in the Menu Bar',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            // The "Current Server" DevTools opens the devtools for the active server's WebContentsView
-            // This is different from "Application Wrapper" which opens devtools for the main BrowserWindow
+            // Drive the actual menu item so we exercise the menu handler
+            // (src/app/menus/appMenu/view.ts → TabManager.getCurrentActiveTabView().openDevTools()),
+            // not the raw webContents API. Menu items in the application menu
+            // don't carry ids, so we walk the tree and match the label
+            // "Developer Tools for Current Tab".
+            const clickMenuItem = async () => {
+                const clicked = await electronApp.evaluate(({Menu}) => {
+                    const root = Menu.getApplicationMenu();
+                    if (!root) {
+                        return false;
+                    }
+                    const stack = [...root.items];
+                    while (stack.length) {
+                        const item = stack.shift()!;
+                        if (item.label === 'Developer Tools for Current Tab') {
+                            item.click();
+                            return true;
+                        }
+                        if (item.submenu) {
+                            stack.push(...item.submenu.items);
+                        }
+                    }
+                    return false;
+                });
+                expect(clicked, '"Developer Tools for Current Tab" menu item must exist and be clickable').toBe(true);
+            };
 
-            // Verify the server's webContents is accessible
+            // Verify the server webContents exists (precondition)
             const webContentsExists = await electronApp.evaluate(({webContents}, id) => {
                 const wc = webContents.fromId(id);
                 return wc !== undefined && !wc.isDestroyed();
             }, webContentsId);
             expect(webContentsExists, 'Server webContents should exist').toBe(true);
 
-            // Verify devtools can be opened for the server webContents
-            const devToolsOpened = await electronApp.evaluate(({webContents}, id) => {
-                const wc = webContents.fromId(id);
-                if (!wc || wc.isDestroyed()) {
-                    return false;
-                }
-                try {
-                    wc.openDevTools({mode: 'detach'});
-                    return true;
-                } catch {
-                    return false;
-                }
-            }, webContentsId);
-            expect(devToolsOpened, 'Should be able to open DevTools for server webContents').toBe(true);
+            // Click the menu item — opens DevTools on the active tab view
+            await clickMenuItem();
+            await expect.poll(
+                () => electronApp.evaluate(({webContents}, id) => {
+                    const wc = webContents.fromId(id);
+                    return Boolean(wc && !wc.isDestroyed() && wc.isDevToolsOpened());
+                }, webContentsId),
+                {timeout: 5_000, message: 'DevTools must open for the current server webContents after menu click'},
+            ).toBe(true);
 
-            // Verify devtools are open
-            const devToolsAreOpen = await electronApp.evaluate(({webContents}, id) => {
-                const wc = webContents.fromId(id);
-                if (!wc || wc.isDestroyed()) {
-                    return false;
-                }
-                return wc.isDevToolsOpened();
-            }, webContentsId);
-            expect(devToolsAreOpen, 'DevTools should be open for server webContents').toBe(true);
-
-            // Close devtools
-            await electronApp.evaluate(({webContents}, id) => {
-                const wc = webContents.fromId(id);
-                if (wc && !wc.isDestroyed()) {
-                    wc.closeDevTools();
-                }
-            }, webContentsId);
-
-            // Verify devtools closed
+            // Click again to toggle DevTools closed (and confirm the menu
+            // handler targets the same webContents both ways).
+            await clickMenuItem();
             await expect.poll(
                 () => electronApp.evaluate(({webContents}, id) => {
                     const wc = webContents.fromId(id);
                     return wc && !wc.isDestroyed() ? !wc.isDevToolsOpened() : true;
                 }, webContentsId),
-                {timeout: 5_000, message: 'DevTools should close'},
+                {timeout: 5_000, message: 'DevTools must close on second menu click'},
             ).toBe(true);
 
-            // Verify the server view is still functional after devtools open/close
+            // The server view should still be functional after toggling DevTools
             const serverStillFunctional = await serverWin.evaluate(() => {
                 const textbox = document.querySelector('#post_textbox');
                 return textbox !== null;

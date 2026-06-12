@@ -31,49 +31,39 @@ test.describe('settings/tray_icon_hide', () => {
             });
             expect(trayIconConfigAccessible, 'showTrayIcon config must be accessible').toBe(true);
 
-            // Disable tray icon
-            await electronApp.evaluate(() => {
-                const refs = (global as any).__e2eTestRefs;
-                const Config = refs?.Config;
-                if (Config) {
-                    Config.set('showTrayIcon', false);
-                }
-            });
-
-            // Verify the config was updated
-            const trayIconDisabled = await electronApp.evaluate(() => {
-                const refs = (global as any).__e2eTestRefs;
-                const Config = refs?.Config;
-                return Config ? Config.get('showTrayIcon') === false : false;
-            });
-            expect(trayIconDisabled, 'showTrayIcon must be false after disabling').toBe(true);
-
-            // Verify no tray icon exists when disabled
-            // On macOS, app.dock.isVisible() or checking Tray module
-            const trayExists = await electronApp.evaluate(({app}) => {
-                try {
-                    // On macOS, check if the app has a tray
-                    // app.getAppPath() — tray is managed by TrayIcon module
+            try {
+                // Disable tray icon
+                await electronApp.evaluate(() => {
                     const refs = (global as any).__e2eTestRefs;
-                    const TrayIcon = refs?.TrayIcon;
-                    if (TrayIcon) {
-                        return TrayIcon.tray !== null && TrayIcon.tray !== undefined;
-                    }
-                    return false;
-                } catch {
-                    return false;
-                }
-            });
-            expect(trayExists, 'Tray icon must not exist when showTrayIcon is false').toBe(false);
+                    refs?.Config?.set('showTrayIcon', false);
+                });
 
-            // Re-enable for cleanup
-            await electronApp.evaluate(() => {
-                const refs = (global as any).__e2eTestRefs;
-                const Config = refs?.Config;
-                if (Config) {
-                    Config.set('showTrayIcon', true);
-                }
-            });
+                // Verify the config was updated
+                const trayIconDisabled = await electronApp.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    const Config = refs?.Config;
+                    return Config ? Config.get('showTrayIcon') === false : false;
+                });
+                expect(trayIconDisabled, 'showTrayIcon must be false after disabling').toBe(true);
+
+                // Tray teardown is async — poll until TrayIcon.tray is gone.
+                await expect.poll(
+                    () => electronApp.evaluate(() => {
+                        const refs = (global as any).__e2eTestRefs;
+                        const TrayIcon = refs?.TrayIcon;
+                        return TrayIcon ? TrayIcon.tray === null || TrayIcon.tray === undefined : false;
+                    }),
+                    {timeout: 10_000, message: 'Tray icon must be torn down after showTrayIcon=false'},
+                ).toBe(true);
+            } finally {
+                // Always re-enable so later specs in the same Electron process
+                // (and the user data dir for the next run) aren't left with a
+                // mutated tray setting.
+                await electronApp.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    refs?.Config?.set('showTrayIcon', true);
+                });
+            }
         },
     );
 });

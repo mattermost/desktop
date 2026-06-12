@@ -21,32 +21,34 @@ test.describe('startup/cmd_tab_restore', () => {
                 return;
             }
 
-            // Verify main window is visible initially
-            await expect.poll(
-                () => electronApp.evaluate(({BrowserWindow}) =>
-                    BrowserWindow.getAllWindows().some((w) => w.isVisible()),
-                ),
-                {timeout: 10_000, message: 'Main window should be visible initially'},
-            ).toBe(true);
-
-            // Hide the main window (simulates Cmd+H or minimizing to dock)
-            await electronApp.evaluate(({BrowserWindow}) => {
-                const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
-                win?.hide();
+            // Resolve the canonical main window id from __e2eTestRefs so the
+            // test targets the same window every time, even if a popout or
+            // Calls widget BrowserWindow exists in this run.
+            const mainWindowId = await electronApp.evaluate(() => {
+                const refs = (global as any).__e2eTestRefs;
+                const win = refs?.MainWindow?.get?.();
+                return win?.id ?? null;
             });
+            expect(mainWindowId, 'MainWindow must be resolvable via __e2eTestRefs').not.toBeNull();
 
-            // Verify window is hidden
-            await expect.poll(
-                () => electronApp.evaluate(({BrowserWindow}) =>
-                    BrowserWindow.getAllWindows().some((w) => w.isVisible()),
-                ),
-                {timeout: 5_000, message: 'Window should be hidden after hide()'},
-            ).toBe(false);
+            const isMainVisible = () => electronApp.evaluate(({BrowserWindow}, id: number) =>
+                Boolean(BrowserWindow.fromId(id)?.isVisible()),
+            mainWindowId as number);
 
-            // Verify window still exists (not destroyed)
-            const windowStillExists = await electronApp.evaluate(({BrowserWindow}) =>
-                BrowserWindow.getAllWindows().some((w) => !w.isDestroyed()),
-            );
+            await expect.poll(isMainVisible, {timeout: 10_000, message: 'Main window should be visible initially'}).toBe(true);
+
+            // Hide the main window
+            await electronApp.evaluate(({BrowserWindow}, id: number) => {
+                BrowserWindow.fromId(id)?.hide();
+            }, mainWindowId as number);
+
+            await expect.poll(isMainVisible, {timeout: 5_000, message: 'Window should be hidden after hide()'}).toBe(false);
+
+            // Sanity-check: window is hidden, not destroyed
+            const windowStillExists = await electronApp.evaluate(({BrowserWindow}, id: number) => {
+                const w = BrowserWindow.fromId(id);
+                return Boolean(w && !w.isDestroyed());
+            }, mainWindowId as number);
             expect(windowStillExists, 'Window must still exist after hide (not destroyed)').toBe(true);
 
             // Simulate Cmd+Tab — emits the 'activate' app event
@@ -54,11 +56,8 @@ test.describe('startup/cmd_tab_restore', () => {
                 app.emit('activate');
             });
 
-            // Window must reappear
             await expect.poll(
-                () => electronApp.evaluate(({BrowserWindow}) =>
-                    BrowserWindow.getAllWindows().some((w) => w.isVisible()),
-                ),
+                isMainVisible,
                 {timeout: 10_000, message: 'Window must reappear after Cmd+Tab (activate event)'},
             ).toBe(true);
         },

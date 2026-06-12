@@ -38,14 +38,15 @@ test.describe('startup/window_reposition', () => {
                 const initialBounds = await getMainWindowBounds(app);
                 expect(initialBounds, 'Should get initial window bounds').toBeTruthy();
 
-                // Move the window to a new position
+                // Move the window to a new position. Target the canonical
+                // main window via __e2eTestRefs so we don't accidentally move
+                // a popout or Calls widget if one is open.
                 const newX = 200;
                 const newY = 150;
-                await app.evaluate(({BrowserWindow}, pos) => {
-                    const win = BrowserWindow.getAllWindows()[0];
-                    if (win) {
-                        win.setPosition(pos.x, pos.y);
-                    }
+                await app.evaluate(({BrowserWindow}, pos: {x: number; y: number}) => {
+                    const refs = (global as any).__e2eTestRefs;
+                    const main = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows()[0];
+                    main?.setPosition(pos.x, pos.y);
                 }, {x: newX, y: newY});
 
                 // Wait for the move to take effect — poll until position matches
@@ -109,7 +110,8 @@ async function getMainWindowBounds(app: Awaited<ReturnType<typeof electron.launc
     for (let attempt = 0; attempt < 10; attempt++) {
         try {
             return await app.evaluate(({BrowserWindow}) => {
-                const win = BrowserWindow.getAllWindows()[0];
+                const refs = (global as any).__e2eTestRefs;
+                const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows()[0];
                 if (!win) {
                     throw new Error('Main BrowserWindow not available');
                 }

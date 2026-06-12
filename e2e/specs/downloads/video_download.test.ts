@@ -1,90 +1,171 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import * as fs from 'fs';
+import * as http from 'http';
+import * as path from 'path';
+
 import {test, expect} from '../../fixtures/index';
-import {demoMattermostConfig} from '../../helpers/config';
-import {loginToMattermost} from '../../helpers/login';
+import {waitForAppReady} from '../../helpers/appReadiness';
+import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {electronBinaryPath, appDir, emptyConfig} from '../../helpers/config';
 
 // ── MM-T1538: Download a video ────────────────────────────────────────
-// Tests that downloading a video file attachment from Mattermost triggers
-// the desktop downloads manager. The desktop owns the download path:
-//   src/main/downloadsManager.ts intercepts will-download events and
-//   manages the downloads dropdown.
+// Verifies a real end-to-end download path for a video MIME type:
+//   1. Local HTTP server serves a fake .mp4 (small binary buffer)
+//   2. A BrowserWindow loaded inside the Electron app clicks the link
+//   3. DownloadsManager (src/main/downloadsManager.ts) handles will-download
+//   4. We assert: the file lands on disk AND downloads.json records it
+//      with state "completed"
 //
-// This test verifies the end-to-end flow: click a video attachment →
-// download starts → appears in downloads dropdown.
+// Pattern mirrors download_completion.test.ts so the two tests differ only
+// in MIME type and content — keeping the download flow exercised for the
+// file type MM-T1538 specifically targets (video) without duplicating the
+// scaffolding.
 
-test.describe('downloads/video_download', () => {
-    test.describe.configure({mode: 'serial'});
-    test.use({appConfig: demoMattermostConfig});
-    test.setTimeout(120_000);
+function readJsonFile<T>(filePath: string): T | undefined {
+    try {
+        return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as T;
+    } catch {
+        return undefined;
+    }
+}
 
-    test.beforeAll(async ({serverMap}) => {
-        if (!process.env.MM_TEST_SERVER_URL) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
+async function startVideoServer(filename: string, body: Buffer) {
+    const server = http.createServer((request, response) => {
+        if (request.url === '/video.mp4') {
+            response.writeHead(200, {
+                'Content-Type': 'video/mp4',
+                'Content-Disposition': `attachment; filename="${filename}"`,
+                'Content-Length': body.length,
+            });
+            response.end(body);
             return;
         }
 
-        const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
-        expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
-
-        await loginToMattermost(firstServer!);
-        await firstServer!.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
-        await firstServer!.click('#sidebarItem_off-topic');
-        await firstServer!.waitForSelector('#post_textbox', {timeout: 15_000});
+        response.writeHead(200, {'Content-Type': 'text/html'});
+        response.end(`
+            <!doctype html>
+            <html>
+            <body>
+                <a id="download-link" href="/video.mp4">Download video</a>
+            </body>
+            </html>
+        `);
     });
 
-    test('MM-T1538 Download a video',
-        {tag: ['@P2', '@all']},
-        async ({electronApp, serverMap}) => {
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
-            expect(firstServer, 'Server view must exist').toBeTruthy();
-
-            // Post a message with a video file attachment
-            // We simulate a file upload by injecting a post with a file attachment link
-            const videoPosted = await firstServer!.evaluate(() => {
-                const textbox = document.querySelector('#post_textbox') as HTMLTextAreaElement;
-                if (!textbox) {
-                    return false;
-                }
-
-                // Create a post that references a video file
-                // In real usage, the user would upload a video file via the paperclip button
-                const fileInput = document.querySelector('#fileInput, input[type="file"][class*="file"]');
-                if (!fileInput) {
-                    // Fallback: post a message with a link to trigger download flow
-                    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
-                    setter?.call(textbox, 'Test video download');
-                    textbox.dispatchEvent(new Event('input', {bubbles: true}));
-                    return 'message-posted';
-                }
-
-                return false;
-            });
-
-            if (videoPosted === 'message-posted') {
-                await firstServer!.press('#post_textbox', 'Enter');
-                await firstServer!.waitForSelector('.post-message__text', {timeout: 10_000});
-            }
-
-            // Verify the downloads infrastructure is loaded
-            const downloadsManagerLoaded = await electronApp.evaluate(() => {
-                const refs = (global as any).__e2eTestRefs;
-                return refs?.DownloadsManager !== undefined;
-            });
-            expect(downloadsManagerLoaded, 'DownloadsManager must be loaded').toBe(true);
-
-            // Verify the download dropdown button exists in the main window
-            // (it appears when downloads are active)
-            const downloadButtonExists = await electronApp.evaluate(({BrowserWindow}) => {
-                const mainWin = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed());
-                if (!mainWin) {
-                    return false;
-                }
-                // The downloads dropdown is in the main window's renderer
-                return true; // infrastructure check passed
-            });
-            expect(downloadButtonExists, 'Main window must be available for downloads').toBe(true);
-        },
+    await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', () => resolve()),
     );
-});
+    const address = server.address();
+    if (!address || typeof address === 'string') {
+        throw new Error('Failed to start local video download server');
+    }
+
+    return {
+        server,
+        url: `http://127.0.0.1:${address.port}`,
+    };
+}
+
+test(
+    'MM-T1538 Download a video',
+    {tag: ['@P2', '@all']},
+    async ({}, testInfo) => {
+        const filename = 'sample-video.mp4';
+
+        // Minimal .mp4 — magic bytes are enough for the download-manager
+        // pipeline; we never play the file, only assert it landed on disk.
+        const videoBody = Buffer.from([
+            0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70,
+            0x6d, 0x70, 0x34, 0x32, 0x00, 0x00, 0x00, 0x00,
+            0x6d, 0x70, 0x34, 0x32, 0x69, 0x73, 0x6f, 0x6d,
+        ]);
+
+        const {server, url} = await startVideoServer(filename, videoBody);
+
+        const userDataDir = path.join(testInfo.outputDir, 'userdata');
+        const downloadsDir = path.join(testInfo.outputDir, 'Downloads');
+        const config = {
+            ...emptyConfig,
+            downloadLocation: downloadsDir,
+        };
+
+        fs.mkdirSync(userDataDir, {recursive: true});
+        fs.mkdirSync(downloadsDir, {recursive: true});
+        fs.writeFileSync(
+            path.join(userDataDir, 'config.json'),
+            JSON.stringify(config),
+        );
+
+        const {_electron: electron} = await import('playwright');
+        const app = await electron.launch({
+            executablePath: electronBinaryPath,
+            args: [
+                appDir,
+                `--user-data-dir=${userDataDir}`,
+                '--no-sandbox',
+                '--disable-gpu',
+            ],
+            env: {...process.env, NODE_ENV: 'test'},
+            timeout: 60_000,
+        });
+
+        const savedPath = path.join(downloadsDir, filename);
+
+        try {
+            await waitForAppReady(app);
+            const mainWindow = app.windows().find((window) => window.url().includes('index'));
+            expect(mainWindow).toBeDefined();
+            await mainWindow!.waitForLoadState();
+
+            const popupPromise = app.waitForEvent('window', {
+                predicate: (window) => window.url().startsWith(url),
+                timeout: 15_000,
+            });
+
+            await app.evaluate(async ({BrowserWindow}, popupUrl) => {
+                const popup = new BrowserWindow({
+                    show: true,
+                    width: 900,
+                    height: 700,
+                });
+                await popup.loadURL(popupUrl);
+                (global as any).__videoDownloadPopup = popup;
+            }, url);
+
+            const popupWindow = await popupPromise;
+            await popupWindow.waitForLoadState();
+            await popupWindow.click('#download-link');
+
+            await expect.
+                poll(() => fs.existsSync(savedPath), {timeout: 15_000}).
+                toBe(true);
+
+            // Verify the downloaded bytes match what we served
+            await expect.
+                poll(() => fs.readFileSync(savedPath).equals(videoBody), {timeout: 15_000}).
+                toBe(true);
+
+            // DownloadsManager must record the download as completed
+            await expect.
+                poll(
+                    () => {
+                        const downloads = readJsonFile<Record<string, {state?: string; mimeType?: string}>>(
+                            path.join(userDataDir, 'downloads.json'),
+                        );
+                        return downloads?.[filename]?.state;
+                    },
+                    {timeout: 15_000},
+                ).
+                toBe('completed');
+        } finally {
+            await app.close().catch(() => {});
+            await waitForLockFileRelease(userDataDir).catch(() => {});
+            await new Promise<void>((resolve, reject) =>
+                server.close((error) => (error ? reject(error) : resolve())),
+            );
+            fs.rmSync(downloadsDir, {recursive: true, force: true});
+        }
+    },
+);
