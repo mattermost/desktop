@@ -16,7 +16,7 @@ const CHANNEL_HEADER_MENU_TRIGGER = [
  * with an aria-label like "off-topic channel menu".
  */
 export async function openChannelHeaderMenu(win: ServerView): Promise<void> {
-    await win.waitForSelector(CHANNEL_HEADER_MENU_TRIGGER, {state: 'attached', timeout: 15_000});
+    await win.waitForSelector(CHANNEL_HEADER_MENU_TRIGGER, {state: 'visible', timeout: 15_000});
     await win.click(CHANNEL_HEADER_MENU_TRIGGER);
     await win.waitForSelector('#channelHeaderDropdownMenu, .a11y__popup', {timeout: 5_000});
 }

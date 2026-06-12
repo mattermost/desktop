@@ -35,6 +35,8 @@ test.describe('calls/calls_functionality', () => {
 
     let serverWin: ServerView;
 
+    // Login runs in beforeEach (not beforeAll) because electronApp and
+    // serverMap are test-scoped fixtures — each test launches a fresh app.
     test.beforeEach(async ({serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');

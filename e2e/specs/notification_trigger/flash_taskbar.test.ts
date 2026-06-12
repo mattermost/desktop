@@ -40,12 +40,12 @@ test.describe('notification_trigger/flash_taskbar', () => {
                 expect(firstServer, 'Server view must exist').toBeTruthy();
                 await loginToMattermost(firstServer!);
 
-                // Enable flashWindow in config
+                // Enable flashWindow in config (schema allows 0 or 2 only)
                 await electronApp.evaluate(() => {
                     const refs = (global as any).__e2eTestRefs;
                     const Config = refs?.Config;
                     if (Config) {
-                        Config.set('notifications', {...Config.notifications, flashWindow: 1});
+                        Config.set('notifications', {...Config.notifications, flashWindow: 2});
                     }
                 });
 
@@ -63,25 +63,27 @@ test.describe('notification_trigger/flash_taskbar', () => {
                     }
                 });
 
-                // Trigger a real notification
-                await triggerTestNotification(firstServer!);
+                try {
+                    // Trigger a real notification
+                    await triggerTestNotification(firstServer!);
 
-                // flashFrame(true) must have been called
-                await expect.poll(
-                    () => electronApp.evaluate(
-                        () => (global as any).__e2eFlashFrameCalls ?? [],
-                    ),
-                    {timeout: 10_000, message: 'flashFrame(true) must be called after notification'},
-                ).toContain(true);
-
-                await electronApp.evaluate(() => {
-                    const refs = (global as any).__e2eTestRefs;
-                    const mainWin = refs?.MainWindow?.get?.();
-                    if (mainWin && (mainWin as any).__e2eOriginalFlashFrame) {
-                        mainWin.flashFrame = (mainWin as any).__e2eOriginalFlashFrame;
-                    }
-                    delete (global as any).__e2eFlashFrameCalls;
-                });
+                    // flashFrame(true) must have been called
+                    await expect.poll(
+                        () => electronApp.evaluate(
+                            () => (global as any).__e2eFlashFrameCalls ?? [],
+                        ),
+                        {timeout: 10_000, message: 'flashFrame(true) must be called after notification'},
+                    ).toContain(true);
+                } finally {
+                    await electronApp.evaluate(() => {
+                        const refs = (global as any).__e2eTestRefs;
+                        const mainWin = refs?.MainWindow?.get?.();
+                        if (mainWin && (mainWin as any).__e2eOriginalFlashFrame) {
+                            mainWin.flashFrame = (mainWin as any).__e2eOriginalFlashFrame;
+                        }
+                        delete (global as any).__e2eFlashFrameCalls;
+                    });
+                }
             } finally {
                 await releaseLock();
             }
