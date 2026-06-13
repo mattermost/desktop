@@ -55,7 +55,7 @@ import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
-import {getDoNotDisturb} from 'main/notifications';
+import NotificationManager, {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
@@ -294,6 +294,9 @@ async function initializeAfterAppReady() {
         TabManager,
         ViewManager,
         WebContentsManager,
+        Config,
+        TrayIcon: Tray,
+        NotificationManager,
     });
 
     // Block all NTLM/Negotiate requests by default

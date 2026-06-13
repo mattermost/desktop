@@ -239,8 +239,8 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22.x'
-          cache: "npm"
-          cache-dependency-path: package-lock.json
+          # node_modules is cached in e2e/cache-node-modules; skip setup-node's
+          # npm cache to avoid stale entries that fail v5 deserialization.
 
       - name: e2e/cache-node-modules
         id: cache-node-modules
@@ -249,9 +249,11 @@ jobs:
           path: |
             node_modules
             C:\Users\runneradmin\.electron-gyp
-          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
+          # v2: bust stale node_modules caches that fail actions/cache v5 deserialization
+          key: ${{ runner.os }}-build-node-modules-v2-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-build-node-modules
+            ${{ runner.os }}-build-node-modules-v2-
+            ${{ runner.os }}-build-node-modules-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
