@@ -307,6 +307,8 @@
   "renderer.components.settingsPage.enableMetrics.description": "将应用及其性能的使用数据发送到您配置的接收服务器。",
   "renderer.components.settingsPage.enableSentry": "发送错误报告以帮助改进应用",
   "renderer.components.settingsPage.enableSentry.description": "如果启用，将发送错误报告和崩溃信息，以帮助识别和修复应用中的问题。设置在重启应用后生效。",
+  "renderer.components.settingsPage.enableSessionAttributes": "启用会话属性",
+  "renderer.components.settingsPage.enableSessionAttributes.description": "将设备和网络信息发送到已配置的服务器，供权限策略使用。如果禁用此设置，某些资源可能无法访问。",
   "renderer.components.settingsPage.flashWindow": "收到新消息时闪烁任务栏图标",
   "renderer.components.settingsPage.flashWindow.description": "如果启用，当收到新消息时，任务栏图标将闪烁几秒钟。",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "此功能可能不适用于所有 Linux 窗口管理器。",
