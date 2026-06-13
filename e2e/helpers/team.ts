@@ -4,6 +4,7 @@
 import type {ServerView} from './serverView';
 
 type Team = {id: string; name: string; display_name: string};
+type EnsureResult = {teams: Team[]; created: boolean};
 
 /**
  * Ensure the logged-in user belongs to at least 2 teams.
@@ -13,25 +14,19 @@ type Team = {id: string; name: string; display_name: string};
  * renderer's existing session (cookie auth + CSRF) to create a throwaway
  * team via the Mattermost REST API if needed, and returns the full team
  * list so callers can target a specific team.
- *
- * The created team is left in place; the test server is expected to be
- * disposable. If teardown is needed, capture the returned team id and
- * DELETE `/api/v4/teams/<id>?permanent=true` as a system admin.
  */
-type EnsureResult = {teams: Team[]; created: boolean};
-
 export async function ensureMultipleTeams(win: ServerView): Promise<Team[]> {
-    const result = await win.evaluate(async () => {
+    const result = await win.runInRenderer<EnsureResult>(`
         const getCsrf = () => {
-            const match = document.cookie.match(/(?:^|;\s*)MMCSRF=([^;]+)/);
+            const match = document.cookie.match(/(?:^|;)\\s*MMCSRF=([^;]+)/);
             return match ? decodeURIComponent(match[1]) : '';
         };
 
         const meTeamsRes = await fetch('/api/v4/users/me/teams', {credentials: 'include'});
         if (!meTeamsRes.ok) {
-            throw new Error(`GET /api/v4/users/me/teams failed: ${meTeamsRes.status} ${meTeamsRes.statusText}`);
+            throw new Error('GET /api/v4/users/me/teams failed: ' + meTeamsRes.status + ' ' + meTeamsRes.statusText);
         }
-        const existing = (await meTeamsRes.json()) as Team[];
+        const existing = await meTeamsRes.json();
         if (existing.length >= 2) {
             return {teams: existing, created: false};
         }
@@ -45,29 +40,25 @@ export async function ensureMultipleTeams(win: ServerView): Promise<Team[]> {
                 'X-CSRF-Token': getCsrf(),
             },
             body: JSON.stringify({
-                name: `e2e-${suffix}`,
-                display_name: `E2E ${suffix}`,
+                name: 'e2e-' + suffix,
+                display_name: 'E2E ' + suffix,
                 type: 'O',
             }),
         });
         if (!createRes.ok) {
             const detail = await createRes.text();
             throw new Error(
-                `POST /api/v4/teams failed: ${createRes.status} ${createRes.statusText} — ${detail}. ` +
-                'The test user may not have permission to create teams; grant `create_team` permission or pre-provision a second team.',
+                'POST /api/v4/teams failed: ' + createRes.status + ' ' + createRes.statusText + ' — ' + detail,
             );
         }
 
         const refreshed = await fetch('/api/v4/users/me/teams', {credentials: 'include'});
-        return {teams: (await refreshed.json()) as Team[], created: true};
-    }) as EnsureResult;
+        return {teams: await refreshed.json(), created: true};
+    `);
 
-    // The webapp store doesn't pick up a freshly-created team without a reload,
-    // so `#teamSidebarWrapper` would never render even though the API succeeded.
     if (result.created) {
-        await win.evaluate(() => {
-            window.location.reload();
-        });
+        await win.evaluate('window.location.reload()');
+        await win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
     }
 
     return result.teams;

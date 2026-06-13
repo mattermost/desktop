@@ -4,6 +4,7 @@
 import type {ElectronApplication} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
+import {waitForAppReady} from '../../helpers/appReadiness';
 import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {triggerFlashEffects} from '../../helpers/notificationEffects';
@@ -73,11 +74,13 @@ test.describe('notification_trigger/dock_bounce', () => {
 
     test('MM-T1295 Do not bounce the dock icon — macOS ONLY',
         {tag: ['@P2', '@darwin']},
-        async ({electronApp, appReady}) => {
+        async ({electronApp}) => {
             if (process.platform !== 'darwin') {
                 test.skip(true, 'macOS only');
                 return;
             }
+
+            await waitForAppReady(electronApp);
 
             const releaseLock = await acquireExclusiveLock('dock-bounce-state');
             try {
@@ -104,11 +107,13 @@ test.describe('notification_trigger/dock_bounce', () => {
 
     test('MM-T1296 Bounce the dock icon — macOS ONLY',
         {tag: ['@P2', '@darwin']},
-        async ({electronApp, appReady}) => {
+        async ({electronApp}) => {
             if (process.platform !== 'darwin') {
                 test.skip(true, 'macOS only');
                 return;
             }
+
+            await waitForAppReady(electronApp);
 
             const releaseLock = await acquireExclusiveLock('dock-bounce-state');
             try {
@@ -134,11 +139,13 @@ test.describe('notification_trigger/dock_bounce', () => {
 
     test('MM-T1297 Bounce the dock until I open the app — macOS ONLY',
         {tag: ['@P2', '@darwin']},
-        async ({electronApp, appReady}) => {
+        async ({electronApp}) => {
             if (process.platform !== 'darwin') {
                 test.skip(true, 'macOS only');
                 return;
             }
+
+            await waitForAppReady(electronApp);
 
             const releaseLock = await acquireExclusiveLock('dock-bounce-state');
             try {

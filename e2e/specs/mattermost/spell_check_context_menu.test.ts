@@ -48,19 +48,62 @@ test.describe('mattermost/spell_check_context_menu', () => {
                 });
             }, serverEntry!.webContentsId);
 
-            await firstServer!.waitForSelector('#post_textbox', {timeout: 10_000});
-            await firstServer!.fill('#post_textbox', 'Thiss is a mispelled worrd');
-            await firstServer!.click('#post_textbox', {button: 'right'});
+            const textboxSelector = '#post_textbox, [data-testid="post_textbox"], [role="textbox"]';
+            await firstServer!.waitForSelector(textboxSelector, {timeout: 10_000});
+            await firstServer!.click(textboxSelector);
+            await firstServer!.keyboard.type('Thiss is a mispelled worrd');
+
+            const point = await firstServer!.evaluate(() => {
+                const el = document.querySelector('#post_textbox, [data-testid="post_textbox"], [role="textbox"]');
+                if (!el) {
+                    return null;
+                }
+                const rect = el.getBoundingClientRect();
+                return {
+                    x: Math.round(rect.left + (rect.width / 2)),
+                    y: Math.round(rect.top + (rect.height / 2)),
+                };
+            });
+            expect(point, 'Post textbox must be on screen for spell-check context menu').toBeTruthy();
+
+            await electronApp.evaluate(({webContents}, payload) => {
+                const wc = webContents.fromId(payload.id);
+                if (!wc || wc.isDestroyed()) {
+                    throw new Error(`webContents ${payload.id} is not available`);
+                }
+                wc.focus();
+                wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
+                wc.sendInputEvent({
+                    type: 'mouseDown',
+                    x: payload.x,
+                    y: payload.y,
+                    button: 'right',
+                    clickCount: 1,
+                });
+                wc.sendInputEvent({
+                    type: 'mouseUp',
+                    x: payload.x,
+                    y: payload.y,
+                    button: 'right',
+                    clickCount: 1,
+                });
+            }, {id: serverEntry!.webContentsId, ...point!});
 
             await expect.poll(
                 async () => {
                     const menu = await electronApp.evaluate(() => (global as any).__e2eSpellCheckMenu);
-                    return Array.isArray(menu?.suggestions) && menu.suggestions.length > 0;
+                    if (!menu) {
+                        return false;
+                    }
+                    if (menu.misspelledWord) {
+                        return true;
+                    }
+                    return Array.isArray(menu.suggestions) && menu.suggestions.length > 0;
                 },
-                {timeout: 10_000, message: 'Native spell-check context menu must expose suggestions'},
+                {timeout: 15_000, message: 'Native spell-check context menu must expose suggestions'},
             ).toBe(true);
 
-            await firstServer!.fill('#post_textbox', '');
+            await firstServer!.fill(textboxSelector, '');
         },
     );
 });

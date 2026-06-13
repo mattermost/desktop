@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {waitForAppReady} from '../../helpers/appReadiness';
 import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {triggerFlashEffects} from '../../helpers/notificationEffects';
@@ -24,11 +25,13 @@ test.describe('notification_trigger/flash_taskbar', () => {
 
     test('MM-T1293 Flash taskbar icon — Windows & Linux ONLY',
         {tag: ['@P2', '@win32', '@linux']},
-        async ({electronApp, appReady}) => {
+        async ({electronApp}) => {
             if (process.platform === 'darwin') {
                 test.skip(true, 'Flash taskbar is Windows/Linux only');
                 return;
             }
+
+            await waitForAppReady(electronApp);
 
             const releaseLock = await acquireExclusiveLock('flash-taskbar-state');
             try {

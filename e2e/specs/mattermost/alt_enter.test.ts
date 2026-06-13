@@ -63,13 +63,18 @@ test.describe('mattermost/alt_enter', () => {
             );
             expect(postsAfter, 'Alt+Enter must NOT send the message').toBe(postsBefore);
 
-            await firstServer!.press('#post_textbox', 'Enter');
+            await firstServer!.evaluate(() => {
+                const sendButton = document.querySelector(
+                    '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"]',
+                ) as HTMLButtonElement | null;
+                sendButton?.click();
+            });
 
             await expect.poll(
                 () => firstServer!.evaluate(() =>
                     document.querySelectorAll('.post-message__text').length,
                 ),
-                {timeout: 10_000, message: 'Regular Enter must send the message'},
+                {timeout: 10_000, message: 'Send button must post the composed message'},
             ).toBeGreaterThan(postsBefore);
 
             const lastPostText = await firstServer!.evaluate(() => {

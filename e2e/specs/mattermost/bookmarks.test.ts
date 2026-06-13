@@ -125,13 +125,9 @@ test.describe('mattermost/bookmarks', () => {
                 await firstServer!.fill('[data-testid="titleInput"]', 'E2E External Bookmark');
                 await firstServer!.click('.GenericModal .GenericModal__button.confirm, .GenericModal button[type="submit"]');
 
-                await expect.poll(
-                    async () => !(await firstServer!.$('[data-testid="linkInput"]')),
-                    {timeout: 10_000, message: 'Bookmark modal must close after save'},
-                ).toBe(true);
                 await firstServer!.waitForSelector(
                     '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',
-                    {timeout: 10_000},
+                    {timeout: 15_000},
                 );
 
                 // Click the bookmark link

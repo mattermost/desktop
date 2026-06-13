@@ -10,7 +10,7 @@ const CHANNEL_HEADER_MENU_TRIGGER = [
     '#channelHeaderTitle button',
 ].join(', ');
 
-const COPY_LINK_SELECTORS = [
+export const COPY_LINK_SELECTORS = [
     '#channelCopyLink',
     '[role="menuitem"]:has-text("Copy Link")',
     '[role="menuitem"]:has-text("Copy link")',
@@ -37,15 +37,15 @@ export async function openChannelHeaderMenu(win: ServerView): Promise<void> {
  */
 export async function openSidebarChannelMenu(win: ServerView, channelItemSelector: string): Promise<void> {
     await win.waitForSelector(channelItemSelector, {timeout: 15_000});
-    await win.evaluate((selector: string) => {
-        const el = document.querySelector(selector);
+    await win.evaluate(`(() => {
+        const el = document.querySelector(${JSON.stringify(channelItemSelector)});
         if (!el) {
             return;
         }
         for (const type of ['pointerover', 'mouseover', 'mouseenter', 'pointermove', 'mousemove']) {
             el.dispatchEvent(new MouseEvent(type, {bubbles: true, cancelable: true}));
         }
-    }, channelItemSelector);
+    })()`);
 
     const menuButtonSelector = [
         `${channelItemSelector} button[aria-label*="channel menu" i]`,
