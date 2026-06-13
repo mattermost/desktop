@@ -370,7 +370,9 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
+            const { auditMigratedSkips } = require('./utils/audit-migrated-skips.js');
             const { failureCount, passCount, skipCount, totalCount, os } = analyzeFlakyTests();
+            const skipAudit = auditMigratedSkips();
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const reportUrl = process.env.PER_OS_REPORT_URL || runUrl;
             const testStatus = failureCount > 0 || Number(process.env.PLAYWRIGHT_EXIT_CODE || 0) !== 0 ? 'failure' : 'success';
@@ -381,7 +383,17 @@ jobs:
               core.setOutput(`PASSED_${suffix}`, String(passCount));
               core.setOutput(`SKIPPED_${suffix}`, String(skipCount));
               core.setOutput(`TOTAL_${suffix}`, String(totalCount));
+              core.setOutput(`MIGRATED_UNEXPECTED_SKIPS_${suffix}`, String(skipAudit.unexpectedSkipped.length));
             };
+            core.summary
+              .addHeading(`Migrated-spec skip audit (${os})`)
+              .addCodeBlock(skipAudit.summary, 'text')
+              .write();
+            if (skipAudit.unexpectedSkipped.length > 0) {
+              core.warning(
+                `${skipAudit.unexpectedSkipped.length} unexpected skip(s) in migrated E2E specs on ${os}`,
+              );
+            }
             switch (os) {
               case 'linux':
                 setOSOutputs('LINUX');

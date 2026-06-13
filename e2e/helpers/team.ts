@@ -3,8 +3,7 @@
 
 import type {ServerView} from './serverView';
 
-type Team = {id: string; name: string; display_name: string};
-type EnsureResult = {teams: Team[]; created: boolean};
+type EnsureResult = {count: number; created: boolean};
 
 /**
  * Ensure the logged-in user belongs to at least 2 teams.
@@ -12,10 +11,9 @@ type EnsureResult = {teams: Team[]; created: boolean};
  * Some tests assert on the team sidebar (`#teamSidebarWrapper`), which the
  * webapp only renders when the user is in 2+ teams. This helper uses the
  * renderer's existing session (cookie auth + CSRF) to create a throwaway
- * team via the Mattermost REST API if needed, and returns the full team
- * list so callers can target a specific team.
+ * team via the Mattermost REST API if needed.
  */
-export async function ensureMultipleTeams(win: ServerView): Promise<Team[]> {
+export async function ensureMultipleTeams(win: ServerView): Promise<number> {
     const result = await win.runInRenderer<EnsureResult>(`
         const getCsrf = () => {
             const match = document.cookie.match(/(?:^|;)\\s*MMCSRF=([^;]+)/);
@@ -28,7 +26,7 @@ export async function ensureMultipleTeams(win: ServerView): Promise<Team[]> {
         }
         const existing = await meTeamsRes.json();
         if (existing.length >= 2) {
-            return {teams: existing, created: false};
+            return {count: existing.length, created: false};
         }
 
         const suffix = Math.floor(Math.random() * 1e9).toString(36);
@@ -53,13 +51,18 @@ export async function ensureMultipleTeams(win: ServerView): Promise<Team[]> {
         }
 
         const refreshed = await fetch('/api/v4/users/me/teams', {credentials: 'include'});
-        return {teams: await refreshed.json(), created: true};
+        const teams = await refreshed.json();
+        return {count: teams.length, created: true};
     `);
 
     if (result.created) {
-        await win.evaluate('window.location.reload()');
+        await win.runInRenderer('window.location.reload(); return true;', true);
         await win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
     }
 
-    return result.teams;
+    if (result.count < 2) {
+        throw new Error(`Expected at least 2 teams after ensureMultipleTeams, got ${result.count}`);
+    }
+
+    return result.count;
 }

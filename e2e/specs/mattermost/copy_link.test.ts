@@ -9,9 +9,8 @@ import {loginToMattermost} from '../../helpers/login';
 test.describe('copylink', () => {
     test.use({appConfig: demoMattermostConfig});
     test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
-    test.skip(process.platform === 'linux', 'Not supported on Linux');
 
-    test('MM-T125 Copy Link can be used from channel LHS', {tag: ['@P2', '@all']}, async ({electronApp, serverMap}) => {
+    test('MM-T125 Copy Link can be used from channel LHS', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp, serverMap}) => {
         const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
         if (!firstServer) {
             throw new Error('No server view available');
@@ -44,19 +43,7 @@ test.describe('copylink', () => {
         expect(copyLinkClicked, '"Copy Link" must be clicked in the channel menu').toBe(true);
 
         await expect.poll(
-            async () => {
-                const fromMain = await electronApp.evaluate(({clipboard}) => clipboard.readText());
-                if (fromMain.includes('/channels/town-square')) {
-                    return fromMain;
-                }
-                return firstServer.evaluate(async () => {
-                    try {
-                        return await navigator.clipboard.readText();
-                    } catch {
-                        return '';
-                    }
-                });
-            },
+            async () => electronApp.evaluate(({clipboard}) => clipboard.readText()),
             {timeout: 10_000, message: 'Clipboard must contain the town-square channel link'},
         ).toContain('/channels/town-square');
     });

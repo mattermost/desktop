@@ -38,6 +38,15 @@ test.describe('mattermost/spell_check_context_menu', () => {
 
             await electronApp.evaluate(({webContents}, id) => {
                 const wc = webContents.fromId(id);
+                if (!wc || wc.isDestroyed()) {
+                    return;
+                }
+                wc.session.setSpellCheckerEnabled(true);
+                wc.session.setSpellCheckerLanguages(['en-US']);
+            }, serverEntry!.webContentsId);
+
+            await electronApp.evaluate(({webContents}, id) => {
+                const wc = webContents.fromId(id);
                 delete (global as any).__e2eSpellCheckMenu;
                 wc?.removeAllListeners('context-menu');
                 wc?.on('context-menu', (_event, params) => {

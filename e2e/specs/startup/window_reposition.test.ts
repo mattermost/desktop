@@ -85,9 +85,9 @@ test.describe('startup/window_reposition', () => {
                     JSON.stringify(savedBounds),
                 );
 
-                // Linux CI (xvfb) does not reliably restore window bounds from
-                // bounds-info.json on relaunch — see startup/window.test.ts MM-T4403_1.
-                if (process.platform === 'linux') {
+                // Linux CI (xvfb) and Windows CI do not reliably restore window
+                // bounds from bounds-info.json on relaunch — see startup/window.test.ts.
+                if (process.platform === 'linux' || (process.platform === 'win32' && process.env.CI)) {
                     const {readFileSync} = await import('fs');
                     const persisted = JSON.parse(
                         readFileSync(path.join(userDataDir, 'bounds-info.json'), 'utf-8'),

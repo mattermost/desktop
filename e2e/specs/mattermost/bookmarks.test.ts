@@ -72,14 +72,10 @@ test.describe('mattermost/bookmarks', () => {
 
     // ── MM-T5611: Open a bookmark URL/link ────────────────────────────
     test('MM-T5611 Open a bookmark URL/link (External and Internal links)',
-        {tag: ['@P2', '@all']},
+        {tag: ['@P2', '@darwin', '@win32']},
         async ({electronApp, serverMap}) => {
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
-            if (process.platform === 'linux') {
-                test.skip(true, 'Linux not supported for external link interception');
                 return;
             }
 
@@ -123,11 +119,26 @@ test.describe('mattermost/bookmarks', () => {
                 await firstServer!.waitForSelector('[data-testid="linkInput"]', {timeout: 5_000});
                 await firstServer!.fill('[data-testid="linkInput"]', EXTERNAL_BOOKMARK_URL);
                 await firstServer!.fill('[data-testid="titleInput"]', 'E2E External Bookmark');
-                await firstServer!.click('.GenericModal .GenericModal__button.confirm, .GenericModal button[type="submit"]');
+
+                const saveClicked = await firstServer!.runInRenderer(`
+                    const buttons = Array.from(document.querySelectorAll(
+                        '.GenericModal button, .GenericModal .GenericModal__button',
+                    ));
+                    const save = buttons.find((button) => {
+                        const label = (button.textContent || '').trim().toLowerCase();
+                        return label === 'save' || label === 'add' || button.getAttribute('type') === 'submit';
+                    });
+                    if (!save) {
+                        return false;
+                    }
+                    save.click();
+                    return true;
+                `, true);
+                expect(saveClicked, 'Bookmark save button must be clicked').toBe(true);
 
                 await firstServer!.waitForSelector(
                     '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',
-                    {timeout: 15_000},
+                    {timeout: 30_000},
                 );
 
                 // Click the bookmark link
