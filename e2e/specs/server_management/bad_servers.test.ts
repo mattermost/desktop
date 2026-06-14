@@ -8,6 +8,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, demoMattermostConfig} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -114,6 +115,11 @@ async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfi
     return dropdownView;
 }
 
+async function closeLaunchedApp(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
+    await closeOverlayWindowsIfOpen(app);
+    await app.close();
+}
+
 test.describe('Bad Server Configurations', () => {
     test.describe.configure({mode: 'serial'});
 
@@ -141,7 +147,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(userDataDir);
             }
         });
@@ -169,7 +175,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(userDataDir);
             }
         });
@@ -197,7 +203,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toMatch(/ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/);
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(userDataDir);
             }
         });
@@ -227,7 +233,7 @@ test.describe('Bad Server Configurations', () => {
                     return RC4_SSL_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
                 }, {timeout: 15_000, message: 'RC4 server must surface a connection error'}).not.toBeNull();
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(userDataDir);
             }
         });
@@ -258,7 +264,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(userDataDir);
             }
         });
@@ -294,6 +300,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const dropdownView = await openServerDropdown(app);
                 await dropdownView!.click('.ServerDropdown .ServerDropdown__button:nth-child(2)');
+                await closeOverlayWindowsIfOpen(app);
 
                 const serverMap = await buildServerMap(app);
                 const mmServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
@@ -303,7 +310,7 @@ test.describe('Bad Server Configurations', () => {
                 const postTextbox = await mmServer.$('#post_textbox');
                 expect(postTextbox).toBeDefined();
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(userDataDir);
             }
         });
@@ -336,7 +343,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(badCertUserDataDir);
             }
         });
@@ -393,7 +400,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeNull();
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(userDataDir);
             }
         });
@@ -422,7 +429,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toMatch(/ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/);
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(tls11UserDataDir);
             }
         });
@@ -457,7 +464,7 @@ test.describe('Bad Server Configurations', () => {
                     return RC4_SSL_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
                 }, {timeout: 15_000, message: 'RC4 server must surface a connection error'}).not.toBeNull();
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(rc4UserDataDir);
             }
         });

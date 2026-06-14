@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
+import type {ElectronApplication} from 'playwright';
 
 import type {ServerView} from './serverView';
 
@@ -127,7 +128,215 @@ export async function enableBookmarksBar(win: ServerView): Promise<void> {
     await win.keyboard.press('Escape');
 }
 
-/** Submit the channel bookmark create/edit modal once the primary action is enabled. */
+export const TEAM_SIDEBAR_BUTTON = [
+    '#teamSidebarWrapper [id$="TeamButton"]',
+    '#teamSidebar button[class*="TeamButton"]',
+    'button[aria-label$=" team"]',
+].join(', ');
+
+const TEAM_MENU_ITEM_SELECTORS = [
+    '.Menu .MenuItem',
+    '[role="menuitem"]',
+    '.dropdown-menu .MenuItem',
+    '#teamMenu .MenuItem',
+];
+
+/**
+ * Right-click a team sidebar button using native input events.
+ * Desktop app shows Chromium's native context menu here (not webapp .Menu).
+ */
+export async function openTeamSidebarContextMenu(
+    win: ServerView,
+    app: ElectronApplication,
+    webContentsId: number,
+): Promise<void> {
+    await win.waitForSelector(TEAM_SIDEBAR_BUTTON, {timeout: 15_000});
+    const point = await win.runInRenderer(`
+        const selectors = ${JSON.stringify(TEAM_SIDEBAR_BUTTON.split(', '))};
+        let buttons = [];
+        for (const selector of selectors) {
+            buttons = Array.from(document.querySelectorAll(selector));
+            if (buttons.length > 0) {
+                break;
+            }
+        }
+        const target = buttons.length > 1 ? buttons[1] : buttons[0];
+        if (!target) {
+            return null;
+        }
+        target.scrollIntoView({block: 'center', inline: 'center'});
+        const rect = target.getBoundingClientRect();
+        return {
+            x: Math.round(rect.left + (rect.width / 2)),
+            y: Math.round(rect.top + (rect.height / 2)),
+        };
+    `, true);
+    expect(point, 'Team sidebar button must be available for context menu').toBeTruthy();
+
+    await app.evaluate(({webContents}, payload) => {
+        const wc = webContents.fromId(payload.id);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.id} is not available`);
+        }
+        wc.focus();
+        wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
+        wc.sendInputEvent({
+            type: 'mouseDown',
+            x: payload.x,
+            y: payload.y,
+            button: 'right',
+            clickCount: 1,
+        });
+        wc.sendInputEvent({
+            type: 'mouseUp',
+            x: payload.x,
+            y: payload.y,
+            button: 'right',
+            clickCount: 1,
+        });
+    }, {id: webContentsId, ...point!});
+}
+
+/** Register a listener for Chromium's native context-menu event on a server view. */
+export async function listenForNativeContextMenu(
+    app: ElectronApplication,
+    webContentsId: number,
+): Promise<void> {
+    await app.evaluate(({webContents}, id) => {
+        const wc = webContents.fromId(id);
+        if (!wc || wc.isDestroyed()) {
+            return;
+        }
+        delete (global as any).__e2eNativeContextMenu;
+        wc.removeAllListeners('context-menu');
+        wc.on('context-menu', (_event, params) => {
+            (global as any).__e2eNativeContextMenu = params;
+        });
+    }, webContentsId);
+}
+
+/** Poll until Chromium reports a native context menu for the server view. */
+export async function waitForNativeContextMenu(app: ElectronApplication): Promise<void> {
+    await expect.poll(async () => app.evaluate(() => {
+        const params = (global as any).__e2eNativeContextMenu;
+        return Boolean(params);
+    }), {timeout: 10_000, message: 'Native context menu must open on team right-click'}).toBe(true);
+}
+
+/** Poll until a webapp menu item is visible (channel sidebar menus). */
+export async function waitForWebappContextMenu(win: ServerView): Promise<void> {
+    await expect.poll(async () => win.runInRenderer(`
+        const selectors = ${JSON.stringify(TEAM_MENU_ITEM_SELECTORS)};
+        return selectors.some((selector) => {
+            const items = Array.from(document.querySelectorAll(selector));
+            return items.some((item) => {
+                const rect = item.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
+            });
+        });
+    `), {timeout: 10_000, message: 'Webapp context menu must appear'}).toBe(true);
+}
+
+/** Selectors for channel bookmark bar items (webapp varies by version). */
+export const BOOKMARK_BAR_LINK_SELECTORS = [
+    'a[href*="utm_content=channel_bookmarks.item"]',
+    '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"] a',
+    '[data-testid="channel-bookmarks-container"] a[href]',
+    '#channelBookmarksContainer a[href]',
+];
+
+export const BOOKMARK_BAR_ITEM_SELECTORS = [
+    'a[href*="utm_content=channel_bookmarks.item"]',
+    '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',
+    '[data-testid="channel-bookmarks-container"] a[href]',
+    '#channelBookmarksContainer [data-testid^="bookmark-item-"]',
+];
+
+/** Poll until a bookmark item appears in the channel bookmarks bar. */
+export async function waitForBookmarkInBar(win: ServerView, urlPart?: string): Promise<void> {
+    await expect.poll(async () => win.runInRenderer(`
+        const selectors = ${JSON.stringify(BOOKMARK_BAR_LINK_SELECTORS)};
+        const needle = ${JSON.stringify(urlPart ?? '')};
+        const links = [];
+        for (const selector of selectors) {
+            links.push(...document.querySelectorAll(selector));
+        }
+        const visible = links.filter((link) => {
+            const rect = link.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        });
+        if (!needle) {
+            return visible.length > 0;
+        }
+        return visible.some((link) => link.href.includes(needle));
+    `), {timeout: 30_000, message: 'Bookmark item must appear in the channel bookmarks bar'}).toBe(true);
+}
+
+/** Click a bookmark link in the channel bookmarks bar. */
+export async function clickBookmarkInBar(win: ServerView, urlPart: string): Promise<void> {
+    const clicked = await win.runInRenderer(`
+        const needle = ${JSON.stringify(urlPart)};
+        const selectors = ${JSON.stringify(BOOKMARK_BAR_LINK_SELECTORS)};
+        const links = [];
+        for (const selector of selectors) {
+            links.push(...document.querySelectorAll(selector));
+        }
+        const target = [...links].reverse().find((link) => {
+            const rect = link.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && link.href.includes(needle);
+        });
+        if (!target) {
+            return false;
+        }
+        target.scrollIntoView({block: 'center', inline: 'center'});
+        target.click();
+        return true;
+    `, true);
+    expect(clicked, `Bookmark link containing "${urlPart}" must be clickable`).toBe(true);
+}
+
+/** Delete every bookmark currently shown in the channel bookmarks bar. */
+export async function deleteAllBookmarksInBar(win: ServerView): Promise<void> {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        const hasBookmark = await win.runInRenderer(`
+            const selectors = ${JSON.stringify(BOOKMARK_BAR_LINK_SELECTORS)};
+            return selectors.some((selector) => document.querySelector(selector));
+        `);
+        if (!hasBookmark) {
+            return;
+        }
+
+        await hoverBookmarkInBar(win);
+        const openedMenu = await win.$('[id^="channelBookmarksDotMenuButton-"]');
+        if (!openedMenu) {
+            return;
+        }
+        await win.click('[id^="channelBookmarksDotMenuButton-"]');
+        await win.click('#channelBookmarksDelete');
+        await win.click('.GenericModal .GenericModal__button.delete, .GenericModal .GenericModal__button.confirm');
+    }
+}
+
+/** Hover the first bookmark item so its dot-menu trigger is reachable. */
+export async function hoverBookmarkInBar(win: ServerView): Promise<void> {
+    await win.runInRenderer(`
+        const selectors = ${JSON.stringify(BOOKMARK_BAR_ITEM_SELECTORS)};
+        let item = null;
+        for (const selector of selectors) {
+            item = document.querySelector(selector);
+            if (item) {
+                break;
+            }
+        }
+        if (!item) {
+            return false;
+        }
+        item.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true}));
+        item.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
+        return true;
+    `, true);
+}
+
 export async function submitBookmarkModal(win: ServerView): Promise<void> {
     await expect.poll(async () => win.runInRenderer(`
         const buttons = Array.from(document.querySelectorAll(

@@ -16,7 +16,6 @@ const MIGRATED_SPEC_FILES = [
     'mattermost/bookmarks.test.ts',
     'mattermost/context_menu.test.ts',
     'mattermost/custom_groups.test.ts',
-    'mattermost/spell_check_context_menu.test.ts',
     'menu_bar/devtools_current_server.test.ts',
     'notification_trigger/desktop_notification_delivery.test.ts',
     'notification_trigger/dock_bounce.test.ts',

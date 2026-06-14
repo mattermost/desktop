@@ -3,17 +3,17 @@
 
 import type {ElectronApplication} from 'playwright';
 
-import {closeDownloadsDropdownIfOpen} from './downloadsDropdown';
+import {closeOverlayWindowsIfOpen} from './overlayWindows';
 
 /**
  * Close overlay windows and focus a Mattermost server WebContentsView so
- * renderer automation targets the channel UI instead of the downloads dropdown.
+ * renderer automation targets the channel UI instead of dropdown overlays.
  */
 export async function prepareMattermostServerView(
     app: ElectronApplication,
     webContentsId: number,
 ): Promise<void> {
-    await closeDownloadsDropdownIfOpen(app);
+    await closeOverlayWindowsIfOpen(app);
     await app.evaluate(({webContents}, id) => {
         const wc = webContents.fromId(id);
         if (!wc || wc.isDestroyed()) {

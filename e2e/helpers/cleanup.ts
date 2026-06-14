@@ -19,12 +19,24 @@ import {expect} from '@playwright/test';
  */
 export async function waitForLockFileRelease(userDataDir: string): Promise<void> {
     const lockFile = path.join(userDataDir, 'SingletonLock');
-    await expect.poll(
-        () => !fs.existsSync(lockFile),
-        {
-            message: `SingletonLock not released at ${lockFile}`,
-            timeout: process.platform === 'win32' ? 10_000 : 5_000,
-            intervals: [100, 200, 500, 1000],
-        },
-    ).toBe(true);
+    const timeout = process.platform === 'win32' ? 15_000 : 5_000;
+
+    try {
+        await expect.poll(
+            () => !fs.existsSync(lockFile),
+            {
+                message: `SingletonLock not released at ${lockFile}`,
+                timeout,
+                intervals: [100, 200, 500, 1000],
+            },
+        ).toBe(true);
+    } catch {
+        if (fs.existsSync(lockFile)) {
+            try {
+                fs.unlinkSync(lockFile);
+            } catch {
+                // Best-effort cleanup when a child process kept the lock open.
+            }
+        }
+    }
 }

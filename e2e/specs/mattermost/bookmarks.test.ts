@@ -5,7 +5,7 @@ import {test, expect, type ServerMap} from '../../fixtures/index';
 import type {ElectronApplication} from 'playwright';
 import type {AppConfig} from '../../helpers/config';
 import {demoMattermostConfig} from '../../helpers/config';
-import {openChannelHeaderMenu, enableBookmarksBar, submitBookmarkModal} from '../../helpers/channelMenu';
+import {openChannelHeaderMenu, enableBookmarksBar, submitBookmarkModal, waitForBookmarkInBar, clickBookmarkInBar, deleteAllBookmarksInBar} from '../../helpers/channelMenu';
 import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
@@ -90,8 +90,10 @@ test.describe('mattermost/bookmarks', () => {
             }
 
             const firstServer = await loginToOffTopicChannel(serverMap, electronApp);
+            const serverEntry = serverMap[bookmarksConfig.servers[0].name]?.[0];
 
             await enableBookmarksBar(firstServer!);
+            await deleteAllBookmarksInBar(firstServer!);
 
             // Intercept shell.openExternal — canonical pattern from external_links.test.ts
             await electronApp.evaluate(({shell}) => {
@@ -125,6 +127,7 @@ test.describe('mattermost/bookmarks', () => {
                 });
                 await firstServer!.waitForSelector('[id^="channel-menu-"][id$="-bookmarks-link"]', {timeout: 5_000});
                 await firstServer!.click('[id^="channel-menu-"][id$="-bookmarks-link"]');
+                await firstServer!.keyboard.press('Escape');
 
                 // Bookmark create modal — fields have stable data-testids
                 // (see webapp/channels/src/components/channel_bookmarks/{channel_bookmarks_create_modal,create_modal_name_input}.tsx).
@@ -133,16 +136,10 @@ test.describe('mattermost/bookmarks', () => {
                 await firstServer!.fill('[data-testid="titleInput"]', 'E2E External Bookmark');
 
                 await submitBookmarkModal(firstServer!);
+                await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
+                await waitForBookmarkInBar(firstServer!, 'mattermost.com');
 
-                await firstServer!.waitForSelector(
-                    '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',
-                    {timeout: 30_000},
-                );
-
-                // Click the bookmark link
-                await firstServer!.click(
-                    '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"] a',
-                );
+                await clickBookmarkInBar(firstServer!, 'mattermost.com');
 
                 // Verify shell.openExternal was called with the bookmark URL
                 await expect.poll(
@@ -194,20 +191,7 @@ test.describe('mattermost/bookmarks', () => {
             // webapp/channels/src/components/channel_bookmarks/bookmark_dot_menu.tsx):
             //   trigger: id="channelBookmarksDotMenuButton-<bookmarkId>"
             //   delete item: id="channelBookmarksDelete"
-            await firstServer!.evaluate(() => {
-                const item = document.querySelector(
-                    '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',
-                ) as HTMLElement | null;
-                item?.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true}));
-                item?.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
-            });
-            await firstServer!.click('[id^="channelBookmarksDotMenuButton-"]');
-            await firstServer!.click('#channelBookmarksDelete');
-            await firstServer!.click('.GenericModal .GenericModal__button.delete, .GenericModal .GenericModal__button.confirm');
-            await firstServer!.waitForSelector(
-                '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',
-                {state: 'detached', timeout: 5_000},
-            );
+            await deleteAllBookmarksInBar(firstServer!);
         },
     );
 });

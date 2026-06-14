@@ -3,15 +3,15 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
-import {openSidebarChannelMenu} from '../../helpers/channelMenu';
+import {openSidebarChannelMenu, openTeamSidebarContextMenu, listenForNativeContextMenu, waitForNativeContextMenu} from '../../helpers/channelMenu';
 import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {ensureMultipleTeams} from '../../helpers/team';
 
 // ── MM-T1307: Right-click a channel name / team name in LHS ────────────
 // Channel "Copy Link" lives in the webapp's sidebar channel-options menu,
-// not the native Electron context menu (see copy_link.test.ts). Team menus
-// are driven through the team sidebar once the user belongs to 2+ teams.
+// Channel menus use webapp .Menu components; team sidebar uses Chromium's
+// native context menu since MM-57962 removed the webapp Copy Link menu.
 
 test.describe('mattermost/context_menu', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -66,12 +66,11 @@ test.describe('mattermost/context_menu', () => {
             await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await ensureMultipleTeams(electronApp, firstServer!, serverEntry!.webContentsId);
             await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-            await firstServer!.waitForSelector('#teamSidebarWrapper [id$="TeamButton"]', {timeout: 15_000});
+            await firstServer!.waitForSelector('#teamSidebarWrapper, button[aria-label$=" team"]', {timeout: 15_000});
 
-            await firstServer!.click('#teamSidebarWrapper [id$="TeamButton"]', {button: 'right'});
-
-            const menuItem = await firstServer!.waitForSelector('.Menu .MenuItem, [role="menuitem"]', {timeout: 5_000});
-            expect(menuItem, 'Team context menu must appear on right-click').toBeTruthy();
+            await listenForNativeContextMenu(electronApp, serverEntry!.webContentsId);
+            await openTeamSidebarContextMenu(firstServer!, electronApp, serverEntry!.webContentsId);
+            await waitForNativeContextMenu(electronApp);
 
             await firstServer!.click('#channelHeaderTitle');
         },
