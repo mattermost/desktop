@@ -76,13 +76,14 @@ test(
                 const focus = () => {
                     const refs = (global as any).__e2eTestRefs;
                     refs?.MainWindow?.show?.();
-                    ipcMain.off(BROWSER_HISTORY_PUSH, focus);
+                    ipcMain.off(payload.browserHistoryPush, focus);
                 };
-                ipcMain.on(BROWSER_HISTORY_PUSH, focus);
+                ipcMain.on(payload.browserHistoryPush, focus);
                 wc.send(payload.channel, payload.channelId, payload.teamId, payload.url);
             }, {
                 webContentsId: serverMap[demoMattermostConfig.servers[0].name]![0]!.webContentsId,
                 channel: NOTIFICATION_CLICKED,
+                browserHistoryPush: BROWSER_HISTORY_PUSH,
                 channelId: targetChannel!.id,
                 teamId: targetChannel!.teamId,
                 url: targetChannel!.url!,

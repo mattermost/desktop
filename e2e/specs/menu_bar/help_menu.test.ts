@@ -22,10 +22,8 @@ test.describe('menu_bar/help_menu', () => {
             await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
                 refs.UpdateManager.__e2eCheckForUpdatesCalls = 0;
-                const original = refs.UpdateManager.checkForUpdates.bind(refs.UpdateManager);
-                refs.UpdateManager.checkForUpdates = (...args: unknown[]) => {
+                refs.UpdateManager.checkForUpdates = () => {
                     refs.UpdateManager.__e2eCheckForUpdatesCalls += 1;
-                    return original(...args);
                 };
             });
 

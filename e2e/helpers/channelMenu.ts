@@ -313,7 +313,8 @@ export async function deleteAllBookmarksInBar(win: ServerView): Promise<void> {
         }
         await win.click('[id^="channelBookmarksDotMenuButton-"]');
         await win.click('#channelBookmarksDelete');
-        await win.click('.GenericModal .GenericModal__button.delete, .GenericModal .GenericModal__button.confirm');
+        await win.waitForSelector('.GenericModal', {state: 'visible', timeout: 5_000});
+        await win.click('button:has-text("Yes, delete")');
     }
 }
 

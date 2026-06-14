@@ -9,6 +9,7 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
+import {waitForErrorView} from '../../helpers/errorView';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 
@@ -43,9 +44,7 @@ test(
 
         try {
             await waitForAppReady(app);
-            const mainWindow = app.windows().find((window) => window.url().includes('index'));
-            expect(mainWindow).toBeDefined();
-            await mainWindow!.waitForSelector('.ErrorView', {timeout: 30_000});
+            await waitForErrorView(app);
 
             await stubMessageBoxResponses(app, [
                 {response: 0},
@@ -62,7 +61,8 @@ test(
             });
 
             await expect.poll(async () => {
-                const errorView = await mainWindow!.$('.ErrorView');
+                const mainWindow = app.windows().find((window) => window.url().includes('index'));
+                const errorView = await mainWindow?.$('.ErrorView');
                 return errorView === null;
             }, {
                 timeout: 45_000,

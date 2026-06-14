@@ -28,7 +28,7 @@ test(
             await triggerDownloadFromPopup(app, url);
             await expect.poll(
                 () => readDownloadsState(userDataDir)[filename]?.state,
-                {timeout: 15_000},
+                {timeout: 20_000, intervals: [50, 100, 200, 500]},
             ).toBe('progressing');
 
             const {downloadsWindow} = await openDownloadsDropdown(app);

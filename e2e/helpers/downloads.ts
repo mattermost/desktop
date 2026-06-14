@@ -6,9 +6,10 @@ import * as http from 'http';
 import * as path from 'path';
 
 import type {ElectronApplication} from 'playwright';
+import {expect} from '@playwright/test';
 
 import {waitForAppReady} from './appReadiness';
-import {electronBinaryPath, appDir, demoConfig} from './config';
+import {electronBinaryPath, appDir, emptyConfig} from './config';
 import {waitForLockFileRelease} from './cleanup';
 
 export type DownloadServer = {
@@ -35,11 +36,11 @@ export async function startDownloadServer(
                 const timer = setInterval(() => {
                     sentChunks += 1;
                     response.write(`chunk-${sentChunks}\n`);
-                    if (sentChunks === 20) {
+                    if (sentChunks === 40) {
                         clearInterval(timer);
                         response.end();
                     }
-                }, 200);
+                }, 300);
                 return;
             }
 
@@ -80,9 +81,8 @@ export async function startDownloadServer(
 
 export async function launchAppWithDownloadsDir(userDataDir: string, downloadLocation: string) {
     const config = {
-        ...demoConfig,
+        ...emptyConfig,
         downloadLocation,
-        downloadsPath: downloadLocation,
     };
 
     fs.mkdirSync(userDataDir, {recursive: true});
@@ -147,12 +147,30 @@ export async function triggerDownloadFromPopup(app: ElectronApplication, popupUr
     return popupWindow;
 }
 
-export function readDownloadsState(userDataDir: string): Record<string, {state?: string}> {
+export function readDownloadsState(userDataDir: string): Record<string, {state?: string; location?: string}> {
     try {
         return JSON.parse(fs.readFileSync(path.join(userDataDir, 'downloads.json'), 'utf-8'));
     } catch {
         return {};
     }
+}
+
+export async function waitForDownloadFile(
+    userDataDir: string,
+    downloadLocation: string,
+    filename: string,
+    timeout = 30_000,
+): Promise<string> {
+    let resolvedPath = path.join(downloadLocation, filename);
+    await expect.poll(() => {
+        const entry = readDownloadsState(userDataDir)[filename];
+        if (entry?.location && fs.existsSync(entry.location)) {
+            resolvedPath = entry.location;
+            return true;
+        }
+        return fs.existsSync(path.join(downloadLocation, filename));
+    }, {timeout, message: `Downloaded file "${filename}" should exist on disk`}).toBe(true);
+    return resolvedPath;
 }
 
 export async function closeDownloadTestApp(app: ElectronApplication, userDataDir: string, downloadLocation: string) {

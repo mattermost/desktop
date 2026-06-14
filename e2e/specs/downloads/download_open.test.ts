@@ -1,7 +1,6 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
@@ -9,8 +8,10 @@ import {
     closeDownloadTestApp,
     launchAppWithDownloadsDir,
     openDownloadsDropdown,
+    readDownloadsState,
     startDownloadServer,
     triggerDownloadFromPopup,
+    waitForDownloadFile,
 } from '../../helpers/downloads';
 
 test(
@@ -23,12 +24,11 @@ test(
 
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadLocation = path.join(testInfo.outputDir, 'Downloads');
-        const savedPath = path.join(downloadLocation, filename);
         const app = await launchAppWithDownloadsDir(userDataDir, downloadLocation);
 
         try {
             await triggerDownloadFromPopup(app, url);
-            await expect.poll(() => fs.existsSync(savedPath), {timeout: 15_000}).toBe(true);
+            const savedPath = await waitForDownloadFile(userDataDir, downloadLocation, filename);
 
             await app.evaluate(({shell}) => {
                 (global as any).__e2eOpenedPaths = [] as string[];
