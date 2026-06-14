@@ -3,8 +3,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const {createRequire} = require('module');
 
-const {XMLParser} = require('fast-xml-parser');
+const requireFromE2e = createRequire(path.join(__dirname, '..', 'package.json'));
+const {XMLParser} = requireFromE2e('fast-xml-parser');
 
 const JUNIT_REPORT_PATH = path.join(__dirname, '..', 'test-results', 'e2e-junit.xml');
 

@@ -8,7 +8,6 @@ import {
     closeDownloadTestApp,
     launchAppWithDownloadsDir,
     openDownloadsDropdown,
-    readDownloadsState,
     startDownloadServer,
     triggerDownloadFromPopup,
     waitForDownloadFile,
@@ -28,7 +27,7 @@ test(
 
         try {
             await triggerDownloadFromPopup(app, url);
-            const savedPath = await waitForDownloadFile(userDataDir, downloadLocation, filename);
+            await waitForDownloadFile(userDataDir, downloadLocation, filename);
 
             await app.evaluate(({shell}) => {
                 (global as any).__e2eOpenedPaths = [] as string[];

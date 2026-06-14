@@ -12,7 +12,7 @@ test.use({appConfig: demoMattermostConfig});
 test(
     'deep link navigates to correct server while app is running',
     {tag: ['@P1', '@darwin', '@win32']},
-    async ({electronApp, appReady: _appReady, serverMap}) => {
+    async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -58,7 +58,7 @@ test.describe('deep link server URL without trailing slash', () => {
     test(
         'DL-01 deep link navigates when configured server URL has no trailing slash',
         {tag: ['@P1', '@darwin', '@win32']},
-        async ({electronApp, appReady: _appReady, serverMap}) => {
+        async ({electronApp, serverMap}) => {
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
