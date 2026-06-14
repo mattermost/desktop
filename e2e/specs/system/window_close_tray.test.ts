@@ -19,8 +19,6 @@ test.describe('system/window_close_tray', () => {
         'WIN-02 close button shows quit dialog and keeps app running when user chooses No',
         {tag: ['@P1', '@win32', '@linux']},
         async ({electronApp}) => {
-            test.skip(process.platform === 'darwin', 'macOS hides the window instead of showing the quit dialog');
-
             await expect.poll(
                 () => isMainWindowVisible(electronApp),
                 {timeout: 10_000},

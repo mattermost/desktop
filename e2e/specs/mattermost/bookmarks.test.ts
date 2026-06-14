@@ -90,10 +90,6 @@ test.describe('mattermost/bookmarks', () => {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
-            if (process.platform === 'linux') {
-                test.skip(true, 'shell.openExternal bookmark flow is validated on macOS and Windows');
-                return;
-            }
 
             const firstServer = await loginToOffTopicChannel(serverMap, electronApp);
             const serverEntry = serverMap[bookmarksConfig.servers[0].name]?.[0];

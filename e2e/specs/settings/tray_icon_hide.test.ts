@@ -15,11 +15,6 @@ test.describe('settings/tray_icon_hide', () => {
     test('MM-T1299 Do not show Mattermost icon in the menu bar',
         {tag: ['@P2', '@darwin', '@linux']},
         async ({electronApp}) => {
-            if (process.platform === 'win32') {
-                test.skip(true, 'Tray icon setting applies to macOS and Linux only');
-                return;
-            }
-
             // Verify the tray icon setting can be read from config
             const trayIconConfigAccessible = await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;

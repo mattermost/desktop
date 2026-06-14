@@ -42,11 +42,6 @@ test.describe('dark_mode', () => {
     });
 
     test('MM-T1310 On Mac set Appearance to Dark — macOS ONLY', {tag: ['@P2', '@darwin']}, async ({mainWindow, electronApp}) => {
-        if (process.platform !== 'darwin') {
-            test.skip(true, 'macOS only');
-            return;
-        }
-
         expect(mainWindow).not.toBeNull();
 
         // macOS does not expose "Toggle Dark Mode" in the View menu (linux-only).

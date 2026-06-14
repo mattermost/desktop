@@ -32,11 +32,6 @@ test(
     'SET-01 toggling autostart updates config.json',
     {tag: ['@P1', '@win32', '@linux']},
     async ({electronApp}, testInfo) => {
-        if (process.platform === 'darwin') {
-            test.skip(true, 'Autostart setting is not shown on macOS');
-            return;
-        }
-
         const configFilePath = path.join(testInfo.outputDir, 'userdata', 'config.json');
         const settingsWindow = await openSettingsWindow(electronApp);
         await settingsWindow.click('#settingCategoryButton-general');

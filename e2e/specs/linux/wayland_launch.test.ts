@@ -5,13 +5,8 @@ import {test, expect} from '../../fixtures/index';
 
 test(
     'LNX-05 app launches in a Wayland session',
-    {tag: ['@P2', '@linux']},
+    {tag: ['@P2', '@wayland']},
     async ({electronApp}) => {
-        if (process.env.E2E_WAYLAND !== 'true') {
-            test.skip(true, 'Set E2E_WAYLAND=true to run Wayland launch coverage');
-            return;
-        }
-
         const sessionType = await electronApp.evaluate(() => process.env.XDG_SESSION_TYPE ?? '');
         expect(sessionType.toLowerCase()).toBe('wayland');
 

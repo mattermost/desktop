@@ -3,16 +3,25 @@
 
 import * as os from 'os';
 
-import {defineConfig} from '@playwright/test';
+import {defineConfig, type Project} from '@playwright/test';
 
-let platformGrep: RegExp;
-if (process.platform === 'darwin') {
-    platformGrep = /@all|@darwin/;
-} else if (process.platform === 'win32') {
-    platformGrep = /@all|@win32/;
-} else {
-    platformGrep = /@all|@linux/;
+type Platform = 'linux' | 'darwin' | 'win32';
+
+function getActivePlatform(): Platform {
+    if (process.platform === 'darwin') {
+        return 'darwin';
+    }
+    if (process.platform === 'win32') {
+        return 'win32';
+    }
+    return 'linux';
 }
+
+const PLATFORM_GREP: Record<Platform, RegExp> = {
+    linux: /@all|@linux/,
+    darwin: /@all|@darwin/,
+    win32: /@all|@win32/,
+};
 
 // Each test gets its own isolated userDataDir (testInfo.outputDir/userdata), so each
 // Electron instance has its own SingletonLock — parallel workers never conflict.
@@ -43,6 +52,29 @@ function getReportTag(): string | undefined {
 
 const reportTag = getReportTag();
 const excludePolicyFromMainRun = Boolean(process.env.CI) && process.env.RUN_POLICY_E2E !== 'true';
+const activePlatform = getActivePlatform();
+
+function buildPlatformProjects(): Project[] {
+    const policyFilter = excludePolicyFromMainRun ? {grepInvert: /[/\\]policy[/\\]policy\.test/} : {};
+
+    const projects: Project[] = [
+        {
+            name: activePlatform,
+            grep: PLATFORM_GREP[activePlatform],
+            ...policyFilter,
+        },
+    ];
+
+    if (process.env.E2E_WAYLAND === 'true' && activePlatform === 'linux') {
+        projects.push({
+            name: 'wayland',
+            grep: /@wayland/,
+        });
+    }
+
+    return projects;
+}
+
 const reporters = process.env.CI ? [
     ['blob', {outputDir: 'blob-report'}],
     ['line'],
@@ -80,11 +112,5 @@ export default defineConfig({
         video: 'retain-on-failure',
     },
 
-    projects: [
-        {
-            name: process.platform,
-            grep: platformGrep,
-            ...(excludePolicyFromMainRun ? {grepInvert: /[/\\]policy[/\\]policy\.test/} : {}),
-        },
-    ],
+    projects: buildPlatformProjects(),
 });
