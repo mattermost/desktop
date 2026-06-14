@@ -247,7 +247,9 @@ jobs:
         id: cache-node-modules
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
-          path: node_modules
+          path: |
+            node_modules
+            e2e/node_modules
           enableCrossOsArchive: false
           # v5: new key prefix invalidates legacy v4 blobs that trigger deserialization warnings
           key: ${{ runner.os }}-build-node-modules-v5-${{ hashFiles('**/package-lock.json') }}

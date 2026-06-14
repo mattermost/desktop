@@ -5,10 +5,25 @@ const fs = require('fs');
 const path = require('path');
 const {createRequire} = require('module');
 
-const requireFromE2e = createRequire(path.join(__dirname, '..', 'package.json'));
-const {XMLParser} = requireFromE2e('fast-xml-parser');
-
 const JUNIT_REPORT_PATH = path.join(__dirname, '..', 'test-results', 'e2e-junit.xml');
+
+function getXMLParserClass() {
+    const packageCandidates = [
+        path.join(__dirname, '..', 'package.json'),
+        path.join(__dirname, '..', '..', 'package.json'),
+    ];
+
+    for (const packageJson of packageCandidates) {
+        try {
+            const {XMLParser} = createRequire(packageJson)('fast-xml-parser');
+            return XMLParser;
+        } catch {
+            // try the other package root (e2e/ vs repo root)
+        }
+    }
+
+    throw new Error('fast-xml-parser is not installed. Run npm ci in the repo root and e2e/.');
+}
 
 function toNumber(value) {
     const parsed = parseInt(value, 10);
@@ -202,6 +217,7 @@ function analyzeFlakyTests() {
         };
     }
 
+    const XMLParser = getXMLParserClass();
     const parser = new XMLParser({
         ignoreAttributes: false,
         attributeNamePrefix: '',
