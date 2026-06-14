@@ -1,6 +1,20 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+/**
+ * Post-run audit for specs ported from the legacy electron-mocha RF desktop suite.
+ *
+ * After Playwright finishes, CI reads e2e/test-results/e2e-junit.xml and this script
+ * checks only MIGRATED_SPEC_FILES for tests that were skipped on every retry attempt.
+ * Skips with known-good reasons (platform-only, feature unavailable on server, etc.)
+ * are ignored; anything else is flagged as "unexpected" so a migrated test cannot
+ * silently skip due to a broken hook, missing env var, or wrong tag without showing
+ * up in the GitHub Actions step summary and MIGRATED_UNEXPECTED_SKIPS_* outputs.
+ *
+ * Invoked from .github/workflows/e2e-functional-template.yml (e2e/analyze-flaky-tests).
+ * Keep MIGRATED_SPEC_FILES in sync when adding or renaming ported specs.
+ */
+
 const fs = require('fs');
 const path = require('path');
 
