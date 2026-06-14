@@ -53,6 +53,7 @@ import AutoLauncher from 'main/AutoLauncher';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
+import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
@@ -65,7 +66,7 @@ import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
 import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
-import updateNotifier from 'main/updateNotifier';
+import UpdateManager from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
@@ -99,6 +100,7 @@ import {
 import {
     clearAppCache,
     getDeeplinkingURL,
+    openDeepLink,
     shouldShowTrayIcon,
     updateSpellCheckerLocales,
     wasUpdated,
@@ -298,6 +300,12 @@ async function initializeAfterAppReady() {
         Config,
         TrayIcon: Tray,
         NotificationManager,
+        Diagnostics,
+        UpdateManager,
+    });
+
+    setTestField('__e2eOpenDeepLink', (url: string) => {
+        openDeepLink(url);
     });
 
     setTestField('__e2eClickTrayMenuItem', (label: string) => {
@@ -430,7 +438,7 @@ async function initializeAfterAppReady() {
             log.debug('checkForUpdates');
             if (Config.canUpgrade && Config.autoCheckForUpdates) {
                 setTimeout(() => {
-                    updateNotifier.checkForUpdates(false);
+                    UpdateManager.checkForUpdates(false);
                 }, 5000);
             } else {
                 log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
@@ -438,7 +446,7 @@ async function initializeAfterAppReady() {
         });
     } else if (Config.canUpgrade && Config.autoCheckForUpdates) {
         setTimeout(() => {
-            updateNotifier.checkForUpdates(false);
+            UpdateManager.checkForUpdates(false);
         }, 5000);
     } else {
         log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
