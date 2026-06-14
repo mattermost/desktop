@@ -175,7 +175,6 @@ test.describe('notification_badge/windows_and_linux', () => {
     });
 
     test('MM-T_BADGE_LNX_02 - should account for session expiry in Linux badge count', {tag: ['@P2', '@linux']}, async ({electronApp}) => {
-
         // showBadgeLinux passes mentionCount + 1 to setBadgeCount when sessionExpired
         await triggerBadge(electronApp, true, 2, false);
         const state = await getBadgeState(electronApp);
@@ -250,7 +249,6 @@ test.describe('notification_badge/windows_and_linux', () => {
 
     test.describe('unread setting toggle', () => {
         test('MM-T_BADGE_WIN_09 - unread dot not shown when showUnreadBadgeSetting is false', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
-
             // setting defaults to falsy — do not enable it
             await triggerBadge(electronApp, false, 0, true);
             const state = await getBadgeState(electronApp);

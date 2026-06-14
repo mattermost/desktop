@@ -70,9 +70,9 @@ async function ensureMultipleTeamsViaApi(
         const headerToken = loginRes.headers.get('Token') ?? loginRes.headers.get('token');
         const setCookie = loginRes.headers.get('set-cookie') ?? '';
         const cookieMatch = setCookie.match(/MMAUTHTOKEN=([^;]+)/i);
-        const token = headerToken
-            ?? loginBody.token
-            ?? (cookieMatch ? decodeURIComponent(cookieMatch[1]) : undefined);
+        const token = headerToken ??
+            loginBody.token ??
+            (cookieMatch ? decodeURIComponent(cookieMatch[1]) : undefined);
         if (!token) {
             throw new Error('POST /api/v4/users/login did not return a session token');
         }
