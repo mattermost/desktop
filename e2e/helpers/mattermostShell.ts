@@ -5,6 +5,13 @@ import {expect} from '@playwright/test';
 
 import type {ServerView} from './serverView';
 
+export const POST_TEXTBOX_SELECTOR = [
+    '#post_textbox',
+    '[data-testid="post_textbox"]',
+    '.post-create__input [contenteditable="true"]',
+    '[role="textbox"]',
+].join(', ');
+
 /**
  * Wait until the Mattermost webapp shell is interactive in a server view.
  */
@@ -26,8 +33,110 @@ export async function waitForMattermostShell(
 }
 
 /**
- * Return viewport coordinates for a word inside the post textbox.
- * Used for native spell-check context menus, which require clicking on text.
+ * Reload the server view when the channel shell failed to mount (blank hex background).
+ */
+export async function recoverServerViewIfNeeded(
+    win: ServerView,
+    options?: {channelItem?: string},
+) {
+    const channelItem = options?.channelItem ?? '#sidebarItem_town-square';
+    const healthy = await win.runInRenderer(`
+        return Boolean(
+            document.querySelector('#channelHeaderTitle')
+            && document.querySelector(${JSON.stringify(channelItem)}),
+        );
+    `).catch(() => false);
+
+    if (healthy) {
+        return;
+    }
+
+    await win.runInRenderer('window.location.reload(); return true;', true);
+    await waitForMattermostShell(win, {channelItem});
+}
+
+/**
+ * Type into the post textbox, preferring DOM insertion so Slate keeps text nodes.
+ */
+export async function typeIntoPostTextbox(win: ServerView, text: string): Promise<void> {
+    await win.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 10_000});
+    await win.click(POST_TEXTBOX_SELECTOR);
+
+    const inserted = await win.runInRenderer(`
+        const value = ${JSON.stringify(text)};
+
+        const isVisible = (element) => {
+            if (!element || !element.isConnected) {
+                return false;
+            }
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                return false;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
+
+        const candidates = [
+            document.querySelector('[data-slate-editor="true"]'),
+            document.querySelector('#post_textbox[contenteditable="true"]'),
+            document.querySelector('[data-testid="post_textbox"][contenteditable="true"]'),
+            document.querySelector('#post_textbox'),
+            document.querySelector('[data-testid="post_textbox"]'),
+            document.querySelector('.post-create__input [contenteditable="true"]'),
+            document.querySelector('textarea#post_textbox'),
+        ].filter(Boolean);
+
+        let root = null;
+        for (const candidate of candidates) {
+            if (!isVisible(candidate)) {
+                continue;
+            }
+            if (candidate.matches('[contenteditable="true"], textarea, input')) {
+                root = candidate;
+                break;
+            }
+            const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
+            if (nested && isVisible(nested)) {
+                root = nested;
+                break;
+            }
+        }
+
+        if (!root) {
+            return false;
+        }
+
+        root.focus?.();
+        root.setAttribute('spellcheck', 'true');
+
+        if (root instanceof HTMLTextAreaElement || root instanceof HTMLInputElement) {
+            root.value = value;
+            root.dispatchEvent(new Event('input', {bubbles: true}));
+            return root.value.includes(value.slice(0, 8));
+        }
+
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        document.execCommand('selectAll', false);
+        document.execCommand('delete', false);
+        const insertedText = document.execCommand('insertText', false, value);
+        root.dispatchEvent(new InputEvent('input', {bubbles: true, data: value, inputType: 'insertText'}));
+        const content = root.innerText || root.textContent || '';
+        return insertedText && content.includes(value.slice(0, 8));
+    `, true);
+
+    if (!inserted) {
+        const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+        await win.keyboard.press(`${mod}+A`);
+        await win.keyboard.press('Backspace');
+        await win.keyboard.type(text);
+    }
+}
+
+/**
+ * Select a word in the post textbox and return viewport coordinates for it.
+ * Native spell-check menus require the right-click to land on misspelled text.
  */
 export async function getPostTextboxWordPoint(
     win: ServerView,
@@ -35,32 +144,146 @@ export async function getPostTextboxWordPoint(
 ): Promise<{x: number; y: number} | null> {
     return win.runInRenderer(`
         const target = ${JSON.stringify(word)};
-        const editor = document.querySelector(
-            '#post_textbox, [data-testid="post_textbox"], [role="textbox"]',
-        );
-        if (!editor) {
+
+        const isVisible = (element) => {
+            if (!element || !element.isConnected) {
+                return false;
+            }
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                return false;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
+
+        const resolveEditor = () => {
+            const candidates = [
+                document.querySelector('[data-slate-editor="true"]'),
+                document.querySelector('#post_textbox[contenteditable="true"]'),
+                document.querySelector('[data-testid="post_textbox"][contenteditable="true"]'),
+                document.querySelector('#post_textbox'),
+                document.querySelector('[data-testid="post_textbox"]'),
+                document.querySelector('.post-create__input [contenteditable="true"]'),
+                document.querySelector('.AdvancedTextEditor [contenteditable="true"]'),
+                document.querySelector('[role="textbox"][contenteditable="true"]'),
+                document.querySelector('textarea#post_textbox'),
+            ].filter(Boolean);
+
+            for (const candidate of candidates) {
+                if (!isVisible(candidate)) {
+                    continue;
+                }
+                if (candidate.matches('[contenteditable="true"], textarea, input')) {
+                    return candidate;
+                }
+                const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
+                if (nested && isVisible(nested)) {
+                    return nested;
+                }
+            }
+            return null;
+        };
+
+        const getTextareaWordPoint = (textarea, needle) => {
+            const text = textarea.value || '';
+            const index = text.indexOf(needle);
+            if (index < 0) {
+                return null;
+            }
+
+            textarea.focus();
+            textarea.setSelectionRange(index, index + needle.length);
+
+            const mirror = document.createElement('div');
+            const properties = [
+                'direction', 'boxSizing', 'width', 'height', 'overflowX', 'overflowY',
+                'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+                'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+                'fontStyle', 'fontVariant', 'fontWeight', 'fontStretch', 'fontSize',
+                'fontSizeAdjust', 'lineHeight', 'fontFamily', 'textAlign', 'textTransform',
+                'textIndent', 'textDecoration', 'letterSpacing', 'wordSpacing', 'whiteSpace',
+            ];
+            const computed = window.getComputedStyle(textarea);
+            mirror.style.position = 'absolute';
+            mirror.style.visibility = 'hidden';
+            mirror.style.whiteSpace = 'pre-wrap';
+            mirror.style.wordWrap = 'break-word';
+            for (const property of properties) {
+                mirror.style[property] = computed[property];
+            }
+            mirror.style.width = computed.width;
+            mirror.textContent = text.slice(0, index);
+            const marker = document.createElement('span');
+            marker.textContent = text.slice(index, index + needle.length) || '.';
+            mirror.appendChild(marker);
+            document.body.appendChild(mirror);
+            const markerRect = marker.getBoundingClientRect();
+            const textareaRect = textarea.getBoundingClientRect();
+            document.body.removeChild(mirror);
+
+            return {
+                x: Math.round(textareaRect.left + markerRect.left),
+                y: Math.round(textareaRect.top + markerRect.top + (markerRect.height / 2)),
+            };
+        };
+
+        const findRangeInRoot = (root, needle) => {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            let node = walker.nextNode();
+            while (node) {
+                const text = node.textContent || '';
+                const index = text.indexOf(needle);
+                if (index >= 0) {
+                    const range = document.createRange();
+                    range.setStart(node, index);
+                    range.setEnd(node, index + needle.length);
+                    const rect = range.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        return {range, rect};
+                    }
+                }
+                node = walker.nextNode();
+            }
+            return null;
+        };
+
+        const root = resolveEditor();
+        if (!root) {
             return null;
         }
 
-        const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
-        let node = walker.nextNode();
-        while (node) {
-            const text = node.textContent || '';
-            const index = text.indexOf(target);
-            if (index >= 0) {
-                const range = document.createRange();
-                range.setStart(node, index);
-                range.setEnd(node, index + target.length);
-                const rect = range.getBoundingClientRect();
-                if (rect.width > 0 && rect.height > 0) {
-                    return {
-                        x: Math.round(rect.left + (rect.width / 2)),
-                        y: Math.round(rect.top + (rect.height / 2)),
-                    };
-                }
-            }
-            node = walker.nextNode();
+        root.setAttribute('spellcheck', 'true');
+
+        if (root instanceof HTMLTextAreaElement || root instanceof HTMLInputElement) {
+            return getTextareaWordPoint(root, target);
         }
-        return null;
-    `);
+
+        const match = findRangeInRoot(root, target);
+        if (!match) {
+            const fullText = root.innerText || root.textContent || '';
+            const index = fullText.indexOf(target);
+            if (index < 0) {
+                return null;
+            }
+
+            const rect = root.getBoundingClientRect();
+            const ratio = (index + (target.length / 2)) / Math.max(fullText.length, 1);
+            root.focus?.();
+            return {
+                x: Math.round(rect.left + Math.min(rect.width * ratio, Math.max(rect.width - 8, 8))),
+                y: Math.round(rect.top + Math.max(rect.height * 0.7, 20)),
+            };
+        }
+
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(match.range);
+        root.focus?.();
+
+        return {
+            x: Math.round(match.rect.left + (match.rect.width / 2)),
+            y: Math.round(match.rect.top + (match.rect.height / 2)),
+        };
+    `, true);
 }

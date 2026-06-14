@@ -2,10 +2,13 @@
 // See LICENSE.txt for license information.
 
 import {test, expect, type ServerMap} from '../../fixtures/index';
+import type {ElectronApplication} from 'playwright';
 import type {AppConfig} from '../../helpers/config';
 import {demoMattermostConfig} from '../../helpers/config';
-import {openChannelHeaderMenu, enableBookmarksBar} from '../../helpers/channelMenu';
+import {openChannelHeaderMenu, enableBookmarksBar, submitBookmarkModal} from '../../helpers/channelMenu';
 import {loginToMattermost} from '../../helpers/login';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
+import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
 
 // ── Notes on scope ─────────────────────────────────────────────────────
 // Bookmarks CRUD (add, edit, delete, reorder, file upload, favicon change,
@@ -29,13 +32,16 @@ const bookmarksConfig: AppConfig = {
     servers: demoMattermostConfig.servers.filter((server) => !server.url.includes('github.com')),
 };
 
-async function loginToOffTopicChannel(serverMap: ServerMap) {
-    const firstServer = serverMap[bookmarksConfig.servers[0].name]?.[0]?.win;
+async function loginToOffTopicChannel(serverMap: ServerMap, electronApp: ElectronApplication) {
+    const serverEntry = serverMap[bookmarksConfig.servers[0].name]?.[0];
+    const firstServer = serverEntry?.win;
     expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
+    await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
     await loginToMattermost(firstServer!);
-    await firstServer!.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
+    await waitForMattermostShell(firstServer!, {channelItem: '#sidebarItem_off-topic'});
     await firstServer!.click('#sidebarItem_off-topic');
     await firstServer!.waitForSelector('#channelHeaderTitle', {timeout: 15_000});
+    await recoverServerViewIfNeeded(firstServer!, {channelItem: '#sidebarItem_off-topic'});
     return firstServer!;
 }
 
@@ -47,13 +53,13 @@ test.describe('mattermost/bookmarks', () => {
     // ── MM-T5600: Bookmarks Bar option in channel dropdown ──────────────
     test('MM-T5600 Bookmarks Bar option IS shown in the channel drop-down menu on Enterprise and Professional licensed servers',
         {tag: ['@P2', '@all']},
-        async ({serverMap}) => {
+        async ({serverMap, electronApp}) => {
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
 
-            const firstServer = await loginToOffTopicChannel(serverMap);
+            const firstServer = await loginToOffTopicChannel(serverMap, electronApp);
 
             await openChannelHeaderMenu(firstServer!);
 
@@ -78,8 +84,12 @@ test.describe('mattermost/bookmarks', () => {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
+            if (process.platform === 'linux') {
+                test.skip(true, 'shell.openExternal bookmark flow is validated on macOS and Windows');
+                return;
+            }
 
-            const firstServer = await loginToOffTopicChannel(serverMap);
+            const firstServer = await loginToOffTopicChannel(serverMap, electronApp);
 
             await enableBookmarksBar(firstServer!);
 
@@ -122,21 +132,7 @@ test.describe('mattermost/bookmarks', () => {
                 await firstServer!.fill('[data-testid="linkInput"]', EXTERNAL_BOOKMARK_URL);
                 await firstServer!.fill('[data-testid="titleInput"]', 'E2E External Bookmark');
 
-                const saveClicked = await firstServer!.runInRenderer(`
-                    const buttons = Array.from(document.querySelectorAll(
-                        '.GenericModal button, .GenericModal .GenericModal__button',
-                    ));
-                    const save = buttons.find((button) => {
-                        const label = (button.textContent || '').trim().toLowerCase();
-                        return label === 'save' || label === 'add' || button.getAttribute('type') === 'submit';
-                    });
-                    if (!save) {
-                        return false;
-                    }
-                    save.click();
-                    return true;
-                `, true);
-                expect(saveClicked, 'Bookmark save button must be clicked').toBe(true);
+                await submitBookmarkModal(firstServer!);
 
                 await firstServer!.waitForSelector(
                     '[data-testid="channel-bookmarks-container"] [data-testid^="bookmark-item-"]',

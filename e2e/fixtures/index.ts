@@ -12,6 +12,7 @@ import {_electron as electron} from 'playwright';
 
 import {waitForAppReady} from '../helpers/appReadiness';
 import {waitForLockFileRelease} from '../helpers/cleanup';
+import {closeDownloadsDropdownIfOpen} from '../helpers/downloadsDropdown';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
 
@@ -161,6 +162,7 @@ export const test = base.extend<Fixtures>({
     // as a dependency — Playwright runs it exactly once and tears it down once.
     appReady: async ({electronApp}, use) => {
         await waitForAppReady(electronApp);
+        await closeDownloadsDropdownIfOpen(electronApp);
         await use();
     },
 

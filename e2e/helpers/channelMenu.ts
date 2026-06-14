@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {expect} from '@playwright/test';
+
 import type {ServerView} from './serverView';
 
 const CHANNEL_HEADER_MENU_TRIGGER = [
@@ -90,6 +92,9 @@ export async function clickCopyLinkInMenu(win: ServerView): Promise<void> {
 /**
  * Enable the channel bookmarks bar via the channel header menu.
  * Bookmarks saved while the bar is hidden may not appear in the bar UI.
+ *
+ * The bar container is not rendered until at least one bookmark exists, so this
+ * helper only toggles the preference — callers wait for bookmark items later.
  */
 export async function enableBookmarksBar(win: ServerView): Promise<void> {
     const alreadyVisible = await win.runInRenderer(`
@@ -120,5 +125,37 @@ export async function enableBookmarksBar(win: ServerView): Promise<void> {
         throw new Error('Bookmarks Bar menu item not found in channel header menu');
     }
     await win.keyboard.press('Escape');
-    await win.waitForSelector('[data-testid="channel-bookmarks-container"]', {timeout: 15_000});
+}
+
+/** Submit the channel bookmark create/edit modal once the primary action is enabled. */
+export async function submitBookmarkModal(win: ServerView): Promise<void> {
+    await expect.poll(async () => win.runInRenderer(`
+        const buttons = Array.from(document.querySelectorAll(
+            '.GenericModal button, .GenericModal .GenericModal__button',
+        ));
+        const save = buttons.find((button) => {
+            const label = (button.textContent || '').trim().toLowerCase();
+            return label.includes('add bookmark')
+                || (label.includes('save') && !label.includes('cancel'));
+        });
+        return Boolean(save && (!(save instanceof HTMLButtonElement) || !save.disabled));
+    `), {timeout: 15_000, message: 'Bookmark modal save button must become enabled'}).toBe(true);
+
+    const clicked = await win.runInRenderer(`
+        const buttons = Array.from(document.querySelectorAll(
+            '.GenericModal button, .GenericModal .GenericModal__button',
+        ));
+        const save = buttons.find((button) => {
+            const label = (button.textContent || '').trim().toLowerCase();
+            return label.includes('add bookmark')
+                || (label.includes('save') && !label.includes('cancel'));
+        });
+        if (!save || (save instanceof HTMLButtonElement && save.disabled)) {
+            return false;
+        }
+        save.click();
+        return true;
+    `, true);
+    expect(clicked, 'Bookmark modal save button must be clicked').toBe(true);
+    await win.waitForSelector('[data-testid="linkInput"]', {state: 'detached', timeout: 15_000});
 }

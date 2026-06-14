@@ -97,7 +97,10 @@ test.describe('application', () => {
             const freshView = freshMap[serverName]?.[0]?.win;
             return freshView?.url() ?? '';
         }, {timeout: 30_000, message: 'deep-linked webContents did not navigate to the expected URL'}).toContain('github.com/test/url');
-        const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
-        expect(dropdownButtonText).toBe('github');
+
+        await expect.poll(
+            () => mainWindow.innerText('.ServerDropdownButton'),
+            {timeout: 15_000, message: 'deep link should activate the github server in the UI'},
+        ).toBe('github');
     });
 });

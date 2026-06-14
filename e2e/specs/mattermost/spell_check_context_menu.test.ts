@@ -4,7 +4,8 @@
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {getPostTextboxWordPoint, waitForMattermostShell} from '../../helpers/mattermostShell';
+import {getPostTextboxWordPoint, POST_TEXTBOX_SELECTOR, recoverServerViewIfNeeded, typeIntoPostTextbox, waitForMattermostShell} from '../../helpers/mattermostShell';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 
 // ── MM-T829: Desktop App shows spell check options when you right click ─
 // Spell-check suggestions are rendered in Chromium's native context menu,
@@ -30,8 +31,11 @@ test.describe('mattermost/spell_check_context_menu', () => {
             const firstServer = serverEntry?.win;
             expect(firstServer, 'Server view must exist').toBeTruthy();
 
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await loginToMattermost(firstServer!);
             await waitForMattermostShell(firstServer!);
+            await recoverServerViewIfNeeded(firstServer!);
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
 
             const spellCheckEnabled = await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
@@ -61,14 +65,29 @@ test.describe('mattermost/spell_check_context_menu', () => {
                 });
             }, serverEntry!.webContentsId);
 
-            const textboxSelector = '#post_textbox, [data-testid="post_textbox"], [role="textbox"]';
-            await firstServer!.waitForSelector(textboxSelector, {timeout: 10_000});
-            await firstServer!.click(textboxSelector);
-            await firstServer!.fill(textboxSelector, '');
-            await firstServer!.keyboard.type(MISSPELLED_TEXT);
+            const textboxSelector = POST_TEXTBOX_SELECTOR;
+            await typeIntoPostTextbox(firstServer!, MISSPELLED_TEXT);
+
+            await expect.poll(
+                async () => firstServer!.runInRenderer(`
+                    const editor = document.querySelector('[data-slate-editor="true"], #post_textbox, [data-testid="post_textbox"]');
+                    const text = editor instanceof HTMLTextAreaElement
+                        ? editor.value
+                        : (editor?.textContent || '');
+                    return text.includes(${JSON.stringify(TARGET_WORD)});
+                `),
+                {timeout: 15_000, message: 'Misspelled text must be present in the post textbox'},
+            ).toBe(true);
+
+            await expect.poll(
+                () => getPostTextboxWordPoint(firstServer!, TARGET_WORD),
+                {timeout: 15_000, message: 'Misspelled word must render in the post textbox'},
+            ).not.toBeNull();
 
             const point = await getPostTextboxWordPoint(firstServer!, TARGET_WORD);
             expect(point, 'Misspelled word must be on screen for spell-check context menu').toBeTruthy();
+
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
 
             await electronApp.evaluate(({webContents}, payload) => {
                 const wc = webContents.fromId(payload.id);
@@ -76,6 +95,21 @@ test.describe('mattermost/spell_check_context_menu', () => {
                     throw new Error(`webContents ${payload.id} is not available`);
                 }
                 wc.focus();
+                wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
+                wc.sendInputEvent({
+                    type: 'mouseDown',
+                    x: payload.x,
+                    y: payload.y,
+                    button: 'left',
+                    clickCount: 2,
+                });
+                wc.sendInputEvent({
+                    type: 'mouseUp',
+                    x: payload.x,
+                    y: payload.y,
+                    button: 'left',
+                    clickCount: 2,
+                });
                 wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
                 wc.sendInputEvent({
                     type: 'mouseDown',

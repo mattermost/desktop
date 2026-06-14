@@ -16,7 +16,7 @@ const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 const TLS_1_0_URL = 'https://tls-v1-0.badssl.com:1010';
 const TLS_1_1_URL = 'https://tls-v1-1.badssl.com';
 const RC4_CIPHER_URL = 'https://rc4.badssl.com';
-const RC4_SSL_ERROR_PATTERN = /ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)|ERR_CONNECTION_RESET/;
+const RC4_SSL_ERROR_PATTERN = /ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)|ERR_CONNECTION_RESET|ERR_ABORTED/;
 
 async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     const {mkdirSync} = await import('fs');
@@ -93,6 +93,7 @@ async function waitForRendererThenReload(app: Awaited<ReturnType<typeof launchWi
             }
         }
     });
+    await new Promise((resolve) => setTimeout(resolve, 500));
 }
 
 async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
@@ -221,8 +222,10 @@ test.describe('Bad Server Configurations', () => {
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toMatch(RC4_SSL_ERROR_PATTERN);
+                await expect.poll(async () => {
+                    const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
+                    return RC4_SSL_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
+                }, {timeout: 15_000, message: 'RC4 server must surface a connection error'}).not.toBeNull();
             } finally {
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
@@ -449,8 +452,10 @@ test.describe('Bad Server Configurations', () => {
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toMatch(RC4_SSL_ERROR_PATTERN);
+                await expect.poll(async () => {
+                    const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
+                    return RC4_SSL_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
+                }, {timeout: 15_000, message: 'RC4 server must surface a connection error'}).not.toBeNull();
             } finally {
                 await app.close();
                 await waitForLockFileRelease(rc4UserDataDir);

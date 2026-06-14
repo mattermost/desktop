@@ -5,6 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {openSidebarChannelMenu} from '../../helpers/channelMenu';
 import {loginToMattermost} from '../../helpers/login';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {ensureMultipleTeams} from '../../helpers/team';
 
 // ── MM-T1307: Right-click a channel name / team name in LHS ────────────
@@ -18,15 +19,17 @@ test.describe('mattermost/context_menu', () => {
 
     test('MM-T1307 Right-click a channel name in LHS shows context menu',
         {tag: ['@P2', '@all']},
-        async ({serverMap}) => {
+        async ({electronApp, serverMap}) => {
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
 
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
+            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+            const firstServer = serverEntry?.win;
             expect(firstServer, 'Server view must exist').toBeTruthy();
 
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await loginToMattermost(firstServer!);
             await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
@@ -46,19 +49,23 @@ test.describe('mattermost/context_menu', () => {
 
     test('MM-T1307_2 Right-click a team name in LHS shows context menu',
         {tag: ['@P2', '@all']},
-        async ({serverMap}) => {
+        async ({electronApp, serverMap}) => {
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
             }
 
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
+            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+            const firstServer = serverEntry?.win;
             expect(firstServer, 'Server view must exist').toBeTruthy();
 
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await loginToMattermost(firstServer!);
             await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
-            await ensureMultipleTeams(firstServer!);
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
+            await ensureMultipleTeams(electronApp, firstServer!, serverEntry!.webContentsId);
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await firstServer!.waitForSelector('#teamSidebarWrapper [id$="TeamButton"]', {timeout: 15_000});
 
             await firstServer!.click('#teamSidebarWrapper [id$="TeamButton"]', {button: 'right'});
