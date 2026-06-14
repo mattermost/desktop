@@ -27,8 +27,8 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
 
                 const servers = refs.ServerManager.getAllServers();
                 return servers.flatMap((server: {id: string; name: string}) => {
-                    const views = refs.ViewManager.getViewsByServerId(server.id);
-                    return views.map((view: {id: string}) => {
+                    const orderedTabs = refs.TabManager.getOrderedTabsForServer(server.id);
+                    return orderedTabs.map((view: {id: string}) => {
                         const webContentsView = refs.WebContentsManager.getView(view.id);
                         if (!webContentsView) {
                             return null;
@@ -64,10 +64,6 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
                 webContentsId: entry.webContentsId,
             });
         }
-
-        Object.values(map).forEach((serverEntries) => {
-            serverEntries.sort((left, right) => left.webContentsId - right.webContentsId);
-        });
 
         if (Object.keys(map).length > 0) {
             return map;

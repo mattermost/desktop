@@ -86,3 +86,39 @@ export async function clickCopyLinkInMenu(win: ServerView): Promise<void> {
         }
     }
 }
+
+/**
+ * Enable the channel bookmarks bar via the channel header menu.
+ * Bookmarks saved while the bar is hidden may not appear in the bar UI.
+ */
+export async function enableBookmarksBar(win: ServerView): Promise<void> {
+    const alreadyVisible = await win.runInRenderer(`
+        const container = document.querySelector('[data-testid="channel-bookmarks-container"]');
+        if (!container) {
+            return false;
+        }
+        const rect = container.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    `);
+    if (alreadyVisible) {
+        return;
+    }
+
+    await openChannelHeaderMenu(win);
+    const toggled = await win.runInRenderer(`
+        const items = Array.from(document.querySelectorAll(
+            '[role="menuitem"], .MenuItem, [id^="channel-menu-"]',
+        ));
+        const barItem = items.find((item) => /bookmarks bar/i.test((item.textContent || '').trim()));
+        if (!barItem) {
+            return false;
+        }
+        barItem.click();
+        return true;
+    `, true);
+    if (!toggled) {
+        throw new Error('Bookmarks Bar menu item not found in channel header menu');
+    }
+    await win.keyboard.press('Escape');
+    await win.waitForSelector('[data-testid="channel-bookmarks-container"]', {timeout: 15_000});
+}

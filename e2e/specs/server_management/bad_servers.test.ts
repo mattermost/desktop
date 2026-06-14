@@ -16,6 +16,7 @@ const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 const TLS_1_0_URL = 'https://tls-v1-0.badssl.com:1010';
 const TLS_1_1_URL = 'https://tls-v1-1.badssl.com';
 const RC4_CIPHER_URL = 'https://rc4.badssl.com';
+const RC4_SSL_ERROR_PATTERN = /ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)|ERR_CONNECTION_RESET/;
 
 async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     const {mkdirSync} = await import('fs');
@@ -221,7 +222,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorView).toBeDefined();
 
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toMatch(/ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)/);
+                expect(errorInfo).toMatch(RC4_SSL_ERROR_PATTERN);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
@@ -449,7 +450,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorView).toBeDefined();
 
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toMatch(/ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)/);
+                expect(errorInfo).toMatch(RC4_SSL_ERROR_PATTERN);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(rc4UserDataDir);

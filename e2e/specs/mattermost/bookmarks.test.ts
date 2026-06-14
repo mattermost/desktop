@@ -4,7 +4,7 @@
 import {test, expect, type ServerMap} from '../../fixtures/index';
 import type {AppConfig} from '../../helpers/config';
 import {demoMattermostConfig} from '../../helpers/config';
-import {openChannelHeaderMenu} from '../../helpers/channelMenu';
+import {openChannelHeaderMenu, enableBookmarksBar} from '../../helpers/channelMenu';
 import {loginToMattermost} from '../../helpers/login';
 
 // ── Notes on scope ─────────────────────────────────────────────────────
@@ -80,6 +80,8 @@ test.describe('mattermost/bookmarks', () => {
             }
 
             const firstServer = await loginToOffTopicChannel(serverMap);
+
+            await enableBookmarksBar(firstServer!);
 
             // Intercept shell.openExternal — canonical pattern from external_links.test.ts
             await electronApp.evaluate(({shell}) => {

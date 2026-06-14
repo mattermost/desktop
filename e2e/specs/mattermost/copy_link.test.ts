@@ -3,7 +3,7 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
-import {COPY_LINK_SELECTORS, openSidebarChannelMenu} from '../../helpers/channelMenu';
+import {clickCopyLinkInMenu, openSidebarChannelMenu} from '../../helpers/channelMenu';
 import {loginToMattermost} from '../../helpers/login';
 
 test.describe('copylink', () => {
@@ -24,23 +24,7 @@ test.describe('copylink', () => {
 
         await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         await openSidebarChannelMenu(firstServer, '#sidebarItem_town-square');
-
-        let copyLinkClicked = false;
-        const copyLinkDeadline = Date.now() + 15_000;
-        while (!copyLinkClicked && Date.now() < copyLinkDeadline) {
-            for (const selector of COPY_LINK_SELECTORS) {
-                const candidate = await firstServer.$(selector);
-                if (candidate) {
-                    await firstServer.click(selector);
-                    copyLinkClicked = true;
-                    break;
-                }
-            }
-            if (!copyLinkClicked) {
-                await new Promise((resolve) => setTimeout(resolve, 200));
-            }
-        }
-        expect(copyLinkClicked, '"Copy Link" must be clicked in the channel menu').toBe(true);
+        await clickCopyLinkInMenu(firstServer);
 
         await expect.poll(
             async () => electronApp.evaluate(({clipboard}) => clipboard.readText()),

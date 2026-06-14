@@ -4,11 +4,15 @@
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {getPostTextboxWordPoint, waitForMattermostShell} from '../../helpers/mattermostShell';
 
 // ── MM-T829: Desktop App shows spell check options when you right click ─
 // Spell-check suggestions are rendered in Chromium's native context menu,
 // not the webapp's `.Menu` components. Listen for the `context-menu` event
 // on the server webContents and inspect dictionarySuggestions there.
+
+const MISSPELLED_TEXT = 'Thiss is a mispelled worrd';
+const TARGET_WORD = 'mispelled';
 
 test.describe('mattermost/spell_check_context_menu', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -27,7 +31,7 @@ test.describe('mattermost/spell_check_context_menu', () => {
             expect(firstServer, 'Server view must exist').toBeTruthy();
 
             await loginToMattermost(firstServer!);
-            await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+            await waitForMattermostShell(firstServer!);
 
             const spellCheckEnabled = await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
@@ -60,20 +64,11 @@ test.describe('mattermost/spell_check_context_menu', () => {
             const textboxSelector = '#post_textbox, [data-testid="post_textbox"], [role="textbox"]';
             await firstServer!.waitForSelector(textboxSelector, {timeout: 10_000});
             await firstServer!.click(textboxSelector);
-            await firstServer!.keyboard.type('Thiss is a mispelled worrd');
+            await firstServer!.fill(textboxSelector, '');
+            await firstServer!.keyboard.type(MISSPELLED_TEXT);
 
-            const point = await firstServer!.evaluate(() => {
-                const el = document.querySelector('#post_textbox, [data-testid="post_textbox"], [role="textbox"]');
-                if (!el) {
-                    return null;
-                }
-                const rect = el.getBoundingClientRect();
-                return {
-                    x: Math.round(rect.left + (rect.width / 2)),
-                    y: Math.round(rect.top + (rect.height / 2)),
-                };
-            });
-            expect(point, 'Post textbox must be on screen for spell-check context menu').toBeTruthy();
+            const point = await getPostTextboxWordPoint(firstServer!, TARGET_WORD);
+            expect(point, 'Misspelled word must be on screen for spell-check context menu').toBeTruthy();
 
             await electronApp.evaluate(({webContents}, payload) => {
                 const wc = webContents.fromId(payload.id);

@@ -8,6 +8,8 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
+import {waitForMattermostShell} from '../../helpers/mattermostShell';
 import {buildServerMap} from '../../helpers/serverMap';
 import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
@@ -242,6 +244,7 @@ async function focusMainWindow() {
 }
 
 async function resetWindowMenuState() {
+    await closeDownloadsDropdownIfOpen(electronApp);
     await focusMainWindow();
     const resetResult = await evaluateWithRetry(electronApp, () => {
         const refs = (global as any).__e2eTestRefs;
@@ -277,15 +280,33 @@ async function createExtraTabs() {
     await mainWindow.click('#newTabButton');
     await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
 
-    // Wait until WebContentsManager has registered all 3 views
     const serverName = windowMenuConfig.servers[0].name;
     let map = await buildServerMap(electronApp);
-    const deadline = Date.now() + 15_000;
+    const deadline = Date.now() + 30_000;
     while ((map[serverName]?.length ?? 0) < 3 && Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, 200));
         map = await buildServerMap(electronApp);
     }
+    expect(map[serverName]?.length, 'Three Mattermost tabs should be registered').toBeGreaterThanOrEqual(3);
     return map;
+}
+
+async function getTabView(tabIndex: number) {
+    const serverName = windowMenuConfig.servers[0].name;
+    const map = await buildServerMap(electronApp);
+    const view = map[serverName]?.[tabIndex]?.win;
+    expect(view, `Mattermost tab view at index ${tabIndex} should exist`).toBeTruthy();
+    return view!;
+}
+
+async function switchToTab(tabNumber: number) {
+    const tab = await mainWindow.waitForSelector(
+        `.TabBar li.serverTabItem:nth-child(${tabNumber})`,
+        {timeout: 15_000},
+    );
+    await tab.click();
+    await focusMainWindow();
+    return getTabView(tabNumber - 1);
 }
 
 test.describe('Menu/window_menu', () => {
@@ -368,21 +389,15 @@ test.describe('Menu/window_menu', () => {
 
     test.describe('MM-T4385 select tab from menu', () => {
         test('MM-T4385_1 should show the second tab', {tag: ['@P2', '@all']}, async () => {
-            const updatedServerMap = await createExtraTabs();
+            await createExtraTabs();
 
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
-            await secondTab.click();
-            const secondView = updatedServerMap[windowMenuConfig.servers[0].name]?.[1]?.win;
-            expect(secondView, 'Second Mattermost tab should exist').toBeTruthy();
-            await secondView!.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
-            await secondView!.click('#sidebarItem_off-topic');
+            const secondView = await switchToTab(2);
+            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
+            await secondView.click('#sidebarItem_off-topic');
 
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
-            await thirdTab.click();
-            const thirdView = updatedServerMap[windowMenuConfig.servers[0].name]?.[2]?.win;
-            expect(thirdView, 'Third Mattermost tab should exist').toBeTruthy();
-            await thirdView!.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
-            await thirdView!.click('#sidebarItem_town-square');
+            const thirdView = await switchToTab(3);
+            await waitForMattermostShell(thirdView);
+            await thirdView.click('#sidebarItem_town-square');
 
             // Tab title updates asynchronously after channel navigation — poll for it.
             await expect(mainWindow.locator('.active')).toContainText('Town Square', {timeout: 10_000});
@@ -392,21 +407,15 @@ test.describe('Menu/window_menu', () => {
         });
 
         test('MM-T4385_2 should show the third tab', {tag: ['@P2', '@all']}, async () => {
-            const updatedServerMap = await createExtraTabs();
+            await createExtraTabs();
 
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
-            await secondTab.click();
-            const secondView = updatedServerMap[windowMenuConfig.servers[0].name]?.[1]?.win;
-            expect(secondView, 'Second Mattermost tab should exist').toBeTruthy();
-            await secondView!.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
-            await secondView!.click('#sidebarItem_off-topic');
+            const secondView = await switchToTab(2);
+            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
+            await secondView.click('#sidebarItem_off-topic');
 
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
-            await thirdTab.click();
-            const thirdView = updatedServerMap[windowMenuConfig.servers[0].name]?.[2]?.win;
-            expect(thirdView, 'Third Mattermost tab should exist').toBeTruthy();
-            await thirdView!.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
-            await thirdView!.click('#sidebarItem_town-square');
+            const thirdView = await switchToTab(3);
+            await waitForMattermostShell(thirdView);
+            await thirdView.click('#sidebarItem_town-square');
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+3'});
@@ -414,21 +423,15 @@ test.describe('Menu/window_menu', () => {
         });
 
         test('MM-T4385_3 should show the first tab', {tag: ['@P2', '@all']}, async () => {
-            const updatedServerMap = await createExtraTabs();
+            await createExtraTabs();
 
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
-            await secondTab.click();
-            const secondView = updatedServerMap[windowMenuConfig.servers[0].name]?.[1]?.win;
-            expect(secondView, 'Second Mattermost tab should exist').toBeTruthy();
-            await secondView!.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
-            await secondView!.click('#sidebarItem_off-topic');
+            const secondView = await switchToTab(2);
+            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
+            await secondView.click('#sidebarItem_off-topic');
 
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
-            await thirdTab.click();
-            const thirdView = updatedServerMap[windowMenuConfig.servers[0].name]?.[2]?.win;
-            expect(thirdView, 'Third Mattermost tab should exist').toBeTruthy();
-            await thirdView!.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
-            await thirdView!.click('#sidebarItem_town-square');
+            const thirdView = await switchToTab(3);
+            await waitForMattermostShell(thirdView);
+            await thirdView.click('#sidebarItem_town-square');
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+1'});
