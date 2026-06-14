@@ -21,7 +21,7 @@ async function setDarkModeConfig(electronApp: import('playwright').ElectronAppli
         const refs = (global as any).__e2eTestRefs;
         const Config = refs?.Config;
         if (!Config) {
-            return;
+            throw new Error('__e2eTestRefs.Config is unavailable');
         }
         Config.set('darkMode', darkMode);
         ipcMain.emit('emit-configuration', null, Config.data);

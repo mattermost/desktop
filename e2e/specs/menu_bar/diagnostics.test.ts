@@ -13,6 +13,16 @@ test(
         await expect.poll(async () => {
             return electronApp.evaluate(() => {
                 const diagnostics = (global as any).__e2eTestRefs?.Diagnostics;
+                return diagnostics?.isRunning?.() ?? false;
+            });
+        }, {
+            timeout: 30_000,
+            message: 'Diagnostics.run should start after choosing Help → Run diagnostics',
+        }).toBe(true);
+
+        await expect.poll(async () => {
+            return electronApp.evaluate(() => {
+                const diagnostics = (global as any).__e2eTestRefs?.Diagnostics;
                 return diagnostics?.isRunning?.() ?? true;
             });
         }, {

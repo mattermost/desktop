@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {demoMattermostConfig} from '../../helpers/config';
 import {openSidebarChannelMenu, openTeamSidebarContextMenu, listenForNativeContextMenu, waitForNativeContextMenu} from '../../helpers/channelMenu';
+import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {ensureMultipleTeams} from '../../helpers/team';

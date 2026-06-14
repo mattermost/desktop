@@ -1,11 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {BROWSER_HISTORY_PUSH, NOTIFICATION_CLICKED} from '../../../src/common/communication';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
-import {NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH} from '../../../src/common/communication';
 
 test.use({appConfig: demoMattermostConfig});
 test.setTimeout(120_000);

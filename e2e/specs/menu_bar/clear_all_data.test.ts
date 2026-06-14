@@ -11,13 +11,15 @@ test(
     async ({electronApp, mainWindow}) => {
         expect(mainWindow).toBeDefined();
 
+        const serverButtonText = await mainWindow!.innerText('.ServerDropdownButton');
+
         await stubMessageBoxResponses(electronApp, [{response: 1}]);
         try {
             await clickApplicationMenuItem(electronApp, 'view', {labelIncludes: 'Clear All Data'});
             await expect.poll(
-                () => electronApp.windows().some((window) => window.url().includes('index')),
-                {timeout: 10_000},
-            ).toBe(true);
+                () => mainWindow!.innerText('.ServerDropdownButton'),
+                {timeout: 10_000, message: 'Canceling Clear All Data should leave the active server unchanged'},
+            ).toBe(serverButtonText);
         } finally {
             await restoreMessageBox(electronApp);
         }

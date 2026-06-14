@@ -58,7 +58,7 @@ export async function openSidebarChannelMenu(win: ServerView, channelItemSelecto
         `${channelItemSelector} .SidebarMenu button`,
     ].join(', ');
 
-    await win.waitForSelector(menuButtonSelector, {state: 'attached', timeout: 15_000});
+    await win.waitForSelector(menuButtonSelector, {state: 'visible', timeout: 15_000});
     await win.click(menuButtonSelector);
     await waitForCopyLinkInMenu(win);
 }

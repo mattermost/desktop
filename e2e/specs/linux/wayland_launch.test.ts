@@ -6,14 +6,13 @@ import {test, expect} from '../../fixtures/index';
 test(
     'LNX-05 app launches in a Wayland session',
     {tag: ['@P2', '@wayland']},
-    async ({electronApp}) => {
+    async ({electronApp, mainWindow}) => {
         const sessionType = await electronApp.evaluate(() => process.env.XDG_SESSION_TYPE ?? '');
         expect(sessionType.toLowerCase()).toBe('wayland');
 
-        const mainWindow = electronApp.windows().find((window) => window.url().includes('index'));
         expect(mainWindow).toBeDefined();
         await expect.poll(
-            () => mainWindow!.evaluate(() => document.readyState === 'complete'),
+            () => mainWindow.evaluate(() => document.readyState === 'complete'),
             {timeout: 15_000},
         ).toBe(true);
     },

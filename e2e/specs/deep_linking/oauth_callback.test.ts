@@ -9,7 +9,7 @@ import {buildServerMap} from '../../helpers/serverMap';
 test(
     'DL-03 OAuth callback deep link navigates the active server view',
     {tag: ['@P1', '@all']},
-    async ({electronApp}) => {
+    async ({electronApp, appReady: _appReady}) => {
         const serverName = demoConfig.servers[0].name;
         const oauthPath = '/oauth/authorize?client_id=desktop&response_type=code&state=e2e-test';
         const deepLink = mattermostDeepLinkUrl(`example.com${oauthPath}`);

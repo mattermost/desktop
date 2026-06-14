@@ -12,6 +12,10 @@ export async function stubMessageBoxResponses(
     app: ElectronApplication,
     responses: MessageBoxResponse[],
 ): Promise<void> {
+    if (responses.length === 0) {
+        throw new Error('stubMessageBoxResponses requires at least one response');
+    }
+
     await app.evaluate(({dialog}, payload) => {
         const original = dialog.showMessageBox.bind(dialog);
         (global as any).__e2eRestoreMessageBox = original;

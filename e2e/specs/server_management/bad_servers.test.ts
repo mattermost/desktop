@@ -94,7 +94,25 @@ async function waitForRendererThenReload(app: Awaited<ReturnType<typeof launchWi
             }
         }
     });
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await expect.poll(async () => {
+        return app.evaluate(() => {
+            const refs = (global as any).__e2eTestRefs;
+            if (!refs) {
+                return false;
+            }
+            const servers: Array<{id: string}> = refs.ServerManager?.getAllServers?.() ?? [];
+            for (const server of servers) {
+                const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
+                for (const view of views) {
+                    const wcEntry = refs.WebContentsManager?.getView?.(view.id);
+                    if (wcEntry?.webContents?.isLoading?.()) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        });
+    }, {timeout: 10_000, message: 'Server views should finish reloading after renderer is ready'}).toBe(true);
 }
 
 async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
@@ -276,7 +294,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorView).toBeNull();
                 expect(Date.now() - start).toBeLessThan(15_000);
             } finally {
-                await app.close();
+                await closeLaunchedApp(app);
                 await waitForLockFileRelease(userDataDir);
             }
         });

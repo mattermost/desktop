@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {execSync} from 'child_process';
+import {execFileSync} from 'child_process';
 
 import {test, expect} from '../../fixtures/index';
 import {mattermostURL, demoMattermostConfig, type AppConfig} from '../../helpers/config';
@@ -33,9 +33,9 @@ test(
         const deepLink = `mattermost://${new URL(mattermostURL).host}/channels/${channelName}`;
 
         if (process.platform === 'darwin') {
-            execSync(`open "${deepLink}"`);
+            execFileSync('open', [deepLink]);
         } else if (process.platform === 'win32') {
-            execSync(`start "" "${deepLink}"`);
+            execFileSync('cmd.exe', ['/c', 'start', '', deepLink]);
         }
 
         // Wait for navigation to the linked channel
@@ -82,9 +82,9 @@ test.describe('deep link server URL without trailing slash', () => {
             const deepLink = `mattermost://${new URL(serverUrlWithoutSlash).host}/channels/${channelName}`;
 
             if (process.platform === 'darwin') {
-                execSync(`open "${deepLink}"`);
+                execFileSync('open', [deepLink]);
             } else if (process.platform === 'win32') {
-                execSync(`start "" "${deepLink}"`);
+                execFileSync('cmd.exe', ['/c', 'start', '', deepLink]);
             }
 
             await expect.poll(

@@ -12,8 +12,8 @@ import {_electron as electron} from 'playwright';
 
 import {waitForAppReady} from '../helpers/appReadiness';
 import {waitForLockFileRelease} from '../helpers/cleanup';
-import {closeOverlayWindowsIfOpen} from '../helpers/overlayWindows';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
+import {closeOverlayWindowsIfOpen} from '../helpers/overlayWindows';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
 
 export type {ServerMap, ServerEntry} from '../helpers/serverMap';

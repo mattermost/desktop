@@ -120,6 +120,14 @@ test.describe('macOS open-url deep link', () => {
             env: {...process.env, NODE_ENV: 'test'},
             timeout: 60_000,
         });
+
+        const pid = app.process()?.pid;
+        if (pid) {
+            const registry = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
+            try {
+                fs.appendFileSync(registry, `${pid}\n`, 'utf8');
+            } catch { /* non-fatal */ }
+        }
     });
 
     test.afterAll(async () => {

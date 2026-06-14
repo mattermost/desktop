@@ -27,8 +27,14 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
 
                 const servers = refs.ServerManager.getAllServers();
                 return servers.flatMap((server: {id: string; name: string}) => {
-                    const orderedTabs = refs.TabManager.getOrderedTabsForServer(server.id);
-                    return orderedTabs.map((view: {id: string}) => {
+                    const views = refs.ViewManager.getViewsByServerId(server.id);
+                    const orderedTabIds = refs.TabManager.getOrderedTabsForServer(server.id).map((tab: {id: string}) => tab.id);
+                    const sortedViews = [...views].sort((a: {id: string}, b: {id: string}) => {
+                        const ai = orderedTabIds.indexOf(a.id);
+                        const bi = orderedTabIds.indexOf(b.id);
+                        return (ai === -1 ? Number.MAX_SAFE_INTEGER : ai) - (bi === -1 ? Number.MAX_SAFE_INTEGER : bi);
+                    });
+                    return sortedViews.map((view: {id: string}) => {
                         const webContentsView = refs.WebContentsManager.getView(view.id);
                         if (!webContentsView) {
                             return null;

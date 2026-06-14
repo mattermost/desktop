@@ -57,12 +57,9 @@ test.describe('notification_trigger/flash_taskbar', () => {
                 try {
                     await triggerFlashEffects(electronApp, true);
 
-                    const flashCalls = await electronApp.evaluate(
-                        () => (global as any).__e2eFlashFrameCalls ?? [],
-                    );
-                    expect(
-                        flashCalls,
-                        'flashFrame(true) must be called when flashWindow is enabled',
+                    await expect.poll(
+                        () => electronApp.evaluate(() => (global as any).__e2eFlashFrameCalls ?? []),
+                        {timeout: 10_000, message: 'flashFrame(true) must be called when flashWindow is enabled'},
                     ).toContain(true);
                 } finally {
                     await electronApp.evaluate(() => {
