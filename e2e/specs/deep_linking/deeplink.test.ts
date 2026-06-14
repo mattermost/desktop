@@ -102,3 +102,56 @@ test.describe('application', () => {
         ).toBe('github');
     });
 });
+
+test.describe('macOS open-url deep link', () => {
+    let app: ElectronApplication | undefined;
+    let userDataDir: string;
+
+    test.beforeAll(async ({}, testInfo) => {
+        userDataDir = path.join(testInfo.outputDir, 'open-url-userdata');
+        fs.mkdirSync(userDataDir, {recursive: true});
+        fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(demoConfig));
+
+        const {_electron: electron} = await import('playwright');
+
+        app = await electron.launch({
+            executablePath: electronBinaryPath,
+            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+            env: {...process.env, NODE_ENV: 'test'},
+            timeout: 60_000,
+        });
+    });
+
+    test.afterAll(async () => {
+        await app?.close();
+        if (userDataDir) {
+            await waitForLockFileRelease(userDataDir).catch(() => {});
+        }
+    });
+
+    test(
+        'DL-02 macOS cold start via open-url event navigates to deep link',
+        {tag: ['@P1', '@darwin']},
+        async () => {
+            await waitForAppReady(app!);
+
+            await app!.evaluate(({app: electronApp}) => {
+                electronApp.emit('open-url', {preventDefault: () => undefined}, 'mattermost-dev://github.com/test/url');
+            });
+
+            const serverName = demoConfig.servers[1].name;
+            await expect.poll(async () => {
+                const freshMap = await buildServerMap(app!);
+                const freshView = freshMap[serverName]?.[0]?.win;
+                return freshView?.url() ?? '';
+            }, {timeout: 30_000, message: 'open-url deep link should navigate the target server view'}).toContain('github.com/test/url');
+
+            const mainWindow = app!.windows().find((window) => window.url().includes('index'));
+            expect(mainWindow).toBeDefined();
+            await expect.poll(
+                () => mainWindow!.innerText('.ServerDropdownButton'),
+                {timeout: 15_000},
+            ).toBe('github');
+        },
+    );
+});

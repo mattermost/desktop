@@ -12,6 +12,7 @@ import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
+import createTrayMenu from 'app/menus/tray';
 import NavigationManager from 'app/navigationManager';
 import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
@@ -297,6 +298,25 @@ async function initializeAfterAppReady() {
         Config,
         TrayIcon: Tray,
         NotificationManager,
+    });
+
+    setTestField('__e2eClickTrayMenuItem', (label: string) => {
+        const menu = createTrayMenu();
+        const stack = [...menu.items];
+        while (stack.length > 0) {
+            const item = stack.shift();
+            if (!item) {
+                continue;
+            }
+            const itemLabel = typeof item.label === 'string' ? item.label : '';
+            if (itemLabel === label || itemLabel.startsWith(`${label.slice(0, 50)}`)) {
+                item.click();
+                return;
+            }
+            const submenuItems = item.submenu?.items ?? [];
+            stack.push(...submenuItems);
+        }
+        throw new Error(`Tray menu item not found: ${label}`);
     });
 
     // Block all NTLM/Negotiate requests by default

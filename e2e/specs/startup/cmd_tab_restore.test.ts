@@ -16,11 +16,6 @@ test.describe('startup/cmd_tab_restore', () => {
     test('MM-T2617 Reopen Mac Desktop App window on Cmd+Tab — macOS ONLY',
         {tag: ['@P2', '@darwin']},
         async ({electronApp}) => {
-            if (process.platform !== 'darwin') {
-                test.skip(true, 'macOS only');
-                return;
-            }
-
             // Resolve the canonical main window id from __e2eTestRefs so the
             // test targets the same window every time, even if a popout or
             // Calls widget BrowserWindow exists in this run.

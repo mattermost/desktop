@@ -4,7 +4,7 @@
 import {execSync} from 'child_process';
 
 import {test, expect} from '../../fixtures/index';
-import {mattermostURL, demoMattermostConfig} from '../../helpers/config';
+import {mattermostURL, demoMattermostConfig, type AppConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 
 // Use a real Mattermost server config so serverMap.example points to localhost:8065
@@ -48,3 +48,52 @@ test(
         ).toContain(channelName);
     },
 );
+
+test.describe('deep link server URL without trailing slash', () => {
+    const serverUrlWithoutSlash = mattermostURL.replace(/\/$/, '');
+    const configWithoutTrailingSlash: AppConfig = {
+        ...demoMattermostConfig,
+        servers: demoMattermostConfig.servers.map((server, index) => (
+            index === 0 ? {...server, url: serverUrlWithoutSlash} : server
+        )),
+    };
+
+    test.use({appConfig: configWithoutTrailingSlash});
+
+    test(
+        'DL-01 deep link navigates when configured server URL has no trailing slash',
+        {tag: ['@P1', '@darwin', '@win32']},
+        async ({serverMap}) => {
+            if (!process.env.MM_TEST_SERVER_URL) {
+                test.skip(true, 'MM_TEST_SERVER_URL required');
+                return;
+            }
+
+            const serverWin = serverMap.example?.[0]?.win;
+            if (!serverWin) {
+                test.skip(true, 'No server view available');
+                return;
+            }
+
+            await loginToMattermost(serverWin);
+            await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+
+            const channelName = 'off-topic';
+            const deepLink = `mattermost://${new URL(serverUrlWithoutSlash).host}/channels/${channelName}`;
+
+            if (process.platform === 'darwin') {
+                execSync(`open "${deepLink}"`);
+            } else if (process.platform === 'win32') {
+                execSync(`start "" "${deepLink}"`);
+            }
+
+            await expect.poll(
+                () => serverWin!.url(),
+                {
+                    timeout: 15_000,
+                    message: `Server view should navigate to ${channelName} without double-slash path corruption`,
+                },
+            ).toContain(channelName);
+        },
+    );
+});

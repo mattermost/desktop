@@ -26,11 +26,6 @@ test.describe('notification_trigger/flash_taskbar', () => {
     test('MM-T1293 Flash taskbar icon — Windows & Linux ONLY',
         {tag: ['@P2', '@win32', '@linux']},
         async ({electronApp}) => {
-            if (process.platform === 'darwin') {
-                test.skip(true, 'Flash taskbar is Windows/Linux only');
-                return;
-            }
-
             await waitForAppReady(electronApp);
 
             const releaseLock = await acquireExclusiveLock('flash-taskbar-state');

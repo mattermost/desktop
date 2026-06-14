@@ -5,7 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
-import {NOTIFICATION_CLICKED} from '../../../src/common/communication';
+import {NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH} from '../../../src/common/communication';
 
 test.use({appConfig: demoMattermostConfig});
 test.setTimeout(120_000);
@@ -53,12 +53,32 @@ test(
             expect(targetChannel?.url, 'Could not resolve off-topic sidebar URL').toBeTruthy();
             const targetPathname = new URL(targetChannel!.url!).pathname;
 
-            await electronApp.evaluate(({webContents}, payload) => {
+            await electronApp.evaluate(() => {
+                const refs = (global as any).__e2eTestRefs;
+                refs?.MainWindow?.get?.()?.hide();
+            });
+
+            await expect.poll(
+                () => electronApp.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    const mainWindow = refs?.MainWindow?.get?.();
+                    return Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
+                }),
+                {timeout: 5_000, message: 'Main window should be hidden before notification click'},
+            ).toBe(false);
+
+            await electronApp.evaluate(({webContents, ipcMain}, payload) => {
                 const wc = webContents.fromId(payload.webContentsId);
                 if (!wc || wc.isDestroyed()) {
                     throw new Error(`webContents ${payload.webContentsId} is not available`);
                 }
 
+                const focus = () => {
+                    const refs = (global as any).__e2eTestRefs;
+                    refs?.MainWindow?.show?.();
+                    ipcMain.off(BROWSER_HISTORY_PUSH, focus);
+                };
+                ipcMain.on(BROWSER_HISTORY_PUSH, focus);
                 wc.send(payload.channel, payload.channelId, payload.teamId, payload.url);
             }, {
                 webContentsId: serverMap[demoMattermostConfig.servers[0].name]![0]!.webContentsId,
@@ -72,6 +92,15 @@ test(
                 () => serverWin!.evaluate(() => window.location.pathname),
                 {timeout: 10_000, message: 'View should navigate to the clicked channel path'},
             ).toBe(targetPathname);
+
+            await expect.poll(
+                () => electronApp.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    const mainWindow = refs?.MainWindow?.get?.();
+                    return Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
+                }),
+                {timeout: 10_000, message: 'Main window should be visible after notification click navigation'},
+            ).toBe(true);
         } finally {
             await releaseLock();
         }

@@ -240,6 +240,47 @@ test.describe('Bad Server Configurations', () => {
     });
 
     test.describe('Pre-configured servers', () => {
+        test('MULTI-01 unreachable server at startup does not block other servers', {tag: ['@P0', '@all']}, async ({}, testInfo) => {
+            const badConfig = {
+                ...demoConfig,
+                servers: [
+                    {
+                        name: 'Pre-configured Unreachable',
+                        url: `${UNREACHABLE_SERVER_URL}/`,
+                        order: 0,
+                    },
+                    ...demoConfig.servers.map((s, i) => ({...s, order: i + 1})),
+                ],
+                lastActiveServer: 0,
+            };
+            const {app, userDataDir} = await launchWithConfig(testInfo, badConfig);
+            try {
+                const mainWindow = app.windows().find((w) => w.url().includes('index'));
+                expect(mainWindow).toBeDefined();
+                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30_000});
+
+                const start = Date.now();
+                const dropdownView = await openServerDropdown(app);
+                await dropdownView!.click('.ServerDropdown .ServerDropdown__button:nth-child(2)');
+
+                const serverMap = await buildServerMap(app);
+                const exampleServer = serverMap[demoConfig.servers[0].name]?.[0]?.win;
+                expect(exampleServer).toBeDefined();
+
+                await expect.poll(
+                    () => exampleServer!.url(),
+                    {timeout: 15_000, message: 'Working server should become reachable after switching away from unreachable server'},
+                ).toContain('example.com');
+
+                const errorView = await mainWindow!.$('.ErrorView');
+                expect(errorView).toBeNull();
+                expect(Date.now() - start).toBeLessThan(15_000);
+            } finally {
+                await app.close();
+                await waitForLockFileRelease(userDataDir);
+            }
+        });
+
         test('should handle pre-configured unreachable server', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const badConfig = {
                 ...demoConfig,
