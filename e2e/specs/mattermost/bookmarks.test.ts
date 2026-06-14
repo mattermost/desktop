@@ -27,6 +27,12 @@ import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/m
 
 const EXTERNAL_BOOKMARK_URL = 'https://mattermost.com/';
 
+function openExternalUrlMatchesBookmark(openedUrl: string, bookmarkUrl: string): boolean {
+    const opened = new URL(openedUrl);
+    const bookmark = new URL(bookmarkUrl);
+    return opened.origin === bookmark.origin && opened.pathname === bookmark.pathname;
+}
+
 const bookmarksConfig: AppConfig = {
     ...demoMattermostConfig,
     servers: demoMattermostConfig.servers.filter((server) => !server.url.includes('github.com')),
@@ -141,13 +147,15 @@ test.describe('mattermost/bookmarks', () => {
 
                 await clickBookmarkInBar(firstServer!, 'mattermost.com');
 
-                // Verify shell.openExternal was called with the bookmark URL
-                await expect.poll(
-                    () => electronApp.evaluate(
+                // Mattermost 11.7+ appends in-product UTM params to bookmark hrefs
+                // (utm_content=channel_bookmarks.item, uid, sid, etc.) before calling
+                // shell.openExternal — assert origin/path, not the raw saved URL.
+                await expect.poll(async () => {
+                    const calls = await electronApp.evaluate(
                         ({shell}) => (shell as any).__e2eOpenExternalCalls ?? [],
-                    ),
-                    {timeout: 10_000},
-                ).toContain(EXTERNAL_BOOKMARK_URL);
+                    );
+                    return calls.some((url) => openExternalUrlMatchesBookmark(url, EXTERNAL_BOOKMARK_URL));
+                }, {timeout: 10_000}).toBe(true);
 
                 // Verify no in-app server view navigated to the external URL.
                 // app.windows() only enumerates BrowserWindows — server panes are
