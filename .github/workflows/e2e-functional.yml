@@ -239,8 +239,9 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22.x'
-          # node_modules is cached in e2e/cache-node-modules; skip setup-node's
-          # npm cache to avoid stale entries that fail v5 deserialization.
+          package-manager-cache: false
+          # node_modules is cached in e2e/cache-node-modules; disable setup-node's
+          # npm cache so actions/cache v5 does not hit legacy entries.
 
       - name: e2e/cache-node-modules
         id: cache-node-modules
@@ -249,10 +250,8 @@ jobs:
           path: |
             node_modules
             C:\Users\runneradmin\.electron-gyp
-          # v3: narrow restore-keys so actions/cache v5 does not match legacy entries
-          key: ${{ runner.os }}-build-node-modules-v3-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-node-modules-v3-
+          # v4: exact-key only — no restore-keys, so v5 never probes stale prefixes
+          key: ${{ runner.os }}-build-node-modules-v4-${{ hashFiles('**/package-lock.json') }}
 
       - name: e2e/setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
