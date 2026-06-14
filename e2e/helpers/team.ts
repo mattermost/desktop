@@ -39,7 +39,11 @@ export async function ensureMultipleTeams(
             throw new Error(`POST /api/v4/users/login failed: ${loginRes.status} ${detail}`);
         }
 
-        const {token} = await loginRes.json() as {token: string};
+        const loginBody = await loginRes.json() as {token?: string};
+        const token = loginRes.headers.get('Token') ?? loginBody.token;
+        if (!token) {
+            throw new Error('POST /api/v4/users/login did not return a session token');
+        }
         const authHeaders = {Authorization: `Bearer ${token}`};
 
         const teamsRes = await fetch(`${payload.serverUrl}/api/v4/users/me/teams`, {headers: authHeaders});

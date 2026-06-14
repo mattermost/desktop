@@ -20,10 +20,14 @@ test.describe('mattermost/spell_check_context_menu', () => {
     test.setTimeout(120_000);
 
     test('MM-T829 Desktop App shows spell check options when you right click',
-        {tag: ['@P2', '@all']},
+        {tag: ['@P2', '@darwin', '@win32']},
         async ({electronApp, serverMap}) => {
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
+                return;
+            }
+            if (process.platform === 'linux') {
+                test.skip(true, 'Native spell-check dictionaries are unavailable in Linux CI');
                 return;
             }
 
