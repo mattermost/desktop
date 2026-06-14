@@ -249,13 +249,10 @@ jobs:
           path: |
             node_modules
             C:\Users\runneradmin\.electron-gyp
-          # v2: bust stale node_modules caches that fail actions/cache v5 deserialization
-          key: ${{ runner.os }}-build-node-modules-v2-${{ hashFiles('**/package-lock.json') }}
+          # v3: narrow restore-keys so actions/cache v5 does not match legacy entries
+          key: ${{ runner.os }}-build-node-modules-v3-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-build-node-modules-v2-
-            ${{ runner.os }}-build-node-modules-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            ${{ runner.os }}-build-node-modules-v3-
 
       - name: e2e/setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
