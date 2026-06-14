@@ -30,11 +30,6 @@ async function setDarkModeConfig(electronApp: import('playwright').ElectronAppli
 
 test.describe('dark_mode', () => {
     test('MM-T2465 Linux Dark Mode Toggle', {tag: ['@P2', '@linux']}, async ({mainWindow, electronApp}) => {
-        if (process.platform !== 'linux') {
-            test.skip(true, 'Linux only');
-            return;
-        }
-
         expect(mainWindow).not.toBeNull();
 
         await toggleDarkModeLinux(electronApp);

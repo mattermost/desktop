@@ -460,10 +460,6 @@ test.describe('Menu/window_menu', () => {
     });
 
     test('MM-T824 should be minimized when keyboard shortcuts are pressed', {tag: ['@P2', '@darwin', '@win32']}, async () => {
-        if (process.platform === 'linux') {
-            test.skip(true, 'Linux not supported');
-            return;
-        }
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         // Both macOS and Windows: invoke minimize() directly on the BrowserWindow.
@@ -484,10 +480,6 @@ test.describe('Menu/window_menu', () => {
         // Ctrl+Shift+W closes the window, and closing the main window with
         // minimizeToTray=false shows a quit confirmation dialog rather than hiding it.
         // So this behavior is only meaningful (and only passes) on macOS.
-        if (process.platform !== 'darwin') {
-            test.skip(true, 'App hide is macOS-only');
-            return;
-        }
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         // macOS: app.hide() hides all windows without closing (Cmd+H behavior)

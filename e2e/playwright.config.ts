@@ -21,7 +21,27 @@ if (process.platform === 'darwin') {
 const cpuCount = os.cpus().length;
 const defaultWorkers = process.env.CI ? 2 : Math.min(4, Math.max(1, Math.floor(cpuCount / 2)));
 const workers = process.env.E2E_WORKERS ? parseInt(process.env.E2E_WORKERS, 10) : defaultWorkers;
-const ciEnvironmentTag = process.env.CI_ENVIRONMENT_NAME;
+// Prepended to each test in blob/HTML reports so multi-environment runs are distinguishable
+// when merging. Must NOT reuse platform grep tokens (@linux, @darwin, @win32, @all) —
+// Playwright inherits config tags onto file suites, which would make Linux grep match
+// every test when CI used to set CI_ENVIRONMENT_NAME=@linux.
+function getReportTag(): string | undefined {
+    const raw = process.env.CI_ENVIRONMENT_NAME;
+    if (!raw) {
+        return undefined;
+    }
+
+    const legacyReportTags: Record<string, string> = {
+        '@linux': '@ci-linux',
+        '@macos': '@ci-macos',
+        '@windows': '@ci-windows',
+    };
+
+    return legacyReportTags[raw] ?? raw;
+}
+
+const reportTag = getReportTag();
+const excludePolicyFromMainRun = Boolean(process.env.CI) && process.env.RUN_POLICY_E2E !== 'true';
 const reporters = process.env.CI ? [
     ['blob', {outputDir: 'blob-report'}],
     ['line'],
@@ -49,7 +69,7 @@ export default defineConfig({
     // while still failing reasonably fast on a genuinely-stuck test.
     timeout: 90_000,
 
-    ...(ciEnvironmentTag ? {tag: ciEnvironmentTag} : {}),
+    ...(reportTag ? {tag: reportTag} : {}),
 
     reporter: reporters,
 
@@ -63,6 +83,7 @@ export default defineConfig({
         {
             name: process.platform,
             grep: platformGrep,
+            ...(excludePolicyFromMainRun ? {grepInvert: /[/\\]policy[/\\]policy\.test/} : {}),
         },
     ],
 });

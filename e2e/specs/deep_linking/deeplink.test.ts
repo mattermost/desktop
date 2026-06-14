@@ -18,8 +18,6 @@ test.describe('application', () => {
     let userDataDir: string;
 
     test.beforeAll(async ({}, testInfo) => {
-        test.skip(process.platform !== 'win32', 'Windows only deep link test');
-
         userDataDir = path.join(testInfo.outputDir, 'userdata');
         fs.mkdirSync(userDataDir, {recursive: true});
         fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(demoConfig));

@@ -64,11 +64,6 @@ test.describe('file_menu/dropdown', () => {
     });
 
     test('MM-T805 Sign in to Another Server Window opens using menu item', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
-        if (process.platform !== 'win32') {
-            test.skip(true, 'Windows-only test');
-            return;
-        }
-
         // Invoke the File menu item directly — keyboard presses sent via Playwright
         // do not reliably reach popup menus in headless CI on Windows.
         await electronApp.evaluate(({app}) => {
@@ -89,11 +84,6 @@ test.describe('file_menu/dropdown', () => {
     });
 
     test('MM-T804 Preferences in Menu Bar open the Settings page', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
-        if (process.platform !== 'win32') {
-            test.skip(true, 'Windows-only test');
-            return;
-        }
-
         // Reuse the existing direct-invocation helper instead of keyboard navigation.
         await openPreferencesFromAppMenu(electronApp);
         const settingsWindow = await waitForSettingsWindow(electronApp);
@@ -101,11 +91,6 @@ test.describe('file_menu/dropdown', () => {
     });
 
     test('MM-T806 Exit in the Menu Bar', {tag: ['@P2', '@darwin']}, async ({electronApp, mainWindow}) => {
-        if (process.platform !== 'darwin') {
-            test.skip(true, 'macOS-only test');
-            return;
-        }
-
         expect(mainWindow).toBeDefined();
         await mainWindow.waitForLoadState();
         await mainWindow.bringToFront();

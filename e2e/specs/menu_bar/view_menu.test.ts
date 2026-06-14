@@ -264,11 +264,6 @@ test.describe('menu/view', () => {
     });
 
     test('MM-T820 should open Developer Tools For Application Wrapper for main window', {tag: ['@P2', '@darwin', '@win32']}, async () => {
-        if (process.platform === 'linux') {
-            test.skip(true, 'Linux not supported');
-            return;
-        }
-
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         let isDevToolsOpen = await browserWindow.evaluate((window) => {

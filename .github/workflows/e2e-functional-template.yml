@@ -188,7 +188,9 @@ jobs:
         run: |
           RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
           echo "RUNNER_OS=${RUNNER_OS}" >> $GITHUB_ENV
-          echo "CI_ENVIRONMENT_NAME=@${RUNNER_OS}" >> $GITHUB_ENV
+          # Report-only tag for Playwright blob/HTML output (@ci-* avoids colliding with
+          # platform selection grep tokens @linux/@darwin/@win32 in playwright.config.ts).
+          echo "CI_ENVIRONMENT_NAME=@ci-${RUNNER_OS}" >> $GITHUB_ENV
           
           # Define build type and suffix
           # inputs.TYPE takes precedence when provided by the caller (e.g. RELEASE, MASTER, PR).
