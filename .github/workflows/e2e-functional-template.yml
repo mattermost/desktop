@@ -245,16 +245,24 @@ jobs:
         id: cache-node-modules
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
-          path: |
-            node_modules
-            C:\Users\runneradmin\.electron-gyp
-          # v4: exact-key only — no restore-keys, so v5 never probes stale prefixes
-          key: ${{ runner.os }}-build-node-modules-v4-${{ hashFiles('**/package-lock.json') }}
+          path: node_modules
+          enableCrossOsArchive: false
+          # v5: new key prefix invalidates legacy v4 blobs that trigger deserialization warnings
+          key: ${{ runner.os }}-build-node-modules-v5-${{ hashFiles('**/package-lock.json') }}
+
+      - name: e2e/cache-electron-gyp-windows
+        if: runner.os == 'Windows'
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: C:\Users\runneradmin\.electron-gyp
+          enableCrossOsArchive: false
+          key: ${{ runner.os }}-electron-gyp-v5-${{ hashFiles('**/package-lock.json') }}
 
       - name: e2e/setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.10"
+          cache: false
 
       - name: e2e/install-os-dependencies
         uses: ./.github/actions/install-os-dependencies
