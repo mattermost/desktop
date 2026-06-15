@@ -8,18 +8,32 @@ import type {ElectronApplication} from 'playwright';
  * Parallel download specs can leave this window focused and block other UI flows.
  */
 export async function closeDownloadsDropdownIfOpen(app: ElectronApplication): Promise<void> {
-    await app.evaluate(({BrowserWindow}) => {
-        for (const win of BrowserWindow.getAllWindows()) {
-            if (win.isDestroyed()) {
-                continue;
-            }
-            try {
-                if (win.webContents.getURL().includes('downloadsDropdown.html')) {
-                    win.close();
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+        try {
+            await app.evaluate(({BrowserWindow}) => {
+                for (const win of BrowserWindow.getAllWindows()) {
+                    if (win.isDestroyed()) {
+                        continue;
+                    }
+                    try {
+                        if (win.webContents.getURL().includes('downloadsDropdown.html')) {
+                            win.close();
+                        }
+                    } catch {
+                        // Ignore windows that disappear while iterating.
+                    }
                 }
-            } catch {
-                // Ignore windows that disappear while iterating.
+            });
+            return;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (!message.includes('Execution context was destroyed')) {
+                throw error;
             }
+            await new Promise((resolve) => setTimeout(resolve, 100));
         }
-    });
+    }
+
+    throw new Error('Timed out closing downloads dropdown after navigation');
 }

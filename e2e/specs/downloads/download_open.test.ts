@@ -31,10 +31,9 @@ test(
 
             await app.evaluate(({shell}) => {
                 (global as any).__e2eOpenedPaths = [] as string[];
-                const original = shell.openPath.bind(shell);
                 shell.openPath = async (targetPath: string) => {
                     (global as any).__e2eOpenedPaths.push(targetPath);
-                    return original(targetPath);
+                    return '';
                 };
             });
 

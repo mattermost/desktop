@@ -9,6 +9,7 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, demoMattermostConfig} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
+import {waitForErrorView} from '../../helpers/errorView';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -28,7 +29,7 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     const app = await electron.launch({
         executablePath: electronBinaryPath,
         args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-        env: {...process.env, NODE_ENV: 'test'},
+        env: {...process.env, NODE_ENV: 'test', MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
         timeout: 60_000,
     });
     await waitForAppReady(app);
@@ -158,10 +159,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
+                await waitForErrorView(app);
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
             } finally {
@@ -186,10 +184,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
+                await waitForErrorView(app);
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
             } finally {
@@ -214,10 +209,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
+                await waitForErrorView(app);
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toMatch(/ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/);
             } finally {
@@ -242,9 +234,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
+                await waitForErrorView(app);
 
                 await expect.poll(async () => {
                     const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');

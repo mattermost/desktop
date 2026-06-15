@@ -16,6 +16,23 @@ export async function waitForRendererThenReload(app: ElectronApplication): Promi
 
     await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000}).catch(() => {});
 
+    await expect.poll(async () => {
+        return app.evaluate(() => {
+            const refs = (global as any).__e2eTestRefs;
+            if (!refs) {
+                return false;
+            }
+            const servers: Array<{id: string}> = refs.ServerManager?.getAllServers?.() ?? [];
+            if (servers.length === 0) {
+                return false;
+            }
+            return servers.every((server) => {
+                const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
+                return views.some((view) => Boolean(refs.WebContentsManager?.getView?.(view.id)));
+            });
+        });
+    }, {timeout: 15_000, message: 'Server views should exist before reload'}).toBe(true);
+
     await app.evaluate(() => {
         const refs = (global as any).__e2eTestRefs;
         if (!refs) {

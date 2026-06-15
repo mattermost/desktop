@@ -200,7 +200,33 @@ export async function waitForDownloadFile(
 }
 
 export async function closeDownloadTestApp(app: ElectronApplication, userDataDir: string, downloadLocation: string) {
+    await app.evaluate(() => {
+        const popup = (global as any).__e2eDownloadPopup;
+        if (popup && !popup.isDestroyed?.()) {
+            popup.close();
+        }
+        delete (global as any).__e2eDownloadPopup;
+    }).catch(() => {});
+
     await app.close().catch(() => {});
     await waitForLockFileRelease(userDataDir).catch(() => {});
-    fs.rmSync(downloadLocation, {recursive: true, force: true});
+
+    if (!fs.existsSync(downloadLocation)) {
+        return;
+    }
+
+    const timeout = process.platform === 'win32' ? 10_000 : 2_000;
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+        try {
+            fs.rmSync(downloadLocation, {recursive: true, force: true, maxRetries: 3, retryDelay: 200});
+            return;
+        } catch (error) {
+            const code = (error as NodeJS.ErrnoException).code;
+            if (code !== 'EBUSY' && code !== 'EPERM' && code !== 'ENOTEMPTY') {
+                throw error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+    }
 }

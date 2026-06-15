@@ -75,9 +75,12 @@ test(
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
         } finally {
-            await setAutoTrustCertificate(app, false);
-            await restoreMessageBox(app);
-            await app.close().catch(() => {});
+            await setAutoTrustCertificate(app, false).catch(() => {});
+            await restoreMessageBox(app).catch(() => {});
+            await Promise.race([
+                app.close(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('app.close timed out')), 10_000)),
+            ]).catch(() => {});
             await waitForLockFileRelease(userDataDir);
         }
     },

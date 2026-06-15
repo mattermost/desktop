@@ -75,6 +75,7 @@ test.describe('menu_bar/help_menu', () => {
                         shell.showItemInFolder = original;
                         delete (global as any).__e2eOriginalShowItemInFolder;
                     }
+                    delete (global as any).__e2eShownInFolder;
                 });
             }
         },

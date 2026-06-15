@@ -241,6 +241,16 @@ jobs:
           # node_modules is cached in e2e/cache-node-modules; disable setup-node's
           # npm cache so actions/cache v5 does not hit legacy entries.
 
+      - name: e2e/use-gnu-tar-macos
+        if: runner.os == 'macOS'
+        run: |
+          # BSD tar on macOS can corrupt actions/cache v5 archives; prefer GNU tar when present.
+          if [ -x /opt/homebrew/opt/gnu-tar/libexec/gnubin/gtar ]; then
+            echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
+          elif [ -x /usr/local/opt/gnu-tar/libexec/gnubin/gtar ]; then
+            echo "/usr/local/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
+          fi
+
       - name: e2e/cache-node-modules
         id: cache-node-modules
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -249,8 +259,10 @@ jobs:
             node_modules
             e2e/node_modules
           enableCrossOsArchive: false
-          # v6: bumped after removing invalid setup-python cache:false input
-          key: ${{ runner.os }}-build-node-modules-v6-${{ hashFiles('**/package-lock.json') }}
+          # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS
+          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
 
       - name: e2e/cache-electron-gyp-windows
         if: runner.os == 'Windows'
@@ -258,7 +270,9 @@ jobs:
         with:
           path: C:\Users\runneradmin\.electron-gyp
           enableCrossOsArchive: false
-          key: ${{ runner.os }}-electron-gyp-v6-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
 
       - name: e2e/setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0

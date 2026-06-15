@@ -134,6 +134,31 @@ async function openPopoutWindow() {
     return popout!;
 }
 
+async function closePopoutWindow(popoutWindow: import('playwright').Page) {
+    const browserWindow = await electronApp.browserWindow(popoutWindow);
+    await Promise.all([
+        popoutWindow.waitForEvent('close', {timeout: 15_000}),
+        browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close()),
+    ]).catch(async () => {
+        // Linux runners can keep stale Playwright pages briefly after close.
+        await browserWindow.evaluate((w) => {
+            if (!(w as Electron.BrowserWindow).isDestroyed()) {
+                (w as Electron.BrowserWindow).destroy();
+            }
+        }).catch(() => {});
+    });
+
+    await expect.poll(() => {
+        return electronApp.windows().filter((window) => {
+            try {
+                return window.url().includes('popout.html');
+            } catch {
+                return false;
+            }
+        }).length;
+    }, {timeout: 15_000}).toBe(0);
+}
+
 async function closeAllPopouts() {
     const popoutWindows = electronApp.windows().filter((window) => {
         try {
@@ -144,19 +169,8 @@ async function closeAllPopouts() {
     });
 
     for (const popout of popoutWindows) {
-        const browserWindow = await electronApp.browserWindow(popout);
-        await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close()).catch(() => {});
+        await closePopoutWindow(popout).catch(() => {});
     }
-
-    await expect.poll(() => {
-        return electronApp.windows().filter((window) => {
-            try {
-                return window.url().includes('popout.html');
-            } catch {
-                return false;
-            }
-        }).length;
-    }, {timeout: 10_000}).toBe(0);
 }
 
 test.describe('server_management/popout_windows', () => {
@@ -246,12 +260,7 @@ test.describe('server_management/popout_windows', () => {
 
         test('MM-TXXXX_4 should close the popout window using close button', {tag: ['@P2', '@all']}, async () => {
             const popoutWindow = await openPopoutWindow();
-            const browserWindow = await electronApp.browserWindow(popoutWindow);
-            await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close());
-
-            await expect.poll(() => {
-                return electronApp.windows().filter((w) => w.url().includes('popout.html')).length;
-            }, {timeout: 10_000}).toBe(0);
+            await closePopoutWindow(popoutWindow);
         });
 
         // NOTE: there is intentionally no "close popout windows when main window is
