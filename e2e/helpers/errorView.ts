@@ -42,8 +42,18 @@ export async function waitForRendererThenReload(
         }, {timeout: 10_000, message: `Active server should switch to ${serverName}`}).toContain(serverName);
     }
 
-    await expect.poll(async () => {
-        return app.evaluate((targetServerName) => {
+    // Wait until ServerManager knows about the target server. We intentionally do NOT
+    // require a WebContentsManager entry to exist here: on platforms where the initial
+    // load fails very fast (e.g. expired cert at startup), the view may never be added
+    // to WebContentsManager before this poll's deadline. If no view exists, the reload
+    // step below becomes a no-op and the existing load failure already surfaces in
+    // `.ErrorView`, which is what the caller is polling for.
+    //
+    // NOTE: Playwright's ElectronApplication.evaluate(fn, arg) always passes the
+    // `electron` module as the FIRST argument to `fn`. The user-supplied `arg` is the
+    // SECOND argument. Hence the `(_electron, targetServerName)` signature below.
+    await expect.poll(() => {
+        return app.evaluate((_electron, targetServerName) => {
             const refs = (global as any).__e2eTestRefs;
             if (!refs) {
                 return false;
@@ -52,19 +62,13 @@ export async function waitForRendererThenReload(
             const serversToCheck = targetServerName ?
                 servers.filter((server) => server.name === targetServerName) :
                 servers;
-            if (serversToCheck.length === 0) {
-                return false;
-            }
-            return serversToCheck.every((server) => {
-                const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
-                return views.some((view) => Boolean(refs.WebContentsManager?.getView?.(view.id)));
-            });
+            return serversToCheck.length > 0;
         }, serverName);
-    }, {timeout: 15_000, message: 'Server views should exist before reload'}).toBe(true);
+    }, {timeout: 15_000, message: 'Target server should be registered before reload'}).toBe(true);
 
     await clearCertificateErrorCallbacks(app).catch(() => {});
 
-    await app.evaluate((targetServerName) => {
+    await app.evaluate((_electron, targetServerName) => {
         const refs = (global as any).__e2eTestRefs;
         if (!refs) {
             return;
@@ -83,7 +87,7 @@ export async function waitForRendererThenReload(
     }, serverName);
 
     await expect.poll(async () => {
-        return app.evaluate((targetServerName) => {
+        return app.evaluate((_electron, targetServerName) => {
             const refs = (global as any).__e2eTestRefs;
             if (!refs) {
                 return false;

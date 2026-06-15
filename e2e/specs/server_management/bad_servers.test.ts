@@ -47,10 +47,30 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
         });
     }
     await dropdownView.waitForLoadState().catch(() => {});
-    await dropdownView!.click('.ServerDropdown .ServerDropdown__button.addServer');
-    const newServerView = await app.waitForEvent('window', {
+
+    // Register the window listener BEFORE clicking. The new-server modal is a
+    // WebContentsView, not a BrowserWindow, so Playwright can surface (or miss) it
+    // depending on timing. Polling `app.windows()` is the most reliable fallback if
+    // the event listener races with the modal's WebContents creation on slow CI.
+    const newServerViewPromise = app.waitForEvent('window', {
         predicate: (w) => w.url().includes('newServer'),
-    });
+        timeout: 20_000,
+    }).catch(() => undefined);
+
+    await dropdownView!.click('.ServerDropdown .ServerDropdown__button.addServer');
+
+    let newServerView = app.windows().find((w) => w.url().includes('newServer')) ?? await newServerViewPromise;
+    if (!newServerView) {
+        await expect.poll(
+            () => app.windows().some((w) => w.url().includes('newServer')),
+            {timeout: 15_000, message: 'New server modal window should appear after clicking Add a server'},
+        ).toBe(true);
+        newServerView = app.windows().find((w) => w.url().includes('newServer'));
+    }
+    if (!newServerView) {
+        throw new Error('New server modal window did not appear');
+    }
+    await newServerView.waitForLoadState().catch(() => {});
     return newServerView;
 }
 
