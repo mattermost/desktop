@@ -325,16 +325,55 @@ export async function deleteAllBookmarksInBar(win: ServerView): Promise<void> {
             return;
         }
 
-        await hoverBookmarkInBar(win);
-        const openedMenu = await win.$('[id^="channelBookmarksDotMenuButton-"]');
-        if (!openedMenu) {
-            return;
+        // The dot-menu trigger is only rendered while the bookmark item is hovered.
+        // Between `hoverBookmarkInBar()` and `win.click(...)` the renderer can unmount
+        // the trigger (hover lost, animation, or stale React subtree from a previous
+        // delete), producing "Element not found for click". Re-hover and click within
+        // a single renderer round-trip so the element can't disappear between the
+        // existence check and the click; on transient failure, retry the loop and
+        // re-check `hasBookmark` — if the item is already gone, we're done.
+        const clicked = await win.runInRenderer(`
+            const selectors = ${JSON.stringify(BOOKMARK_BAR_ITEM_SELECTORS)};
+            let item = null;
+            for (const selector of selectors) {
+                item = document.querySelector(selector);
+                if (item) {
+                    break;
+                }
+            }
+            if (!item) {
+                return false;
+            }
+            item.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true}));
+            item.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
+            const trigger = document.querySelector('[id^="channelBookmarksDotMenuButton-"]');
+            if (!trigger) {
+                return false;
+            }
+            trigger.click();
+            return true;
+        `, true);
+        if (!clicked) {
+            await sleep(200);
+            continue;
         }
-        await win.click('[id^="channelBookmarksDotMenuButton-"]');
-        await win.click('#channelBookmarksDelete');
-        await win.waitForSelector('.GenericModal', {state: 'visible', timeout: 5_000});
-        await win.click('button:has-text("Yes, delete")');
+
+        try {
+            await win.waitForSelector('#channelBookmarksDelete', {state: 'visible', timeout: 5_000});
+            await win.click('#channelBookmarksDelete');
+            await win.waitForSelector('.GenericModal', {state: 'visible', timeout: 5_000});
+            await win.click('button:has-text("Yes, delete")');
+            await win.waitForSelector('.GenericModal', {state: 'hidden', timeout: 5_000}).catch(() => {});
+        } catch {
+            // Menu/modal closed before we could finish the chain — re-loop and let
+            // the `hasBookmark` probe decide whether the bookmark was actually deleted.
+            await sleep(200);
+        }
     }
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** Hover the first bookmark item so its dot-menu trigger is reachable. */
