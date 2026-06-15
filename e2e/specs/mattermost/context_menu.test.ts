@@ -33,6 +33,7 @@ test.describe('mattermost/context_menu', () => {
             await loginToMattermost(firstServer!);
             await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await openSidebarChannelMenu(firstServer!, '#sidebarItem_town-square');
 
             const hasCopyLink = await firstServer!.evaluate(() => {

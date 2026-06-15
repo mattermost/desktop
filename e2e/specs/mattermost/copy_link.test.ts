@@ -5,17 +5,20 @@ import {test, expect} from '../../fixtures/index';
 import {clickCopyLinkInMenu, openSidebarChannelMenu} from '../../helpers/channelMenu';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 
 test.describe('copylink', () => {
     test.use({appConfig: demoMattermostConfig});
     test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
     test('MM-T125 Copy Link can be used from channel LHS', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp, serverMap}) => {
-        const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
+        const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+        const firstServer = serverEntry?.win;
         if (!firstServer) {
             throw new Error('No server view available');
         }
 
+        await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
         await loginToMattermost(firstServer);
 
         await electronApp.evaluate(({clipboard}) => {
@@ -23,6 +26,7 @@ test.describe('copylink', () => {
         });
 
         await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+        await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
         await openSidebarChannelMenu(firstServer, '#sidebarItem_town-square');
         await clickCopyLinkInMenu(firstServer);
 

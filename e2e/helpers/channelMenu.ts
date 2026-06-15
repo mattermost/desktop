@@ -34,29 +34,47 @@ export async function openChannelHeaderMenu(win: ServerView): Promise<void> {
     await win.waitForSelector('#channelHeaderDropdownMenu, .a11y__popup', {timeout: 5_000});
 }
 
+const SIDEBAR_CHANNEL_MENU_BUTTON = (channelItemSelector: string) => [
+    `${channelItemSelector} button[aria-label*="channel menu" i]`,
+    `${channelItemSelector} button[aria-label*="channel options" i]`,
+    `${channelItemSelector} button[aria-label*="options" i]`,
+    `${channelItemSelector} button.SidebarMenu_menuButton`,
+    `${channelItemSelector} .SidebarMenu button`,
+    `${channelItemSelector} [data-testid="channel-options-dropdown"]`,
+].join(', ');
+
 /**
  * Open the per-channel sidebar options ("⋮") menu for a sidebar row.
- * The trigger is hover-gated in the webapp, so dispatch pointer events first.
+ * The trigger is hover-gated in the webapp; use native mouseMove so Electron
+ * updates :hover state (synthetic dispatchEvent is ignored on macOS/Windows).
  */
 export async function openSidebarChannelMenu(win: ServerView, channelItemSelector: string): Promise<void> {
     await win.waitForSelector(channelItemSelector, {timeout: 15_000});
-    await win.evaluate(`(() => {
+
+    const menuButtonSelector = SIDEBAR_CHANNEL_MENU_BUTTON(channelItemSelector);
+
+    const hoverPoint = await win.runInRenderer(`
         const el = document.querySelector(${JSON.stringify(channelItemSelector)});
         if (!el) {
-            return;
+            return null;
         }
-        for (const type of ['pointerover', 'mouseover', 'mouseenter', 'pointermove', 'mousemove']) {
-            el.dispatchEvent(new MouseEvent(type, {bubbles: true, cancelable: true}));
-        }
-    })()`);
+        el.scrollIntoView({block: 'center', inline: 'center'});
+        const rect = el.getBoundingClientRect();
+        return {
+            x: Math.round(rect.right - 8),
+            y: Math.round(rect.top + (rect.height / 2)),
+        };
+    `, true);
+    expect(hoverPoint, `Channel sidebar item must exist: ${channelItemSelector}`).toBeTruthy();
 
-    const menuButtonSelector = [
-        `${channelItemSelector} button[aria-label*="channel menu" i]`,
-        `${channelItemSelector} button[aria-label*="channel options" i]`,
-        `${channelItemSelector} button[aria-label*="options" i]`,
-        `${channelItemSelector} button.SidebarMenu_menuButton`,
-        `${channelItemSelector} .SidebarMenu button`,
-    ].join(', ');
+    await win.app.evaluate(({webContents}, payload) => {
+        const wc = webContents.fromId(payload.id);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.id} is not available`);
+        }
+        wc.focus();
+        wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
+    }, {id: win.webContentsId, ...hoverPoint!});
 
     await win.waitForSelector(menuButtonSelector, {state: 'visible', timeout: 15_000});
     await win.click(menuButtonSelector);
