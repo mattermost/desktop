@@ -28,19 +28,33 @@ export async function startDownloadServer(
     const server = http.createServer((request, response) => {
         if (request.url === '/download.txt') {
             if (slow) {
+                // Keep the response open long enough for CI to observe a progressing
+                // download even when popup setup and the will-download round-trip are slow.
+                const chunkCount = 120;
+                const chunkIntervalMs = 500;
+                const chunkPayload = `chunk-${'x'.repeat(4096)}`;
+
                 response.writeHead(200, {
                     'Content-Type': 'text/plain',
                     'Content-Disposition': `attachment; filename="${filename}"`,
                 });
+
                 let sentChunks = 0;
-                const timer = setInterval(() => {
+                const writeChunk = () => {
                     sentChunks += 1;
-                    response.write(`chunk-${sentChunks}\n`);
-                    if (sentChunks === 40) {
-                        clearInterval(timer);
+                    response.write(`${chunkPayload}-${sentChunks}\n`);
+                    if (sentChunks >= chunkCount) {
                         response.end();
                     }
-                }, 300);
+                };
+
+                writeChunk();
+                const timer = setInterval(() => {
+                    writeChunk();
+                    if (sentChunks >= chunkCount) {
+                        clearInterval(timer);
+                    }
+                }, chunkIntervalMs);
                 return;
             }
 
@@ -153,6 +167,18 @@ export function readDownloadsState(userDataDir: string): Record<string, {state?:
     } catch {
         return {};
     }
+}
+
+export async function waitForDownloadState(
+    userDataDir: string,
+    filename: string,
+    state: string,
+    timeout = 90_000,
+) {
+    await expect.poll(
+        () => readDownloadsState(userDataDir)[filename]?.state,
+        {timeout, intervals: [25, 50, 100, 200, 500]},
+    ).toBe(state);
 }
 
 export async function waitForDownloadFile(

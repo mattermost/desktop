@@ -11,6 +11,7 @@ import {
     readDownloadsState,
     startDownloadServer,
     triggerDownloadFromPopup,
+    waitForDownloadState,
 } from '../../helpers/downloads';
 
 test(
@@ -25,11 +26,10 @@ test(
         const app = await launchAppWithDownloadsDir(userDataDir, downloadLocation);
 
         try {
-            await triggerDownloadFromPopup(app, url);
-            await expect.poll(
-                () => readDownloadsState(userDataDir)[filename]?.state,
-                {timeout: 20_000, intervals: [50, 100, 200, 500]},
-            ).toBe('progressing');
+            await Promise.all([
+                triggerDownloadFromPopup(app, url),
+                waitForDownloadState(userDataDir, filename, 'progressing'),
+            ]);
 
             const {downloadsWindow} = await openDownloadsDropdown(app);
             await downloadsWindow.hover('.DownloadsDropdown__File');
