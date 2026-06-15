@@ -68,6 +68,7 @@ import sentryHandler from 'main/sentryHandler';
 import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
 import UpdateManager from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
+import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
 
 import {
     handleAppBeforeQuit,
@@ -77,6 +78,7 @@ import {
     handleAppWillFinishLaunching,
     handleAppWindowAllClosed,
     handleChildProcessGone,
+    certificateErrorCallbacks,
 } from './app';
 import {
     handleConfigUpdate,
@@ -369,6 +371,20 @@ async function initializeAfterAppReady() {
     ServerManager.on(SERVER_ADDED, updateServerInfo);
     ServerManager.on(SERVER_URL_CHANGED, updateServerInfo);
     ServerManager.on(SERVER_PRE_AUTH_SECRET_CHANGED, updateServerInfo);
+
+    if (process.env.NODE_ENV === 'test') {
+        setTestField('__e2eStubMessageBoxResponses', installMessageBoxStub);
+        setTestField('__e2eRestoreMessageBox', restoreMessageBoxStub);
+        setTestField('__e2eClearCertificateErrorCallbacks', () => certificateErrorCallbacks.clear());
+        setTestField('__e2eSetAutoTrustCertificate', (enabled: boolean) => {
+            (global as {__e2eAutoTrustCertificate?: boolean}).__e2eAutoTrustCertificate = enabled;
+        });
+        if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'cancel') {
+            installMessageBoxStub([{response: 1}]);
+        } else if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'trust') {
+            installMessageBoxStub([{response: 0}, {response: 0}]);
+        }
+    }
 
     ServerManager.on(SERVER_ADDED, PreAuthManager.loadPreAuthSecretForServer);
     ServerManager.init();

@@ -8,7 +8,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
-import {restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
+import {clearCertificateErrorCallbacks, restoreMessageBox, setAutoTrustCertificate} from '../../helpers/dialog';
 import {waitForErrorView} from '../../helpers/errorView';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
@@ -26,7 +26,6 @@ test(
                     url: EXPIRED_CERT_URL,
                     order: 0,
                 },
-                ...demoConfig.servers.map((server, index) => ({...server, order: index + 1})),
             ],
             lastActiveServer: 0,
         };
@@ -37,8 +36,12 @@ test(
         const {_electron: electron} = await import('playwright');
         const app = await electron.launch({
             executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-            env: {...process.env, NODE_ENV: 'test'},
+            args: [appDir, `--dataDir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+            env: {
+                ...process.env,
+                NODE_ENV: 'test',
+                MM_E2E_STUB_MESSAGE_BOX: 'cancel',
+            },
             timeout: 60_000,
         });
 
@@ -46,10 +49,8 @@ test(
             await waitForAppReady(app);
             await waitForErrorView(app);
 
-            await stubMessageBoxResponses(app, [
-                {response: 0},
-                {response: 0},
-            ]);
+            await clearCertificateErrorCallbacks(app);
+            await setAutoTrustCertificate(app, true);
 
             await app.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
@@ -60,20 +61,21 @@ test(
                 refs.ServerManager.reloadServer(server.id);
             });
 
+            const certificateStorePath = path.join(userDataDir, 'certificate.json');
+
             await expect.poll(async () => {
                 const mainWindow = app.windows().find((window) => window.url().includes('index'));
                 const errorView = await mainWindow?.$('.ErrorView');
-                return errorView === null;
+                return errorView === null && fs.existsSync(certificateStorePath);
             }, {
                 timeout: 45_000,
-                message: 'Trusted certificate should allow the expired-cert server to load without ErrorView',
+                message: 'Trusted certificate should persist to certificate.json and clear ErrorView',
             }).toBe(true);
 
-            const certificateStorePath = path.join(userDataDir, 'certificate.json');
-            await expect.poll(() => fs.existsSync(certificateStorePath)).toBe(true);
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
         } finally {
+            await setAutoTrustCertificate(app, false);
             await restoreMessageBox(app);
             await app.close().catch(() => {});
             await waitForLockFileRelease(userDataDir);

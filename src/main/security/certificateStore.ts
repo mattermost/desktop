@@ -39,18 +39,25 @@ export class CertificateStore {
 
     constructor(storeFile: string) {
         this.storeFile = storeFile;
-        let storeStr;
+        this.data = this.readStoreFile(storeFile);
+    }
+
+    private readStoreFile = (storeFile: string) => {
         try {
-            storeStr = fs.readFileSync(storeFile, 'utf-8');
+            const storeStr = fs.readFileSync(storeFile, 'utf-8');
             const result = Validator.validateCertificateStore(storeStr);
             if (!result) {
                 throw new Error('Provided certificate store file does not validate, using defaults instead.');
             }
-            this.data = result;
+            return result;
         } catch (e) {
-            this.data = {};
+            return {};
         }
-    }
+    };
+
+    reloadFromDisk = () => {
+        this.data = this.readStoreFile(this.storeFile);
+    };
 
     save = () => {
         fs.writeFileSync(this.storeFile, JSON.stringify(this.data, null, '  '));
@@ -91,5 +98,6 @@ export default certificateStore;
 
 ipcMain.on(UPDATE_PATHS, () => {
     new Logger('certificateStore').debug('UPDATE_PATHS');
-    certificateStore = new CertificateStore(certificateStorePath);
+    certificateStore.storeFile = certificateStorePath;
+    certificateStore.reloadFromDisk();
 });
