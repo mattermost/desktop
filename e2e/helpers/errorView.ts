@@ -115,15 +115,16 @@ export async function waitForErrorView(
     options: WaitForErrorViewOptions = {},
 ): Promise<void> {
     const timeout = options.timeout ?? 45_000;
-    const mainWindow = app.windows().find((window) => window.url().includes('index'));
-    expect(mainWindow).toBeDefined();
-
     const deadline = Date.now() + timeout;
     let lastError: unknown;
     while (Date.now() < deadline) {
         try {
+            const mainWindow = app.windows().find((window) => window.url().includes('index'));
+            if (!mainWindow) {
+                throw new Error('Main index window is not available yet');
+            }
             await waitForRendererThenReload(app, options.serverName);
-            await mainWindow!.waitForSelector('.ErrorView', {
+            await mainWindow.waitForSelector('.ErrorView', {
                 timeout: Math.min(10_000, deadline - Date.now()),
             });
             return;

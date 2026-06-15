@@ -28,7 +28,8 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
                 const servers = refs.ServerManager.getAllServers();
                 return servers.flatMap((server: {id: string; name: string}) => {
                     const views = refs.ViewManager.getViewsByServerId(server.id);
-                    const orderedTabIds = refs.TabManager.getOrderedTabsForServer(server.id).map((tab: {id: string}) => tab.id);
+                    const orderedTabs: Array<{id: string}> = refs.TabManager?.getOrderedTabsForServer?.(server.id) ?? [];
+                    const orderedTabIds = orderedTabs.map((tab) => tab.id);
                     const sortedViews = [...views].sort((a: {id: string}, b: {id: string}) => {
                         const ai = orderedTabIds.indexOf(a.id);
                         const bi = orderedTabIds.indexOf(b.id);

@@ -39,6 +39,10 @@ const bookmarksConfig: AppConfig = {
     servers: demoMattermostConfig.servers.filter((server) => !server.url.includes('github.com')),
 };
 
+if (bookmarksConfig.servers.length === 0) {
+    throw new Error('bookmarksConfig requires at least one non-github server');
+}
+
 async function loginToOffTopicChannel(serverMap: ServerMap, electronApp: ElectronApplication) {
     const serverEntry = serverMap[bookmarksConfig.servers[0].name]?.[0];
     const firstServer = serverEntry?.win;

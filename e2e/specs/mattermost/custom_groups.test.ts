@@ -18,7 +18,11 @@ test.describe('mattermost/custom_groups', () => {
     test.use({appConfig: demoMattermostConfig});
     test.setTimeout(120_000);
 
-    test.beforeAll(async ({serverMap}) => {
+    // NOTE: `serverMap` is a test-scoped fixture and Playwright forbids accessing
+    // test-scoped fixtures from `test.beforeAll`. Login runs in `beforeEach` so the
+    // fixture is requested at the correct scope; subsequent tests are cheap because
+    // the underlying session cookie is already established.
+    test.beforeEach(async ({serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -83,21 +87,28 @@ test.describe('mattermost/custom_groups', () => {
             });
             expect(groupsClicked, 'User Groups menu item must be clickable').toBe(true);
 
-            // Wait for the User Groups view to load
-            await expect.poll(
-                () => firstServer!.evaluate(() => {
-                    // The groups view should have a list or table of groups
-                    const groupElements = document.querySelectorAll('[class*="group"], [id*="group"]');
-                    return groupElements.length;
-                }),
-                {timeout: 10_000, message: 'User Groups view must load with content'},
-            ).toBeGreaterThan(0);
+            // Scope assertions to the actual User Groups surface (modal or page).
+            // Webapp renders user groups inside `.user-groups-modal` / `#user-groups-modal`
+            // (with `_heading`/`_body`), so prefer those selectors over substring wildcards
+            // that can match unrelated sidebar/channel elements.
+            const groupsSurfaceSelector = [
+                '.user-groups-modal',
+                '#user-groups-modal',
+                '#user-groups-modal_body',
+                '[id^="user-groups-modal"]',
+                '[class*="UserGroupsModal"]',
+                '[class*="user-groups-modal"]',
+            ].join(', ');
 
-            // Verify the view has a list structure (even if empty, the container should exist)
-            const viewHasStructure = await firstServer!.evaluate(() => {
-                const listContainer = document.querySelector('[class*="list"], [class*="table"], [class*="grid"]');
-                return listContainer !== null;
-            });
+            await firstServer!.waitForSelector(groupsSurfaceSelector, {timeout: 10_000});
+
+            const viewHasStructure = await firstServer!.evaluate((selector) => {
+                const root = document.querySelector(selector);
+                if (!root) {
+                    return false;
+                }
+                return Boolean(root.querySelector('ul, ol, table, [role="list"], [role="table"], [role="grid"]'));
+            }, groupsSurfaceSelector);
             expect(viewHasStructure, 'User Groups view must have a list/table structure').toBe(true);
 
             // Return to channels

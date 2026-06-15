@@ -105,13 +105,21 @@ test(
                 {timeout: 10_000, message: 'Main window should be visible after notification click navigation'},
             ).toBe(true);
         } finally {
+            // Always restore MainWindow visibility so cross-test workers don't see a
+            // hidden window if BROWSER_HISTORY_PUSH never fired or timed out.
             await electronApp.evaluate(({ipcMain}, channel) => {
+                const refs = (global as any).__e2eTestRefs;
+                const mainWindow = refs?.MainWindow?.get?.();
+                if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+                    refs?.MainWindow?.show?.();
+                }
+
                 const focus = (global as any).__e2eNotificationClickFocus;
                 if (focus) {
                     ipcMain.off(channel, focus);
                     delete (global as any).__e2eNotificationClickFocus;
                 }
-            }, BROWSER_HISTORY_PUSH);
+            }, BROWSER_HISTORY_PUSH).catch(() => {});
             await releaseLock();
         }
     },

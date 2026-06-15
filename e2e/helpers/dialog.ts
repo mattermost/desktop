@@ -16,12 +16,12 @@ export async function stubMessageBoxResponses(
         throw new Error('stubMessageBoxResponses requires at least one response');
     }
 
-    await app.evaluate((responses) => {
+    await app.evaluate((_electron, value) => {
         const stub = (global as any).__e2eStubMessageBoxResponses as ((responses: MessageBoxResponse[]) => void) | undefined;
         if (!stub) {
             throw new Error('__e2eStubMessageBoxResponses is not available');
         }
-        stub(responses);
+        stub(value);
     }, responses);
 }
 
@@ -42,8 +42,11 @@ export async function clearCertificateErrorCallbacks(app: ElectronApplication): 
 }
 
 export async function setAutoTrustCertificate(app: ElectronApplication, enabled: boolean): Promise<void> {
-    await app.evaluate((value) => {
+    await app.evaluate((_electron, value) => {
         const setAutoTrust = (global as any).__e2eSetAutoTrustCertificate as ((enabled: boolean) => void) | undefined;
-        setAutoTrust?.(value);
+        if (!setAutoTrust) {
+            throw new Error('__e2eSetAutoTrustCertificate not exposed (NODE_ENV must be test)');
+        }
+        setAutoTrust(value);
     }, enabled);
 }

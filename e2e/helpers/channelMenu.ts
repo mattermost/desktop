@@ -106,6 +106,7 @@ export async function clickCopyLinkInMenu(win: ServerView): Promise<void> {
             return;
         }
     }
+    throw new Error('"Copy Link" item became unavailable before it could be clicked');
 }
 
 /**

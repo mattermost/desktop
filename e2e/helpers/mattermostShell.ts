@@ -207,6 +207,8 @@ export async function getPostTextboxWordPoint(
             const computed = window.getComputedStyle(textarea);
             mirror.style.position = 'absolute';
             mirror.style.visibility = 'hidden';
+            mirror.style.top = '0';
+            mirror.style.left = '0';
             mirror.style.whiteSpace = 'pre-wrap';
             mirror.style.wordWrap = 'break-word';
             for (const property of properties) {
@@ -218,13 +220,21 @@ export async function getPostTextboxWordPoint(
             marker.textContent = text.slice(index, index + needle.length) || '.';
             mirror.appendChild(marker);
             document.body.appendChild(mirror);
+            const mirrorRect = mirror.getBoundingClientRect();
             const markerRect = marker.getBoundingClientRect();
             const textareaRect = textarea.getBoundingClientRect();
             document.body.removeChild(mirror);
 
+            // markerRect is relative to the mirror (anchored at 0,0 in body coords),
+            // so (markerRect - mirrorRect) gives the offset inside the mirror. Add that
+            // to the textarea's viewport position and subtract scroll for the final point.
             return {
-                x: Math.round(textareaRect.left + markerRect.left),
-                y: Math.round(textareaRect.top + markerRect.top + (markerRect.height / 2)),
+                x: Math.round(
+                    textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft,
+                ),
+                y: Math.round(
+                    textareaRect.top + (markerRect.top - mirrorRect.top) - textarea.scrollTop + (markerRect.height / 2),
+                ),
             };
         };
 

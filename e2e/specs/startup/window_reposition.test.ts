@@ -10,6 +10,26 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
 
+// Mirror the timeout-capped close + SIGTERM fallback from e2e/fixtures/index.ts so this
+// spec doesn't hang on a stuck Electron process if app.close() never resolves.
+async function safeClose(app: Awaited<ReturnType<typeof electron.launch>>) {
+    const closePromise = app.close().catch(() => undefined);
+    const result = await Promise.race([
+        closePromise,
+        new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), 10_000)),
+    ]);
+    if (result === 'timeout') {
+        try {
+            const pid = app.process().pid;
+            if (pid) {
+                process.kill(pid, 'SIGTERM');
+            }
+        } catch {
+            // best-effort cleanup
+        }
+    }
+}
+
 test.describe('startup/window_reposition', () => {
     test.describe.configure({mode: 'serial'});
     test.setTimeout(120_000);
@@ -76,7 +96,7 @@ test.describe('startup/window_reposition', () => {
                     maximized: false,
                     fullscreen: false,
                 };
-                await app.close();
+                await safeClose(app);
                 await waitForLockFileRelease(userDataDir);
 
                 const {writeFileSync} = await import('fs');
@@ -87,7 +107,11 @@ test.describe('startup/window_reposition', () => {
 
                 // Linux CI (xvfb) and Windows CI do not reliably restore window
                 // bounds from bounds-info.json on relaunch — see startup/window.test.ts.
-                if (process.platform === 'linux' || (process.platform === 'win32' && process.env.CI)) {
+                // Local Linux runs still exercise the relaunch verification path below.
+                if (
+                    (process.platform === 'linux' && process.env.CI) ||
+                    (process.platform === 'win32' && process.env.CI)
+                ) {
                     const {readFileSync} = await import('fs');
                     const persisted = JSON.parse(
                         readFileSync(path.join(userDataDir, 'bounds-info.json'), 'utf-8'),
@@ -126,10 +150,10 @@ test.describe('startup/window_reposition', () => {
                         `Restored y should be near ${savedBounds.y}`,
                     ).toBeLessThanOrEqual(tolerance);
                 } finally {
-                    await app2.close();
+                    await safeClose(app2);
                 }
             } finally {
-                await app.close().catch(() => {});
+                await safeClose(app);
                 await waitForLockFileRelease(userDataDir).catch(() => {});
             }
         },

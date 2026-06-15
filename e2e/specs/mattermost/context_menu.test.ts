@@ -39,7 +39,7 @@ test.describe('mattermost/context_menu', () => {
             const hasCopyLink = await firstServer!.evaluate(() => {
                 const items = document.querySelectorAll('.Menu .MenuItem, [role="menuitem"]');
                 return Array.from(items).some(
-                    (item) => (item.textContent ?? '').trim() === 'Copy Link',
+                    (item) => (/^copy link$/i).test((item.textContent ?? '').trim()),
                 );
             });
             expect(hasCopyLink, '"Copy Link" must appear in channel context menu').toBe(true);

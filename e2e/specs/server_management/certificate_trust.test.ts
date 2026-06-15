@@ -36,7 +36,7 @@ test(
         const {_electron: electron} = await import('playwright');
         const app = await electron.launch({
             executablePath: electronBinaryPath,
-            args: [appDir, `--dataDir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
             env: {
                 ...process.env,
                 NODE_ENV: 'test',

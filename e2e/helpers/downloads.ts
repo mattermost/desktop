@@ -9,8 +9,8 @@ import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
 import {waitForAppReady} from './appReadiness';
-import {electronBinaryPath, appDir, emptyConfig} from './config';
 import {waitForLockFileRelease} from './cleanup';
+import {electronBinaryPath, appDir, emptyConfig} from './config';
 
 export type DownloadServer = {
     server: http.Server;
@@ -40,21 +40,36 @@ export async function startDownloadServer(
                 });
 
                 let sentChunks = 0;
+                let closed = false;
+                let timer: ReturnType<typeof setInterval> | undefined;
+                const clearTimer = () => {
+                    if (timer) {
+                        clearInterval(timer);
+                        timer = undefined;
+                    }
+                };
+                response.on('close', () => {
+                    closed = true;
+                    clearTimer();
+                });
                 const writeChunk = () => {
+                    if (closed || response.destroyed || response.writableEnded) {
+                        clearTimer();
+                        return;
+                    }
                     sentChunks += 1;
                     response.write(`${chunkPayload}-${sentChunks}\n`);
                     if (sentChunks >= chunkCount) {
+                        clearTimer();
                         response.end();
                     }
                 };
 
                 writeChunk();
-                const timer = setInterval(() => {
-                    writeChunk();
-                    if (sentChunks >= chunkCount) {
-                        clearInterval(timer);
-                    }
-                }, chunkIntervalMs);
+                if (closed) {
+                    return;
+                }
+                timer = setInterval(writeChunk, chunkIntervalMs);
                 return;
             }
 
@@ -217,11 +232,13 @@ export async function closeDownloadTestApp(app: ElectronApplication, userDataDir
 
     const timeout = process.platform === 'win32' ? 10_000 : 2_000;
     const deadline = Date.now() + timeout;
+    let lastError: unknown;
     while (Date.now() < deadline) {
         try {
             fs.rmSync(downloadLocation, {recursive: true, force: true, maxRetries: 3, retryDelay: 200});
             return;
         } catch (error) {
+            lastError = error;
             const code = (error as NodeJS.ErrnoException).code;
             if (code !== 'EBUSY' && code !== 'EPERM' && code !== 'ENOTEMPTY') {
                 throw error;
@@ -229,4 +246,5 @@ export async function closeDownloadTestApp(app: ElectronApplication, userDataDir
             await new Promise((resolve) => setTimeout(resolve, 250));
         }
     }
+    throw lastError ?? new Error(`Failed to remove download directory: ${downloadLocation}`);
 }

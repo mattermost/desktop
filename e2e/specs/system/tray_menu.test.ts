@@ -76,8 +76,8 @@ test.describe('system/tray_menu', () => {
                 {timeout: 15_000, message: 'Tray server menu click should switch the active server'},
             ).toBe(targetServer);
 
-            const serverMap = await buildServerMap(electronApp);
             await expect.poll(async () => {
+                const serverMap = await buildServerMap(electronApp);
                 const view = serverMap[targetServer]?.[0]?.win;
                 return view?.url() ?? '';
             }, {timeout: 20_000}).toContain('github.com');
