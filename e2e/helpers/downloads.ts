@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
 
-import type {ElectronApplication} from 'playwright';
 import {expect} from '@playwright/test';
+import type {ElectronApplication} from 'playwright';
 
 import {waitForAppReady} from './appReadiness';
 import {electronBinaryPath, appDir, emptyConfig} from './config';

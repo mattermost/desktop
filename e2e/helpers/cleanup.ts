@@ -38,5 +38,8 @@ export async function waitForLockFileRelease(userDataDir: string): Promise<void>
                 // Best-effort cleanup when a child process kept the lock open.
             }
         }
+        if (fs.existsSync(lockFile)) {
+            throw new Error(`SingletonLock still present after cleanup attempt: ${lockFile}`);
+        }
     }
 }

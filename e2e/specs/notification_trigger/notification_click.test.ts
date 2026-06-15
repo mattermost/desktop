@@ -77,7 +77,9 @@ test(
                     const refs = (global as any).__e2eTestRefs;
                     refs?.MainWindow?.show?.();
                     ipcMain.off(payload.browserHistoryPush, focus);
+                    delete (global as any).__e2eNotificationClickFocus;
                 };
+                (global as any).__e2eNotificationClickFocus = focus;
                 ipcMain.on(payload.browserHistoryPush, focus);
                 wc.send(payload.channel, payload.channelId, payload.teamId, payload.url);
             }, {
@@ -103,6 +105,13 @@ test(
                 {timeout: 10_000, message: 'Main window should be visible after notification click navigation'},
             ).toBe(true);
         } finally {
+            await electronApp.evaluate(({ipcMain}, channel) => {
+                const focus = (global as any).__e2eNotificationClickFocus;
+                if (focus) {
+                    ipcMain.off(channel, focus);
+                    delete (global as any).__e2eNotificationClickFocus;
+                }
+            }, BROWSER_HISTORY_PUSH);
             await releaseLock();
         }
     },

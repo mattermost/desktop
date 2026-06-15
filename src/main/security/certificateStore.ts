@@ -93,7 +93,7 @@ export class CertificateStore {
     };
 }
 
-let certificateStore = new CertificateStore(certificateStorePath);
+const certificateStore = new CertificateStore(certificateStorePath);
 export default certificateStore;
 
 ipcMain.on(UPDATE_PATHS, () => {

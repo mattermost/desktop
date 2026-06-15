@@ -22,19 +22,30 @@ test.describe('menu_bar/help_menu', () => {
             await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
                 refs.UpdateManager.__e2eCheckForUpdatesCalls = 0;
+                refs.UpdateManager.__e2eOriginalCheckForUpdates = refs.UpdateManager.checkForUpdates;
                 refs.UpdateManager.checkForUpdates = () => {
                     refs.UpdateManager.__e2eCheckForUpdatesCalls += 1;
                 };
             });
 
-            await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Check for Updates'});
+            try {
+                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Check for Updates'});
 
-            await expect.poll(async () => {
-                return electronApp.evaluate(() => {
+                await expect.poll(async () => {
+                    return electronApp.evaluate(() => {
+                        const refs = (global as any).__e2eTestRefs;
+                        return refs?.UpdateManager?.__e2eCheckForUpdatesCalls ?? 0;
+                    });
+                }, {timeout: 10_000}).toBeGreaterThan(0);
+            } finally {
+                await electronApp.evaluate(() => {
                     const refs = (global as any).__e2eTestRefs;
-                    return refs?.UpdateManager?.__e2eCheckForUpdatesCalls ?? 0;
+                    if (refs?.UpdateManager?.__e2eOriginalCheckForUpdates) {
+                        refs.UpdateManager.checkForUpdates = refs.UpdateManager.__e2eOriginalCheckForUpdates;
+                        delete refs.UpdateManager.__e2eOriginalCheckForUpdates;
+                    }
                 });
-            }, {timeout: 10_000}).toBeGreaterThan(0);
+            }
         },
     );
 
@@ -44,18 +55,28 @@ test.describe('menu_bar/help_menu', () => {
         async ({electronApp}) => {
             await electronApp.evaluate(({shell}) => {
                 (global as any).__e2eShownInFolder = [] as string[];
-                const original = shell.showItemInFolder.bind(shell);
+                (global as any).__e2eOriginalShowItemInFolder = shell.showItemInFolder.bind(shell);
                 shell.showItemInFolder = (fullPath: string) => {
                     (global as any).__e2eShownInFolder.push(fullPath);
-                    return original(fullPath);
+                    return (global as any).__e2eOriginalShowItemInFolder(fullPath);
                 };
             });
 
-            await clickApplicationMenuItem(electronApp, 'help', {id: 'Show logs'});
+            try {
+                await clickApplicationMenuItem(electronApp, 'help', {id: 'Show logs'});
 
-            await expect.poll(async () => {
-                return electronApp.evaluate(() => ((global as any).__e2eShownInFolder as string[] | undefined)?.length ?? 0);
-            }, {timeout: 10_000}).toBeGreaterThan(0);
+                await expect.poll(async () => {
+                    return electronApp.evaluate(() => ((global as any).__e2eShownInFolder as string[] | undefined)?.length ?? 0);
+                }, {timeout: 10_000}).toBeGreaterThan(0);
+            } finally {
+                await electronApp.evaluate(({shell}) => {
+                    const original = (global as any).__e2eOriginalShowItemInFolder;
+                    if (original) {
+                        shell.showItemInFolder = original;
+                        delete (global as any).__e2eOriginalShowItemInFolder;
+                    }
+                });
+            }
         },
     );
 });

@@ -66,9 +66,9 @@ import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
 import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
+import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
 import UpdateManager from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
-import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
 
 import {
     handleAppBeforeQuit,
@@ -319,7 +319,8 @@ async function initializeAfterAppReady() {
                 continue;
             }
             const itemLabel = typeof item.label === 'string' ? item.label : '';
-            if (itemLabel === label || itemLabel.startsWith(`${label.slice(0, 50)}`)) {
+            const truncatedMenuLabel = label.length > 50 ? `${label.slice(0, 50)}...` : label;
+            if ((itemLabel === label || itemLabel === truncatedMenuLabel) && typeof item.click === 'function') {
                 item.click();
                 return;
             }

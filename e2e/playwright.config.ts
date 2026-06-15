@@ -55,7 +55,7 @@ const excludePolicyFromMainRun = Boolean(process.env.CI) && process.env.RUN_POLI
 const activePlatform = getActivePlatform();
 
 function buildPlatformProjects(): Project[] {
-    const policyFilter = excludePolicyFromMainRun ? {grepInvert: /[/\\]policy[/\\]policy\.test/} : {};
+    const policyFilter = excludePolicyFromMainRun ? {grepInvert: /[/\\]policy[/\\]/} : {};
 
     const projects: Project[] = [
         {

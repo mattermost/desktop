@@ -1,8 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {test, expect, type ServerMap} from '../../fixtures/index';
 import type {ElectronApplication} from 'playwright';
+
+import {test, expect, type ServerMap} from '../../fixtures/index';
 import type {AppConfig} from '../../helpers/config';
 import {demoMattermostConfig} from '../../helpers/config';
 import {openChannelHeaderMenu, enableBookmarksBar, submitBookmarkModal, waitForBookmarkInBar, clickBookmarkInBar, deleteAllBookmarksInBar} from '../../helpers/channelMenu';

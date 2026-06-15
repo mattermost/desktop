@@ -216,7 +216,10 @@ jest.mock('common/views/viewManager', () => ({
 jest.mock('app/menus', () => ({
     refreshMenu: jest.fn(),
 }));
-jest.mock('app/menus/tray', () => jest.fn(() => ({items: []})));
+jest.mock('app/menus/tray', () => ({
+    __esModule: true,
+    default: jest.fn(() => ({items: []})),
+}));
 
 jest.mock('main/security/preAuthManager', () => ({
     handlePreAuthSecret: jest.fn(),

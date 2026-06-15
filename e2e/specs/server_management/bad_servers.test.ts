@@ -134,8 +134,8 @@ async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfi
 }
 
 async function closeLaunchedApp(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
-    await closeOverlayWindowsIfOpen(app);
-    await app.close();
+    await closeOverlayWindowsIfOpen(app).catch(() => {});
+    await app.close().catch(() => {});
 }
 
 test.describe('Bad Server Configurations', () => {

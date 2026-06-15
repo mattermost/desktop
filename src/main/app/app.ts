@@ -113,7 +113,8 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         }
     } else {
         event.preventDefault();
-    // update the callback
+
+        // update the callback
         const errorID = `${parsedURL.origin}:${error}`;
 
         const view = WebContentsManager.getViewByWebContentsId(webContents.id);
