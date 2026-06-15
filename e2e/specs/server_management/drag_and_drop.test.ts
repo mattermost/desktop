@@ -9,8 +9,9 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
+import {recoverServerViewIfNeeded, waitForMattermostShell} from '../../helpers/mattermostShell';
 import {buildServerMap} from '../../helpers/serverMap';
 
 if (!process.env.MM_TEST_SERVER_URL) {
@@ -57,34 +58,6 @@ async function waitForWindow(app: ElectronApplication, pattern: string, timeout 
     }
 
     throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
-
-async function closeElectronApp(app: ElectronApplication, dataDir: string) {
-    let pid: number | undefined;
-    try {
-        pid = app.process()?.pid;
-    } catch {
-        pid = undefined;
-    }
-
-    let cleanClosed = false;
-    await Promise.race([
-        app.close().catch(() => {}).then(() => {
-            cleanClosed = true;
-        }),
-        new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
-    ]);
-
-    if (!cleanClosed && pid) {
-        try {
-            process.kill(pid, 'SIGTERM');
-        } catch {
-            // already exited
-        }
-        return;
-    }
-
-    await waitForLockFileRelease(dataDir).catch(() => {});
 }
 
 async function getMattermostServer() {
@@ -231,13 +204,15 @@ test.describe('server_management/drag_and_drop', () => {
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
             await secondTab.click();
             const secondView = localServerMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
+            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
+            await recoverServerViewIfNeeded(secondView, {channelItem: '#sidebarItem_off-topic'});
             await secondView.click('#sidebarItem_off-topic');
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
             await thirdTab.click();
             const thirdView = localServerMap[serverName][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+            await waitForMattermostShell(thirdView, {channelItem: '#sidebarItem_town-square'});
+            await recoverServerViewIfNeeded(thirdView, {channelItem: '#sidebarItem_town-square'});
             await thirdView.click('#sidebarItem_town-square');
 
             // Tab titles update asynchronously after channel navigation — poll for each.
@@ -263,13 +238,15 @@ test.describe('server_management/drag_and_drop', () => {
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
             await secondTab.click();
             const secondView = localServerMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
+            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
+            await recoverServerViewIfNeeded(secondView, {channelItem: '#sidebarItem_off-topic'});
             await secondView.click('#sidebarItem_off-topic');
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
             await thirdTab.click();
             const thirdView = localServerMap[serverName][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+            await waitForMattermostShell(thirdView, {channelItem: '#sidebarItem_town-square'});
+            await recoverServerViewIfNeeded(thirdView, {channelItem: '#sidebarItem_town-square'});
             await thirdView.click('#sidebarItem_town-square');
 
             const visibleTabOrder = await getVisibleTabOrder();

@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 
 async function waitForWindow(app: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>, pattern: string, timeout = 30_000) {
     const timeoutAt = Date.now() + timeout;
@@ -66,8 +66,7 @@ test.describe('Add Server Modal', () => {
             const isFocused = await newServerView.$eval('#serverUrlInput', (el) => el.isSameNode(document.activeElement));
             expect(isFocused).toBe(true);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 
@@ -79,8 +78,7 @@ test.describe('Add Server Modal', () => {
             const existing = Boolean(app.windows().find((w) => w.url().includes('newServer')));
             expect(existing).toBe(false);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 
@@ -91,8 +89,7 @@ test.describe('Add Server Modal', () => {
                 const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
                 expect(disabled === '').toBe(true);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(app, userDataDir);
             }
         });
 
@@ -107,8 +104,7 @@ test.describe('Add Server Modal', () => {
                 const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
                 expect(disabled === '').toBe(false);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(app, userDataDir);
             }
         });
 
@@ -121,8 +117,7 @@ test.describe('Add Server Modal', () => {
                     const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
                     expect(disabled === '').toBe(true);
                 } finally {
-                    await app.close();
-                    await waitForLockFileRelease(userDataDir);
+                    await closeElectronApp(app, userDataDir);
                 }
             });
         });
@@ -140,8 +135,7 @@ test.describe('Add Server Modal', () => {
                     expect(existingUrl).toBe(false);
                     expect(disabled === '').toBe(true);
                 } finally {
-                    await app.close();
-                    await waitForLockFileRelease(userDataDir);
+                    await closeElectronApp(app, userDataDir);
                 }
             });
         });
@@ -155,8 +149,7 @@ test.describe('Add Server Modal', () => {
             const existing = await newServerView.isVisible('#customMessage_url.Input___error');
             expect(existing).toBe(true);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 
@@ -170,8 +163,7 @@ test.describe('Add Server Modal', () => {
                 const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
                 expect(disabled === null).toBe(true);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(app, userDataDir);
             }
         });
 
@@ -202,8 +194,7 @@ test.describe('Add Server Modal', () => {
                     }),
                 ]));
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(app, userDataDir);
             }
         });
     });

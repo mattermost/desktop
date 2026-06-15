@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 
 async function launchWithWelcomeScreen(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');
@@ -44,8 +44,7 @@ test.describe('Configure Server Modal', () => {
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 
@@ -56,8 +55,7 @@ test.describe('Configure Server Modal', () => {
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 
@@ -70,8 +68,7 @@ test.describe('Configure Server Modal', () => {
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(false);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 
@@ -86,8 +83,7 @@ test.describe('Configure Server Modal', () => {
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 
@@ -123,8 +119,7 @@ test.describe('Configure Server Modal', () => {
                 order: 0,
             }));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 });

@@ -7,8 +7,8 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {clearCertificateErrorCallbacks, restoreMessageBox, setAutoTrustCertificate} from '../../helpers/dialog';
+import {closeElectronApp} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
@@ -77,11 +77,7 @@ test(
         } finally {
             await setAutoTrustCertificate(app, false).catch(() => {});
             await restoreMessageBox(app).catch(() => {});
-            await Promise.race([
-                app.close(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('app.close timed out')), 10_000)),
-            ]).catch(() => {});
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     },
 );
