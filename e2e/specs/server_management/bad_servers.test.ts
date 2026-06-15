@@ -54,68 +54,6 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
     return newServerView;
 }
 
-/**
- * Wait for the renderer's MainPage to fully mount (so its onLoadFailed listener is
- * registered), then reload the current server view so any load failure that fired
- * before the listener was ready is re-triggered and properly propagated to the UI.
- *
- * Pre-configured bad-server tests fail without this because Chromium can reject an
- * SSL certificate before the renderer finishes mounting and registering IPC listeners,
- * causing the ErrorView never to appear.
- */
-async function waitForRendererThenReload(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
-    const mainWindow = app.windows().find((w) => w.url().includes('index'));
-    if (!mainWindow) {
-        return;
-    }
-
-    // ServerDropdownButton renders once componentDidMount has finished and IPC listeners
-    // are registered, so waiting for it is a reliable proxy for "renderer is ready".
-    await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000}).catch(() => {});
-
-    // Reload server views so the load-failure fires after IPC listeners are registered.
-    // Use getAllServers() (same API as buildServerMap) — getCurrentServerId() does not exist.
-    //
-    // IMPORTANT: reload through the MattermostWebContentsView (wcEntry.reload()), NOT the
-    // raw webContents.reload(). The app only emits LOAD_FAILED (which drives the ErrorView)
-    // from its own load() promise's .catch() on ERR_CERT_*. A raw webContents.reload()
-    // re-triggers the Chromium load outside that promise, so the certificate rejection is
-    // never surfaced to the renderer and the ErrorView never appears.
-    await app.evaluate(() => {
-        const refs = (global as any).__e2eTestRefs;
-        if (!refs) {
-            return;
-        }
-        const servers: Array<{id: string}> = refs.ServerManager?.getAllServers?.() ?? [];
-        for (const server of servers) {
-            const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
-            for (const view of views) {
-                const wcEntry = refs.WebContentsManager?.getView?.(view.id);
-                wcEntry?.reload?.();
-            }
-        }
-    });
-    await expect.poll(async () => {
-        return app.evaluate(() => {
-            const refs = (global as any).__e2eTestRefs;
-            if (!refs) {
-                return false;
-            }
-            const servers: Array<{id: string}> = refs.ServerManager?.getAllServers?.() ?? [];
-            for (const server of servers) {
-                const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
-                for (const view of views) {
-                    const wcEntry = refs.WebContentsManager?.getView?.(view.id);
-                    if (wcEntry?.webContents?.isLoading?.()) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        });
-    }, {timeout: 10_000, message: 'Server views should finish reloading after renderer is ready'}).toBe(true);
-}
-
 async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
     expect(mainView).toBeDefined();
@@ -159,7 +97,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app);
+                await waitForErrorView(app, {serverName: 'Unreachable Server'});
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
             } finally {
@@ -184,7 +122,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app);
+                await waitForErrorView(app, {serverName: 'Expired Cert Server'});
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
             } finally {
@@ -209,7 +147,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app);
+                await waitForErrorView(app, {serverName: 'TLS 1.0 Server'});
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toMatch(/ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/);
             } finally {
@@ -234,7 +172,7 @@ test.describe('Bad Server Configurations', () => {
 
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app);
+                await waitForErrorView(app, {serverName: 'RC4 Cipher Server'});
 
                 await expect.poll(async () => {
                     const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
@@ -265,7 +203,7 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30_000});
+                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable'});
 
                 const start = Date.now();
                 const dropdownView = await openServerDropdown(app);
@@ -306,7 +244,7 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
+                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable'});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
@@ -340,7 +278,7 @@ test.describe('Bad Server Configurations', () => {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
 
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
+                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable'});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
@@ -379,13 +317,9 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: badCertUserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
-                // Ensure the renderer has mounted its IPC listeners before the load failure
-                // fires, then reload to re-trigger the failure so it reaches the UI.
-                await waitForRendererThenReload(app);
-
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
+                await waitForErrorView(app, {serverName: 'Pre-configured Expired Cert'});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
@@ -471,7 +405,7 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
+                await waitForErrorView(app, {serverName: 'Pre-configured TLS 1.1'});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
@@ -498,13 +432,9 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: rc4UserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
-                // Ensure the renderer has mounted its IPC listeners before the load failure
-                // fires, then reload to re-trigger the failure so it reaches the UI.
-                await waitForRendererThenReload(app);
-
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
+                await waitForErrorView(app, {serverName: 'Pre-configured RC4'});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
