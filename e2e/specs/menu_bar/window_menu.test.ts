@@ -7,7 +7,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronApp, registerElectronMainProcess, waitForWindow} from '../../helpers/electronApp';
 import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {waitForMattermostShell} from '../../helpers/mattermostShell';
 import {buildServerMap} from '../../helpers/serverMap';
@@ -36,28 +36,6 @@ let electronApp: ElectronApplication;
 let mainWindow: ElectronPage;
 let serverMap: Awaited<ReturnType<typeof buildServerMap>>;
 let userDataDir: string;
-
-async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
-    const timeoutAt = Date.now() + timeout;
-    while (Date.now() < timeoutAt) {
-        const win = app.windows().find((window) => {
-            try {
-                return window.url().includes(pattern);
-            } catch {
-                return false;
-            }
-        });
-
-        if (win) {
-            await win.waitForLoadState().catch(() => {});
-            return win;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
 
 async function clickWindowMenuItem(
     app: ElectronApplication,
@@ -265,10 +243,17 @@ async function createExtraTabs() {
 
 async function getTabView(tabIndex: number) {
     const serverName = windowMenuConfig.servers[0].name;
-    const map = await buildServerMap(electronApp);
-    const view = map[serverName]?.[tabIndex]?.win;
-    expect(view, `Mattermost tab view at index ${tabIndex} should exist`).toBeTruthy();
-    return view!;
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+        const map = await buildServerMap(electronApp);
+        const view = map[serverName]?.[tabIndex]?.win;
+        if (view) {
+            return view;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    throw new Error(`Mattermost tab view at index ${tabIndex} should exist`);
 }
 
 async function switchToTab(tabNumber: number) {
@@ -321,6 +306,8 @@ test.describe('Menu/window_menu', () => {
             timeout: 90_000,
         });
 
+        registerElectronMainProcess(electronApp.process()?.pid);
+
         await waitForAppReady(electronApp);
         mainWindow = await waitForWindow(electronApp, 'index');
         serverMap = await buildServerMap(electronApp);
@@ -334,6 +321,9 @@ test.describe('Menu/window_menu', () => {
     });
 
     test.afterAll(async () => {
+        if (!electronApp) {
+            return;
+        }
         await closeElectronApp(electronApp, userDataDir);
     });
 

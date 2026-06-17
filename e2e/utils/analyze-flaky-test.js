@@ -204,8 +204,9 @@ function getOutcomeCounts(report) {
 
 function analyzeFlakyTests() {
     const exitCode = toNumber(process.env.PLAYWRIGHT_EXIT_CODE || '0');
+    const hasJunit = fs.existsSync(JUNIT_REPORT_PATH);
 
-    if (!fs.existsSync(JUNIT_REPORT_PATH)) {
+    if (!hasJunit) {
         const failureCount = exitCode === 0 ? 0 : 1;
         return {
             failureCount,
@@ -214,6 +215,7 @@ function analyzeFlakyTests() {
             totalCount: failureCount,
             newFailedTests: new Array(failureCount).fill('unknown'),
             os: process.platform,
+            testStatus: failureCount > 0 ? 'failure' : 'success',
         };
     }
 
@@ -234,6 +236,11 @@ function analyzeFlakyTests() {
     const reconciledFailed = failureCount;
     const reconciledPassed = Math.max(0, outcomes.total - reconciledFailed - outcomes.skipped);
 
+    // `failureCount` applies the retry-pass filter. When exit code is non-zero
+    // but every unique test passed, Playwright still exits 1 due to worker
+    // teardown metadata — do not fail the GitHub status in that case.
+    const testStatus = reconciledFailed > 0 ? 'failure' : 'success';
+
     return {
         failureCount,
         passCount: reconciledPassed,
@@ -241,6 +248,7 @@ function analyzeFlakyTests() {
         totalCount: reconciledFailed + reconciledPassed + outcomes.skipped,
         newFailedTests: new Array(failureCount).fill('failed'),
         os: process.platform,
+        testStatus,
     };
 }
 

@@ -407,10 +407,9 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { failureCount, passCount, skipCount, totalCount, os } = analyzeFlakyTests();
+            const { failureCount, passCount, skipCount, totalCount, os, testStatus } = analyzeFlakyTests();
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const reportUrl = process.env.PER_OS_REPORT_URL || runUrl;
-            const testStatus = failureCount > 0 || Number(process.env.PLAYWRIGHT_EXIT_CODE || 0) !== 0 ? 'failure' : 'success';
             const setOSOutputs = (suffix) => {
               core.setOutput(`NEW_FAILURES_${suffix}`, String(failureCount));
               core.setOutput(`REPORT_LINK_${suffix}`, reportUrl);
