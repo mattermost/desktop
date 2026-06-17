@@ -52,14 +52,14 @@ export async function evaluateInMainProcessWithArg<T, A>(
     const timeoutMs = options.timeoutMs ?? 15_000;
     const retryDelayMs = options.retryDelayMs ?? 100;
     const deadline = Date.now() + timeoutMs;
-    const evaluate = app.evaluate as (
-        fn: MainProcessEvaluatorWithArg<T, A>,
-        value: A,
-    ) => Promise<T>;
 
     while (Date.now() < deadline) {
         try {
-            return await evaluate(pageFunction, arg);
+            // Must call on `app` — extracting `app.evaluate` drops `this` and breaks _channel.
+            return await (app.evaluate as (
+                fn: MainProcessEvaluatorWithArg<T, A>,
+                value: A,
+            ) => Promise<T>).call(app, pageFunction, arg);
         } catch (error) {
             if (!isTransientEvaluateError(error)) {
                 throw error;

@@ -197,6 +197,11 @@ jest.mock('app/tabs/tabManager', () => ({
     on: jest.fn(),
 }));
 
+jest.mock('app/windows/popoutManager', () => ({
+    __esModule: true,
+    default: {},
+}));
+
 jest.mock('main/developerMode', () => ({
     on: jest.fn(),
     switchOff: jest.fn(),
