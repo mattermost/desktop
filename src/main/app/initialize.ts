@@ -18,6 +18,7 @@ import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
+import PopoutManager from 'app/windows/popoutManager';
 import {
     QUIT,
     NOTIFY_MENTION,
@@ -304,6 +305,7 @@ async function initializeAfterAppReady() {
         NotificationManager,
         Diagnostics,
         updateNotifier,
+        PopoutManager,
     });
 
     setTestField('__e2eOpenDeepLink', (url: string) => {

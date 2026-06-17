@@ -5,6 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoConfig, type AppConfig} from '../../helpers/config';
 import {restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
 import {isMainWindowVisible} from '../../helpers/tray';
+import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 const closeDialogConfig: AppConfig = {
     ...demoConfig,
@@ -26,7 +27,7 @@ test.describe('system/window_close_tray', () => {
 
             await stubMessageBoxResponses(electronApp, [{response: 1}]);
             try {
-                await electronApp.evaluate(() => {
+                await evaluateInMainProcess(electronApp, () => {
                     const refs = (global as any).__e2eTestRefs;
                     refs?.MainWindow?.get?.()?.close();
                 });

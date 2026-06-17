@@ -5,6 +5,7 @@ import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
 import {clearCertificateErrorCallbacks} from './dialog';
+import {evaluateInMainProcessWithArg} from './testRefs';
 
 type WaitForErrorViewOptions = {
     serverName?: string;
@@ -53,7 +54,7 @@ export async function waitForRendererThenReload(
     // `electron` module as the FIRST argument to `fn`. The user-supplied `arg` is the
     // SECOND argument. Hence the `(_electron, targetServerName)` signature below.
     await expect.poll(() => {
-        return app.evaluate((_electron, targetServerName) => {
+        return evaluateInMainProcessWithArg(app, (_electron, targetServerName) => {
             const refs = (global as any).__e2eTestRefs;
             if (!refs) {
                 return false;
@@ -68,7 +69,7 @@ export async function waitForRendererThenReload(
 
     await clearCertificateErrorCallbacks(app).catch(() => {});
 
-    await app.evaluate((_electron, targetServerName) => {
+    await evaluateInMainProcessWithArg(app, (_electron, targetServerName) => {
         const refs = (global as any).__e2eTestRefs;
         if (!refs) {
             return;
@@ -87,7 +88,7 @@ export async function waitForRendererThenReload(
     }, serverName);
 
     await expect.poll(async () => {
-        return app.evaluate((_electron, targetServerName) => {
+        return evaluateInMainProcessWithArg(app, (_electron, targetServerName) => {
             const refs = (global as any).__e2eTestRefs;
             if (!refs) {
                 return false;
@@ -114,7 +115,7 @@ export async function waitForErrorView(
     app: ElectronApplication,
     options: WaitForErrorViewOptions = {},
 ): Promise<void> {
-    const timeout = options.timeout ?? 45_000;
+    const timeout = options.timeout ?? (process.env.CI ? 60_000 : 45_000);
     const deadline = Date.now() + timeout;
     let lastError: unknown;
     while (Date.now() < deadline) {

@@ -7,8 +7,8 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
+import {demoMattermostConfig} from '../../helpers/config';
+import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {recoverServerViewIfNeeded, waitForMattermostShell} from '../../helpers/mattermostShell';
@@ -158,16 +158,7 @@ test.describe('server_management/drag_and_drop', () => {
 
     test.beforeAll(async () => {
         userDataDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'mm-drag-drop-e2e-'));
-        writeConfigFile(userDataDir, config);
-
-        const {_electron: electron} = await import('playwright');
-        electronApp = await electron.launch({
-            executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-            env: {...process.env, NODE_ENV: 'test'},
-            timeout: 60_000,
-        });
-        await waitForAppReady(electronApp);
+        electronApp = await launchDirectTestApp(userDataDir, config);
         mainWindow = await waitForWindow(electronApp, 'index');
         const mmServer = await getMattermostServer();
         await loginToMattermost(mmServer);

@@ -4,6 +4,73 @@
 import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
+const TRANSIENT_EVALUATE_ERRORS = [
+    'Execution context was destroyed',
+    'Target page, context or browser has been closed',
+    'Unable to find context',
+];
+
+export function isTransientEvaluateError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return TRANSIENT_EVALUATE_ERRORS.some((part) => message.includes(part));
+}
+
+export async function evaluateInMainProcess<T>(
+    app: ElectronApplication,
+    pageFunction: () => T,
+    options: {timeoutMs?: number; retryDelayMs?: number} = {},
+): Promise<T> {
+    const timeoutMs = options.timeoutMs ?? 15_000;
+    const retryDelayMs = options.retryDelayMs ?? 100;
+    const deadline = Date.now() + timeoutMs;
+
+    while (Date.now() < deadline) {
+        try {
+            return await app.evaluate(pageFunction);
+        } catch (error) {
+            if (!isTransientEvaluateError(error)) {
+                throw error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+        }
+    }
+
+    throw new Error('Timed out waiting for electron main-process evaluate');
+}
+
+type MainProcessEvaluatorWithArg<T, A> = (
+    _electron: typeof import('electron'),
+    arg: A,
+) => T | Promise<T>;
+
+export async function evaluateInMainProcessWithArg<T, A>(
+    app: ElectronApplication,
+    pageFunction: MainProcessEvaluatorWithArg<T, A>,
+    arg: A,
+    options: {timeoutMs?: number; retryDelayMs?: number} = {},
+): Promise<T> {
+    const timeoutMs = options.timeoutMs ?? 15_000;
+    const retryDelayMs = options.retryDelayMs ?? 100;
+    const deadline = Date.now() + timeoutMs;
+    const evaluate = app.evaluate as (
+        fn: MainProcessEvaluatorWithArg<T, A>,
+        value: A,
+    ) => Promise<T>;
+
+    while (Date.now() < deadline) {
+        try {
+            return await evaluate(pageFunction, arg);
+        } catch (error) {
+            if (!isTransientEvaluateError(error)) {
+                throw error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+        }
+    }
+
+    throw new Error('Timed out waiting for electron main-process evaluate');
+}
+
 export async function getMainWindowId(app: ElectronApplication): Promise<number> {
     let mainWindowId: number | null = null;
     await expect.poll(async () => {

@@ -8,8 +8,9 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
 import {clearCertificateErrorCallbacks, restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
-import {closeElectronAppFast} from '../../helpers/electronApp';
+import {registerElectronMainProcess, closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
+import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 
@@ -45,6 +46,8 @@ test(
             timeout: 60_000,
         });
 
+        registerElectronMainProcess(app.process()?.pid);
+
         try {
             await waitForAppReady(app);
             await waitForErrorView(app);
@@ -52,14 +55,14 @@ test(
             await clearCertificateErrorCallbacks(app);
             await stubMessageBoxResponses(app, [{response: 0}, {response: 0}]);
 
-            await app.evaluate(() => {
+            await evaluateInMainProcess(app, () => {
                 const refs = (global as any).__e2eTestRefs;
                 const server = refs?.ServerManager?.getOrderedServers?.()?.[0];
                 if (!server) {
                     throw new Error('No server available to reload');
                 }
                 refs.ServerManager.reloadServer(server.id);
-            });
+            }, {timeoutMs: 30_000});
 
             const certificateStorePath = path.join(userDataDir, 'certificate.json');
 

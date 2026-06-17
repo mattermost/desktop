@@ -93,106 +93,108 @@ test.describe('Bad Server Configurations', () => {
     test.describe.configure({mode: 'serial'});
 
     test.describe('Adding servers via Add Server Modal', () => {
-        test('should handle server with unresolvable DNS', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, userDataDir} = await launchWithConfig(testInfo, demoConfig);
-            try {
-                const newServerView = await openAddServerModal(app);
-                await newServerView.type('#serverNameInput', 'Unreachable Server');
-                await newServerView.type('#serverUrlInput', UNREACHABLE_SERVER_URL);
-                await newServerView.click('#newServerModal_confirm');
+        let sharedApp: Awaited<ReturnType<typeof launchWithConfig>>['app'];
+        let sharedUserDataDir: string;
 
-                const configPath = path.join(userDataDir, 'config.json');
-                await expect.poll(() => {
-                    const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                    return cfg.servers.find((s: {name: string}) => s.name === 'Unreachable Server');
-                }, {timeout: 10000}).toBeDefined();
+        test.beforeAll(async ({}, testInfo) => {
+            const {mkdirSync} = await import('fs');
+            sharedUserDataDir = path.join(testInfo.outputDir, 'add-server-shared');
+            mkdirSync(sharedUserDataDir, {recursive: true});
+            sharedApp = await launchDirectTestApp(sharedUserDataDir, demoConfig, {MM_E2E_STUB_MESSAGE_BOX: 'cancel'});
+        });
 
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'Unreachable Server'});
+        test.afterAll(async () => {
+            await closeLaunchedApp(sharedApp, sharedUserDataDir);
+        });
+
+        test('should handle server with unresolvable DNS', {tag: ['@P2', '@all']}, async () => {
+            const app = sharedApp;
+            const userDataDir = sharedUserDataDir;
+            const newServerView = await openAddServerModal(app);
+            await newServerView.type('#serverNameInput', 'Unreachable Server');
+            await newServerView.type('#serverUrlInput', UNREACHABLE_SERVER_URL);
+            await newServerView.click('#newServerModal_confirm');
+
+            const configPath = path.join(userDataDir, 'config.json');
+            await expect.poll(() => {
+                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                return cfg.servers.find((s: {name: string}) => s.name === 'Unreachable Server');
+            }, {timeout: 10000}).toBeDefined();
+
+            const mainWindow = app.windows().find((w) => w.url().includes('index'));
+            expect(mainWindow).toBeDefined();
+            await waitForErrorView(app, {serverName: 'Unreachable Server'});
+            const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
+            expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
+        });
+
+        test('should handle server with expired certificate', {tag: ['@P2', '@all']}, async () => {
+            const app = sharedApp;
+            const userDataDir = sharedUserDataDir;
+            const newServerView = await openAddServerModal(app);
+            await newServerView.type('#serverNameInput', 'Expired Cert Server');
+            await newServerView.type('#serverUrlInput', EXPIRED_CERT_URL);
+            await newServerView.click('#newServerModal_confirm');
+
+            const configPath = path.join(userDataDir, 'config.json');
+            await expect.poll(() => {
+                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                return cfg.servers.find((s: {name: string}) => s.name === 'Expired Cert Server');
+            }, {timeout: 10000}).toBeDefined();
+
+            const mainWindow = app.windows().find((w) => w.url().includes('index'));
+            expect(mainWindow).toBeDefined();
+            await waitForErrorView(app, {serverName: 'Expired Cert Server'});
+            const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
+            expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
+        });
+
+        test('should handle server using TLS 1.0', {tag: ['@P2', '@all']}, async () => {
+            const app = sharedApp;
+            const userDataDir = sharedUserDataDir;
+            const newServerView = await openAddServerModal(app);
+            await newServerView.type('#serverNameInput', 'TLS 1.0 Server');
+            await newServerView.type('#serverUrlInput', TLS_1_0_URL);
+            await newServerView.click('#newServerModal_confirm');
+
+            const configPath = path.join(userDataDir, 'config.json');
+            await expect.poll(() => {
+                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                return cfg.servers.find((s: {name: string}) => s.name === 'TLS 1.0 Server');
+            }, {timeout: 10000}).toBeDefined();
+
+            const mainWindow = app.windows().find((w) => w.url().includes('index'));
+            expect(mainWindow).toBeDefined();
+            await waitForErrorView(app, {serverName: 'TLS 1.0 Server'});
+
+            await expect.poll(async () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
-            } finally {
-                await closeLaunchedApp(app, userDataDir);
-            }
+                return INSECURE_TLS_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
+            }, {timeout: 15_000, message: 'TLS 1.0 server must surface a connection error'}).not.toBeNull();
         });
 
-        test('should handle server with expired certificate', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, userDataDir} = await launchWithConfig(testInfo, demoConfig);
-            try {
-                const newServerView = await openAddServerModal(app);
-                await newServerView.type('#serverNameInput', 'Expired Cert Server');
-                await newServerView.type('#serverUrlInput', EXPIRED_CERT_URL);
-                await newServerView.click('#newServerModal_confirm');
+        test('should handle server using RC4 cipher', {tag: ['@P2', '@all']}, async () => {
+            const app = sharedApp;
+            const userDataDir = sharedUserDataDir;
+            const newServerView = await openAddServerModal(app);
+            await newServerView.type('#serverNameInput', 'RC4 Cipher Server');
+            await newServerView.type('#serverUrlInput', RC4_CIPHER_URL);
+            await newServerView.click('#newServerModal_confirm');
 
-                const configPath = path.join(userDataDir, 'config.json');
-                await expect.poll(() => {
-                    const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                    return cfg.servers.find((s: {name: string}) => s.name === 'Expired Cert Server');
-                }, {timeout: 10000}).toBeDefined();
+            const configPath = path.join(userDataDir, 'config.json');
+            await expect.poll(() => {
+                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                return cfg.servers.find((s: {name: string}) => s.name === 'RC4 Cipher Server');
+            }, {timeout: 10000}).toBeDefined();
 
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'Expired Cert Server'});
+            const mainWindow = app.windows().find((w) => w.url().includes('index'));
+            expect(mainWindow).toBeDefined();
+            await waitForErrorView(app, {serverName: 'RC4 Cipher Server'});
+
+            await expect.poll(async () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
-            } finally {
-                await closeLaunchedApp(app, userDataDir);
-            }
-        });
-
-        test('should handle server using TLS 1.0', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, userDataDir} = await launchWithConfig(testInfo, demoConfig);
-            try {
-                const newServerView = await openAddServerModal(app);
-                await newServerView.type('#serverNameInput', 'TLS 1.0 Server');
-                await newServerView.type('#serverUrlInput', TLS_1_0_URL);
-                await newServerView.click('#newServerModal_confirm');
-
-                const configPath = path.join(userDataDir, 'config.json');
-                await expect.poll(() => {
-                    const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                    return cfg.servers.find((s: {name: string}) => s.name === 'TLS 1.0 Server');
-                }, {timeout: 10000}).toBeDefined();
-
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'TLS 1.0 Server'});
-
-                await expect.poll(async () => {
-                    const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                    return INSECURE_TLS_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
-                }, {timeout: 15_000, message: 'TLS 1.0 server must surface a connection error'}).not.toBeNull();
-            } finally {
-                await closeLaunchedApp(app, userDataDir);
-            }
-        });
-
-        test('should handle server using RC4 cipher', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
-            const {app, userDataDir} = await launchWithConfig(testInfo, demoConfig);
-            try {
-                const newServerView = await openAddServerModal(app);
-                await newServerView.type('#serverNameInput', 'RC4 Cipher Server');
-                await newServerView.type('#serverUrlInput', RC4_CIPHER_URL);
-                await newServerView.click('#newServerModal_confirm');
-
-                const configPath = path.join(userDataDir, 'config.json');
-                await expect.poll(() => {
-                    const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                    return cfg.servers.find((s: {name: string}) => s.name === 'RC4 Cipher Server');
-                }, {timeout: 10000}).toBeDefined();
-
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'RC4 Cipher Server'});
-
-                await expect.poll(async () => {
-                    const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                    return INSECURE_TLS_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
-                }, {timeout: 15_000, message: 'RC4 server must surface a connection error'}).not.toBeNull();
-            } finally {
-                await closeLaunchedApp(app, userDataDir);
-            }
+                return INSECURE_TLS_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
+            }, {timeout: 15_000, message: 'RC4 server must surface a connection error'}).not.toBeNull();
         });
     });
 

@@ -5,6 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
 import {buildServerMap} from '../../helpers/serverMap';
 import {clickTrayMenuItem, emitTrayIconClick, isMainWindowVisible} from '../../helpers/tray';
+import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 const trayConfig = {
     ...demoConfig,
@@ -25,7 +26,7 @@ test.describe('system/tray_menu', () => {
                 {timeout: 10_000, message: 'Main window should be visible after launch'},
             ).toBe(true);
 
-            await electronApp.evaluate(() => {
+            await evaluateInMainProcess(electronApp, () => {
                 const refs = (global as any).__e2eTestRefs;
                 refs?.MainWindow?.get?.()?.hide();
             });
@@ -53,7 +54,7 @@ test.describe('system/tray_menu', () => {
                 {timeout: 15_000},
             ).toBe(demoConfig.servers[0].name);
 
-            await electronApp.evaluate(() => {
+            await evaluateInMainProcess(electronApp, () => {
                 const refs = (global as any).__e2eTestRefs;
                 refs?.MainWindow?.get?.()?.hide();
             });

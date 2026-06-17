@@ -155,29 +155,31 @@ export function clearAllRegistryFiles(): void {
 }
 
 async function reapPids(pids: number[]): Promise<void> {
-    await Promise.all(pids.map(async (pid) => {
-        if (!isProcessAlive(pid)) {
-            return;
-        }
+    if (pids.length === 0) {
+        return;
+    }
 
+    const alive = pids.filter(isProcessAlive);
+    if (alive.length === 0) {
+        return;
+    }
+
+    for (const pid of alive) {
         if (process.platform === 'linux') {
-            // Worker/global cleanup: a stuck Electron tree is unlikely to respond
-            // to SIGTERM, so SIGKILL the process group and direct children and
-            // only wait briefly for the kernel to reap them.
             signalProcessGroup(pid, 'SIGKILL');
             forceKillLinuxProcessTree(pid);
-            await waitForProcessExit(pid, 2_000);
+        } else {
+            signalShutdownAndReturn(pid);
+        }
+    }
+
+    const deadline = Date.now() + 5_000;
+    while (Date.now() < deadline) {
+        if (alive.every((pid) => !isProcessAlive(pid))) {
             return;
         }
-
-        // Signal (SIGTERM on macOS, taskkill /F on Windows) and wait briefly. We
-        // do NOT SIGKILL on macOS: it triggers "Electron quit unexpectedly"
-        // dialogs/crash reports, and master deliberately accepts orphans (a
-        // unique userDataDir + fresh CI runner means a lingering process never
-        // blocks the next test). Any live leftover simply stays un-reaped.
-        signalShutdownAndReturn(pid);
-        await waitForProcessExit(pid, 2_000);
-    }));
+        await sleep(200);
+    }
 }
 
 function sleep(ms: number) {
@@ -316,16 +318,11 @@ export async function closeElectronApp(
     const cleanClosed = await attemptClose(app, 10_000);
 
     if (!cleanClosed && pid) {
-        if (!fastTeardown && process.platform === 'linux') {
-            // Full path on Linux: ensure the process tree is gone so the lock
-            // releases for the next launch with this userDataDir.
+        if (process.platform === 'linux') {
+            // Always SIGKILL stuck trees on Linux so worker teardown does not sit
+            // in Playwright's 90s gracefullyClose wait with live Electron PIDs.
             await forceShutdownLinux(pid);
         } else {
-            // Fast path (unique dir), or macOS/Windows: signal only and abandon.
-            // We do NOT SIGKILL here -- on macOS that triggers crash dialogs and
-            // crash reports; Windows taskkill /F is already synchronous. A live
-            // leftover in an abandoned dir never blocks the next test, and the
-            // worker/global PID cleanup reaps it.
             signalShutdownAndReturn(pid);
         }
     }
