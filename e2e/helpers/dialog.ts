@@ -40,13 +40,3 @@ export async function clearCertificateErrorCallbacks(app: ElectronApplication): 
         clear?.();
     });
 }
-
-export async function setAutoTrustCertificate(app: ElectronApplication, enabled: boolean): Promise<void> {
-    await app.evaluate((_electron, value) => {
-        const setAutoTrust = (global as any).__e2eSetAutoTrustCertificate as ((enabled: boolean) => void) | undefined;
-        if (!setAutoTrust) {
-            throw new Error('__e2eSetAutoTrustCertificate not exposed (NODE_ENV must be test)');
-        }
-        setAutoTrust(value);
-    }, enabled);
-}

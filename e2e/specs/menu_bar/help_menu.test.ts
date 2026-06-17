@@ -21,10 +21,10 @@ test.describe('menu_bar/help_menu', () => {
 
             await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
-                refs.UpdateManager.__e2eCheckForUpdatesCalls = 0;
-                refs.UpdateManager.__e2eOriginalCheckForUpdates = refs.UpdateManager.checkForUpdates;
-                refs.UpdateManager.checkForUpdates = () => {
-                    refs.UpdateManager.__e2eCheckForUpdatesCalls += 1;
+                refs.updateNotifier.__e2eCheckForUpdatesCalls = 0;
+                refs.updateNotifier.__e2eOriginalCheckForUpdates = refs.updateNotifier.checkForUpdates;
+                refs.updateNotifier.checkForUpdates = () => {
+                    refs.updateNotifier.__e2eCheckForUpdatesCalls += 1;
                 };
             });
 
@@ -34,15 +34,15 @@ test.describe('menu_bar/help_menu', () => {
                 await expect.poll(async () => {
                     return electronApp.evaluate(() => {
                         const refs = (global as any).__e2eTestRefs;
-                        return refs?.UpdateManager?.__e2eCheckForUpdatesCalls ?? 0;
+                        return refs?.updateNotifier?.__e2eCheckForUpdatesCalls ?? 0;
                     });
                 }, {timeout: 10_000}).toBeGreaterThan(0);
             } finally {
                 await electronApp.evaluate(() => {
                     const refs = (global as any).__e2eTestRefs;
-                    if (refs?.UpdateManager?.__e2eOriginalCheckForUpdates) {
-                        refs.UpdateManager.checkForUpdates = refs.UpdateManager.__e2eOriginalCheckForUpdates;
-                        delete refs.UpdateManager.__e2eOriginalCheckForUpdates;
+                    if (refs?.updateNotifier?.__e2eOriginalCheckForUpdates) {
+                        refs.updateNotifier.checkForUpdates = refs.updateNotifier.__e2eOriginalCheckForUpdates;
+                        delete refs.updateNotifier.__e2eOriginalCheckForUpdates;
                     }
                 });
             }

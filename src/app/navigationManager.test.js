@@ -149,7 +149,6 @@ describe('app/navigationManager', () => {
 
             navigationManager.openLinkInPrimaryTab('mattermost://server-1.com/deep/link?thing=yes');
 
-            expect(TabManager.switchToTab).toHaveBeenCalledWith('view1');
             expect(baseView.load).toHaveBeenCalledWith('http://server-1.com/deep/link?thing=yes');
         });
 

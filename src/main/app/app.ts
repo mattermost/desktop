@@ -98,23 +98,8 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     } else if (CertificateStore.isTrusted(parsedURL, certificate)) {
         event.preventDefault();
         callback(true);
-    } else if (process.env.NODE_ENV === 'test' && (global as {__e2eAutoTrustCertificate?: boolean}).__e2eAutoTrustCertificate) {
-        event.preventDefault();
-
-        const view = WebContentsManager.getViewByWebContentsId(webContents.id);
-        CertificateStore.add(parsedURL, certificate);
-        CertificateStore.save();
-        callback(true);
-
-        if (view) {
-            view.load(url);
-        } else {
-            webContents.loadURL(url);
-        }
     } else {
-        event.preventDefault();
-
-        // update the callback
+    // update the callback
         const errorID = `${parsedURL.origin}:${error}`;
 
         const view = WebContentsManager.getViewByWebContentsId(webContents.id);
