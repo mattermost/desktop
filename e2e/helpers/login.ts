@@ -1,16 +1,25 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {expect} from '@playwright/test';
+
 import type {ServerView} from './serverView';
+import {recoverServerViewIfNeeded} from './mattermostShell';
 
-async function waitForAppShell(win: ServerView, timeout: number) {
-    const results = await Promise.allSettled([
-        win.waitForSelector('#post_textbox', {timeout}),
-        win.waitForSelector('#channelHeaderTitle', {timeout}),
-        win.waitForSelector('input.search-bar.form-control', {timeout}),
-    ]);
+async function hasAppShell(win: ServerView): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        return Boolean(
+            document.querySelector('#post_textbox')
+            || document.querySelector('#channelHeaderTitle')
+            || document.querySelector('input.search-bar.form-control'),
+        );
+    `).catch(() => false);
+}
 
-    return results.some((result) => result.status === 'fulfilled');
+async function hasLoginForm(win: ServerView): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        return Boolean(document.querySelector('#input_loginId'));
+    `).catch(() => false);
 }
 
 /**
@@ -27,32 +36,38 @@ export async function loginToMattermost(win: ServerView): Promise<void> {
     }
 
     const timeout = process.platform === 'win32' ? 60_000 : 30_000;
-
     const loginSelector = '#input_loginId';
     const passwordSelector = '#input_password-input, input[type="password"]';
-    const submitSelector = 'button[type="submit"]';
+    const submitSelector = '#saveSetting, button[type="submit"]';
 
-    let onLoginPage = false;
-    try {
-        await win.waitForSelector(loginSelector, {timeout});
-        onLoginPage = true;
-    } catch {
-        if (await waitForAppShell(win, 5_000)) {
-            return;
+    await recoverServerViewIfNeeded(win).catch(() => {});
+
+    await expect.poll(async () => {
+        if (await hasAppShell(win)) {
+            return 'logged-in';
         }
-    }
+        if (await hasLoginForm(win)) {
+            return 'login-form';
+        }
+        return 'loading';
+    }, {
+        timeout,
+        intervals: [500, 1000, 2000],
+        message: 'Mattermost login form or app shell must appear',
+    }).not.toBe('loading');
 
-    if (!onLoginPage) {
-        throw new Error(`loginToMattermost: login form was not found and the app shell never appeared. Current URL: ${await win.url()}`);
+    if (await hasAppShell(win)) {
+        return;
     }
 
     await win.fill(loginSelector, username);
     await win.fill(passwordSelector, password);
     await win.click(submitSelector);
 
-    // Wait for login to complete: URL leaves /login
     await win.waitForURL((url) => !url.pathname.startsWith('/login'), {timeout});
-    if (!await waitForAppShell(win, timeout)) {
-        throw new Error(`loginToMattermost: login succeeded but the app shell never became ready. Current URL: ${await win.url()}`);
-    }
+    await expect.poll(async () => hasAppShell(win), {
+        timeout,
+        intervals: [500, 1000, 2000],
+        message: 'Mattermost app shell must appear after login',
+    }).toBe(true);
 }
