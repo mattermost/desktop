@@ -7,12 +7,12 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {closeElectronApp, registerElectronMainProcess, waitForWindow} from '../../helpers/electronApp';
+import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
 import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
+import {closeElectronApp, registerElectronMainProcess, waitForWindow} from '../../helpers/electronApp';
+import {loginToMattermost} from '../../helpers/login';
 import {waitForMattermostShell} from '../../helpers/mattermostShell';
 import {buildServerMap} from '../../helpers/serverMap';
-import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
-import {loginToMattermost} from '../../helpers/login';
 
 const windowMenuConfig = {
     ...demoMattermostConfig,

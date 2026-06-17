@@ -136,11 +136,14 @@ test(
                 ).
                 toBe('completed');
         } finally {
-            await closeElectronApp(app, userDataDir);
-            await new Promise<void>((resolve, reject) =>
-                server.close((error) => (error ? reject(error) : resolve())),
-            );
-            fs.rmSync(downloadsDir, {recursive: true, force: true});
+            try {
+                await closeElectronApp(app, userDataDir);
+            } finally {
+                await new Promise<void>((resolve, reject) =>
+                    server.close((error) => (error ? reject(error) : resolve())),
+                );
+                fs.rmSync(downloadsDir, {recursive: true, force: true});
+            }
         }
     },
 );

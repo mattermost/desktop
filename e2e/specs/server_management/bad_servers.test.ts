@@ -8,9 +8,9 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, demoMattermostConfig} from '../../helpers/config';
 import {closeElectronApp} from '../../helpers/electronApp';
-import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
 import {waitForErrorView} from '../../helpers/errorView';
 import {loginToMattermost} from '../../helpers/login';
+import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const UNREACHABLE_SERVER_URL = 'https://jhsgefhjsaeiuofhseifuphoauifdhjauiowijdfcpohuawoiudfjpdhauwodjahwdpojaoiwdhawhdiuawd.com';

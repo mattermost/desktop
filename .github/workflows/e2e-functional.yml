@@ -263,8 +263,6 @@ jobs:
           enableCrossOsArchive: false
           # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS
           key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
 
       - name: e2e/cache-electron-gyp-windows
         if: runner.os == 'Windows'

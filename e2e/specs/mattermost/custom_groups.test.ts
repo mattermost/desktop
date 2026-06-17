@@ -103,11 +103,13 @@ test.describe('mattermost/custom_groups', () => {
             await firstServer!.waitForSelector(groupsSurfaceSelector, {timeout: 10_000});
 
             const viewHasStructure = await firstServer!.evaluate((selector) => {
-                const root = document.querySelector(selector);
-                if (!root) {
-                    return false;
+                const roots = document.querySelectorAll(selector);
+                for (const root of roots) {
+                    if (root.querySelector('ul, ol, table, [role="list"], [role="table"], [role="grid"]')) {
+                        return true;
+                    }
                 }
-                return Boolean(root.querySelector('ul, ol, table, [role="list"], [role="table"], [role="grid"]'));
+                return false;
             }, groupsSurfaceSelector);
             expect(viewHasStructure, 'User Groups view must have a list/table structure').toBe(true);
 

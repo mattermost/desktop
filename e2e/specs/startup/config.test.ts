@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {closeElectronApp} from '../../helpers/electronApp';
 import {exampleURL} from '../../helpers/config';
+import {closeElectronApp} from '../../helpers/electronApp';
 
 test.describe('startup/config', () => {
     test(

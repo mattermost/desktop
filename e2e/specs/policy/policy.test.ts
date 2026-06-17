@@ -9,8 +9,8 @@ import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {closeElectronApp} from '../../helpers/electronApp';
 import {appDir, demoConfig, electronBinaryPath, exampleURL, mattermostURL, writeConfigFile} from '../../helpers/config';
+import {closeElectronApp} from '../../helpers/electronApp';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const isSupported = (process.platform === 'win32' || process.platform === 'darwin') && process.env.RUN_POLICY_E2E === 'true';
