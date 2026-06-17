@@ -14,12 +14,6 @@ type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_elec
 const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
 
 export type CloseElectronAppOptions = {
-
-    /**
-     * Fixture teardown only: each test uses a unique userDataDir, so skip
-     * SingletonLock polling when app.close() hung and we had to force-kill.
-     * Direct-launch specs that reuse the same dir must leave this false.
-     */
     skipLockWaitUnlessCleanClose?: boolean;
 };
 
@@ -58,53 +52,28 @@ async function waitForProcessExit(pid: number, timeoutMs: number): Promise<boole
     return !isProcessAlive(pid);
 }
 
-function signalProcessTree(pid: number, signal: NodeJS.Signals): void {
-    if (process.platform === 'linux') {
-        // Playwright maintainer recommendation for leaky Electron subprocesses on
-        // Linux: signal the process group so renderer/GPU children exit too.
-        try {
-            process.kill(-pid, signal);
-            return;
-        } catch {
-            // Fall through when the PID is not a group leader.
-        }
-    }
-
+function signalProcessGroup(pid: number, signal: NodeJS.Signals): void {
     try {
-        process.kill(pid, signal);
+        process.kill(-pid, signal);
     } catch {
-        // already exited
-    }
-}
-
-function forceKillProcessTree(pid: number): void {
-    if (process.platform === 'win32') {
         try {
-            execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], {stdio: 'ignore'});
+            process.kill(pid, signal);
         } catch {
             // already exited
         }
-        return;
-    }
-
-    if (process.platform === 'linux') {
-        try {
-            execFileSync('pkill', ['-KILL', '-P', String(pid)], {stdio: 'ignore'});
-        } catch {
-            // no child processes
-        }
-        signalProcessTree(pid, 'SIGKILL');
-        return;
-    }
-
-    try {
-        process.kill(pid, 'SIGKILL');
-    } catch {
-        // already exited
     }
 }
 
-async function requestQuitViaMainProcess(app: ElectronApplication): Promise<void> {
+function forceKillLinuxProcessTree(pid: number): void {
+    try {
+        execFileSync('pkill', ['-KILL', '-P', String(pid)], {stdio: 'ignore'});
+    } catch {
+        // no child processes
+    }
+    signalProcessGroup(pid, 'SIGKILL');
+}
+
+async function requestAppQuit(app: ElectronApplication): Promise<void> {
     await Promise.race([
         app.evaluate(({app: electronApp}) => {
             const refs = (global as any).__e2eTestRefs;
@@ -118,45 +87,46 @@ async function requestQuitViaMainProcess(app: ElectronApplication): Promise<void
     ]);
 }
 
-async function forceShutdownElectron(pid: number): Promise<void> {
+async function forceShutdownLinux(pid: number): Promise<void> {
     if (!isProcessAlive(pid)) {
         return;
     }
 
-    if (process.platform === 'win32') {
-        try {
-            execFileSync('taskkill', ['/PID', String(pid), '/T'], {stdio: 'ignore'});
-        } catch {
-            // already exited
-        }
-        if (await waitForProcessExit(pid, 5_000)) {
-            return;
-        }
-        forceKillProcessTree(pid);
-        await waitForProcessExit(pid, 10_000);
-        return;
-    }
-
-    signalProcessTree(pid, 'SIGTERM');
+    signalProcessGroup(pid, 'SIGTERM');
     if (await waitForProcessExit(pid, 3_000)) {
         return;
     }
 
-    // macOS skips SIGKILL because it triggers the "Electron quit unexpectedly"
-    // crash dialog which blocks subsequent launches.
-    if (process.platform === 'darwin') {
-        return;
-    }
-
-    forceKillProcessTree(pid);
+    forceKillLinuxProcessTree(pid);
     await waitForProcessExit(pid, 10_000);
 }
 
-async function drainPlaywrightClose(closePromise: Promise<void>): Promise<void> {
-    // Playwright keeps a gracefullyClose entry until app.close() settles
-    // (see microsoft/playwright#29431). Drain it after force-kill so the worker
-    // does not sit in teardown until the 90s worker timeout.
-    await Promise.race([closePromise, sleep(5_000)]);
+function signalShutdownAndReturn(pid: number): void {
+    if (process.platform === 'win32') {
+        try {
+            execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], {stdio: 'ignore'});
+        } catch {
+            // already exited
+        }
+        return;
+    }
+
+    try {
+        process.kill(pid, 'SIGTERM');
+    } catch {
+        // already exited
+    }
+}
+
+async function attemptClose(app: ElectronApplication, timeoutMs: number): Promise<boolean> {
+    let closed = false;
+    await Promise.race([
+        app.close().catch(() => {}).then(() => {
+            closed = true;
+        }),
+        sleep(timeoutMs),
+    ]);
+    return closed;
 }
 
 export async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
@@ -175,7 +145,7 @@ export async function waitForWindow(app: ElectronApplication, pattern: string, t
             return win;
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await sleep(200);
     }
 
     throw new Error(`Timed out waiting for window matching "${pattern}"`);
@@ -193,32 +163,39 @@ export async function closeElectronApp(
         pid = undefined;
     }
 
-    await closeOverlayWindowsIfOpen(app).catch(() => {});
-    await requestQuitViaMainProcess(app);
+    if (process.platform === 'linux') {
+        await closeOverlayWindowsIfOpen(app).catch(() => {});
+        await requestAppQuit(app);
 
-    let cleanClosed = false;
-    const closePromise = app.close().catch(() => {}).then(() => {
-        cleanClosed = true;
-    });
-    await Promise.race([
-        closePromise,
-        sleep(10_000),
-    ]);
+        let cleanClosed = false;
+        const closePromise = app.close().catch(() => {}).then(() => {
+            cleanClosed = true;
+        });
+        await Promise.race([closePromise, sleep(10_000)]);
 
+        if (pid && (!cleanClosed || isProcessAlive(pid))) {
+            await forceShutdownLinux(pid);
+            await Promise.race([closePromise, sleep(5_000)]);
+            cleanClosed = cleanClosed || !(pid && isProcessAlive(pid));
+        }
+
+        const shouldWaitForLock = Boolean(dataDir) &&
+            (!options.skipLockWaitUnlessCleanClose || cleanClosed);
+        if (shouldWaitForLock && dataDir) {
+            await waitForLockFileRelease(dataDir).catch(() => {});
+        }
+        return;
+    }
+
+    const cleanClosed = await attemptClose(app, 10_000);
     if (!cleanClosed && pid) {
-        await forceShutdownElectron(pid);
-        await drainPlaywrightClose(closePromise);
-        cleanClosed = await waitForProcessExit(pid, 1_000).then((exited) => exited || cleanClosed);
+        signalShutdownAndReturn(pid);
+        if (options.skipLockWaitUnlessCleanClose) {
+            return;
+        }
     }
 
-    if (pid && isProcessAlive(pid)) {
-        await forceShutdownElectron(pid);
-        await drainPlaywrightClose(closePromise);
-    }
-
-    const shouldWaitForLock = Boolean(dataDir) &&
-        (!options.skipLockWaitUnlessCleanClose || cleanClosed);
-    if (shouldWaitForLock && dataDir) {
+    if (dataDir) {
         await waitForLockFileRelease(dataDir).catch(() => {});
     }
 }

@@ -235,10 +235,6 @@ function analyzeFlakyTests() {
     // `failureCount` and reconcile the rest.
     const reconciledFailed = failureCount;
     const reconciledPassed = Math.max(0, outcomes.total - reconciledFailed - outcomes.skipped);
-
-    // `failureCount` applies the retry-pass filter. When exit code is non-zero
-    // but every unique test passed, Playwright still exits 1 due to worker
-    // teardown metadata — do not fail the GitHub status in that case.
     const testStatus = reconciledFailed > 0 ? 'failure' : 'success';
 
     return {

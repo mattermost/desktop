@@ -57,7 +57,6 @@ export const test = base.extend<Fixtures>({
         await fs.rm(userDataDir, {recursive: true, force: true});
         await fs.mkdir(userDataDir, {recursive: true});
 
-        // writeConfigFile is SYNCHRONOUS — must complete before electron.launch()
         writeConfigFile(userDataDir, appConfig);
 
         let launchTimeout: number;
@@ -72,30 +71,22 @@ export const test = base.extend<Fixtures>({
         const app = await electron.launch({
             executablePath: electronBinaryPath,
             args: [
-                appDir, // test build directory (e2e/dist)
+                appDir,
                 `--user-data-dir=${userDataDir}`,
-
-                // CI compatibility — required for Linux sandbox, GPU stability
                 '--no-sandbox',
                 '--disable-gpu',
                 '--disable-gpu-sandbox',
                 '--disable-dev-shm-usage',
                 '--no-zygote',
                 '--disable-software-rasterizer',
-
-                // Stability
                 '--disable-breakpad',
                 '--disable-features=SpareRendererForSitePerProcess',
                 '--disable-features=CrossOriginOpenerPolicy',
                 '--disable-renderer-backgrounding',
-
-                // Dialogs & first-run
                 '--no-first-run',
                 '--no-default-browser-check',
                 '--disable-default-apps',
                 '--disable-crash-reporter',
-
-                // Consistency
                 '--force-color-profile=srgb',
                 '--mute-audio',
             ],
@@ -117,8 +108,6 @@ export const test = base.extend<Fixtures>({
         await closeElectronApp(app, userDataDir, {skipLockWaitUnlessCleanClose: true});
     },
 
-    // Deduplicated readiness gate. Both serverMap and mainWindow declare this
-    // as a dependency — Playwright runs it exactly once and tears it down once.
     appReady: async ({electronApp}, use) => {
         await waitForAppReady(electronApp);
         await closeOverlayWindowsIfOpen(electronApp);

@@ -3,10 +3,6 @@
 
 import type {ElectronApplication} from 'playwright';
 
-/**
- * Close auxiliary BrowserWindows (server dropdown, downloads menu) that can
- * steal focus or keep Electron alive after app.close() on Windows.
- */
 export async function closeOverlayWindowsIfOpen(app: ElectronApplication): Promise<void> {
     await app.evaluate(({BrowserWindow}) => {
         for (const win of BrowserWindow.getAllWindows()) {

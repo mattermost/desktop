@@ -17,18 +17,6 @@ function readMacOsDefault(domain: string, key: string): string | null {
     }
 }
 
-/**
- * Disable macOS window-restoration (Resume) for the Electron binary used in tests.
- *
- * When Electron is killed by a signal (SIGTERM from fixture teardown or SIGKILL from
- * Playwright's worker timeout), macOS marks the process as having "quit unexpectedly"
- * and shows a "Do you want to reopen its windows?" dialog on the next launch.
- * That dialog blocks the app UI, so __e2eAppReady is never set, waitForAppReady times
- * out, and fixture teardown hangs — causing more kills, more dialogs, and so on.
- *
- * NSQuitAlwaysKeepsWindows = false  — don't offer to restore windows after unexpected quit
- * ApplePersistenceIgnoreState = YES — skip saved-state restoration on every launch
- */
 export default async function globalSetup() {
     try {
         fs.rmSync(E2E_PROCESS_REGISTRY, {force: true});
@@ -37,25 +25,21 @@ export default async function globalSetup() {
     }
 
     if (process.platform === 'darwin') {
-        // Multiple bundle IDs may be involved: com.github.Electron (Electron binary
-        // launched directly) and the app's own bundle ID (when running signed builds).
         const bundleIDs = ['com.github.Electron'];
 
         for (const bundleID of bundleIDs) {
             try {
                 execFileSync('defaults', ['write', bundleID, 'NSQuitAlwaysKeepsWindows', '-bool', 'false'], {stdio: 'pipe'});
             } catch {
-                // Non-fatal — tests still run, just potentially with the Resume dialog
+                // non-fatal
             }
             try {
                 execFileSync('defaults', ['write', bundleID, 'ApplePersistenceIgnoreState', '-bool', 'YES'], {stdio: 'pipe'});
             } catch {
-                // Non-fatal
+                // non-fatal
             }
         }
 
-        // Snapshot system defaults we are about to override so global-teardown
-        // can restore them (or delete keys that did not exist before).
         try {
             const snapshot = {
                 LSQuarantine: readMacOsDefault('com.apple.LaunchServices', 'LSQuarantine'),
@@ -63,24 +47,19 @@ export default async function globalSetup() {
             };
             fs.writeFileSync(MACOS_DEFAULTS_SNAPSHOT, JSON.stringify(snapshot), 'utf8');
         } catch {
-            // Non-fatal — teardown will skip restore if file missing
+            // non-fatal
         }
 
-        // Apply system-level settings to suppress macOS dialogs that block
-        // Electron startup. These target system domains (LaunchServices,
-        // CrashReporter) rather than per-app bundle IDs.
         try {
             execFileSync('defaults', ['write', 'com.apple.LaunchServices', 'LSQuarantine', '-bool', 'false'], {stdio: 'pipe'});
         } catch {
-            // Non-fatal
+            // non-fatal
         }
 
-        // Suppress the macOS crash dialog ("Electron quit unexpectedly") that
-        // appears when a process exits via SIGTERM or other unexpected quits.
         try {
             execFileSync('defaults', ['write', 'com.apple.CrashReporter', 'DialogType', 'none'], {stdio: 'pipe'});
         } catch {
-            // Non-fatal
+            // non-fatal
         }
     }
 }

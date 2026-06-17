@@ -44,13 +44,6 @@ function restoreMacOsDefaultsSnapshot() {
     }
 }
 
-/**
- * Kill any main Electron processes still running from this test suite.
- *
- * Main test processes append their PID to a temp registry during startup.
- * Teardown kills only those registered main-process PIDs, avoiding broad shell
- * matching across unrelated Electron helper processes.
- */
 export default async function globalTeardown() {
     restoreMacOsDefaultsSnapshot();
 
@@ -89,8 +82,6 @@ export default async function globalTeardown() {
             continue;
         }
 
-        // Give the process time to exit gracefully.
-        // On macOS, use a longer wait since Electron shutdown can be slow.
         const waitMs = process.platform === 'darwin' ? 10_000 : 5_000;
         const deadline = Date.now() + waitMs;
         while (Date.now() < deadline) {
@@ -100,17 +91,11 @@ export default async function globalTeardown() {
             await sleep(200);
         }
 
-        if (isProcessAlive(pid)) {
-            // On macOS, SIGKILL triggers the "quit unexpectedly" crash dialog
-            // which blocks subsequent Electron launches. Skip SIGKILL and let
-            // the process linger — global-setup clears the registry, and each
-            // test uses a unique userDataDir so orphans never block new tests.
-            if (process.platform !== 'darwin') {
-                try {
-                    process.kill(pid, 'SIGKILL');
-                } catch {
-                    // already exited
-                }
+        if (isProcessAlive(pid) && process.platform !== 'darwin') {
+            try {
+                process.kill(pid, 'SIGKILL');
+            } catch {
+                // already exited
             }
         }
     }
