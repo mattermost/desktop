@@ -12,7 +12,6 @@ import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
 
-
 const EXTERNAL_BOOKMARK_URL = 'https://mattermost.com/';
 
 function openExternalUrlMatchesBookmark(openedUrl: string, bookmarkUrl: string): boolean {
