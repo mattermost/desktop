@@ -121,8 +121,8 @@ export class NavigationManager {
                     this.showViewLimitReachedError();
                     return undefined;
                 }
+                TabManager.switchToTab(view.id);
             }
-            TabManager.switchToTab(view.id);
             return view;
         });
     };

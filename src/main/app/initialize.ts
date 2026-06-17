@@ -67,7 +67,7 @@ import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
 import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
 import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
-import UpdateManager from 'main/updateNotifier';
+import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
@@ -303,7 +303,7 @@ async function initializeAfterAppReady() {
         TrayIcon: Tray,
         NotificationManager,
         Diagnostics,
-        UpdateManager,
+        updateNotifier,
     });
 
     setTestField('__e2eOpenDeepLink', (url: string) => {
@@ -377,9 +377,6 @@ async function initializeAfterAppReady() {
         setTestField('__e2eStubMessageBoxResponses', installMessageBoxStub);
         setTestField('__e2eRestoreMessageBox', restoreMessageBoxStub);
         setTestField('__e2eClearCertificateErrorCallbacks', () => certificateErrorCallbacks.clear());
-        setTestField('__e2eSetAutoTrustCertificate', (enabled: boolean) => {
-            (global as {__e2eAutoTrustCertificate?: boolean}).__e2eAutoTrustCertificate = enabled;
-        });
         if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'cancel') {
             installMessageBoxStub([{response: 1}]);
         } else if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'trust') {
@@ -455,7 +452,7 @@ async function initializeAfterAppReady() {
             log.debug('checkForUpdates');
             if (Config.canUpgrade && Config.autoCheckForUpdates) {
                 setTimeout(() => {
-                    UpdateManager.checkForUpdates(false);
+                    updateNotifier.checkForUpdates(false);
                 }, 5000);
             } else {
                 log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);
@@ -463,7 +460,7 @@ async function initializeAfterAppReady() {
         });
     } else if (Config.canUpgrade && Config.autoCheckForUpdates) {
         setTimeout(() => {
-            UpdateManager.checkForUpdates(false);
+            updateNotifier.checkForUpdates(false);
         }, 5000);
     } else {
         log.info(`Autoupgrade disabled: ${Config.canUpgrade}`);

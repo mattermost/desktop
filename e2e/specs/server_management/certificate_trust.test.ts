@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {clearCertificateErrorCallbacks, restoreMessageBox, setAutoTrustCertificate} from '../../helpers/dialog';
+import {clearCertificateErrorCallbacks, restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
 import {closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
 
@@ -50,7 +50,7 @@ test(
             await waitForErrorView(app);
 
             await clearCertificateErrorCallbacks(app);
-            await setAutoTrustCertificate(app, true);
+            await stubMessageBoxResponses(app, [{response: 0}, {response: 0}]);
 
             await app.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
@@ -75,7 +75,6 @@ test(
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
         } finally {
-            await setAutoTrustCertificate(app, false).catch(() => {});
             await restoreMessageBox(app).catch(() => {});
             await closeElectronAppFast(app, userDataDir);
         }
