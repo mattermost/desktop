@@ -5,12 +5,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoConfig, demoMattermostConfig} from '../../helpers/config';
+import {demoConfig, demoMattermostConfig} from '../../helpers/config';
+import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
 import {loginToMattermost} from '../../helpers/login';
 import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const UNREACHABLE_SERVER_URL = 'https://jhsgefhjsaeiuofhseifuphoauifdhjauiowijdfcpohuawoiudfjpdhauwodjahwdpojaoiwdhawhdiuawd.com';
@@ -24,15 +25,7 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     const {mkdirSync} = await import('fs');
     const userDataDir = path.join(testInfo.outputDir, 'custom-userdata');
     mkdirSync(userDataDir, {recursive: true});
-    fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(config));
-    const {_electron: electron} = await import('playwright');
-    const app = await electron.launch({
-        executablePath: electronBinaryPath,
-        args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-        env: {...process.env, NODE_ENV: 'test', MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
-        timeout: 60_000,
-    });
-    await waitForAppReady(app);
+    const app = await launchDirectTestApp(userDataDir, config, {MM_E2E_STUB_MESSAGE_BOX: 'cancel'});
     return {app, userDataDir};
 }
 
@@ -274,6 +267,7 @@ test.describe('Bad Server Configurations', () => {
         });
 
         test('should handle pre-configured unreachable server and still allow login to working Mattermost server', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+            test.setTimeout(120_000);
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
                 return;
@@ -307,10 +301,18 @@ test.describe('Bad Server Configurations', () => {
                 await closeOverlayWindowsIfOpen(app);
 
                 const serverMap = await buildServerMap(app);
-                const mmServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
+                const mmEntry = serverMap[demoMattermostConfig.servers[0].name][0];
+                const mmServer = mmEntry.win;
+                const cloudHost = new URL(process.env.MM_TEST_SERVER_URL!).host;
+
+                await expect.poll(
+                    () => mmServer.url(),
+                    {timeout: 45_000, message: 'Working cloud server should load after switching away from unreachable server'},
+                ).toContain(cloudHost);
+
+                await prepareMattermostServerView(app, mmEntry.webContentsId);
                 await loginToMattermost(mmServer);
 
-                await mmServer.waitForSelector('#post_textbox');
                 const postTextbox = await mmServer.$('#post_textbox');
                 expect(postTextbox).toBeDefined();
             } finally {

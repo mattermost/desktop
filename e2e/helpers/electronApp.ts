@@ -73,6 +73,12 @@ function forceKillLinuxProcessTree(pid: number): void {
     signalProcessGroup(pid, 'SIGKILL');
 }
 
+async function drainPlaywrightClose(closePromise: Promise<void>): Promise<void> {
+    // Playwright keeps a gracefullyClose entry until app.close() settles (#29431).
+    // Drain it after force-kill so worker teardown does not hang for 90s.
+    await Promise.race([closePromise, sleep(3_000)]);
+}
+
 async function requestAppQuit(app: ElectronApplication): Promise<void> {
     await Promise.race([
         app.evaluate(({app: electronApp}) => {
@@ -175,8 +181,10 @@ export async function closeElectronApp(
 
         if (pid && (!cleanClosed || isProcessAlive(pid))) {
             await forceShutdownLinux(pid);
-            await Promise.race([closePromise, sleep(5_000)]);
+            await drainPlaywrightClose(closePromise);
             cleanClosed = cleanClosed || !(pid && isProcessAlive(pid));
+        } else {
+            await drainPlaywrightClose(closePromise);
         }
 
         const shouldWaitForLock = Boolean(dataDir) &&
