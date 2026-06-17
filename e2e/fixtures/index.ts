@@ -126,7 +126,7 @@ export const test = base.extend<Fixtures>({
 
         await use(app);
 
-        await closeElectronApp(app, userDataDir);
+        await closeElectronApp(app, userDataDir, {skipLockWaitUnlessCleanClose: true});
     },
 
     // Deduplicated readiness gate. Both serverMap and mainWindow declare this

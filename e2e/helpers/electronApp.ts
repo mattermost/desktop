@@ -7,6 +7,16 @@ import {waitForLockFileRelease} from './cleanup';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 
+export type CloseElectronAppOptions = {
+
+    /**
+     * Fixture teardown only: each test uses a unique userDataDir, so skip
+     * SingletonLock polling when app.close() hung and we had to force-kill.
+     * Direct-launch specs that reuse the same dir must leave this false.
+     */
+    skipLockWaitUnlessCleanClose?: boolean;
+};
+
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -31,7 +41,7 @@ async function waitForProcessExit(pid: number, timeoutMs: number): Promise<boole
     return !isProcessAlive(pid);
 }
 
-function killProcessTree(pid: number): void {
+function forceKillProcessTree(pid: number): void {
     if (process.platform === 'win32') {
         try {
             execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], {stdio: 'ignore'});
@@ -61,6 +71,22 @@ async function forceShutdownElectron(pid: number): Promise<void> {
         return;
     }
 
+    if (process.platform === 'win32') {
+        // Windows: use taskkill for the whole tree — Unix signals only hit the
+        // main PID and leave GPU/renderer children holding SingletonLock.
+        try {
+            execFileSync('taskkill', ['/PID', String(pid), '/T'], {stdio: 'ignore'});
+        } catch {
+            // already exited
+        }
+        if (await waitForProcessExit(pid, 5_000)) {
+            return;
+        }
+        forceKillProcessTree(pid);
+        await waitForProcessExit(pid, 10_000);
+        return;
+    }
+
     try {
         process.kill(pid, 'SIGTERM');
     } catch {
@@ -77,7 +103,7 @@ async function forceShutdownElectron(pid: number): Promise<void> {
         return;
     }
 
-    killProcessTree(pid);
+    forceKillProcessTree(pid);
     await waitForProcessExit(pid, 10_000);
 }
 
@@ -103,7 +129,11 @@ export async function waitForWindow(app: ElectronApplication, pattern: string, t
     throw new Error(`Timed out waiting for window matching "${pattern}"`);
 }
 
-export async function closeElectronApp(app: ElectronApplication, dataDir?: string) {
+export async function closeElectronApp(
+    app: ElectronApplication,
+    dataDir?: string,
+    options: CloseElectronAppOptions = {},
+) {
     let pid: number | undefined;
     try {
         pid = app.process()?.pid;
@@ -123,7 +153,9 @@ export async function closeElectronApp(app: ElectronApplication, dataDir?: strin
         await forceShutdownElectron(pid);
     }
 
-    if (dataDir) {
+    const shouldWaitForLock = Boolean(dataDir) &&
+        (!options.skipLockWaitUnlessCleanClose || cleanClosed);
+    if (shouldWaitForLock && dataDir) {
         await waitForLockFileRelease(dataDir).catch(() => {});
     }
 }
