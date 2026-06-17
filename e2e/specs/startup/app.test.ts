@@ -6,7 +6,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, emptyConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 test.describe('startup/app', () => {
@@ -96,7 +96,7 @@ test.describe('startup/app', () => {
                 expect(text).toBe('Get Started');
             } finally {
                 if (emptyApp && userDataDir) {
-                    await closeElectronApp(emptyApp, userDataDir);
+                    await closeElectronAppFast(emptyApp, userDataDir);
                 } else if (emptyApp) {
                     await emptyApp.close().catch(() => {});
                 }
@@ -136,7 +136,7 @@ test.describe('startup/app', () => {
                 ).toBe(runtimeAppName);
             } finally {
                 if (emptyApp && userDataDir) {
-                    await closeElectronApp(emptyApp, userDataDir);
+                    await closeElectronAppFast(emptyApp, userDataDir);
                 } else if (emptyApp) {
                     await emptyApp.close().catch(() => {});
                 }

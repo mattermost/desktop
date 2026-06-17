@@ -7,6 +7,7 @@ import {test, expect, type ServerMap} from '../../fixtures/index';
 import type {AppConfig} from '../../helpers/config';
 import {demoMattermostConfig} from '../../helpers/config';
 import {openChannelHeaderMenu, enableBookmarksBar, submitBookmarkModal, waitForBookmarkInBar, clickBookmarkInBar, deleteAllBookmarksInBar} from '../../helpers/channelMenu';
+import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
 import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
@@ -60,6 +61,20 @@ test.describe('mattermost/bookmarks', () => {
     test.describe.configure({mode: 'serial'});
     test.use({appConfig: bookmarksConfig});
     test.setTimeout(120_000);
+
+    test.beforeEach(async ({electronApp, serverMap}) => {
+        if (!process.env.MM_TEST_SERVER_URL) {
+            return;
+        }
+
+        const serverEntry = serverMap[bookmarksConfig.servers[0].name]?.[0];
+        if (!serverEntry) {
+            return;
+        }
+
+        await closeOverlayWindowsIfOpen(electronApp);
+        await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
+    });
 
     // ── MM-T5600: Bookmarks Bar option in channel dropdown ──────────────
     test('MM-T5600 Bookmarks Bar option IS shown in the channel drop-down menu on Enterprise and Professional licensed servers',
@@ -155,7 +170,7 @@ test.describe('mattermost/bookmarks', () => {
                     const calls = await electronApp.evaluate(
                         ({shell}) => (shell as any).__e2eOpenExternalCalls ?? [],
                     );
-                    return calls.some((url) => openExternalUrlMatchesBookmark(url, EXTERNAL_BOOKMARK_URL));
+                    return calls.some((url: string) => openExternalUrlMatchesBookmark(url, EXTERNAL_BOOKMARK_URL));
                 }, {timeout: 10_000}).toBe(true);
 
                 // Verify no in-app server view navigated to the external URL.

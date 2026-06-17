@@ -7,25 +7,177 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {waitForLockFileRelease} from './cleanup';
-import {closeOverlayWindowsIfOpen} from './overlayWindows';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 
-const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
+/**
+ * PID registry for orphaned Electron main processes.
+ *
+ * Each Playwright worker is a separate Node process, so the registry is sharded
+ * per worker (`...-<workerPid>.txt`). This avoids the read-modify-write races a
+ * single shared file had under fullyParallel: a worker only ever touches its
+ * own shard, and tests run serially within a worker, so register/unregister
+ * never contend. Worker teardown reaps this worker's shard; global teardown
+ * enumerates every shard (plus a legacy shared file from older runs) as the
+ * final backstop.
+ */
+const REGISTRY_DIR = os.tmpdir();
+const REGISTRY_PREFIX = 'mattermost-desktop-e2e-main-pids';
+const LEGACY_REGISTRY = path.join(REGISTRY_DIR, 'mattermost-desktop-e2e-main-pids.txt');
 
 export type CloseElectronAppOptions = {
     skipLockWaitUnlessCleanClose?: boolean;
 };
+
+/** Unique per-test userDataDir (fixture path): abandon fast, reap via worker cleanup. */
+export const FAST_TEARDOWN: CloseElectronAppOptions = {
+    skipLockWaitUnlessCleanClose: true,
+};
+
+/** Convenience wrapper for {@link FAST_TEARDOWN}. */
+export async function closeElectronAppFast(
+    app: ElectronApplication,
+    dataDir?: string,
+): Promise<void> {
+    return closeElectronApp(app, dataDir, FAST_TEARDOWN);
+}
+
+function workerRegistryPath(workerPid: number = process.pid): string {
+    return path.join(REGISTRY_DIR, `${REGISTRY_PREFIX}-${workerPid}.txt`);
+}
+
+function listRegistryFiles(): string[] {
+    const files: string[] = [];
+    try {
+        for (const entry of fs.readdirSync(REGISTRY_DIR)) {
+            if (entry.startsWith(`${REGISTRY_PREFIX}-`) && entry.endsWith('.txt')) {
+                files.push(path.join(REGISTRY_DIR, entry));
+            }
+        }
+    } catch {
+        // tmpdir unreadable; best-effort
+    }
+    if (fs.existsSync(LEGACY_REGISTRY)) {
+        files.push(LEGACY_REGISTRY);
+    }
+    return files;
+}
+
+function readPidsFromFile(file: string): number[] {
+    try {
+        if (!fs.existsSync(file)) {
+            return [];
+        }
+        return Array.from(new Set(
+            fs.readFileSync(file, 'utf8').
+                split(/\s+/).
+                map((value) => Number.parseInt(value, 10)).
+                filter((value) => Number.isInteger(value) && value > 0),
+        ));
+    } catch {
+        return [];
+    }
+}
 
 export function registerElectronMainProcess(pid: number | undefined) {
     if (!pid) {
         return;
     }
     try {
-        fs.appendFileSync(E2E_PROCESS_REGISTRY, `${pid}\n`, 'utf8');
+        fs.appendFileSync(workerRegistryPath(), `${pid}\n`, 'utf8');
     } catch {
         // non-fatal
     }
+}
+
+export function unregisterElectronMainProcess(pid: number | undefined) {
+    if (!pid) {
+        return;
+    }
+
+    // Only the current worker touches its own shard (tests are serial within a
+    // worker), so a plain read-modify-write here is race-free.
+    const file = workerRegistryPath();
+    try {
+        if (!fs.existsSync(file)) {
+            return;
+        }
+        const remaining = fs.readFileSync(file, 'utf8').
+            split(/\n/).
+            filter((line) => {
+                const value = Number.parseInt(line.trim(), 10);
+                return Number.isInteger(value) && value > 0 && value !== pid;
+            });
+        if (remaining.length > 0) {
+            fs.writeFileSync(file, `${remaining.join('\n')}\n`, 'utf8');
+        } else {
+            fs.rmSync(file, {force: true});
+        }
+    } catch {
+        // non-fatal
+    }
+}
+
+/**
+ * Reap this worker's registered Electron main processes. Called from the
+ * worker-scoped fixture teardown, so it only touches this worker's shard.
+ */
+export async function cleanupRegisteredElectronProcesses(): Promise<void> {
+    const file = workerRegistryPath();
+    const pids = readPidsFromFile(file);
+    fs.rmSync(file, {force: true});
+    await reapPids(pids);
+}
+
+/**
+ * Reap every worker's registered Electron main processes. Called from global
+ * teardown as the final backstop for processes left by workers that crashed or
+ * skipped their worker-scoped teardown.
+ */
+export async function cleanupAllRegisteredElectronProcesses(): Promise<void> {
+    const files = listRegistryFiles();
+    const pids = Array.from(new Set(files.flatMap(readPidsFromFile)));
+    for (const file of files) {
+        fs.rmSync(file, {force: true});
+    }
+    await reapPids(pids);
+}
+
+/**
+ * Remove every registry shard without reaping. Used at global setup to clear
+ * stale files from a prior crashed run; we deliberately do not signal any pids
+ * here because they may have been reused by unrelated processes since that run.
+ */
+export function clearAllRegistryFiles(): void {
+    for (const file of listRegistryFiles()) {
+        fs.rmSync(file, {force: true});
+    }
+}
+
+async function reapPids(pids: number[]): Promise<void> {
+    await Promise.all(pids.map(async (pid) => {
+        if (!isProcessAlive(pid)) {
+            return;
+        }
+
+        if (process.platform === 'linux') {
+            // Worker/global cleanup: a stuck Electron tree is unlikely to respond
+            // to SIGTERM, so SIGKILL the process group and direct children and
+            // only wait briefly for the kernel to reap them.
+            signalProcessGroup(pid, 'SIGKILL');
+            forceKillLinuxProcessTree(pid);
+            await waitForProcessExit(pid, 2_000);
+            return;
+        }
+
+        // Signal (SIGTERM on macOS, taskkill /F on Windows) and wait briefly. We
+        // do NOT SIGKILL on macOS: it triggers "Electron quit unexpectedly"
+        // dialogs/crash reports, and master deliberately accepts orphans (a
+        // unique userDataDir + fresh CI runner means a lingering process never
+        // blocks the next test). Any live leftover simply stays un-reaped.
+        signalShutdownAndReturn(pid);
+        await waitForProcessExit(pid, 2_000);
+    }));
 }
 
 function sleep(ms: number) {
@@ -75,22 +227,8 @@ function forceKillLinuxProcessTree(pid: number): void {
 
 async function drainPlaywrightClose(closePromise: Promise<void>): Promise<void> {
     // Playwright keeps a gracefullyClose entry until app.close() settles (#29431).
-    // Drain it after force-kill so worker teardown does not hang for 90s.
+    // Cap the wait so worker teardown does not hang for 90s when close never settles.
     await Promise.race([closePromise, sleep(3_000)]);
-}
-
-async function requestAppQuit(app: ElectronApplication): Promise<void> {
-    await Promise.race([
-        app.evaluate(({app: electronApp}) => {
-            const refs = (global as any).__e2eTestRefs;
-            const mainWindow = refs?.MainWindow?.get?.();
-            if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
-                mainWindow.show();
-            }
-            electronApp.quit();
-        }).catch(() => {}),
-        sleep(3_000),
-    ]);
 }
 
 async function forceShutdownLinux(pid: number): Promise<void> {
@@ -126,12 +264,11 @@ function signalShutdownAndReturn(pid: number): void {
 
 async function attemptClose(app: ElectronApplication, timeoutMs: number): Promise<boolean> {
     let closed = false;
-    await Promise.race([
-        app.close().catch(() => {}).then(() => {
-            closed = true;
-        }),
-        sleep(timeoutMs),
-    ]);
+    const closePromise = app.close().catch(() => {}).then(() => {
+        closed = true;
+    });
+    await Promise.race([closePromise, sleep(timeoutMs)]);
+    await drainPlaywrightClose(closePromise);
     return closed;
 }
 
@@ -169,41 +306,47 @@ export async function closeElectronApp(
         pid = undefined;
     }
 
-    if (process.platform === 'linux') {
-        await closeOverlayWindowsIfOpen(app).catch(() => {});
-        await requestAppQuit(app);
+    // `skipLockWaitUnlessCleanClose` marks a unique per-test userDataDir (the
+    // fixture path): teardown abandons fast and lets worker/global cleanup reap
+    // orphans, matching master's model. Without it (direct-launch specs), the
+    // same userDataDir may be relaunched, so we force-kill on failure (Linux)
+    // and always wait for the SingletonLock to release.
+    const fastTeardown = Boolean(options.skipLockWaitUnlessCleanClose);
 
-        let cleanClosed = false;
-        const closePromise = app.close().catch(() => {}).then(() => {
-            cleanClosed = true;
-        });
-        await Promise.race([closePromise, sleep(10_000)]);
+    const cleanClosed = await attemptClose(app, 10_000);
 
-        if (pid && (!cleanClosed || isProcessAlive(pid))) {
+    if (!cleanClosed && pid) {
+        if (!fastTeardown && process.platform === 'linux') {
+            // Full path on Linux: ensure the process tree is gone so the lock
+            // releases for the next launch with this userDataDir.
             await forceShutdownLinux(pid);
-            await drainPlaywrightClose(closePromise);
-            cleanClosed = cleanClosed || !(pid && isProcessAlive(pid));
         } else {
-            await drainPlaywrightClose(closePromise);
+            // Fast path (unique dir), or macOS/Windows: signal only and abandon.
+            // We do NOT SIGKILL here -- on macOS that triggers crash dialogs and
+            // crash reports; Windows taskkill /F is already synchronous. A live
+            // leftover in an abandoned dir never blocks the next test, and the
+            // worker/global PID cleanup reaps it.
+            signalShutdownAndReturn(pid);
         }
+    }
 
-        const shouldWaitForLock = Boolean(dataDir) &&
-            (!options.skipLockWaitUnlessCleanClose || cleanClosed);
-        if (shouldWaitForLock && dataDir) {
-            await waitForLockFileRelease(dataDir).catch(() => {});
+    // Fast path on a failed close: return immediately (master-style). The lock
+    // lives in an abandoned dir and worker/global cleanup reaps any live PID.
+    if (fastTeardown && !cleanClosed) {
+        if (pid && !isProcessAlive(pid)) {
+            unregisterElectronMainProcess(pid);
         }
         return;
     }
 
-    const cleanClosed = await attemptClose(app, 10_000);
-    if (!cleanClosed && pid) {
-        signalShutdownAndReturn(pid);
-        if (options.skipLockWaitUnlessCleanClose) {
-            return;
-        }
+    // Full path always waits for the lock; fast path only on a clean close.
+    if (dataDir && (cleanClosed || !fastTeardown)) {
+        await waitForLockFileRelease(dataDir).catch(() => {});
     }
 
-    if (dataDir) {
-        await waitForLockFileRelease(dataDir).catch(() => {});
+    // Drop the PID from the registry only once it's actually gone; a live
+    // leftover stays for worker/global cleanup to reap (matches master).
+    if (!pid || !isProcessAlive(pid)) {
+        unregisterElectronMainProcess(pid);
     }
 }

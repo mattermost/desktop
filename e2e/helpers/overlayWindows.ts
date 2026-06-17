@@ -3,8 +3,12 @@
 
 import type {ElectronApplication} from 'playwright';
 
-export async function closeOverlayWindowsIfOpen(app: ElectronApplication): Promise<void> {
-    await app.evaluate(({BrowserWindow}) => {
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export async function closeOverlayWindowsIfOpen(app: ElectronApplication, timeoutMs = 3_000): Promise<void> {
+    // app.evaluate can hang if the Electron main process is blocked or unresponsive
+    // (e.g. during teardown). Cap the wait so setup/teardown never deadlock.
+    const closePromise = app.evaluate(({BrowserWindow}) => {
         for (const win of BrowserWindow.getAllWindows()) {
             if (win.isDestroyed()) {
                 continue;
@@ -18,5 +22,9 @@ export async function closeOverlayWindowsIfOpen(app: ElectronApplication): Promi
                 // Ignore windows that disappear while iterating.
             }
         }
+    }).catch(() => {
+        // Ignore evaluation failures (e.g. app already shutting down).
     });
+
+    await Promise.race([closePromise, sleep(timeoutMs)]);
 }

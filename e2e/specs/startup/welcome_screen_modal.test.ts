@@ -6,7 +6,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 // All welcome screen tests need a no-servers app. This helper launches one.
@@ -69,7 +69,7 @@ test.describe('startup/welcome_screen_modal', () => {
                 ]);
             } finally {
                 if (app && userDataDir) {
-                    await closeElectronApp(app, userDataDir);
+                    await closeElectronAppFast(app, userDataDir);
                 } else if (app) {
                     await app.close().catch(() => {});
                 }
@@ -106,7 +106,7 @@ test.describe('startup/welcome_screen_modal', () => {
                 ).toBe(firstTitle);
             } finally {
                 if (app && userDataDir) {
-                    await closeElectronApp(app, userDataDir);
+                    await closeElectronAppFast(app, userDataDir);
                 } else if (app) {
                     await app.close().catch(() => {});
                 }
@@ -130,7 +130,7 @@ test.describe('startup/welcome_screen_modal', () => {
                 await modal.waitForSelector('#input_url', {timeout: 10_000});
             } finally {
                 if (app && userDataDir) {
-                    await closeElectronApp(app, userDataDir);
+                    await closeElectronAppFast(app, userDataDir);
                 } else if (app) {
                     await app.close().catch(() => {});
                 }

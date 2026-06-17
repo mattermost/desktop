@@ -6,7 +6,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
+import {clearAllRegistryFiles} from './helpers/electronApp';
+
 const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
 
 function readMacOsDefault(domain: string, key: string): string | null {
@@ -18,8 +19,11 @@ function readMacOsDefault(domain: string, key: string): string | null {
 }
 
 export default async function globalSetup() {
+    // Clear stale per-worker PID shards (and any legacy shared file) from a
+    // prior crashed run. We only delete files here, never signal pids, because
+    // pids may have been reused by unrelated processes since that run.
     try {
-        fs.rmSync(E2E_PROCESS_REGISTRY, {force: true});
+        clearAllRegistryFiles();
     } catch {
         // ignore stale registry cleanup failures
     }

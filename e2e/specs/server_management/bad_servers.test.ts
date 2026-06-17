@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, demoMattermostConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
 import {loginToMattermost} from '../../helpers/login';
 import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
@@ -86,8 +86,7 @@ async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfi
 }
 
 async function closeLaunchedApp(app: Awaited<ReturnType<typeof launchWithConfig>>['app'], dataDir: string) {
-    await closeOverlayWindowsIfOpen(app).catch(() => {});
-    await closeElectronApp(app, dataDir);
+    await closeElectronAppFast(app, dataDir);
 }
 
 test.describe('Bad Server Configurations', () => {
@@ -377,23 +376,11 @@ test.describe('Bad Server Configurations', () => {
             };
             fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(badConfig));
 
-            const {_electron: electron} = await import('playwright');
-            const app = await electron.launch({
-                executablePath: electronBinaryPath,
-                args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-                env: {...process.env, NODE_ENV: 'test'},
-                timeout: 60_000,
+            const app = await launchDirectTestApp(userDataDir, badConfig, {
+                writeConfig: false,
+                extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
             });
             try {
-                await waitForAppReady(app);
-
-                // app.windows() can briefly lag behind app readiness while Playwright
-                // registers the freshly-shown BrowserWindow as a Page, so poll for the
-                // index window instead of reading it once.
-                await expect.poll(
-                    () => app.windows().some((w) => w.url().includes('index')),
-                    {timeout: 15_000},
-                ).toBe(true);
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
 

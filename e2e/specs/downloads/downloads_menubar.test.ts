@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 const file1 = {
     addedAt: Date.UTC(2022, 8, 8, 10), // Sep 08, 2022 10:00AM UTC
@@ -96,7 +96,7 @@ test.describe('downloads/downloads_menubar', () => {
 
                 expect(saveMenuItem).toHaveProperty('enabled', false);
             } finally {
-                await closeElectronApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
             }
         });
     });
@@ -127,7 +127,7 @@ test.describe('downloads/downloads_menubar', () => {
 
                 expect(saveMenuItem).toHaveProperty('enabled', true);
             } finally {
-                await closeElectronApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });
@@ -154,7 +154,7 @@ test.describe('downloads/downloads_menubar', () => {
                 const isVisible = await downloadsWindow.isVisible('.DownloadsDropdown');
                 expect(isVisible).toBe(true);
             } finally {
-                await closeElectronApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });
@@ -183,7 +183,7 @@ test.describe('downloads/downloads_menubar', () => {
                 const isVisible = await downloadsWindow.isVisible('.DownloadsDropdown');
                 expect(isVisible).toBe(true);
             } finally {
-                await closeElectronApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });

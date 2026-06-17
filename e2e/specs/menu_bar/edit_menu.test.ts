@@ -8,7 +8,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
-import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
+import {waitForWindow, closeElectronAppFast} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 import type {ServerView} from '../../helpers/serverView';
@@ -103,7 +103,7 @@ test.describe('edit_menu', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronApp(electronApp, userDataDir);
+        await closeElectronAppFast(electronApp, userDataDir);
     });
 
     test('MM-T807 Undo in the post textbox', {tag: ['@P2', '@all']}, async () => {

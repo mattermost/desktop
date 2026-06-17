@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 
 async function waitForMainBrowserWindow(app: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
     await expect.poll(

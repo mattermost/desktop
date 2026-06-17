@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 async function launchWithWelcomeScreen(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');
@@ -44,7 +44,7 @@ test.describe('Configure Server Modal', () => {
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -55,7 +55,7 @@ test.describe('Configure Server Modal', () => {
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -68,7 +68,7 @@ test.describe('Configure Server Modal', () => {
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(false);
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -83,7 +83,7 @@ test.describe('Configure Server Modal', () => {
             const connectButtonDisabled = await configureServerModal.getAttribute('#connectConfigureServer', 'disabled');
             expect(connectButtonDisabled === '').toBe(true);
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -119,7 +119,7 @@ test.describe('Configure Server Modal', () => {
                 order: 0,
             }));
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 });

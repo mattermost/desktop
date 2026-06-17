@@ -6,7 +6,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
+import {cleanupAllRegisteredElectronProcesses} from './helpers/electronApp';
+
 const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
 
 function restoreMacOsDefaultsSnapshot() {
@@ -47,69 +48,9 @@ function restoreMacOsDefaultsSnapshot() {
 export default async function globalTeardown() {
     restoreMacOsDefaultsSnapshot();
 
-    let pids: number[] = [];
-    try {
-        if (fs.existsSync(E2E_PROCESS_REGISTRY)) {
-            pids = Array.from(new Set(
-                fs.readFileSync(E2E_PROCESS_REGISTRY, 'utf8').
-                    split(/\s+/).
-                    map((value) => Number.parseInt(value, 10)).
-                    filter((value) => Number.isInteger(value) && value > 0),
-            ));
-        }
-        fs.rmSync(E2E_PROCESS_REGISTRY, {force: true});
-    } catch {
-        pids = [];
-    }
-
-    for (const pid of pids) {
-        if (process.platform === 'win32') {
-            try {
-                execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], {stdio: 'ignore'});
-            } catch {
-                // already exited
-            }
-            continue;
-        }
-
-        if (!isProcessAlive(pid)) {
-            continue;
-        }
-
-        try {
-            process.kill(pid, 'SIGTERM');
-        } catch {
-            continue;
-        }
-
-        const waitMs = process.platform === 'darwin' ? 10_000 : 5_000;
-        const deadline = Date.now() + waitMs;
-        while (Date.now() < deadline) {
-            if (!isProcessAlive(pid)) {
-                break;
-            }
-            await sleep(200);
-        }
-
-        if (isProcessAlive(pid) && process.platform !== 'darwin') {
-            try {
-                process.kill(pid, 'SIGKILL');
-            } catch {
-                // already exited
-            }
-        }
-    }
-}
-
-function isProcessAlive(pid: number) {
-    try {
-        process.kill(pid, 0);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    // Reap any Electron main processes left registered across all workers (e.g.
+    // from workers that crashed or skipped their worker teardown), then remove
+    // every registry shard. Shared with the worker-scoped cleanup so the kill
+    // strategy lives in one place and stays consistent across platforms.
+    await cleanupAllRegisteredElectronProcesses();
 }

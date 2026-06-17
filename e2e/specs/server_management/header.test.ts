@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, writeConfigFile, demoConfig} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 test.describe('header', () => {
     test.describe('MM-T2637 Double-Clicking on the header should minimize/maximize the app', () => {
@@ -42,7 +42,7 @@ test.describe('header', () => {
                     const isMaximized = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).isMaximized());
                     expect(isMaximized).toBe(true);
                 } finally {
-                    await closeElectronApp(app, userDataDir);
+                    await closeElectronAppFast(app, userDataDir);
                 }
             });
 
@@ -87,7 +87,7 @@ test.describe('header', () => {
                     const restored = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).isMaximized());
                     expect(restored).toBe(false);
                 } finally {
-                    await closeElectronApp(app, userDataDir);
+                    await closeElectronAppFast(app, userDataDir);
                 }
             });
         }

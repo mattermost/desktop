@@ -8,7 +8,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 test(
     'main window can be hidden to tray and restored',
@@ -83,7 +83,7 @@ test(
                 {timeout: 5_000, message: 'Window did not reappear after show()'},
             ).toBe(true);
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     },
 );

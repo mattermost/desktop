@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 
 import type {ElectronApplication} from 'playwright';
@@ -10,7 +9,7 @@ import type {ElectronApplication} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast, registerElectronMainProcess} from '../../helpers/electronApp';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('application', () => {
@@ -34,18 +33,12 @@ test.describe('application', () => {
             timeout: 60_000,
         });
 
-        const pid = app.process()?.pid;
-        if (pid) {
-            const registry = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
-            try {
-                fs.appendFileSync(registry, `${pid}\n`, 'utf8');
-            } catch { /* non-fatal */ }
-        }
+        registerElectronMainProcess(app.process()?.pid);
     });
 
     test.afterAll(async () => {
         if (app && userDataDir) {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -120,18 +113,12 @@ test.describe('macOS open-url deep link', () => {
             timeout: 60_000,
         });
 
-        const pid = app.process()?.pid;
-        if (pid) {
-            const registry = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
-            try {
-                fs.appendFileSync(registry, `${pid}\n`, 'utf8');
-            } catch { /* non-fatal */ }
-        }
+        registerElectronMainProcess(app.process()?.pid);
     });
 
     test.afterAll(async () => {
         if (app && userDataDir) {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 

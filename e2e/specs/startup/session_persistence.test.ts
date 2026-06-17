@@ -8,7 +8,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -70,7 +70,7 @@ test(
             // App channel should be visible
             await serverWin2!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         } finally {
-            await closeElectronApp(app2, userDataDir);
+            await closeElectronAppFast(app2, userDataDir);
         }
     },
 );

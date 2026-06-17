@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {getMainWindowId} from '../../helpers/testRefs';
 
 // ── MM-T2617: Reopen Mac Desktop App window on Cmd+Tab ────────────────
 // Cmd+Tab triggers the Electron 'activate' app event. The production handler
@@ -19,11 +20,7 @@ test.describe('startup/cmd_tab_restore', () => {
             // Resolve the canonical main window id from __e2eTestRefs so the
             // test targets the same window every time, even if a popout or
             // Calls widget BrowserWindow exists in this run.
-            const mainWindowId = await electronApp.evaluate(() => {
-                const refs = (global as any).__e2eTestRefs;
-                const win = refs?.MainWindow?.get?.();
-                return win?.id ?? null;
-            });
+            const mainWindowId = await getMainWindowId(electronApp);
             expect(mainWindowId, 'MainWindow must be resolvable via __e2eTestRefs').not.toBeNull();
 
             const isMainVisible = () => electronApp.evaluate(({BrowserWindow}, id: number) =>

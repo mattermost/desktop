@@ -10,7 +10,12 @@ import {_electron as electron} from 'playwright';
 
 import {waitForAppReady} from '../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
-import {closeElectronApp, registerElectronMainProcess} from '../helpers/electronApp';
+import {
+    closeElectronApp,
+    FAST_TEARDOWN,
+    registerElectronMainProcess,
+    cleanupRegisteredElectronProcesses,
+} from '../helpers/electronApp';
 import {closeOverlayWindowsIfOpen} from '../helpers/overlayWindows';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
 
@@ -47,12 +52,24 @@ type Fixtures = {
     mainWindow: Page;
 };
 
-export const test = base.extend<Fixtures>({
+type WorkerFixtures = {
+
+    /** Worker-scoped cleanup for orphaned Electron main processes. */
+    workerElectronCleanup: void;
+};
+
+export const test = base.extend<Fixtures, WorkerFixtures>({
+    workerElectronCleanup: [async ({}, use) => {
+        await use();
+        await cleanupRegisteredElectronProcesses();
+    }, {scope: 'worker'}],
+
     appConfig: async ({}, use) => {
         await use(demoConfig);
     },
 
-    electronApp: async ({appConfig}, use, testInfo) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    electronApp: async ({appConfig, workerElectronCleanup: _workerElectronCleanup}, use, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         await fs.rm(userDataDir, {recursive: true, force: true});
         await fs.mkdir(userDataDir, {recursive: true});
@@ -105,11 +122,15 @@ export const test = base.extend<Fixtures>({
 
         await use(app);
 
-        await closeElectronApp(app, userDataDir, {skipLockWaitUnlessCleanClose: true});
+        await closeElectronApp(app, userDataDir, FAST_TEARDOWN);
     },
 
     appReady: async ({electronApp}, use) => {
         await waitForAppReady(electronApp);
+
+        // Setup path: the main process is freshly launched and responsive, so
+        // the default 3s bound is ample for sub-100ms dropdown closes and still
+        // fails fast if app.evaluate hangs. No larger setup timeout is needed.
         await closeOverlayWindowsIfOpen(electronApp);
         await use();
     },

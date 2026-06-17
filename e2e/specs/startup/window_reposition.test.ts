@@ -8,7 +8,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 
 test.describe('startup/window_reposition', () => {
     test.describe.configure({mode: 'serial'});
@@ -22,6 +22,8 @@ test.describe('startup/window_reposition', () => {
             const userDataDir = path.join(testInfo.outputDir, 'reposition-userdata');
             mkdirSync(userDataDir, {recursive: true});
             writeConfigFile(userDataDir, demoConfig);
+
+            let appClosed = false;
 
             // Launch app
             const app = await electron.launch({
@@ -77,6 +79,7 @@ test.describe('startup/window_reposition', () => {
                     fullscreen: false,
                 };
                 await closeElectronApp(app, userDataDir);
+                appClosed = true;
 
                 const {writeFileSync} = await import('fs');
                 writeFileSync(
@@ -129,10 +132,12 @@ test.describe('startup/window_reposition', () => {
                         `Restored y should be near ${savedBounds.y}`,
                     ).toBeLessThanOrEqual(tolerance);
                 } finally {
-                    await closeElectronApp(app2, userDataDir);
+                    await closeElectronAppFast(app2, userDataDir);
                 }
             } finally {
-                await closeElectronApp(app, userDataDir);
+                if (!appClosed) {
+                    await closeElectronAppFast(app, userDataDir);
+                }
             }
         },
     );

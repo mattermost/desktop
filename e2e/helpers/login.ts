@@ -5,7 +5,16 @@ import {expect} from '@playwright/test';
 
 import type {ServerView} from './serverView';
 
+async function isMattermostServerUrl(win: ServerView): Promise<boolean> {
+    const url = await win.url().catch(() => '');
+    return url.startsWith('http://') || url.startsWith('https://');
+}
+
 async function hasAppShell(win: ServerView): Promise<boolean> {
+    if (!(await isMattermostServerUrl(win))) {
+        return false;
+    }
+
     return win.runInRenderer<boolean>(`
         return Boolean(
             document.querySelector('#post_textbox')
@@ -16,6 +25,10 @@ async function hasAppShell(win: ServerView): Promise<boolean> {
 }
 
 async function hasLoginForm(win: ServerView): Promise<boolean> {
+    if (!(await isMattermostServerUrl(win))) {
+        return false;
+    }
+
     return win.runInRenderer<boolean>(`
         return Boolean(document.querySelector('#input_loginId'));
     `).catch(() => false);

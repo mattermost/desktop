@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, exampleURL, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 function readJsonFile<T>(filePath: string): T | undefined {
     try {
@@ -115,7 +115,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -136,7 +136,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -148,7 +148,7 @@ test.describe('EditServerModal', () => {
             const existing = await editServerView.isVisible('#customMessage_url.Input___error');
             expect(existing).toBe(true);
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -176,7 +176,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -204,7 +204,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -233,7 +233,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 });

@@ -6,7 +6,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {exampleURL} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 test.describe('startup/config', () => {
     test(
@@ -66,7 +66,7 @@ test.describe('startup/config', () => {
                 expect(upgraded.servers).toBeDefined();
                 expect(upgraded.servers[0].url).toContain('example.com');
             } finally {
-                await closeElectronApp(upgradedApp, v0Dir);
+                await closeElectronAppFast(upgradedApp, v0Dir);
             }
         },
     );

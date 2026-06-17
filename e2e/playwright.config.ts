@@ -102,6 +102,12 @@ export default defineConfig({
     // while still failing reasonably fast on a genuinely-stuck test.
     timeout: 90_000,
 
+    // Worker teardown reaps this worker's orphaned Electron main processes. The
+    // per-worker PID registry + concurrent SIGKILL reap keep this to ~2s even
+    // with several leftovers, so 90s is ample headroom. If teardown ever
+    // approaches this it signals a reaping gap to fix, not a timeout to raise.
+    workerTeardownTimeout: 90_000,
+
     ...(reportTag ? {tag: reportTag} : {}),
 
     reporter: reporters,

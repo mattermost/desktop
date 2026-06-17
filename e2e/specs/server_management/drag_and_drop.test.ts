@@ -9,7 +9,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {recoverServerViewIfNeeded, waitForMattermostShell} from '../../helpers/mattermostShell';
 import {buildServerMap} from '../../helpers/serverMap';
@@ -179,7 +179,7 @@ test.describe('server_management/drag_and_drop', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronApp(electronApp, userDataDir);
+        await closeElectronAppFast(electronApp, userDataDir);
     });
 
     test.describe('MM-T2635 should be able to drag and drop tabs', () => {

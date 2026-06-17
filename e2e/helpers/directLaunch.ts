@@ -26,12 +26,30 @@ export const DIRECT_LAUNCH_ARGS = [
     '--mute-audio',
 ];
 
+export type LaunchDirectTestAppOptions = {
+    extraEnv?: Record<string, string>;
+    writeConfig?: boolean;
+};
+
+function resolveLaunchOptions(
+    extraEnvOrOptions: Record<string, string> | LaunchDirectTestAppOptions,
+): LaunchDirectTestAppOptions {
+    if ('writeConfig' in extraEnvOrOptions || 'extraEnv' in extraEnvOrOptions) {
+        return extraEnvOrOptions;
+    }
+    return {extraEnv: extraEnvOrOptions};
+}
+
 export async function launchDirectTestApp(
     userDataDir: string,
     config: AppConfig | object,
-    extraEnv: Record<string, string> = {},
+    extraEnvOrOptions: Record<string, string> | LaunchDirectTestAppOptions = {},
 ): Promise<ElectronApplication> {
-    writeConfigFile(userDataDir, config as AppConfig);
+    const {extraEnv = {}, writeConfig = true} = resolveLaunchOptions(extraEnvOrOptions);
+
+    if (writeConfig) {
+        writeConfigFile(userDataDir, config as AppConfig);
+    }
 
     const app = await electron.launch({
         executablePath: electronBinaryPath,

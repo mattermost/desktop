@@ -8,7 +8,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig} from '../../helpers/config';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 // ── MM-T1538: Download a video ────────────────────────────────────────
 // Verifies a real end-to-end download path for a video MIME type:
@@ -161,7 +161,7 @@ test(
                 toBe('completed');
         } finally {
             try {
-                await closeElectronApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
             } finally {
                 await new Promise<void>((resolve, reject) =>
                     server.close((error) => (error ? reject(error) : resolve())),

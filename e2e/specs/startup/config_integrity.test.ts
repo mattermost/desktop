@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {closeElectronApp} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 test(
     'config.json is valid JSON after app closes normally',
@@ -31,7 +31,7 @@ test(
         try {
             await waitForAppReady(app);
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
 
         // Config file must exist and be valid JSON
@@ -75,7 +75,7 @@ test(
             const windows = app.windows();
             expect(windows.length).toBeGreaterThan(0);
         } finally {
-            await closeElectronApp(app, userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     },
 );

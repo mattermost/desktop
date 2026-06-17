@@ -14,6 +14,8 @@ import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {clickApplicationMenuItem} from '../../helpers/menu';
+import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {getActiveServerWebContentsId} from '../../helpers/testRefs';
 
 test.describe('menu_bar/devtools_current_server', () => {
@@ -28,13 +30,16 @@ test.describe('menu_bar/devtools_current_server', () => {
                 return;
             }
 
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
+            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+            const firstServer = serverEntry?.win;
             expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
 
+            await closeOverlayWindowsIfOpen(electronApp);
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await loginToMattermost(firstServer!);
             await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
-            const webContentsId = await getActiveServerWebContentsId(electronApp);
+            const webContentsId = serverEntry!.webContentsId ?? await getActiveServerWebContentsId(electronApp);
 
             const webContentsExists = await electronApp.evaluate(({webContents}, id) => {
                 const wc = webContents.fromId(id);
@@ -56,17 +61,24 @@ test.describe('menu_bar/devtools_current_server', () => {
                 {timeout: 15_000, message: 'DevTools must open for the current server webContents after menu click'},
             ).toBe(true);
 
-            // The View menu item calls openDevTools() (not toggle). Close explicitly.
+            // Toggle closed instead of closeDevTools() evaluate, which can race with
+            // DevTools teardown and destabilize the app on Linux CI.
             await electronApp.evaluate(({webContents}, id) => {
-                const wc = webContents.fromId(id);
-                wc?.closeDevTools();
-            }, webContentsId);
+                try {
+                    const wc = webContents.fromId(id);
+                    if (wc && !wc.isDestroyed() && wc.isDevToolsOpened()) {
+                        wc.toggleDevTools();
+                    }
+                } catch {
+                    // DevTools may already be detaching.
+                }
+            }, webContentsId).catch(() => {});
             await expect.poll(
                 () => electronApp.evaluate(({webContents}, id) => {
                     const wc = webContents.fromId(id);
                     return wc && !wc.isDestroyed() ? !wc.isDevToolsOpened() : true;
-                }, webContentsId),
-                {timeout: 15_000, message: 'DevTools must close after closeDevTools()'},
+                }, webContentsId).catch(() => true),
+                {timeout: 15_000, message: 'DevTools must close after toggle'},
             ).toBe(true);
 
             const serverStillFunctional = await firstServer!.evaluate(() => {
