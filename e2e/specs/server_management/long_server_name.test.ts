@@ -6,7 +6,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 
 test.describe('LongServerName', () => {
     test('MM-T4050 Long server name', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
@@ -61,8 +61,7 @@ test.describe('LongServerName', () => {
             });
             expect(isWithinMaxWidth).toBe(true);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
         }
     });
 });

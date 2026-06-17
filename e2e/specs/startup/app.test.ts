@@ -5,7 +5,7 @@ import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 import {electronBinaryPath, appDir, demoConfig, emptyConfig, writeConfigFile} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
@@ -51,8 +51,7 @@ test.describe('startup/app', () => {
                     }
                 }
             } finally {
-                await firstApp.close().catch(() => {});
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(firstApp, userDataDir);
             }
 
             expect(secondLaunchSucceeded, 'Second app instance should not have launched successfully').toBe(false);
@@ -96,9 +95,10 @@ test.describe('startup/app', () => {
                 const text = await welcomeModal.innerText('.WelcomeScreen .WelcomeScreen__button');
                 expect(text).toBe('Get Started');
             } finally {
-                await emptyApp?.close().catch(() => {});
-                if (userDataDir) {
-                    await waitForLockFileRelease(userDataDir).catch(() => {});
+                if (emptyApp && userDataDir) {
+                    await closeElectronApp(emptyApp, userDataDir);
+                } else if (emptyApp) {
+                    await emptyApp.close().catch(() => {});
                 }
                 await releaseLock();
             }
@@ -135,9 +135,10 @@ test.describe('startup/app', () => {
                     {timeout: 10_000},
                 ).toBe(runtimeAppName);
             } finally {
-                await emptyApp?.close().catch(() => {});
-                if (userDataDir) {
-                    await waitForLockFileRelease(userDataDir).catch(() => {});
+                if (emptyApp && userDataDir) {
+                    await closeElectronApp(emptyApp, userDataDir);
+                } else if (emptyApp) {
+                    await emptyApp.close().catch(() => {});
                 }
                 await releaseLock();
             }

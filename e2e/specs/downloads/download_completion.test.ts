@@ -8,7 +8,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 
 function readJsonFile<T>(filePath: string): T | undefined {
     try {
@@ -136,8 +136,7 @@ test(
                 ).
                 toBe('completed');
         } finally {
-            await app.close().catch(() => {});
-            await waitForLockFileRelease(userDataDir).catch(() => {});
+            await closeElectronApp(app, userDataDir);
             await new Promise<void>((resolve, reject) =>
                 server.close((error) => (error ? reject(error) : resolve())),
             );

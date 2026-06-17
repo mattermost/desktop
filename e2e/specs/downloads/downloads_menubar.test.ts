@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 
 const file1 = {
     addedAt: Date.UTC(2022, 8, 8, 10), // Sep 08, 2022 10:00AM UTC
@@ -96,8 +96,7 @@ test.describe('downloads/downloads_menubar', () => {
 
                 expect(saveMenuItem).toHaveProperty('enabled', false);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(app, userDataDir);
             }
         });
     });
@@ -128,8 +127,7 @@ test.describe('downloads/downloads_menubar', () => {
 
                 expect(saveMenuItem).toHaveProperty('enabled', true);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });
@@ -156,8 +154,7 @@ test.describe('downloads/downloads_menubar', () => {
                 const isVisible = await downloadsWindow.isVisible('.DownloadsDropdown');
                 expect(isVisible).toBe(true);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });
@@ -186,8 +183,7 @@ test.describe('downloads/downloads_menubar', () => {
                 const isVisible = await downloadsWindow.isVisible('.DownloadsDropdown');
                 expect(isVisible).toBe(true);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronApp(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });

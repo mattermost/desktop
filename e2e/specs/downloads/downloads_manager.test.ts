@@ -8,7 +8,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 
 async function startSlowDownloadServer(filename: string, chunk = 'slow-download-chunk-') {
     const server = http.createServer((request, response) => {
@@ -122,8 +122,7 @@ test.describe('downloads/downloads_manager', () => {
                 });
             }, {timeout: 15_000}).toBeGreaterThan(0);
         } finally {
-            await app.close().catch(() => {});
-            await waitForLockFileRelease(userDataDir).catch(() => {});
+            await closeElectronApp(app, userDataDir);
             await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
             fs.rmSync(downloadsDir, {recursive: true, force: true});
         }

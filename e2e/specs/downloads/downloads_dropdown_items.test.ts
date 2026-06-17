@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 
 const file1 = {
     addedAt: Date.UTC(2022, 7, 8, 10), // Aug 08, 2022 10:00AM UTC
@@ -113,8 +113,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
@@ -149,8 +148,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
@@ -189,8 +187,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
@@ -223,8 +220,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             const file2InnerText = await secondItemLocator.innerText();
             expect(file2InnerText).toBe(file1.filename);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app, userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });

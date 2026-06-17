@@ -7,7 +7,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {waitForMattermostShell} from '../../helpers/mattermostShell';
 import {buildServerMap} from '../../helpers/serverMap';
@@ -57,34 +57,6 @@ async function waitForWindow(app: ElectronApplication, pattern: string, timeout 
     }
 
     throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
-
-async function closeElectronApp(app: ElectronApplication, dataDir: string) {
-    let pid: number | undefined;
-    try {
-        pid = app.process()?.pid;
-    } catch {
-        pid = undefined;
-    }
-
-    let cleanClosed = false;
-    await Promise.race([
-        app.close().catch(() => {}).then(() => {
-            cleanClosed = true;
-        }),
-        new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
-    ]);
-
-    if (!cleanClosed && pid) {
-        try {
-            process.kill(pid, 'SIGTERM');
-        } catch {
-            // already exited
-        }
-        return;
-    }
-
-    await waitForLockFileRelease(dataDir).catch(() => {});
 }
 
 async function clickWindowMenuItem(

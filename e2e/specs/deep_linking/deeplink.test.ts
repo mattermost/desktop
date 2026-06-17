@@ -10,7 +10,7 @@ import type {ElectronApplication} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp} from '../../helpers/electronApp';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('application', () => {
@@ -44,9 +44,8 @@ test.describe('application', () => {
     });
 
     test.afterAll(async () => {
-        await app?.close();
-        if (userDataDir) {
-            await waitForLockFileRelease(userDataDir).catch(() => {});
+        if (app && userDataDir) {
+            await closeElectronApp(app, userDataDir);
         }
     });
 
@@ -131,9 +130,8 @@ test.describe('macOS open-url deep link', () => {
     });
 
     test.afterAll(async () => {
-        await app?.close();
-        if (userDataDir) {
-            await waitForLockFileRelease(userDataDir).catch(() => {});
+        if (app && userDataDir) {
+            await closeElectronApp(app, userDataDir);
         }
     });
 
