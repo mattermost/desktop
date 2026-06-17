@@ -11,8 +11,8 @@ import type {ElectronApplication} from 'playwright';
 import {_electron as electron} from 'playwright';
 
 import {waitForAppReady} from '../helpers/appReadiness';
-import {waitForLockFileRelease} from '../helpers/cleanup';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
+import {closeElectronApp} from '../helpers/electronApp';
 import {closeOverlayWindowsIfOpen} from '../helpers/overlayWindows';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
 
@@ -126,64 +126,7 @@ export const test = base.extend<Fixtures>({
 
         await use(app);
 
-        // Teardown strategy:
-        //   1. Try app.close() (clean Playwright shutdown) with a 10s cap.
-        //   2. If it hangs, send SIGTERM. On macOS that's the final signal
-        //      (SIGKILL triggers "Electron quit unexpectedly" crash dialogs).
-        //      On Linux/Windows, give the process ~3s to exit gracefully,
-        //      then SIGKILL so a stuck Electron cannot keep the Playwright
-        //      RPC channel — and therefore the worker — alive long enough to
-        //      hit Playwright's per-hook timeout (which surfaces as
-        //      "Worker teardown timeout of {timeout}ms exceeded").
-        let pid: number | undefined;
-        try {
-            pid = app.process()?.pid;
-        } catch { /* app already disconnected */ }
-
-        let cleanClosed = false;
-        await Promise.race([
-            app.close().catch(() => {}).then(() => {
-                cleanClosed = true;
-            }),
-            new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
-        ]);
-
-        if (!cleanClosed && pid) {
-            try {
-                process.kill(pid, 'SIGTERM');
-            } catch { /* already gone */ }
-
-            if (process.platform !== 'darwin') {
-                // Wait briefly for graceful SIGTERM exit, then force-kill.
-                const stillAlive = await new Promise<boolean>((resolve) => {
-                    const start = Date.now();
-                    const interval = setInterval(() => {
-                        try {
-                            process.kill(pid!, 0);
-                        } catch {
-                            clearInterval(interval);
-                            resolve(false);
-                            return;
-                        }
-                        if (Date.now() - start > 3_000) {
-                            clearInterval(interval);
-                            resolve(true);
-                        }
-                    }, 200);
-                });
-                if (stillAlive) {
-                    try {
-                        process.kill(pid, 'SIGKILL');
-                    } catch { /* already gone */ }
-                }
-            }
-
-            // Lock-file cleanup is not needed: each test has a unique userDataDir
-            // so a lingering lock never blocks the next test.
-            return;
-        }
-
-        await waitForLockFileRelease(userDataDir).catch(() => {});
+        await closeElectronApp(app, userDataDir);
     },
 
     // Deduplicated readiness gate. Both serverMap and mainWindow declare this
