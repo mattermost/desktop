@@ -12,20 +12,6 @@ import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
 
-// ── Notes on scope ─────────────────────────────────────────────────────
-// Bookmarks CRUD (add, edit, delete, reorder, file upload, favicon change,
-// search integration, permissions, archived-channel restrictions) is covered
-// in the Mattermost webapp Cypress E2E suite:
-//   cypress/tests/integration/channels/channel/channel_bookmarks_spec.ts
-//   cypress/tests/integration/channels/enterprise/permissions/bookmark_permissions_spec.ts
-//
-// The two desktop-relevant cases kept here are:
-//   MM-T5611 – clicking an external bookmark link must open the system
-//              browser (shell.openExternal), not an in-app window.
-//   MM-T5600 – the "Bookmarks Bar" toggle must appear in the channel
-//              dropdown menu (desktop renders the webapp menu; the menu
-//              item presence is a server-feature gate the desktop must
-//              not break).
 
 const EXTERNAL_BOOKMARK_URL = 'https://mattermost.com/';
 
