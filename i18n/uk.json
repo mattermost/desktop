@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Скопіювати адресу електронної пошти",
   "app.menus.contextMenu.openInNewTab": "Відкрити в новій вкладці",
   "app.menus.contextMenu.openInNewWindow": "Відкрити в новому вікні",
   "app.navigationManager.invalidLinkDescription": "Натиснуте посилання сформоване некорректно і не може бути відкрите. Будь ласка, перевірте URL на наявність помилок перед новою спробою.",
@@ -214,7 +215,7 @@
   "renderer.components.errorView.troubleshooting.browserView.canReachFromBrowserWindow": "Посилання <link>{url}</link> можна відкрити у вікні браузеру.",
   "renderer.components.errorView.troubleshooting.clearCacheAndReload": "Спробуйте <link>очистити кеш і перезавантажити сторінку</link>. Це може вирішити проблему.",
   "renderer.components.errorView.troubleshooting.computerIsConnected": "Переконайтеся, що ваш комп'ютер підключений до Інтернету.",
-  "renderer.components.errorView.troubleshooting.downgradeApp": "<link>Поверніть версію вашого десктопного застосунку {appName} </link> до v5.10 або більш ранньої версії.",
+  "renderer.components.errorView.troubleshooting.downgradeApp": "<link>Поверніть настільну програму {appName} </link>до версії v5.10 або раніше.",
   "renderer.components.errorView.troubleshooting.ensureComputerIsConnected": "Переконайтеся, що ваш комп'ютер підключений до мережі.",
   "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": "Переконайтеся, що URL-адреса <link>{url}</link> є правильною.",
   "renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow": "Спробуйте відкрити <link>{url}</link> у вікні браузера.",
@@ -346,7 +347,7 @@
   "renderer.components.settingsPage.viewLimit": "Максимальна кількість відкритих переглядів",
   "renderer.components.settingsPage.viewLimit.description": "Максимальна кількість вкладок і вікон, які можуть бути відкриті одночасно в додатку на одному сервері. Встановіть порожнє значення, щоб зняти обмеження.",
   "renderer.components.showCertificateModal.algorithm": "Алгоритм",
-  "renderer.components.showCertificateModal.commonName": "Загальне ім'я (CN)",
+  "renderer.components.showCertificateModal.commonName": "Загальне ім'я",
   "renderer.components.showCertificateModal.issuerName": "Ім'я видавця",
   "renderer.components.showCertificateModal.noCertSelected": "Не вибрано жодного сертифікату",
   "renderer.components.showCertificateModal.notValidAfter": "Недійсний після",
