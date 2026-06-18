@@ -252,9 +252,9 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, ipcValidate(handleMentionNotification, [
         Joi.string().allow('').required(),
         Joi.string().allow('').required(),
-        Joi.string().min(1).required(),
-        Joi.string().min(1).required(),
-        Joi.string().min(1).required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
         Joi.boolean().required(),
         Joi.string().allow('').required(),
     ]));
