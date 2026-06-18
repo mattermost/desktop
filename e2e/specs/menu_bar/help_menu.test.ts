@@ -80,4 +80,42 @@ test.describe('menu_bar/help_menu', () => {
             }
         },
     );
+
+    test(
+        'MM-T828 Learn More in the Menu Bar opens docs.mattermost.com in a browser',
+        {tag: ['@P2', '@all']},
+        async ({electronApp}) => {
+            // Stub shell.openExternal to capture the URL
+            await electronApp.evaluate(({shell}) => {
+                (global as any).__e2eOpenExternalCalls = [] as string[];
+                const original = shell.openExternal.bind(shell);
+                (global as any).__e2eOriginalOpenExternal = original;
+                shell.openExternal = async (url: string) => {
+                    (global as any).__e2eOpenExternalCalls.push(url);
+                    return original(url);
+                };
+            });
+
+            try {
+                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Learn More'});
+
+                await expect.poll(
+                    () => electronApp.evaluate(() => {
+                        const calls: string[] = (global as any).__e2eOpenExternalCalls ?? [];
+                        return calls.some((url) => url.includes('docs.mattermost.com'));
+                    }),
+                    {timeout: 10_000, message: 'Learn More should open docs.mattermost.com'},
+                ).toBe(true);
+            } finally {
+                await electronApp.evaluate(({shell}) => {
+                    const original = (global as any).__e2eOriginalOpenExternal;
+                    if (original) {
+                        shell.openExternal = original;
+                        delete (global as any).__e2eOriginalOpenExternal;
+                    }
+                    delete (global as any).__e2eOpenExternalCalls;
+                });
+            }
+        },
+    );
 });

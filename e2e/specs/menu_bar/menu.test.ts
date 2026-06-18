@@ -25,4 +25,43 @@ test.describe('menu/menu', () => {
         });
         expect(settingsWindow).toBeDefined();
     });
+
+    test(
+        'MM-T4803 Open Servers Menu using keyboard shortcuts',
+        {tag: ['@P2', '@all']},
+        async ({electronApp, mainWindow}) => {
+            expect(mainWindow).toBeDefined();
+
+            // Click the "Show Servers" menu item via the application menu.
+            // The keyboard shortcut (Ctrl+Shift+S / Cmd+Ctrl+S) is handled at
+            // the OS/Electron level and cannot be sent from web content.
+            const clicked = await electronApp.evaluate(({Menu}) => {
+                const root = Menu.getApplicationMenu();
+                if (!root) {
+                    return false;
+                }
+                const stack = [...root.items];
+                while (stack.length) {
+                    const item = stack.shift()!;
+                    if (item.label === 'Show Servers') {
+                        item.click();
+                        return true;
+                    }
+                    if (item.submenu) {
+                        stack.push(...item.submenu.items);
+                    }
+                }
+                return false;
+            });
+            expect(clicked, '"Show Servers" menu item must exist and be clickable').toBe(true);
+
+            // The server dropdown opens as a separate BrowserWindow with "dropdown" in its URL
+            const dropdownWindow = electronApp.windows().find((w) => w.url().includes('dropdown')) ??
+                await electronApp.waitForEvent('window', {
+                    predicate: (w) => w.url().includes('dropdown'),
+                    timeout: 10_000,
+                });
+            expect(dropdownWindow, 'Server dropdown window must appear after Show Servers menu click').toBeDefined();
+        },
+    );
 });

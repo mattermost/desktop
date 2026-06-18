@@ -271,4 +271,39 @@ test.describe('startup/welcome_screen_modal', () => {
             }
         },
     );
+
+    test(
+        'MM-T4982 should wrap from first slide to last slide',
+        {tag: ['@P2', '@all']},
+        async ({}, testInfo) => {
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let app: Awaited<ReturnType<typeof electron.launch>> | undefined;
+            let modal: Page;
+            let userDataDir = '';
+            try {
+                ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
+
+                const firstTitle = await getCurrentSlideTitle(modal);
+
+                // Click prev from the first slide — should wrap to the last slide
+                const prevBtn = modal.locator('#prevCarouselButton');
+                await prevBtn.click();
+
+                await expect.poll(
+                    async () => getCurrentSlideTitle(modal),
+                    {timeout: 5_000, message: 'Should wrap from first slide back to last'},
+                ).not.toBe(firstTitle);
+
+                const wrappedTitle = await getCurrentSlideTitle(modal);
+                expect(normalizeTitle(wrappedTitle)).toBe('integrate with tools you love');
+            } finally {
+                if (app && userDataDir) {
+                    await closeElectronAppFast(app, userDataDir);
+                } else if (app) {
+                    await app.close().catch(() => {});
+                }
+                await releaseLock();
+            }
+        },
+    );
 });

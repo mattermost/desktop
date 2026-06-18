@@ -249,17 +249,17 @@ Ranked by: Priority (Smoke > Normal > Low), then by whether production code alre
 | 18 | MM-T1319 | Sign in to Another Server (menu) | Low | `menu_bar/file_menu.test.ts` (extend) | `@all` | Menu item traversal | Low |
 | 19 | MM-T1428 | Window returns to floating position | Low | `startup/window_reposition.test.ts` (extend) | `@all` | Bounds persistence across restart | Medium |
 | 20 | MM-T1660 | App restores position after minimize | Low | `startup/window_reposition.test.ts` (extend) | `@all` | Minimize + restore | Medium |
-| 21 | MM-T1668 | Quit the app | Low | `menu_bar/file_menu.test.ts` (extend) | `@all` | App quit verification | Low |
+| 21 | MM-T1668 | Quit the app | Low | 🔒 infra-blocked | App quit terminates process | Cannot test app quit from within the Playwright-managed Electron process |
 | 22 | MM-T2631 | Trust invalid cert once | Low | `server_management/certificate_trust.test.ts` (extend) | `@all` | TLS server + cert persistence | Medium |
 | 23 | MM-T2633 | Back button to return to login | Low | `server_management/bad_servers.test.ts` (extend) | `@all` | Error view navigation | Low |
 | 24 | MM-T2949 | CMD-Enter (macOS) | Low | `mattermost/alt_enter.test.ts` (extend) | `@darwin` | macOS-only keyboard | Low |
-| 25 | MM-T3360 | Configure Help & Problem links | Low | `menu_bar/help_menu.test.ts` (extend) | `@all` | Config-driven URLs | Low |
+| 25 | MM-T3360 | Configure Help & Problem links | Low | 🔒 infra-blocked | Server System Console access | Requires admin access to System Console to set Help/Report links |
 | 26 | MM-T4031 | Default downloads location | Low | `settings.test.ts` (extend) | `@all` | Settings page | Low |
 | 27 | MM-T4049 | Tiled and full screen position | Low | `startup/window.test.ts` (extend) | `@all` | Window positioning | Medium |
 | 28 | MM-T4055 | Opening untrusted links | Low | `mattermost/external_links.test.ts` (extend) | `@all` | Protocol handling | Low |
 | 29 | MM-T4638 | App icon theme | Low | `settings.test.ts` (extend) | `@all` | Settings page | Low |
 | 30 | MM-T4803 | Open Servers Menu via keyboard | Low | `menu_bar/menu.test.ts` (extend) | `@all` | Keyboard shortcut | Low |
-| 31 | MM-T4804 | Copy version string to clipboard | Low | `menu_bar/help_menu.test.ts` (extend) | `@all` | Menu item + clipboard | Low |
+| 31 | MM-T4804 | Copy version string to clipboard | Low | 🔒 infra-blocked | Clipboard access in headless CI | Cannot reliably read clipboard in headless CI environments |
 | 32 | MM-T822 | History → Back | Low | `menu_bar/history_menu.test.ts` (extend) | `@all` | Menu item | Low |
 | 33 | MM-T828 | Learn More in Menu Bar | Low | `menu_bar/help_menu.test.ts` (extend) | `@all` | Menu item → external URL | Low |
 | 34 | MM-T1289 | Start app on login (Win/Linux) | Low | `settings/autostart.test.ts` (extend) | `@win32`, `@linux` | Autostart config | Low |

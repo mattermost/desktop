@@ -94,4 +94,27 @@ test.describe('file_menu/dropdown', () => {
             return electronApp.windows().some((window) => window.url().includes('index'));
         }).toBe(false);
     });
+
+    test(
+        'MM-T1319 Sign in to Another Server — server name input should be focused',
+        {tag: ['@P2', '@all']},
+        async ({electronApp}) => {
+            await clickApplicationMenuItem(electronApp, 'file', {labelIncludes: 'Sign in'});
+
+            // The Add Server modal opens in a newServer window
+            const newServerWindow = await electronApp.waitForEvent('window', {
+                predicate: (window) => window.url().includes('newServer'),
+                timeout: 15_000,
+            });
+            await newServerWindow.waitForLoadState('domcontentloaded');
+
+            // Verify the server name input exists and is focused
+            await newServerWindow.waitForSelector('#input_name', {timeout: 10_000});
+            const focusedElement = await newServerWindow.evaluate(() => {
+                const active = document.activeElement;
+                return active?.id ?? null;
+            });
+            expect(focusedElement, 'Server name input must be focused after opening Sign in to Another Server').toBe('input_name');
+        },
+    );
 });

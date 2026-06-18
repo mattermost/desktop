@@ -38,4 +38,57 @@ test.describe('history_menu', () => {
         channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
         expect(channelHeaderText).toBe('Town Square');
     });
+
+    test(
+        'MM-T822 History → Back in the Menu Bar navigates to previous page',
+        {tag: ['@P2', '@all']},
+        async ({electronApp}) => {
+            const serverMap = await buildServerMap(electronApp);
+            const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
+            await loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#sidebarItem_off-topic');
+
+            // Navigate to Off-Topic, then Town Square to build history
+            await firstServer.click('#sidebarItem_off-topic');
+            await firstServer.waitForSelector('#channelHeaderTitle');
+            const offTopicTitle = await firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
+
+            await firstServer.click('#sidebarItem_town-square');
+            await firstServer.waitForSelector('#channelHeaderTitle');
+
+            // Click History → Back via the application menu
+            const clicked = await electronApp.evaluate(({Menu}) => {
+                const root = Menu.getApplicationMenu();
+                if (!root) {
+                    return false;
+                }
+                const stack = [...root.items];
+                while (stack.length) {
+                    const item = stack.shift()!;
+                    if (item.label === '&History' || item.label === 'History') {
+                        const backItem = item.submenu?.items?.find(
+                            (sub: any) => sub.label === 'Back',
+                        );
+                        if (backItem) {
+                            backItem.click();
+                            return true;
+                        }
+                    }
+                    if (item.submenu) {
+                        stack.push(...item.submenu.items);
+                    }
+                }
+                return false;
+            });
+            expect(clicked, 'History → Back menu item must exist and be clickable').toBe(true);
+
+            // Verify navigation went back to Off-Topic
+            await expect.poll(
+                async () => {
+                    return firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
+                },
+                {timeout: 10_000, message: 'Should navigate back to Off-Topic after History → Back'},
+            ).toBe(offTopicTitle);
+        },
+    );
 });
