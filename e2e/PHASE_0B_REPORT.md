@@ -70,7 +70,7 @@
 | 43 | MM-T1300 | System tray - open Settings | system-tray-icon | Low | 📋 desktop-todo | `system/tray_menu.test.ts` (extend) | Tray menu item → Settings window |
 | 44 | MM-T1301 | System tray - exit | system-tray-icon | Low | 📋 desktop-todo | `system/tray_menu.test.ts` (extend) | Tray menu → quit app |
 | 45 | MM-T1302 | System tray - choose server | system-tray-icon | Low | 📋 desktop-todo | `system/tray_menu.test.ts` (extend) | Tray menu → switch server |
-| 46 | MM-T1303 | Receive a desktop notification | permissions | Smoke | 📋 desktop-todo | `notification_trigger/notification_click.test.ts` (extend) | Multi-user notification delivery + click |
+| 46 | MM-T1303 | Receive a desktop notification | permissions | Smoke | 🔒 infra-blocked | OS notification click | Cannot click OS-level desktop notifications from Playwright; existing test uses IPC-level simulation |
 | 47 | MM-T1304 | Open app from deep link | deep-linking | Smoke | ✅ migrated | `deep_linking/deeplink.test.ts` | |
 | 48 | MM-T1306 | Posting in Developers channel | deep-linking | Smoke | ✅ migrated | `deep_linking/deeplink.test.ts` | |
 | 49 | MM-T1307 | Right-click channel/team name | right-click-menu | Smoke | ✅ migrated | `mattermost/context_menu.test.ts` | |
@@ -228,11 +228,11 @@ Ranked by: Priority (Smoke > Normal > Low), then by whether production code alre
 | Rank | MM-T ID | Title | Priority | Proposed Spec Path | Platform Tag | Dependencies | Complexity |
 |------|---------|-------|----------|--------------------|-------------|--------------|------------|
 | **P1** | | | | | | | |
-| 1 | MM-T1303 | Receive a desktop notification | Smoke | `notification_trigger/notification_click.test.ts` (extend) | `@all` | Multi-user server for mention | Medium |
-| 2 | MM-T4399 | New Server Modal when no servers | Smoke | `startup/app.test.ts` (extend) | `@all` | Empty config | Low |
-| 3 | MM-T4419 | Add Server modal not removable | Smoke | `startup/app.test.ts` (extend) | `@all` | Empty config | Low |
-| 4 | MM-T4978 | Navigate slides via pagination | Smoke | `startup/welcome_screen_modal.test.ts` (extend) | `@all` | Welcome screen modal | Low |
-| 5 | MM-T4979 | Auto-advance slides every 5s | Smoke | `startup/welcome_screen_modal.test.ts` (extend) | `@all` | Timer-based polling | Medium |
+| 1 | MM-T4399 | New Server Modal when no servers | Smoke | `startup/app.test.ts` (extend) | `@all` | Empty config | Low |
+| 2 | MM-T4419 | Add Server modal not removable | Smoke | `startup/app.test.ts` (extend) | `@all` | Empty config | Low |
+| 3 | MM-T4978 | Navigate slides via pagination | Smoke | `startup/welcome_screen_modal.test.ts` (extend) | `@all` | Welcome screen modal | Low |
+| 4 | MM-T4979 | Auto-advance slides every 5s | Smoke | `startup/welcome_screen_modal.test.ts` (extend) | `@all` | Timer-based polling | Medium |
+| 5 | MM-T4981 | Move from last to first slide | Smoke | `startup/welcome_screen_modal.test.ts` (extend) | `@all` | Welcome screen modal | Low |
 | **P2** | | | | | | | |
 | 6 | MM-T4979 | Auto-advance slides every 5s | Smoke | `startup/welcome_screen_modal.test.ts` (extend) | `@all` | Timer-based polling | Medium |
 | 7 | MM-T4980 | Slides in expected order (variant) | Smoke | `startup/welcome_screen_modal.test.ts` (extend) | `@all` | Welcome screen modal | Low |

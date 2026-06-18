@@ -144,4 +144,101 @@ test.describe('startup/app', () => {
             }
         },
     );
+
+    test(
+        'MM-T4399 New Server Modal should appear when no servers exist',
+        {tag: ['@P1', '@all']},
+        async ({}, testInfo) => {
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let emptyApp;
+            let userDataDir = '';
+
+            try {
+                userDataDir = testInfo.outputDir + '/empty-noservers-userdata';
+                const {mkdirSync} = await import('fs');
+                mkdirSync(userDataDir, {recursive: true});
+                writeConfigFile(userDataDir, emptyConfig);
+
+                emptyApp = await electron.launch({
+                    executablePath: electronBinaryPath,
+                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+                    env: {...process.env, NODE_ENV: 'test'},
+                    timeout: 60_000,
+                });
+
+                // The Add Server modal should appear automatically when no servers exist.
+                // It renders inside the main window (index.html), not as a separate window.
+                await waitForAppReady(emptyApp);
+                const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
+                expect(mainWin, 'Main window must exist').toBeDefined();
+
+                // Verify the Add Server modal inputs are visible
+                await mainWin!.waitForSelector('#input_name', {timeout: 10_000});
+                await mainWin!.waitForSelector('#input_url', {timeout: 10_000});
+
+                const nameInputVisible = await mainWin!.isVisible('#input_name');
+                const urlInputVisible = await mainWin!.isVisible('#input_url');
+                expect(nameInputVisible, 'Server name input must be visible').toBe(true);
+                expect(urlInputVisible, 'Server URL input must be visible').toBe(true);
+            } finally {
+                if (emptyApp && userDataDir) {
+                    await closeElectronAppFast(emptyApp, userDataDir);
+                } else if (emptyApp) {
+                    await emptyApp.close().catch(() => {});
+                }
+                await releaseLock();
+            }
+        },
+    );
+
+    test(
+        'MM-T4419 Add Server Modal should not be removable when no servers exist',
+        {tag: ['@P1', '@all']},
+        async ({}, testInfo) => {
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let emptyApp;
+            let userDataDir = '';
+
+            try {
+                userDataDir = testInfo.outputDir + '/empty-modal-lock-userdata';
+                const {mkdirSync} = await import('fs');
+                mkdirSync(userDataDir, {recursive: true});
+                writeConfigFile(userDataDir, emptyConfig);
+
+                emptyApp = await electron.launch({
+                    executablePath: electronBinaryPath,
+                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+                    env: {...process.env, NODE_ENV: 'test'},
+                    timeout: 60_000,
+                });
+
+                await waitForAppReady(emptyApp);
+                const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
+                expect(mainWin, 'Main window must exist').toBeDefined();
+
+                // Verify the Add Server modal is present
+                await mainWin!.waitForSelector('#input_name', {timeout: 10_000});
+
+                // Verify no Cancel or Close button exists on the modal
+                const cancelButton = await mainWin!.$$('.GenericModal__button.cancel').then((els) => els.length);
+                const closeX = await mainWin!.$$('.GenericModal__close').then((els) => els.length);
+                expect(cancelButton, 'No Cancel button should be present when no servers exist').toBe(0);
+                expect(closeX, 'No close X button should be present when no servers exist').toBe(0);
+
+                // Press Escape — modal must NOT disappear
+                await mainWin!.keyboard.press('Escape');
+                await new Promise((resolve) => setTimeout(resolve, 500));
+
+                const nameInputStillVisible = await mainWin!.isVisible('#input_name');
+                expect(nameInputStillVisible, 'Add Server modal must remain visible after Escape when no servers exist').toBe(true);
+            } finally {
+                if (emptyApp && userDataDir) {
+                    await closeElectronAppFast(emptyApp, userDataDir);
+                } else if (emptyApp) {
+                    await emptyApp.close().catch(() => {});
+                }
+                await releaseLock();
+            }
+        },
+    );
 });
