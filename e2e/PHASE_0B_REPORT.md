@@ -240,7 +240,7 @@ Ranked by: Priority (Smoke > Normal > Low), then by whether production code alre
 | 9 | MM-T4982 | Move first→last slide | Smoke | `startup/welcome_screen_modal.test.ts` (extend) | `@all` | Welcome screen modal | Low |
 | 10 | MM-T1291 | Show red badge | Low | `notification_trigger/notification_badge_windows_linux.test.ts` (extend) | `@win32`, `@linux` | Badge test hooks | Low |
 | 11 | MM-T1292 | Do not show red badge if no mention | Low | `notification_trigger/notification_badge_windows_linux.test.ts` (extend) | `@win32`, `@linux` | Badge test hooks + server with unreads | Medium |
-| 12 | MM-T1294 | Do not flash taskbar icon | Low | `notification_trigger/flash_taskbar.test.ts` (extend) | `@win32`, `@linux` | Flash test hooks | Low |
+| 12 | MM-T1294 | Do not flash taskbar icon | Low | 🔒 infra-blocked | Multi-user server for notification trigger | Needs second user to send messages without mention |
 | 13 | MM-T1298 | Show icon in menu bar | Low | `settings/tray_icon_hide.test.ts` (extend) | `@darwin`, `@linux` | TrayIcon refs | Low |
 | 14 | MM-T1300 | System tray - open Settings | Low | `system/tray_menu.test.ts` (extend) | `@linux`, `@win32` | Tray menu click helpers | Low |
 | 15 | MM-T1301 | System tray - exit | Low | `system/tray_menu.test.ts` (extend) | `@linux`, `@win32` | Tray menu click helpers | Low |
@@ -248,15 +248,15 @@ Ranked by: Priority (Smoke > Normal > Low), then by whether production code alre
 | 17 | MM-T1314 | Focus text input | Low | `focus.test.ts` (extend) | `@all` | Server view | Low |
 | 18 | MM-T1319 | Sign in to Another Server (menu) | Low | `menu_bar/file_menu.test.ts` (extend) | `@all` | Menu item traversal | Low |
 | 19 | MM-T1428 | Window returns to floating position | Low | `startup/window_reposition.test.ts` (extend) | `@all` | Bounds persistence across restart | Medium |
-| 20 | MM-T1660 | App restores position after minimize | Low | `startup/window_reposition.test.ts` (extend) | `@all` | Minimize + restore | Medium |
+| 20 | MM-T1660 | App restores position after minimize | Low | 🚫 retire-manual | Two monitors required | Case file explicitly states "TWO MONITORS ARE REQUIRED - NOT SUITABLE FOR AUTOMATION" |
 | 21 | MM-T1668 | Quit the app | Low | 🔒 infra-blocked | App quit terminates process | Cannot test app quit from within the Playwright-managed Electron process |
 | 22 | MM-T2631 | Trust invalid cert once | Low | `server_management/certificate_trust.test.ts` (extend) | `@all` | TLS server + cert persistence | Medium |
-| 23 | MM-T2633 | Back button to return to login | Low | `server_management/bad_servers.test.ts` (extend) | `@all` | Error view navigation | Low |
-| 24 | MM-T2949 | CMD-Enter (macOS) | Low | `mattermost/alt_enter.test.ts` (extend) | `@darwin` | macOS-only keyboard | Low |
+| 23 | MM-T2633 | Back button to return to login | Low | 🔒 infra-blocked | OAuth/OneLogin flow | Requires real OneLogin/OAuth provider for auth flow |
+| 24 | MM-T2949 | CMD-Enter (macOS) | Low | 🔒 infra-blocked | Server for post textbox | Needs logged-in server to test CMD+Enter in post textbox |
 | 25 | MM-T3360 | Configure Help & Problem links | Low | 🔒 infra-blocked | Server System Console access | Requires admin access to System Console to set Help/Report links |
-| 26 | MM-T4031 | Default downloads location | Low | `settings.test.ts` (extend) | `@all` | Settings page | Low |
+| 26 | MM-T4031 | Default downloads location | Low | 🔒 infra-blocked | Server for file download | Needs server to trigger file download and verify location |
 | 27 | MM-T4049 | Tiled and full screen position | Low | `startup/window.test.ts` (extend) | `@all` | Window positioning | Medium |
-| 28 | MM-T4055 | Opening untrusted links | Low | `mattermost/external_links.test.ts` (extend) | `@all` | Protocol handling | Low |
+| 28 | MM-T4055 | Opening untrusted links | Low | 🔒 infra-blocked | Server with Image Proxy disabled | Needs server with specific Image Proxy configuration |
 | 29 | MM-T4638 | App icon theme | Low | `settings.test.ts` (extend) | `@all` | Settings page | Low |
 | 30 | MM-T4803 | Open Servers Menu via keyboard | Low | `menu_bar/menu.test.ts` (extend) | `@all` | Keyboard shortcut | Low |
 | 31 | MM-T4804 | Copy version string to clipboard | Low | 🔒 infra-blocked | Clipboard access in headless CI | Cannot reliably read clipboard in headless CI environments |
