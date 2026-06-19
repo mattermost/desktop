@@ -525,7 +525,11 @@ export class ServerView {
                 throw new Error(`${result.__e2eError}${result.__e2eStack ? `\n${result.__e2eStack}` : ''}`);
             }
 
-            return result?.__e2eResult;
+            let value = result?.__e2eResult;
+            if (value && typeof (value as Promise<unknown>).then === 'function') {
+                value = await value;
+            }
+            return value;
         }, {id: this.webContentsId, body, userGesture}) as Promise<T>;
     }
 
@@ -535,10 +539,21 @@ export class ServerView {
     }
 
     async url() {
-        return this.app.evaluate(({webContents}, id) => {
-            const wc = webContents.fromId(id);
-            return wc?.getURL() ?? '';
-        }, this.webContentsId);
+        try {
+            return await this.app.evaluate(({webContents}, id) => {
+                const wc = webContents.fromId(id);
+                return wc?.getURL() ?? '';
+            }, this.webContentsId);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (
+                message.includes('Execution context was destroyed') ||
+                message.includes('Target page, context or browser has been closed')
+            ) {
+                return '';
+            }
+            throw error;
+        }
     }
 
     async waitForFunction<T>(
