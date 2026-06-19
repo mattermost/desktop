@@ -34,6 +34,7 @@ export type AppConfig = {
     showTrayIcon: boolean;
     trayIconTheme: string;
     minimizeToTray: boolean;
+    alwaysClose?: boolean;
     notifications: {flashWindow: number; bounceIcon: boolean; bounceIconType: string};
     showUnreadBadge: boolean;
     useSpellChecker: boolean;
