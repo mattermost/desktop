@@ -8,7 +8,7 @@ import * as path from 'path';
 import {test, expect} from '../fixtures/index';
 import {waitForAppReady} from '../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../helpers/config';
-import {waitForLockFileRelease} from '../helpers/cleanup';
+import {closeElectronAppFast} from '../helpers/electronApp';
 import {loginToMattermost} from '../helpers/login';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
 
@@ -158,9 +158,10 @@ test.describe('focus', () => {
     });
 
     test.afterAll(async () => {
-        await electronApp?.close().catch(() => {});
-        if (userDataDir) {
-            await waitForLockFileRelease(userDataDir).catch(() => {});
+        if (electronApp && userDataDir) {
+            await closeElectronAppFast(electronApp, userDataDir);
+        } else if (electronApp) {
+            await electronApp.close().catch(() => {});
         }
     });
 
