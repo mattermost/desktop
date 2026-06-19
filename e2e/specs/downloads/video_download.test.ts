@@ -10,6 +10,19 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig} from '../../helpers/config';
 import {closeElectronAppFast} from '../../helpers/electronApp';
 
+// ── MM-T1538: Download a video ────────────────────────────────────────
+// Verifies a real end-to-end download path for a video MIME type:
+//   1. Local HTTP server serves a fake .mp4 (small binary buffer)
+//   2. A BrowserWindow loaded inside the Electron app clicks the link
+//   3. DownloadsManager (src/main/downloadsManager.ts) handles will-download
+//   4. We assert: the file lands on disk AND downloads.json records it
+//      with state "completed"
+//
+// Pattern mirrors download_completion.test.ts so the two tests differ only
+// in MIME type and content — keeping the download flow exercised for the
+// file type MM-T1538 specifically targets (video) without duplicating the
+// scaffolding.
+
 function readJsonFile<T>(filePath: string): T | undefined {
     try {
         return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as T;
@@ -18,15 +31,15 @@ function readJsonFile<T>(filePath: string): T | undefined {
     }
 }
 
-async function startDownloadServer(filename: string, contents: string) {
+async function startVideoServer(filename: string, body: Buffer) {
     const server = http.createServer((request, response) => {
-        if (request.url === '/download.txt') {
+        if (request.url === '/video.mp4') {
             response.writeHead(200, {
-                'Content-Type': 'text/plain',
+                'Content-Type': 'video/mp4',
                 'Content-Disposition': `attachment; filename="${filename}"`,
-                'Content-Length': Buffer.byteLength(contents),
+                'Content-Length': body.length,
             });
-            response.end(contents);
+            response.end(body);
             return;
         }
 
@@ -35,7 +48,7 @@ async function startDownloadServer(filename: string, contents: string) {
             <!doctype html>
             <html>
             <body>
-                <a id="download-link" href="/download.txt">Download file</a>
+                <a id="download-link" href="/video.mp4">Download video</a>
             </body>
             </html>
         `);
@@ -46,7 +59,7 @@ async function startDownloadServer(filename: string, contents: string) {
     );
     const address = server.address();
     if (!address || typeof address === 'string') {
-        throw new Error('Failed to start local download server');
+        throw new Error('Failed to start local video download server');
     }
 
     return {
@@ -56,12 +69,20 @@ async function startDownloadServer(filename: string, contents: string) {
 }
 
 test(
-    'downloaded file exists on disk after download completes',
-    {tag: ['@P1', '@all']},
+    'MM-T1538 Download a video',
+    {tag: ['@P2', '@all']},
     async ({}, testInfo) => {
-        const filename = 'downloaded-file.txt';
-        const fileContents = 'download completion verification';
-        const {server, url} = await startDownloadServer(filename, fileContents);
+        const filename = 'sample-video.mp4';
+
+        // Minimal .mp4 — magic bytes are enough for the download-manager
+        // pipeline; we never play the file, only assert it landed on disk.
+        const videoBody = Buffer.from([
+            0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70,
+            0x6d, 0x70, 0x34, 0x32, 0x00, 0x00, 0x00, 0x00,
+            0x6d, 0x70, 0x34, 0x32, 0x69, 0x73, 0x6f, 0x6d,
+        ]);
+
+        const {server, url} = await startVideoServer(filename, videoBody);
 
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsDir = path.join(testInfo.outputDir, 'Downloads');
@@ -94,9 +115,7 @@ test(
 
         try {
             await waitForAppReady(app);
-            const mainWindow = app.
-                windows().
-                find((window) => window.url().includes('index'));
+            const mainWindow = app.windows().find((window) => window.url().includes('index'));
             expect(mainWindow).toBeDefined();
             await mainWindow!.waitForLoadState();
 
@@ -112,22 +131,27 @@ test(
                     height: 700,
                 });
                 await popup.loadURL(popupUrl);
-                (global as any).__downloadCompletionPopup = popup;
+                (global as any).__videoDownloadPopup = popup;
             }, url);
 
             const popupWindow = await popupPromise;
             await popupWindow.waitForLoadState();
             await popupWindow.click('#download-link');
+
             await expect.
                 poll(() => fs.existsSync(savedPath), {timeout: 15_000}).
                 toBe(true);
+
+            // Verify the downloaded bytes match what we served
             await expect.
-                poll(() => fs.readFileSync(savedPath, 'utf-8'), {timeout: 15_000}).
-                toBe(fileContents);
+                poll(() => fs.readFileSync(savedPath).equals(videoBody), {timeout: 15_000}).
+                toBe(true);
+
+            // DownloadsManager must record the download as completed
             await expect.
                 poll(
                     () => {
-                        const downloads = readJsonFile<Record<string, { state?: string }>>(
+                        const downloads = readJsonFile<Record<string, {state?: string; mimeType?: string}>>(
                             path.join(userDataDir, 'downloads.json'),
                         );
                         return downloads?.[filename]?.state;
