@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, exampleURL, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 function readJsonFile<T>(filePath: string): T | undefined {
     try {
@@ -115,8 +115,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -137,8 +136,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -150,8 +148,7 @@ test.describe('EditServerModal', () => {
             const existing = await editServerView.isVisible('#customMessage_url.Input___error');
             expect(existing).toBe(true);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -179,8 +176,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -208,8 +204,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -238,8 +233,7 @@ test.describe('EditServerModal', () => {
                 order: 0,
             }));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 });
