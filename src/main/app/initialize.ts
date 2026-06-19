@@ -322,7 +322,12 @@ async function initializeAfterAppReady() {
             }
             const itemLabel = typeof item.label === 'string' ? item.label : '';
             const truncatedMenuLabel = label.length > 50 ? `${label.slice(0, 50)}...` : label;
-            if ((itemLabel === label || itemLabel === truncatedMenuLabel) && typeof item.click === 'function') {
+            if (
+                (itemLabel === label || itemLabel === truncatedMenuLabel) &&
+                item.enabled !== false &&
+                item.visible !== false &&
+                typeof item.click === 'function'
+            ) {
                 item.click();
                 return;
             }

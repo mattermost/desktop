@@ -3,6 +3,7 @@
 
 import {expect} from '@playwright/test';
 
+import {isTransientEvaluateError} from './testRefs';
 import type {ServerView} from './serverView';
 
 async function isMattermostServerUrl(win: ServerView): Promise<boolean> {
@@ -10,18 +11,29 @@ async function isMattermostServerUrl(win: ServerView): Promise<boolean> {
     return url.startsWith('http://') || url.startsWith('https://');
 }
 
+async function runRendererProbe(win: ServerView, body: string): Promise<boolean> {
+    try {
+        return await win.runInRenderer<boolean>(body);
+    } catch (error) {
+        if (isTransientEvaluateError(error)) {
+            return false;
+        }
+        throw error;
+    }
+}
+
 async function hasAppShell(win: ServerView): Promise<boolean> {
     if (!(await isMattermostServerUrl(win))) {
         return false;
     }
 
-    return win.runInRenderer<boolean>(`
+    return runRendererProbe(win, `
         return Boolean(
             document.querySelector('#post_textbox')
             || document.querySelector('#channelHeaderTitle')
             || document.querySelector('input.search-bar.form-control'),
         );
-    `).catch(() => false);
+    `);
 }
 
 async function hasLoginForm(win: ServerView): Promise<boolean> {
@@ -29,9 +41,9 @@ async function hasLoginForm(win: ServerView): Promise<boolean> {
         return false;
     }
 
-    return win.runInRenderer<boolean>(`
+    return runRendererProbe(win, `
         return Boolean(document.querySelector('#input_loginId'));
-    `).catch(() => false);
+    `);
 }
 
 /**
