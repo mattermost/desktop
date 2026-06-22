@@ -321,5 +321,30 @@ describe('common/Validator', () => {
             expect(wrapped(event, 'anything', 1n)).toBe('ok');
             expect(handler).toHaveBeenCalledWith(event, 'anything', 1n);
         });
+
+        it('accepts empty strings when schema uses .allow("")', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const wrapped = Validator.ipcValidate(handler, [Joi.string().allow('').required()]);
+
+            expect(wrapped(event, '')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, '');
+        });
+
+        it('accepts empty strings for all NOTIFY_MENTION-style args', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const mentionSchema = [
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.boolean().required(),
+                Joi.string().allow('').required(),
+            ];
+            const wrapped = Validator.ipcValidate(handler, mentionSchema);
+
+            expect(wrapped(event, 'Title', 'Body', '', '', '', false, '')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, 'Title', 'Body', '', '', '', false, '');
+        });
     });
 });
