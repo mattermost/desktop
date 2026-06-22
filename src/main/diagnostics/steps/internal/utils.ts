@@ -202,15 +202,20 @@ export async function countLogLevels(path: fs.PathLike, lineMatchPattern = REGEX
     const rl = readline.createInterface({input: fileStream, crlfDelay: Infinity});
     const pattern = new RegExp(lineMatchPattern, 'gi');
 
-    for await (const line of rl) {
-        if (pattern.test(line)) {
-            linesCount++;
-            const lineData = parseLogFileLine(line, lineMatchPattern);
-            if (lineData.logLevel) {
-                logLevelAmounts[lineData.logLevel]++;
+    try {
+        for await (const line of rl) {
+            if (pattern.test(line)) {
+                linesCount++;
+                const lineData = parseLogFileLine(line, lineMatchPattern);
+                if (lineData.logLevel) {
+                    logLevelAmounts[lineData.logLevel]++;
+                }
             }
+            pattern.lastIndex = 0;
         }
-        pattern.lastIndex = 0;
+    } finally {
+        rl.close();
+        fileStream.destroy();
     }
 
     return {logLevelAmounts, linesCount};
