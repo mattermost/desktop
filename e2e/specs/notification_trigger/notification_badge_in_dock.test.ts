@@ -13,10 +13,6 @@ test.describe('Trigger Notification From desktop', () => {
     test.setTimeout(120_000);
 
     test('should receive a notification on macOS', {tag: ['@P2', '@darwin']}, async ({electronApp, serverMap}) => {
-        if (process.platform !== 'darwin') {
-            test.skip(true, 'This test is only for macOS');
-            return;
-        }
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;

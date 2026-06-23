@@ -1,16 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {_electron as electron} from 'playwright';
+import {_electron as electron, type Page} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 // All welcome screen tests need a no-servers app. This helper launches one.
-async function launchEmptyApp(testInfo: {outputDir: string; title: string}) {
+async function launchEmptyApp(testInfo: {outputDir: string; title: string}): Promise<{app: Awaited<ReturnType<typeof electron.launch>>; modal: Page; userDataDir: string}> {
     const {mkdirSync} = await import('fs');
     const userDataDir = testInfo.outputDir + '/empty-userdata';
     mkdirSync(userDataDir, {recursive: true});
@@ -33,7 +33,7 @@ async function launchEmptyApp(testInfo: {outputDir: string; title: string}) {
     return {app, modal, userDataDir};
 }
 
-async function getCurrentSlideTitle(modal: any) {
+async function getCurrentSlideTitle(modal: Page) {
     return modal.locator('.Carousel__slide-current .WelcomeScreenSlide__title').innerText();
 }
 
@@ -49,8 +49,8 @@ test.describe('startup/welcome_screen_modal', () => {
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
-            let app;
-            let modal;
+            let app: Awaited<ReturnType<typeof electron.launch>> | undefined;
+            let modal: Page;
             let userDataDir = '';
             try {
                 ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
@@ -68,9 +68,10 @@ test.describe('startup/welcome_screen_modal', () => {
                     'integrate with tools you love',
                 ]);
             } finally {
-                await app?.close().catch(() => {});
-                if (userDataDir) {
-                    await waitForLockFileRelease(userDataDir).catch(() => {});
+                if (app && userDataDir) {
+                    await closeElectronAppFast(app, userDataDir);
+                } else if (app) {
+                    await app.close().catch(() => {});
                 }
                 await releaseLock();
             }
@@ -82,8 +83,8 @@ test.describe('startup/welcome_screen_modal', () => {
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
-            let app;
-            let modal;
+            let app: Awaited<ReturnType<typeof electron.launch>> | undefined;
+            let modal: Page;
             let userDataDir = '';
             try {
                 ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
@@ -104,9 +105,10 @@ test.describe('startup/welcome_screen_modal', () => {
                     {timeout: 10_000},
                 ).toBe(firstTitle);
             } finally {
-                await app?.close().catch(() => {});
-                if (userDataDir) {
-                    await waitForLockFileRelease(userDataDir).catch(() => {});
+                if (app && userDataDir) {
+                    await closeElectronAppFast(app, userDataDir);
+                } else if (app) {
+                    await app.close().catch(() => {});
                 }
                 await releaseLock();
             }
@@ -118,8 +120,8 @@ test.describe('startup/welcome_screen_modal', () => {
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
-            let app;
-            let modal;
+            let app: Awaited<ReturnType<typeof electron.launch>> | undefined;
+            let modal: Page;
             let userDataDir = '';
             try {
                 ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
@@ -127,9 +129,143 @@ test.describe('startup/welcome_screen_modal', () => {
                 await modal.waitForSelector('#input_name', {timeout: 10_000});
                 await modal.waitForSelector('#input_url', {timeout: 10_000});
             } finally {
-                await app?.close().catch(() => {});
-                if (userDataDir) {
-                    await waitForLockFileRelease(userDataDir).catch(() => {});
+                if (app && userDataDir) {
+                    await closeElectronAppFast(app, userDataDir);
+                } else if (app) {
+                    await app.close().catch(() => {});
+                }
+                await releaseLock();
+            }
+        },
+    );
+
+    test(
+        'MM-T4978 should be able to move through slides clicking the pagination indicator',
+        {tag: ['@P2', '@all']},
+        async ({}, testInfo) => {
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let app: Awaited<ReturnType<typeof electron.launch>> | undefined;
+            let modal: Page;
+            let userDataDir = '';
+            try {
+                ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
+
+                // Verify pagination indicators exist (4 slides = 4 dots)
+                const dot0 = modal.locator('#PaginationIndicator0');
+                const dot1 = modal.locator('#PaginationIndicator1');
+                const dot2 = modal.locator('#PaginationIndicator2');
+                const dot3 = modal.locator('#PaginationIndicator3');
+                await expect(dot0).toBeVisible({timeout: 5_000});
+                await expect(dot1).toBeVisible({timeout: 5_000});
+                await expect(dot2).toBeVisible({timeout: 5_000});
+                await expect(dot3).toBeVisible({timeout: 5_000});
+
+                // First dot should be active initially
+                await expect(dot0).toHaveClass(/active/);
+
+                const firstTitle = await getCurrentSlideTitle(modal);
+
+                // Click the second pagination dot
+                await dot1.click();
+                await expect.poll(
+                    async () => getCurrentSlideTitle(modal),
+                    {timeout: 5_000},
+                ).not.toBe(firstTitle);
+
+                // Second dot should now be active
+                await expect(dot1).toHaveClass(/active/);
+                await expect(dot0).not.toHaveClass(/active/);
+
+                // Click the fourth dot
+                await dot3.click();
+                await expect.poll(
+                    async () => getCurrentSlideTitle(modal),
+                    {timeout: 5_000},
+                ).not.toBe(firstTitle);
+                await expect(dot3).toHaveClass(/active/);
+            } finally {
+                if (app && userDataDir) {
+                    await closeElectronAppFast(app, userDataDir);
+                } else if (app) {
+                    await app.close().catch(() => {});
+                }
+                await releaseLock();
+            }
+        },
+    );
+
+    test(
+        'MM-T4979 should auto-advance slides every 5 seconds',
+        {tag: ['@P2', '@all']},
+        async ({}, testInfo) => {
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let app: Awaited<ReturnType<typeof electron.launch>> | undefined;
+            let modal: Page;
+            let userDataDir = '';
+            try {
+                ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
+
+                // Capture the initial slide title
+                const firstTitle = await getCurrentSlideTitle(modal);
+
+                // Wait for auto-advance (AUTO_CHANGE_TIME = 5000ms + 1s buffer)
+                await expect.poll(
+                    async () => getCurrentSlideTitle(modal),
+                    {timeout: 8_000, message: 'Slide should auto-advance within ~5 seconds'},
+                ).not.toBe(firstTitle);
+
+                // Capture second slide title and wait for another advance
+                const secondTitle = await getCurrentSlideTitle(modal);
+                await expect.poll(
+                    async () => getCurrentSlideTitle(modal),
+                    {timeout: 8_000, message: 'Slide should auto-advance again within ~5 seconds'},
+                ).not.toBe(secondTitle);
+            } finally {
+                if (app && userDataDir) {
+                    await closeElectronAppFast(app, userDataDir);
+                } else if (app) {
+                    await app.close().catch(() => {});
+                }
+                await releaseLock();
+            }
+        },
+    );
+
+    test(
+        'MM-T4981 should wrap from last slide to first slide',
+        {tag: ['@P2', '@all']},
+        async ({}, testInfo) => {
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let app: Awaited<ReturnType<typeof electron.launch>> | undefined;
+            let modal: Page;
+            let userDataDir = '';
+            try {
+                ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
+
+                const firstTitle = await getCurrentSlideTitle(modal);
+
+                // Navigate to the last slide by clicking next 3 times
+                const nextBtn = modal.locator('#nextCarouselButton');
+                await nextBtn.click();
+                await expect.poll(async () => getCurrentSlideTitle(modal), {timeout: 5_000}).not.toBe(firstTitle);
+                await nextBtn.click();
+                await nextBtn.click();
+
+                // We should now be on the last slide ("Integrate with tools you love")
+                const lastTitle = await getCurrentSlideTitle(modal);
+                expect(normalizeTitle(lastTitle)).toBe('integrate with tools you love');
+
+                // Click next from last slide — should wrap to first
+                await nextBtn.click();
+                await expect.poll(
+                    async () => getCurrentSlideTitle(modal),
+                    {timeout: 5_000, message: 'Should wrap from last slide back to first'},
+                ).toBe(firstTitle);
+            } finally {
+                if (app && userDataDir) {
+                    await closeElectronAppFast(app, userDataDir);
+                } else if (app) {
+                    await app.close().catch(() => {});
                 }
                 await releaseLock();
             }

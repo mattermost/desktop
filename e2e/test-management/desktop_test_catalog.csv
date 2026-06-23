@@ -1,0 +1,162 @@
+id,file,name
+MM-T125,desktop-app--native-specific-/MM-T125.md,'Copy Link' can be used from channel LHS
+MM-T804,desktop-app--native-specific-/menu-bar/MM-T804.md,Preferences in the Menu Bar opens the Settings page
+MM-T805,desktop-app--native-specific-/menu-bar/MM-T805.md,Sign in to Another Server (or Mattermost)
+MM-T806,desktop-app--native-specific-/menu-bar/MM-T806.md,Exit in the Menu Bar
+MM-T807,desktop-app--native-specific-/menu-bar/MM-T807.md,Undo in the Menu Bar
+MM-T808,desktop-app--native-specific-/menu-bar/MM-T808.md,Redo in the Menu Bar
+MM-T809,desktop-app--native-specific-/menu-bar/MM-T809.md,Cut in the Menu Bar
+MM-T810,desktop-app--native-specific-/menu-bar/MM-T810.md,Copy in the Menu Bar
+MM-T811,desktop-app--native-specific-/menu-bar/MM-T811.md,Paste in the Menu Bar
+MM-T812,desktop-app--native-specific-/menu-bar/MM-T812.md,Select All in the Menu Bar
+MM-T813,desktop-app--native-specific-/menu-bar/MM-T813.md,Use Find option
+MM-T814,desktop-app--native-specific-/menu-bar/MM-T814.md,Reload  in the Menu Bar
+MM-T815,desktop-app--native-specific-/menu-bar/MM-T815.md,Clear Cache and Reload in the Menu Bar
+MM-T816,desktop-app--native-specific-/menu-bar/MM-T816.md,Toggle Full Screen in the Menu Bar
+MM-T817,desktop-app--native-specific-/menu-bar/MM-T817.md,Actual Size in the Menu Bar
+MM-T818,desktop-app--native-specific-/menu-bar/MM-T818.md,Zoom In in the Menu
+MM-T819,desktop-app--native-specific-/menu-bar/MM-T819.md,Zoom Out in the Menu
+MM-T820,desktop-app--native-specific-/menu-bar/MM-T820.md,Toggle Developer Tools for Application Wrapper in the Menu Bar
+MM-T821,desktop-app--native-specific-/menu-bar/MM-T821.md,Toggle Developer Tools for Current Server in the Menu Bar
+MM-T822,desktop-app--native-specific-/menu-bar/MM-T822.md,History ➜ Back
+MM-T823,desktop-app--native-specific-/menu-bar/MM-T823.md,History > Forward
+MM-T824,desktop-app--native-specific-/menu-bar/MM-T824.md,Minimize in the Menu Bar
+MM-T825,desktop-app--native-specific-/menu-bar/MM-T825.md,Close in the Menu Bar
+MM-T826,desktop-app--native-specific-/menu-bar/MM-T826.md,Use keyboard shortcut as listed to switch to a server
+MM-T827,desktop-app--native-specific-/menu-bar/MM-T827.md,Select Next/Previous Server
+MM-T828,desktop-app--native-specific-/menu-bar/MM-T828.md,Learn More in the Menu Bar
+MM-T829,desktop-app--native-specific-/right-click-menu-options/MM-T829.md,Desktop App shows spell check options when you right click
+MM-T1284,desktop-app--native-specific-/server-management/MM-T1284.md,Deprecated -Add new server (from Settings)
+MM-T1285,desktop-app--native-specific-/server-management/MM-T1285.md,Deprecated: Edit existing server
+MM-T1286,desktop-app--native-specific-/server-management/MM-T1286.md,Remove existing server
+MM-T1287,desktop-app--native-specific-/server-management/MM-T1287.md,Deprecated - Add two servers (from Settings)
+MM-T1289,desktop-app--native-specific-/windows-and-linux-only/MM-T1289.md,Start app on login (Windows and Linux only)
+MM-T1290,desktop-app--native-specific-/windows-and-linux-only/MM-T1290.md,Do not start app on login
+MM-T1291,desktop-app--native-specific-/server-management/MM-T1291.md,Show red badge
+MM-T1292,desktop-app--native-specific-/server-management/MM-T1292.md,Do not show red badge if no at-mention in message
+MM-T1293,desktop-app--native-specific-/windows-and-linux-only/MM-T1293.md,Flash taskbar icon — Windows & Linux ONLY
+MM-T1294,desktop-app--native-specific-/windows-and-linux-only/MM-T1294.md,Do not flash taskbar icon — Windows & Linux ONLY
+MM-T1295,desktop-app--native-specific-/macos-only/MM-T1295.md,Do not bounce the dock icon — macOS ONLY
+MM-T1296,desktop-app--native-specific-/macos-only/MM-T1296.md,Bounce the dock icon — macOS ONLY
+MM-T1297,desktop-app--native-specific-/macos-only/MM-T1297.md,Bounce the dock until I open the app — macOS ONLY
+MM-T1298,desktop-app--native-specific-/server-management/MM-T1298.md,Show Mattermost icon in the menu bar (mac and linux)
+MM-T1299,desktop-app--native-specific-/server-management/MM-T1299.md,Do not show Mattermost icon in the menu bar
+MM-T1300,desktop-app--native-specific-/system-tray-icon/MM-T1300.md,System tray - Can open Settings page
+MM-T1301,desktop-app--native-specific-/system-tray-icon/MM-T1301.md,System tray - exit
+MM-T1302,desktop-app--native-specific-/system-tray-icon/MM-T1302.md,System tray - choose
+MM-T1303,desktop-app--native-specific-/permissions/MM-T1303.md,Receive a desktop notification
+MM-T1304,desktop-app--native-specific-/deep-linking/MM-T1304.md,Open desktop app from prompt after opening channel URL
+MM-T1306,desktop-app--native-specific-/deep-linking/MM-T1306.md,Posting in the Developers channel
+MM-T1307,desktop-app--native-specific-/right-click-menu-options/MM-T1307.md,Right-click a channel name / team name in LHS
+MM-T1308,desktop-app--native-specific-/relative-urls/MM-T1308.md,Clicking the title link inside the preview rectangle opens in browser
+MM-T1309,desktop-app--native-specific-/search-box/MM-T1309.md,Type some text in the search box
+MM-T1310,desktop-app--native-specific-/dark-mode/MM-T1310.md,On Mac set Appearance to Dark — macOS ONLY
+MM-T1311,desktop-app--native-specific-/focus-behavior/MM-T1311.md,Switch applications: Text input is focused within server view (webview)
+MM-T1312,desktop-app--native-specific-/server-management/add-server-modal/MM-T1312.md,Text input is focused within Add Server modal
+MM-T1313,desktop-app--native-specific-/menu-bar/MM-T1313.md,Open Settings modal using keyboard shortcuts
+MM-T1314,desktop-app--native-specific-/focus-behavior/MM-T1314.md,Focus text input
+MM-T1315,desktop-app--native-specific-/focus-behavior/MM-T1315.md,Close Settings screen: Text input is focused within server view (webview)
+MM-T1316,desktop-app--native-specific-/focus-behavior/MM-T1316.md,Close Add Server modal: Text input is focused within server view
+MM-T1317,desktop-app--native-specific-/focus-behavior/MM-T1317.md,Create two servers.
+MM-T1318,desktop-app--native-specific-/focus-behavior/MM-T1318.md,Deprecated - Open Settings modal to add new server
+MM-T1319,desktop-app--native-specific-/focus-behavior/MM-T1319.md,Sign in to Another Server (from menu option)
+MM-T1320,desktop-app--native-specific-/right-click-menu-options/MM-T1320.md,Use spell-check suggestion
+MM-T1428,desktop-app--native-specific-/MM-T1428.md,Desktop App window returns to 'floating' app position upon restart
+MM-T1430,desktop-app--native-specific-/deep-linking/MM-T1430.md,Clicking a permalink to a post on a different server opens the appropriate post without launching a browser - or creating a new Desktop app window
+MM-T1538,desktop-app--native-specific-/MM-T1538.md,Download a video
+MM-T1574,desktop-app--native-specific-/windows-and-linux-only/MM-T1574.md,Startup after reboot loads properly — Windows & Linux ONLY
+MM-T1659,desktop-app--native-specific-/MM-T1659.md,Prevent browser back/forward from firing in OAuth windows
+MM-T1660,desktop-app--native-specific-/MM-T1660.md,App restores position correctly after minimize and launch
+MM-T1661,desktop-app--native-specific-/MM-T1661.md,Desktop notifications
+MM-T1668,desktop-app--native-specific-/menu-bar/MM-T1668.md,Quit the app
+MM-T2023,desktop-app--native-specific-/menu-bar/MM-T2023.md,ALT+ENTER
+MM-T2465,desktop-app--native-specific-/windows-and-linux-only/MM-T2465.md,Linux Dark Mode — Linux ONLY
+MM-T2617,desktop-app--native-specific-/menu-bar/MM-T2617.md,Reopen Mac Desktop App window on Cmd+Tab — macOS ONLY
+MM-T2631,desktop-app--native-specific-/MM-T2631.md,"Once user trusts an invalid certificate from a server, desktop app should not ask for trust again"
+MM-T2633,desktop-app--native-specific-/MM-T2633.md,Use back button to return to the desktop app login
+MM-T2634,desktop-app--native-specific-/server-management/server-tab-header/MM-T2634.md,Server tab Drag and Drop
+MM-T2635,desktop-app--native-specific-/server-management/server-tab-header/MM-T2635.md,Switch Server tabs using keyboard shortcuts after reorganizing them
+MM-T2636,desktop-app--native-specific-/server-management/server-tab-header/MM-T2636.md,Reposition Desktop app
+MM-T2637,desktop-app--native-specific-/server-management/server-tab-header/MM-T2637.md,Double-Clicking on the header should minimize/maximize the app
+MM-T2826,desktop-app--native-specific-/server-management/add-server-modal/MM-T2826.md,Server URL validation
+MM-T2827,desktop-app--native-specific-/focus-behavior/MM-T2827.md,Copy and Paste when connecting Jira plugin
+MM-T2828,desktop-app--native-specific-/MM-T2828.md,Install Mattermost using an .msi file (Windows only)
+MM-T2925,desktop-app--native-specific-/permissions/MM-T2925.md,"Trust protocols, auto-converting protocols to links and capturing unhandled exceptions"
+MM-T2949,desktop-app--native-specific-/macos-only/MM-T2949.md,"Advanced - CMD-Enter (MacOS, post and reply text box)"
+MM-T2951,desktop-app--native-specific-/windows-and-linux-only/MM-T2951.md,Desktop App only (v4.2+) (WINDOWS & LINUX OS ONLY) App start on login is on by default
+MM-T2952,desktop-app--native-specific-/windows-and-linux-only/MM-T2952.md,Desktop App only (v4.2+) (WINDOWS & LINUX OS ONLY) Change setting for app start on login
+MM-T3360,desktop-app--native-specific-/MM-T3360.md,Configure Help & Report a Problem links (external website and link to existing channel)
+MM-T3400,desktop-app--native-specific-/windows-and-linux-only/MM-T3400.md,"Default OS window header (Win 7, Linux)"
+MM-T3795,desktop-app--native-specific-/permissions/MM-T3795.md,Allow camera and microphone permissions in macOS (jitsi)
+MM-T4020,desktop-app--native-specific-/MM-T4020.md,PIV card test
+MM-T4022,desktop-app--native-specific-/MM-T4022.md,Check process number in Task Manager
+MM-T4031,desktop-app--native-specific-/MM-T4031.md,Specify default file downloads location
+MM-T4049,desktop-app--native-specific-/MM-T4049.md,Use app in tiled and full screen position
+MM-T4050,desktop-app--native-specific-/MM-T4050.md,Long server name
+MM-T4054,desktop-app--native-specific-/MM-T4054.md,Open/Close permanent link media preview
+MM-T4055,desktop-app--native-specific-/MM-T4055.md,Opening untrusted links in the browser
+MM-T4385,desktop-app--native-specific-/menu-bar/MM-T4385.md,Use keyboard shortcut as listed to switch tabs
+MM-T4388,desktop-app--native-specific-/server-management/add-server-modal/MM-T4388.md,Add Server Modal should close when clicking Cancel
+MM-T4389,desktop-app--native-specific-/server-management/add-server-modal/MM-T4389.md,Add Server Modal - Should not allow invalid inputs
+MM-T4390,desktop-app--native-specific-/server-management/MM-T4390.md,Remove Server Modal
+MM-T4391,desktop-app--native-specific-/server-management/MM-T4391.md,Edit Server Modal
+MM-T4392,desktop-app--native-specific-/settings/MM-T4392.md,Windows or Linux - Start app on login
+MM-T4393,desktop-app--native-specific-/settings/MM-T4393.md,Setting (Mac or Linux) - Save Tray Icon
+MM-T4394,desktop-app--native-specific-/settings/MM-T4394.md,Setting (Linux) Leave app running in notification area when application window is closed
+MM-T4395,desktop-app--native-specific-/settings/MM-T4395.md,Setting (Windows and Linux) - Flash app taskbar icon when a new message is received
+MM-T4396,desktop-app--native-specific-/settings/MM-T4396.md,Setting (Windows and Mac) - Show red badge on taskbar icon to indicate unread messages
+MM-T4397,desktop-app--native-specific-/settings/MM-T4397.md,Setting - Check spelling
+MM-T4398,desktop-app--native-specific-/settings/MM-T4398.md,Setting - Enable GPU hardware acceleration
+MM-T4399,desktop-app--native-specific-/startup/MM-T4399.md,New Server Modal should appear when no servers exist
+MM-T4400,desktop-app--native-specific-/startup/MM-T4400.md,Should not create a second instance
+MM-T4401,desktop-app--native-specific-/startup/MM-T4401.md,Should show servers in config when servers exist
+MM-T4402,desktop-app--native-specific-/startup/MM-T4402.md,Should upgrade config file from v0
+MM-T4403,desktop-app--native-specific-/startup/MM-T4403.md,Window Bounds
+MM-T4404,desktop-app--native-specific-/menu-bar/MM-T4404.md,Accessibility - Menu
+MM-T4405,desktop-app--native-specific-/dropdown/MM-T4405.md,Menu items should reflect config
+MM-T4406,desktop-app--native-specific-/dropdown/MM-T4406.md,Show/Hide Dropdown
+MM-T4407,desktop-app--native-specific-/dropdown/MM-T4407.md,Click Add Server Button
+MM-T4408,desktop-app--native-specific-/dropdown/MM-T4408.md,Switching Servers
+MM-T4416,boards/mm-desktop-app-plugin-regression-tests/MM-T4416.md,Refreshing a board should reopen the same board
+MM-T4419,desktop-app--native-specific-/startup/MM-T4419.md,Add Server Modal should not be removable when no servers exist
+MM-T4549,desktop-app--native-specific-/settings/MM-T4549.md,Settings - Automatically check for updates
+MM-T4638,desktop-app--native-specific-/settings/MM-T4638.md,Settings - app icon theme
+MM-T4803,desktop-app--native-specific-/MM-T4803.md,Open Servers Menu using keyboard shortcuts
+MM-T4804,desktop-app--native-specific-/MM-T4804.md,Copy version string into clipboard.
+MM-T4975,desktop-app--native-specific-/onboarding/MM-T4975.md,Show the welcome screen modal when no servers exist
+MM-T4976,desktop-app--native-specific-/onboarding/MM-T4976.md,Should show the slides in the expected order
+MM-T4977,desktop-app--native-specific-/onboarding/MM-T4977.md,Should be able to move through slides clicking the navigation buttons
+MM-T4978,desktop-app--native-specific-/onboarding/MM-T4978.md,Should be able to move through slides clicking the pagination indicator
+MM-T4979,desktop-app--native-specific-/onboarding/MM-T4979.md,Should be able to move forward through slides automatically every 5 seconds
+MM-T4980,desktop-app--native-specific-/onboarding/MM-T4980.md,Should show the slides in the expected order
+MM-T4981,desktop-app--native-specific-/onboarding/MM-T4981.md,Should be able to move from last to first slide
+MM-T4982,desktop-app--native-specific-/onboarding/MM-T4982.md,Should be able to move from first to last slide
+MM-T4983,desktop-app--native-specific-/onboarding/MM-T4983.md,Should be able to click the get started button and be redirected to new server modal
+MM-T4985,desktop-app--native-specific-/onboarding/MM-T4985.md,Should show app name in title bar when no servers exist
+MM-T5115,desktop-app--native-specific-/cypress-drafts/MM-T5115.md,should not be valid if no display name has been set
+MM-T5116,desktop-app--native-specific-/cypress-drafts/MM-T5116.md,should not be valid if no URL has been set
+MM-T5117,desktop-app--native-specific-/cypress-drafts/MM-T5117.md,should be valid if display name and URL are set
+MM-T5118,desktop-app--native-specific-/cypress-drafts/MM-T5118.md,should not be valid if an invalid URL has been set
+MM-T5119,desktop-app--native-specific-/cypress-drafts/MM-T5119.md,should add the team to the config file
+MM-T5640,desktop-app--native-specific-/landing-page/MM-T5640.md,Verify user is not taken to landing page when EnableDesktopLandingPage is enabled
+MM-T5747,channels/user-attributes/webapp---desktop-app/MM-T5747.md,Attributes are shown in the user profile settings in the same order that they are listed in the System Console
+MM-T5748,channels/user-attributes/webapp---desktop-app/MM-T5748.md,Long attribute names and descriptions are displayed correctly in a user's Profile Settings screen
+MM-T5749,channels/user-attributes/webapp---desktop-app/MM-T5749.md,Clicking 'Cancel' does not save the edit in user's Profile settings screen
+MM-T5750,channels/user-attributes/webapp---desktop-app/MM-T5750.md,No crash if user is editing a user attribute at the same time as the System Admin is deleting it in the System Console
+MM-T5751,channels/user-attributes/webapp---desktop-app/MM-T5751.md,Attributes are shown in the user profile pop-over in the same order that they are listed in the System Console
+MM-T5752,channels/user-attributes/webapp---desktop-app/MM-T5752.md,User profile pop-over is scrollable and bottom bar in pop-over is locked in place
+MM-T5771,channels/user-attributes/webapp---desktop-app/MM-T5771.md,Editing Phone and URL Type User Attributes
+MM-T5772,channels/user-attributes/webapp---desktop-app/MM-T5772.md,URL Validation in User Attributes
+MM-T5774,channels/user-attributes/webapp---desktop-app/MM-T5774.md,Do Not Display User Attributes If None Exist
+MM-T5776,channels/user-attributes/webapp---desktop-app/MM-T5776.md,Hide User Attributes When Visibility Is Set to Hidden
+MM-T5777,channels/user-attributes/webapp---desktop-app/MM-T5777.md,Always Display User Attributes With Visibility Set to Always
+MM-T5778,channels/user-attributes/webapp---desktop-app/MM-T5778.md,Display Phone and URL Type User Attributes Correctly
+MM-T5779,channels/user-attributes/webapp---desktop-app/MM-T5779.md,Verify Phone and URL Attributes Are Clickable in Profile Popover
+MM-T5888,desktop-app--native-specific-/multi-window/MM-T5888.md,Drag and drop between windows
+MM-T5889,desktop-app--native-specific-/multi-window/MM-T5889.md,Focus and notification behavior
+MM-T5890,desktop-app--native-specific-/multi-window/MM-T5890.md, Opening channels in new windows
+MM-T5891,desktop-app--native-specific-/multi-window/MM-T5891.md,Opening RHS plugin content in new windows
+MM-T5892,desktop-app--native-specific-/multi-window/MM-T5892.md,Opening threads in new windows
+MM-T5893,desktop-app--native-specific-/multi-window/MM-T5893.md,State synchronization between windows
+MM-T5894,desktop-app--native-specific-/multi-window/MM-T5894.md,Tab behavior changes
+MM-T5895,desktop-app--native-specific-/multi-window/MM-T5895.md,"Window management (resizing, moving, closing)"
