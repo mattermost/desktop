@@ -8,7 +8,7 @@ import {HKEY, enumerateValues} from 'registry-js';
 
 import {Logger} from 'common/log';
 
-import type {RegistryConfig as RegistryConfigType, Server} from 'types/config';
+import type {RegistryConfig as RegistryConfigType, Server, TrustedEmbeddedMediaOrigin} from 'types/config';
 
 const log = new Logger('PolicyConfigLoader');
 const WINDOWS_REGISTRY_PATH = 'SOFTWARE\\Policies\\Mattermost';
@@ -20,6 +20,7 @@ export class PolicyConfigLoader {
             servers: this.getServerList(),
             enableServerManagement: this.getSingleBooleanValue('EnableServerManagement'),
             enableUpdateNotifications: this.getSingleBooleanValue('EnableAutoUpdater'),
+            trustedEmbeddedMediaOrigins: this.getTrustedEmbeddedMediaOrigins(),
         };
     };
 
@@ -50,6 +51,17 @@ export class PolicyConfigLoader {
         }
     };
 
+    private getTrustedEmbeddedMediaOrigins = (): TrustedEmbeddedMediaOrigin[] => {
+        switch (process.platform) {
+        case 'win32':
+            return this.getWindowsTrustedEmbeddedMediaOrigins();
+        case 'darwin':
+            return this.getMacOSTrustedEmbeddedMediaOrigins();
+        default:
+            return [];
+        }
+    };
+
     private getWindowsServerList = (): Server[] => {
         const results = this.getWindowsValues('DefaultServerList');
         return results.map((item) => ({name: item.name, url: item.data as string}));
@@ -58,6 +70,18 @@ export class PolicyConfigLoader {
     private getMacOSServerList = (): Server[] => {
         const results = this.getMacOSValue('DefaultServerList') as Array<Record<string, string>> | undefined;
         return (results ?? []).map((item) => ({name: item.name, url: item.url}));
+    };
+
+    private getWindowsTrustedEmbeddedMediaOrigins = (): TrustedEmbeddedMediaOrigin[] => {
+        const results = this.getWindowsValues('TrustedEmbeddedMediaOrigins');
+        return results.
+            filter((item) => typeof item.name === 'string' && typeof item.data === 'string').
+            map((item) => ({serverOrigin: item.name, embeddedOrigin: item.data as string}));
+    };
+
+    private getMacOSTrustedEmbeddedMediaOrigins = (): TrustedEmbeddedMediaOrigin[] => {
+        const results = this.getMacOSValue('TrustedEmbeddedMediaOrigins') as TrustedEmbeddedMediaOrigin[] | undefined;
+        return (results ?? []).filter((item) => typeof item.serverOrigin === 'string' && typeof item.embeddedOrigin === 'string');
     };
 
     private getSingleBooleanValue = (valueName: string): boolean | undefined => {

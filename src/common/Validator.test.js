@@ -221,6 +221,12 @@ describe('common/Validator', () => {
             enableSentry: true,
             enableSessionAttributes: true,
             useNativeTitleBar: false,
+            trustedEmbeddedMediaOrigins: [
+                {
+                    serverOrigin: 'https://chat.example.com',
+                    embeddedOrigin: 'https://meet.example.com',
+                },
+            ],
         };
 
         it('should validate v4 config data', () => {

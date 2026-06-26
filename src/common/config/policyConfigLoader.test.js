@@ -20,6 +20,11 @@ jest.mock('registry-js', () => {
                         {name: 'server-lm-2', data: 'http://server-lm-2.com'},
                     ];
                 }
+                if (key.endsWith('TrustedEmbeddedMediaOrigins')) {
+                    return [
+                        {name: 'https://chat-lm.example.com', data: 'https://meet-lm.example.com'},
+                    ];
+                }
                 if (key.includes('SOFTWARE\\Policies\\Mattermost')) {
                     return [
                         {name: 'EnableServerManagement', data: 1},
@@ -33,6 +38,11 @@ jest.mock('registry-js', () => {
                     return [
                         {name: 'server-cu-1', data: 'http://server-cu-1.com'},
                         {name: 'server-cu-2', data: 'http://server-cu-2.com'},
+                    ];
+                }
+                if (key.endsWith('TrustedEmbeddedMediaOrigins')) {
+                    return [
+                        {name: 'https://chat-cu.example.com', data: 'https://meet-cu.example.com'},
                     ];
                 }
                 if (key.includes('SOFTWARE\\Policies\\Mattermost')) {
@@ -57,6 +67,11 @@ jest.mock('cf-prefs', () => ({
             return [
                 {name: 'server-a', url: 'https://a.com'},
                 {name: 'server-b', url: 'https://b.com'},
+            ];
+        }
+        if (key === 'TrustedEmbeddedMediaOrigins') {
+            return [
+                {serverOrigin: 'https://chat.example.com', embeddedOrigin: 'https://meet.example.com'},
             ];
         }
         if (key === 'EnableServerManagement') {
@@ -93,6 +108,14 @@ describe('common/config/policyConfigLoader', () => {
                 expect(data.servers).toContainEqual({name: 'server-cu-1', url: 'http://server-cu-1.com'});
                 expect(data.enableServerManagement).toBe(false);
                 expect(data.enableUpdateNotifications).toBe(true);
+                expect(data.trustedEmbeddedMediaOrigins).toContainEqual({
+                    serverOrigin: 'https://chat-lm.example.com',
+                    embeddedOrigin: 'https://meet-lm.example.com',
+                });
+                expect(data.trustedEmbeddedMediaOrigins).toContainEqual({
+                    serverOrigin: 'https://chat-cu.example.com',
+                    embeddedOrigin: 'https://meet-cu.example.com',
+                });
             });
 
             it('handles undefined from one hive', () => {
@@ -161,6 +184,9 @@ describe('common/config/policyConfigLoader', () => {
                 ]);
                 expect(data.enableServerManagement).toBe(true);
                 expect(data.enableUpdateNotifications).toBe(false);
+                expect(data.trustedEmbeddedMediaOrigins).toEqual([
+                    {serverOrigin: 'https://chat.example.com', embeddedOrigin: 'https://meet.example.com'},
+                ]);
             });
 
             it('returns empty servers and undefined booleans when no managed prefs', () => {
