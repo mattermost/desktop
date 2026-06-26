@@ -60,6 +60,7 @@ import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
+import {shouldCancelLocalNetworkRequest} from 'main/security/localNetworkAccess';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
@@ -345,6 +346,34 @@ async function initializeAfterAppReady() {
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
+    defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
+        try {
+            const shouldCancel = await shouldCancelLocalNetworkRequest(
+                {
+                    url: details.url,
+                    webContentsId: details.webContentsId,
+                    webContents: details.webContents,
+                },
+                ServerManager.getAllServers().map((server) => server.url),
+                (webContentsId) => Boolean(WebContentsManager.getViewByWebContentsId(webContentsId)),
+            );
+
+            if (shouldCancel) {
+                log.warn('Blocked server content from accessing local or private network URL', {
+                    resourceType: details.resourceType,
+                    url: details.url,
+                    webContentsId: details.webContentsId || details.webContents?.id,
+                });
+                callback({cancel: true});
+                return;
+            }
+        } catch (error) {
+            log.warn('Error while checking local network request policy', {error});
+        }
+
+        callback({});
+    });
+
     defaultSession.webRequest.onHeadersReceived((details, callback) => {
         const url = parseURL(details.url);
         if (url?.protocol === 'mattermost-desktop:' && url?.pathname.endsWith('html')) {
