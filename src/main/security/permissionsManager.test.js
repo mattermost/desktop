@@ -8,6 +8,7 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import WebContentsManager from 'app/views/webContentsManager';
 import Config from 'common/config';
 import {parseURL, isTrustedURL} from 'common/utils/url';
+import {localizeMessage} from 'main/i18nManager';
 
 import {PermissionsManager} from './permissionsManager';
 
@@ -42,13 +43,16 @@ jest.mock('common/utils/url', () => ({
 }));
 
 jest.mock('common/config', () => ({
-    data: {
-        trustedEmbeddedMediaOrigins: [],
-    },
-    registryData: {
-        servers: [
-            {url: 'http://gposerver.com'},
-        ],
+    __esModule: true,
+    default: {
+        data: {
+            trustedEmbeddedMediaOrigins: [],
+        },
+        registryData: {
+            servers: [
+                {url: 'http://gposerver.com'},
+            ],
+        },
     },
 }));
 
@@ -271,6 +275,16 @@ describe('main/PermissionsManager', () => {
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://meet.anyurl.com'});
             expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
             expect(permissionsManager.json['http://meet.anyurl.com']).toBeUndefined();
+            expect(localizeMessage).toHaveBeenCalledWith(
+                'main.permissionsManager.checkPermission.dialog.message.media',
+                '{appName} ({url}) is requesting the "{permission}" permission.',
+                {
+                    appName: 'Mattermost',
+                    url: 'http://anyurl.com (via http://meet.anyurl.com)',
+                    permission: 'media',
+                    externalURL: undefined,
+                },
+            );
             expect(permissionsManager.writeToFile).toHaveBeenCalled();
             expect(cb).toHaveBeenCalledWith(true);
         });

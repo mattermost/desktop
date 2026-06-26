@@ -22,6 +22,19 @@ const defaultWindowHeight = 700;
 const minWindowWidth = 400;
 const minWindowHeight = 240;
 
+const originOnlyStringSchema = Joi.string().custom((value, helpers) => {
+    try {
+        const url = new URL(value);
+        if (url.origin !== value) {
+            return helpers.error('string.uri');
+        }
+
+        return value;
+    } catch {
+        return helpers.error('string.uri');
+    }
+});
+
 const argsSchema = Joi.object<Args>({
     hidden: Joi.boolean(),
     disableDevMode: Joi.boolean(),
@@ -191,8 +204,8 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     skippedVersions: Joi.array().items(Joi.string()).default([]),
     useNativeTitleBar: Joi.boolean().default(false),
     trustedEmbeddedMediaOrigins: Joi.array().items(Joi.object({
-        serverOrigin: Joi.string().uri().required(),
-        embeddedOrigin: Joi.string().uri().required(),
+        serverOrigin: originOnlyStringSchema.required(),
+        embeddedOrigin: originOnlyStringSchema.required(),
     })).default([]),
 });
 

@@ -75,13 +75,43 @@ export class PolicyConfigLoader {
     private getWindowsTrustedEmbeddedMediaOrigins = (): TrustedEmbeddedMediaOrigin[] => {
         const results = this.getWindowsValues('TrustedEmbeddedMediaOrigins');
         return results.
-            filter((item) => typeof item.name === 'string' && typeof item.data === 'string').
-            map((item) => ({serverOrigin: item.name, embeddedOrigin: item.data as string}));
+            map((item) => this.parseTrustedEmbeddedMediaOrigin(item.data)).
+            filter((item): item is TrustedEmbeddedMediaOrigin => Boolean(item));
     };
 
     private getMacOSTrustedEmbeddedMediaOrigins = (): TrustedEmbeddedMediaOrigin[] => {
-        const results = this.getMacOSValue('TrustedEmbeddedMediaOrigins') as TrustedEmbeddedMediaOrigin[] | undefined;
-        return (results ?? []).filter((item) => typeof item.serverOrigin === 'string' && typeof item.embeddedOrigin === 'string');
+        const results = this.getMacOSValue('TrustedEmbeddedMediaOrigins');
+        if (!Array.isArray(results)) {
+            return [];
+        }
+
+        return results.filter((item): item is TrustedEmbeddedMediaOrigin => this.isTrustedEmbeddedMediaOrigin(item));
+    };
+
+    private parseTrustedEmbeddedMediaOrigin = (value: RegistryValue['data']): TrustedEmbeddedMediaOrigin | undefined => {
+        if (typeof value !== 'string') {
+            return undefined;
+        }
+
+        try {
+            const parsed = JSON.parse(value);
+            if (this.isTrustedEmbeddedMediaOrigin(parsed)) {
+                return parsed;
+            }
+        } catch (error) {
+            log.debug('Error parsing TrustedEmbeddedMediaOrigins registry value', {error});
+        }
+
+        return undefined;
+    };
+
+    private isTrustedEmbeddedMediaOrigin = (value: unknown): value is TrustedEmbeddedMediaOrigin => {
+        if (!value || typeof value !== 'object') {
+            return false;
+        }
+
+        const originPair = value as Partial<TrustedEmbeddedMediaOrigin>;
+        return typeof originPair.serverOrigin === 'string' && typeof originPair.embeddedOrigin === 'string';
     };
 
     private getSingleBooleanValue = (valueName: string): boolean | undefined => {

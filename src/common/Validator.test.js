@@ -240,6 +240,19 @@ describe('common/Validator', () => {
             };
             expect(Validator.validateV4ConfigData(modifiedConfig)).not.toHaveProperty('spellCheckerURL');
         });
+
+        it('should reject trusted embedded media values that are not origins', () => {
+            const modifiedConfig = {
+                ...config,
+                trustedEmbeddedMediaOrigins: [
+                    {
+                        serverOrigin: 'https://chat.example.com/path',
+                        embeddedOrigin: 'https://meet.example.com',
+                    },
+                ],
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toBeNull();
+        });
     });
 
     describe('validateAllowedProtocols', () => {

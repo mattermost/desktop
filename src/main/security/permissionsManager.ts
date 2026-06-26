@@ -168,6 +168,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         const isExternalFullscreen = permission === 'fullscreen' && parsedURL.origin !== serverURL.origin;
         const isTrustedEmbeddedMedia = permission === 'media' && this.isTrustedEmbeddedMediaOrigin(parsedURL, serverURL);
         const permissionOrigin = isTrustedEmbeddedMedia ? serverURL.origin : parsedURL.origin;
+        const dialogOrigin = isTrustedEmbeddedMedia ? `${serverURL.origin} (via ${parsedURL.origin})` : parsedURL.origin;
 
         // is the requesting url trusted?
         if (!(isTrustedURL(parsedURL, serverURL) || (permission === 'media' && parsedURL.origin === serverURL.origin) || isTrustedEmbeddedMedia || isExternalFullscreen)) {
@@ -207,7 +208,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
                 // Show the dialog to ask the user
                 dialog.showMessageBox(mainWindow, {
                     title: localizeMessage('main.permissionsManager.checkPermission.dialog.title', 'Permission Requested'),
-                    message: localizeMessage(`main.permissionsManager.checkPermission.dialog.message.${permission}`, '{appName} ({url}) is requesting the "{permission}" permission.', {appName: app.name, url: parsedURL.origin, permission, externalURL: details.externalURL}),
+                    message: localizeMessage(`main.permissionsManager.checkPermission.dialog.message.${permission}`, '{appName} ({url}) is requesting the "{permission}" permission.', {appName: app.name, url: dialogOrigin, permission, externalURL: details.externalURL}),
                     detail: localizeMessage(`main.permissionsManager.checkPermission.dialog.detail.${permission}`, 'Would you like to grant {appName} this permission?', {appName: app.name}),
                     type: 'question',
                     buttons: [

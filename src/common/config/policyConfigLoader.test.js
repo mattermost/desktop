@@ -22,7 +22,7 @@ jest.mock('registry-js', () => {
                 }
                 if (key.endsWith('TrustedEmbeddedMediaOrigins')) {
                     return [
-                        {name: 'https://chat-lm.example.com', data: 'https://meet-lm.example.com'},
+                        {name: 'jitsi-lm', data: JSON.stringify({serverOrigin: 'https://chat-lm.example.com', embeddedOrigin: 'https://meet-lm.example.com'})},
                     ];
                 }
                 if (key.includes('SOFTWARE\\Policies\\Mattermost')) {
@@ -42,7 +42,7 @@ jest.mock('registry-js', () => {
                 }
                 if (key.endsWith('TrustedEmbeddedMediaOrigins')) {
                     return [
-                        {name: 'https://chat-cu.example.com', data: 'https://meet-cu.example.com'},
+                        {name: 'jitsi-cu', data: JSON.stringify({serverOrigin: 'https://chat-cu.example.com', embeddedOrigin: 'https://meet-cu.example.com'})},
                     ];
                 }
                 if (key.includes('SOFTWARE\\Policies\\Mattermost')) {
@@ -163,6 +163,25 @@ describe('common/config/policyConfigLoader', () => {
                 expect(data.servers[1]).toEqual({name: 'server-2', url: 'http://server-2.com'});
             });
 
+            it('filters malformed trusted embedded media registry data', () => {
+                enumerateValues.mockImplementation((hive, key) => {
+                    if (key.endsWith('TrustedEmbeddedMediaOrigins') && hive === 'HKEY_LOCAL_MACHINE') {
+                        return [
+                            {name: 'valid-1', data: JSON.stringify({serverOrigin: 'https://chat.example.com', embeddedOrigin: 'https://meet.example.com'})},
+                            {name: 'invalid-json', data: '{not-json'},
+                            {name: 'missing-origin', data: JSON.stringify({serverOrigin: 'https://chat.example.com'})},
+                            {name: 'not-string', data: 1},
+                        ];
+                    }
+
+                    return [];
+                });
+                const data = policyConfigLoader.getPolicyConfig();
+                expect(data.trustedEmbeddedMediaOrigins).toEqual([
+                    {serverOrigin: 'https://chat.example.com', embeddedOrigin: 'https://meet.example.com'},
+                ]);
+            });
+
             it('returns consistent data from multiple calls', () => {
                 const first = policyConfigLoader.getPolicyConfig();
                 const second = policyConfigLoader.getPolicyConfig();
@@ -206,6 +225,18 @@ describe('common/config/policyConfigLoader', () => {
                 });
                 const data = policyConfigLoader.getPolicyConfig();
                 expect(data.servers).toEqual([]);
+            });
+
+            it('returns no trusted embedded media origins when the macOS value is not an array', () => {
+                getCFPreferenceValue.mockImplementation((key) => {
+                    if (key === 'TrustedEmbeddedMediaOrigins') {
+                        return {serverOrigin: 'https://chat.example.com', embeddedOrigin: 'https://meet.example.com'};
+                    }
+
+                    return undefined;
+                });
+                const data = policyConfigLoader.getPolicyConfig();
+                expect(data.trustedEmbeddedMediaOrigins).toEqual([]);
             });
         });
     });
