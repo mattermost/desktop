@@ -361,7 +361,7 @@ async function initializeAfterAppReady() {
             if (shouldCancel) {
                 log.warn('Blocked server content from accessing local or private network URL', {
                     resourceType: details.resourceType,
-                    url: details.url,
+                    origin: parseURL(details.url)?.origin,
                     webContentsId: details.webContentsId || details.webContents?.id,
                 });
                 callback({cancel: true});

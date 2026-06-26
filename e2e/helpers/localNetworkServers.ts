@@ -60,8 +60,7 @@ export async function startLocalNetworkServers(): Promise<LocalNetworkServers> {
         res.writeHead(200, {'Content-Type': 'text/plain'});
         res.end('top-secret');
     });
-    const secretPort = await listen(secretService);
-    const secretUrl = `http://127.0.0.1:${secretPort}/secret`;
+    let secretUrl = '';
 
     const fakeServer = http.createServer((req, res) => {
         const url = req.url ?? '/';
@@ -85,16 +84,26 @@ export async function startLocalNetworkServers(): Promise<LocalNetworkServers> {
         res.writeHead(200, {'Content-Type': 'text/html'});
         res.end(FAKE_SERVER_HTML);
     });
-    const fakePort = await listen(fakeServer);
-    const fakeServerOrigin = `http://127.0.0.1:${fakePort}`;
 
-    return {
-        fakeServerOrigin,
-        fakeServerUrl: `${fakeServerOrigin}/`,
-        secretUrl,
-        getSecretHitCount: () => secretHitCount,
-        close: async () => {
-            await Promise.all([closeServer(fakeServer), closeServer(secretService)]);
-        },
-    };
+    // Close any already-bound server if a later listen() fails, so a partial startup
+    // never leaks a loopback listener into other tests.
+    try {
+        const secretPort = await listen(secretService);
+        secretUrl = `http://127.0.0.1:${secretPort}/secret`;
+        const fakePort = await listen(fakeServer);
+        const fakeServerOrigin = `http://127.0.0.1:${fakePort}`;
+
+        return {
+            fakeServerOrigin,
+            fakeServerUrl: `${fakeServerOrigin}/`,
+            secretUrl,
+            getSecretHitCount: () => secretHitCount,
+            close: async () => {
+                await Promise.all([closeServer(fakeServer), closeServer(secretService)]);
+            },
+        };
+    } catch (error) {
+        await Promise.allSettled([closeServer(fakeServer), closeServer(secretService)]);
+        throw error;
+    }
 }

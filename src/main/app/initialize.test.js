@@ -336,7 +336,8 @@ describe('main/app/initialize', () => {
                 ServerManager.getAllServers.mockReturnValue([{url: new URL('http://127.0.0.1:8065')}]);
                 WebContentsManager.getViewByWebContentsId.mockImplementation((id) => (id === SERVER_WEBCONTENTS_ID ? {id} : undefined));
                 await initialize();
-                return session.defaultSession.webRequest.onBeforeRequest.mock.calls[0][0];
+                const calls = session.defaultSession.webRequest.onBeforeRequest.mock.calls;
+                return calls[calls.length - 1][0];
             };
 
             it('cancels server-view requests to local/private targets (via webContentsId)', async () => {
