@@ -287,6 +287,8 @@
   "renderer.components.settingsPage.enableMetrics.description": "Отправляет данные об использовании приложения и его производительности на настроенные вами серверы, которые их принимают.",
   "renderer.components.settingsPage.enableSentry": "Отправляй сообщения об ошибках, чтобы помочь улучшить приложение",
   "renderer.components.settingsPage.enableSentry.description": "Если эта опция включена, то отчеты об ошибках и информация о сбоях будут отправляться, чтобы помочь выявить и устранить проблемы в приложении. Настройки вступят в силу после перезапуска приложения.",
+  "renderer.components.settingsPage.enableSessionAttributes": "Включить атрибуты сеанса",
+  "renderer.components.settingsPage.enableSessionAttributes.description": "Отправлять информацию об устройстве и сети на настроенные серверы для использования в политиках доступа. Если эта настройка отключена, доступ к некоторым ресурсам может быть ограничен.",
   "renderer.components.settingsPage.flashWindow": "Мигающий значок на панели задач при получении нового сообщения",
   "renderer.components.settingsPage.flashWindow.description": "Если эта функция включена, то при получении нового сообщения значок на панели задач будет мигать в течение нескольких секунд.",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "Этот функционал может работать не со всеми оконными менеджерами Linux.",
