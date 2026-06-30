@@ -82,11 +82,7 @@ export async function getMainWindowId(app: ElectronApplication): Promise<number>
             });
             return mainWindowId;
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (
-                message.includes('Execution context was destroyed') ||
-                message.includes('Target page, context or browser has been closed')
-            ) {
+            if (isTransientEvaluateError(error)) {
                 return null;
             }
             throw error;
@@ -104,7 +100,7 @@ export async function getMainWindowId(app: ElectronApplication): Promise<number>
 }
 
 export async function getActiveServerWebContentsId(app: ElectronApplication): Promise<number> {
-    const id = await app.evaluate(() => {
+    const id = await evaluateInMainProcess(app, () => {
         const refs = (global as any).__e2eTestRefs;
         const view = refs?.TabManager?.getCurrentActiveTabView?.();
         return view?.webContentsId ?? null;
