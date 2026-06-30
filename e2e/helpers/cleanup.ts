@@ -31,7 +31,7 @@ export async function waitForLockFileRelease(userDataDir: string): Promise<void>
             },
         ).toBe(true);
     } catch {
-        if (fs.existsSync(lockFile)) {
+        if (process.platform === 'win32' && fs.existsSync(lockFile)) {
             try {
                 fs.unlinkSync(lockFile);
             } catch {
