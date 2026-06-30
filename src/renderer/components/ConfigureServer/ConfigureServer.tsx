@@ -3,7 +3,7 @@
 
 import classNames from 'classnames';
 import React, {useState, useCallback, useEffect, useRef} from 'react';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {MODAL_TRANSITION_TIMEOUT, URLValidationStatus} from 'common/utils/constants';
 import Header from 'renderer/components/Header';
@@ -336,13 +336,20 @@ function ConfigureServer({
                                 <ServerImage/>
                             </div>
                             <h1 className='ConfigureServer__message-title'>
-                                {messageTitle || formatMessage({id: 'renderer.components.configureServer.title', defaultMessage: 'Connect securely to your server'})}
+                                {messageTitle || (
+                                    <FormattedMessage
+                                        id='renderer.components.configureServer.title'
+                                        defaultMessage='Connect securely to your server'
+                                    />
+                                )}
                             </h1>
                             <p className='ConfigureServer__message-subtitle'>
-                                {messageSubtitle || formatMessage({
-                                    id: 'renderer.components.configureServer.subtitle',
-                                    defaultMessage: 'Enter your server details to get started.',
-                                })}
+                                {messageSubtitle || (
+                                    <FormattedMessage
+                                        id='renderer.components.configureServer.subtitle'
+                                        defaultMessage='Enter your server details to get started.'
+                                    />
+                                )}
                             </p>
                         </div>
                         <div className={classNames('ConfigureServer__card', transition, {'with-error': nameError || urlError?.type === STATUS.ERROR})}>
