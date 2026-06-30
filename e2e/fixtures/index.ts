@@ -2,8 +2,6 @@
 // See LICENSE.txt for license information.
 
 import * as fs from 'fs/promises';
-import * as fsSync from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 
 import {test as base, type Page} from '@playwright/test';
@@ -11,8 +9,14 @@ import type {ElectronApplication} from 'playwright';
 import {_electron as electron} from 'playwright';
 
 import {waitForAppReady} from '../helpers/appReadiness';
-import {waitForLockFileRelease} from '../helpers/cleanup';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
+import {
+    closeElectronApp,
+    FAST_TEARDOWN,
+    registerElectronMainProcess,
+    cleanupRegisteredElectronProcesses,
+} from '../helpers/electronApp';
+import {closeOverlayWindowsIfOpen} from '../helpers/overlayWindows';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
 
 export type {ServerMap, ServerEntry} from '../helpers/serverMap';
@@ -48,17 +52,41 @@ type Fixtures = {
     mainWindow: Page;
 };
 
-export const test = base.extend<Fixtures>({
+type WorkerFixtures = {
+
+    /** Worker-scoped cleanup for orphaned Electron main processes. */
+    workerElectronCleanup: void;
+};
+
+export const test = base.extend<Fixtures, WorkerFixtures>({
+    workerElectronCleanup: [async ({}, use) => {
+        await use();
+        let timeoutHandle: NodeJS.Timeout | undefined;
+        try {
+            await Promise.race([
+                cleanupRegisteredElectronProcesses(),
+                new Promise<void>((resolve) => {
+                    timeoutHandle = setTimeout(resolve, 20_000);
+                    timeoutHandle.unref?.();
+                }),
+            ]);
+        } finally {
+            if (timeoutHandle) {
+                clearTimeout(timeoutHandle);
+            }
+        }
+    }, {scope: 'worker'}],
+
     appConfig: async ({}, use) => {
         await use(demoConfig);
     },
 
-    electronApp: async ({appConfig}, use, testInfo) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    electronApp: async ({appConfig, workerElectronCleanup: _workerElectronCleanup}, use, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         await fs.rm(userDataDir, {recursive: true, force: true});
         await fs.mkdir(userDataDir, {recursive: true});
 
-        // writeConfigFile is SYNCHRONOUS — must complete before electron.launch()
         writeConfigFile(userDataDir, appConfig);
 
         let launchTimeout: number;
@@ -70,35 +98,25 @@ export const test = base.extend<Fixtures>({
             launchTimeout = 60_000;
         }
 
-        const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
-
         const app = await electron.launch({
             executablePath: electronBinaryPath,
             args: [
-                appDir, // test build directory (e2e/dist)
+                appDir,
                 `--user-data-dir=${userDataDir}`,
-
-                // CI compatibility — required for Linux sandbox, GPU stability
                 '--no-sandbox',
                 '--disable-gpu',
                 '--disable-gpu-sandbox',
                 '--disable-dev-shm-usage',
                 '--no-zygote',
                 '--disable-software-rasterizer',
-
-                // Stability
                 '--disable-breakpad',
                 '--disable-features=SpareRendererForSitePerProcess',
                 '--disable-features=CrossOriginOpenerPolicy',
                 '--disable-renderer-backgrounding',
-
-                // Dialogs & first-run
                 '--no-first-run',
                 '--no-default-browser-check',
                 '--disable-default-apps',
                 '--disable-crash-reporter',
-
-                // Consistency
                 '--force-color-profile=srgb',
                 '--mute-audio',
             ],
@@ -113,54 +131,20 @@ export const test = base.extend<Fixtures>({
             timeout: launchTimeout,
         });
 
-        // Register PID for global teardown orphan cleanup.
-        // electronApp.process().pid is available here from Playwright at runtime,
-        // so we write it from the test side rather than from inside the app.
-        const launchPid = app.process()?.pid;
-        if (launchPid) {
-            try {
-                fsSync.appendFileSync(E2E_PROCESS_REGISTRY, `${launchPid}\n`, 'utf8');
-            } catch { /* non-fatal */ }
-        }
+        registerElectronMainProcess(app.process()?.pid);
 
         await use(app);
 
-        // Teardown strategy:
-        //   1. Try app.close() (clean Playwright shutdown) with a 10s cap.
-        //   2. If it hangs, send SIGTERM and return immediately — do NOT SIGKILL.
-        //   SIGKILL triggers macOS "Electron quit unexpectedly" crash dialogs.
-        //   SIGTERM does not. Global teardown (pkill targeting main process only)
-        //   will reap any lingering orphans after the full suite completes.
-        let pid: number | undefined;
-        try {
-            pid = app.process()?.pid;
-        } catch { /* app already disconnected */ }
-
-        let cleanClosed = false;
-        await Promise.race([
-            app.close().catch(() => {}).then(() => {
-                cleanClosed = true;
-            }),
-            new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
-        ]);
-
-        if (!cleanClosed && pid) {
-            try {
-                process.kill(pid, 'SIGTERM');
-            } catch { /* already gone */ }
-            // Return immediately — don't wait for the process to exit.
-            // Lock-file cleanup is not needed: each test has a unique userDataDir
-            // so a lingering lock never blocks the next test.
-            return;
-        }
-
-        await waitForLockFileRelease(userDataDir).catch(() => {});
+        await closeElectronApp(app, userDataDir, FAST_TEARDOWN);
     },
 
-    // Deduplicated readiness gate. Both serverMap and mainWindow declare this
-    // as a dependency — Playwright runs it exactly once and tears it down once.
     appReady: async ({electronApp}, use) => {
         await waitForAppReady(electronApp);
+
+        // Setup path: the main process is freshly launched and responsive, so
+        // the default 3s bound is ample for sub-100ms dropdown closes and still
+        // fails fast if app.evaluate hangs. No larger setup timeout is needed.
+        await closeOverlayWindowsIfOpen(electronApp);
         await use();
     },
 

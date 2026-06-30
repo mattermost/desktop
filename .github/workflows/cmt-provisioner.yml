@@ -1,20 +1,16 @@
 name: CMT Provisioner
 
-# Trigger workflow for Compatibility Matrix Testing (CMT).
-# When this workflow runs, GitHub fires a workflow_run webhook to matterwick.
-# Matterwick provisions one cloud server per version and dispatches
-# compatibility-matrix-testing.yml automatically.
+# Lightweight signal workflow for Compatibility Matrix Testing (CMT).
+# When this runs, matterwick detects the workflow_run:requested event, provisions one
+# cloud server per version in its CMT set, and dispatches compatibility-matrix-testing.yml.
+# Triggers: RC tag pushes (e.g. v6.2.2-rc.1) and manual workflow_dispatch.
 
 on:
-  # Fire on each RC tag cut (v6.2.0-rc.1, v6.2.0-rc.2, …).
   push:
     tags:
-      - "v*-rc*"
-  # Manual runs from the Actions tab (any ref).
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
   workflow_dispatch: {}
 
-# This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a
-# workflow_run event that matterwick reacts to.
 permissions: {}
 
 jobs:

@@ -3,10 +3,34 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const {XMLParser} = require('fast-xml-parser');
+const {createRequire} = require('module');
 
 const JUNIT_REPORT_PATH = path.join(__dirname, '..', 'test-results', 'e2e-junit.xml');
+
+function getXMLParserClass() {
+    const packageCandidates = [
+        path.join(__dirname, '..', 'package.json'),
+        path.join(__dirname, '..', '..', 'package.json'),
+    ];
+
+    for (const packageJson of packageCandidates) {
+        try {
+            const {XMLParser} = createRequire(packageJson)('fast-xml-parser');
+            return XMLParser;
+        } catch (error) {
+            const isModuleNotFound =
+                error &&
+                (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_MODULE_NOT_FOUND');
+            if (!isModuleNotFound) {
+                throw error;
+            }
+
+            // try the other package root (e2e/ vs repo root)
+        }
+    }
+
+    throw new Error('fast-xml-parser is not installed. Run npm ci in the repo root and e2e/.');
+}
 
 function toNumber(value) {
     const parsed = parseInt(value, 10);
@@ -187,8 +211,9 @@ function getOutcomeCounts(report) {
 
 function analyzeFlakyTests() {
     const exitCode = toNumber(process.env.PLAYWRIGHT_EXIT_CODE || '0');
+    const hasJunit = fs.existsSync(JUNIT_REPORT_PATH);
 
-    if (!fs.existsSync(JUNIT_REPORT_PATH)) {
+    if (!hasJunit) {
         const failureCount = exitCode === 0 ? 0 : 1;
         return {
             failureCount,
@@ -197,9 +222,11 @@ function analyzeFlakyTests() {
             totalCount: failureCount,
             newFailedTests: new Array(failureCount).fill('unknown'),
             os: process.platform,
+            testStatus: failureCount > 0 ? 'failure' : 'success',
         };
     }
 
+    const XMLParser = getXMLParserClass();
     const parser = new XMLParser({
         ignoreAttributes: false,
         attributeNamePrefix: '',
@@ -215,6 +242,7 @@ function analyzeFlakyTests() {
     // `failureCount` and reconcile the rest.
     const reconciledFailed = failureCount;
     const reconciledPassed = Math.max(0, outcomes.total - reconciledFailed - outcomes.skipped);
+    const testStatus = reconciledFailed > 0 ? 'failure' : 'success';
 
     return {
         failureCount,
@@ -223,6 +251,7 @@ function analyzeFlakyTests() {
         totalCount: reconciledFailed + reconciledPassed + outcomes.skipped,
         newFailedTests: new Array(failureCount).fill('failed'),
         os: process.platform,
+        testStatus,
     };
 }
 

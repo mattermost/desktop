@@ -12,11 +12,13 @@ import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
+import createTrayMenu from 'app/menus/tray';
 import NavigationManager from 'app/navigationManager';
 import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
+import PopoutManager from 'app/windows/popoutManager';
 import {
     QUIT,
     NOTIFY_MENTION,
@@ -52,6 +54,7 @@ import AutoLauncher from 'main/AutoLauncher';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
+import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
@@ -64,6 +67,7 @@ import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
 import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
+import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
 import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
@@ -75,6 +79,7 @@ import {
     handleAppWillFinishLaunching,
     handleAppWindowAllClosed,
     handleChildProcessGone,
+    certificateErrorCallbacks,
 } from './app';
 import {
     handleConfigUpdate,
@@ -98,6 +103,7 @@ import {
 import {
     clearAppCache,
     getDeeplinkingURL,
+    openDeepLink,
     shouldShowTrayIcon,
     updateSpellCheckerLocales,
     wasUpdated,
@@ -294,6 +300,41 @@ async function initializeAfterAppReady() {
         TabManager,
         ViewManager,
         WebContentsManager,
+        Config,
+        TrayIcon: Tray,
+        Diagnostics,
+        PopoutManager,
+    });
+
+    setTestField('__e2eOpenDeepLink', (url: string) => {
+        openDeepLink(url);
+    });
+
+    setTestField('__e2eClickTrayMenuItem', (label: string) => {
+        const truncated = label.length > 50 ? `${label.slice(0, 50)}...` : label;
+
+        function clickItem(items: Electron.MenuItem[]): boolean {
+            for (const item of items) {
+                const itemLabel = typeof item.label === 'string' ? item.label : '';
+                if (
+                    (itemLabel === label || itemLabel === truncated) &&
+                    item.enabled !== false &&
+                    item.visible !== false &&
+                    typeof item.click === 'function'
+                ) {
+                    item.click();
+                    return true;
+                }
+                if (item.submenu?.items && clickItem(item.submenu.items)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (!clickItem(createTrayMenu().items)) {
+            throw new Error(`Tray menu item not found: ${label}`);
+        }
     });
 
     // Block all NTLM/Negotiate requests by default
@@ -338,6 +379,17 @@ async function initializeAfterAppReady() {
     ServerManager.on(SERVER_ADDED, updateServerInfo);
     ServerManager.on(SERVER_URL_CHANGED, updateServerInfo);
     ServerManager.on(SERVER_PRE_AUTH_SECRET_CHANGED, updateServerInfo);
+
+    setTestField('__e2eStubMessageBoxResponses', installMessageBoxStub);
+    setTestField('__e2eRestoreMessageBox', restoreMessageBoxStub);
+    setTestField('__e2eClearCertificateErrorCallbacks', () => certificateErrorCallbacks.clear());
+    if (process.env.NODE_ENV === 'test') {
+        if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'cancel') {
+            installMessageBoxStub([{response: 1}]);
+        } else if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'trust') {
+            installMessageBoxStub([{response: 0}, {response: 0}]);
+        }
+    }
 
     ServerManager.on(SERVER_ADDED, PreAuthManager.loadPreAuthSecretForServer);
     ServerManager.init();
