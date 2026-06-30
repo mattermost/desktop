@@ -7,7 +7,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
-import {triggerFlashEffects} from '../../helpers/notificationEffects';
+import {triggerNotificationEffects} from '../../helpers/notificationEffects';
 
 // ── Production code path ───────────────────────────────────────────────
 // src/main/notifications/index.ts :: flashFrame()
@@ -82,7 +82,7 @@ test.describe('notification_trigger/dock_bounce', () => {
                 await setBounceConfig(electronApp, false);
                 await installDockBounceSpy(electronApp);
                 try {
-                    await triggerFlashEffects(electronApp, true);
+                    await triggerNotificationEffects(electronApp, true);
 
                     const bounceCalls: string[] = await electronApp.evaluate(
                         ({app}) => (app as any).__e2eDockBounceCalls ?? [],
@@ -110,7 +110,7 @@ test.describe('notification_trigger/dock_bounce', () => {
                 await setBounceConfig(electronApp, true, 'informational');
                 await installDockBounceSpy(electronApp);
                 try {
-                    await triggerFlashEffects(electronApp, true);
+                    await triggerNotificationEffects(electronApp, true);
 
                     await expect.poll(
                         () => electronApp.evaluate(
@@ -137,7 +137,7 @@ test.describe('notification_trigger/dock_bounce', () => {
                 await setBounceConfig(electronApp, true, 'critical');
                 await installDockBounceSpy(electronApp);
                 try {
-                    await triggerFlashEffects(electronApp, true);
+                    await triggerNotificationEffects(electronApp, true);
 
                     await expect.poll(
                         () => electronApp.evaluate(

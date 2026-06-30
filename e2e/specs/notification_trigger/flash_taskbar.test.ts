@@ -5,7 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
-import {triggerFlashEffects} from '../../helpers/notificationEffects';
+import {triggerNotificationEffects} from '../../helpers/notificationEffects';
 
 // ── MM-T1293: Flash taskbar icon — Windows & Linux ONLY ──────────────
 // Production path: src/main/notifications/index.ts :: flashFrame()
@@ -55,7 +55,7 @@ test.describe('notification_trigger/flash_taskbar', () => {
                 });
 
                 try {
-                    await triggerFlashEffects(electronApp, true);
+                    await triggerNotificationEffects(electronApp, true);
 
                     await expect.poll(
                         () => electronApp.evaluate(() => (global as any).__e2eFlashFrameCalls ?? []),
