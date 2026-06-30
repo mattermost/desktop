@@ -17,7 +17,14 @@ function getXMLParserClass() {
         try {
             const {XMLParser} = createRequire(packageJson)('fast-xml-parser');
             return XMLParser;
-        } catch {
+        } catch (error) {
+            const isModuleNotFound =
+                error &&
+                (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_MODULE_NOT_FOUND');
+            if (!isModuleNotFound) {
+                throw error;
+            }
+
             // try the other package root (e2e/ vs repo root)
         }
     }
