@@ -7,8 +7,9 @@ import type {ElectronApplication} from 'playwright';
 import {buildServerMap} from './serverMap';
 
 export function mattermostDeepLinkUrl(hostAndPath: string): string {
-    const protocol = process.env.NODE_ENV === 'test' ? 'mattermost-dev' : 'mattermost';
-    return `${protocol}://${hostAndPath}`;
+    // E2E always launches the unpacked binary (electron-is-dev=true), so deep links
+    // must use mattermost-dev:// regardless of the Playwright worker's NODE_ENV.
+    return `mattermost-dev://${hostAndPath}`;
 }
 
 /** Build a channel deep link that preserves the team path from the configured server URL. */

@@ -59,10 +59,18 @@ test(
         await autostartToggle.waitFor({state: 'visible', timeout: 10_000});
 
         const initialConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')) as {autostart: boolean};
-        await autostartToggle.click();
-        await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")', {timeout: 15_000});
+        try {
+            await autostartToggle.click();
+            await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")', {timeout: 15_000});
 
-        const updatedConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')) as {autostart: boolean};
-        expect(updatedConfig.autostart).toBe(!initialConfig.autostart);
+            const updatedConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')) as {autostart: boolean};
+            expect(updatedConfig.autostart).toBe(!initialConfig.autostart);
+        } finally {
+            const currentConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')) as {autostart: boolean};
+            if (currentConfig.autostart !== initialConfig.autostart) {
+                await autostartToggle.click();
+                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")', {timeout: 15_000});
+            }
+        }
     },
 );
