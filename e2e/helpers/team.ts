@@ -133,6 +133,7 @@ export async function ensureMultipleTeams(
     }
 
     let result: EnsureResult;
+    let usedApiFallback = false;
     try {
         result = await app.evaluate(async ({webContents}, payload) => {
             const wc = webContents.fromId(payload.id);
@@ -142,7 +143,12 @@ export async function ensureMultipleTeams(
             return wc.executeJavaScript(payload.script) as Promise<EnsureResult>;
         }, {id: webContentsId, script: RENDERER_ENSURE_TEAMS});
     } catch {
+        usedApiFallback = true;
         result = await ensureMultipleTeamsViaApi(app, serverUrl, username, password);
+    }
+
+    if (result.count < 2) {
+        throw new Error(`Expected at least 2 teams after ensureMultipleTeams, got ${result.count}`);
     }
 
     if (result.created) {
@@ -153,12 +159,11 @@ export async function ensureMultipleTeams(
             }
             await wc.executeJavaScript('window.location.reload()', true);
         }, webContentsId);
-        await win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-        await win.waitForSelector('#teamSidebarWrapper', {state: 'visible', timeout: 30_000});
     }
 
-    if (result.count < 2) {
-        throw new Error(`Expected at least 2 teams after ensureMultipleTeams, got ${result.count}`);
+    if (result.created || usedApiFallback) {
+        await win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+        await win.waitForSelector('#teamSidebarWrapper', {state: 'visible', timeout: 30_000});
     }
 
     return result.count;

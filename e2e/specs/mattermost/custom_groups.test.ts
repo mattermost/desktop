@@ -28,6 +28,11 @@ test.describe('mattermost/custom_groups', () => {
             return;
         }
 
+        if (!process.env.MM_TEST_USER_NAME || !process.env.MM_TEST_PASSWORD) {
+            test.skip(true, 'MM_TEST_USER_NAME and MM_TEST_PASSWORD required');
+            return;
+        }
+
         const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
         expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
 

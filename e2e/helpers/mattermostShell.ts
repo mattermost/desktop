@@ -9,7 +9,8 @@ export const POST_TEXTBOX_SELECTOR = [
     '#post_textbox',
     '[data-testid="post_textbox"]',
     '.post-create__input [contenteditable="true"]',
-    '[role="textbox"]',
+    '.post-create__input [role="textbox"]',
+    '.AdvancedTextEditor [contenteditable="true"]',
 ].join(', ');
 
 /**
@@ -111,8 +112,10 @@ export async function typeIntoPostTextbox(win: ServerView, text: string): Promis
         root.setAttribute('spellcheck', 'true');
 
         if (root instanceof HTMLTextAreaElement || root instanceof HTMLInputElement) {
-            root.value = value;
+            const descriptor = Object.getOwnPropertyDescriptor(root.constructor.prototype, 'value');
+            descriptor?.set?.call(root, value);
             root.dispatchEvent(new Event('input', {bubbles: true}));
+            root.dispatchEvent(new Event('change', {bubbles: true}));
             return root.value.includes(value.slice(0, 8));
         }
 
@@ -230,7 +233,7 @@ export async function getPostTextboxWordPoint(
             // to the textarea's viewport position and subtract scroll for the final point.
             return {
                 x: Math.round(
-                    textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft,
+                    textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft + (markerRect.width / 2),
                 ),
                 y: Math.round(
                     textareaRect.top + (markerRect.top - mirrorRect.top) - textarea.scrollTop + (markerRect.height / 2),
