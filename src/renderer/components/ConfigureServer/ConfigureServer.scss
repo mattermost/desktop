@@ -45,6 +45,7 @@
         flex-direction: column;
         margin: auto;
         font-family: 'Open Sans';
+        width: 100%;
 
         .ConfigureServer__content {
             display: flex;
@@ -52,11 +53,14 @@
             flex: 1;
             align-items: center;
             justify-content: center;
-            margin-bottom: 42px;
+            margin: auto;
+            max-width: 1280px;
+            padding: 0 40px;
+            gap: 32px;
 
             .ConfigureServer__message {
                 display: flex;
-                width: 540px;
+                width: 100%;
                 flex-flow: column;
                 align-self: flex-start;
                 z-index: 22;
@@ -64,14 +68,13 @@
 
                 .ConfigureServer__message-title {
                     margin-top: 24px;
-                    margin-bottom: 24px;
-                    padding-right: 60px;
+                    margin-bottom: 20px;
                     color: var(--center-channel-color);
                     font-family: 'Metropolis';
-                    font-size: 80px;
+                    font-size: 64px;
                     font-weight: 600;
                     letter-spacing: -0.05em;
-                    line-height: 88px;
+                    line-height: 68px;
                 }
 
                 .ConfigureServer__message-subtitle {
@@ -79,6 +82,7 @@
                     font-size: 18px;
                     font-weight: 400;
                     line-height: 28px;
+                    margin-top: 0;
                 }
 
                 &.inFromRight {
@@ -115,10 +119,9 @@
             }
 
             .ConfigureServer__card {
-                width: 540px;
+                width: 100%;
                 box-sizing: border-box;
                 border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-                margin-left: 60px;
                 background-color: var(--center-channel-bg);
                 border-radius: 8px;
                 box-shadow: var(--elevation-5);
@@ -127,7 +130,7 @@
                     display: flex;
                     flex: 1;
                     flex-flow: column;
-                    padding: 48px 56px;
+                    padding: 48px;
                     border: none;
                     box-shadow: none;
 
@@ -185,23 +188,7 @@
     }
 }
 
-@media screen and (min-width: 1680px) {
-    .ConfigureServer {
-        .ConfigureServer__body .ConfigureServer__content {
-            .ConfigureServer__message,
-            .ConfigureServer__card {
-                width: 610px;
-            }
-
-            .ConfigureServer__message .ConfigureServer__message-title {
-                padding-right: 130px;
-                margin-top: 48px;
-            }
-        }
-    }
-}
-
-@media screen and (max-width: 1199px) {
+@media screen and (max-width: 1080px) {
     .alternate-link {
         margin-bottom: 0;
     }
@@ -209,20 +196,14 @@
     .ConfigureServer {
         .ConfigureServer__body .ConfigureServer__content {
             flex-direction: column;
-
-            .ConfigureServer__message,
-            .ConfigureServer__card {
-                width: 640px;
-            }
+            max-width: 640px;
 
             .ConfigureServer__message {
                 align-self: center;
                 padding: 24px;
 
                 .ConfigureServer__message-title {
-                    padding-right: 210px;
-                    font-size: 64px;
-                    line-height: 76px;
+                    padding-right: 24px;
                 }
 
                 .ConfigureServer__message-subtitle {
@@ -241,7 +222,7 @@
                 box-shadow: none;
 
                 .ConfigureServer__card-content {
-                    padding: 16px 24px;
+                    padding: 0;
 
                     .ConfigureServer__card-title {
                         display: none;
@@ -261,25 +242,22 @@
 
 @media screen and (max-width: 699px) {
     .ConfigureServer {
+
         .ConfigureServer__body {
-            margin: auto 0;
+            padding: 24px;
+            width: auto;
 
             .ConfigureServer__content {
-                min-width: 375px;
-
-                .ConfigureServer__card {
-                    width: 100%;
-                }
+                min-width: 320px;
+                padding: 0;
 
                 .ConfigureServer__message {
-                    width: auto;
                     align-self: flex-start;
-                    padding: 24px;
+                    padding: 0;
 
                     .ConfigureServer__message-title {
-                        max-width: 271px;
-                        padding-right: 0;
-                        font-size: 45px;
+                        padding-right: 24px;
+                        font-size: 48px;
                         line-height: 56px;
                     }
                 }

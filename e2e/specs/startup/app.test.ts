@@ -94,7 +94,7 @@ test.describe('startup/app', () => {
                 }
                 await welcomeModal.waitForLoadState('domcontentloaded');
                 const text = await welcomeModal.innerText('.WelcomeScreen .WelcomeScreen__button');
-                expect(text).toBe('Get Started');
+                expect(text).toBe('Get started');
             } finally {
                 await emptyApp?.close().catch(() => {});
                 if (userDataDir) {
