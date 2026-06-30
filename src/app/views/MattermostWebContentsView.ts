@@ -22,6 +22,7 @@ import {
     SERVER_URL_CHANGED,
     BROWSER_HISTORY_PUSH,
     RELOAD_VIEW,
+    UPDATE_SHORTCUT_MENU,
 } from 'common/communication';
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -305,6 +306,20 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     openDevTools = () => {
+        // Rebuild the app menu when DevTools gains/loses focus so that Cmd+W
+        // targets the DevTools window rather than the main window.
+        // Pop-out windows do the same via their BrowserWindow 'focus' event; DevTools
+        // windows are not BrowserWindows, so we have to use webContents events instead.
+        const registerDevToolsMenuRefresh = () => {
+            const onDevToolsFocused = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
+            const onDevToolsClosed = () => {
+                this.webContentsView.webContents.off('devtools-focused', onDevToolsFocused);
+                ipcMain.emit(UPDATE_SHORTCUT_MENU);
+            };
+            this.webContentsView.webContents.once('devtools-closed', onDevToolsClosed);
+            this.webContentsView.webContents.on('devtools-focused', onDevToolsFocused);
+        };
+
         // Workaround for a bug with our Dev Tools on Mac
         // For some reason if you open two Dev Tools windows and close the first one, it won't register the closing
         // So what we do here is check to see if it's opened correctly and if not we reset it
@@ -312,12 +327,17 @@ export class MattermostWebContentsView extends EventEmitter {
             const timeout = setTimeout(() => {
                 if (this.webContentsView.webContents.isDevToolsOpened()) {
                     this.webContentsView.webContents.closeDevTools();
+                    registerDevToolsMenuRefresh();
                     this.webContentsView.webContents.openDevTools({mode: 'detach'});
                 }
             }, 500);
             this.webContentsView.webContents.on('devtools-opened', () => {
                 clearTimeout(timeout);
             });
+        }
+
+        if (!this.webContentsView.webContents.isDevToolsOpened()) {
+            registerDevToolsMenuRefresh();
         }
 
         this.webContentsView.webContents.openDevTools({mode: 'detach'});
