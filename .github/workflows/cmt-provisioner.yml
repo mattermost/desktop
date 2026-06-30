@@ -6,11 +6,11 @@ name: CMT Provisioner
 # compatibility-matrix-testing.yml automatically.
 
 on:
-  # Run CMT when a release branch is cut and on every subsequent push to it.
+  # Fire on each RC tag cut (v6.2.0-rc.1, v6.2.0-rc.2, …).
   push:
-    branches:
-      - "release-v*"
-  # Manual runs from the Actions tab (against any branch).
+    tags:
+      - "v*-rc*"
+  # Manual runs from the Actions tab (any ref).
   workflow_dispatch: {}
 
 # This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a
