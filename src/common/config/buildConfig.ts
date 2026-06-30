@@ -38,7 +38,7 @@ const buildConfig: BuildConfig = {
     macAppStoreUpdateURL: 'macappstore://apps.apple.com/us/app/mattermost-desktop/id1614666244',
     windowsStoreUpdateURL: 'ms-windows-store://pdp/?productid=XP8BR8MH3LPKLT',
     linuxUpdateURL: 'https://docs.mattermost.com/deployment-guide/desktop/linux-desktop-install.html',
-    linuxGitHubReleaseURL: 'https://github.com/mattermost/desktop/releases/tag/v',
+    linuxGitHubReleaseURL: 'https://github.com/mattermost/desktop/releases/tag',
     managedResources: ['trusted'],
     allowedProtocols: [
         'mattermost',
