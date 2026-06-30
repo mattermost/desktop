@@ -370,6 +370,8 @@ export async function deleteAllBookmarksInBar(win: ServerView): Promise<void> {
             await sleep(200);
         }
     }
+
+    throw new Error('Failed to delete all bookmarks in the channel bookmarks bar after 10 attempts');
 }
 
 function sleep(ms: number): Promise<void> {
