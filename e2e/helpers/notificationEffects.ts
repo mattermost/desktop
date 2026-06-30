@@ -10,11 +10,11 @@ import type {ElectronApplication} from 'playwright';
  * often emits `failed` without `show`), so flash_taskbar and dock_bounce tests
  * exercise the same flashFrame() gate the notification `show` handler calls.
  */
-export async function triggerFlashEffects(app: ElectronApplication, flash = true): Promise<void> {
+export async function triggerNotificationEffects(app: ElectronApplication, flash = true): Promise<void> {
     await app.evaluate((_, shouldFlash: boolean) => {
-        const trigger = (global as any).__e2eFlashEffects as ((value: boolean) => void) | undefined;
+        const trigger = (global as any).__e2eNotificationEffects as ((value: boolean) => void) | undefined;
         if (!trigger) {
-            throw new Error('__e2eFlashEffects not exposed (NODE_ENV must be test)');
+            throw new Error('__e2eNotificationEffects not exposed (NODE_ENV must be test)');
         }
         trigger(shouldFlash);
     }, flash);

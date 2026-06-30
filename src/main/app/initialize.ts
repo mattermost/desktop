@@ -58,7 +58,7 @@ import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
-import NotificationManager, {getDoNotDisturb} from 'main/notifications';
+import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
@@ -258,9 +258,9 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, ipcValidate(handleMentionNotification, [
         Joi.string().allow('').required(),
         Joi.string().allow('').required(),
-        Joi.string().min(1).required(),
-        Joi.string().min(1).required(),
-        Joi.string().min(1).required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
         Joi.boolean().required(),
         Joi.string().allow('').required(),
     ]));
@@ -302,9 +302,7 @@ async function initializeAfterAppReady() {
         WebContentsManager,
         Config,
         TrayIcon: Tray,
-        NotificationManager,
         Diagnostics,
-        updateNotifier,
         PopoutManager,
     });
 
@@ -313,23 +311,30 @@ async function initializeAfterAppReady() {
     });
 
     setTestField('__e2eClickTrayMenuItem', (label: string) => {
-        const menu = createTrayMenu();
-        const stack = [...menu.items];
-        while (stack.length > 0) {
-            const item = stack.shift();
-            if (!item) {
-                continue;
+        const truncated = label.length > 50 ? `${label.slice(0, 50)}...` : label;
+
+        function clickItem(items: Electron.MenuItem[]): boolean {
+            for (const item of items) {
+                const itemLabel = typeof item.label === 'string' ? item.label : '';
+                if (
+                    (itemLabel === label || itemLabel === truncated) &&
+                    item.enabled !== false &&
+                    item.visible !== false &&
+                    typeof item.click === 'function'
+                ) {
+                    item.click();
+                    return true;
+                }
+                if (item.submenu?.items && clickItem(item.submenu.items)) {
+                    return true;
+                }
             }
-            const itemLabel = typeof item.label === 'string' ? item.label : '';
-            const truncatedMenuLabel = label.length > 50 ? `${label.slice(0, 50)}...` : label;
-            if ((itemLabel === label || itemLabel === truncatedMenuLabel) && typeof item.click === 'function') {
-                item.click();
-                return;
-            }
-            const submenuItems = item.submenu?.items ?? [];
-            stack.push(...submenuItems);
+            return false;
         }
-        throw new Error(`Tray menu item not found: ${label}`);
+
+        if (!clickItem(createTrayMenu().items)) {
+            throw new Error(`Tray menu item not found: ${label}`);
+        }
     });
 
     // Block all NTLM/Negotiate requests by default
@@ -375,10 +380,10 @@ async function initializeAfterAppReady() {
     ServerManager.on(SERVER_URL_CHANGED, updateServerInfo);
     ServerManager.on(SERVER_PRE_AUTH_SECRET_CHANGED, updateServerInfo);
 
+    setTestField('__e2eStubMessageBoxResponses', installMessageBoxStub);
+    setTestField('__e2eRestoreMessageBox', restoreMessageBoxStub);
+    setTestField('__e2eClearCertificateErrorCallbacks', () => certificateErrorCallbacks.clear());
     if (process.env.NODE_ENV === 'test') {
-        setTestField('__e2eStubMessageBoxResponses', installMessageBoxStub);
-        setTestField('__e2eRestoreMessageBox', restoreMessageBoxStub);
-        setTestField('__e2eClearCertificateErrorCallbacks', () => certificateErrorCallbacks.clear());
         if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'cancel') {
             installMessageBoxStub([{response: 1}]);
         } else if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'trust') {
