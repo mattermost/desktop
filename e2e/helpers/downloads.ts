@@ -9,8 +9,8 @@ import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
 import {waitForAppReady} from './appReadiness';
-import {waitForLockFileRelease} from './cleanup';
 import {electronBinaryPath, appDir, emptyConfig} from './config';
+import {closeElectronAppFast} from './electronApp';
 
 export type DownloadServer = {
     server: http.Server;
@@ -93,7 +93,10 @@ export async function startDownloadServer(
         `);
     });
 
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    await new Promise<void>((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', () => resolve());
+    });
     const address = server.address();
     if (!address || typeof address === 'string') {
         throw new Error('Failed to start local download server');
@@ -223,8 +226,7 @@ export async function closeDownloadTestApp(app: ElectronApplication, userDataDir
         delete (global as any).__e2eDownloadPopup;
     }).catch(() => {});
 
-    await app.close().catch(() => {});
-    await waitForLockFileRelease(userDataDir).catch(() => {});
+    await closeElectronAppFast(app, userDataDir).catch(() => {});
 
     if (!fs.existsSync(downloadLocation)) {
         return;

@@ -3,28 +3,21 @@
 
 import type {ElectronApplication} from 'playwright';
 
+const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
+const CLOSE_DOWNLOADS_DROPDOWN_MENU = 'close-downloads-dropdown-menu';
+
 /**
- * Close the downloads dropdown BrowserWindow if it is open.
- * Parallel download specs can leave this window focused and block other UI flows.
+ * Close the downloads dropdown WebContentsView if it is open.
+ * Parallel download specs can leave this overlay focused and block other UI flows.
  */
 export async function closeDownloadsDropdownIfOpen(app: ElectronApplication): Promise<void> {
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
         try {
-            await app.evaluate(({BrowserWindow}) => {
-                for (const win of BrowserWindow.getAllWindows()) {
-                    if (win.isDestroyed()) {
-                        continue;
-                    }
-                    try {
-                        if (win.webContents.getURL().includes('downloadsDropdown.html')) {
-                            win.close();
-                        }
-                    } catch {
-                        // Ignore windows that disappear while iterating.
-                    }
-                }
-            });
+            await app.evaluate(({ipcMain}, channels) => {
+                ipcMain.emit(channels.menu);
+                ipcMain.emit(channels.dropdown);
+            }, {dropdown: CLOSE_DOWNLOADS_DROPDOWN, menu: CLOSE_DOWNLOADS_DROPDOWN_MENU});
             return;
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);

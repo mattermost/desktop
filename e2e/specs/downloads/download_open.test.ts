@@ -30,9 +30,10 @@ test(
             await waitForDownloadFile(userDataDir, downloadLocation, filename);
 
             await app.evaluate(({shell}) => {
-                (global as any).__e2eOpenedPaths = [] as string[];
+                const refs = (global as any).__e2eTestRefs;
+                refs.__e2eOpenedPaths = [] as string[];
                 shell.openPath = async (targetPath: string) => {
-                    (global as any).__e2eOpenedPaths.push(targetPath);
+                    refs.__e2eOpenedPaths.push(targetPath);
                     return '';
                 };
             });
@@ -41,14 +42,22 @@ test(
             await downloadsWindow.click('.DownloadsDropdown__File');
 
             await expect.poll(async () => {
-                return app.evaluate(() => ((global as any).__e2eOpenedPaths as string[] | undefined)?.length ?? 0);
+                return app.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    return (refs.__e2eOpenedPaths as string[] | undefined)?.length ?? 0;
+                });
             }, {timeout: 10_000}).toBeGreaterThan(0);
 
-            const openedPath = await app.evaluate(() => ((global as any).__e2eOpenedPaths as string[])[0]);
+            const openedPath = await app.evaluate(() => {
+                const refs = (global as any).__e2eTestRefs;
+                return (refs.__e2eOpenedPaths as string[])[0];
+            });
             expect(openedPath).toContain(filename);
         } finally {
-            await closeDownloadTestApp(app, userDataDir, downloadLocation);
-            await close();
+            await Promise.allSettled([
+                closeDownloadTestApp(app, userDataDir, downloadLocation),
+                close(),
+            ]);
         }
     },
 );
