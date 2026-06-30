@@ -3,7 +3,7 @@
 
 import classNames from 'classnames';
 import React, {useState, useEffect, useMemo} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {useIntl} from 'react-intl';
 
 import {MODAL_TRANSITION_TIMEOUT} from 'common/utils/constants';
 import Carousel from 'renderer/components/Carousel';
@@ -41,7 +41,7 @@ function WelcomeScreen({
             title: formatMessage({id: 'renderer.components.welcomeScreen.slides.welcome.title', defaultMessage: 'Welcome'}),
             subtitle: formatMessage({
                 id: 'renderer.components.welcomeScreen.slides.welcome.subtitle',
-                defaultMessage: 'Mattermost is an open source collaboration platform for mission-critical work. Secure, flexible, and integrated with the tools you love.',
+                defaultMessage: 'Mattermost is a sovereign collaboration platform, purpose-built for operational environments. Secure by design.',
             }),
             image: (
                 <ThreadsEmptyImage/>
@@ -51,15 +51,10 @@ function WelcomeScreen({
         {
             key: 'Collaborate in real-time',
             title: formatMessage({id: 'renderer.components.welcomeScreen.slides.collaborate.title', defaultMessage: 'Collaborate in real-time'}),
-            subtitle: (
-                <FormattedMessage
-                    id='renderer.components.welcomeScreen.slides.collaborate.subtitle'
-                    defaultMessage='Collaborate effectively with persistent channels, file and code snippet sharing, and workflow automation purpose-built for technical teams.'
-                    values={{
-                        br: (x: React.ReactNode) => (<><br/>{x}</>),
-                    }}
-                />
-            ),
+            subtitle: formatMessage({
+                id: 'renderer.components.welcomeScreen.slides.collaborate.subtitle',
+                defaultMessage: 'Coordinate across teams with persistent mission channels, secure file sharing, and automated workflows.',
+            }),
             image: (
                 <CollaborateImage/>
             ),
@@ -69,7 +64,7 @@ function WelcomeScreen({
             title: formatMessage({id: 'renderer.components.welcomeScreen.slides.calls.title', defaultMessage: 'Start secure calls instantly'}),
             subtitle: formatMessage({
                 id: 'renderer.components.welcomeScreen.slides.calls.subtitle',
-                defaultMessage: 'When typing isn’t fast enough, seamlessly move from chat to audio calls and screenshare without switching tools.',
+                defaultMessage: 'Seamlessly move from chat to audio calls and screen sharing without switching tools or losing context.',
             }),
             image: (
                 <CallsImage/>
@@ -77,10 +72,10 @@ function WelcomeScreen({
         },
         {
             key: 'integrate',
-            title: formatMessage({id: 'renderer.components.welcomeScreen.slides.integrate.title', defaultMessage: 'Integrate with tools you love'}),
+            title: formatMessage({id: 'renderer.components.welcomeScreen.slides.integrate.title', defaultMessage: 'Integrate with your systems'}),
             subtitle: formatMessage({
                 id: 'renderer.components.welcomeScreen.slides.integrate.subtitle',
-                defaultMessage: 'Execute and automate workflows with flexible, custom integrations with popular technical tools like GitHub, GitLab, and ServiceNow.',
+                defaultMessage: 'Integrate with the tools and systems powering your operations — ticketing, conferencing, alerting, or custom integrations.',
             }),
             image: (
                 <ToolsImage/>
@@ -127,7 +122,7 @@ function WelcomeScreen({
                             )}
                             onClick={handleOnGetStartedClick}
                         >
-                            {formatMessage({id: 'renderer.components.welcomeScreen.button.getStarted', defaultMessage: 'Get Started'})}
+                            {formatMessage({id: 'renderer.components.welcomeScreen.button.getStarted', defaultMessage: 'Get started'})}
                         </button>
                     </div>
                 </div>

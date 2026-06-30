@@ -300,7 +300,7 @@ test.describe('policy', () => {
             }
             await welcomeWindow.waitForLoadState('domcontentloaded');
             const buttonText = await welcomeWindow.innerText('.WelcomeScreen .WelcomeScreen__button');
-            expect(buttonText).toBe('Get Started');
+            expect(buttonText).toBe('Get started');
         } finally {
             await closePolicyApp(app, userDataDir);
         }
