@@ -29,7 +29,8 @@ const PLATFORM_GREP: Record<Platform, RegExp> = {
 // count locally (max 4). Override with E2E_WORKERS env var.
 const cpuCount = os.cpus().length;
 const defaultWorkers = process.env.CI ? 2 : Math.min(4, Math.max(1, Math.floor(cpuCount / 2)));
-const workers = process.env.E2E_WORKERS ? parseInt(process.env.E2E_WORKERS, 10) : defaultWorkers;
+const parsedWorkers = process.env.E2E_WORKERS ? Number.parseInt(process.env.E2E_WORKERS, 10) : NaN;
+const workers = Number.isFinite(parsedWorkers) && parsedWorkers > 0 ? parsedWorkers : defaultWorkers;
 
 // Prepended to each test in blob/HTML reports so multi-environment runs are distinguishable
 // when merging. Must NOT reuse platform grep tokens (@linux, @darwin, @win32, @all) —
@@ -69,6 +70,7 @@ function buildPlatformProjects(): Project[] {
         projects.push({
             name: 'wayland',
             grep: /@wayland/,
+            ...policyFilter,
         });
     }
 
