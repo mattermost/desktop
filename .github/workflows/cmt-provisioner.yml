@@ -1,6 +1,6 @@
 name: CMT Provisioner
 
-# Lightweight trigger workflow for Compatibility Matrix Testing (CMT).
+# Trigger workflow for Compatibility Matrix Testing (CMT).
 #
 # Matterwick listens for this workflow's workflow_run:requested event, then provisions one
 # Mattermost cloud instance per version in its CMT version set (auto-derived from Mattermost
@@ -16,38 +16,31 @@ name: CMT Provisioner
 # Triggers:
 #   - Desktop RC tag push (e.g. v6.2.2-rc.1). Desktop does NOT use release-v* branches —
 #     releases are tag-based. Each RC tag push re-runs CMT against the new RC commit.
+#     CMT runs the full suite across its multi-version matrix; no separate release E2E run
+#     is needed (Matterwick's push handler ignores tag pushes — only branch pushes trigger
+#     the push E2E flow).
 #   - Manual run from the Actions tab (workflow_dispatch, any ref).
 #
 # Matterwick is the authoritative gate: its shouldTriggerCMT requires head_branch to match
 # the RC tag pattern ^v?\d+\.\d+\.\d+-rc[.\-]?\d+$ (or be a manual dispatch). The tag
 # glob below is a coarse GitHub-side filter; Matterwick re-validates.
-#
-# NOTE (intentional duplicate coverage): an RC tag push ALSO triggers Matterwick's normal
-# release E2E flow (whole suite against the single latest server version). CMT additionally
-# runs the whole suite against its multi-version matrix, whose set includes the latest server.
-# So on an RC tag push the latest server version gets the suite run twice (once by the normal
-# release flow, once by the CMT latest-version leg). This is expected and accepted.
 
 on:
-  # Run CMT on every desktop RC tag push. The glob matches tags like v6.2.2-rc.1,
-  # v10.0.0-rc.2, etc. Matterwick's isRCTag regex is the authoritative gate.
+  # Fire on each RC tag cut (e.g. v6.2.2-rc.1, v10.0.0-rc.2).
+  # Matterwick's isRCTag regex is the authoritative gate.
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
-  # Manual runs from the Actions tab (against any branch or tag).
+  # Manual runs from the Actions tab (any ref).
   workflow_dispatch: {}
 
-# This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a workflow_run event
-# that Matterwick reacts to; it does not check out the repo or call the GitHub API. Drop all
-# GITHUB_TOKEN scopes so the runner-issued token cannot modify the repo if a step is added later.
+# This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a
+# workflow_run event that matterwick reacts to.
 permissions: {}
 
 jobs:
-  signal:
+  trigger-matterwick:
     runs-on: ubuntu-22.04
     steps:
-      - name: Signal Matterwick to provision CMT servers
-        run: |
-          echo "CMT trigger started."
-          echo "Matterwick provisions one server per configured version and then"
-          echo "dispatches compatibility-matrix-testing.yml automatically."
+      - name: Signal matterwick
+        run: echo "CMT provisioning requested — matterwick will handle provisioning and dispatch."
