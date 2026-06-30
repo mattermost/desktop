@@ -61,10 +61,20 @@ type WorkerFixtures = {
 export const test = base.extend<Fixtures, WorkerFixtures>({
     workerElectronCleanup: [async ({}, use) => {
         await use();
-        await Promise.race([
-            cleanupRegisteredElectronProcesses(),
-            new Promise<void>((resolve) => setTimeout(resolve, 20_000)),
-        ]);
+        let timeoutHandle: NodeJS.Timeout | undefined;
+        try {
+            await Promise.race([
+                cleanupRegisteredElectronProcesses(),
+                new Promise<void>((resolve) => {
+                    timeoutHandle = setTimeout(resolve, 20_000);
+                    timeoutHandle.unref?.();
+                }),
+            ]);
+        } finally {
+            if (timeoutHandle) {
+                clearTimeout(timeoutHandle);
+            }
+        }
     }, {scope: 'worker'}],
 
     appConfig: async ({}, use) => {
