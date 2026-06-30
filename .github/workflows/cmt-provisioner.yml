@@ -1,41 +1,16 @@
 name: CMT Provisioner
 
-# Trigger workflow for Compatibility Matrix Testing (CMT).
-#
-# Matterwick listens for this workflow's workflow_run:requested event, then provisions one
-# Mattermost cloud instance per version in its CMT version set (auto-derived from Mattermost
-# releases, with CMTServerVersions in matterwick config as a manual override) and dispatches
-# compatibility-matrix-testing.yml with the CMT_MATRIX input. When that test workflow
-# completes, Matterwick destroys the provisioned instances (cleanup is keyed off the
-# completed workflow_run run id).
-#
-# The server-version set lives in Matterwick config (managed via gitops), so this workflow
-# takes no inputs. Run it manually from the Actions tab, or let it fire automatically on
-# RC tags (below).
-#
-# Triggers:
-#   - Desktop RC tag push (e.g. v6.2.2-rc.1). Desktop does NOT use release-v* branches —
-#     releases are tag-based. Each RC tag push re-runs CMT against the new RC commit.
-#     CMT runs the full suite across its multi-version matrix; no separate release E2E run
-#     is needed (Matterwick's push handler ignores tag pushes — only branch pushes trigger
-#     the push E2E flow).
-#   - Manual run from the Actions tab (workflow_dispatch, any ref).
-#
-# Matterwick is the authoritative gate: its shouldTriggerCMT requires head_branch to match
-# the RC tag pattern ^v?\d+\.\d+\.\d+-rc[.\-]?\d+$ (or be a manual dispatch). The tag
-# glob below is a coarse GitHub-side filter; Matterwick re-validates.
+# Lightweight signal workflow for Compatibility Matrix Testing (CMT).
+# When this runs, matterwick detects the workflow_run:requested event, provisions one
+# cloud server per version in its CMT set, and dispatches compatibility-matrix-testing.yml.
+# Triggers: RC tag pushes (e.g. v6.2.2-rc.1) and manual workflow_dispatch.
 
 on:
-  # Fire on each RC tag cut (e.g. v6.2.2-rc.1, v10.0.0-rc.2).
-  # Matterwick's isRCTag regex is the authoritative gate.
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
-  # Manual runs from the Actions tab (any ref).
   workflow_dispatch: {}
 
-# This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a
-# workflow_run event that matterwick reacts to.
 permissions: {}
 
 jobs:
