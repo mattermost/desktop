@@ -188,13 +188,6 @@
     }
 }
 
-@media screen and (min-width: 1680px) {
-    .ConfigureServer {
-        .ConfigureServer__body .ConfigureServer__content {
-        }
-    }
-}
-
 @media screen and (max-width: 1080px) {
     .alternate-link {
         margin-bottom: 0;
@@ -204,10 +197,6 @@
         .ConfigureServer__body .ConfigureServer__content {
             flex-direction: column;
             max-width: 640px;
-
-            .ConfigureServer__message,
-            .ConfigureServer__card {
-            }
 
             .ConfigureServer__message {
                 align-self: center;
