@@ -281,6 +281,7 @@ function signalShutdownAndReturn(pid: number): void {
 
 async function attemptClose(app: ElectronApplication, timeoutMs: number): Promise<boolean> {
     let closed = false;
+
     // Only mark closed on successful resolve; a rejected close() must leave
     // closed=false so the caller's SIGTERM/SIGKILL fallback runs.
     const closePromise = app.close().then(() => {
