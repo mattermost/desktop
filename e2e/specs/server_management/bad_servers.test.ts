@@ -301,9 +301,16 @@ test.describe('Bad Server Configurations', () => {
                 await dropdownView!.click('.ServerDropdown .ServerDropdown__button:nth-child(2)');
                 await closeOverlayWindowsIfOpen(app);
 
-                const serverMap = await buildServerMap(app);
-                const mmEntry = serverMap[demoMattermostConfig.servers[0].name][0];
-                const mmServer = mmEntry.win;
+                let mmEntry: Awaited<ReturnType<typeof buildServerMap>>[string][0] | undefined;
+                await expect.poll(async () => {
+                    const serverMap = await buildServerMap(app);
+                    mmEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+                    return Boolean(mmEntry);
+                }, {
+                    timeout: 45_000,
+                    message: 'Working Mattermost server view should be registered after switching servers',
+                }).toBe(true);
+                const mmServer = mmEntry!.win;
                 const cloudHost = new URL(process.env.MM_TEST_SERVER_URL!).host;
 
                 await expect.poll(
@@ -385,6 +392,19 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
+
+                await expect.poll(async () => {
+                    const serverMap = await buildServerMap(app);
+                    const entry = serverMap['Pre-configured Expired Cert Trusted']?.[0];
+                    if (!entry) {
+                        return false;
+                    }
+                    const url = await entry.win.url().catch(() => '');
+                    return url.includes('expired.badssl.com');
+                }, {
+                    timeout: 45_000,
+                    message: 'Trusted expired-cert server view should finish loading before asserting ErrorView absence',
+                }).toBe(true);
 
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeNull();
