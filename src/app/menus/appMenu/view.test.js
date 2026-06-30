@@ -87,6 +87,7 @@ describe('app/menus/appMenu/view', () => {
     };
 
     beforeEach(() => {
+        jest.clearAllMocks();
         ServerManager.getCurrentServerId.mockReturnValue(mockServer.id);
         ServerManager.getServer.mockReturnValue(mockServer);
         WebContentsManager.getFocusedView.mockReturnValue(mockView);

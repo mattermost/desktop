@@ -3,8 +3,10 @@
 
 'use strict';
 
+import {ipcMain} from 'electron';
+
 import AppState from 'common/appState';
-import {BROWSER_HISTORY_PUSH, LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_FAILED, UPDATE_TARGET_URL, UPDATE_SHORTCUT_MENU} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
@@ -27,10 +29,14 @@ jest.mock('electron', () => ({
             loadURL: jest.fn(),
             on: jest.fn(),
             once: jest.fn(),
+            off: jest.fn(),
             reload: jest.fn(),
             getTitle: () => 'title',
             getURL: () => 'http://server-1.com',
             send: jest.fn(),
+            openDevTools: jest.fn(),
+            closeDevTools: jest.fn(),
+            isDevToolsOpened: jest.fn(),
             navigationHistory: {
                 clear: jest.fn(),
                 canGoBack: jest.fn(),
@@ -43,6 +49,7 @@ jest.mock('electron', () => ({
     })),
     ipcMain: {
         on: jest.fn(),
+        emit: jest.fn(),
     },
 }));
 
@@ -541,6 +548,116 @@ describe('main/views/MattermostWebContentsView', () => {
             expect(mattermostView.webContentsView.webContents.once).not.toHaveBeenCalled();
             expect(mattermostView.webContentsView.webContents.reload).not.toHaveBeenCalled();
             expect(mattermostView.webContentsView.webContents.send).not.toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, expect.anything());
+        });
+    });
+
+    describe('openDevTools', () => {
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        let mattermostView;
+
+        beforeEach(() => {
+            mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.isDevToolsOpened.mockReturnValue(false);
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('should register devtools-focused and devtools-closed listeners when DevTools is not open', () => {
+            mattermostView.openDevTools();
+
+            const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
+            expect(onCalls.some(([e]) => e === 'devtools-focused')).toBe(true);
+            const onceCalls = mattermostView.webContentsView.webContents.once.mock.calls;
+            expect(onceCalls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should not register devtools listeners when DevTools is already open', () => {
+            mattermostView.webContentsView.webContents.isDevToolsOpened.mockReturnValue(true);
+
+            mattermostView.openDevTools();
+
+            const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
+            expect(onCalls.some(([e]) => e === 'devtools-focused')).toBe(false);
+            const onceCalls = mattermostView.webContentsView.webContents.once.mock.calls;
+            expect(onceCalls.some(([e]) => e === 'devtools-closed')).toBe(false);
+            expect(mattermostView.webContentsView.webContents.openDevTools).toHaveBeenCalledWith({mode: 'detach'});
+        });
+
+        it('should call openDevTools in detach mode', () => {
+            mattermostView.openDevTools();
+
+            expect(mattermostView.webContentsView.webContents.openDevTools).toHaveBeenCalledWith({mode: 'detach'});
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires', () => {
+            mattermostView.openDevTools();
+
+            const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(onCall).toBeDefined();
+            onCall[1]();
+
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should remove devtools-focused listener and emit UPDATE_SHORTCUT_MENU when devtools-closed fires', () => {
+            mattermostView.openDevTools();
+
+            const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            const onDevToolsFocused = onCall[1];
+            const onceCall = mattermostView.webContentsView.webContents.once.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(onceCall).toBeDefined();
+            onceCall[1]();
+
+            expect(mattermostView.webContentsView.webContents.off).toHaveBeenCalledWith('devtools-focused', onDevToolsFocused);
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should reset DevTools and re-register listeners via mac workaround when DevTools does not open cleanly', () => {
+            jest.useFakeTimers();
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin', configurable: true});
+
+            try {
+                mattermostView.openDevTools();
+
+                // DevTools opens (isDevToolsOpened returns true) but devtools-opened event never fires,
+                // so the timeout runs and triggers the reset workaround
+                mattermostView.webContentsView.webContents.isDevToolsOpened.mockReturnValue(true);
+                jest.advanceTimersByTime(500);
+
+                expect(mattermostView.webContentsView.webContents.closeDevTools).toHaveBeenCalled();
+                expect(mattermostView.webContentsView.webContents.openDevTools).toHaveBeenCalledTimes(2);
+
+                // registerDevToolsMenuRefresh called in both normal path and mac workaround
+                const onceCalls = mattermostView.webContentsView.webContents.once.mock.calls.filter(([e]) => e === 'devtools-closed');
+                expect(onceCalls.length).toBe(2);
+            } finally {
+                Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
+            }
+        });
+
+        it('should cancel the mac workaround timeout when devtools-opened fires normally', () => {
+            jest.useFakeTimers();
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin', configurable: true});
+
+            try {
+                mattermostView.openDevTools();
+
+                // Fire the devtools-opened event to cancel the workaround timeout
+                const devToolsOpenedCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-opened');
+                expect(devToolsOpenedCall).toBeDefined();
+                devToolsOpenedCall[1]();
+
+                mattermostView.webContentsView.webContents.isDevToolsOpened.mockReturnValue(true);
+                jest.advanceTimersByTime(500);
+
+                expect(mattermostView.webContentsView.webContents.closeDevTools).not.toHaveBeenCalled();
+            } finally {
+                Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
+            }
         });
     });
 });
