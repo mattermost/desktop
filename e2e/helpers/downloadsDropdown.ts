@@ -3,8 +3,13 @@
 
 import type {ElectronApplication} from 'playwright';
 
-const CLOSE_DOWNLOADS_DROPDOWN = 'close-downloads-dropdown';
-const CLOSE_DOWNLOADS_DROPDOWN_MENU = 'close-downloads-dropdown-menu';
+import {CLOSE_DOWNLOADS_DROPDOWN, CLOSE_DOWNLOADS_DROPDOWN_MENU} from '../../src/common/communication';
+
+function isTransientNavigationError(message: string): boolean {
+    return message.includes('Execution context was destroyed') ||
+        message.includes('Target closed') ||
+        message.includes('Protocol error');
+}
 
 /**
  * Close the downloads dropdown WebContentsView if it is open.
@@ -21,7 +26,7 @@ export async function closeDownloadsDropdownIfOpen(app: ElectronApplication): Pr
             return;
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            if (!message.includes('Execution context was destroyed')) {
+            if (!isTransientNavigationError(message)) {
                 throw error;
             }
             await new Promise((resolve) => setTimeout(resolve, 100));
