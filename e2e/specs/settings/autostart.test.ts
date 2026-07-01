@@ -19,18 +19,37 @@ test(
         await autostartToggle.waitFor({state: 'visible', timeout: 10_000});
 
         const initialConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')) as {autostart: boolean};
+        let testError: unknown;
         try {
             await autostartToggle.click();
             await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")', {timeout: 15_000});
 
             const updatedConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')) as {autostart: boolean};
             expect(updatedConfig.autostart).toBe(!initialConfig.autostart);
+        } catch (error) {
+            testError = error;
         } finally {
-            const currentConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')) as {autostart: boolean};
-            if (currentConfig.autostart !== initialConfig.autostart) {
-                await autostartToggle.click();
-                await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")', {timeout: 15_000});
+            // Restoring failure here would leave the real OS autostart entry toggled
+            // for subsequent CI runs, so surface it loudly instead of swallowing it —
+            // but don't let a restore failure mask an earlier test failure.
+            try {
+                const currentConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')) as {autostart: boolean};
+                if (currentConfig.autostart !== initialConfig.autostart) {
+                    await autostartToggle.click();
+                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")', {timeout: 15_000});
+                }
+            } catch (restoreError) {
+                // eslint-disable-next-line no-console
+                console.error(
+                    'SET-01: failed to restore autostart to its original value — ' +
+                    'the real OS autostart entry may be left toggled for subsequent runs.',
+                    restoreError,
+                );
+                testError = testError ?? restoreError;
             }
+        }
+        if (testError) {
+            throw testError;
         }
     },
 );

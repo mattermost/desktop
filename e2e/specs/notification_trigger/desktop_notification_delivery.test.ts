@@ -10,17 +10,17 @@ import {loginToMattermost} from '../../helpers/login';
 
 import {triggerTestNotification, verifyNotificationReceivedInDM} from './helpers';
 
+// Only called when the platform actually supports a badge count (darwin, or
+// linux with Unity running — see the unityRunning check at the call site), so
+// app.getBadgeCount() isn't expected to throw here; let a real failure surface
+// instead of masking it as "0 badge".
 async function readBadgeCount(electronApp: ElectronApplication): Promise<number> {
     return electronApp.evaluate(({app}) => {
         if (process.platform === 'darwin') {
             const badge = app.dock?.getBadge() ?? '';
             return badge === '' || Number.isNaN(Number(badge)) ? 0 : parseInt(badge, 10);
         }
-        try {
-            return app.getBadgeCount();
-        } catch {
-            return 0;
-        }
+        return app.getBadgeCount();
     });
 }
 

@@ -243,6 +243,17 @@ class NotificationManager {
             break;
         }
     }
+
+    /** Test-only accessor: find an active Mention by channel. Used to simulate clicking a
+     * just-displayed notification in E2E tests without reaching into private fields via a cast. */
+    public findActiveMentionByChannelId(channelId: string): Mention | undefined {
+        for (const notification of this.allActiveNotifications?.values() ?? []) {
+            if (notification instanceof Mention && notification.channelId === channelId) {
+                return notification;
+            }
+        }
+        return undefined;
+    }
 }
 
 export async function getDoNotDisturb() {
@@ -308,15 +319,7 @@ if (process.env.NODE_ENV === 'test') {
         let mention: Mention | undefined;
         const deadline = Date.now() + 5_000;
         while (!mention && Date.now() < deadline) {
-            const activeNotifications = (notificationManager as unknown as {
-                allActiveNotifications?: Map<string, Notification>;
-            }).allActiveNotifications;
-            for (const notification of activeNotifications?.values() ?? []) {
-                if (notification instanceof Mention && notification.channelId === payload.channelId) {
-                    mention = notification;
-                    break;
-                }
-            }
+            mention = notificationManager.findActiveMentionByChannelId(payload.channelId);
             if (!mention) {
                 // eslint-disable-next-line no-await-in-loop
                 await new Promise((resolve) => setTimeout(resolve, 50));

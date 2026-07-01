@@ -9,8 +9,16 @@ export async function openSettingsWindow(electronApp: ElectronApplication): Prom
     for (let attempt = 0; attempt < 5; attempt++) {
         const existingWindow = electronApp.windows().find((window) => window.url().includes('settings'));
         if (existingWindow) {
-            await existingWindow.waitForLoadState().catch(() => {});
-            return existingWindow;
+            try {
+                await existingWindow.waitForLoadState();
+                return existingWindow;
+            } catch (error) {
+                if (attempt === 4) {
+                    throw error;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 250));
+                continue;
+            }
         }
 
         try {
@@ -31,7 +39,7 @@ export async function openSettingsWindow(electronApp: ElectronApplication): Prom
                     timeout: 3_000,
                 });
 
-            await settingsWindow.waitForLoadState().catch(() => {});
+            await settingsWindow.waitForLoadState();
             return settingsWindow;
         } catch (error) {
             if (attempt === 4) {
