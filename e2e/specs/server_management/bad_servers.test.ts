@@ -29,22 +29,44 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     return {app, userDataDir};
 }
 
-async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
+/**
+ * Click the server dropdown button and wait for its WebContentsView to appear,
+ * re-clicking if it doesn't show up in time. The click occasionally doesn't
+ * register on the very first attempt against a freshly-booted window in CI
+ * (observed on Linux/macOS: the click resolves but no dropdown ever appears,
+ * even given a generous timeout) — re-clicking is a cheap, self-healing check
+ * for a dropped click rather than assuming a single click always lands.
+ */
+async function openServerDropdownWindow(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
-    await mainView!.click('.ServerDropdownButton');
 
-    // Poll instead of waitForEvent: checking app.windows() once and only then
-    // registering a listener can miss a dropdown window created in that gap,
-    // hanging until the timeout (observed in CI on Linux/macOS). Polling isn't
-    // edge-triggered, so it picks the window up on the next tick regardless.
-    await expect.poll(
-        () => app.windows().some((w) => w.url().includes('dropdown')),
-        {timeout: 15_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
-    ).toBe(true);
-    const dropdownView = app.windows().find((w) => w.url().includes('dropdown'))!;
-    await dropdownView.waitForLoadState().catch(() => {});
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await mainView!.click('.ServerDropdownButton');
+        try {
+            // Poll instead of waitForEvent: checking app.windows() once and only
+            // then registering a listener can miss a dropdown window created in
+            // that gap. Polling isn't edge-triggered, so it picks the window up
+            // on the next tick regardless of when it was created.
+            await expect.poll(
+                () => app.windows().some((w) => w.url().includes('dropdown')),
+                {timeout: 5_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
+            ).toBe(true);
+            const dropdownView = app.windows().find((w) => w.url().includes('dropdown'))!;
+            await dropdownView.waitForLoadState().catch(() => {});
+            return dropdownView;
+        } catch (error) {
+            if (attempt === 2) {
+                throw error;
+            }
+        }
+    }
+    throw new Error('Server dropdown window did not appear after 3 attempts');
+}
 
-    await dropdownView!.click('.ServerDropdown .ServerDropdown__button.addServer');
+async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
+    const dropdownView = await openServerDropdownWindow(app);
+
+    await dropdownView.click('.ServerDropdown .ServerDropdown__button.addServer');
 
     // The new-server modal is a WebContentsView, not a BrowserWindow, so it can
     // appear a beat after the click. Polling `app.windows()` picks it up on the
@@ -64,19 +86,7 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
 }
 
 async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
-    const mainView = app.windows().find((w) => w.url().includes('index'));
-    expect(mainView).toBeDefined();
-
-    await mainView!.click('.ServerDropdownButton');
-
-    await expect.poll(
-        () => app.windows().some((w) => w.url().includes('dropdown')),
-        {timeout: 15_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
-    ).toBe(true);
-    const dropdownView = app.windows().find((w) => w.url().includes('dropdown'))!;
-
-    await dropdownView.waitForLoadState().catch(() => {});
-    return dropdownView;
+    return openServerDropdownWindow(app);
 }
 
 test.describe('Bad Server Configurations', () => {

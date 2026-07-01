@@ -41,6 +41,7 @@ test.describe('settings/tray_icon_hide', () => {
         {tag: ['@P2', '@darwin', '@linux']},
         async ({}, testInfo) => {
             const userDataDir = path.join(testInfo.outputDir, 'tray-icon-hide-userdata');
+            fs.mkdirSync(userDataDir, {recursive: true});
             const config = {...demoConfig, showTrayIcon: true};
 
             const app1 = await launchDirectTestApp(userDataDir, config);
