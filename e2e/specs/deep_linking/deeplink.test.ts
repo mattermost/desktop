@@ -85,7 +85,7 @@ test.describe('application', () => {
         await expect.poll(async () => {
             const freshMap = await buildServerMap(app!);
             const freshView = freshMap[serverName]?.[0]?.win;
-            return freshView?.url() ?? '';
+            return (await freshView?.url()) ?? '';
         }, {timeout: 30_000, message: 'deep-linked webContents did not navigate to the expected URL'}).toContain('github.com/test/url');
 
         await expect.poll(
@@ -110,7 +110,7 @@ test.describe('macOS open-url deep link', () => {
             await expect.poll(async () => {
                 const freshMap = await buildServerMap(electronApp);
                 const freshView = freshMap[serverName]?.[0]?.win;
-                return freshView?.url() ?? '';
+                return (await freshView?.url()) ?? '';
             }, {timeout: 30_000, message: 'open-url deep link should navigate the target server view'}).toContain('github.com/test/url');
 
             await expect.poll(

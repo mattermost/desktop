@@ -28,7 +28,7 @@ test(
         await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
         const channelName = 'off-topic';
-        expect(serverWin.url(), 'Precondition: server view must not already be on target channel').not.toContain(channelName);
+        expect(await serverWin.url(), 'Precondition: server view must not already be on target channel').not.toContain(channelName);
 
         const deepLink = channelDeepLinkUrl(mattermostURL, channelName);
 
@@ -67,7 +67,7 @@ test.describe('deep link server URL without trailing slash', () => {
             await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
             const channelName = 'off-topic';
-            expect(serverWin.url(), 'Precondition: server view must not already be on target channel').not.toContain(channelName);
+            expect(await serverWin.url(), 'Precondition: server view must not already be on target channel').not.toContain(channelName);
 
             const deepLink = channelDeepLinkUrl(serverUrlWithoutSlash, channelName);
 

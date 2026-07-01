@@ -4,6 +4,7 @@
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 
 test.describe('copylink', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -17,6 +18,7 @@ test.describe('copylink', () => {
         }
 
         await loginToMattermost(firstServer);
+        await prepareMattermostServerView(electronApp, firstServer.webContentsId);
 
         // Clear clipboard to prevent pollution from other tests
         await electronApp.evaluate(({clipboard}) => {
@@ -89,9 +91,9 @@ test.describe('copylink', () => {
             throw new Error('"Copy Link" item not found in the channel options menu');
         }
 
-        const clipboardText = await electronApp.evaluate(({clipboard}) => {
-            return clipboard.readText();
-        });
-        expect(clipboardText).toContain('/channels/town-square');
+        await expect.poll(async () => electronApp.evaluate(({clipboard}) => clipboard.readText()), {
+            timeout: 10_000,
+            message: 'Copy Link should populate the clipboard with the channel URL',
+        }).toContain('/channels/town-square');
     });
 });
