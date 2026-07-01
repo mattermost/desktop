@@ -38,11 +38,27 @@ async function openPopoutWindow() {
 
     const popoutTimeout = process.platform === 'linux' ? 45_000 : 30_000;
 
-    // Wait for any new window rather than filtering on popout.html in the
-    // predicate: PopoutManager.createNewWindow() creates the window and only
-    // then calls loadURL(popout.html), so the 'window' event can fire before
-    // the URL matches — a URL-filtering predicate can miss the only event.
-    const windowPromise = electronApp.waitForEvent('window', {timeout: popoutTimeout});
+    // Filter on popout.html rather than accepting the first 'window' event:
+    // PopoutManager attaches a separate LoadingScreen WebContentsView (its own
+    // loadingScreen.html) to the same BrowserWindow before the real content
+    // view loads popout.html (src/app/views/loadingScreen.ts), so the first
+    // 'window' event can be the loading screen, not the popout content. The
+    // predicate is re-evaluated on every 'window' event (not just the first),
+    // so it correctly waits for the later event whose URL actually matches —
+    // confirmed via CI: removing this predicate broke the test (the loading
+    // screen page's URL never becomes popout.html, since it's a different
+    // WebContents entirely), so it's a genuine requirement, not just a
+    // theoretical race.
+    const windowPromise = electronApp.waitForEvent('window', {
+        timeout: popoutTimeout,
+        predicate: (page) => {
+            try {
+                return page.url().includes('popout.html');
+            } catch {
+                return false;
+            }
+        },
+    });
 
     // Trigger through the real File → New Window menu item (which calls
     // PopoutManager.createNewWindow for the current server) so the
@@ -50,7 +66,6 @@ async function openPopoutWindow() {
     await clickApplicationMenuItem(electronApp, 'file', {label: 'New Window'});
 
     const popout = await windowPromise;
-    await popout.waitForURL(/popout\.html/, {timeout: popoutTimeout});
     await popout.waitForLoadState('domcontentloaded').catch(() => {});
     return popout;
 }

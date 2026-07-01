@@ -31,14 +31,18 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
 
 /**
  * Click the server dropdown button and wait for its WebContentsView to appear,
- * re-clicking if it doesn't show up in time. The click occasionally doesn't
- * register on the very first attempt against a freshly-booted window in CI
- * (observed on Linux/macOS: the click resolves but no dropdown ever appears,
- * even given a generous timeout) — re-clicking is a cheap, self-healing check
- * for a dropped click rather than assuming a single click always lands.
+ * re-clicking if it doesn't show up in time. Retrying 3x with the click alone
+ * (no bringToFront) still failed every attempt in CI, which is what a window
+ * that never receives OS-level focus would look like: Playwright's click()
+ * only requires the element to be visible/stable/enabled in the DOM, not that
+ * the window is actually frontmost, so a background window can "successfully"
+ * receive the click without the app treating it as a focused user interaction.
+ * drag_and_drop.test.ts and popout_windows.test.ts both bringToFront() before
+ * their first interaction with a freshly-launched window; this didn't.
  */
 async function openServerDropdownWindow(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
+    await mainView!.bringToFront().catch(() => {});
 
     for (let attempt = 0; attempt < 3; attempt++) {
         await mainView!.click('.ServerDropdownButton');
