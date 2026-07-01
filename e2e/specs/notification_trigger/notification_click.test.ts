@@ -1,11 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BROWSER_HISTORY_PUSH, NOTIFICATION_CLICKED} from '../../../src/common/communication';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
+import {hideMainWindow} from '../../helpers/tray';
 
 test.use({appConfig: demoMattermostConfig});
 test.setTimeout(120_000);
@@ -21,7 +21,8 @@ test(
 
         const releaseLock = await acquireExclusiveLock('notification-state');
         try {
-            const serverWin = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
+            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+            const serverWin = serverEntry?.win;
             expect(serverWin, 'No server view available').toBeTruthy();
 
             await loginToMattermost(serverWin!);
@@ -53,10 +54,7 @@ test(
             expect(targetChannel?.url, 'Could not resolve off-topic sidebar URL').toBeTruthy();
             const targetPathname = new URL(targetChannel!.url!).pathname;
 
-            await electronApp.evaluate(() => {
-                const refs = (global as any).__e2eTestRefs;
-                refs?.MainWindow?.get?.()?.hide();
-            });
+            await hideMainWindow(electronApp);
 
             await expect.poll(
                 () => electronApp.evaluate(() => {
@@ -67,25 +65,23 @@ test(
                 {timeout: 5_000, message: 'Main window should be hidden before notification click'},
             ).toBe(false);
 
-            await electronApp.evaluate(({webContents, ipcMain}, payload) => {
-                const wc = webContents.fromId(payload.webContentsId);
-                if (!wc || wc.isDestroyed()) {
-                    throw new Error(`webContents ${payload.webContentsId} is not available`);
+            await electronApp.evaluate((payload) => {
+                const displayAndClick = (global as any).__e2eDisplayAndClickMention as
+                    | ((value: typeof payload) => Promise<void>)
+                    | undefined;
+                if (!displayAndClick) {
+                    throw new Error('__e2eDisplayAndClickMention not exposed (NODE_ENV must be test)');
                 }
-
-                const focus = () => {
-                    const refs = (global as any).__e2eTestRefs;
-                    refs?.MainWindow?.show?.();
-                    ipcMain.off(payload.browserHistoryPush, focus);
-                    delete (global as any).__e2eNotificationClickFocus;
-                };
-                (global as any).__e2eNotificationClickFocus = focus;
-                ipcMain.on(payload.browserHistoryPush, focus);
-                wc.send(payload.channel, payload.channelId, payload.teamId, payload.url);
+                return displayAndClick({
+                    webContentsId: payload.webContentsId,
+                    title: 'E2E mention',
+                    body: 'Notification click test',
+                    channelId: payload.channelId,
+                    teamId: payload.teamId,
+                    url: payload.url,
+                });
             }, {
-                webContentsId: serverMap[demoMattermostConfig.servers[0].name]![0]!.webContentsId,
-                channel: NOTIFICATION_CLICKED,
-                browserHistoryPush: BROWSER_HISTORY_PUSH,
+                webContentsId: serverEntry!.webContentsId,
                 channelId: targetChannel!.id,
                 teamId: targetChannel!.teamId,
                 url: targetChannel!.url!,
@@ -105,21 +101,13 @@ test(
                 {timeout: 10_000, message: 'Main window should be visible after notification click navigation'},
             ).toBe(true);
         } finally {
-            // Always restore MainWindow visibility so cross-test workers don't see a
-            // hidden window if BROWSER_HISTORY_PUSH never fired or timed out.
-            await electronApp.evaluate(({ipcMain}, channel) => {
+            await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
                 const mainWindow = refs?.MainWindow?.get?.();
                 if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
                     refs?.MainWindow?.show?.();
                 }
-
-                const focus = (global as any).__e2eNotificationClickFocus;
-                if (focus) {
-                    ipcMain.off(channel, focus);
-                    delete (global as any).__e2eNotificationClickFocus;
-                }
-            }, BROWSER_HISTORY_PUSH).catch(() => {});
+            }).catch(() => {});
             await releaseLock();
         }
     },

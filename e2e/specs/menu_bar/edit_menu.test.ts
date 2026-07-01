@@ -16,7 +16,7 @@ import type {ServerView} from '../../helpers/serverView';
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 type ElectronPage = import('playwright').Page;
 
-let electronApp: ElectronApplication;
+let electronApp: ElectronApplication | undefined;
 let mainWindow: ElectronPage;
 let firstServer: ServerView;
 let firstServerId: number;
@@ -103,7 +103,11 @@ test.describe('edit_menu', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronAppFast(electronApp, userDataDir);
+        if (electronApp && userDataDir) {
+            await closeElectronAppFast(electronApp, userDataDir);
+        } else if (electronApp) {
+            await electronApp.close().catch(() => {});
+        }
     });
 
     test('MM-T807 Undo in the post textbox', {tag: ['@P2', '@all']}, async () => {

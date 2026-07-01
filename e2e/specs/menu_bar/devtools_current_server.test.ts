@@ -27,7 +27,6 @@ test.describe('menu_bar/devtools_current_server', () => {
         async ({electronApp, serverMap}) => {
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
             }
 
             const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];

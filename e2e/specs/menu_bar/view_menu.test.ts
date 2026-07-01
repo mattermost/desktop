@@ -16,7 +16,7 @@ import {buildServerMap} from '../../helpers/serverMap';
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 type ElectronPage = import('playwright').Page;
 
-let electronApp: ElectronApplication;
+let electronApp: ElectronApplication | undefined;
 let mainWindow: ElectronPage;
 let userDataDir: string;
 
@@ -132,7 +132,11 @@ test.describe('menu/view', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronAppFast(electronApp, userDataDir);
+        if (electronApp && userDataDir) {
+            await closeElectronAppFast(electronApp, userDataDir);
+        } else if (electronApp) {
+            await electronApp.close().catch(() => {});
+        }
     });
 
     test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async () => {

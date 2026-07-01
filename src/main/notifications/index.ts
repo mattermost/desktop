@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, shell, Notification, ipcMain} from 'electron';
+import {app, shell, Notification, ipcMain, webContents} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
@@ -281,6 +281,55 @@ function flashFrame(flash: boolean) {
 
 if (process.env.NODE_ENV === 'test') {
     setTestField('__e2eNotificationEffects', flashFrame);
+    setTestField('__e2eDisplayAndClickMention', async (payload: {
+        webContentsId: number;
+        title: string;
+        body: string;
+        channelId: string;
+        teamId: string;
+        url: string;
+    }) => {
+        const wc = webContents.fromId(payload.webContentsId);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.webContentsId} is not available`);
+        }
+
+        const displayPromise = notificationManager.displayMention(
+            payload.title,
+            payload.body,
+            payload.channelId,
+            payload.teamId,
+            payload.url,
+            true,
+            wc,
+            '',
+        );
+
+        let mention: Mention | undefined;
+        const deadline = Date.now() + 5_000;
+        while (!mention && Date.now() < deadline) {
+            const activeNotifications = (notificationManager as unknown as {
+                allActiveNotifications?: Map<string, Notification>;
+            }).allActiveNotifications;
+            for (const notification of activeNotifications?.values() ?? []) {
+                if (notification instanceof Mention && notification.channelId === payload.channelId) {
+                    mention = notification;
+                    break;
+                }
+            }
+            if (!mention) {
+                // eslint-disable-next-line no-await-in-loop
+                await new Promise((resolve) => setTimeout(resolve, 50));
+            }
+        }
+
+        if (!mention) {
+            throw new Error('Mention notification was not created');
+        }
+
+        mention.emit('click');
+        await displayPromise.catch(() => {});
+    });
 }
 
 const notificationManager = new NotificationManager();

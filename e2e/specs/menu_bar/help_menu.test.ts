@@ -21,10 +21,14 @@ test.describe('menu_bar/help_menu', () => {
 
             await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
-                refs.updateNotifier.__e2eCheckForUpdatesCalls = 0;
-                refs.updateNotifier.__e2eOriginalCheckForUpdates = refs.updateNotifier.checkForUpdates;
-                refs.updateNotifier.checkForUpdates = () => {
-                    refs.updateNotifier.__e2eCheckForUpdatesCalls += 1;
+                const updateNotifier = refs?.updateNotifier;
+                if (!updateNotifier) {
+                    throw new Error('updateNotifier is not exposed in __e2eTestRefs');
+                }
+                updateNotifier.__e2eCheckForUpdatesCalls = 0;
+                updateNotifier.__e2eOriginalCheckForUpdates = updateNotifier.checkForUpdates;
+                updateNotifier.checkForUpdates = () => {
+                    updateNotifier.__e2eCheckForUpdatesCalls += 1;
                 };
             });
 

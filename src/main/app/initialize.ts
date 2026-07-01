@@ -304,6 +304,7 @@ async function initializeAfterAppReady() {
         TrayIcon: Tray,
         Diagnostics,
         PopoutManager,
+        updateNotifier,
     });
 
     setTestField('__e2eOpenDeepLink', (url: string) => {

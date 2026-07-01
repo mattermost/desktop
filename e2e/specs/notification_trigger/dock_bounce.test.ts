@@ -7,44 +7,8 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
+import {installDockBounceSpy, restoreDockBounceSpy} from '../../helpers/methodSpy';
 import {triggerNotificationEffects} from '../../helpers/notificationEffects';
-
-// ── Production code path ───────────────────────────────────────────────
-// src/main/notifications/index.ts :: flashFrame()
-//   if (process.platform === 'darwin' && Config.notifications.bounceIcon
-//       && Config.notifications.bounceIconType) {
-//     app.dock?.bounce(Config.notifications.bounceIconType);
-//   }
-//
-// Invoke the production flashFrame() helper (same path notification `show`
-// handlers use). OS notifications are unreliable in headless CI.
-
-async function installDockBounceSpy(electronApp: ElectronApplication): Promise<void> {
-    await electronApp.evaluate(({app}) => {
-        (app as any).__e2eDockBounceCalls = [];
-        const dock = app.dock;
-        if (!dock) {
-            return;
-        }
-        const originalBounce = dock.bounce.bind(dock);
-        (dock as any).__e2eOriginalBounce = originalBounce;
-        dock.bounce = ((type?: 'informational' | 'critical') => {
-            (app as any).__e2eDockBounceCalls.push(type ?? 'informational');
-            return originalBounce(type);
-        }) as typeof dock.bounce;
-    });
-}
-
-async function restoreDockBounce(electronApp: ElectronApplication): Promise<void> {
-    await electronApp.evaluate(({app}) => {
-        const dock = app.dock;
-        if (dock && (dock as any).__e2eOriginalBounce) {
-            dock.bounce = (dock as any).__e2eOriginalBounce;
-            delete (dock as any).__e2eOriginalBounce;
-        }
-        delete (app as any).__e2eDockBounceCalls;
-    });
-}
 
 type BounceConfigArgs = {bounceIcon: boolean; bounceIconType: 'informational' | 'critical' | null};
 
@@ -92,7 +56,7 @@ test.describe('notification_trigger/dock_bounce', () => {
                         'dock.bounce() must NOT be called when bounceIcon is false',
                     ).toHaveLength(0);
                 } finally {
-                    await restoreDockBounce(electronApp);
+                    await restoreDockBounceSpy(electronApp);
                 }
             } finally {
                 await releaseLock();
@@ -119,7 +83,7 @@ test.describe('notification_trigger/dock_bounce', () => {
                         {timeout: 10_000, message: 'dock.bounce("informational") must be called'},
                     ).toContain('informational');
                 } finally {
-                    await restoreDockBounce(electronApp);
+                    await restoreDockBounceSpy(electronApp);
                 }
             } finally {
                 await releaseLock();
@@ -146,7 +110,7 @@ test.describe('notification_trigger/dock_bounce', () => {
                         {timeout: 10_000, message: 'dock.bounce("critical") must be called'},
                     ).toContain('critical');
                 } finally {
-                    await restoreDockBounce(electronApp);
+                    await restoreDockBounceSpy(electronApp);
                 }
             } finally {
                 await releaseLock();
