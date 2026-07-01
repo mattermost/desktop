@@ -26,6 +26,11 @@ test.describe('mattermost/context_menu', () => {
 
     let serverEntry: ServerEntry | undefined;
     let firstServer: ServerView | undefined;
+    let cleanupCreatedTeam: (() => Promise<void>) | undefined;
+
+    test.afterAll(async () => {
+        await cleanupCreatedTeam?.();
+    });
 
     // serverMap is test-scoped; Playwright forbids it in beforeAll, so shared
     // login runs in beforeEach (cheap once the session cookie is established).
@@ -71,7 +76,8 @@ test.describe('mattermost/context_menu', () => {
             expect(firstServer, 'Shared server view must be initialized in beforeEach').toBeTruthy();
 
             await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-            await ensureMultipleTeams(electronApp, firstServer!, serverEntry!.webContentsId);
+            const {cleanup} = await ensureMultipleTeams(electronApp, firstServer!, serverEntry!.webContentsId);
+            cleanupCreatedTeam = cleanup;
             await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await firstServer!.waitForSelector('#teamSidebarWrapper, button[aria-label$=" team"]', {timeout: 15_000});
 

@@ -21,10 +21,13 @@ export const OBSOLETE_TLS_ERROR = /ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_
 
 /**
  * Insecure cipher/protocol endpoints (e.g. RC4-only). Modern Chromium may reset the
- * connection instead of completing a handshake with OBSOLETE_CIPHER, so accept the
- * real terminal errors the desktop app surfaces after retries.
+ * connection instead of completing a handshake with OBSOLETE_CIPHER, so accept that
+ * specific reset alongside the SSL-handshake errors. Deliberately does NOT include
+ * generic codes like ERR_CONNECTION_CLOSED or ERR_NETWORK_* — those can fire for
+ * unrelated causes (CI network blips, proxy resets) and would let this test pass
+ * without the app ever having rejected an insecure cipher.
  */
-export const INSECURE_CIPHER_ERROR = /ERR_(SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)|CONNECTION_RESET|CONNECTION_CLOSED|NETWORK_)/;
+export const INSECURE_CIPHER_ERROR = /ERR_(SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)|CONNECTION_RESET)/;
 
 export function getMainWindow(app: ElectronApplication): Page {
     const mainWindow = app.windows().find((window) => window.url().includes('index'));
@@ -47,13 +50,19 @@ export async function reloadServerViewsFromMainProcess(app: ElectronApplication)
     await app.evaluate(() => {
         const refs = (global as any).__e2eTestRefs;
         if (!refs) {
+            // Not yet populated this early in boot — caller polls and retries.
             return;
         }
-        const servers: Array<{id: string}> = refs.ServerManager?.getAllServers?.() ?? [];
+
+        // Deliberately NOT optional-chained past this point: if ServerManager/
+        // ViewManager/WebContentsManager are renamed, this should throw immediately
+        // instead of silently reloading nothing and leaving the caller to time out
+        // 45s later with a generic "ErrorView did not appear" message.
+        const servers: Array<{id: string}> = refs.ServerManager.getAllServers();
         for (const server of servers) {
-            const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
+            const views: Array<{id: string}> = refs.ViewManager.getViewsByServerId(server.id);
             for (const view of views) {
-                const wcEntry = refs.WebContentsManager?.getView?.(view.id);
+                const wcEntry = refs.WebContentsManager.getView(view.id);
                 wcEntry?.reload?.();
             }
         }
