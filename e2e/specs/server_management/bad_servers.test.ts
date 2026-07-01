@@ -6,16 +6,24 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {
+    DNS_FAILURE_ERROR,
+    EXPIRED_CERT_ERROR,
+    EXPIRED_CERT_URL,
+    INSECURE_CIPHER_ERROR,
+    OBSOLETE_TLS_ERROR,
+    RC4_CIPHER_URL,
+    TLS_1_0_URL,
+    TLS_1_1_URL,
+    UNREACHABLE_SERVER_URL,
+    expectConnectionErrorView,
+    getMainWindow,
+    waitForRendererReadyThenReload,
+} from '../../helpers/badServer';
 import {electronBinaryPath, appDir, demoConfig, demoMattermostConfig} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
-
-const UNREACHABLE_SERVER_URL = 'https://jhsgefhjsaeiuofhseifuphoauifdhjauiowijdfcpohuawoiudfjpdhauwodjahwdpojaoiwdhawhdiuawd.com';
-const EXPIRED_CERT_URL = 'https://expired.badssl.com';
-const TLS_1_0_URL = 'https://tls-v1-0.badssl.com:1010';
-const TLS_1_1_URL = 'https://tls-v1-1.badssl.com';
-const RC4_CIPHER_URL = 'https://rc4.badssl.com';
 
 async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     const {mkdirSync} = await import('fs');
@@ -34,8 +42,8 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
 }
 
 async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
-    const mainView = app.windows().find((w) => w.url().includes('index'));
-    await mainView!.click('.ServerDropdownButton');
+    const mainView = getMainWindow(app);
+    await mainView.click('.ServerDropdownButton');
     let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
     if (!dropdownView) {
         dropdownView = await app.waitForEvent('window', {
@@ -51,54 +59,9 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
     return newServerView;
 }
 
-/**
- * Wait for the renderer's MainPage to fully mount (so its onLoadFailed listener is
- * registered), then reload the current server view so any load failure that fired
- * before the listener was ready is re-triggered and properly propagated to the UI.
- *
- * Pre-configured bad-server tests fail without this because Chromium can reject an
- * SSL certificate before the renderer finishes mounting and registering IPC listeners,
- * causing the ErrorView never to appear.
- */
-async function waitForRendererThenReload(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
-    const mainWindow = app.windows().find((w) => w.url().includes('index'));
-    if (!mainWindow) {
-        return;
-    }
-
-    // ServerDropdownButton renders once componentDidMount has finished and IPC listeners
-    // are registered, so waiting for it is a reliable proxy for "renderer is ready".
-    await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000}).catch(() => {});
-
-    // Reload server views so the load-failure fires after IPC listeners are registered.
-    // Use getAllServers() (same API as buildServerMap) — getCurrentServerId() does not exist.
-    //
-    // IMPORTANT: reload through the MattermostWebContentsView (wcEntry.reload()), NOT the
-    // raw webContents.reload(). The app only emits LOAD_FAILED (which drives the ErrorView)
-    // from its own load() promise's .catch() on ERR_CERT_*. A raw webContents.reload()
-    // re-triggers the Chromium load outside that promise, so the certificate rejection is
-    // never surfaced to the renderer and the ErrorView never appears.
-    await app.evaluate(() => {
-        const refs = (global as any).__e2eTestRefs;
-        if (!refs) {
-            return;
-        }
-        const servers: Array<{id: string}> = refs.ServerManager?.getAllServers?.() ?? [];
-        for (const server of servers) {
-            const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
-            for (const view of views) {
-                const wcEntry = refs.WebContentsManager?.getView?.(view.id);
-                wcEntry?.reload?.();
-            }
-        }
-    });
-}
-
 async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
-    const mainView = app.windows().find((w) => w.url().includes('index'));
-    expect(mainView).toBeDefined();
-
-    await mainView!.click('.ServerDropdownButton');
+    const mainView = getMainWindow(app);
+    await mainView.click('.ServerDropdownButton');
 
     let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
     if (!dropdownView) {
@@ -128,16 +91,9 @@ test.describe('Bad Server Configurations', () => {
                 await expect.poll(() => {
                     const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
                     return cfg.servers.find((s: {name: string}) => s.name === 'Unreachable Server');
-                }, {timeout: 10000}).toBeDefined();
+                }, {timeout: 10_000}).toBeDefined();
 
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
+                await expectConnectionErrorView(getMainWindow(app), DNS_FAILURE_ERROR);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
@@ -156,16 +112,9 @@ test.describe('Bad Server Configurations', () => {
                 await expect.poll(() => {
                     const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
                     return cfg.servers.find((s: {name: string}) => s.name === 'Expired Cert Server');
-                }, {timeout: 10000}).toBeDefined();
+                }, {timeout: 10_000}).toBeDefined();
 
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
+                await expectConnectionErrorView(getMainWindow(app), EXPIRED_CERT_ERROR);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
@@ -184,16 +133,9 @@ test.describe('Bad Server Configurations', () => {
                 await expect.poll(() => {
                     const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
                     return cfg.servers.find((s: {name: string}) => s.name === 'TLS 1.0 Server');
-                }, {timeout: 10000}).toBeDefined();
+                }, {timeout: 10_000}).toBeDefined();
 
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toMatch(/ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/);
+                await expectConnectionErrorView(getMainWindow(app), OBSOLETE_TLS_ERROR);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
@@ -212,16 +154,9 @@ test.describe('Bad Server Configurations', () => {
                 await expect.poll(() => {
                     const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
                     return cfg.servers.find((s: {name: string}) => s.name === 'RC4 Cipher Server');
-                }, {timeout: 10000}).toBeDefined();
+                }, {timeout: 10_000}).toBeDefined();
 
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toMatch(/ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)/);
+                await expectConnectionErrorView(getMainWindow(app), INSECURE_CIPHER_ERROR);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
@@ -245,14 +180,7 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
+                await expectConnectionErrorView(getMainWindow(app), DNS_FAILURE_ERROR);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(userDataDir);
@@ -278,15 +206,7 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
+                await expectConnectionErrorView(getMainWindow(app), DNS_FAILURE_ERROR);
 
                 const dropdownView = await openServerDropdown(app);
                 await dropdownView!.click('.ServerDropdown .ServerDropdown__button:nth-child(2)');
@@ -319,18 +239,8 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: badCertUserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
-                // Ensure the renderer has mounted its IPC listeners before the load failure
-                // fires, then reload to re-trigger the failure so it reaches the UI.
-                await waitForRendererThenReload(app);
-
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
+                const mainWindow = await waitForRendererReadyThenReload(app, EXPIRED_CERT_ERROR);
+                await expectConnectionErrorView(mainWindow, EXPIRED_CERT_ERROR);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(badCertUserDataDir);
@@ -376,17 +286,13 @@ test.describe('Bad Server Configurations', () => {
             try {
                 await waitForAppReady(app);
 
-                // app.windows() can briefly lag behind app readiness while Playwright
-                // registers the freshly-shown BrowserWindow as a Page, so poll for the
-                // index window instead of reading it once.
                 await expect.poll(
                     () => app.windows().some((w) => w.url().includes('index')),
                     {timeout: 15_000},
                 ).toBe(true);
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
+                const mainWindow = getMainWindow(app);
 
-                const errorView = await mainWindow!.$('.ErrorView');
+                const errorView = await mainWindow.$('.ErrorView');
                 expect(errorView).toBeNull();
             } finally {
                 await app.close();
@@ -409,14 +315,7 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: tls11UserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toMatch(/ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/);
+                await expectConnectionErrorView(getMainWindow(app), OBSOLETE_TLS_ERROR);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(tls11UserDataDir);
@@ -438,18 +337,8 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: rc4UserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
-                // Ensure the renderer has mounted its IPC listeners before the load failure
-                // fires, then reload to re-trigger the failure so it reaches the UI.
-                await waitForRendererThenReload(app);
-
-                const mainWindow = app.windows().find((w) => w.url().includes('index'));
-                expect(mainWindow).toBeDefined();
-                await mainWindow!.waitForSelector('.ErrorView', {timeout: 30000});
-                const errorView = await mainWindow!.$('.ErrorView');
-                expect(errorView).toBeDefined();
-
-                const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
-                expect(errorInfo).toMatch(/ERR_SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH)/);
+                const mainWindow = await waitForRendererReadyThenReload(app, INSECURE_CIPHER_ERROR);
+                await expectConnectionErrorView(mainWindow, INSECURE_CIPHER_ERROR);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(rc4UserDataDir);

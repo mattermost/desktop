@@ -1,0 +1,131 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import {expect} from '@playwright/test';
+import type {Page} from 'playwright';
+
+export const UNREACHABLE_SERVER_URL = 'https://jhsgefhjsaeiuofhseifuphoauifdhjauiowijdfcpohuawoiudfjpdhauwodjahwdpojaoiwdhawhdiuawd.com';
+export const EXPIRED_CERT_URL = 'https://expired.badssl.com';
+export const TLS_1_0_URL = 'https://tls-v1-0.badssl.com:1010';
+export const TLS_1_1_URL = 'https://tls-v1-1.badssl.com';
+export const RC4_CIPHER_URL = 'https://rc4.badssl.com';
+
+/** DNS / host resolution failures (stable across platforms). */
+export const DNS_FAILURE_ERROR = /ERR_NAME_NOT_RESOLVED/;
+
+/** Certificate expiry failures surfaced before retry exhaustion. */
+export const EXPIRED_CERT_ERROR = /ERR_CERT_DATE_INVALID/;
+
+/** Obsolete TLS versions rejected during handshake. */
+export const OBSOLETE_TLS_ERROR = /ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)/;
+
+/**
+ * Insecure cipher/protocol endpoints (e.g. RC4-only). Modern Chromium may reset the
+ * connection instead of completing a handshake with OBSOLETE_CIPHER, so accept the
+ * real terminal errors the desktop app surfaces after retries.
+ */
+export const INSECURE_CIPHER_ERROR = /ERR_(SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)|CONNECTION_RESET|CONNECTION_CLOSED|NET_)/;
+
+type ElectronApp = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
+
+export function getMainWindow(app: ElectronApp): Page {
+    const mainWindow = app.windows().find((window) => window.url().includes('index'));
+    expect(mainWindow, 'Main window (index) must exist').toBeDefined();
+    return mainWindow!;
+}
+
+/**
+ * Wait until the renderer MainPage has mounted (IPC listeners registered).
+ */
+export async function waitForRendererReady(mainWindow: Page): Promise<void> {
+    await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000});
+}
+
+/**
+ * Reload server views through the app's MattermostWebContentsView.reload() so
+ * LOAD_FAILED is emitted on certificate / connection errors.
+ */
+export async function reloadServerViewsFromMainProcess(app: ElectronApp): Promise<void> {
+    await app.evaluate(() => {
+        const refs = (global as any).__e2eTestRefs;
+        if (!refs) {
+            return;
+        }
+        const servers: Array<{id: string}> = refs.ServerManager?.getAllServers?.() ?? [];
+        for (const server of servers) {
+            const views: Array<{id: string}> = refs.ViewManager?.getViewsByServerId?.(server.id) ?? [];
+            for (const view of views) {
+                const wcEntry = refs.WebContentsManager?.getView?.(view.id);
+                wcEntry?.reload?.();
+            }
+        }
+    });
+}
+
+/**
+ * Wait for ErrorView with a terminal Chromium load error. Ignores transient
+ * ERR_ABORTED states that can appear while a reload is in flight.
+ */
+export async function waitForTerminalLoadFailure(
+    mainWindow: Page,
+    acceptedError: RegExp,
+    timeoutMs = 45_000,
+): Promise<string> {
+    let errorInfo = '';
+
+    await expect.poll(async () => {
+        if (!(await mainWindow.isVisible('.ErrorView'))) {
+            return false;
+        }
+
+        errorInfo = await mainWindow.innerText('.ErrorView-techInfo');
+        if ((/ERR_ABORTED/).test(errorInfo) && !acceptedError.test(errorInfo)) {
+            return false;
+        }
+
+        return acceptedError.test(errorInfo);
+    }, {
+        timeout: timeoutMs,
+        message: `ErrorView must show a terminal load failure matching ${acceptedError}`,
+    }).toBe(true);
+
+    return errorInfo;
+}
+
+export async function waitForRendererReadyThenReload(
+    app: ElectronApp,
+    acceptedError: RegExp,
+): Promise<Page> {
+    const mainWindow = getMainWindow(app);
+    await waitForRendererReady(mainWindow);
+
+    const hasTerminalFailure = async (): Promise<boolean> => {
+        if (!(await mainWindow.isVisible('.ErrorView'))) {
+            return false;
+        }
+        const errorInfo = await mainWindow.innerText('.ErrorView-techInfo');
+        if ((/ERR_ABORTED/).test(errorInfo) && !acceptedError.test(errorInfo)) {
+            return false;
+        }
+        return acceptedError.test(errorInfo);
+    };
+
+    if (!(await hasTerminalFailure())) {
+        await reloadServerViewsFromMainProcess(app);
+    }
+
+    return mainWindow;
+}
+
+export async function expectConnectionErrorView(
+    mainWindow: Page,
+    acceptedError: RegExp,
+    options?: {timeoutMs?: number},
+): Promise<void> {
+    const errorInfo = await waitForTerminalLoadFailure(
+        mainWindow,
+        acceptedError,
+        options?.timeoutMs,
+    );
+    expect(errorInfo).toMatch(acceptedError);
+}

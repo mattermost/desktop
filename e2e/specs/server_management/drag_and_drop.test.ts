@@ -11,6 +11,8 @@ import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
 import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {loginToMattermost} from '../../helpers/login';
+import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {buildServerMap} from '../../helpers/serverMap';
 
 if (!process.env.MM_TEST_SERVER_URL) {
@@ -130,8 +132,11 @@ async function resetState() {
     mainWindow = await waitForWindow(electronApp, 'index');
     await mainWindow.bringToFront().catch(() => {});
     await mainWindow.keyboard.press('Escape').catch(() => {});
+
     const mmServer = await getMattermostServer();
-    await mmServer.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
+    await prepareMattermostServerView(electronApp, mmServer.webContentsId);
+    await waitForMattermostShell(mmServer, {timeout: 45_000});
+    await recoverServerViewIfNeeded(mmServer);
     await mmServer.click('#sidebarItem_town-square').catch(() => {});
 }
 

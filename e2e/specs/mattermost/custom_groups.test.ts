@@ -10,8 +10,6 @@ import {loginToMattermost} from '../../helpers/login';
 // hosts the webapp UI but the feature availability is gated by the server
 // license. This test verifies the desktop correctly renders the User Groups
 // view when the feature is available.
-//
-// NOT covered in webapp E2E suite — keeping in desktop.
 
 test.describe('mattermost/custom_groups', () => {
     test.describe.configure({mode: 'serial'});
