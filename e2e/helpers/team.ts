@@ -35,10 +35,10 @@ export async function ensureMultipleTeams(
             }
             await wc.executeJavaScript('window.location.reload()', true);
         }, webContentsId);
-
-        await win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-        await win.waitForSelector('#teamSidebarWrapper', {state: 'visible', timeout: 30_000});
     }
+
+    await win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+    await win.waitForSelector('#teamSidebarWrapper', {state: 'visible', timeout: 30_000});
 
     return result.count;
 }

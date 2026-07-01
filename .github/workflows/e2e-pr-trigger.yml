@@ -28,12 +28,6 @@ on:
     branches:
       - master
 
-permissions:
-  issues: write
-  pull-requests: write
-  actions: write
-  statuses: write
-
 concurrency:
   group: e2e-pr-trigger-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -42,6 +36,10 @@ jobs:
   add-e2e-label:
     name: Add E2E/Run label
     runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+      actions: write
+      statuses: write
     if: >-
       !github.event.pull_request.draft
       && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
@@ -128,6 +126,11 @@ jobs:
   honor-e2e-override:
     name: Honor E2E/Override
     runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+      actions: write
+      statuses: write
+      pull-requests: read
     if: >-
       github.event.action == 'labeled'
       && github.event.label.name == 'E2E/Override'
@@ -173,6 +176,10 @@ jobs:
   cancel-on-manual-unlabel:
     name: Cancel E2E on manual label removal
     runs-on: ubuntu-22.04
+    permissions:
+      actions: write
+      statuses: write
+      pull-requests: read
     if: >-
       github.event.action == 'unlabeled'
       && github.event.label.name == 'E2E/Run'

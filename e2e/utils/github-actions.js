@@ -206,6 +206,7 @@ async function cancelActiveE2ERuns({github, context, prNumber, headBranch}) {
             owner,
             repo,
             workflow_id: e2eWorkflow.id,
+            branch,
             status,
             per_page: 20,
         });

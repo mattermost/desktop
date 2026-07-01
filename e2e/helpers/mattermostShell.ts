@@ -5,13 +5,22 @@ import {expect} from '@playwright/test';
 
 import type {ServerView} from './serverView';
 
-export const POST_TEXTBOX_SELECTOR = [
+export const POST_TEXTBOX_CANDIDATES = [
+    '[data-slate-editor="true"]',
+    '#post_textbox[contenteditable="true"]',
+    '[data-testid="post_textbox"][contenteditable="true"]',
     '#post_textbox',
     '[data-testid="post_textbox"]',
     '.post-create__input [contenteditable="true"]',
     '.post-create__input [role="textbox"]',
     '.AdvancedTextEditor [contenteditable="true"]',
-].join(', ');
+    '[role="textbox"][contenteditable="true"]',
+    'textarea#post_textbox',
+] as const;
+
+export const POST_TEXTBOX_SELECTOR = POST_TEXTBOX_CANDIDATES.join(', ');
+
+const POST_TEXTBOX_CANDIDATES_JSON = JSON.stringify(POST_TEXTBOX_CANDIDATES);
 
 /**
  * Wait until the Mattermost webapp shell is interactive in a server view.
@@ -85,15 +94,7 @@ export async function getPostTextboxValue(win: ServerView): Promise<string> {
             return rect.width > 0 && rect.height > 0;
         };
 
-        const candidates = [
-            document.querySelector('[data-slate-editor="true"]'),
-            document.querySelector('#post_textbox[contenteditable="true"]'),
-            document.querySelector('[data-testid="post_textbox"][contenteditable="true"]'),
-            document.querySelector('#post_textbox'),
-            document.querySelector('[data-testid="post_textbox"]'),
-            document.querySelector('.post-create__input [contenteditable="true"]'),
-            document.querySelector('textarea#post_textbox'),
-        ].filter(Boolean);
+        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
 
         for (const candidate of candidates) {
             if (!isVisible(candidate)) {
@@ -142,15 +143,7 @@ export async function typeIntoPostTextbox(win: ServerView, text: string): Promis
             return rect.width > 0 && rect.height > 0;
         };
 
-        const candidates = [
-            document.querySelector('[data-slate-editor="true"]'),
-            document.querySelector('#post_textbox[contenteditable="true"]'),
-            document.querySelector('[data-testid="post_textbox"][contenteditable="true"]'),
-            document.querySelector('#post_textbox'),
-            document.querySelector('[data-testid="post_textbox"]'),
-            document.querySelector('.post-create__input [contenteditable="true"]'),
-            document.querySelector('textarea#post_textbox'),
-        ].filter(Boolean);
+        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
 
         let root = null;
         for (const candidate of candidates) {
@@ -225,17 +218,7 @@ export async function getPostTextboxWordPoint(
         };
 
         const resolveEditor = () => {
-            const candidates = [
-                document.querySelector('[data-slate-editor="true"]'),
-                document.querySelector('#post_textbox[contenteditable="true"]'),
-                document.querySelector('[data-testid="post_textbox"][contenteditable="true"]'),
-                document.querySelector('#post_textbox'),
-                document.querySelector('[data-testid="post_textbox"]'),
-                document.querySelector('.post-create__input [contenteditable="true"]'),
-                document.querySelector('.AdvancedTextEditor [contenteditable="true"]'),
-                document.querySelector('[role="textbox"][contenteditable="true"]'),
-                document.querySelector('textarea#post_textbox'),
-            ].filter(Boolean);
+            const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
 
             for (const candidate of candidates) {
                 if (!isVisible(candidate)) {

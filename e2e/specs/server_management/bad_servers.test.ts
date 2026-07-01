@@ -292,8 +292,7 @@ test.describe('Bad Server Configurations', () => {
                 ).toBe(true);
                 const mainWindow = getMainWindow(app);
 
-                const errorView = await mainWindow.$('.ErrorView');
-                expect(errorView).toBeNull();
+                await expect(mainWindow.locator('.ErrorView')).toHaveCount(0);
             } finally {
                 await app.close();
                 await waitForLockFileRelease(userDataDir);

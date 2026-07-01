@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {apiLogin, apiRequest} from './client';
+import {apiLogin, apiRequest, ApiRequestError} from './client';
 import {getTestServerCredentials} from './credentials';
 import {apiGetTeamsForUser} from './team';
 
@@ -53,8 +53,7 @@ export async function resolveChannelByName(
                 url: buildChannelUrl(credentials.baseUrl, team.name, channel.name),
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (!message.includes('404')) {
+            if (!(error instanceof ApiRequestError) || error.status !== 404) {
                 throw error;
             }
         }

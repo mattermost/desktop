@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
-import type {Page} from 'playwright';
+import type {ElectronApplication, Page} from 'playwright';
 
 export const UNREACHABLE_SERVER_URL = 'https://jhsgefhjsaeiuofhseifuphoauifdhjauiowijdfcpohuawoiudfjpdhauwodjahwdpojaoiwdhawhdiuawd.com';
 export const EXPIRED_CERT_URL = 'https://expired.badssl.com';
@@ -24,11 +24,9 @@ export const OBSOLETE_TLS_ERROR = /ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_
  * connection instead of completing a handshake with OBSOLETE_CIPHER, so accept the
  * real terminal errors the desktop app surfaces after retries.
  */
-export const INSECURE_CIPHER_ERROR = /ERR_(SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)|CONNECTION_RESET|CONNECTION_CLOSED|NET_)/;
+export const INSECURE_CIPHER_ERROR = /ERR_(SSL_(OBSOLETE_CIPHER|VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR)|CONNECTION_RESET|CONNECTION_CLOSED|NETWORK_)/;
 
-type ElectronApp = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
-
-export function getMainWindow(app: ElectronApp): Page {
+export function getMainWindow(app: ElectronApplication): Page {
     const mainWindow = app.windows().find((window) => window.url().includes('index'));
     expect(mainWindow, 'Main window (index) must exist').toBeDefined();
     return mainWindow!;
@@ -45,7 +43,7 @@ export async function waitForRendererReady(mainWindow: Page): Promise<void> {
  * Reload server views through the app's MattermostWebContentsView.reload() so
  * LOAD_FAILED is emitted on certificate / connection errors.
  */
-export async function reloadServerViewsFromMainProcess(app: ElectronApp): Promise<void> {
+export async function reloadServerViewsFromMainProcess(app: ElectronApplication): Promise<void> {
     await app.evaluate(() => {
         const refs = (global as any).__e2eTestRefs;
         if (!refs) {
@@ -62,6 +60,22 @@ export async function reloadServerViewsFromMainProcess(app: ElectronApp): Promis
     });
 }
 
+async function readTerminalLoadFailure(
+    mainWindow: Page,
+    acceptedError: RegExp,
+): Promise<string | null> {
+    if (!(await mainWindow.isVisible('.ErrorView'))) {
+        return null;
+    }
+
+    const errorInfo = await mainWindow.innerText('.ErrorView-techInfo');
+    if ((/ERR_ABORTED/).test(errorInfo) && !acceptedError.test(errorInfo)) {
+        return null;
+    }
+
+    return acceptedError.test(errorInfo) ? errorInfo : null;
+}
+
 /**
  * Wait for ErrorView with a terminal Chromium load error. Ignores transient
  * ERR_ABORTED states that can appear while a reload is in flight.
@@ -74,16 +88,8 @@ export async function waitForTerminalLoadFailure(
     let errorInfo = '';
 
     await expect.poll(async () => {
-        if (!(await mainWindow.isVisible('.ErrorView'))) {
-            return false;
-        }
-
-        errorInfo = await mainWindow.innerText('.ErrorView-techInfo');
-        if ((/ERR_ABORTED/).test(errorInfo) && !acceptedError.test(errorInfo)) {
-            return false;
-        }
-
-        return acceptedError.test(errorInfo);
+        errorInfo = await readTerminalLoadFailure(mainWindow, acceptedError) ?? '';
+        return Boolean(errorInfo);
     }, {
         timeout: timeoutMs,
         message: `ErrorView must show a terminal load failure matching ${acceptedError}`,
@@ -93,24 +99,13 @@ export async function waitForTerminalLoadFailure(
 }
 
 export async function waitForRendererReadyThenReload(
-    app: ElectronApp,
+    app: ElectronApplication,
     acceptedError: RegExp,
 ): Promise<Page> {
     const mainWindow = getMainWindow(app);
     await waitForRendererReady(mainWindow);
 
-    const hasTerminalFailure = async (): Promise<boolean> => {
-        if (!(await mainWindow.isVisible('.ErrorView'))) {
-            return false;
-        }
-        const errorInfo = await mainWindow.innerText('.ErrorView-techInfo');
-        if ((/ERR_ABORTED/).test(errorInfo) && !acceptedError.test(errorInfo)) {
-            return false;
-        }
-        return acceptedError.test(errorInfo);
-    };
-
-    if (!(await hasTerminalFailure())) {
+    if (!(await readTerminalLoadFailure(mainWindow, acceptedError))) {
         await reloadServerViewsFromMainProcess(app);
     }
 
