@@ -42,7 +42,11 @@ async function updateInitialStatus({github, context, platforms}) {
  *   - all pass:   "All 161 ran, 161 passed"
  *   - any failure: "161 ran, 157 passed, 4 failed"
  */
-function formatStatusDescription({passed, failed}) {
+function formatStatusDescription({passed, failed, collectionFailed}) {
+    if (collectionFailed || (passed === 0 && failed > 0 && passed + failed === failed)) {
+        return 'No tests ran (collection failed)';
+    }
+
     const ran = passed + failed;
     if (ran === 0) {
         return failed > 0 ? `0 ran, ${failed} failed` : 'No tests ran';
