@@ -30,41 +30,27 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
 }
 
 /**
- * Click the server dropdown button and wait for its WebContentsView to appear,
- * re-clicking if it doesn't show up in time. Retrying 3x with the click alone
- * (no bringToFront) still failed every attempt in CI, which is what a window
- * that never receives OS-level focus would look like: Playwright's click()
- * only requires the element to be visible/stable/enabled in the DOM, not that
- * the window is actually frontmost, so a background window can "successfully"
- * receive the click without the app treating it as a focused user interaction.
- * drag_and_drop.test.ts and popout_windows.test.ts both bringToFront() before
- * their first interaction with a freshly-launched window; this didn't.
+ * Click the server dropdown button once and wait for its WebContentsView to
+ * appear. Deliberately does NOT re-click on a timeout: the button is a toggle
+ * (ServerDropdownButton.tsx tracks isMenuOpen and closes on the next click), so
+ * re-clicking while the first click's dropdown is still mid-creation just
+ * closes it again instead of helping — confirmed via CI, where a 3x
+ * click-and-poll retry failed identically every attempt. A single click with a
+ * longer poll matches the working pattern used elsewhere in this suite (e.g.
+ * add_server_modal.test.ts's click + waitForWindow(app, 'dropdown')).
  */
 async function openServerDropdownWindow(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
     await mainView!.bringToFront().catch(() => {});
+    await mainView!.click('.ServerDropdownButton');
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await mainView!.click('.ServerDropdownButton');
-        try {
-            // Poll instead of waitForEvent: checking app.windows() once and only
-            // then registering a listener can miss a dropdown window created in
-            // that gap. Polling isn't edge-triggered, so it picks the window up
-            // on the next tick regardless of when it was created.
-            await expect.poll(
-                () => app.windows().some((w) => w.url().includes('dropdown')),
-                {timeout: 5_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
-            ).toBe(true);
-            const dropdownView = app.windows().find((w) => w.url().includes('dropdown'))!;
-            await dropdownView.waitForLoadState().catch(() => {});
-            return dropdownView;
-        } catch (error) {
-            if (attempt === 2) {
-                throw error;
-            }
-        }
-    }
-    throw new Error('Server dropdown window did not appear after 3 attempts');
+    await expect.poll(
+        () => app.windows().some((w) => w.url().includes('dropdown')),
+        {timeout: 20_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
+    ).toBe(true);
+    const dropdownView = app.windows().find((w) => w.url().includes('dropdown'))!;
+    await dropdownView.waitForLoadState().catch(() => {});
+    return dropdownView;
 }
 
 async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
