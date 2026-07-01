@@ -56,6 +56,70 @@ export async function recoverServerViewIfNeeded(
     await waitForMattermostShell(win, {channelItem});
 }
 
+/** Wait until the channel post list finishes its initial load. */
+export async function waitForChannelPostListLoaded(
+    win: ServerView,
+    options?: {timeout?: number},
+): Promise<void> {
+    const timeout = options?.timeout ?? 15_000;
+    await expect.poll(
+        async () => win.evaluate(() => !document.querySelector(
+            '.post-list__loading, .post-list__dynamic-loading, .loading-screen',
+        )),
+        {timeout, message: 'Channel post list must finish loading'},
+    ).toBe(true);
+}
+
+/** Read the current post textbox contents (textarea value or contenteditable text). */
+export async function getPostTextboxValue(win: ServerView): Promise<string> {
+    return win.runInRenderer(`
+        const isVisible = (element) => {
+            if (!element || !element.isConnected) {
+                return false;
+            }
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                return false;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
+
+        const candidates = [
+            document.querySelector('[data-slate-editor="true"]'),
+            document.querySelector('#post_textbox[contenteditable="true"]'),
+            document.querySelector('[data-testid="post_textbox"][contenteditable="true"]'),
+            document.querySelector('#post_textbox'),
+            document.querySelector('[data-testid="post_textbox"]'),
+            document.querySelector('.post-create__input [contenteditable="true"]'),
+            document.querySelector('textarea#post_textbox'),
+        ].filter(Boolean);
+
+        for (const candidate of candidates) {
+            if (!isVisible(candidate)) {
+                continue;
+            }
+            const root = candidate.matches('[contenteditable="true"], textarea, input')
+                ? candidate
+                : candidate.querySelector('[contenteditable="true"], textarea, input');
+            if (!root || !isVisible(root)) {
+                continue;
+            }
+            if (root instanceof HTMLTextAreaElement || root instanceof HTMLInputElement) {
+                return root.value ?? '';
+            }
+            return root.innerText || root.textContent || '';
+        }
+        return '';
+    `, true) ?? '';
+}
+
+/** Press a keyboard shortcut on the post textbox. */
+export async function pressPostTextboxKey(win: ServerView, key: string): Promise<void> {
+    await win.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 10_000});
+    await win.press(POST_TEXTBOX_SELECTOR, key);
+}
+
 /**
  * Type into the post textbox, preferring DOM insertion so Slate keeps text nodes.
  */
