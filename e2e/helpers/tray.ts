@@ -33,3 +33,13 @@ export async function isMainWindowVisible(app: ElectronApplication): Promise<boo
         return Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
     });
 }
+
+export async function hideMainWindow(app: ElectronApplication): Promise<void> {
+    await evaluateInMainProcess(app, () => {
+        const refs = (global as any).__e2eTestRefs;
+        const mainWindow = refs?.MainWindow?.get?.();
+        if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
+            mainWindow.hide();
+        }
+    });
+}
