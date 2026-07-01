@@ -117,20 +117,16 @@ test.describe('Bad Server Configurations', () => {
             await closeElectronAppFast(sharedApp, sharedUserDataDir);
         });
 
-        // These tests share one app instance (mode: 'serial') for speed. If an earlier
-        // test fails while the dropdown or new-server modal is open, that stray window
-        // would otherwise persist and break the next test's openAddServerModal() call.
-        test.beforeEach(async () => {
-            for (const win of sharedApp.windows()) {
-                try {
-                    if (win.url().includes('dropdown') || win.url().includes('newServer')) {
-                        await win.close();
-                    }
-                } catch {
-                    // Window may already be gone — nothing to clean up.
-                }
-            }
-        });
+        // Deliberately NO defensive beforeEach here to close stray dropdown/newServer
+        // windows: a `.includes('dropdown')` URL filter matches the SERVER DROPDOWN's
+        // own WebContentsView (mattermost-desktop://renderer/dropdown.html), which is
+        // created at MAIN_WINDOW_CREATED and required for OPEN_SERVERS_DROPDOWN to work
+        // (ServerDropdownView.handleOpen returns silently if this.view is destroyed).
+        // Closing it via Playwright's Page.close() destroys the WebContents, so every
+        // subsequent click on .ServerDropdownButton silently no-ops. Diagnosed from CI
+        // trace showing 13 clicks over 40s producing no dropdown. If serial-mode tests
+        // ever leak state, prefer sending CLOSE_SERVERS_DROPDOWN via IPC instead of
+        // Page.close(), or press Escape at test end.
 
         test('should handle server with unresolvable DNS', {tag: ['@P2', '@all']}, async () => {
             const app = sharedApp;
