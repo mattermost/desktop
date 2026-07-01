@@ -5,11 +5,6 @@ import {test, expect} from '../../fixtures/index';
 
 test.describe('menu/menu', () => {
     test('MM-T4404 should open the 3 dot menu with Alt', {tag: ['@P2', '@win32']}, async ({electronApp, mainWindow}) => {
-        if (process.platform === 'darwin') {
-            test.skip(true, 'No keyboard shortcut for macOS');
-            return;
-        }
-
         expect(mainWindow).toBeDefined();
 
         await mainWindow.waitForSelector('button.three-dot-menu');
