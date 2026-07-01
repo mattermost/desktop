@@ -37,16 +37,12 @@ async function openPopoutWindow() {
     await mainWindow.bringToFront().catch(() => {});
 
     const popoutTimeout = process.platform === 'linux' ? 45_000 : 30_000;
-    const windowPromise = electronApp.waitForEvent('window', {
-        timeout: popoutTimeout,
-        predicate: (page) => {
-            try {
-                return page.url().includes('popout.html');
-            } catch {
-                return false;
-            }
-        },
-    });
+
+    // Wait for any new window rather than filtering on popout.html in the
+    // predicate: PopoutManager.createNewWindow() creates the window and only
+    // then calls loadURL(popout.html), so the 'window' event can fire before
+    // the URL matches — a URL-filtering predicate can miss the only event.
+    const windowPromise = electronApp.waitForEvent('window', {timeout: popoutTimeout});
 
     // Trigger through the real File → New Window menu item (which calls
     // PopoutManager.createNewWindow for the current server) so the
@@ -54,11 +50,12 @@ async function openPopoutWindow() {
     await clickApplicationMenuItem(electronApp, 'file', {label: 'New Window'});
 
     const popout = await windowPromise;
+    await popout.waitForURL(/popout\.html/, {timeout: popoutTimeout});
     await popout.waitForLoadState('domcontentloaded').catch(() => {});
     return popout;
 }
 
-async function closePopoutWindow(popoutWindow: import('playwright').Page) {
+async function closePopoutWindow(popoutWindow: import('playwright').Page, waitForAllClosed = true) {
     const browserWindow = await electronApp.browserWindow(popoutWindow);
     const closeTimeout = process.platform === 'linux' ? 5_000 : 15_000;
     await Promise.all([
@@ -71,6 +68,10 @@ async function closePopoutWindow(popoutWindow: import('playwright').Page) {
             }
         }).catch(() => {});
     });
+
+    if (!waitForAllClosed) {
+        return;
+    }
 
     await expect.poll(() => {
         return electronApp.windows().filter((window) => {
@@ -92,9 +93,26 @@ async function closeAllPopouts() {
         }
     });
 
+    // Close every window first without waiting for the full count to reach 0
+    // per-window — with multiple popouts open, waiting inside each call added
+    // up to a 10s timeout per extra window. Poll for the batch once instead.
     for (const popout of popoutWindows) {
-        await closePopoutWindow(popout).catch(() => {});
+        await closePopoutWindow(popout, false).catch(() => {});
     }
+
+    if (popoutWindows.length === 0) {
+        return;
+    }
+
+    await expect.poll(() => {
+        return electronApp.windows().filter((window) => {
+            try {
+                return window.url().includes('popout.html');
+            } catch {
+                return false;
+            }
+        }).length;
+    }, {timeout: 10_000}).toBe(0);
 }
 
 test.describe('server_management/popout_windows', () => {

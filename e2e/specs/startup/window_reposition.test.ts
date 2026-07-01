@@ -3,11 +3,11 @@
 
 import * as path from 'path';
 
-import {_electron as electron} from 'playwright';
+import type {ElectronApplication} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
+import {demoConfig} from '../../helpers/config';
+import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 
 test.describe('startup/window_reposition', () => {
@@ -21,21 +21,13 @@ test.describe('startup/window_reposition', () => {
             const {mkdirSync} = await import('fs');
             const userDataDir = path.join(testInfo.outputDir, 'reposition-userdata');
             mkdirSync(userDataDir, {recursive: true});
-            writeConfigFile(userDataDir, demoConfig);
 
             let appClosed = false;
 
             // Launch app
-            const app = await electron.launch({
-                executablePath: electronBinaryPath,
-                args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-                env: {...process.env, NODE_ENV: 'test'},
-                timeout: 90_000,
-            });
+            const app = await launchDirectTestApp(userDataDir, demoConfig);
 
             try {
-                await waitForAppReady(app);
-
                 // Get initial window position
                 const initialBounds = await getMainWindowBounds(app);
                 expect(initialBounds, 'Should get initial window bounds').toBeTruthy();
@@ -45,10 +37,13 @@ test.describe('startup/window_reposition', () => {
                 // a popout or Calls widget if one is open.
                 const newX = 200;
                 const newY = 150;
-                await app.evaluate(({BrowserWindow}, pos: {x: number; y: number}) => {
+                await app.evaluate((_electron, pos: {x: number; y: number}) => {
                     const refs = (global as any).__e2eTestRefs;
-                    const main = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows()[0];
-                    main?.setPosition(pos.x, pos.y);
+                    const main = refs?.MainWindow?.get?.();
+                    if (!main) {
+                        throw new Error('MainWindow test ref is not available');
+                    }
+                    main.setPosition(pos.x, pos.y);
                 }, {x: newX, y: newY});
 
                 // Wait for the move to take effect — poll until position is near target
@@ -110,15 +105,9 @@ test.describe('startup/window_reposition', () => {
                 }
 
                 // Relaunch and verify position is restored
-                const app2 = await electron.launch({
-                    executablePath: electronBinaryPath,
-                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-                    env: {...process.env, NODE_ENV: 'test'},
-                    timeout: 90_000,
-                });
+                const app2 = await launchDirectTestApp(userDataDir, demoConfig, {writeConfig: false});
 
                 try {
-                    await waitForAppReady(app2);
                     const restoredBounds = await getMainWindowBounds(app2);
 
                     // Position should be restored (within tolerance for OS window decorations)
@@ -143,12 +132,12 @@ test.describe('startup/window_reposition', () => {
     );
 });
 
-async function getMainWindowBounds(app: Awaited<ReturnType<typeof electron.launch>>) {
+async function getMainWindowBounds(app: ElectronApplication) {
     for (let attempt = 0; attempt < 10; attempt++) {
         try {
-            return await app.evaluate(({BrowserWindow}) => {
+            return await app.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
-                const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows()[0];
+                const win = refs?.MainWindow?.get?.();
                 if (!win) {
                     throw new Error('Main BrowserWindow not available');
                 }
