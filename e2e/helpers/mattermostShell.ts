@@ -81,7 +81,7 @@ export async function waitForChannelPostListLoaded(
 
 /** Read the current post textbox contents (textarea value or contenteditable text). */
 export async function getPostTextboxValue(win: ServerView): Promise<string> {
-    return win.runInRenderer(`
+    const value = await win.runInRenderer(`
         const isVisible = (element) => {
             if (!element || !element.isConnected) {
                 return false;
@@ -112,13 +112,49 @@ export async function getPostTextboxValue(win: ServerView): Promise<string> {
             return root.innerText || root.textContent || '';
         }
         return '';
-    `, true) ?? '';
+    `, true);
+
+    return value ?? '';
 }
 
 /** Press a keyboard shortcut on the post textbox. */
 export async function pressPostTextboxKey(win: ServerView, key: string): Promise<void> {
-    await win.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 10_000});
-    await win.press(POST_TEXTBOX_SELECTOR, key);
+    const focused = await win.runInRenderer(`
+        const isVisible = (element) => {
+            if (!element || !element.isConnected) {
+                return false;
+            }
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                return false;
+            }
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
+
+        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
+
+        for (const candidate of candidates) {
+            if (!isVisible(candidate)) {
+                continue;
+            }
+            const root = candidate.matches('[contenteditable="true"], textarea, input')
+                ? candidate
+                : candidate.querySelector('[contenteditable="true"], textarea, input');
+            if (!root || !isVisible(root)) {
+                continue;
+            }
+            root.focus?.();
+            return true;
+        }
+        return false;
+    `, true);
+
+    if (!focused) {
+        throw new Error('Post textbox not found');
+    }
+
+    await win.keyboard.press(key);
 }
 
 /**
