@@ -26,6 +26,17 @@ export async function clickTrayMenuItem(app: ElectronApplication, label: string)
     }, label);
 }
 
+export async function hideMainWindow(app: ElectronApplication): Promise<void> {
+    await evaluateInMainProcess(app, () => {
+        const refs = (global as any).__e2eTestRefs;
+        const mainWindow = refs?.MainWindow?.get?.();
+        if (!mainWindow || mainWindow.isDestroyed?.()) {
+            throw new Error('MainWindow is not available');
+        }
+        mainWindow.hide();
+    });
+}
+
 export async function isMainWindowVisible(app: ElectronApplication): Promise<boolean> {
     return evaluateInMainProcess(app, () => {
         const refs = (global as any).__e2eTestRefs;

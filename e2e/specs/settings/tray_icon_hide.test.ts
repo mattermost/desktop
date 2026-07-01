@@ -26,6 +26,11 @@ test.describe('settings/tray_icon_hide', () => {
             });
             expect(trayIconConfigAccessible, 'showTrayIcon config must be accessible').toBe(true);
 
+            const initialShowTrayIcon = await electronApp.evaluate(() => {
+                const refs = (global as any).__e2eTestRefs;
+                return refs?.Config?.showTrayIcon ?? true;
+            });
+
             try {
                 // Disable tray icon
                 await electronApp.evaluate(() => {
@@ -51,13 +56,10 @@ test.describe('settings/tray_icon_hide', () => {
                     {timeout: 10_000, message: 'Tray icon must be torn down after showTrayIcon=false'},
                 ).toBe(true);
             } finally {
-                // Always re-enable so later specs in the same Electron process
-                // (and the user data dir for the next run) aren't left with a
-                // mutated tray setting.
-                await electronApp.evaluate(() => {
+                await electronApp.evaluate((savedShowTrayIcon) => {
                     const refs = (global as any).__e2eTestRefs;
-                    refs?.Config?.set('showTrayIcon', true);
-                });
+                    refs?.Config?.set('showTrayIcon', savedShowTrayIcon);
+                }, initialShowTrayIcon);
             }
         },
     );

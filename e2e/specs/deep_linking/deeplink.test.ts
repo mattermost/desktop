@@ -99,7 +99,7 @@ test.describe('macOS open-url deep link', () => {
     test.use({appConfig: demoConfig});
 
     test(
-        'DL-02 macOS cold start via open-url event navigates to deep link',
+        'DL-02 macOS open-url event navigates to deep link while app is running',
         {tag: ['@P1', '@darwin']},
         async ({electronApp, mainWindow}) => {
             await electronApp.evaluate(({app: electronApp}) => {

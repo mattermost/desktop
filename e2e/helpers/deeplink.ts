@@ -39,15 +39,19 @@ export async function waitForServerChannelNavigation(
     options?: {timeout?: number},
 ): Promise<void> {
     await expect.poll(async () => {
-        const map = await buildServerMap(app);
-        const entries = map[serverName] ?? [];
-        for (const entry of entries) {
-            const url = await entry.win.url();
-            if (url.includes(channelName)) {
-                return true;
+        try {
+            const map = await buildServerMap(app);
+            const entries = map[serverName] ?? [];
+            for (const entry of entries) {
+                const url = await entry.win.url();
+                if (url.includes(channelName)) {
+                    return true;
+                }
             }
+            return false;
+        } catch {
+            return false;
         }
-        return false;
     }, {
         timeout: options?.timeout ?? 15_000,
         message: `Server view should navigate to ${channelName}`,

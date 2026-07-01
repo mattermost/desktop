@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {test} from '../../fixtures/index';
+import {test, expect} from '../../fixtures/index';
 import {mattermostURL, demoMattermostConfig, type AppConfig} from '../../helpers/config';
 import {channelDeepLinkUrl, openDeepLinkInApp, waitForServerChannelNavigation} from '../../helpers/deeplink';
 import {loginToMattermost} from '../../helpers/login';
@@ -27,7 +27,9 @@ test(
         await loginToMattermost(serverWin);
         await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
-        const channelName = 'town-square';
+        const channelName = 'off-topic';
+        expect(serverWin.url(), 'Precondition: server view must not already be on target channel').not.toContain(channelName);
+
         const deepLink = channelDeepLinkUrl(mattermostURL, channelName);
 
         await openDeepLinkInApp(electronApp, deepLink);
@@ -65,6 +67,8 @@ test.describe('deep link server URL without trailing slash', () => {
             await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
             const channelName = 'off-topic';
+            expect(serverWin.url(), 'Precondition: server view must not already be on target channel').not.toContain(channelName);
+
             const deepLink = channelDeepLinkUrl(serverUrlWithoutSlash, channelName);
 
             await openDeepLinkInApp(electronApp, deepLink);
