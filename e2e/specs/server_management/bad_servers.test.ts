@@ -30,6 +30,36 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
 }
 
 /**
+ * Read a server by name from config.json, tolerating a transient parse failure.
+ * Config.saveLocalConfigData() persists via JsonFileManager.write(), which calls
+ * Node's fs.writeFile() — that truncates the file before writing the new content,
+ * it isn't an atomic write-to-temp-then-rename. Since this reads the same file
+ * from a separate process (the Playwright test runner) while the app may still
+ * be mid-write, an empty/partial read is a real possibility, not a hypothetical
+ * one — confirmed in CI as `SyntaxError: Unexpected end of JSON input` on a
+ * RC4-cipher run. Returning undefined here lets the caller's expect.poll keep
+ * retrying instead of letting the exception fail the test outright.
+ */
+function findServerInConfig(configPath: string, serverName: string): {name: string} | undefined {
+    let raw: string;
+    try {
+        raw = fs.readFileSync(configPath, 'utf8');
+    } catch {
+        return undefined;
+    }
+    if (!raw) {
+        return undefined;
+    }
+    let cfg: {servers?: Array<{name: string}>};
+    try {
+        cfg = JSON.parse(raw);
+    } catch {
+        return undefined;
+    }
+    return cfg.servers?.find((s) => s.name === serverName);
+}
+
+/**
  * Click the server dropdown button and wait for its WebContentsView to
  * appear, re-clicking periodically until it does.
  *
@@ -137,10 +167,10 @@ test.describe('Bad Server Configurations', () => {
             await newServerView.click('#newServerModal_confirm');
 
             const configPath = path.join(userDataDir, 'config.json');
-            await expect.poll(() => {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.servers.find((s: {name: string}) => s.name === 'Unreachable Server');
-            }, {timeout: 10000}).toBeDefined();
+            await expect.poll(
+                () => findServerInConfig(configPath, 'Unreachable Server'),
+                {timeout: 10000},
+            ).toBeDefined();
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
@@ -158,10 +188,10 @@ test.describe('Bad Server Configurations', () => {
             await newServerView.click('#newServerModal_confirm');
 
             const configPath = path.join(userDataDir, 'config.json');
-            await expect.poll(() => {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.servers.find((s: {name: string}) => s.name === 'Expired Cert Server');
-            }, {timeout: 10000}).toBeDefined();
+            await expect.poll(
+                () => findServerInConfig(configPath, 'Expired Cert Server'),
+                {timeout: 10000},
+            ).toBeDefined();
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
@@ -179,10 +209,10 @@ test.describe('Bad Server Configurations', () => {
             await newServerView.click('#newServerModal_confirm');
 
             const configPath = path.join(userDataDir, 'config.json');
-            await expect.poll(() => {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.servers.find((s: {name: string}) => s.name === 'TLS 1.0 Server');
-            }, {timeout: 10000}).toBeDefined();
+            await expect.poll(
+                () => findServerInConfig(configPath, 'TLS 1.0 Server'),
+                {timeout: 10000},
+            ).toBeDefined();
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
@@ -203,10 +233,10 @@ test.describe('Bad Server Configurations', () => {
             await newServerView.click('#newServerModal_confirm');
 
             const configPath = path.join(userDataDir, 'config.json');
-            await expect.poll(() => {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.servers.find((s: {name: string}) => s.name === 'RC4 Cipher Server');
-            }, {timeout: 10000}).toBeDefined();
+            await expect.poll(
+                () => findServerInConfig(configPath, 'RC4 Cipher Server'),
+                {timeout: 10000},
+            ).toBeDefined();
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
