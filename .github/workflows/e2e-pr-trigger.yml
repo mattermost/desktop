@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       issues: write
+      pull-requests: write
       actions: write
       statuses: write
     if: >-
@@ -128,9 +129,9 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       issues: write
+      pull-requests: write
       actions: write
       statuses: write
-      pull-requests: read
     if: >-
       github.event.action == 'labeled'
       && github.event.label.name == 'E2E/Override'
