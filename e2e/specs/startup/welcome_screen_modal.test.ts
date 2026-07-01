@@ -6,7 +6,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronAppFast} from '../../helpers/electronApp';
+import {closeAppSafely} from '../../helpers/electronApp';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 // All welcome screen tests need a no-servers app. This helper launches one.
@@ -68,11 +68,7 @@ test.describe('startup/welcome_screen_modal', () => {
                     'integrate with tools you love',
                 ]);
             } finally {
-                if (app && userDataDir) {
-                    await closeElectronAppFast(app, userDataDir);
-                } else if (app) {
-                    await app.close().catch(() => {});
-                }
+                await closeAppSafely(app, userDataDir);
                 await releaseLock();
             }
         },
@@ -105,11 +101,7 @@ test.describe('startup/welcome_screen_modal', () => {
                     {timeout: 10_000},
                 ).toBe(firstTitle);
             } finally {
-                if (app && userDataDir) {
-                    await closeElectronAppFast(app, userDataDir);
-                } else if (app) {
-                    await app.close().catch(() => {});
-                }
+                await closeAppSafely(app, userDataDir);
                 await releaseLock();
             }
         },
@@ -129,11 +121,7 @@ test.describe('startup/welcome_screen_modal', () => {
                 await modal.waitForSelector('#input_name', {timeout: 10_000});
                 await modal.waitForSelector('#input_url', {timeout: 10_000});
             } finally {
-                if (app && userDataDir) {
-                    await closeElectronAppFast(app, userDataDir);
-                } else if (app) {
-                    await app.close().catch(() => {});
-                }
+                await closeAppSafely(app, userDataDir);
                 await releaseLock();
             }
         },

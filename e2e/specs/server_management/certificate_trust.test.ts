@@ -47,7 +47,10 @@ test(
 
             await evaluateInMainProcess(app, () => {
                 const refs = (global as any).__e2eTestRefs;
-                const server = refs?.ServerManager?.getOrderedServers?.()?.[0];
+                if (!refs) {
+                    throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
+                }
+                const server = refs.ServerManager.getOrderedServers()?.[0];
                 if (!server) {
                     throw new Error('No server available to reload');
                 }

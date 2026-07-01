@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
-import type {ElectronApplication} from 'playwright';
+import type {ElectronApplication, Page} from 'playwright';
 
 import {buildServerMap} from './serverMap';
 
@@ -56,4 +56,31 @@ export async function waitForServerChannelNavigation(
         timeout: options?.timeout ?? 15_000,
         message: `Server view should navigate to ${channelName}`,
     }).toBe(true);
+}
+
+/**
+ * Poll the server's primary view for a URL containing `urlSubstring`, then poll
+ * the dropdown button until it shows `serverName`. Shared by deep-link tests that
+ * assert both the navigation and the resulting active-server UI state.
+ */
+export async function waitForServerUrlAndDropdown(
+    app: ElectronApplication,
+    mainWindow: Page,
+    serverName: string,
+    urlSubstring: string,
+    options?: {urlTimeout?: number; dropdownTimeout?: number},
+): Promise<void> {
+    await expect.poll(async () => {
+        const freshMap = await buildServerMap(app);
+        const freshView = freshMap[serverName]?.[0]?.win;
+        return (await freshView?.url()) ?? '';
+    }, {
+        timeout: options?.urlTimeout ?? 30_000,
+        message: `Server view for ${serverName} should navigate to a URL containing "${urlSubstring}"`,
+    }).toContain(urlSubstring);
+
+    await expect.poll(
+        () => mainWindow.innerText('.ServerDropdownButton'),
+        {timeout: options?.dropdownTimeout ?? 15_000, message: `Server dropdown should show ${serverName}`},
+    ).toBe(serverName);
 }

@@ -23,6 +23,44 @@ export const POST_TEXTBOX_SELECTOR = POST_TEXTBOX_CANDIDATES.join(', ');
 const POST_TEXTBOX_CANDIDATES_JSON = JSON.stringify(POST_TEXTBOX_CANDIDATES);
 
 /**
+ * Shared renderer-side JS, inlined into each `runInRenderer` string below.
+ * Defines `__mmIsVisible` and `__mmResolvePostTextboxRoot` once so the four
+ * functions in this file don't each carry their own copy of the candidate
+ * resolution logic — `runInRenderer` evaluates a raw string in the renderer
+ * process, so this has to be textually interpolated rather than imported.
+ */
+const POST_TEXTBOX_RESOLVER_JS = `
+    const __mmIsVisible = (element) => {
+        if (!element || !element.isConnected) {
+            return false;
+        }
+        const style = window.getComputedStyle(element);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+            return false;
+        }
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    };
+
+    const __mmResolvePostTextboxRoot = () => {
+        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
+        for (const candidate of candidates) {
+            if (!__mmIsVisible(candidate)) {
+                continue;
+            }
+            if (candidate.matches('[contenteditable="true"], textarea, input')) {
+                return candidate;
+            }
+            const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
+            if (nested && __mmIsVisible(nested)) {
+                return nested;
+            }
+        }
+        return null;
+    };
+`;
+
+/**
  * Wait until the Mattermost webapp shell is interactive in a server view.
  */
 export async function waitForMattermostShell(
@@ -65,6 +103,15 @@ export async function recoverServerViewIfNeeded(
     await waitForMattermostShell(win, {channelItem});
 }
 
+/** Wait for the shell to mount, then recover it if the channel content failed to render. */
+export async function waitForMattermostShellReady(
+    win: ServerView,
+    options?: {channelItem?: string; timeout?: number},
+): Promise<void> {
+    await waitForMattermostShell(win, options);
+    await recoverServerViewIfNeeded(win, options);
+}
+
 /** Wait until the channel post list finishes its initial load. */
 export async function waitForChannelPostListLoaded(
     win: ServerView,
@@ -82,36 +129,16 @@ export async function waitForChannelPostListLoaded(
 /** Read the current post textbox contents (textarea value or contenteditable text). */
 export async function getPostTextboxValue(win: ServerView): Promise<string> {
     const value = await win.runInRenderer(`
-        const isVisible = (element) => {
-            if (!element || !element.isConnected) {
-                return false;
-            }
-            const style = window.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                return false;
-            }
-            const rect = element.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        };
+        ${POST_TEXTBOX_RESOLVER_JS}
 
-        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
-
-        for (const candidate of candidates) {
-            if (!isVisible(candidate)) {
-                continue;
-            }
-            const root = candidate.matches('[contenteditable="true"], textarea, input')
-                ? candidate
-                : candidate.querySelector('[contenteditable="true"], textarea, input');
-            if (!root || !isVisible(root)) {
-                continue;
-            }
-            if (root instanceof HTMLTextAreaElement || root instanceof HTMLInputElement) {
-                return root.value ?? '';
-            }
-            return root.innerText || root.textContent || '';
+        const root = __mmResolvePostTextboxRoot();
+        if (!root) {
+            return '';
         }
-        return '';
+        if (root instanceof HTMLTextAreaElement || root instanceof HTMLInputElement) {
+            return root.value ?? '';
+        }
+        return root.innerText || root.textContent || '';
     `, true);
 
     return value ?? '';
@@ -120,34 +147,14 @@ export async function getPostTextboxValue(win: ServerView): Promise<string> {
 /** Press a keyboard shortcut on the post textbox. */
 export async function pressPostTextboxKey(win: ServerView, key: string): Promise<void> {
     const focused = await win.runInRenderer(`
-        const isVisible = (element) => {
-            if (!element || !element.isConnected) {
-                return false;
-            }
-            const style = window.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                return false;
-            }
-            const rect = element.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        };
+        ${POST_TEXTBOX_RESOLVER_JS}
 
-        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
-
-        for (const candidate of candidates) {
-            if (!isVisible(candidate)) {
-                continue;
-            }
-            const root = candidate.matches('[contenteditable="true"], textarea, input')
-                ? candidate
-                : candidate.querySelector('[contenteditable="true"], textarea, input');
-            if (!root || !isVisible(root)) {
-                continue;
-            }
-            root.focus?.();
-            return true;
+        const root = __mmResolvePostTextboxRoot();
+        if (!root) {
+            return false;
         }
-        return false;
+        root.focus?.();
+        return true;
     `, true);
 
     if (!focused) {
@@ -167,36 +174,9 @@ export async function typeIntoPostTextbox(win: ServerView, text: string): Promis
     const inserted = await win.runInRenderer(`
         const value = ${JSON.stringify(text)};
 
-        const isVisible = (element) => {
-            if (!element || !element.isConnected) {
-                return false;
-            }
-            const style = window.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                return false;
-            }
-            const rect = element.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        };
+        ${POST_TEXTBOX_RESOLVER_JS}
 
-        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
-
-        let root = null;
-        for (const candidate of candidates) {
-            if (!isVisible(candidate)) {
-                continue;
-            }
-            if (candidate.matches('[contenteditable="true"], textarea, input')) {
-                root = candidate;
-                break;
-            }
-            const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
-            if (nested && isVisible(nested)) {
-                root = nested;
-                break;
-            }
-        }
-
+        const root = __mmResolvePostTextboxRoot();
         if (!root) {
             return false;
         }
@@ -241,35 +221,7 @@ export async function getPostTextboxWordPoint(
     return win.runInRenderer(`
         const target = ${JSON.stringify(word)};
 
-        const isVisible = (element) => {
-            if (!element || !element.isConnected) {
-                return false;
-            }
-            const style = window.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                return false;
-            }
-            const rect = element.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        };
-
-        const resolveEditor = () => {
-            const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
-
-            for (const candidate of candidates) {
-                if (!isVisible(candidate)) {
-                    continue;
-                }
-                if (candidate.matches('[contenteditable="true"], textarea, input')) {
-                    return candidate;
-                }
-                const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
-                if (nested && isVisible(nested)) {
-                    return nested;
-                }
-            }
-            return null;
-        };
+        ${POST_TEXTBOX_RESOLVER_JS}
 
         const getTextareaWordPoint = (textarea, needle) => {
             const text = textarea.value || '';
@@ -344,7 +296,7 @@ export async function getPostTextboxWordPoint(
             return null;
         };
 
-        const root = resolveEditor();
+        const root = __mmResolvePostTextboxRoot();
         if (!root) {
             return null;
         }

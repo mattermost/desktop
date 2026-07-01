@@ -294,7 +294,7 @@ function initializeInterCommunicationEventListeners() {
 }
 
 async function initializeAfterAppReady() {
-    setTestField('__e2eTestRefs', {
+    const e2eTestRefs = {
         MainWindow,
         ServerManager,
         TabManager,
@@ -304,7 +304,21 @@ async function initializeAfterAppReady() {
         TrayIcon: Tray,
         Diagnostics,
         PopoutManager,
-    });
+    };
+
+    // Reading a ref that no longer exists (e.g. a manager was renamed or removed)
+    // used to silently return `undefined`, so the test would die on a generic poll
+    // timeout far from the real cause. Wrap the refs so any access to an unexposed
+    // key throws a named error instead. `setTestField` is a no-op unless
+    // NODE_ENV === 'test', so this never affects production.
+    setTestField('__e2eTestRefs', new Proxy(e2eTestRefs, {
+        get(target, prop, receiver) {
+            if (typeof prop === 'string' && prop !== 'then' && prop !== 'toJSON' && !(prop in target)) {
+                throw new Error(`__e2eTestRefs.${prop} is not exposed — was it renamed or removed? Update the refs in src/main/app/initialize.ts.`);
+            }
+            return Reflect.get(target, prop, receiver);
+        },
+    }));
 
     setTestField('__e2eOpenDeepLink', (url: string) => {
         openDeepLink(url);

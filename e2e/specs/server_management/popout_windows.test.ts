@@ -8,10 +8,10 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
-import {closeElectronAppFast} from '../../helpers/electronApp';
+import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
+import {clickApplicationMenuItem} from '../../helpers/menu';
 import {buildServerMap} from '../../helpers/serverMap';
-import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 const config = {
     ...demoMattermostConfig,
@@ -25,28 +25,6 @@ type ElectronPage = import('playwright').Page;
 let electronApp: ElectronApplication;
 let mainWindow: ElectronPage;
 let userDataDir: string;
-
-async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
-    const timeoutAt = Date.now() + timeout;
-    while (Date.now() < timeoutAt) {
-        const win = app.windows().find((window) => {
-            try {
-                return window.url().includes(pattern);
-            } catch {
-                return false;
-            }
-        });
-
-        if (win) {
-            await win.waitForLoadState().catch(() => {});
-            return win;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
 
 async function getMattermostServer() {
     const serverMap = await buildServerMap(electronApp);
@@ -70,14 +48,10 @@ async function openPopoutWindow() {
         },
     });
 
-    await evaluateInMainProcess(electronApp, () => {
-        const refs = (global as any).__e2eTestRefs;
-        const serverId = refs?.ServerManager?.getCurrentServerId?.();
-        if (!serverId) {
-            throw new Error('No current server for popout');
-        }
-        refs.PopoutManager.createNewWindow(serverId);
-    }, {timeoutMs: 20_000});
+    // Trigger through the real File → New Window menu item (which calls
+    // PopoutManager.createNewWindow for the current server) so the
+    // menu → popout wiring stays covered, rather than calling the manager directly.
+    await clickApplicationMenuItem(electronApp, 'file', {label: 'New Window'});
 
     const popout = await windowPromise;
     await popout.waitForLoadState('domcontentloaded').catch(() => {});

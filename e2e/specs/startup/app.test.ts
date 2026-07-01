@@ -6,7 +6,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, emptyConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
+import {closeAppSafely, closeElectronApp} from '../../helpers/electronApp';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 test.describe('startup/app', () => {
@@ -95,11 +95,7 @@ test.describe('startup/app', () => {
                 const text = await welcomeModal.innerText('.WelcomeScreen .WelcomeScreen__button');
                 expect(text).toBe('Get Started');
             } finally {
-                if (emptyApp && userDataDir) {
-                    await closeElectronAppFast(emptyApp, userDataDir);
-                } else if (emptyApp) {
-                    await emptyApp.close().catch(() => {});
-                }
+                await closeAppSafely(emptyApp, userDataDir);
                 await releaseLock();
             }
         },
@@ -135,11 +131,7 @@ test.describe('startup/app', () => {
                     {timeout: 10_000},
                 ).toBe(runtimeAppName);
             } finally {
-                if (emptyApp && userDataDir) {
-                    await closeElectronAppFast(emptyApp, userDataDir);
-                } else if (emptyApp) {
-                    await emptyApp.close().catch(() => {});
-                }
+                await closeAppSafely(emptyApp, userDataDir);
                 await releaseLock();
             }
         },
