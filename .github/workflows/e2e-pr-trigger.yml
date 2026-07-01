@@ -9,13 +9,9 @@ name: E2E PR Trigger
 # opened/synchronize events do not add E2E/Run, and applying the override label
 # strips E2E/Run and cancels in-flight E2E runs.
 #
-# On synchronize: in-progress Electron Playwright Tests runs are cancelled before
-# re-adding the label so stale runs for the old commit don't block the new one.
-# Matterwick dispatches e2e-functional.yml via workflow_dispatch using the default
-# branch as the ref (so all E2E runs show head_branch: master). This makes it
-# impossible to distinguish runs by PR branch, so all in-progress E2E runs are
-# cancelled — which is correct behaviour since only one labelled PR triggers tests
-# at a time in this project.
+# On synchronize: in-progress Electron Playwright Tests runs for this PR are
+# cancelled before re-adding the label so stale runs for the old commit do not
+# block the new one. Runs on other PR branches are left running.
 #
 # The concurrency group ensures rapid pushes to the same PR don't queue multiple
 # label operations: only the most recent push proceeds.
@@ -87,7 +83,12 @@ jobs:
                 }
               }
 
-              await cancelActiveE2ERuns({ github, context });
+              await cancelActiveE2ERuns({
+                github,
+                context,
+                prNumber: issue_number,
+                headBranch: pr.head.ref,
+              });
               await markE2EStatusesCancelled({
                 github,
                 context,
@@ -97,7 +98,12 @@ jobs:
               return;
             }
 
-            await cancelActiveE2ERuns({ github, context });
+            await cancelActiveE2ERuns({
+              github,
+              context,
+              prNumber: issue_number,
+              headBranch: pr.head.ref,
+            });
 
             try {
               await github.rest.issues.removeLabel({
@@ -151,7 +157,12 @@ jobs:
               }
             }
 
-            await cancelActiveE2ERuns({ github, context });
+            await cancelActiveE2ERuns({
+              github,
+              context,
+              prNumber: issue_number,
+              headBranch: pr.head.ref,
+            });
             await markE2EStatusesCancelled({
               github,
               context,

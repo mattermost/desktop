@@ -388,4 +388,5 @@ jobs:
         with:
           name: policy-test-results-${{ runner.os }}
           path: e2e/playwright-report
+          if-no-files-found: ignore
           retention-days: 7

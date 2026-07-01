@@ -152,12 +152,45 @@ async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLE
 }
 
 /**
- * Cancel all active Electron Playwright Tests workflow runs.
- * Matterwick dispatches via workflow_dispatch on the default branch, so runs
- * cannot be filtered reliably by PR branch — cancel every active run instead.
+ * Return true when a workflow run belongs to the given PR.
+ * Matterwick dispatches with version_name set to the PR head branch, so
+ * head_branch on the run matches pull_request.head.ref.
  */
-async function cancelActiveE2ERuns({github, context}) {
+function runBelongsToPr(run, headBranch) {
+    return Boolean(headBranch && run.head_branch === headBranch);
+}
+
+async function resolvePrHeadBranch({github, context, prNumber, headBranch}) {
+    if (headBranch) {
+        return headBranch;
+    }
+
+    if (!prNumber) {
+        return null;
+    }
+
+    const {data: pr} = await github.rest.pulls.get({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        pull_number: prNumber,
+    });
+    return pr.head.ref;
+}
+
+/**
+ * Cancel active Electron Playwright Tests runs for a single PR.
+ * Only runs whose head_branch matches the PR branch are cancelled so concurrent
+ * E2E runs on other PRs are not interrupted.
+ */
+async function cancelActiveE2ERuns({github, context, prNumber, headBranch}) {
     const {owner, repo} = context.repo;
+    const branch = await resolvePrHeadBranch({github, context, prNumber, headBranch});
+
+    if (!branch) {
+        console.log('cancelActiveE2ERuns: no PR branch resolved — skipping cancellation');
+        return 0;
+    }
+
     const {data: {workflows}} = await github.rest.actions.listRepoWorkflows({owner, repo});
     const e2eWorkflow = workflows.find((workflow) => workflow.name === E2E_WORKFLOW_NAME);
 
@@ -178,9 +211,14 @@ async function cancelActiveE2ERuns({github, context}) {
         });
 
         for (const run of workflowRuns) {
+            if (!runBelongsToPr(run, branch)) {
+                console.log(`Skipping E2E run ${run.id} (branch ${run.head_branch ?? 'unknown'} != ${branch})`);
+                continue;
+            }
+
             try {
                 await github.rest.actions.cancelWorkflowRun({owner, repo, run_id: run.id});
-                console.log(`Cancelled E2E run ${run.id} (status: ${status})`);
+                console.log(`Cancelled E2E run ${run.id} for branch ${branch} (status: ${status})`);
                 cancelled += 1;
             } catch (error) {
                 console.log(`Could not cancel run ${run.id}: ${error.message}`);
