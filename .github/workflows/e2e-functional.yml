@@ -67,11 +67,13 @@ jobs:
 
       - name: Update initial status for all platforms
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateInitialStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            const platforms = JSON.parse(process.env.PLATFORMS);
             await updateInitialStatus({ github, context, platforms });
 
   e2e-tests:
@@ -115,19 +117,22 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
+          OUTPUTS: ${{ toJSON(needs.e2e-tests.outputs) }}
+          E2E_TESTS_RESULT: ${{ needs.e2e-tests.result }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
-            const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
+            const platforms = JSON.parse(process.env.PLATFORMS);
+            const outputs = JSON.parse(process.env.OUTPUTS);
             const prNumber = parseInt(process.env.PR_NUMBER, 10) || null;
             await updateFinalStatus({
               github,
               context,
               platforms,
               outputs,
-              e2eTestsResult: '${{ needs.e2e-tests.result }}',
+              e2eTestsResult: process.env.E2E_TESTS_RESULT,
               prNumber,
             });
 

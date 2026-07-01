@@ -11,6 +11,8 @@ export class ApiRequestError extends Error {
     }
 }
 
+const DEFAULT_API_TIMEOUT_MS = 30_000;
+
 function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
     if (!headers) {
         return {};
@@ -24,14 +26,51 @@ function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
     return {...headers};
 }
 
+async function fetchWithTimeout(
+    url: string,
+    init: RequestInit = {},
+    timeoutMs = DEFAULT_API_TIMEOUT_MS,
+): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    if (init.signal) {
+        if (init.signal.aborted) {
+            clearTimeout(timeoutId);
+            throw init.signal.reason ?? new DOMException('The operation was aborted.', 'AbortError');
+        }
+        init.signal.addEventListener('abort', () => controller.abort(), {once: true});
+    }
+
+    try {
+        return await fetch(url, {...init, signal: controller.signal});
+    } catch (error) {
+        if (controller.signal.aborted && !init.signal?.aborted) {
+            throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
 export async function apiLogin(baseUrl: string, loginId: string, password: string): Promise<string> {
-    const response = await fetch(`${baseUrl}/api/v4/users/login`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({login_id: loginId, password}),
-    });
+    const path = '/api/v4/users/login';
+    let response: Response;
+    try {
+        response = await fetchWithTimeout(`${baseUrl}${path}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({login_id: loginId, password}),
+        });
+    } catch (error) {
+        if (error instanceof Error && error.message.startsWith('Request timed out after')) {
+            throw new Error(`POST ${path} timed out after ${DEFAULT_API_TIMEOUT_MS}ms`);
+        }
+        throw error;
+    }
     if (!response.ok) {
-        throw new Error(`POST /api/v4/users/login failed: ${response.status} ${await response.text()}`);
+        throw new ApiRequestError('POST', path, response.status, await response.text());
     }
 
     const headerToken = response.headers.get('Token') ?? response.headers.get('token');
@@ -53,14 +92,22 @@ export async function apiRequest<T>(
     path: string,
     init: RequestInit = {},
 ): Promise<T> {
-    const response = await fetch(`${baseUrl}${path}`, {
-        ...init,
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            ...normalizeHeaders(init.headers),
-        },
-    });
+    let response: Response;
+    try {
+        response = await fetchWithTimeout(`${baseUrl}${path}`, {
+            ...init,
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                ...normalizeHeaders(init.headers),
+            },
+        });
+    } catch (error) {
+        if (error instanceof Error && error.message.startsWith('Request timed out after')) {
+            throw new ApiRequestError(init.method ?? 'GET', path, 408, `Request timed out after ${DEFAULT_API_TIMEOUT_MS}ms`);
+        }
+        throw error;
+    }
     if (!response.ok) {
         throw new ApiRequestError(init.method ?? 'GET', path, response.status, await response.text());
     }
