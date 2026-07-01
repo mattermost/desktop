@@ -49,6 +49,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.ref }}
 
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: |
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+
       - name: Cancel running E2E tests and re-trigger
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
@@ -142,6 +150,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.ref }}
 
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: |
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+
       - name: Strip E2E/Run and cancel in-flight E2E
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
@@ -193,6 +209,14 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ github.event.pull_request.base.ref }}
+
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: |
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
 
       - name: Cancel E2E runs and mark statuses skipped
         uses: ./.github/actions/cancel-e2e-runs
