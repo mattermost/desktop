@@ -42,12 +42,54 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
 async function openServerDropdownWindow(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
     await mainView!.bringToFront().catch(() => {});
+
+    // Diagnostic snapshot of the button's actual state right before clicking.
+    // Three prior fix attempts (retry-click, bringToFront, single-click+20s
+    // poll) all failed identically in CI with no visible root cause, so this
+    // captures what the button/DOM actually look like instead of guessing a
+    // fourth time.
+    const buttonState = await mainView!.evaluate(() => {
+        const button = document.querySelector('.ServerDropdownButton');
+        if (!button) {
+            return {found: false};
+        }
+        const rect = button.getBoundingClientRect();
+        const style = window.getComputedStyle(button);
+        return {
+            found: true,
+            visible: rect.width > 0 && rect.height > 0,
+            display: style.display,
+            visibility: style.visibility,
+            pointerEvents: style.pointerEvents,
+            disabled: (button as HTMLButtonElement).disabled ?? null,
+            rect: {x: rect.x, y: rect.y, width: rect.width, height: rect.height},
+            overlappingElementTag: document.elementFromPoint(
+                rect.x + (rect.width / 2),
+                rect.y + (rect.height / 2),
+            )?.className ?? null,
+        };
+    }).catch((error) => ({error: error instanceof Error ? error.message : String(error)}));
+
     await mainView!.click('.ServerDropdownButton');
 
-    await expect.poll(
-        () => app.windows().some((w) => w.url().includes('dropdown')),
-        {timeout: 20_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
-    ).toBe(true);
+    try {
+        await expect.poll(
+            () => app.windows().some((w) => w.url().includes('dropdown')),
+            {timeout: 20_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
+        ).toBe(true);
+    } catch (error) {
+        const openWindowUrls = app.windows().map((w) => {
+            try {
+                return w.url();
+            } catch {
+                return '<unavailable>';
+            }
+        });
+        throw new Error(
+            `Server dropdown window never appeared. Button state before click: ${JSON.stringify(buttonState)}. ` +
+            `Open windows at timeout: ${JSON.stringify(openWindowUrls)}. Original error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+    }
     const dropdownView = app.windows().find((w) => w.url().includes('dropdown'))!;
     await dropdownView.waitForLoadState().catch(() => {});
     return dropdownView;
