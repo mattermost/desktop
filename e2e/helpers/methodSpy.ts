@@ -3,8 +3,16 @@
 
 import type {ElectronApplication} from 'playwright';
 
+import {evaluateInMainProcess, evaluateInMainProcessWithArg} from './testRefs';
+
+// These spies install/restore around navigation-heavy flows (e.g. tests that
+// hide the main window, trigger notifications, then re-show it), during which
+// Electron's evaluate context can be transiently destroyed. Routing through
+// evaluateInMainProcess[WithArg] gives us the same "retry on transient
+// context-destroyed errors" behavior used by the tray helpers.
+
 export async function installDockBounceSpy(app: ElectronApplication): Promise<void> {
-    await app.evaluate(({app: electronApp}) => {
+    await evaluateInMainProcessWithArg(app, ({app: electronApp}) => {
         (electronApp as any).__e2eDockBounceCalls = [];
         const dock = electronApp.dock;
         if (!dock) {
@@ -16,22 +24,22 @@ export async function installDockBounceSpy(app: ElectronApplication): Promise<vo
             (electronApp as any).__e2eDockBounceCalls.push(type ?? 'informational');
             return originalBounce(type);
         }) as typeof dock.bounce;
-    });
+    }, null);
 }
 
 export async function restoreDockBounceSpy(app: ElectronApplication): Promise<void> {
-    await app.evaluate(({app: electronApp}) => {
+    await evaluateInMainProcessWithArg(app, ({app: electronApp}) => {
         const dock = electronApp.dock;
         if (dock && (dock as any).__e2eOriginalBounce) {
             dock.bounce = (dock as any).__e2eOriginalBounce;
             delete (dock as any).__e2eOriginalBounce;
         }
         delete (electronApp as any).__e2eDockBounceCalls;
-    });
+    }, null);
 }
 
 export async function installFlashFrameSpy(app: ElectronApplication): Promise<void> {
-    await app.evaluate(() => {
+    await evaluateInMainProcess(app, () => {
         (global as any).__e2eFlashFrameCalls = [];
         const refs = (global as any).__e2eTestRefs;
         const mainWin = refs?.MainWindow?.get?.();
@@ -48,7 +56,7 @@ export async function installFlashFrameSpy(app: ElectronApplication): Promise<vo
 }
 
 export async function restoreFlashFrameSpy(app: ElectronApplication): Promise<void> {
-    await app.evaluate(() => {
+    await evaluateInMainProcess(app, () => {
         const refs = (global as any).__e2eTestRefs;
         const mainWin = refs?.MainWindow?.get?.();
         if (mainWin && (mainWin as any).__e2eOriginalFlashFrame) {

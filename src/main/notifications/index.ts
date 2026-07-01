@@ -244,15 +244,18 @@ class NotificationManager {
         }
     }
 
-    /** Test-only accessor: find an active Mention by channel. Used to simulate clicking a
-     * just-displayed notification in E2E tests without reaching into private fields via a cast. */
+    /** Test-only accessor: find the MOST-RECENTLY-INSERTED active Mention for a channel.
+     * Used by __e2eDisplayAndClickMention to target the notification the test just displayed
+     * (there can be older ones for the same channel that haven't dismissed yet, and
+     * Map preserves insertion order so scanning to the end always gives us the newest). */
     public findActiveMentionByChannelId(channelId: string): Mention | undefined {
+        let latest: Mention | undefined;
         for (const notification of this.allActiveNotifications?.values() ?? []) {
             if (notification instanceof Mention && notification.channelId === channelId) {
-                return notification;
+                latest = notification;
             }
         }
-        return undefined;
+        return latest;
     }
 }
 

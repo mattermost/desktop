@@ -5,7 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
-import {hideMainWindow} from '../../helpers/tray';
+import {hideMainWindow, isMainWindowVisible} from '../../helpers/tray';
 
 test.use({appConfig: demoMattermostConfig});
 test.setTimeout(120_000);
@@ -57,11 +57,7 @@ test(
             await hideMainWindow(electronApp);
 
             await expect.poll(
-                () => electronApp.evaluate(() => {
-                    const refs = (global as any).__e2eTestRefs;
-                    const mainWindow = refs?.MainWindow?.get?.();
-                    return Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
-                }),
+                () => isMainWindowVisible(electronApp),
                 {timeout: 5_000, message: 'Main window should be hidden before notification click'},
             ).toBe(false);
 
@@ -93,11 +89,7 @@ test(
             ).toBe(targetPathname);
 
             await expect.poll(
-                () => electronApp.evaluate(() => {
-                    const refs = (global as any).__e2eTestRefs;
-                    const mainWindow = refs?.MainWindow?.get?.();
-                    return Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
-                }),
+                () => isMainWindowVisible(electronApp),
                 {timeout: 10_000, message: 'Main window should be visible after notification click navigation'},
             ).toBe(true);
         } finally {
