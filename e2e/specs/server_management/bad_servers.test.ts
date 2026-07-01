@@ -32,13 +32,16 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
 async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
     await mainView!.click('.ServerDropdownButton');
-    let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
-    if (!dropdownView) {
-        dropdownView = await app.waitForEvent('window', {
-            predicate: (w) => w.url().includes('dropdown'),
-            timeout: 10_000,
-        });
-    }
+
+    // Poll instead of waitForEvent: checking app.windows() once and only then
+    // registering a listener can miss a dropdown window created in that gap,
+    // hanging until the timeout (observed in CI on Linux/macOS). Polling isn't
+    // edge-triggered, so it picks the window up on the next tick regardless.
+    await expect.poll(
+        () => app.windows().some((w) => w.url().includes('dropdown')),
+        {timeout: 15_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
+    ).toBe(true);
+    const dropdownView = app.windows().find((w) => w.url().includes('dropdown'))!;
     await dropdownView.waitForLoadState().catch(() => {});
 
     await dropdownView!.click('.ServerDropdown .ServerDropdown__button.addServer');
@@ -66,13 +69,11 @@ async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfi
 
     await mainView!.click('.ServerDropdownButton');
 
-    let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
-    if (!dropdownView) {
-        dropdownView = await app.waitForEvent('window', {
-            predicate: (w) => w.url().includes('dropdown'),
-            timeout: 10_000,
-        });
-    }
+    await expect.poll(
+        () => app.windows().some((w) => w.url().includes('dropdown')),
+        {timeout: 15_000, message: 'Server dropdown window should appear after clicking the dropdown button'},
+    ).toBe(true);
+    const dropdownView = app.windows().find((w) => w.url().includes('dropdown'))!;
 
     await dropdownView.waitForLoadState().catch(() => {});
     return dropdownView;
