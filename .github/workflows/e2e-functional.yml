@@ -119,7 +119,15 @@ jobs:
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
             const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
             const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            await updateFinalStatus({ github, context, platforms, outputs });
+            const prNumber = parseInt('${{ inputs.pr_number }}', 10) || null;
+            await updateFinalStatus({
+              github,
+              context,
+              platforms,
+              outputs,
+              e2eTestsResult: '${{ needs.e2e-tests.result }}',
+              prNumber,
+            });
 
   remove-e2e-label:
     name: Remove E2E label from PR

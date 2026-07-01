@@ -2,6 +2,18 @@
 // See LICENSE.txt for license information.
 /* eslint-disable no-console -- Logging is intentional in CI utility scripts */
 
+const E2E_STATUS_CONTEXTS = [
+    'e2e/linux',
+    'e2e/macos',
+    'e2e/windows',
+    'policy-test/macos',
+    'policy-test/windows',
+];
+
+const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
+const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
+const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
+
 /**
  * Update initial pending status for all platforms
  * @param {Object} params - Parameters object
@@ -26,14 +38,6 @@ async function updateInitialStatus({github, context, platforms}) {
 }
 
 /**
- * Update final status for all platforms based on test results
- * @param {Object} params - Parameters object
- * @param {Object} params.github - GitHub API client from actions/github-script
- * @param {Object} params.context - GitHub Actions context
- * @param {Array} params.platforms - Array of platform objects from matrix
- * @param {Object} params.outputs - Test outputs from e2e-tests job
- */
-/**
  * Build the short description shown in the PR status check.
  * Only counts tests that actually ran on this platform (passed + failed).
  * Skipped tests are omitted — they are cross-platform guards, not real
@@ -53,12 +57,35 @@ function formatStatusDescription({passed, failed}) {
     return `${ran} ran, ${passed} passed, ${failed} failed`;
 }
 
-async function updateFinalStatus({github, context, platforms, outputs}) {
+async function resolveStatusSha({github, context, prNumber}) {
+    if (prNumber) {
+        const {data: pr} = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: prNumber,
+        });
+        return pr.head.sha;
+    }
+
+    return context.payload.pull_request?.head?.sha || context.sha;
+}
+
+/**
+ * Update final status for all platforms based on test results
+ * @param {Object} params - Parameters object
+ * @param {Object} params.github - GitHub API client from actions/github-script
+ * @param {Object} params.context - GitHub Actions context
+ * @param {Array} params.platforms - Array of platform objects from matrix
+ * @param {Object} params.outputs - Test outputs from e2e-tests job
+ * @param {string} [params.e2eTestsResult] - needs.e2e-tests.result from the workflow
+ * @param {number} [params.prNumber] - PR number for status SHA lookup
+ */
+async function updateFinalStatus({github, context, platforms, outputs, e2eTestsResult, prNumber}) {
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+    const sha = await resolveStatusSha({github, context, prNumber});
+    const workflowCancelled = e2eTestsResult === 'cancelled';
 
     await Promise.all(platforms.map((platform) => {
-        // Determine OS key based on runner. Each platform's REPORT_LINK_* is its
-        // own single-OS Playwright HTML report (uploaded per-OS in the template).
         let osKey;
         if (platform.runner.includes('ubuntu')) {
             osKey = 'LINUX';
@@ -70,21 +97,98 @@ async function updateFinalStatus({github, context, platforms, outputs}) {
 
         const failed = Number(outputs[`NEW_FAILURES_${osKey}`] || 0);
         const passed = Number(outputs[`PASSED_${osKey}`] || 0);
-        const skipped = Number(outputs[`SKIPPED_${osKey}`] || 0);
-        const total = Number(outputs[`TOTAL_${osKey}`] || 0);
-        const status = outputs[`STATUS_${osKey}`] || 'failure';
+        const platformStatus = outputs[`STATUS_${osKey}`] || '';
         const reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
+        const ran = passed + failed;
+
+        let state;
+        let description;
+
+        if (platformStatus === 'error' || (workflowCancelled && ran === 0)) {
+            state = 'error';
+            description = CANCELLED_STATUS_DESCRIPTION;
+        } else if (ran === 0 && (platformStatus === 'success' || platformStatus === '')) {
+            state = 'error';
+            description = workflowCancelled ? CANCELLED_STATUS_DESCRIPTION : 'E2E incomplete — no tests ran';
+        } else if (failed > 0 || platformStatus === 'failure') {
+            state = 'failure';
+            description = formatStatusDescription({passed, failed});
+        } else {
+            state = 'success';
+            description = formatStatusDescription({passed, failed});
+        }
 
         return github.rest.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            sha: context.payload.pull_request?.head?.sha || context.sha,
-            state: status,
+            sha,
+            state,
             context: `e2e/${platform.platform}`,
-            description: formatStatusDescription({passed, failed, skipped, total}),
+            description,
             target_url: reportLink,
         });
     }));
+}
+
+/**
+ * Mark standard E2E commit statuses as cancelled/skipped on a SHA.
+ * GitHub commit statuses have no "skipped" state — `error` matches mobile E2E.
+ */
+async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION}) {
+    const description = String(reason).substring(0, 140);
+
+    await Promise.all(E2E_STATUS_CONTEXTS.map((statusContext) =>
+        github.rest.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha,
+            state: 'error',
+            context: statusContext,
+            description,
+        }).catch((error) => {
+            console.log(`Could not update ${statusContext} on ${sha}: ${error.message}`);
+        }),
+    ));
+}
+
+/**
+ * Cancel all active Electron Playwright Tests workflow runs.
+ * Matterwick dispatches via workflow_dispatch on the default branch, so runs
+ * cannot be filtered reliably by PR branch — cancel every active run instead.
+ */
+async function cancelActiveE2ERuns({github, context}) {
+    const {owner, repo} = context.repo;
+    const {data: {workflows}} = await github.rest.actions.listRepoWorkflows({owner, repo});
+    const e2eWorkflow = workflows.find((workflow) => workflow.name === E2E_WORKFLOW_NAME);
+
+    if (!e2eWorkflow) {
+        console.log(`${E2E_WORKFLOW_NAME} workflow not found — skipping cancellation`);
+        return 0;
+    }
+
+    let cancelled = 0;
+
+    for (const status of ACTIVE_RUN_STATUSES) {
+        const {data: {workflow_runs: workflowRuns}} = await github.rest.actions.listWorkflowRuns({
+            owner,
+            repo,
+            workflow_id: e2eWorkflow.id,
+            status,
+            per_page: 20,
+        });
+
+        for (const run of workflowRuns) {
+            try {
+                await github.rest.actions.cancelWorkflowRun({owner, repo, run_id: run.id});
+                console.log(`Cancelled E2E run ${run.id} (status: ${status})`);
+                cancelled += 1;
+            } catch (error) {
+                console.log(`Could not cancel run ${run.id}: ${error.message}`);
+            }
+        }
+    }
+
+    return cancelled;
 }
 
 /**
@@ -95,30 +199,24 @@ async function updateFinalStatus({github, context, platforms, outputs}) {
  */
 async function removeE2ELabel({github, context}) {
     try {
-        // Get the current run to check if it was triggered by workflow_dispatch
         const run = await github.rest.actions.getWorkflowRun({
             owner: context.repo.owner,
             repo: context.repo.repo,
             run_id: context.runId,
         });
 
-        // Only remove the label if this was triggered via workflow_dispatch (Matterwick)
         if (run.data.event !== 'workflow_dispatch') {
             console.log('Label removal skipped - workflow run is not triggered by workflow_dispatch (Matterwick)');
             return;
         }
 
-        // Try to find associated PR
         let prNumber = null;
 
-        // First try: check run.data.pull_requests (reliable for pull_request events)
         if (run.data.pull_requests && run.data.pull_requests.length > 0) {
             prNumber = run.data.pull_requests[0].number;
         } else {
-            // Second try: query PRs by head branch (more reliable for workflow_dispatch)
             const branchName = run.data.head_branch;
             if (branchName) {
-                // Use the actual head repository owner (supports fork PRs)
                 const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
                 const prs = await github.rest.pulls.list({
                     owner: context.repo.owner,
@@ -127,15 +225,10 @@ async function removeE2ELabel({github, context}) {
                     head: `${headOwner}:${branchName}`,
                 });
                 if (prs.data && prs.data.length > 0) {
-                    // Prefer the PR whose head SHA matches the workflow run's head SHA
                     const matchingPr = prs.data.find(
                         (pr) => pr.head && pr.head.sha === run.data.head_sha,
                     );
-                    if (matchingPr) {
-                        prNumber = matchingPr.number;
-                    } else {
-                        prNumber = prs.data[0].number;
-                    }
+                    prNumber = (matchingPr || prs.data[0]).number;
                 }
             }
         }
@@ -166,4 +259,8 @@ module.exports = {
     updateFinalStatus,
     removeE2ELabel,
     formatStatusDescription,
+    markE2EStatusesCancelled,
+    cancelActiveE2ERuns,
+    E2E_STATUS_CONTEXTS,
+    CANCELLED_STATUS_DESCRIPTION,
 };
