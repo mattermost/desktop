@@ -9,8 +9,8 @@ import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {appDir, demoConfig, electronBinaryPath, exampleURL, mattermostURL, writeConfigFile} from '../../helpers/config';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const isSupported = (process.platform === 'win32' || process.platform === 'darwin') && process.env.RUN_POLICY_E2E === 'true';
@@ -187,8 +187,10 @@ async function launchPolicyApp(testInfo: {outputDir: string}, options: LaunchOpt
 }
 
 async function closePolicyApp(app: Awaited<ReturnType<typeof electron.launch>> | undefined, userDataDir: string) {
-    await app?.close().catch(() => {});
-    await waitForLockFileRelease(userDataDir).catch(() => {});
+    if (!app) {
+        return;
+    }
+    await closeElectronAppFast(app, userDataDir);
 }
 
 async function getMainWindow(app: Awaited<ReturnType<typeof electron.launch>>) {
