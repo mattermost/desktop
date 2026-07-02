@@ -5,6 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
+import {resolveChannelByName} from '../../helpers/server_api/channel';
 import {hideMainWindow, isMainWindowVisible} from '../../helpers/tray';
 
 test.use({appConfig: demoMattermostConfig});
@@ -28,31 +29,8 @@ test(
             await loginToMattermost(serverWin!);
             await serverWin!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
-            const targetChannel = await serverWin!.evaluate(() => {
-                const link = document.querySelector('#sidebarItem_off-topic') as HTMLAnchorElement | null;
-                const store = (window as any).store;
-                const state = store?.getState?.();
-                const channels = state?.entities?.channels?.channels;
-                if (!channels) {
-                    return undefined;
-                }
-
-                const channel = Object.values(channels).find((value: any) => value?.name === 'off-topic');
-                if (!channel) {
-                    return undefined;
-                }
-
-                return {
-                    id: channel.id,
-                    teamId: channel.team_id,
-                    name: channel.name,
-                    url: link?.href,
-                };
-            });
-
-            expect(targetChannel, 'Could not get target channel from webapp store').toBeTruthy();
-            expect(targetChannel?.url, 'Could not resolve off-topic sidebar URL').toBeTruthy();
-            const targetPathname = new URL(targetChannel!.url!).pathname;
+            const targetChannel = await resolveChannelByName('off-topic');
+            const targetPathname = new URL(targetChannel.url).pathname;
 
             await hideMainWindow(electronApp);
 
@@ -78,9 +56,9 @@ test(
                 });
             }, {
                 webContentsId: serverEntry!.webContentsId,
-                channelId: targetChannel!.id,
-                teamId: targetChannel!.teamId,
-                url: targetChannel!.url!,
+                channelId: targetChannel.id,
+                teamId: targetChannel.teamId,
+                url: targetChannel.url,
             });
 
             await expect.poll(

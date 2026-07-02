@@ -32,11 +32,7 @@ test.describe('Settings', () => {
             });
 
             test.describe('Save tray icon setting on mac', () => {
-                test("MM-T4393_2 should be saved when it's selected", {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
-                    if (!['darwin', 'linux'].includes(process.platform)) {
-                        test.skip(true, 'darwin/linux only');
-                        return;
-                    }
+                test("MM-T4393_2 should be saved when it's selected", {tag: ['@P2', '@darwin', '@linux']}, async ({electronApp}, testInfo) => {
                     const settingsWindow = await openSettingsWindow(electronApp);
                     await settingsWindow.waitForSelector('#settingCategoryButton-general');
                     await settingsWindow.click('#settingCategoryButton-general');
@@ -58,11 +54,7 @@ test.describe('Settings', () => {
             });
 
             test.describe('Save tray icon theme on linux', () => {
-                test("MM-T4393_3 should be saved when it's selected", {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
-                    if (process.platform !== 'linux') {
-                        test.skip(true, 'Linux only');
-                        return;
-                    }
+                test("MM-T4393_3 should be saved when it's selected", {tag: ['@P2', '@linux']}, async ({electronApp}, testInfo) => {
                     const settingsWindow = await openSettingsWindow(electronApp);
                     await settingsWindow.waitForSelector('#settingCategoryButton-general');
                     await settingsWindow.click('#settingCategoryButton-general');
@@ -166,11 +158,7 @@ test.describe('Settings', () => {
         });
 
         test.describe('Enable automatic check for updates', () => {
-            test('MM-T4549 should save selected option', {tag: ['@P2', '@all']}, async ({electronApp}, testInfo) => {
-                if (process.platform === 'darwin') {
-                    test.skip(true, 'Not applicable on macOS');
-                    return;
-                }
+            test('MM-T4549 should save selected option', {tag: ['@P2', '@win32', '@linux']}, async ({electronApp}, testInfo) => {
                 const ID_INPUT_ENABLE_AUTO_UPDATES = '#CheckSetting_autoCheckForUpdates button';
                 const settingsWindow = await openSettingsWindow(electronApp);
                 await settingsWindow.waitForSelector('#settingCategoryButton-general');

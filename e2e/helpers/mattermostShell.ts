@@ -272,6 +272,9 @@ export async function getPostTextboxWordPoint(
             const textareaRect = textarea.getBoundingClientRect();
             document.body.removeChild(mirror);
 
+            // markerRect is relative to the mirror (anchored at 0,0 in body coords),
+            // so (markerRect - mirrorRect) gives the offset inside the mirror. Add that
+            // to the textarea's viewport position and subtract scroll for the final point.
             return {
                 x: Math.round(
                     textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft + (markerRect.width / 2),

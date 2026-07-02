@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {exampleURL} from '../../helpers/config';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 test.describe('startup/config', () => {
     test(
@@ -66,8 +66,7 @@ test.describe('startup/config', () => {
                 expect(upgraded.servers).toBeDefined();
                 expect(upgraded.servers[0].url).toContain('example.com');
             } finally {
-                await upgradedApp.close();
-                await waitForLockFileRelease(v0Dir);
+                await closeElectronAppFast(upgradedApp, v0Dir);
             }
         },
     );
