@@ -8,7 +8,10 @@ import {evaluateInMainProcess, evaluateInMainProcessWithArg} from './testRefs';
 export async function emitTrayIconClick(app: ElectronApplication): Promise<void> {
     await evaluateInMainProcess(app, () => {
         const refs = (global as any).__e2eTestRefs;
-        const tray = refs?.TrayIcon?.tray;
+        if (!refs) {
+            throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
+        }
+        const tray = refs.TrayIcon.tray;
         if (!tray || tray.isDestroyed?.()) {
             throw new Error('Tray icon is not initialized');
         }
@@ -26,10 +29,27 @@ export async function clickTrayMenuItem(app: ElectronApplication, label: string)
     }, label);
 }
 
+export async function hideMainWindow(app: ElectronApplication): Promise<void> {
+    await evaluateInMainProcess(app, () => {
+        const refs = (global as any).__e2eTestRefs;
+        if (!refs) {
+            throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
+        }
+        const mainWindow = refs.MainWindow.get();
+        if (!mainWindow || mainWindow.isDestroyed?.()) {
+            throw new Error('MainWindow is not available');
+        }
+        mainWindow.hide();
+    });
+}
+
 export async function isMainWindowVisible(app: ElectronApplication): Promise<boolean> {
     return evaluateInMainProcess(app, () => {
         const refs = (global as any).__e2eTestRefs;
-        const mainWindow = refs?.MainWindow?.get?.();
+        if (!refs) {
+            return false;
+        }
+        const mainWindow = refs.MainWindow.get();
         return Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
     });
 }

@@ -20,6 +20,7 @@ test.describe('copylink', () => {
 
         await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
         await loginToMattermost(firstServer);
+        await prepareMattermostServerView(electronApp, firstServer.webContentsId);
 
         await electronApp.evaluate(({clipboard}) => {
             clipboard.writeText('');

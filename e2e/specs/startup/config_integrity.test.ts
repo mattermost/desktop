@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 
 test(
     'config.json is valid JSON after app closes normally',
@@ -31,8 +31,9 @@ test(
         try {
             await waitForAppReady(app);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            // Not the fast path: this test reads config.json right after close, so
+            // it needs the lock-release wait to guarantee the file is fully flushed.
+            await closeElectronApp(app, userDataDir);
         }
 
         // Config file must exist and be valid JSON
@@ -76,8 +77,7 @@ test(
             const windows = app.windows();
             expect(windows.length).toBeGreaterThan(0);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     },
 );

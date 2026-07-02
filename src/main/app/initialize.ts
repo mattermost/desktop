@@ -294,7 +294,7 @@ function initializeInterCommunicationEventListeners() {
 }
 
 async function initializeAfterAppReady() {
-    setTestField('__e2eTestRefs', {
+    const e2eTestRefs = {
         MainWindow,
         ServerManager,
         TabManager,
@@ -304,7 +304,9 @@ async function initializeAfterAppReady() {
         TrayIcon: Tray,
         Diagnostics,
         PopoutManager,
-    });
+    };
+
+    setTestField('__e2eTestRefs', e2eTestRefs);
 
     setTestField('__e2eOpenDeepLink', (url: string) => {
         openDeepLink(url);

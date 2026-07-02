@@ -42,6 +42,25 @@ export async function closeElectronAppFast(
     return closeElectronApp(app, dataDir, FAST_TEARDOWN);
 }
 
+/**
+ * Close an app that may not have launched (e.g. the launch itself threw) and may
+ * not have a userDataDir assigned yet. Uses the fast teardown when a dir is known
+ * (unique per-test dir, safe to abandon); otherwise falls back to a plain close.
+ */
+export async function closeAppSafely(
+    app: ElectronApplication | undefined,
+    dataDir?: string,
+): Promise<void> {
+    if (!app) {
+        return;
+    }
+    if (dataDir) {
+        await closeElectronAppFast(app, dataDir);
+    } else {
+        await app.close().catch(() => {});
+    }
+}
+
 function workerRegistryPath(workerPid: number = process.pid): string {
     return path.join(REGISTRY_DIR, `${REGISTRY_PREFIX}-${workerPid}.txt`);
 }
