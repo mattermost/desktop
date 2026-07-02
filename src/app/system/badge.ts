@@ -7,7 +7,7 @@ import {app, nativeImage} from 'electron';
 import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
-import {setTestField} from 'common/utils/util';
+import {recordBadgeTestState} from 'main/e2e/badgeState';
 import {localizeMessage} from 'main/i18nManager';
 
 import MainWindow from '../mainWindow/mainWindow';
@@ -125,29 +125,7 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
         break;
     }
 
-    if (process.env.NODE_ENV === 'test') {
-        let resolvedType: 'mention' | 'unread' | 'expired' | 'none';
-        if (process.platform === 'linux') {
-            if (mentionCount > 0) {
-                resolvedType = 'mention';
-            } else if (sessionExpired) {
-                resolvedType = 'expired';
-            } else {
-                resolvedType = 'none';
-            }
-        } else if (mentionCount > 0) {
-            resolvedType = 'mention';
-        } else if (showUnreadBadge && showUnreadBadgeSetting) {
-            resolvedType = 'unread';
-        } else if (sessionExpired) {
-            resolvedType = 'expired';
-        } else {
-            resolvedType = 'none';
-        }
-
-        const hasOverlay = process.platform === 'win32' && resolvedType !== 'none';
-        setTestField('__testBadgeState', {sessionExpired, mentionCount, showUnreadBadge, resolvedType, hasOverlay});
-    }
+    recordBadgeTestState(sessionExpired, mentionCount, showUnreadBadge, showUnreadBadgeSetting);
 }
 
 export function setUnreadBadgeSetting(showUnreadBadge: boolean) {

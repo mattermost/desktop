@@ -3,14 +3,9 @@
 
 import {setTestField} from 'common/utils/util';
 
-type MessageBoxResponse = {response: number};
+import type {SimulateNotificationClickPayload} from './notificationClick';
 
-type SimulateNotificationClickPayload = {
-    webContentsId: number;
-    channelId: string;
-    teamId: string;
-    url: string;
-};
+type MessageBoxResponse = {response: number};
 
 type RegisterE2eHooksOptions = {
     e2eTestRefs: Record<string, unknown>;
