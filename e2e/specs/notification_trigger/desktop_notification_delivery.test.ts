@@ -1,28 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {ElectronApplication} from 'playwright';
-
 import {test, expect} from '../../fixtures/index';
+import {readBadgeCount} from '../../helpers/badge';
 import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
 
 import {triggerTestNotification, verifyNotificationReceivedInDM} from './helpers';
-
-// Only called when the platform actually supports a badge count (darwin, or
-// linux with Unity running — see the unityRunning check at the call site), so
-// app.getBadgeCount() isn't expected to throw here; let a real failure surface
-// instead of masking it as "0 badge".
-async function readBadgeCount(electronApp: ElectronApplication): Promise<number> {
-    return electronApp.evaluate(({app}) => {
-        if (process.platform === 'darwin') {
-            const badge = app.dock?.getBadge() ?? '';
-            return badge === '' || Number.isNaN(Number(badge)) ? 0 : parseInt(badge, 10);
-        }
-        return app.getBadgeCount();
-    });
-}
 
 test.describe('notification_trigger/desktop_notification_delivery', () => {
     test.use({appConfig: demoMattermostConfig});

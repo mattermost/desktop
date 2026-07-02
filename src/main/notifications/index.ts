@@ -93,16 +93,7 @@ class NotificationManager {
             log.debug('notification click', server.id, mention.uId);
 
             this.allActiveNotifications?.delete(mention.uId);
-
-            // Show the window after navigation has finished to avoid the focus handler
-            // being called before the current channel has updated
-            const focus = () => {
-                MainWindow.show();
-                TabManager.switchToTab(view.id);
-                ipcMain.off(BROWSER_HISTORY_PUSH, focus);
-            };
-            ipcMain.on(BROWSER_HISTORY_PUSH, focus);
-            webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
+            this.handleMentionClick(view, webcontents, channelId, teamId, url);
         });
 
         mention.on('close', () => {
@@ -244,11 +235,23 @@ class NotificationManager {
         }
     }
 
-    /** Test-only accessor: find the MOST-RECENTLY-INSERTED active Mention for a channel.
-     * Used by __e2eDisplayAndClickMention to target the notification the test just displayed
-     * (there can be older ones for the same channel that haven't dismissed yet, and
-     * Map preserves insertion order so scanning to the end always gives us the newest). */
-    public findActiveMentionByChannelId(channelId: string): Mention | undefined {
+    private handleMentionClick(
+        view: {id: string},
+        webcontents: Electron.WebContents,
+        channelId: string,
+        teamId: string,
+        url: string,
+    ) {
+        const focus = () => {
+            MainWindow.show();
+            TabManager.switchToTab(view.id);
+            ipcMain.off(BROWSER_HISTORY_PUSH, focus);
+        };
+        ipcMain.on(BROWSER_HISTORY_PUSH, focus);
+        webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
+    }
+
+    private findActiveMentionByChannelId(channelId: string): Mention | undefined {
         let latest: Mention | undefined;
         for (const notification of this.allActiveNotifications?.values() ?? []) {
             if (notification instanceof Mention && notification.channelId === channelId) {
@@ -256,6 +259,35 @@ class NotificationManager {
             }
         }
         return latest;
+    }
+
+    /** NODE_ENV=test only — invoked via __e2eSimulateNotificationClick. */
+    simulateMentionClickForTest(payload: {
+        webContentsId: number;
+        channelId: string;
+        teamId: string;
+        url: string;
+    }) {
+        const wc = webContents.fromId(payload.webContentsId);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.webContentsId} is not available`);
+        }
+
+        const view = WebContentsManager.getViewByWebContentsId(wc.id);
+        if (!view) {
+            throw new Error(`No view for webContents ${payload.webContentsId}`);
+        }
+
+        this.handleMentionClick(view, wc, payload.channelId, payload.teamId, payload.url);
+    }
+
+    /** NODE_ENV=test only — invoked via __e2eClickActiveMention after displayMention. */
+    clickActiveMentionForTest(channelId: string) {
+        const mention = this.findActiveMentionByChannelId(channelId);
+        if (!mention) {
+            throw new Error(`No active mention for channel ${channelId}`);
+        }
+        mention.emit('click');
     }
 }
 
@@ -293,50 +325,21 @@ function flashFrame(flash: boolean) {
     }
 }
 
+const notificationManager = new NotificationManager();
+
 if (process.env.NODE_ENV === 'test') {
     setTestField('__e2eNotificationEffects', flashFrame);
-    setTestField('__e2eDisplayAndClickMention', async (payload: {
+    setTestField('__e2eSimulateNotificationClick', (payload: {
         webContentsId: number;
-        title: string;
-        body: string;
         channelId: string;
         teamId: string;
         url: string;
     }) => {
-        const wc = webContents.fromId(payload.webContentsId);
-        if (!wc || wc.isDestroyed()) {
-            throw new Error(`webContents ${payload.webContentsId} is not available`);
-        }
-
-        const displayPromise = notificationManager.displayMention(
-            payload.title,
-            payload.body,
-            payload.channelId,
-            payload.teamId,
-            payload.url,
-            true,
-            wc,
-            '',
-        );
-
-        let mention: Mention | undefined;
-        const deadline = Date.now() + 5_000;
-        while (!mention && Date.now() < deadline) {
-            mention = notificationManager.findActiveMentionByChannelId(payload.channelId);
-            if (!mention) {
-                // eslint-disable-next-line no-await-in-loop
-                await new Promise((resolve) => setTimeout(resolve, 50));
-            }
-        }
-
-        if (!mention) {
-            throw new Error('Mention notification was not created');
-        }
-
-        mention.emit('click');
-        await displayPromise.catch(() => {});
+        notificationManager.simulateMentionClickForTest(payload);
+    });
+    setTestField('__e2eClickActiveMention', (channelId: string) => {
+        notificationManager.clickActiveMentionForTest(channelId);
     });
 }
 
-const notificationManager = new NotificationManager();
 export default notificationManager;

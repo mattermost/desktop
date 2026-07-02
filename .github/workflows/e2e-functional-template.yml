@@ -94,6 +94,15 @@ on:
       SKIPPED_WINDOWS:
         description: "Number of skipped tests on Windows"
         value: ${{ jobs.e2e.outputs.SKIPPED_WINDOWS }}
+      COLLECTION_FAILED_LINUX:
+        description: "Whether Playwright collected zero tests on Linux"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_LINUX }}
+      COLLECTION_FAILED_MACOS:
+        description: "Whether Playwright collected zero tests on macOS"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_MACOS }}
+      COLLECTION_FAILED_WINDOWS:
+        description: "Whether Playwright collected zero tests on Windows"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_WINDOWS }}
       STATUS_WINDOWS:
         description: "The status of the windows test"
         value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
@@ -182,6 +191,9 @@ jobs:
       SKIPPED_LINUX: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_LINUX }}
       SKIPPED_MACOS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_MACOS }}
       SKIPPED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_WINDOWS }}
+      COLLECTION_FAILED_LINUX: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_LINUX }}
+      COLLECTION_FAILED_MACOS: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_MACOS }}
+      COLLECTION_FAILED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_WINDOWS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -393,7 +405,7 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { failureCount, passCount, skipCount, totalCount, os, testStatus } = analyzeFlakyTests();
+            const { failureCount, passCount, skipCount, totalCount, os, testStatus, collectionFailed } = analyzeFlakyTests();
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const reportUrl = process.env.PER_OS_REPORT_URL || runUrl;
             const setOSOutputs = (suffix) => {
@@ -403,6 +415,7 @@ jobs:
               core.setOutput(`PASSED_${suffix}`, String(passCount));
               core.setOutput(`SKIPPED_${suffix}`, String(skipCount));
               core.setOutput(`TOTAL_${suffix}`, String(totalCount));
+              core.setOutput(`COLLECTION_FAILED_${suffix}`, String(collectionFailed));
             };
             switch (os) {
               case 'linux':

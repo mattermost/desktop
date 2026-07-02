@@ -5,6 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
+import {simulateNotificationClick} from '../../helpers/notificationClick';
 import {resolveChannelByName} from '../../helpers/server_api/channel';
 import {hideMainWindow, isMainWindowVisible} from '../../helpers/tray';
 
@@ -39,22 +40,7 @@ test(
                 {timeout: 5_000, message: 'Main window should be hidden before notification click'},
             ).toBe(false);
 
-            await electronApp.evaluate((payload) => {
-                const displayAndClick = (global as any).__e2eDisplayAndClickMention as
-                    | ((value: typeof payload) => Promise<void>)
-                    | undefined;
-                if (!displayAndClick) {
-                    throw new Error('__e2eDisplayAndClickMention not exposed (NODE_ENV must be test)');
-                }
-                return displayAndClick({
-                    webContentsId: payload.webContentsId,
-                    title: 'E2E mention',
-                    body: 'Notification click test',
-                    channelId: payload.channelId,
-                    teamId: payload.teamId,
-                    url: payload.url,
-                });
-            }, {
+            await simulateNotificationClick(electronApp, {
                 webContentsId: serverEntry!.webContentsId,
                 channelId: targetChannel.id,
                 teamId: targetChannel.teamId,

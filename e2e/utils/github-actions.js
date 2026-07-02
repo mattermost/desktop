@@ -47,7 +47,7 @@ async function updateInitialStatus({github, context, platforms}) {
  *   - any failure: "161 ran, 157 passed, 4 failed"
  */
 function formatStatusDescription({passed, failed, collectionFailed}) {
-    if (collectionFailed || (passed === 0 && failed > 0 && passed + failed === failed)) {
+    if (collectionFailed) {
         return 'No tests ran (collection failed)';
     }
 
@@ -101,6 +101,7 @@ async function updateFinalStatus({github, context, platforms, outputs, e2eTestsR
 
         const failed = Number(outputs[`NEW_FAILURES_${osKey}`] || 0);
         const passed = Number(outputs[`PASSED_${osKey}`] || 0);
+        const collectionFailed = outputs[`COLLECTION_FAILED_${osKey}`] === 'true';
         const platformStatus = outputs[`STATUS_${osKey}`] || '';
         const reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
         const ran = passed + failed;
@@ -116,10 +117,10 @@ async function updateFinalStatus({github, context, platforms, outputs, e2eTestsR
             description = workflowCancelled ? CANCELLED_STATUS_DESCRIPTION : 'E2E incomplete — no tests ran';
         } else if (failed > 0 || platformStatus === 'failure') {
             state = 'failure';
-            description = formatStatusDescription({passed, failed});
+            description = formatStatusDescription({passed, failed, collectionFailed});
         } else {
             state = 'success';
-            description = formatStatusDescription({passed, failed});
+            description = formatStatusDescription({passed, failed, collectionFailed});
         }
 
         return github.rest.repos.createCommitStatus({

@@ -3,6 +3,7 @@
 
 import {expect} from '@playwright/test';
 
+import {isTransientEvaluateError} from './testRefs';
 import type {ServerView} from './serverView';
 
 export const POST_TEXTBOX_CANDIDATES = [
@@ -97,7 +98,7 @@ export async function recoverServerViewIfNeeded(
     options?: {channelItem?: string},
 ) {
     const channelItem = options?.channelItem ?? '#sidebarItem_town-square';
-    const healthy = await win.runInRenderer(`
+    const healthy = await win.runInRenderer<boolean>(`
         return Boolean(
             document.querySelector('#channelHeaderTitle')
             && document.querySelector(${JSON.stringify(channelItem)}),
@@ -108,7 +109,14 @@ export async function recoverServerViewIfNeeded(
         return;
     }
 
-    await win.runInRenderer('window.location.reload(); return true;', true);
+    try {
+        await win.runInRenderer('window.location.reload(); return true;', true);
+    } catch (error) {
+        // reload() tears down the renderer; runInRenderer may reject after navigation starts.
+        if (!isTransientEvaluateError(error)) {
+            throw error;
+        }
+    }
     await waitForMattermostShell(win, {channelItem});
 }
 
@@ -137,7 +145,7 @@ export async function waitForChannelPostListLoaded(
 
 /** Read the current post textbox contents (textarea value or contenteditable text). */
 export async function getPostTextboxValue(win: ServerView): Promise<string> {
-    const value = await win.runInRenderer(`
+    const value = await win.runInRenderer<string>(`
         ${POST_TEXTBOX_RESOLVER_JS}
 
         const root = __mmResolvePostTextboxRoot();
@@ -155,7 +163,7 @@ export async function getPostTextboxValue(win: ServerView): Promise<string> {
 
 /** Press a keyboard shortcut on the post textbox. */
 export async function pressPostTextboxKey(win: ServerView, key: string): Promise<void> {
-    const focused = await win.runInRenderer(`
+    const focused = await win.runInRenderer<boolean>(`
         ${POST_TEXTBOX_RESOLVER_JS}
 
         const root = __mmResolvePostTextboxRoot();
@@ -180,7 +188,7 @@ export async function typeIntoPostTextbox(win: ServerView, text: string): Promis
     await win.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 10_000});
     await win.click(POST_TEXTBOX_SELECTOR);
 
-    const inserted = await win.runInRenderer(`
+    const inserted = await win.runInRenderer<boolean>(`
         const value = ${JSON.stringify(text)};
 
         ${POST_TEXTBOX_RESOLVER_JS}
@@ -227,7 +235,7 @@ export async function getPostTextboxWordPoint(
     win: ServerView,
     word: string,
 ): Promise<{x: number; y: number} | null> {
-    return win.runInRenderer(`
+    return win.runInRenderer<{x: number; y: number} | null>(`
         const target = ${JSON.stringify(word)};
 
         ${POST_TEXTBOX_RESOLVER_JS}

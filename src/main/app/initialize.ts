@@ -41,6 +41,7 @@ import {
     SERVER_PRE_AUTH_SECRET_CHANGED,
     SERVER_URL_CHANGED,
 } from 'common/communication';
+import AppState from 'common/appState';
 import Config from 'common/config';
 import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
@@ -58,7 +59,7 @@ import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
-import {getDoNotDisturb} from 'main/notifications';
+import notificationManager, {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
@@ -295,7 +296,9 @@ function initializeInterCommunicationEventListeners() {
 
 async function initializeAfterAppReady() {
     const e2eTestRefs = {
+        AppState,
         MainWindow,
+        NotificationManager: notificationManager,
         ServerManager,
         TabManager,
         ViewManager,
