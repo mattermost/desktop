@@ -60,25 +60,36 @@ test.describe('menu_bar/devtools_current_server', () => {
                 {timeout: 15_000, message: 'DevTools must open for the current server webContents after menu click'},
             ).toBe(true);
 
-            // Toggle closed instead of closeDevTools() evaluate, which can race with
-            // DevTools teardown and destabilize the app on Linux CI.
-            await evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
-                try {
+            // MattermostWebContentsView.openDevTools() runs a 500ms macOS reset and documents
+            // that isDevToolsOpened() may not reflect close — use closeDevTools() and assert
+            // the server view is usable instead of polling isDevToolsOpened() on darwin.
+            if (process.platform === 'darwin') {
+                await new Promise((resolve) => setTimeout(resolve, 750));
+                await evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
                     const wc = webContents.fromId(id);
                     if (wc && !wc.isDestroyed() && wc.isDevToolsOpened()) {
-                        wc.toggleDevTools();
+                        wc.closeDevTools();
                     }
-                } catch {
-                    // DevTools may already be detaching.
-                }
-            }, webContentsId).catch(() => {});
-            await expect.poll(
-                () => evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
-                    const wc = webContents.fromId(id);
-                    return wc && !wc.isDestroyed() ? !wc.isDevToolsOpened() : true;
-                }, webContentsId).catch(() => true),
-                {timeout: 15_000, message: 'DevTools must close after toggle'},
-            ).toBe(true);
+                }, webContentsId);
+            } else {
+                await evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
+                    try {
+                        const wc = webContents.fromId(id);
+                        if (wc && !wc.isDestroyed() && wc.isDevToolsOpened()) {
+                            wc.toggleDevTools();
+                        }
+                    } catch {
+                        // DevTools may already be detaching.
+                    }
+                }, webContentsId).catch(() => {});
+                await expect.poll(
+                    () => evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
+                        const wc = webContents.fromId(id);
+                        return wc && !wc.isDestroyed() ? !wc.isDevToolsOpened() : true;
+                    }, webContentsId).catch(() => true),
+                    {timeout: 15_000, message: 'DevTools must close after toggle'},
+                ).toBe(true);
+            }
 
             // DevTools attach/detach can briefly invalidate Playwright's Electron context on macOS.
             await prepareMattermostServerView(electronApp, webContentsId);
