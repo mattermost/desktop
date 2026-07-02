@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, shell, Notification, ipcMain, webContents} from 'electron';
+import {app, shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
@@ -12,7 +12,6 @@ import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATIO
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {setTestField} from 'common/utils/util';
 import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
 import PermissionsManager from 'main/security/permissionsManager';
@@ -93,7 +92,7 @@ class NotificationManager {
             log.debug('notification click', server.id, mention.uId);
 
             this.allActiveNotifications?.delete(mention.uId);
-            this.handleMentionClick(view, webcontents, channelId, teamId, url);
+            dispatchMentionClick(view, webcontents, channelId, teamId, url);
         });
 
         mention.on('close', () => {
@@ -128,7 +127,7 @@ class NotificationManager {
                         if (notificationSound) {
                             MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
                         }
-                        flashFrame(true);
+                        triggerNotificationFrameEffects(true);
                         clearTimeout(timeout);
                         resolve({status: 'success'});
                     }
@@ -169,7 +168,7 @@ class NotificationManager {
         this.allActiveNotifications?.set(download.uId, download);
 
         download.on('show', () => {
-            flashFrame(true);
+            triggerNotificationFrameEffects(true);
         });
 
         download.on('click', () => {
@@ -234,61 +233,22 @@ class NotificationManager {
             break;
         }
     }
+}
 
-    private handleMentionClick(
-        view: {id: string},
-        webcontents: Electron.WebContents,
-        channelId: string,
-        teamId: string,
-        url: string,
-    ) {
-        const focus = () => {
-            MainWindow.show();
-            TabManager.switchToTab(view.id);
-            ipcMain.off(BROWSER_HISTORY_PUSH, focus);
-        };
-        ipcMain.on(BROWSER_HISTORY_PUSH, focus);
-        webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
-    }
-
-    private findActiveMentionByChannelId(channelId: string): Mention | undefined {
-        let latest: Mention | undefined;
-        for (const notification of this.allActiveNotifications?.values() ?? []) {
-            if (notification instanceof Mention && notification.channelId === channelId) {
-                latest = notification;
-            }
-        }
-        return latest;
-    }
-
-    /** NODE_ENV=test only — invoked via __e2eSimulateNotificationClick. */
-    simulateMentionClickForTest(payload: {
-        webContentsId: number;
-        channelId: string;
-        teamId: string;
-        url: string;
-    }) {
-        const wc = webContents.fromId(payload.webContentsId);
-        if (!wc || wc.isDestroyed()) {
-            throw new Error(`webContents ${payload.webContentsId} is not available`);
-        }
-
-        const view = WebContentsManager.getViewByWebContentsId(wc.id);
-        if (!view) {
-            throw new Error(`No view for webContents ${payload.webContentsId}`);
-        }
-
-        this.handleMentionClick(view, wc, payload.channelId, payload.teamId, payload.url);
-    }
-
-    /** NODE_ENV=test only — invoked via __e2eClickActiveMention after displayMention. */
-    clickActiveMentionForTest(channelId: string) {
-        const mention = this.findActiveMentionByChannelId(channelId);
-        if (!mention) {
-            throw new Error(`No active mention for channel ${channelId}`);
-        }
-        mention.emit('click');
-    }
+export function dispatchMentionClick(
+    view: {id: string},
+    webcontents: Electron.WebContents,
+    channelId: string,
+    teamId: string,
+    url: string,
+) {
+    const focus = () => {
+        MainWindow.show();
+        TabManager.switchToTab(view.id);
+        ipcMain.off(BROWSER_HISTORY_PUSH, focus);
+    };
+    ipcMain.on(BROWSER_HISTORY_PUSH, focus);
+    webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
 }
 
 export async function getDoNotDisturb() {
@@ -314,7 +274,7 @@ export async function getDoNotDisturb() {
     return false;
 }
 
-function flashFrame(flash: boolean) {
+function triggerNotificationFrameEffects(flash: boolean) {
     if (process.platform === 'linux' || process.platform === 'win32') {
         if (Config.notifications.flashWindow) {
             MainWindow.get()?.flashFrame(flash);
@@ -327,19 +287,5 @@ function flashFrame(flash: boolean) {
 
 const notificationManager = new NotificationManager();
 
-if (process.env.NODE_ENV === 'test') {
-    setTestField('__e2eNotificationEffects', flashFrame);
-    setTestField('__e2eSimulateNotificationClick', (payload: {
-        webContentsId: number;
-        channelId: string;
-        teamId: string;
-        url: string;
-    }) => {
-        notificationManager.simulateMentionClickForTest(payload);
-    });
-    setTestField('__e2eClickActiveMention', (channelId: string) => {
-        notificationManager.clickActiveMentionForTest(channelId);
-    });
-}
-
+export {triggerNotificationFrameEffects};
 export default notificationManager;

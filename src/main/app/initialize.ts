@@ -5,7 +5,7 @@ import path from 'path';
 import {pathToFileURL} from 'url';
 
 import type {IpcMainInvokeEvent} from 'electron';
-import {app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session} from 'electron';
+import {app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session, webContents} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
 import Joi from 'joi';
@@ -47,7 +47,6 @@ import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
-import {setTestField} from 'common/utils/util';
 import {ipcValidate} from 'common/Validator';
 import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
@@ -57,9 +56,10 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
 import Diagnostics from 'main/diagnostics';
 import downloadsManager from 'main/downloadsManager';
+import {registerE2eHooks} from 'main/e2e/hooks';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
-import notificationManager, {getDoNotDisturb} from 'main/notifications';
+import notificationManager, {dispatchMentionClick, getDoNotDisturb, triggerNotificationFrameEffects} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
@@ -311,37 +311,52 @@ async function initializeAfterAppReady() {
         setUnreadBadgeSetting,
     };
 
-    setTestField('__e2eTestRefs', e2eTestRefs);
+    registerE2eHooks({
+        e2eTestRefs,
+        openDeepLink,
+        clickTrayMenuItem: (label: string) => {
+            const truncated = label.length > 50 ? `${label.slice(0, 50)}...` : label;
 
-    setTestField('__e2eOpenDeepLink', (url: string) => {
-        openDeepLink(url);
-    });
-
-    setTestField('__e2eClickTrayMenuItem', (label: string) => {
-        const truncated = label.length > 50 ? `${label.slice(0, 50)}...` : label;
-
-        function clickItem(items: Electron.MenuItem[]): boolean {
-            for (const item of items) {
-                const itemLabel = typeof item.label === 'string' ? item.label : '';
-                if (
-                    (itemLabel === label || itemLabel === truncated) &&
-                    item.enabled !== false &&
-                    item.visible !== false &&
-                    typeof item.click === 'function'
-                ) {
-                    item.click();
-                    return true;
+            function clickItem(items: Electron.MenuItem[]): boolean {
+                for (const item of items) {
+                    const itemLabel = typeof item.label === 'string' ? item.label : '';
+                    if (
+                        (itemLabel === label || itemLabel === truncated) &&
+                        item.enabled !== false &&
+                        item.visible !== false &&
+                        typeof item.click === 'function'
+                    ) {
+                        item.click();
+                        return true;
+                    }
+                    if (item.submenu?.items && clickItem(item.submenu.items)) {
+                        return true;
+                    }
                 }
-                if (item.submenu?.items && clickItem(item.submenu.items)) {
-                    return true;
-                }
+                return false;
             }
-            return false;
-        }
 
-        if (!clickItem(createTrayMenu().items)) {
-            throw new Error(`Tray menu item not found: ${label}`);
-        }
+            if (!clickItem(createTrayMenu().items)) {
+                throw new Error(`Tray menu item not found: ${label}`);
+            }
+        },
+        triggerNotificationFrameEffects,
+        simulateNotificationClick: (payload) => {
+            const wc = webContents.fromId(payload.webContentsId);
+            if (!wc || wc.isDestroyed()) {
+                throw new Error(`webContents ${payload.webContentsId} is not available`);
+            }
+
+            const view = WebContentsManager.getViewByWebContentsId(wc.id);
+            if (!view) {
+                throw new Error(`No view for webContents ${payload.webContentsId}`);
+            }
+
+            dispatchMentionClick(view, wc, payload.channelId, payload.teamId, payload.url);
+        },
+        installMessageBoxStub,
+        restoreMessageBoxStub,
+        clearCertificateErrorCallbacks: () => certificateErrorCallbacks.clear(),
     });
 
     // Block all NTLM/Negotiate requests by default
@@ -387,9 +402,6 @@ async function initializeAfterAppReady() {
     ServerManager.on(SERVER_URL_CHANGED, updateServerInfo);
     ServerManager.on(SERVER_PRE_AUTH_SECRET_CHANGED, updateServerInfo);
 
-    setTestField('__e2eStubMessageBoxResponses', installMessageBoxStub);
-    setTestField('__e2eRestoreMessageBox', restoreMessageBoxStub);
-    setTestField('__e2eClearCertificateErrorCallbacks', () => certificateErrorCallbacks.clear());
     if (process.env.NODE_ENV === 'test') {
         if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'cancel') {
             installMessageBoxStub([{response: 1}]);

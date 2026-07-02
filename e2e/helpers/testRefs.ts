@@ -15,6 +15,19 @@ export function isTransientEvaluateError(error: unknown): boolean {
     return TRANSIENT_EVALUATE_ERRORS.some((part) => message.includes(part));
 }
 
+export function isTransientNavigationError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return isTransientEvaluateError(error) ||
+        message.includes('Target closed') ||
+        message.includes('Protocol error');
+}
+
+type EvaluateRetryOptions = {
+    timeoutMs?: number;
+    retryDelayMs?: number;
+    isRetryable?: (error: unknown) => boolean;
+};
+
 type MainProcessEvaluator<T> = (
     _electron: typeof import('electron'),
 ) => T | Promise<T>;
@@ -22,17 +35,18 @@ type MainProcessEvaluator<T> = (
 export async function evaluateInMainProcess<T>(
     app: ElectronApplication,
     pageFunction: MainProcessEvaluator<T>,
-    options: {timeoutMs?: number; retryDelayMs?: number} = {},
+    options: EvaluateRetryOptions = {},
 ): Promise<T> {
     const timeoutMs = options.timeoutMs ?? 15_000;
     const retryDelayMs = options.retryDelayMs ?? 100;
+    const isRetryable = options.isRetryable ?? isTransientEvaluateError;
     const deadline = Date.now() + timeoutMs;
 
     while (Date.now() < deadline) {
         try {
             return await (app.evaluate as (fn: MainProcessEvaluator<T>) => Promise<T>).call(app, pageFunction);
         } catch (error) {
-            if (!isTransientEvaluateError(error)) {
+            if (!isRetryable(error)) {
                 throw error;
             }
             await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
@@ -51,10 +65,11 @@ export async function evaluateInMainProcessWithArg<T, A>(
     app: ElectronApplication,
     pageFunction: MainProcessEvaluatorWithArg<T, A>,
     arg: A,
-    options: {timeoutMs?: number; retryDelayMs?: number} = {},
+    options: EvaluateRetryOptions = {},
 ): Promise<T> {
     const timeoutMs = options.timeoutMs ?? 15_000;
     const retryDelayMs = options.retryDelayMs ?? 100;
+    const isRetryable = options.isRetryable ?? isTransientEvaluateError;
     const deadline = Date.now() + timeoutMs;
 
     while (Date.now() < deadline) {
@@ -65,7 +80,7 @@ export async function evaluateInMainProcessWithArg<T, A>(
                 value: A,
             ) => Promise<T>).call(app, pageFunction, arg);
         } catch (error) {
-            if (!isTransientEvaluateError(error)) {
+            if (!isRetryable(error)) {
                 throw error;
             }
             await new Promise((resolve) => setTimeout(resolve, retryDelayMs));

@@ -57,7 +57,7 @@ async function clickWindowMenuItem(
                         replace(/\s+/g, '');
                 };
 
-                const windowMenu = app.applicationMenu.getMenuItemById('window');
+                const windowMenu = app.applicationMenu?.getMenuItemById('window');
                 const items = windowMenu?.submenu?.items ?? [];
                 const item = items.find((candidate: any) => {
                     if (expected.role && candidate.role !== expected.role) {
@@ -248,27 +248,43 @@ async function prepareTabView(app: ElectronApplication, view: ServerView) {
     await loginToMattermost(view);
 }
 
-async function navigateToSecondAndThirdTabs(serverName: string) {
-    let localServerMap = await buildServerMap(electronApp);
+async function switchToTabAndOpenChannel(
+    serverName: string,
+    tabIndex: number,
+    channelItem: string,
+    initialServerMap?: Awaited<ReturnType<typeof buildServerMap>>,
+) {
+    let localServerMap = initialServerMap ?? await buildServerMap(electronApp);
     await expect.poll(async () => {
         localServerMap = await buildServerMap(electronApp);
         return localServerMap[serverName]?.length ?? 0;
-    }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
+    }, {timeout: 30_000}).toBeGreaterThanOrEqual(tabIndex);
 
-    const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
-    await secondTab.click();
-    const secondView = localServerMap[serverName][1].win;
-    await prepareTabView(electronApp, secondView);
-    await waitForMattermostShellReady(secondView, {channelItem: '#sidebarItem_off-topic'});
-    await secondView.click('#sidebarItem_off-topic');
+    const tab = await mainWindow.waitForSelector(
+        `.TabBar li.serverTabItem:nth-child(${tabIndex})`,
+        {timeout: 15_000},
+    );
+    await tab.click();
+    const view = localServerMap[serverName][tabIndex - 1].win;
+    await prepareTabView(electronApp, view);
+    await waitForMattermostShellReady(view, {channelItem});
+    await view.click(channelItem);
 
-    const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
-    await thirdTab.click();
-    const thirdView = localServerMap[serverName][2].win;
-    await prepareTabView(electronApp, thirdView);
-    await waitForMattermostShellReady(thirdView, {channelItem: '#sidebarItem_town-square'});
-    await thirdView.click('#sidebarItem_town-square');
+    return localServerMap;
+}
 
+async function navigateToSecondAndThirdTabs(serverName: string) {
+    let localServerMap = await switchToTabAndOpenChannel(
+        serverName,
+        2,
+        '#sidebarItem_off-topic',
+    );
+    localServerMap = await switchToTabAndOpenChannel(
+        serverName,
+        3,
+        '#sidebarItem_town-square',
+        localServerMap,
+    );
     return localServerMap;
 }
 
@@ -391,18 +407,7 @@ test.describe('Menu/window_menu', () => {
         await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
 
         const serverName = windowMenuConfig.servers[0].name;
-        let localServerMap = await buildServerMap(electronApp);
-        await expect.poll(async () => {
-            localServerMap = await buildServerMap(electronApp);
-            return localServerMap[serverName]?.length ?? 0;
-        }, {timeout: 30_000}).toBeGreaterThanOrEqual(2);
-
-        const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
-        await secondTab.click();
-        const secondView = localServerMap[serverName][1].win;
-        await prepareTabView(electronApp, secondView);
-        await waitForMattermostShellReady(secondView, {channelItem: '#sidebarItem_off-topic'});
-        await secondView.click('#sidebarItem_off-topic');
+        await switchToTabAndOpenChannel(serverName, 2, '#sidebarItem_off-topic');
 
         await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Off-Topic');
 

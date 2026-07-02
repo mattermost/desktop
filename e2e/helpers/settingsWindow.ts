@@ -3,7 +3,7 @@
 
 import type {ElectronApplication, Page} from 'playwright';
 
-import {SHOW_SETTINGS_WINDOW} from '../../src/common/communication';
+import {SHOW_SETTINGS_WINDOW} from './ipcChannels';
 import {evaluateInMainProcessWithArg} from './testRefs';
 
 export async function openSettingsWindow(electronApp: ElectronApplication): Promise<Page> {
