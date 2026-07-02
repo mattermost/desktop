@@ -4,6 +4,8 @@
 import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
+import {evaluateInMainProcess, evaluateInMainProcessWithArg} from './testRefs';
+
 export type OsBadgeState = {
     count: number;
     symbol: 'mention' | 'unread' | 'expired' | 'none';
@@ -21,12 +23,12 @@ export async function waitForBadgeInfrastructure(app: ElectronApplication): Prom
 }
 
 export async function setUnreadBadgeSetting(app: ElectronApplication, enabled: boolean): Promise<void> {
-    await app.evaluate((showUnreadBadge) => {
-        const setUnread = (global as any).__testTriggerSetUnreadBadgeSetting;
-        if (typeof setUnread !== 'function') {
-            throw new Error('__testTriggerSetUnreadBadgeSetting is not registered');
+    await evaluateInMainProcessWithArg(app, (_electron, showUnreadBadge) => {
+        const Config = (global as any).__e2eTestRefs?.Config;
+        if (!Config) {
+            throw new Error('Config missing from __e2eTestRefs');
         }
-        setUnread(showUnreadBadge);
+        Config.set('showUnreadBadge', showUnreadBadge);
     }, enabled);
 }
 
@@ -36,7 +38,7 @@ export async function updateServerBadgeViaAppState(
     mentions: number,
     unreads: boolean,
 ): Promise<void> {
-    await app.evaluate((_electron, {serverName: name, mentions: mentionCount, unreads: hasUnreads}) => {
+    await evaluateInMainProcessWithArg(app, (_electron, {serverName: name, mentions: mentionCount, unreads: hasUnreads}) => {
         const refs = (global as any).__e2eTestRefs;
         const AppState = refs?.AppState;
         const ServerManager = refs?.ServerManager;
@@ -56,7 +58,7 @@ export async function setServerExpiredViaAppState(
     serverName: string,
     expired: boolean,
 ): Promise<void> {
-    await app.evaluate((_electron, {serverName: name, expired: isExpired}) => {
+    await evaluateInMainProcessWithArg(app, (_electron, {serverName: name, expired: isExpired}) => {
         const refs = (global as any).__e2eTestRefs;
         const AppState = refs?.AppState;
         const ServerManager = refs?.ServerManager;
@@ -83,16 +85,12 @@ export async function clearAllBadgesViaAppState(app: ElectronApplication): Promi
             AppState.updateUnreadsAndMentionsPerServer(server.id, 0, false);
             AppState.updateExpired(server.id, false);
         }
-        const setUnread = (global as any).__testTriggerSetUnreadBadgeSetting;
-        if (typeof setUnread === 'function') {
-            setUnread(false);
-        }
+        refs.Config?.set?.('showUnreadBadge', false);
     });
 }
 
 export async function readOsBadge(electronApp: ElectronApplication): Promise<OsBadgeState> {
-    return electronApp.evaluate(() => {
-        const {app} = require('electron') as typeof import('electron');
+    return evaluateInMainProcess(electronApp, ({app}) => {
         const refs = (global as any).__e2eTestRefs;
         const mainWindow = refs?.MainWindow?.get?.();
         const testState = (global as any).__testBadgeState;
@@ -116,9 +114,14 @@ export async function readOsBadge(electronApp: ElectronApplication): Promise<OsB
             // desktop (true in headless CI), so fall back to re-deriving the count
             // from the same inputs showBadgeLinux() would have passed to
             // setBadgeCount() — mentionCount plus 1 for an expired session.
-            const count = app.isUnityRunning() ?
-                app.getBadgeCount() :
-                (testState ? testState.mentionCount + (testState.sessionExpired ? 1 : 0) : 0);
+            let count: number;
+            if (app.isUnityRunning()) {
+                count = app.getBadgeCount();
+            } else if (testState) {
+                count = testState.mentionCount + (testState.sessionExpired ? 1 : 0);
+            } else {
+                count = 0;
+            }
             const symbol = testState?.resolvedType ?? (count > 0 ? 'mention' : 'none');
             return {count, symbol, hasOverlay: false};
         }

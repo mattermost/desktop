@@ -5,7 +5,7 @@ import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
 import {clearCertificateErrorCallbacks} from './dialog';
-import {evaluateInMainProcessWithArg, isTransientEvaluateError} from './testRefs';
+import {evaluateInMainProcessWithArg, isTransientEvaluateError, resolveMainIndexWindow} from './testRefs';
 
 type WaitForErrorViewOptions = {
     serverName?: string;
@@ -80,8 +80,10 @@ export async function waitForRendererThenReload(
     app: ElectronApplication,
     serverName?: string,
 ): Promise<void> {
-    const mainWindow = app.windows().find((window) => window.url().includes('index'));
-    if (!mainWindow) {
+    let mainWindow;
+    try {
+        mainWindow = await resolveMainIndexWindow(app);
+    } catch {
         return;
     }
 
@@ -152,10 +154,7 @@ export async function waitForErrorView(
     let lastError: unknown;
     while (Date.now() < deadline) {
         try {
-            const mainWindow = app.windows().find((window) => window.url().includes('index'));
-            if (!mainWindow) {
-                throw new Error('Main index window is not available yet');
-            }
+            const mainWindow = await resolveMainIndexWindow(app);
             await waitForRendererThenReload(app, options.serverName);
             await mainWindow.waitForSelector('.ErrorView', {
                 timeout: Math.min(10_000, deadline - Date.now()),

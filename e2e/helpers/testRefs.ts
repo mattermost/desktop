@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
-import type {ElectronApplication} from 'playwright';
+import type {ElectronApplication, Page} from 'playwright';
 
 const TRANSIENT_EVALUATE_ERRORS = [
     'Execution context was destroyed',
@@ -15,9 +15,13 @@ export function isTransientEvaluateError(error: unknown): boolean {
     return TRANSIENT_EVALUATE_ERRORS.some((part) => message.includes(part));
 }
 
+type MainProcessEvaluator<T> = (
+    _electron: typeof import('electron'),
+) => T | Promise<T>;
+
 export async function evaluateInMainProcess<T>(
     app: ElectronApplication,
-    pageFunction: () => T,
+    pageFunction: MainProcessEvaluator<T>,
     options: {timeoutMs?: number; retryDelayMs?: number} = {},
 ): Promise<T> {
     const timeoutMs = options.timeoutMs ?? 15_000;
@@ -26,7 +30,7 @@ export async function evaluateInMainProcess<T>(
 
     while (Date.now() < deadline) {
         try {
-            return await app.evaluate(pageFunction);
+            return await (app.evaluate as (fn: MainProcessEvaluator<T>) => Promise<T>).call(app, pageFunction);
         } catch (error) {
             if (!isTransientEvaluateError(error)) {
                 throw error;
@@ -69,6 +73,58 @@ export async function evaluateInMainProcessWithArg<T, A>(
     }
 
     throw new Error('Timed out waiting for electron main-process evaluate');
+}
+
+function findMainIndexWindow(app: ElectronApplication): Page | undefined {
+    return app.windows().find((window) => {
+        try {
+            return window.url().includes('index');
+        } catch {
+            return false;
+        }
+    });
+}
+
+/**
+ * Resolve the main wrapper window (index.html). On macOS CI the BrowserWindow can
+ * exist before Playwright attaches it to app.windows(), especially when startup
+ * load fails fast — poll and show the window from main process before giving up.
+ */
+export async function resolveMainIndexWindow(
+    app: ElectronApplication,
+    timeout = 15_000,
+): Promise<Page> {
+    let mainWindow: Page | undefined;
+
+    await expect.poll(async () => {
+        await evaluateInMainProcess(app, () => {
+            const win = (global as any).__e2eTestRefs?.MainWindow?.get?.();
+            if (win && !win.isDestroyed() && !win.isVisible()) {
+                win.show();
+            }
+        }).catch(() => {});
+
+        mainWindow = findMainIndexWindow(app);
+        return mainWindow ?? null;
+    }, {
+        timeout,
+        message: 'Main index window should be available',
+    }).not.toBeNull();
+
+    if (mainWindow) {
+        return mainWindow;
+    }
+
+    return app.waitForEvent('window', {
+        predicate: (window) => {
+            try {
+                return window.url().includes('index');
+            } catch {
+                return false;
+            }
+        },
+        timeout: Math.min(5_000, timeout),
+    });
 }
 
 export async function getMainWindowId(app: ElectronApplication): Promise<number> {

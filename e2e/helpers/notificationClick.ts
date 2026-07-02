@@ -4,6 +4,8 @@
 import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
+import {evaluateInMainProcessWithArg} from './testRefs';
+
 export type NotificationClickPayload = {
     webContentsId: number;
     channelId: string;
@@ -24,7 +26,7 @@ export async function simulateNotificationClick(
     app: ElectronApplication,
     payload: NotificationClickPayload,
 ): Promise<void> {
-    await app.evaluate((p) => {
+    await evaluateInMainProcessWithArg(app, (_electron, p) => {
         const simulate = (global as any).__e2eSimulateNotificationClick as
             | ((value: typeof p) => void)
             | undefined;
@@ -43,7 +45,7 @@ export async function displayMentionAndClick(
     app: ElectronApplication,
     payload: DisplayMentionPayload,
 ): Promise<void> {
-    await app.evaluate(({webContents}, p) => {
+    await evaluateInMainProcessWithArg(app, async ({webContents}, p) => {
         const refs = (global as any).__e2eTestRefs;
         const manager = refs?.NotificationManager;
         if (!manager) {
@@ -55,7 +57,7 @@ export async function displayMentionAndClick(
             throw new Error(`webContents ${p.webContentsId} is not available`);
         }
 
-        void manager.displayMention(
+        await manager.displayMention(
             p.title,
             p.body,
             p.channelId,
@@ -69,7 +71,7 @@ export async function displayMentionAndClick(
 
     await expect.poll(async () => {
         try {
-            await app.evaluate((channelId) => {
+            await evaluateInMainProcessWithArg(app, (_electron, channelId) => {
                 const clickActive = (global as any).__e2eClickActiveMention as
                     | ((id: string) => void)
                     | undefined;

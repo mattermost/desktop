@@ -19,6 +19,7 @@ import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import PopoutManager from 'app/windows/popoutManager';
+import AppState from 'common/appState';
 import {
     QUIT,
     NOTIFY_MENTION,
@@ -41,7 +42,6 @@ import {
     SERVER_PRE_AUTH_SECRET_CHANGED,
     SERVER_URL_CHANGED,
 } from 'common/communication';
-import AppState from 'common/appState';
 import Config from 'common/config';
 import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';

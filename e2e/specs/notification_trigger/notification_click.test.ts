@@ -7,6 +7,7 @@ import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
 import {simulateNotificationClick} from '../../helpers/notificationClick';
 import {resolveChannelByName} from '../../helpers/server_api/channel';
+import {getActiveServerWebContentsId} from '../../helpers/testRefs';
 import {hideMainWindow, isMainWindowVisible} from '../../helpers/tray';
 
 test.use({appConfig: demoMattermostConfig});
@@ -41,7 +42,7 @@ test(
             ).toBe(false);
 
             await simulateNotificationClick(electronApp, {
-                webContentsId: serverEntry!.webContentsId,
+                webContentsId: await getActiveServerWebContentsId(electronApp),
                 channelId: targetChannel.id,
                 teamId: targetChannel.teamId,
                 url: targetChannel.url,

@@ -155,6 +155,4 @@ export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
 
 export function setupBadge() {
     AppState.on(UPDATE_APPSTATE_TOTALS, showBadge);
-    setTestField('__testTriggerBadge', showBadge);
-    setTestField('__testTriggerSetUnreadBadgeSetting', setUnreadBadgeSetting);
 }

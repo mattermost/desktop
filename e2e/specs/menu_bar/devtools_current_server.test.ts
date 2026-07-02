@@ -80,10 +80,9 @@ test.describe('menu_bar/devtools_current_server', () => {
                 {timeout: 15_000, message: 'DevTools must close after toggle'},
             ).toBe(true);
 
-            const serverStillFunctional = await firstServer!.evaluate(() => {
-                return document.querySelector('#post_textbox') !== null;
-            });
-            expect(serverStillFunctional, 'Server view should still be functional after DevTools toggle').toBe(true);
+            // DevTools attach/detach can briefly invalidate Playwright's Electron context on macOS.
+            await prepareMattermostServerView(electronApp, webContentsId);
+            await firstServer!.waitForSelector('#post_textbox', {timeout: 15_000});
         },
     );
 });
