@@ -78,53 +78,94 @@ export async function evaluateInMainProcessWithArg<T, A>(
 function findMainIndexWindow(app: ElectronApplication): Page | undefined {
     return app.windows().find((window) => {
         try {
-            return window.url().includes('index');
+            const url = window.url();
+            return url.includes('index') || url.includes('mattermost-desktop://renderer/');
         } catch {
             return false;
         }
     });
 }
 
+async function findMainIndexWindowByBrowserId(
+    app: ElectronApplication,
+    browserWindowId: number,
+): Promise<Page | undefined> {
+    for (const window of app.windows()) {
+        try {
+            const browserWin = await app.browserWindow(window);
+            const id = await browserWin.evaluate((win: {id: number}) => win.id);
+            if (id === browserWindowId) {
+                return window;
+            }
+        } catch {
+            // Window may still be attaching.
+        }
+    }
+    return undefined;
+}
+
+async function ensureMainWindowVisible(app: ElectronApplication): Promise<number | null> {
+    return evaluateInMainProcess(app, () => {
+        const refs = (global as any).__e2eTestRefs;
+        const win = refs?.MainWindow?.get?.();
+        if (win && !win.isDestroyed()) {
+            if (!win.isVisible()) {
+                win.show();
+            }
+            win.focus();
+            return win.id;
+        }
+        return null;
+    }).catch(() => null);
+}
+
 /**
  * Resolve the main wrapper window (index.html). On macOS CI the BrowserWindow can
  * exist before Playwright attaches it to app.windows(), especially when startup
- * load fails fast — poll and show the window from main process before giving up.
+ * load fails fast — show/focus from main process and match by BrowserWindow id.
  */
 export async function resolveMainIndexWindow(
     app: ElectronApplication,
-    timeout = 15_000,
+    timeout = 30_000,
 ): Promise<Page> {
+    const deadline = Date.now() + timeout;
     let mainWindow: Page | undefined;
 
-    await expect.poll(async () => {
-        await evaluateInMainProcess(app, () => {
-            const win = (global as any).__e2eTestRefs?.MainWindow?.get?.();
-            if (win && !win.isDestroyed() && !win.isVisible()) {
-                win.show();
-            }
-        }).catch(() => {});
+    while (Date.now() < deadline) {
+        const mainWindowId = await ensureMainWindowVisible(app);
 
         mainWindow = findMainIndexWindow(app);
-        return mainWindow ?? null;
-    }, {
-        timeout,
-        message: 'Main index window should be available',
-    }).not.toBeNull();
+        if (!mainWindow && mainWindowId != null) {
+            mainWindow = await findMainIndexWindowByBrowserId(app, mainWindowId);
+        }
 
-    if (mainWindow) {
-        return mainWindow;
+        if (mainWindow) {
+            return mainWindow;
+        }
+
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+            break;
+        }
+
+        try {
+            return await app.waitForEvent('window', {
+                predicate: (window) => {
+                    try {
+                        const url = window.url();
+                        return url.includes('index') || url.includes('mattermost-desktop://renderer/');
+                    } catch {
+                        return false;
+                    }
+                },
+                timeout: Math.min(2_000, remaining),
+            });
+        } catch {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+        }
     }
 
-    return app.waitForEvent('window', {
-        predicate: (window) => {
-            try {
-                return window.url().includes('index');
-            } catch {
-                return false;
-            }
-        },
-        timeout: Math.min(5_000, timeout),
-    });
+    throw new Error('Main index window should be available');
 }
 
 export async function getMainWindowId(app: ElectronApplication): Promise<number> {

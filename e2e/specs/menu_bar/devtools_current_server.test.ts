@@ -16,7 +16,7 @@ import {loginToMattermost} from '../../helpers/login';
 import {clickApplicationMenuItem} from '../../helpers/menu';
 import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
-import {getActiveServerWebContentsId} from '../../helpers/testRefs';
+import {evaluateInMainProcessWithArg, getActiveServerWebContentsId} from '../../helpers/testRefs';
 
 test.describe('menu_bar/devtools_current_server', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -40,7 +40,7 @@ test.describe('menu_bar/devtools_current_server', () => {
 
             const webContentsId = serverEntry!.webContentsId ?? await getActiveServerWebContentsId(electronApp);
 
-            const webContentsExists = await electronApp.evaluate(({webContents}, id) => {
+            const webContentsExists = await evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
                 const wc = webContents.fromId(id);
                 return wc !== undefined && !wc.isDestroyed();
             }, webContentsId);
@@ -53,7 +53,7 @@ test.describe('menu_bar/devtools_current_server', () => {
                 {webContentsId},
             );
             await expect.poll(
-                () => electronApp.evaluate(({webContents}, id) => {
+                () => evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
                     const wc = webContents.fromId(id);
                     return Boolean(wc && !wc.isDestroyed() && wc.isDevToolsOpened());
                 }, webContentsId),
@@ -62,7 +62,7 @@ test.describe('menu_bar/devtools_current_server', () => {
 
             // Toggle closed instead of closeDevTools() evaluate, which can race with
             // DevTools teardown and destabilize the app on Linux CI.
-            await electronApp.evaluate(({webContents}, id) => {
+            await evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
                 try {
                     const wc = webContents.fromId(id);
                     if (wc && !wc.isDestroyed() && wc.isDevToolsOpened()) {
@@ -73,7 +73,7 @@ test.describe('menu_bar/devtools_current_server', () => {
                 }
             }, webContentsId).catch(() => {});
             await expect.poll(
-                () => electronApp.evaluate(({webContents}, id) => {
+                () => evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
                     const wc = webContents.fromId(id);
                     return wc && !wc.isDestroyed() ? !wc.isDevToolsOpened() : true;
                 }, webContentsId).catch(() => true),

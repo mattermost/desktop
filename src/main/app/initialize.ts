@@ -14,7 +14,7 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
 import createTrayMenu from 'app/menus/tray';
 import NavigationManager from 'app/navigationManager';
-import {setupBadge} from 'app/system/badge';
+import {setUnreadBadgeSetting, setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
@@ -308,6 +308,7 @@ async function initializeAfterAppReady() {
         Diagnostics,
         PopoutManager,
         updateNotifier,
+        setUnreadBadgeSetting,
     };
 
     setTestField('__e2eTestRefs', e2eTestRefs);

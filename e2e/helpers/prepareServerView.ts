@@ -4,6 +4,7 @@
 import type {ElectronApplication} from 'playwright';
 
 import {closeOverlayWindowsIfOpen} from './overlayWindows';
+import {evaluateInMainProcessWithArg} from './testRefs';
 
 /**
  * Close overlay windows and focus a Mattermost server WebContentsView so
@@ -14,7 +15,7 @@ export async function prepareMattermostServerView(
     webContentsId: number,
 ): Promise<void> {
     await closeOverlayWindowsIfOpen(app);
-    await app.evaluate(({webContents}, id) => {
+    await evaluateInMainProcessWithArg(app, ({webContents}, id) => {
         const wc = webContents.fromId(id);
         if (!wc || wc.isDestroyed()) {
             throw new Error(`webContents ${id} is not available`);

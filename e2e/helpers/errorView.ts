@@ -154,7 +154,10 @@ export async function waitForErrorView(
     let lastError: unknown;
     while (Date.now() < deadline) {
         try {
-            const mainWindow = await resolveMainIndexWindow(app);
+            const mainWindow = await resolveMainIndexWindow(
+                app,
+                Math.min(30_000, Math.max(deadline - Date.now(), 1_000)),
+            );
             await waitForRendererThenReload(app, options.serverName);
             await mainWindow.waitForSelector('.ErrorView', {
                 timeout: Math.min(10_000, deadline - Date.now()),

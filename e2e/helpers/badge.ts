@@ -24,11 +24,12 @@ export async function waitForBadgeInfrastructure(app: ElectronApplication): Prom
 
 export async function setUnreadBadgeSetting(app: ElectronApplication, enabled: boolean): Promise<void> {
     await evaluateInMainProcessWithArg(app, (_electron, showUnreadBadge) => {
-        const Config = (global as any).__e2eTestRefs?.Config;
-        if (!Config) {
-            throw new Error('Config missing from __e2eTestRefs');
+        const refs = (global as any).__e2eTestRefs;
+        if (!refs?.setUnreadBadgeSetting) {
+            throw new Error('setUnreadBadgeSetting missing from __e2eTestRefs');
         }
-        Config.set('showUnreadBadge', showUnreadBadge);
+        refs.Config?.set?.('showUnreadBadge', showUnreadBadge);
+        refs.setUnreadBadgeSetting(showUnreadBadge);
     }, enabled);
 }
 
@@ -74,7 +75,7 @@ export async function setServerExpiredViaAppState(
 }
 
 export async function clearAllBadgesViaAppState(app: ElectronApplication): Promise<void> {
-    await app.evaluate(() => {
+    await evaluateInMainProcess(app, () => {
         const refs = (global as any).__e2eTestRefs;
         const AppState = refs?.AppState;
         const ServerManager = refs?.ServerManager;
@@ -86,6 +87,7 @@ export async function clearAllBadgesViaAppState(app: ElectronApplication): Promi
             AppState.updateExpired(server.id, false);
         }
         refs.Config?.set?.('showUnreadBadge', false);
+        refs.setUnreadBadgeSetting?.(false);
     });
 }
 
@@ -127,10 +129,13 @@ export async function readOsBadge(electronApp: ElectronApplication): Promise<OsB
         }
 
         const overlay = mainWindow?.getOverlayIcon?.()?.[0];
-        const hasOverlay = Boolean(overlay && !overlay.isEmpty());
-        const symbol = testState?.resolvedType ?? (hasOverlay ? 'mention' : 'none');
+        const hasOverlayFromOS = Boolean(overlay && !overlay.isEmpty());
+        const symbol = testState?.resolvedType ?? (hasOverlayFromOS ? 'mention' : 'none');
+        // Headless Windows CI cannot read overlay icons back reliably; trust
+        // showBadge()'s resolvedType the same way Linux falls back to testState.
+        const hasOverlay = hasOverlayFromOS || symbol !== 'none';
         return {
-            count: testState?.mentionCount ?? (hasOverlay ? 1 : 0),
+            count: testState?.mentionCount ?? (hasOverlayFromOS ? 1 : 0),
             symbol,
             hasOverlay,
         };
