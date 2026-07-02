@@ -93,8 +93,6 @@ export async function clearAllBadgesViaAppState(app: ElectronApplication): Promi
 
 export async function readOsBadge(electronApp: ElectronApplication): Promise<OsBadgeState> {
     return evaluateInMainProcess(electronApp, ({app}) => {
-        const refs = (global as any).__e2eTestRefs;
-        const mainWindow = refs?.MainWindow?.get?.();
         const testState = (global as any).__testBadgeState;
 
         if (process.platform === 'darwin') {
@@ -128,16 +126,13 @@ export async function readOsBadge(electronApp: ElectronApplication): Promise<OsB
             return {count, symbol, hasOverlay: false};
         }
 
-        const overlay = mainWindow?.getOverlayIcon?.()?.[0];
-        const hasOverlayFromOS = Boolean(overlay && !overlay.isEmpty());
-        const symbol = testState?.resolvedType ?? (hasOverlayFromOS ? 'mention' : 'none');
-        // Headless Windows CI cannot read overlay icons back reliably; trust
-        // showBadge()'s resolvedType the same way Linux falls back to testState.
-        const hasOverlay = hasOverlayFromOS || symbol !== 'none';
+        // Electron exposes setOverlayIcon() but no getOverlayIcon(); __testBadgeState
+        // records what showBadgeWindows() decided to pass to setOverlayIcon().
+        const symbol = testState?.resolvedType ?? 'none';
         return {
-            count: testState?.mentionCount ?? (hasOverlayFromOS ? 1 : 0),
+            count: testState?.mentionCount ?? 0,
             symbol,
-            hasOverlay,
+            hasOverlay: testState?.hasOverlay ?? false,
         };
     });
 }

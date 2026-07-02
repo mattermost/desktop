@@ -174,7 +174,7 @@ test.describe('Bad Server Configurations', () => {
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
-            await waitForErrorView(app, {serverName: 'Unreachable Server'});
+            await waitForErrorView(app, {serverName: 'Unreachable Server', waitForActiveServer: true});
             const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
             expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
         });
@@ -195,7 +195,7 @@ test.describe('Bad Server Configurations', () => {
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
-            await waitForErrorView(app, {serverName: 'Expired Cert Server'});
+            await waitForErrorView(app, {serverName: 'Expired Cert Server', waitForActiveServer: true});
             const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
             expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
         });
@@ -216,7 +216,7 @@ test.describe('Bad Server Configurations', () => {
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
-            await waitForErrorView(app, {serverName: 'TLS 1.0 Server'});
+            await waitForErrorView(app, {serverName: 'TLS 1.0 Server', waitForActiveServer: true});
 
             await expect.poll(async () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
@@ -240,7 +240,7 @@ test.describe('Bad Server Configurations', () => {
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
-            await waitForErrorView(app, {serverName: 'RC4 Cipher Server'});
+            await waitForErrorView(app, {serverName: 'RC4 Cipher Server', waitForActiveServer: true});
 
             await expect.poll(async () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');

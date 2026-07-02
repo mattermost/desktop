@@ -115,6 +115,7 @@ export default defineConfig({
     reporter: reporters,
 
     use: {
+
         // Video/trace land in test-results/ and bloat CI artifacts (Electron
         // userdata + webm/zip per test). Failures are debugged via the merged
         // HTML report on S3, which includes screenshots and traces from blob.

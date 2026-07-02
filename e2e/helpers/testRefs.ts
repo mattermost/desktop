@@ -75,11 +75,14 @@ export async function evaluateInMainProcessWithArg<T, A>(
     throw new Error('Timed out waiting for electron main-process evaluate');
 }
 
-function findMainIndexWindow(app: ElectronApplication): Page | undefined {
+function isMainIndexUrl(url: string): boolean {
+    return url.includes('index');
+}
+
+export function findMainIndexWindow(app: ElectronApplication): Page | undefined {
     return app.windows().find((window) => {
         try {
-            const url = window.url();
-            return url.includes('index') || url.includes('mattermost-desktop://renderer/');
+            return isMainIndexUrl(window.url());
         } catch {
             return false;
         }
@@ -152,8 +155,7 @@ export async function resolveMainIndexWindow(
             return await app.waitForEvent('window', {
                 predicate: (window) => {
                     try {
-                        const url = window.url();
-                        return url.includes('index') || url.includes('mattermost-desktop://renderer/');
+                        return isMainIndexUrl(window.url());
                     } catch {
                         return false;
                     }

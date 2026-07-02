@@ -144,7 +144,9 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
         } else {
             resolvedType = 'none';
         }
-        setTestField('__testBadgeState', {sessionExpired, mentionCount, showUnreadBadge, resolvedType});
+
+        const hasOverlay = process.platform === 'win32' && resolvedType !== 'none';
+        setTestField('__testBadgeState', {sessionExpired, mentionCount, showUnreadBadge, resolvedType, hasOverlay});
     }
 }
 
