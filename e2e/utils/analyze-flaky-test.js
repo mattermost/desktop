@@ -214,6 +214,18 @@ function analyzeFlakyTests() {
     const hasJunit = fs.existsSync(JUNIT_REPORT_PATH);
 
     if (!hasJunit) {
+        if (process.env.JOB_STATUS === 'cancelled') {
+            return {
+                failureCount: 0,
+                passCount: 0,
+                skipCount: 0,
+                totalCount: 0,
+                newFailedTests: [],
+                os: process.platform,
+                testStatus: 'error',
+            };
+        }
+
         const failureCount = exitCode === 0 ? 0 : 1;
         return {
             failureCount,

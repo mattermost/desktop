@@ -86,18 +86,11 @@ test.describe('application', () => {
             return resolvedServerMap[serverName]?.length ?? 0;
         }, {timeout: 15_000}).toBeGreaterThanOrEqual(1);
 
-        // Poll the server view's URL directly via webContents.fromId() instead
-        // of navigating contentView.children. On newer Electron versions the
-        // WebContentsView tree layout differs between platforms, but
-        // webContents.fromId() works universally.
-        // Re-resolve the serverMap on each poll iteration in case the webContentsId
-        // changes (e.g., a new view was created by openLinkInPrimaryTab).
         await expect.poll(async () => {
             const freshMap = await buildServerMap(app!);
             const freshView = freshMap[serverName]?.[0]?.win;
             return freshView?.url() ?? '';
         }, {timeout: 30_000, message: 'deep-linked webContents did not navigate to the expected URL'}).toContain('github.com/test/url');
-        const dropdownButtonText = await mainWindow.innerText('.ServerDropdownButton');
-        expect(dropdownButtonText).toBe('github');
+        await expect(mainWindow.locator('.ServerDropdownButton')).toHaveText('github', {timeout: 15_000});
     });
 });
