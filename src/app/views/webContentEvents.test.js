@@ -40,6 +40,7 @@ jest.mock('common/views/viewManager', () => ({
 
 jest.mock('app/views/pluginsPopUps', () => ({
     handleNewWindow: jest.fn(() => ({action: 'allow'})),
+    generateHandleCreateWindow: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('main/utils', () => ({
@@ -126,6 +127,72 @@ describe('main/views/webContentsEvents', () => {
         it('should not allow navigation under any other circumstances', () => {
             willNavigate(event, 'http://someotherurl.com');
             expect(event.preventDefault).toBeCalled();
+        });
+    });
+
+    describe('addWebContentsEventListeners', () => {
+        const setupContents = () => {
+            const handlers = {};
+            const contents = {
+                id: 1,
+                on: jest.fn((eventName, handler) => {
+                    handlers[eventName] = handler;
+                }),
+                once: jest.fn(),
+                removeListener: jest.fn(),
+                setWindowOpenHandler: jest.fn(),
+            };
+            return {handlers, contents};
+        };
+
+        it('should attach distinct main-frame and subframe navigation guards and remove both', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            const {handlers, contents} = setupContents();
+
+            webContentsEventManager.addWebContentsEventListeners(contents);
+
+            expect(contents.on).toHaveBeenCalledWith('will-navigate', expect.any(Function));
+            expect(contents.on).toHaveBeenCalledWith('will-frame-navigate', expect.any(Function));
+
+            // Distinct from will-navigate so a main-frame navigation is not processed twice.
+            expect(handlers['will-frame-navigate']).not.toBe(handlers['will-navigate']);
+
+            webContentsEventManager.removeWebContentsListeners(1);
+
+            expect(contents.removeListener).toHaveBeenCalledWith('will-navigate', handlers['will-navigate']);
+            expect(contents.removeListener).toHaveBeenCalledWith('will-frame-navigate', handlers['will-frame-navigate']);
+        });
+
+        it('subframe guard ignores main-frame navigations (handled by will-navigate)', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+
+            const frameEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'https://example.com/anything'};
+            handlers['will-frame-navigate'](frameEvent);
+
+            expect(frameEvent.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('subframe guard allows web embeds (http/https/about) but blocks other protocols', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+            const willFrameNavigate = handlers['will-frame-navigate'];
+
+            const allowed = ['https://www.youtube.com/embed/abc', 'http://example.com/widget', 'about:blank', 'about:srcdoc'];
+            allowed.forEach((url) => {
+                const ev = {preventDefault: jest.fn(), isMainFrame: false, url};
+                willFrameNavigate(ev);
+                expect(ev.preventDefault).not.toHaveBeenCalled();
+            });
+
+            const blocked = ['tel:+15551234', 'mailto:user@example.com', 'custom://payload', 'file:///etc/passwd'];
+            blocked.forEach((url) => {
+                const ev = {preventDefault: jest.fn(), isMainFrame: false, url};
+                willFrameNavigate(ev);
+                expect(ev.preventDefault).toHaveBeenCalled();
+            });
         });
     });
 

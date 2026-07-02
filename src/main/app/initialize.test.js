@@ -65,6 +65,7 @@ jest.mock('electron', () => ({
     session: {
         defaultSession: {
             webRequest: {
+                onBeforeRequest: jest.fn(),
                 onHeadersReceived: jest.fn(),
                 onBeforeSendHeaders: jest.fn(),
             },
@@ -185,6 +186,7 @@ jest.mock('app/mainWindow/mainWindow', () => ({
 jest.mock('app/views/webContentsManager', () => ({
     on: jest.fn(),
     getServerURLByViewId: jest.fn(),
+    getViewByWebContentsId: jest.fn(),
 }));
 
 jest.mock('app/navigationManager', () => ({
@@ -211,6 +213,7 @@ jest.mock('common/servers/serverManager', () => ({
     init: jest.fn(),
     on: jest.fn(),
     off: jest.fn(),
+    getAllServers: jest.fn(() => []),
 }));
 
 jest.mock('common/views/viewManager', () => ({
@@ -331,6 +334,77 @@ describe('main/app/initialize', () => {
             });
 
             expect(NavigationManager.openLinkInPrimaryTab).toHaveBeenCalledWith('mattermost://server-1.com');
+        });
+
+        describe('local network request filter (onBeforeRequest)', () => {
+            const SERVER_WEBCONTENTS_ID = 1;
+
+            const getRegisteredHandler = async () => {
+                const ServerManager = jest.requireMock('common/servers/serverManager');
+                const WebContentsManager = jest.requireMock('app/views/webContentsManager');
+                ServerManager.getAllServers.mockReturnValue([{url: new URL('http://127.0.0.1:8065')}]);
+                WebContentsManager.getViewByWebContentsId.mockImplementation((id) => (id === SERVER_WEBCONTENTS_ID ? {id} : undefined));
+                await initialize();
+                const calls = session.defaultSession.webRequest.onBeforeRequest.mock.calls;
+                return calls[calls.length - 1][0];
+            };
+
+            it('cancels server-view requests to local/private targets (via webContentsId)', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: SERVER_WEBCONTENTS_ID, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({cancel: true});
+            });
+
+            it('cancels server-view requests to local/private targets (via webContents.id fallback)', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', webContents: {id: SERVER_WEBCONTENTS_ID}, resourceType: 'subFrame'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({cancel: true});
+            });
+
+            it('allows requests to the configured server origin', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:8065/api/v4/system/ping', webContentsId: SERVER_WEBCONTENTS_ID, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({});
+            });
+
+            it('does not cancel requests from non-server web contents', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: 999, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({});
+            });
+
+            it('cancels unowned requests (service workers) to local/private targets', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({cancel: true});
+            });
+
+            it('allows the request when the policy check throws', async () => {
+                const handler = await getRegisteredHandler();
+                jest.requireMock('app/views/webContentsManager').getViewByWebContentsId.mockImplementation(() => {
+                    throw new Error('boom');
+                });
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: SERVER_WEBCONTENTS_ID, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({});
+            });
         });
     });
 });
