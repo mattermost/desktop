@@ -347,7 +347,7 @@ function ConfigureServer({
                                 {messageSubtitle || (
                                     <FormattedMessage
                                         id='renderer.components.configureServer.subtitle'
-                                        defaultMessage='Enter your server details to get started.'
+                                        defaultMessage="A server is your team's communication hub accessed using a unique URL"
                                     />
                                 )}
                             </p>

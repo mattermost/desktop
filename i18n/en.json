@@ -169,7 +169,7 @@
   "renderer.components.configureServer.error.preAuthRequired": "This server requires an authentication secret. You will be prompted to enter it when you connect to the server.",
   "renderer.components.configureServer.name.info": "The name that will be displayed in your server list",
   "renderer.components.configureServer.name.placeholder": "Server display name",
-  "renderer.components.configureServer.subtitle": "Enter your server details to get started.",
+  "renderer.components.configureServer.subtitle": "A server is your team's communication hub accessed using a unique URL",
   "renderer.components.configureServer.title": "Connect to your server",
   "renderer.components.configureServer.url.info": "The URL of your Mattermost server",
   "renderer.components.configureServer.url.insecure": "Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.",
