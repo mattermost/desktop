@@ -85,14 +85,12 @@ test.describe('menu_bar/help_menu', () => {
         'MM-T828 Learn More in the Menu Bar opens docs.mattermost.com in a browser',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            // Stub shell.openExternal to capture the URL
+            // Stub shell.openExternal to capture the URL without launching the browser
             await electronApp.evaluate(({shell}) => {
                 (global as any).__e2eOpenExternalCalls = [] as string[];
-                const original = shell.openExternal.bind(shell);
-                (global as any).__e2eOriginalOpenExternal = original;
+                (global as any).__e2eOriginalOpenExternal = shell.openExternal.bind(shell);
                 shell.openExternal = async (url: string) => {
                     (global as any).__e2eOpenExternalCalls.push(url);
-                    return original(url);
                 };
             });
 

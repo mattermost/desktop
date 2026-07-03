@@ -50,11 +50,11 @@ test.describe('history_menu', () => {
 
             // Navigate to Off-Topic, then Town Square to build history
             await firstServer.click('#sidebarItem_off-topic');
-            await firstServer.waitForSelector('#channelHeaderTitle');
+            await expect(firstServer.locator('#channelHeaderTitle')).toContainText('Off-Topic', {timeout: 10_000});
             const offTopicTitle = await firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
 
             await firstServer.click('#sidebarItem_town-square');
-            await firstServer.waitForSelector('#channelHeaderTitle');
+            await expect(firstServer.locator('#channelHeaderTitle')).toContainText('Town Square', {timeout: 10_000});
 
             // Click History → Back via the application menu
             const clicked = await electronApp.evaluate(({Menu}) => {

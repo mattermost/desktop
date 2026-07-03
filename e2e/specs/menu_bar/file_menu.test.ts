@@ -99,13 +99,15 @@ test.describe('file_menu/dropdown', () => {
         'MM-T1319 Sign in to Another Server — server name input should be focused',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            await clickApplicationMenuItem(electronApp, 'file', {labelIncludes: 'Sign in'});
-
-            // The Add Server modal opens in a newServer window
-            const newServerWindow = await electronApp.waitForEvent('window', {
+            // The Add Server modal opens in a newServer window; start waiting before clicking
+            const newServerWindowPromise = electronApp.waitForEvent('window', {
                 predicate: (window) => window.url().includes('newServer'),
                 timeout: 15_000,
             });
+
+            await clickApplicationMenuItem(electronApp, 'file', {labelIncludes: 'Sign in'});
+
+            const newServerWindow = await newServerWindowPromise;
             await newServerWindow.waitForLoadState('domcontentloaded');
 
             // Verify the server name input exists and is focused
