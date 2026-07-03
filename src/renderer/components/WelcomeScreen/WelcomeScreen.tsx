@@ -45,7 +45,7 @@ function WelcomeScreen({
             subtitle: (
                 <FormattedMessage
                     id='renderer.components.welcomeScreen.slides.welcome.subtitle'
-                    defaultMessage='Mattermost is a sovereign collaboration platform, purpose-built for operational environments. Secure by design.'
+                    defaultMessage='Mattermost is a sovereign collaboration platform built for operational environments and uncompromising security.'
                 />
             ),
             image: (
@@ -100,7 +100,7 @@ function WelcomeScreen({
             subtitle: (
                 <FormattedMessage
                     id='renderer.components.welcomeScreen.slides.integrate.subtitle'
-                    defaultMessage='Integrate with the tools and systems powering your operations — ticketing, conferencing, alerting, or custom integrations.'
+                    defaultMessage='Centralize data feeds, automate alerts, and integrate custom tooling directly into your operational hub.'
                 />
             ),
             image: (
