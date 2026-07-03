@@ -12,18 +12,12 @@ name: CMT Provisioner
 # Triggers: an RC tag cut (e.g. `v6.2.0-rc.1`), or a manual run from the Actions tab. The tag
 # glob filters out GA tags (`v6.2.0`) and non-RC pre-releases at the GitHub layer; matterwick
 # re-validates with a strict regex (`shouldTriggerCMT` / `isRCTag`) as defense-in-depth.
-#
-# NOTE (intentional duplicate coverage): the matching `release-*` branch on which the RC tag
-# is cut also gets a normal release E2E run (whole suite, latest server) on push events. CMT
-# additionally runs the whole suite against the multi-version matrix at the RC moment, whose
-# set includes the latest server — so the latest server is exercised by both flows. Expected
-# and accepted.
 
 on:
   # RC tag cut. Glob matches the `vX.Y.Z-rc.N` convention; matterwick re-validates strictly.
   push:
     tags:
-      - "v*-rc*"
+      - "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*"
   # Manual runs from the Actions tab (any ref).
   workflow_dispatch: {}
 
