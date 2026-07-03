@@ -4,7 +4,7 @@
 import {webContents} from 'electron';
 
 import WebContentsManager from 'app/views/webContentsManager';
-import type {dispatchMentionClick} from 'main/notifications';
+import type {dispatchMentionClick} from 'main/notifications/dispatchMentionClick';
 
 export type SimulateNotificationClickPayload = {
     webContentsId: number;

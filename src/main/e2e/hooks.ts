@@ -7,8 +7,29 @@ import type {SimulateNotificationClickPayload} from './notificationClick';
 
 type MessageBoxResponse = {response: number};
 
+/**
+ * Shape of `global.__e2eTestRefs`, set by registerE2eHooks() below. Kept in sync
+ * manually with the object built in `register.ts` — there's no way to derive this
+ * from the call site without a circular type dependency.
+ */
+export type E2eGlobalRefs = {
+    AppState: typeof import('common/appState').default;
+    MainWindow: typeof import('app/mainWindow/mainWindow').default;
+    NotificationManager: typeof import('main/notifications').default;
+    ServerManager: typeof import('common/servers/serverManager').default;
+    TabManager: typeof import('app/tabs/tabManager').default;
+    ViewManager: typeof import('common/views/viewManager').default;
+    WebContentsManager: typeof import('app/views/webContentsManager').default;
+    Config: typeof import('common/config').default;
+    TrayIcon: typeof import('app/system/tray/tray').default;
+    Diagnostics: typeof import('main/diagnostics').default;
+    PopoutManager: typeof import('app/windows/popoutManager').default;
+    updateNotifier: typeof import('main/updateNotifier').default;
+    setUnreadBadgeSetting: (showUnreadBadge: boolean) => void;
+};
+
 type RegisterE2eHooksOptions = {
-    e2eTestRefs: Record<string, unknown>;
+    e2eTestRefs: E2eGlobalRefs;
     openDeepLink: (url: string) => void;
     clickTrayMenuItem: (label: string) => void;
     triggerNotificationFrameEffects: (flash: boolean) => void;

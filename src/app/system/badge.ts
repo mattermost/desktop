@@ -7,7 +7,6 @@ import {app, nativeImage} from 'electron';
 import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
-import {recordBadgeTestState} from 'main/e2e/badgeState';
 import {localizeMessage} from 'main/i18nManager';
 
 import MainWindow from '../mainWindow/mainWindow';
@@ -16,6 +15,14 @@ const log = new Logger('Badge');
 const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
+
+type BadgeTestRecorder = (sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean, showUnreadBadgeSetting: boolean) => void;
+let badgeTestRecorder: BadgeTestRecorder | undefined;
+
+/** Lets E2E wire up test-state recording without badge.ts depending on main/e2e. */
+export function setBadgeTestRecorder(recorder: BadgeTestRecorder | undefined) {
+    badgeTestRecorder = recorder;
+}
 
 /**
      * Badge generation for Windows
@@ -125,7 +132,7 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
         break;
     }
 
-    recordBadgeTestState(sessionExpired, mentionCount, showUnreadBadge, showUnreadBadgeSetting);
+    badgeTestRecorder?.(sessionExpired, mentionCount, showUnreadBadge, showUnreadBadgeSetting);
 }
 
 export function setUnreadBadgeSetting(showUnreadBadge: boolean) {

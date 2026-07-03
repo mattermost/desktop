@@ -8,7 +8,7 @@ import {loginToMattermost} from '../../helpers/login';
 import {simulateNotificationClick} from '../../helpers/notificationClick';
 import {resolveChannelByName} from '../../helpers/server_api/channel';
 import {getActiveServerWebContentsId} from '../../helpers/testRefs';
-import {hideMainWindow, isMainWindowVisible} from '../../helpers/tray';
+import {hideMainWindow, isMainWindowVisible, showMainWindowIfHidden} from '../../helpers/tray';
 
 test.use({appConfig: demoMattermostConfig});
 test.setTimeout(120_000);
@@ -58,13 +58,7 @@ test(
                 {timeout: 10_000, message: 'Main window should be visible after notification click navigation'},
             ).toBe(true);
         } finally {
-            await electronApp.evaluate(() => {
-                const refs = (global as any).__e2eTestRefs;
-                const mainWindow = refs?.MainWindow?.get?.();
-                if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
-                    refs?.MainWindow?.show?.();
-                }
-            }).catch(() => {});
+            await showMainWindowIfHidden(electronApp);
             await releaseLock();
         }
     },

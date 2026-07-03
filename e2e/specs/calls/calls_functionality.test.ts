@@ -7,6 +7,7 @@ import type {ElectronApplication} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {findCallsWidgetWindow, waitForCallsWidgetWindow} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
+import {CALLS_LEAVE_CALL} from '../../helpers/ipcChannels';
 import {loginToMattermost} from '../../helpers/login';
 import type {ServerView} from '../../helpers/serverView';
 
@@ -204,9 +205,9 @@ async function closeCallsWidget(
     });
 
     if (!leaveClicked) {
-        await electronApp.evaluate(({ipcMain}) => {
-            ipcMain.emit('calls-leave-call');
-        });
+        await electronApp.evaluate(({ipcMain}, channel) => {
+            ipcMain.emit(channel);
+        }, CALLS_LEAVE_CALL);
     }
 
     await expect.poll(

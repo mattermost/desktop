@@ -5,7 +5,7 @@ import {ipcMain} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import createTrayMenu from 'app/menus/tray';
-import {setUnreadBadgeSetting} from 'app/system/badge';
+import {setBadgeTestRecorder, setUnreadBadgeSetting} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
@@ -19,10 +19,13 @@ import {certificateErrorCallbacks} from 'main/app/app';
 import {handleShowSettingsModal} from 'main/app/intercom';
 import {openDeepLink} from 'main/app/utils';
 import Diagnostics from 'main/diagnostics';
-import notificationManager, {dispatchMentionClick, triggerNotificationFrameEffects} from 'main/notifications';
+import notificationManager from 'main/notifications';
+import {dispatchMentionClick} from 'main/notifications/dispatchMentionClick';
+import {triggerNotificationFrameEffects} from 'main/notifications/notificationFrameEffects';
 import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
 import updateNotifier from 'main/updateNotifier';
 
+import {recordBadgeTestState} from './badgeState';
 import {registerE2eHooks} from './hooks';
 import {createSimulateNotificationClick} from './notificationClick';
 import {createClickTrayMenuItem} from './trayMenu';
@@ -36,6 +39,7 @@ export function maybeRegisterE2eHooks(): void {
         return;
     }
 
+    setBadgeTestRecorder(recordBadgeTestState);
     ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
 
     registerE2eHooks({

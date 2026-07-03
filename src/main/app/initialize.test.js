@@ -148,6 +148,8 @@ jest.mock('main/AutoLauncher', () => ({
 jest.mock('main/updateNotifier', () => ({}));
 jest.mock('app/system/badge', () => ({
     setupBadge: jest.fn(),
+    setBadgeTestRecorder: jest.fn(),
+    setUnreadBadgeSetting: jest.fn(),
 }));
 jest.mock('main/CriticalErrorHandler', () => ({
     init: jest.fn(),

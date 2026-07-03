@@ -3,8 +3,7 @@
 
 import {test, expect} from '../../fixtures/index';
 import {cmdOrCtrl} from '../../helpers/config';
-
-const SHOW_SETTINGS_WINDOW = 'show-settings-window';
+import {SHOW_SETTINGS_WINDOW} from '../../helpers/ipcChannels';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 

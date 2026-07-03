@@ -9,11 +9,9 @@ import {test, expect} from '../fixtures/index';
 import {waitForAppReady} from '../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../helpers/config';
 import {closeElectronAppFast} from '../helpers/electronApp';
+import {SHOW_NEW_SERVER_MODAL, SHOW_SETTINGS_WINDOW} from '../helpers/ipcChannels';
 import {loginToMattermost} from '../helpers/login';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
-
-const SHOW_SETTINGS_WINDOW = 'show-settings-window';
-const SHOW_NEW_SERVER_MODAL = 'show_new_server_modal';
 
 const config = {
     ...demoMattermostConfig,

@@ -19,13 +19,19 @@ export async function waitForCallsWidgetWindow(
     electronApp: ElectronApplication,
     timeoutMs = 20_000,
 ): Promise<Page | null> {
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-        const widget = findCallsWidgetWindow(electronApp);
-        if (widget) {
-            return widget;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 500));
+    const existing = findCallsWidgetWindow(electronApp);
+    if (existing) {
+        return existing;
     }
-    return null;
+
+    return electronApp.waitForEvent('window', {
+        predicate: (w) => {
+            try {
+                return w.url().includes('/plugins/com.mattermost.calls/standalone/widget.html');
+            } catch {
+                return false;
+            }
+        },
+        timeout: timeoutMs,
+    }).catch(() => null);
 }

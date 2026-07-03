@@ -91,7 +91,7 @@ export async function evaluateInMainProcessWithArg<T, A>(
 }
 
 function isMainIndexUrl(url: string): boolean {
-    return url.includes('index');
+    return url.includes('mattermost-desktop://renderer/index');
 }
 
 export function findMainIndexWindow(app: ElectronApplication): Page | undefined {

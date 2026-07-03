@@ -1,25 +1,25 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, shell, Notification, ipcMain} from 'electron';
+import {shell, Notification, ipcMain} from 'electron';
 import isDev from 'electron-is-dev';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import MainWindow from 'app/mainWindow/mainWindow';
-import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
-import {PLAY_SOUND, NOTIFICATION_CLICKED, BROWSER_HISTORY_PUSH, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
-import Config from 'common/config';
+import {PLAY_SOUND, OPEN_NOTIFICATION_PREFERENCES} from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
 import PermissionsManager from 'main/security/permissionsManager';
 
+import {dispatchMentionClick} from './dispatchMentionClick';
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
 import {DownloadNotification} from './Download';
 import {Mention} from './Mention';
+import {triggerNotificationFrameEffects} from './notificationFrameEffects';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
 const log = new Logger('Notifications');
@@ -235,22 +235,6 @@ class NotificationManager {
     }
 }
 
-export function dispatchMentionClick(
-    view: {id: string},
-    webcontents: Electron.WebContents,
-    channelId: string,
-    teamId: string,
-    url: string,
-) {
-    const focus = () => {
-        MainWindow.show();
-        TabManager.switchToTab(view.id);
-        ipcMain.off(BROWSER_HISTORY_PUSH, focus);
-    };
-    ipcMain.on(BROWSER_HISTORY_PUSH, focus);
-    webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
-}
-
 export async function getDoNotDisturb() {
     if (process.platform === 'win32') {
         return getWindowsDoNotDisturb();
@@ -274,18 +258,5 @@ export async function getDoNotDisturb() {
     return false;
 }
 
-function triggerNotificationFrameEffects(flash: boolean) {
-    if (process.platform === 'linux' || process.platform === 'win32') {
-        if (Config.notifications.flashWindow) {
-            MainWindow.get()?.flashFrame(flash);
-        }
-    }
-    if (process.platform === 'darwin' && Config.notifications.bounceIcon && Config.notifications.bounceIconType) {
-        app.dock?.bounce(Config.notifications.bounceIconType);
-    }
-}
-
 const notificationManager = new NotificationManager();
-
-export {triggerNotificationFrameEffects};
 export default notificationManager;
