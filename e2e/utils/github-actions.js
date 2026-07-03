@@ -141,6 +141,7 @@ async function updateFinalStatus({github, context, platforms, outputs, e2eTestsR
  */
 async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION}) {
     const description = String(reason).substring(0, 140);
+    const targetUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
     await Promise.all(E2E_STATUS_CONTEXTS.map((statusContext) =>
         github.rest.repos.createCommitStatus({
@@ -150,6 +151,7 @@ async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLE
             state: 'error',
             context: statusContext,
             description,
+            target_url: targetUrl,
         }).catch((error) => {
             console.log(`Could not update ${statusContext} on ${sha}: ${error.message}`);
         }),

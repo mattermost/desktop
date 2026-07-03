@@ -183,12 +183,19 @@ jobs:
             }
 
             if (prNumber) {
-              await github.rest.issues.removeLabel({
-                issue_number: prNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: 'E2E/Run',
-              });
+              try {
+                await github.rest.issues.removeLabel({
+                  issue_number: prNumber,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: 'E2E/Run',
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+                console.log('E2E/Run label already removed');
+              }
             } else {
               console.log('Label removal skipped - could not find associated PR');
             }
