@@ -62,6 +62,13 @@ function formatStatusDescription({passed, failed, collectionFailed}) {
 }
 
 async function resolveStatusSha({github, context, prNumber}) {
+    // Commit statuses must target the SHA this workflow run was dispatched for.
+    // PR HEAD moves when a new push cancels an in-flight run; using it would mark
+    // the new commit cancelled instead of the superseded one.
+    if (context.sha) {
+        return context.sha;
+    }
+
     if (prNumber) {
         const {data: pr} = await github.rest.pulls.get({
             owner: context.repo.owner,
@@ -71,7 +78,7 @@ async function resolveStatusSha({github, context, prNumber}) {
         return pr.head.sha;
     }
 
-    return context.payload.pull_request?.head?.sha || context.sha;
+    return context.payload.pull_request?.head?.sha;
 }
 
 /**
