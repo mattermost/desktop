@@ -44,6 +44,26 @@ await exampleServer.waitForSelector('#sidebarItem_town-square');
 - Reuse helpers from `e2e/helpers` before creating new launch, login, or server-discovery logic.
 - Do not add new `electron-mocha`, `robotjs`, or Mochawesome-based code.
 
+## Declarative platform tags
+
+Platform selection is handled by Playwright **projects** in `e2e/playwright.config.ts`, not runtime `test.skip()` guards.
+
+Every test must declare:
+
+- **Priority:** `@P0`, `@P1`, or `@P2`
+- **Platform:** `@all` (runs on every OS) or one or more of `@linux`, `@darwin`, `@win32`
+
+Special tags:
+
+- `@wayland` — Wayland-only coverage (`linux/wayland_launch.test.ts`). Runs only when `E2E_WAYLAND=true` on Linux via the `wayland` project; excluded from normal Linux CI.
+- Policy specs under `specs/policy/` — excluded from the main CI run unless `RUN_POLICY_E2E=true`.
+
+Do **not** add `test.skip()` for platform gating when tags already express the intended OS. Keep runtime skips only for conditional cases (missing server URL, license/feature unavailable on the test instance).
+
+CI report labels (`@ci-linux`, `@ci-macos`, `@ci-windows`) come from `CI_ENVIRONMENT_NAME` and must not be used as test tags — they would collide with platform grep.
+
+Local/CI runs use `--project=<linux|darwin|win32>` to match the host OS (set automatically in GitHub Actions).
+
 ## Version Compatibility
 
 Treat dependency upgrades as infrastructure changes, not routine edits.
@@ -137,6 +157,8 @@ Many server-backed specs require:
 - `MM_TEST_PASSWORD`
 
 Do not remove skips or platform guards unless the test can actually run in the current environment.
+
+Platform guards belong in test **tags** (`@linux`, `@darwin`, `@win32`, `@all`, `@wayland`), not `test.skip()` — see [Declarative platform tags](#declarative-platform-tags).
 
 Examples:
 - Tests tagged for Windows or Linux are not truthfully verified on macOS.

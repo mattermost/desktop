@@ -298,6 +298,8 @@
   "renderer.components.settingsPage.enableMetrics.description": "Skickar användningsdata om applikationen och dess prestanda till dina konfigurerade servrar som tar emot dem.",
   "renderer.components.settingsPage.enableSentry": "Skicka felrapporter för att förbättra appen",
   "renderer.components.settingsPage.enableSentry.description": "Om aktiverad så skickas felrapporter och kraschinformation som stöd för att identifiera och åtgärda problem i applikationen. Inställningen träder i kraft efter att appen har startats om.",
+  "renderer.components.settingsPage.enableSessionAttributes": "Aktivera sessionsattribut",
+  "renderer.components.settingsPage.enableSessionAttributes.description": "Skickar enhets- och nätverksinformation till de servrar du har konfigurerat för användning i behörighetspolicyer. Vissa resurser kan vara otillgängliga om dessa inställningar är inaktiverade.",
   "renderer.components.settingsPage.flashWindow": "Låt Mattermostikonen blinka i aktivitetsfältet när ett nytt meddelande tas emot",
   "renderer.components.settingsPage.flashWindow.description": "Om aktiverad kommer ikonen blinka i aktivitetsfältet i några sekunder när ett nytt meddelande tas emot.",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "Den här funktionen kanske inte fungerar med alla fönsterhanterare i Linux.",

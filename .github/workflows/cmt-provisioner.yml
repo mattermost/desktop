@@ -27,13 +27,10 @@ on:
   # Manual runs from the Actions tab (any ref).
   workflow_dispatch: {}
 
-# This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a workflow_run event
-# that Matterwick reacts to; it does not check out the repo or call the GitHub API. Drop all
-# GITHUB_TOKEN scopes so the runner-issued token cannot modify the repo if a step is added later.
 permissions: {}
 
 jobs:
-  signal:
+  trigger-matterwick:
     runs-on: ubuntu-22.04
     steps:
       - name: Signal Matterwick to provision CMT servers
