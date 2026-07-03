@@ -51,10 +51,13 @@ jobs:
       platforms: ${{ steps.generate.outputs.platforms }}
     steps:
       - id: generate
+        env:
+          INSTANCE_DETAILS: ${{ inputs.instance_details }}
         run: |
           # Matterwick still dispatches macos-latest; pin explicitly so the job
           # does not drift when GitHub retargets that label to macOS 26.
-          echo "platforms=$(echo '${{ inputs.instance_details }}' | jq -c 'map(if .runner == "macos-latest" then .runner = "macos-26" else . end)')" >> $GITHUB_OUTPUT
+          platforms=$(echo "${INSTANCE_DETAILS}" | jq -c 'map(if .runner == "macos-latest" then .runner = "macos-26" else . end)')
+          echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
   update-initial-status:
     name: Update initial status
