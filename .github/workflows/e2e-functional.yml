@@ -23,14 +23,9 @@ on:
         type: string
         description: "The server version to test against"
         required: true
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       run_type:
         type: string
-        description: "Run type for test reporting (PR/RELEASE). Auto-detected from branch if not provided."
+        description: "Run type for test reporting (PR / MASTER / RELEASE). Matterwick sends MASTER for master pushes; PR-label runs leave this blank (default PR). Settable on manual dispatch for ad-hoc RELEASE runs."
         required: false
         default: ""
       pr_number:
@@ -95,8 +90,11 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
-      TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(inputs.version_name, 'release-') && 'RELEASE' || 'PR' }}
-      nightly: ${{ inputs.nightly }}
+      # When matterwick fires this workflow it sets run_type explicitly (MASTER for master
+      # pushes; PR-label runs are dispatched without run_type, defaulting to PR via the `|| 'PR'`
+      # below). The previous `startsWith(version_name, 'release-') && 'RELEASE'` fallback was
+      # for matterwick's release-branch push, which is no longer wired — removed.
+      TYPE: ${{ inputs.run_type || 'PR' }}
     secrets: inherit
 
   update-final-status:
