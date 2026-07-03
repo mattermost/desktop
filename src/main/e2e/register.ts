@@ -20,14 +20,13 @@ import {handleShowSettingsModal} from 'main/app/intercom';
 import {openDeepLink} from 'main/app/utils';
 import Diagnostics from 'main/diagnostics';
 import notificationManager from 'main/notifications';
-import {dispatchMentionClick} from 'main/notifications/dispatchMentionClick';
-import {triggerNotificationFrameEffects} from 'main/notifications/notificationFrameEffects';
 import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
 import updateNotifier from 'main/updateNotifier';
 
 import {recordBadgeTestState} from './badgeState';
 import {registerE2eHooks} from './hooks';
-import {createSimulateNotificationClick} from './notificationClick';
+import {simulateNotificationClick} from './notificationClick';
+import {triggerNotificationFrameEffects} from './notificationFrameEffects';
 import {createClickTrayMenuItem} from './trayMenu';
 
 /**
@@ -61,7 +60,7 @@ export function maybeRegisterE2eHooks(): void {
         openDeepLink,
         clickTrayMenuItem: createClickTrayMenuItem(createTrayMenu),
         triggerNotificationFrameEffects,
-        simulateNotificationClick: createSimulateNotificationClick(dispatchMentionClick),
+        simulateNotificationClick,
         installMessageBoxStub,
         restoreMessageBoxStub,
         clearCertificateErrorCallbacks: () => certificateErrorCallbacks.clear(),

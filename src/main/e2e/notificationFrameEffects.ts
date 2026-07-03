@@ -6,6 +6,7 @@ import {app} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import Config from 'common/config';
 
+/** Mirrors notifications/index.ts flashFrame — E2E only. */
 export function triggerNotificationFrameEffects(flash: boolean) {
     if (process.platform === 'linux' || process.platform === 'win32') {
         if (Config.notifications.flashWindow) {

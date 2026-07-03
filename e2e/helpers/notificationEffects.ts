@@ -4,7 +4,7 @@
 import type {ElectronApplication} from 'playwright';
 
 /**
- * Invoke the production flashFrame() helper from src/main/notifications/index.ts.
+ * Invoke the E2E mirror of notifications/index.ts flashFrame().
  *
  * OS notification delivery is unreliable in headless CI (Electron's Notification
  * often emits `failed` without `show`), so flash_taskbar and dock_bounce tests
