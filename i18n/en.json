@@ -170,7 +170,7 @@
   "renderer.components.configureServer.name.info": "The name that will be displayed in your server list",
   "renderer.components.configureServer.name.placeholder": "Server display name",
   "renderer.components.configureServer.subtitle": "Enter your server details to get started.",
-  "renderer.components.configureServer.title": "Connect securely to your server",
+  "renderer.components.configureServer.title": "Connect to your server",
   "renderer.components.configureServer.url.info": "The URL of your Mattermost server",
   "renderer.components.configureServer.url.insecure": "Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.",
   "renderer.components.configureServer.url.notMattermost": "The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.",

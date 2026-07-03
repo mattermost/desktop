@@ -339,7 +339,7 @@ function ConfigureServer({
                                 {messageTitle || (
                                     <FormattedMessage
                                         id='renderer.components.configureServer.title'
-                                        defaultMessage='Connect securely to your server'
+                                        defaultMessage='Connect to your server'
                                     />
                                 )}
                             </h1>
