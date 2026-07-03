@@ -24,11 +24,6 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       cmt:
         type: boolean
         description: "True if this is Compatibility Matrix Testing"
@@ -122,11 +117,6 @@ on:
         description: "The E2E tests underlying OS"
         required: true
         default: "ubuntu-24.04"
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       cmt:
         type: boolean
         description: "True if this is Compatibility Matrix Testing"
@@ -220,11 +210,6 @@ jobs:
               ;;
           esac
 
-          if ${{ inputs.nightly }}; then
-            echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-          fi
-
       - name: e2e/set-build-id
         run: echo "BUILD_ID=${{ github.run_id }}-${{ steps.variables.outputs.BUILD_SUFFIX }}" >> $GITHUB_ENV
 
@@ -243,13 +228,7 @@ jobs:
 
       - name: e2e/use-gnu-tar-macos
         if: runner.os == 'macOS'
-        run: |
-          # BSD tar on macOS can corrupt actions/cache v5 archives; prefer GNU tar when present.
-          if [ -x /opt/homebrew/opt/gnu-tar/libexec/gnubin/gtar ]; then
-            echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
-          elif [ -x /usr/local/opt/gnu-tar/libexec/gnubin/gtar ]; then
-            echo "/usr/local/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
-          fi
+        run: echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
 
       - name: e2e/cache-node-modules
         id: cache-node-modules
@@ -272,25 +251,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
 
-      # Clear pip's HTTP cache on macOS-26 runners before setup-python. The pre-baked
-      # image cache contains entries serialized by an older pip that the newer pip
-      # shipped with Python 3.10 cannot deserialize, producing the noisy
-      # "WARNING: Cache entry deserialization failed, entry ignored" lines in CI.
-      # See actions/setup-python#1317.
-      - name: e2e/clear-pip-cache-macos
-        if: runner.os == 'macOS'
-        run: |
-          rm -rf "${HOME}/Library/Caches/pip" || true
-          python3 -m pip cache purge >/dev/null 2>&1 || true
-
       - name: e2e/setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         env:
           # Bypass pip's on-disk HTTP cache entirely so a stale/corrupt entry on the
-          # runner image cannot trigger deserialization warnings.
+          # runner image cannot trigger deserialization warnings (actions/setup-python#1317).
           PIP_NO_CACHE_DIR: "1"
         with:
-          python-version: "3.10"
+          # Use a version pre-installed on macOS-26 (3.13 is in its toolcache), so
+          # setup-python doesn't install a mismatched interpreter whose pip can't
+          # deserialize the image's pre-baked cache. PIP_NO_CACHE_DIR above is the
+          # remaining guard for non-macOS runners.
+          python-version: "3.13"
           # Omit `cache` — setup-python only accepts pip/pipenv/poetry, not `false`.
 
       - name: e2e/install-os-dependencies
@@ -401,6 +373,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PER_OS_REPORT_URL: ${{ steps.upload-html-report-to-s3.outputs.report_url }}
+          JOB_STATUS: ${{ job.status }}
         with:
           script: |
             process.chdir('./e2e');

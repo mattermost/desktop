@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Copiar Endereço de Correio Eletrónico",
   "app.menus.contextMenu.openInNewTab": "Abrir num novo separador",
   "app.menus.contextMenu.openInNewWindow": "Abrir numa nova janela",
   "app.navigationManager.invalidLinkDescription": "A hiperligação que clicou parece estar mal formada e não pode ser aberta. Por favor, verifique o URL para erros antes de tentar novamente.",

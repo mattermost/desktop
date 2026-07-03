@@ -4,49 +4,7 @@
 import * as fs from 'fs';
 
 import {test, expect} from '../fixtures/index';
-
-const SHOW_SETTINGS_WINDOW = 'show-settings-window';
-
-type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
-
-async function openSettingsWindow(electronApp: ElectronApplication) {
-    for (let attempt = 0; attempt < 5; attempt++) {
-        const existingWindow = electronApp.windows().find((window) => window.url().includes('settings'));
-        if (existingWindow) {
-            await existingWindow.waitForLoadState().catch(() => {});
-            return existingWindow;
-        }
-
-        try {
-            await electronApp.evaluate(({ipcMain}, showWindow) => {
-                ipcMain.emit(showWindow);
-            }, SHOW_SETTINGS_WINDOW);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (!message.includes('Execution context was destroyed') || attempt === 4) {
-                throw error;
-            }
-        }
-
-        try {
-            const settingsWindow = electronApp.windows().find((window) => window.url().includes('settings')) ??
-                await electronApp.waitForEvent('window', {
-                    predicate: (window) => window.url().includes('settings'),
-                    timeout: 3_000,
-                });
-
-            await settingsWindow.waitForLoadState().catch(() => {});
-            return settingsWindow;
-        } catch (error) {
-            if (attempt === 4) {
-                throw error;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 250));
-        }
-    }
-
-    throw new Error('Settings window did not open');
-}
+import {openSettingsWindow} from '../helpers/settingsWindow';
 
 test.describe('Settings', () => {
     test.describe('Options', () => {
