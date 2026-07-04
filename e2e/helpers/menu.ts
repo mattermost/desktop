@@ -37,6 +37,9 @@ export async function clickApplicationMenuItem(
                 };
 
                 const topLevelMenu = electronAppInstance.applicationMenu?.getMenuItemById(payload.menuId);
+                if (!topLevelMenu) {
+                    throw new Error(`Menu with ID "${payload.menuId}" not found in application menu`);
+                }
                 const rootItems = topLevelMenu?.submenu?.items ?? [];
                 const stack = [...rootItems];
                 const items: any[] = [];

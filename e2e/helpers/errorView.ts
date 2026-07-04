@@ -117,6 +117,18 @@ export async function waitForErrorView(
 ): Promise<void> {
     const timeout = options.timeout ?? (process.env.CI ? 60_000 : 45_000);
     const deadline = Date.now() + timeout;
+
+    // Wait for main window to appear before entering the error view polling loop
+    await expect.poll(() => {
+        return app.windows().some((window) => {
+            try {
+                return window.url().includes('index');
+            } catch {
+                return false;
+            }
+        });
+    }, {timeout: Math.min(30_000, timeout), message: 'Main window should appear'}).toBe(true);
+
     let lastError: unknown;
     while (Date.now() < deadline) {
         try {

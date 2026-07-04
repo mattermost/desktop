@@ -91,7 +91,7 @@ test.describe('startup/app', () => {
                         timeout: 15_000,
                     });
                 }
-                await welcomeModal.waitForLoadState('domcontentloaded');
+                await welcomeModal.waitForLoadState();
                 const text = await welcomeModal.innerText('.WelcomeScreen .WelcomeScreen__button');
                 expect(text).toBe('Get Started');
             } finally {
@@ -172,7 +172,8 @@ test.describe('startup/app', () => {
                 const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
                 expect(mainWin, 'Main window must exist').toBeDefined();
 
-                // Verify the Add Server modal inputs are visible
+                // Wait for modal container to render, then for the input elements
+                await mainWin!.waitForSelector('.GenericModal', {timeout: 15_000});
                 await mainWin!.waitForSelector('#input_name', {timeout: 10_000});
                 await mainWin!.waitForSelector('#input_url', {timeout: 10_000});
 
@@ -216,7 +217,8 @@ test.describe('startup/app', () => {
                 const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
                 expect(mainWin, 'Main window must exist').toBeDefined();
 
-                // Verify the Add Server modal is present
+                // Wait for modal container to render, then for the input
+                await mainWin!.waitForSelector('.GenericModal', {timeout: 15_000});
                 await mainWin!.waitForSelector('#input_name', {timeout: 10_000});
 
                 // Verify no Cancel or Close button exists on the modal

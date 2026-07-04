@@ -50,11 +50,21 @@ test.describe('history_menu', () => {
 
             // Navigate to Off-Topic, then Town Square to build history
             await firstServer.click('#sidebarItem_off-topic');
-            await expect(firstServer.locator('#channelHeaderTitle')).toContainText('Off-Topic', {timeout: 10_000});
+            await expect.poll(
+                async () => {
+                    return firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
+                },
+                {timeout: 10_000},
+            ).toBe('Off-Topic');
             const offTopicTitle = await firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
 
             await firstServer.click('#sidebarItem_town-square');
-            await expect(firstServer.locator('#channelHeaderTitle')).toContainText('Town Square', {timeout: 10_000});
+            await expect.poll(
+                async () => {
+                    return firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
+                },
+                {timeout: 10_000},
+            ).toBe('Town Square');
 
             // Click History → Back via the application menu
             const clicked = await electronApp.evaluate(({Menu}) => {

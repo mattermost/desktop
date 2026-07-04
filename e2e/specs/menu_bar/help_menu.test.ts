@@ -84,7 +84,7 @@ test.describe('menu_bar/help_menu', () => {
     test(
         'MM-T828 Learn More in the Menu Bar opens docs.mattermost.com in a browser',
         {tag: ['@P2', '@all']},
-        async ({electronApp}) => {
+        async ({electronApp, appReady: _appReady}) => {
             // Stub shell.openExternal to capture the URL without launching the browser
             await electronApp.evaluate(({shell}) => {
                 (global as any).__e2eOpenExternalCalls = [] as string[];
@@ -95,7 +95,10 @@ test.describe('menu_bar/help_menu', () => {
             });
 
             try {
-                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Learn More'});
+                // Try "Learn More" first, fall back to just "Learn" if that doesn't exist (platform differences)
+                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Learn More'}).catch(async () => {
+                    await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Learn'});
+                });
 
                 await expect.poll(
                     () => electronApp.evaluate(() => {

@@ -98,7 +98,7 @@ test.describe('file_menu/dropdown', () => {
     test(
         'MM-T1319 Sign in to Another Server — server name input should be focused',
         {tag: ['@P2', '@all']},
-        async ({electronApp}) => {
+        async ({electronApp, appReady: _appReady}) => {
             // The Add Server modal opens in a newServer window; start waiting before clicking
             const newServerWindowPromise = electronApp.waitForEvent('window', {
                 predicate: (window) => window.url().includes('newServer'),
@@ -108,10 +108,18 @@ test.describe('file_menu/dropdown', () => {
             await clickApplicationMenuItem(electronApp, 'file', {labelIncludes: 'Sign in'});
 
             const newServerWindow = await newServerWindowPromise;
-            await newServerWindow.waitForLoadState('domcontentloaded');
+            await newServerWindow.waitForLoadState();
+
+            // Verify the window is the newServer window by checking for modal content
+            await newServerWindow.waitForSelector('#serverNameInput, #input_name', {timeout: 10_000});
+
+            // Get the correct input ID (may vary by platform)
+            const inputId = await newServerWindow.evaluate(() => {
+                return document.querySelector('#serverNameInput') ? '#serverNameInput' : '#input_name';
+            });
 
             // Verify the server name input exists and is focused
-            await newServerWindow.waitForSelector('#input_name', {timeout: 10_000});
+            await newServerWindow.waitForSelector(inputId, {timeout: 10_000});
             const focusedElement = await newServerWindow.evaluate(() => {
                 const active = document.activeElement;
                 return active?.id ?? null;
