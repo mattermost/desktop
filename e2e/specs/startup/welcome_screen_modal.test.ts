@@ -126,6 +126,7 @@ test.describe('startup/welcome_screen_modal', () => {
             try {
                 ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
                 await modal.click('#getStartedWelcomeScreen');
+
                 // Wait for NewServerModal to appear in the main window after clicking Get Started
                 const mainWin = app!.windows().find((w) => w.url().includes('index'));
                 await mainWin!.waitForSelector('.NewServerModal', {timeout: 10_000});

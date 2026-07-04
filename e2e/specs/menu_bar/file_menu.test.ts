@@ -98,7 +98,7 @@ test.describe('file_menu/dropdown', () => {
     test(
         'MM-T1319 Sign in to Another Server — server name input should be focused',
         {tag: ['@P2', '@all']},
-        async ({electronApp, appReady: _appReady}) => {
+        async ({electronApp}) => {
             // The Add Server modal opens in a newServer window; start waiting before clicking
             const newServerWindowPromise = electronApp.waitForEvent('window', {
                 predicate: (window) => window.url().includes('newServer'),
