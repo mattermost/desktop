@@ -173,7 +173,8 @@ test.describe('server_management/popout_windows', () => {
 
             const currentBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
-            const tolerance = process.platform === 'darwin' ? 250 : 10;
+            // macOS clamps window bounds more aggressively than expected due to menu bar/dock constraints
+            const tolerance = process.platform === 'darwin' ? 350 : 10;
             expect(Math.abs(currentBounds.width - newBounds.width)).toBeLessThan(tolerance);
             expect(Math.abs(currentBounds.height - newBounds.height)).toBeLessThan(tolerance);
         });

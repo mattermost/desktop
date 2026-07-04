@@ -99,13 +99,18 @@ test.describe('file_menu/dropdown', () => {
         'MM-T1319 Sign in to Another Server — server name input should be focused',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            // On macOS, "Sign in to Another Server" lives in the app menu, not the file menu
+            // (see getSettingsAndSignInToAnotherServerMenu, only spread into the file menu
+            // when process.platform !== 'darwin' — src/app/menus/appMenu/file.ts).
+            const menuId = process.platform === 'darwin' ? 'app' : 'file';
+
             // The Add Server modal opens in a newServer window; start waiting before clicking
             const newServerWindowPromise = electronApp.waitForEvent('window', {
                 predicate: (window) => window.url().includes('newServer'),
                 timeout: 15_000,
             });
 
-            await clickApplicationMenuItem(electronApp, 'file', {labelIncludes: 'Sign in'});
+            await clickApplicationMenuItem(electronApp, menuId, {labelIncludes: 'Sign in'});
 
             const newServerWindow = await newServerWindowPromise;
             await newServerWindow.waitForLoadState();

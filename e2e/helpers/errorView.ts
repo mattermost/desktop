@@ -125,8 +125,16 @@ export async function waitForErrorView(
                 throw new Error('Main index window is not available yet');
             }
             await waitForRendererThenReload(app, options.serverName);
+
+            // Non-ERR_CERT failures (e.g. ERR_SSL_VERSION_OR_CIPHER_MISMATCH for RC4/TLS
+            // mismatches) go through MattermostWebContentsView's retry cascade — up to
+            // MAX_SERVER_RETRIES (3) retries at RELOAD_INTERVAL (5s) apart — before LOAD_FAILED
+            // fires and .ErrorView renders (~20-30s worst case). Capping this wait below that
+            // forces another reload() via the catch below, which resets the retry counter
+            // (resetLoadingStatus) and restarts the whole cascade, compounding delay instead
+            // of giving the in-flight cascade a fair chance to finish.
             await mainWindow.waitForSelector('.ErrorView', {
-                timeout: Math.min(10_000, deadline - Date.now()),
+                timeout: Math.min(35_000, deadline - Date.now()),
             });
             return;
         } catch (error) {

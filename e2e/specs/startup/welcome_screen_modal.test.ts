@@ -119,12 +119,6 @@ test.describe('startup/welcome_screen_modal', () => {
         'MM-T4983 should click Get Started and open new server modal',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
-            // SKIP on Linux: Clicking "Get Started" transitions to ConfigureServer in the welcome screen window,
-            // not a NewServerModal in the main window. Test expectations don't match actual implementation.
-            if (process.platform === 'linux') {
-                test.skip(true, 'Get Started shows ConfigureServer in welcome screen, not NewServerModal in main window');
-            }
-
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
             let app: Awaited<ReturnType<typeof electron.launch>> | undefined;
             let modal: Page;
@@ -133,11 +127,16 @@ test.describe('startup/welcome_screen_modal', () => {
                 ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
                 await modal.click('#getStartedWelcomeScreen');
 
-                // Wait for NewServerModal to appear in the main window after clicking Get Started
-                const mainWin = app!.windows().find((w) => w.url().includes('index'));
-                await mainWin!.waitForSelector('.NewServerModal', {timeout: 10_000});
-                await mainWin!.waitForSelector('#serverNameInput', {timeout: 10_000});
-                await mainWin!.waitForSelector('#serverUrlInput', {timeout: 10_000});
+                // After clicking "Get Started", the welcome screen transitions to ConfigureServer component
+                // Check for the server input fields in the welcome screen window (not main window)
+                await modal.waitForSelector('input[name="url"]', {timeout: 10_000});
+                await modal.waitForSelector('input[name="name"]', {timeout: 10_000});
+
+                // Verify inputs are visible
+                const urlInputVisible = await modal.isVisible('input[name="url"]');
+                const nameInputVisible = await modal.isVisible('input[name="name"]');
+                expect(urlInputVisible, 'Server URL input must be visible').toBe(true);
+                expect(nameInputVisible, 'Server name input must be visible').toBe(true);
             } finally {
                 if (app && userDataDir) {
                     await closeElectronAppFast(app, userDataDir);

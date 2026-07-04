@@ -149,12 +149,6 @@ test.describe('startup/app', () => {
         'MM-T4399 New Server Modal should appear when no servers exist',
         {tag: ['@P1', '@all']},
         async ({}, testInfo) => {
-            // SKIP on Linux: NewServerModal does not appear in main window on Linux with empty config.
-            // Welcome screen window appears instead. Behavior should be clarified.
-            if (process.platform === 'linux') {
-                test.skip(true, 'NewServerModal behavior unclear on Linux; welcome screen appears instead');
-            }
-
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
             let emptyApp;
             let userDataDir = '';
@@ -172,21 +166,26 @@ test.describe('startup/app', () => {
                     timeout: 60_000,
                 });
 
-                // The Add Server modal should appear automatically when no servers exist.
-                // It renders inside the main window (index.html), not as a separate window.
-                await waitForAppReady(emptyApp);
-                const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
-                expect(mainWin, 'Main window must exist').toBeDefined();
+                // With no servers configured, handleShowOnboardingScreens (intercom.ts) always shows
+                // the Welcome Screen modal first — .NewServerModal is never rendered on this path.
+                let welcomeScreen = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
+                if (!welcomeScreen) {
+                    welcomeScreen = await emptyApp.waitForEvent('window', {
+                        predicate: (w) => w.url().includes('welcomeScreen'),
+                        timeout: 15_000,
+                    });
+                }
+                await welcomeScreen.waitForLoadState();
 
-                // Wait for the NewServerModal to appear
-                await mainWin!.waitForSelector('.NewServerModal', {timeout: 15_000});
-                await mainWin!.waitForSelector('#serverNameInput', {timeout: 10_000});
-                await mainWin!.waitForSelector('#serverUrlInput', {timeout: 10_000});
+                // "Get Started" transitions in place (same window) to the server configuration form
+                await welcomeScreen.click('#getStartedWelcomeScreen');
+                await welcomeScreen.waitForSelector('input[name="url"]', {timeout: 10_000});
+                await welcomeScreen.waitForSelector('input[name="name"]', {timeout: 10_000});
 
-                const nameInputVisible = await mainWin!.isVisible('#serverNameInput');
-                const urlInputVisible = await mainWin!.isVisible('#serverUrlInput');
-                expect(nameInputVisible, 'Server name input must be visible').toBe(true);
+                const urlInputVisible = await welcomeScreen.isVisible('input[name="url"]');
+                const nameInputVisible = await welcomeScreen.isVisible('input[name="name"]');
                 expect(urlInputVisible, 'Server URL input must be visible').toBe(true);
+                expect(nameInputVisible, 'Server name input must be visible').toBe(true);
             } finally {
                 if (emptyApp && userDataDir) {
                     await closeElectronAppFast(emptyApp, userDataDir);
@@ -219,20 +218,24 @@ test.describe('startup/app', () => {
                     timeout: 60_000,
                 });
 
-                await waitForAppReady(emptyApp);
-                const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
-                expect(mainWin, 'Main window must exist').toBeDefined();
-
-                // Wait for the NewServerModal to appear
-                await mainWin!.waitForSelector('.NewServerModal', {timeout: 15_000});
-                await mainWin!.waitForSelector('#serverNameInput', {timeout: 10_000});
+                // With no servers configured, the Welcome Screen modal is shown uncloseable
+                // (ModalManager.addModal(..., !ServerManager.hasServers())). WelcomeScreen.tsx
+                // does not use the shared Modal component, so it has no Escape-to-close handler.
+                let welcomeScreen = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
+                if (!welcomeScreen) {
+                    welcomeScreen = await emptyApp.waitForEvent('window', {
+                        predicate: (w) => w.url().includes('welcomeScreen'),
+                        timeout: 15_000,
+                    });
+                }
+                await welcomeScreen.waitForLoadState();
+                await welcomeScreen.waitForSelector('.WelcomeScreen', {timeout: 15_000});
 
                 // Press Escape — modal must NOT disappear when uncloseable
-                await mainWin!.keyboard.press('Escape');
+                await welcomeScreen.keyboard.press('Escape');
 
-                // Poll to verify modal is still visible after Escape attempt
-                const modalStillVisible = await mainWin!.isVisible('.NewServerModal');
-                expect(modalStillVisible, 'NewServerModal must remain visible after Escape when no servers exist').toBe(true);
+                const modalStillVisible = await welcomeScreen.isVisible('.WelcomeScreen');
+                expect(modalStillVisible, 'Welcome screen modal must remain visible after Escape when no servers exist').toBe(true);
             } finally {
                 if (emptyApp && userDataDir) {
                     await closeElectronAppFast(emptyApp, userDataDir);

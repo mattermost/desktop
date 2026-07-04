@@ -195,15 +195,15 @@ test.describe('server_management/drag_and_drop', () => {
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
             await secondTab.click();
             const secondView = localServerMap[serverName][1].win;
-            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
             await recoverServerViewIfNeeded(secondView, {channelItem: '#sidebarItem_off-topic'});
+            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
             await secondView.click('#sidebarItem_off-topic');
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
             await thirdTab.click();
             const thirdView = localServerMap[serverName][2].win;
-            await waitForMattermostShell(thirdView, {channelItem: '#sidebarItem_town-square'});
             await recoverServerViewIfNeeded(thirdView, {channelItem: '#sidebarItem_town-square'});
+            await waitForMattermostShell(thirdView, {channelItem: '#sidebarItem_town-square'});
             await thirdView.click('#sidebarItem_town-square');
 
             // Tab titles update asynchronously after channel navigation — poll for each.
@@ -229,15 +229,15 @@ test.describe('server_management/drag_and_drop', () => {
             const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
             await secondTab.click();
             const secondView = localServerMap[serverName][1].win;
-            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
             await recoverServerViewIfNeeded(secondView, {channelItem: '#sidebarItem_off-topic'});
+            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
             await secondView.click('#sidebarItem_off-topic');
 
             const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
             await thirdTab.click();
             const thirdView = localServerMap[serverName][2].win;
-            await waitForMattermostShell(thirdView, {channelItem: '#sidebarItem_town-square'});
             await recoverServerViewIfNeeded(thirdView, {channelItem: '#sidebarItem_town-square'});
+            await waitForMattermostShell(thirdView, {channelItem: '#sidebarItem_town-square'});
             await thirdView.click('#sidebarItem_town-square');
 
             const visibleTabOrder = await getVisibleTabOrder();
