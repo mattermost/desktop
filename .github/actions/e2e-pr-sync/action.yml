@@ -1,0 +1,49 @@
+name: Sync E2E PR state
+description: >-
+  Cancel stale Electron Playwright Tests runs and update E2E/Run label plus
+  commit statuses for PR-triggered E2E flows.
+
+inputs:
+  mode:
+    description: refresh (re-trigger), override (strip label), or stop (manual unlabel)
+    required: true
+  pr_number:
+    description: Pull request number
+    required: true
+  head_sha:
+    description: PR head commit SHA for commit statuses
+    required: true
+  head_ref:
+    description: PR head branch ref for cancelling in-flight workflow runs
+    required: true
+  status_reason:
+    description: Commit status description (override/stop modes only)
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        MODE: ${{ inputs.mode }}
+        PR_NUMBER: ${{ inputs.pr_number }}
+        HEAD_SHA: ${{ inputs.head_sha }}
+        HEAD_REF: ${{ inputs.head_ref }}
+        STATUS_REASON: ${{ inputs.status_reason }}
+      with:
+        script: |
+          const {handleE2EPrSync} = require('./e2e/utils/github-actions.js');
+          const prNumber = parseInt(process.env.PR_NUMBER, 10);
+          if (!Number.isFinite(prNumber)) {
+            throw new Error(`Invalid pr_number: ${process.env.PR_NUMBER}`);
+          }
+
+          await handleE2EPrSync({
+            github,
+            context,
+            prNumber,
+            headSha: process.env.HEAD_SHA,
+            headRef: process.env.HEAD_REF,
+            mode: process.env.MODE,
+            statusReason: process.env.STATUS_REASON || undefined,
+          });

@@ -149,47 +149,14 @@ jobs:
       - name: e2e/remove-label-from-pr
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         continue-on-error: true # Label might have been removed manually
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
         with:
           github-token: ${{ github.token }}
           script: |
-            // Use pr_number if provided directly by the dispatcher (e.g. Matterwick)
-            let prNumber = parseInt(process.env.PR_NUMBER) || null;
-
-            // Fall back to looking up the PR by head branch when pr_number was not passed
-            if (!prNumber) {
-              const run = await github.rest.actions.getWorkflowRun({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: context.runId,
-              });
-              const branchName = run.data.head_branch;
-              if (branchName) {
-                const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
-                const prs = await github.rest.pulls.list({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  state: 'open',
-                  head: `${headOwner}:${branchName}`,
-                });
-                if (prs.data && prs.data.length > 0) {
-                  const matchingPr = prs.data.find((pr) => pr.head && pr.head.sha === run.data.head_sha);
-                  prNumber = (matchingPr || prs.data[0]).number;
-                }
-              }
-            }
-
-            if (prNumber) {
-              await github.rest.issues.removeLabel({
-                issue_number: prNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: 'E2E/Run',
-              });
-            } else {
-              console.log('Label removal skipped - could not find associated PR');
-            }
-        env:
-          PR_NUMBER: ${{ inputs.pr_number }}
+            const { removeE2ELabel } = require('./e2e/utils/github-actions.js');
+            const prNumber = parseInt(process.env.PR_NUMBER, 10) || null;
+            await removeE2ELabel({ github, context, prNumber });
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}
