@@ -95,10 +95,7 @@ test.describe('menu_bar/help_menu', () => {
             });
 
             try {
-                // Try "Learn More" first, fall back to just "Learn" if that doesn't exist (platform differences)
-                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Learn More'}).catch(async () => {
-                    await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Learn'});
-                });
+                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'User guide'});
 
                 await expect.poll(
                     () => electronApp.evaluate(() => {

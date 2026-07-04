@@ -110,21 +110,12 @@ test.describe('file_menu/dropdown', () => {
             const newServerWindow = await newServerWindowPromise;
             await newServerWindow.waitForLoadState();
 
-            // Verify the window is the newServer window by checking for modal content
-            await newServerWindow.waitForSelector('#serverNameInput, #input_name', {timeout: 10_000});
-
-            // Get the correct input ID (may vary by platform)
-            const inputId = await newServerWindow.evaluate(() => {
-                return document.querySelector('#serverNameInput') ? '#serverNameInput' : '#input_name';
-            });
-
-            // Verify the server name input exists and is focused
-            await newServerWindow.waitForSelector(inputId, {timeout: 10_000});
+            // Verify the server URL input is focused (has autoFocus attribute in NewServerModal)
             const focusedElement = await newServerWindow.evaluate(() => {
                 const active = document.activeElement;
                 return active?.id ?? null;
             });
-            expect(focusedElement, 'Server name input must be focused after opening Sign in to Another Server').toBe('input_name');
+            expect(focusedElement, 'Server URL input must be focused after opening Sign in to Another Server').toBe('serverUrlInput');
         },
     );
 });

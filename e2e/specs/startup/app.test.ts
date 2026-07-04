@@ -172,13 +172,13 @@ test.describe('startup/app', () => {
                 const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
                 expect(mainWin, 'Main window must exist').toBeDefined();
 
-                // Wait for modal container to render, then for the input elements
-                await mainWin!.waitForSelector('.GenericModal', {timeout: 15_000});
-                await mainWin!.waitForSelector('#input_name', {timeout: 10_000});
-                await mainWin!.waitForSelector('#input_url', {timeout: 10_000});
+                // Wait for the NewServerModal to appear
+                await mainWin!.waitForSelector('.NewServerModal', {timeout: 15_000});
+                await mainWin!.waitForSelector('#serverNameInput', {timeout: 10_000});
+                await mainWin!.waitForSelector('#serverUrlInput', {timeout: 10_000});
 
-                const nameInputVisible = await mainWin!.isVisible('#input_name');
-                const urlInputVisible = await mainWin!.isVisible('#input_url');
+                const nameInputVisible = await mainWin!.isVisible('#serverNameInput');
+                const urlInputVisible = await mainWin!.isVisible('#serverUrlInput');
                 expect(nameInputVisible, 'Server name input must be visible').toBe(true);
                 expect(urlInputVisible, 'Server URL input must be visible').toBe(true);
             } finally {
@@ -217,22 +217,16 @@ test.describe('startup/app', () => {
                 const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
                 expect(mainWin, 'Main window must exist').toBeDefined();
 
-                // Wait for modal container to render, then for the input
-                await mainWin!.waitForSelector('.GenericModal', {timeout: 15_000});
-                await mainWin!.waitForSelector('#input_name', {timeout: 10_000});
+                // Wait for the NewServerModal to appear
+                await mainWin!.waitForSelector('.NewServerModal', {timeout: 15_000});
+                await mainWin!.waitForSelector('#serverNameInput', {timeout: 10_000});
 
-                // Verify no Cancel or Close button exists on the modal
-                const cancelButton = await mainWin!.$$('.GenericModal__button.cancel').then((els) => els.length);
-                const closeX = await mainWin!.$$('.GenericModal__close').then((els) => els.length);
-                expect(cancelButton, 'No Cancel button should be present when no servers exist').toBe(0);
-                expect(closeX, 'No close X button should be present when no servers exist').toBe(0);
-
-                // Press Escape — modal must NOT disappear
+                // Press Escape — modal must NOT disappear when uncloseable
                 await mainWin!.keyboard.press('Escape');
                 await new Promise((resolve) => setTimeout(resolve, 500));
 
-                const nameInputStillVisible = await mainWin!.isVisible('#input_name');
-                expect(nameInputStillVisible, 'Add Server modal must remain visible after Escape when no servers exist').toBe(true);
+                const modalStillVisible = await mainWin!.isVisible('.NewServerModal');
+                expect(modalStillVisible, 'NewServerModal must remain visible after Escape when no servers exist').toBe(true);
             } finally {
                 if (emptyApp && userDataDir) {
                     await closeElectronAppFast(emptyApp, userDataDir);

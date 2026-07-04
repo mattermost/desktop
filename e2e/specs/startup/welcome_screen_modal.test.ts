@@ -126,8 +126,11 @@ test.describe('startup/welcome_screen_modal', () => {
             try {
                 ({app, modal, userDataDir} = await launchEmptyApp(testInfo));
                 await modal.click('#getStartedWelcomeScreen');
-                await modal.waitForSelector('#input_name', {timeout: 10_000});
-                await modal.waitForSelector('#input_url', {timeout: 10_000});
+                // Wait for NewServerModal to appear in the main window after clicking Get Started
+                const mainWin = app!.windows().find((w) => w.url().includes('index'));
+                await mainWin!.waitForSelector('.NewServerModal', {timeout: 10_000});
+                await mainWin!.waitForSelector('#serverNameInput', {timeout: 10_000});
+                await mainWin!.waitForSelector('#serverUrlInput', {timeout: 10_000});
             } finally {
                 if (app && userDataDir) {
                     await closeElectronAppFast(app, userDataDir);
