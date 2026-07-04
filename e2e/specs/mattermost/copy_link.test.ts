@@ -13,13 +13,14 @@ test.describe('copylink', () => {
 
     test('MM-T125 Copy Link can be used from channel LHS', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp, serverMap}) => {
         const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
-        const firstServer = serverEntry?.win;
-        if (!firstServer) {
+        if (!serverEntry?.win) {
             throw new Error('No server view available');
         }
+        const firstServer = serverEntry.win;
 
         await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
         await loginToMattermost(firstServer);
+        await prepareMattermostServerView(electronApp, firstServer.webContentsId);
 
         await electronApp.evaluate(({clipboard}) => {
             clipboard.writeText('');

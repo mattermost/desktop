@@ -6,7 +6,7 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, emptyConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
+import {closeAppSafely, closeElectronApp} from '../../helpers/electronApp';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 test.describe('startup/app', () => {
@@ -91,15 +91,11 @@ test.describe('startup/app', () => {
                         timeout: 15_000,
                     });
                 }
-                await welcomeModal.waitForLoadState();
+                await welcomeModal.waitForLoadState('domcontentloaded');
                 const text = await welcomeModal.innerText('.WelcomeScreen .WelcomeScreen__button');
                 expect(text).toBe('Get Started');
             } finally {
-                if (emptyApp && userDataDir) {
-                    await closeElectronAppFast(emptyApp, userDataDir);
-                } else if (emptyApp) {
-                    await emptyApp.close().catch(() => {});
-                }
+                await closeAppSafely(emptyApp, userDataDir);
                 await releaseLock();
             }
         },
@@ -135,11 +131,7 @@ test.describe('startup/app', () => {
                     {timeout: 10_000},
                 ).toBe(runtimeAppName);
             } finally {
-                if (emptyApp && userDataDir) {
-                    await closeElectronAppFast(emptyApp, userDataDir);
-                } else if (emptyApp) {
-                    await emptyApp.close().catch(() => {});
-                }
+                await closeAppSafely(emptyApp, userDataDir);
                 await releaseLock();
             }
         },
@@ -166,8 +158,6 @@ test.describe('startup/app', () => {
                     timeout: 60_000,
                 });
 
-                // With no servers configured, handleShowOnboardingScreens (intercom.ts) always shows
-                // the Welcome Screen modal first — .NewServerModal is never rendered on this path.
                 let welcomeScreen = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
                 if (!welcomeScreen) {
                     welcomeScreen = await emptyApp.waitForEvent('window', {
@@ -175,23 +165,15 @@ test.describe('startup/app', () => {
                         timeout: 15_000,
                     });
                 }
-                await welcomeScreen.waitForLoadState();
-
-                // "Get Started" transitions in place (same window) to the server configuration form
+                await welcomeScreen.waitForLoadState('domcontentloaded');
                 await welcomeScreen.click('#getStartedWelcomeScreen');
-                await welcomeScreen.waitForSelector('input[name="url"]', {timeout: 10_000});
-                await welcomeScreen.waitForSelector('input[name="name"]', {timeout: 10_000});
+                await welcomeScreen.waitForSelector('#input_url', {timeout: 10_000});
+                await welcomeScreen.waitForSelector('#input_name', {timeout: 10_000});
 
-                const urlInputVisible = await welcomeScreen.isVisible('input[name="url"]');
-                const nameInputVisible = await welcomeScreen.isVisible('input[name="name"]');
-                expect(urlInputVisible, 'Server URL input must be visible').toBe(true);
-                expect(nameInputVisible, 'Server name input must be visible').toBe(true);
+                expect(await welcomeScreen.isVisible('#input_url'), 'Server URL input must be visible').toBe(true);
+                expect(await welcomeScreen.isVisible('#input_name'), 'Server name input must be visible').toBe(true);
             } finally {
-                if (emptyApp && userDataDir) {
-                    await closeElectronAppFast(emptyApp, userDataDir);
-                } else if (emptyApp) {
-                    await emptyApp.close().catch(() => {});
-                }
+                await closeAppSafely(emptyApp, userDataDir);
                 await releaseLock();
             }
         },
@@ -218,9 +200,6 @@ test.describe('startup/app', () => {
                     timeout: 60_000,
                 });
 
-                // With no servers configured, the Welcome Screen modal is shown uncloseable
-                // (ModalManager.addModal(..., !ServerManager.hasServers())). WelcomeScreen.tsx
-                // does not use the shared Modal component, so it has no Escape-to-close handler.
                 let welcomeScreen = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
                 if (!welcomeScreen) {
                     welcomeScreen = await emptyApp.waitForEvent('window', {
@@ -228,20 +207,16 @@ test.describe('startup/app', () => {
                         timeout: 15_000,
                     });
                 }
-                await welcomeScreen.waitForLoadState();
+                await welcomeScreen.waitForLoadState('domcontentloaded');
                 await welcomeScreen.waitForSelector('.WelcomeScreen', {timeout: 15_000});
-
-                // Press Escape — modal must NOT disappear when uncloseable
                 await welcomeScreen.keyboard.press('Escape');
 
-                const modalStillVisible = await welcomeScreen.isVisible('.WelcomeScreen');
-                expect(modalStillVisible, 'Welcome screen modal must remain visible after Escape when no servers exist').toBe(true);
+                expect(
+                    await welcomeScreen.isVisible('.WelcomeScreen'),
+                    'Welcome screen modal must remain visible after Escape when no servers exist',
+                ).toBe(true);
             } finally {
-                if (emptyApp && userDataDir) {
-                    await closeElectronAppFast(emptyApp, userDataDir);
-                } else if (emptyApp) {
-                    await emptyApp.close().catch(() => {});
-                }
+                await closeAppSafely(emptyApp, userDataDir);
                 await releaseLock();
             }
         },

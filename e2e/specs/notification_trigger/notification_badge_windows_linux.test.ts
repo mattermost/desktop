@@ -175,6 +175,7 @@ test.describe('notification_badge/windows_and_linux', () => {
     });
 
     test('MM-T_BADGE_LNX_02 - should account for session expiry in Linux badge count', {tag: ['@P2', '@linux']}, async ({electronApp}) => {
+
         // showBadgeLinux passes mentionCount + 1 to setBadgeCount when sessionExpired
         await triggerBadge(electronApp, true, 2, false);
         const state = await getBadgeState(electronApp);
@@ -200,6 +201,10 @@ test.describe('notification_badge/windows_and_linux', () => {
 
     test.describe('badge type priority', () => {
         test('MM-T_BADGE_WIN_06 - mention count wins over session-expired on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, true, 5, false);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();
@@ -210,6 +215,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_07 - mention count wins over unread dot on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, false, 5, true);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();
@@ -220,6 +229,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_08 - unread dot wins over session-expired on Windows when setting enabled', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await electronApp.evaluate(() => {
                 (global as any).__testTriggerSetUnreadBadgeSetting(true);
             });
@@ -236,6 +249,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_LNX_04 - Linux passes both mentionCount and sessionExpired through', {tag: ['@P2', '@linux']}, async ({electronApp}) => {
+            if (process.platform !== 'linux') {
+                test.skip(true, 'Linux only');
+                return;
+            }
             await triggerBadge(electronApp, true, 5, false);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();
@@ -249,6 +266,11 @@ test.describe('notification_badge/windows_and_linux', () => {
 
     test.describe('unread setting toggle', () => {
         test('MM-T_BADGE_WIN_09 - unread dot not shown when showUnreadBadgeSetting is false', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
+
             // setting defaults to falsy — do not enable it
             await triggerBadge(electronApp, false, 0, true);
             const state = await getBadgeState(electronApp);
@@ -260,6 +282,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_10 - unread dot shown when showUnreadBadgeSetting is true', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await electronApp.evaluate(() => {
                 (global as any).__testTriggerSetUnreadBadgeSetting(true);
             });
@@ -280,6 +306,10 @@ test.describe('notification_badge/windows_and_linux', () => {
 
     test.describe('badge clearing', () => {
         test('MM-T_BADGE_WIN_11 - ghost mention badge clears on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, false, 3, false);
             let state = await getBadgeState(electronApp);
             expect(state!.mentionCount).toBe(3);
@@ -294,6 +324,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_12 - ghost unread dot clears on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await electronApp.evaluate(() => {
                 (global as any).__testTriggerSetUnreadBadgeSetting(true);
             });
@@ -313,6 +347,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_13 - ghost session-expired badge clears on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, true, 0, false);
             let state = await getBadgeState(electronApp);
             expect(state!.sessionExpired).toBe(true);
@@ -325,6 +363,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_LNX_05 - Linux counter resets to zero', {tag: ['@P2', '@linux']}, async ({electronApp}) => {
+            if (process.platform !== 'linux') {
+                test.skip(true, 'Linux only');
+                return;
+            }
             await triggerBadge(electronApp, false, 5, false);
             let state = await getBadgeState(electronApp);
             expect(state!.mentionCount).toBe(5);
@@ -341,6 +383,10 @@ test.describe('notification_badge/windows_and_linux', () => {
 
     test.describe('state transitions', () => {
         test('MM-T_BADGE_WIN_14 - mention count decrements correctly on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, false, 5, false);
             let state = await getBadgeState(electronApp);
             expect(state!.mentionCount).toBe(5);
@@ -355,6 +401,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_15 - transitions from mention to unread dot on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await electronApp.evaluate(() => {
                 (global as any).__testTriggerSetUnreadBadgeSetting(true);
             });
@@ -372,6 +422,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_16 - transitions from unread dot to mention on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await electronApp.evaluate(() => {
                 (global as any).__testTriggerSetUnreadBadgeSetting(true);
             });
@@ -389,6 +443,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_17 - session-restore with pending mentions on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, true, 0, false);
             let state = await getBadgeState(electronApp);
             expect(state!.sessionExpired).toBe(true);
@@ -404,6 +462,10 @@ test.describe('notification_badge/windows_and_linux', () => {
 
     test.describe('windows edge cases', () => {
         test('MM-T_BADGE_WIN_18 - mention count exactly at 99 on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, false, 99, false);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();
@@ -412,6 +474,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_19 - mention count over 99 cap on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, false, 100, false);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();
@@ -420,6 +486,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_WIN_20 - explicit no-badge state recorded on Windows', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+            if (process.platform !== 'win32') {
+                test.skip(true, 'Windows only');
+                return;
+            }
             await triggerBadge(electronApp, false, 0, false);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();
@@ -433,6 +503,10 @@ test.describe('notification_badge/windows_and_linux', () => {
 
     test.describe('linux edge cases', () => {
         test('MM-T_BADGE_LNX_06 - no cap on mention count on Linux', {tag: ['@P2', '@linux']}, async ({electronApp}) => {
+            if (process.platform !== 'linux') {
+                test.skip(true, 'Linux only');
+                return;
+            }
             await triggerBadge(electronApp, false, 100, false);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();
@@ -440,6 +514,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_LNX_07 - session-expired with zero mentions on Linux', {tag: ['@P2', '@linux']}, async ({electronApp}) => {
+            if (process.platform !== 'linux') {
+                test.skip(true, 'Linux only');
+                return;
+            }
             await triggerBadge(electronApp, true, 0, false);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();
@@ -448,6 +526,10 @@ test.describe('notification_badge/windows_and_linux', () => {
         });
 
         test('MM-T_BADGE_LNX_08 - Linux clears correctly with all false/zero', {tag: ['@P2', '@linux']}, async ({electronApp}) => {
+            if (process.platform !== 'linux') {
+                test.skip(true, 'Linux only');
+                return;
+            }
             await triggerBadge(electronApp, false, 3, false);
             let state = await getBadgeState(electronApp);
             expect(state!.mentionCount).toBe(3);

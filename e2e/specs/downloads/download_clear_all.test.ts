@@ -52,7 +52,10 @@ test(
         try {
             const {downloadsWindow} = await openDownloadsDropdown(app);
             await downloadsWindow.waitForSelector('.DownloadsDropdown__File', {timeout: 10_000});
-            expect(await downloadsWindow.locator('.DownloadsDropdown__File').count()).toBe(2);
+            await expect.poll(
+                () => downloadsWindow.locator('.DownloadsDropdown__File').count(),
+                {timeout: 10_000},
+            ).toBe(2);
 
             await downloadsWindow.click('.DownloadsDropdown__clearAllButton');
 

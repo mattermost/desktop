@@ -4,20 +4,23 @@
 import type {ElectronApplication} from 'playwright';
 
 import {test, expect, type ServerMap} from '../../fixtures/index';
-import type {AppConfig} from '../../helpers/config';
-import {demoMattermostConfig} from '../../helpers/config';
 import {openChannelHeaderMenu, enableBookmarksBar, submitBookmarkModal, waitForBookmarkInBar, clickBookmarkInBar, deleteAllBookmarksInBar} from '../../helpers/channelMenu';
-import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
+import {demoMattermostConfig, type AppConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
+import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 
 const EXTERNAL_BOOKMARK_URL = 'https://mattermost.com/';
 
 function openExternalUrlMatchesBookmark(openedUrl: string, bookmarkUrl: string): boolean {
-    const opened = new URL(openedUrl);
-    const bookmark = new URL(bookmarkUrl);
-    return opened.origin === bookmark.origin && opened.pathname === bookmark.pathname;
+    try {
+        const opened = new URL(openedUrl);
+        const bookmark = new URL(bookmarkUrl);
+        return opened.origin === bookmark.origin && opened.pathname === bookmark.pathname;
+    } catch {
+        return false;
+    }
 }
 
 const bookmarksConfig: AppConfig = {
@@ -179,7 +182,7 @@ test.describe('mattermost/bookmarks', () => {
                     return urls;
                 });
                 expect(
-                    serverViewURLs.some((url) => url.includes('mattermost.com')),
+                    serverViewURLs.some((url) => openExternalUrlMatchesBookmark(url, EXTERNAL_BOOKMARK_URL)),
                     'No in-app server view should have navigated to the external bookmark URL',
                 ).toBe(false);
             } finally {
@@ -193,14 +196,14 @@ test.describe('mattermost/bookmarks', () => {
                     delete (shell as any).__e2eOpenExternalCalls;
                     delete (shell as any).__e2eOriginalOpenExternal;
                 });
-            }
 
-            // Cleanup: open the per-bookmark dot menu and click Delete. Both have
-            // stable element ids that don't depend on locale (see
-            // webapp/channels/src/components/channel_bookmarks/bookmark_dot_menu.tsx):
-            //   trigger: id="channelBookmarksDotMenuButton-<bookmarkId>"
-            //   delete item: id="channelBookmarksDelete"
-            await deleteAllBookmarksInBar(firstServer!);
+                // Cleanup: open the per-bookmark dot menu and click Delete. Both have
+                // stable element ids that don't depend on locale (see
+                // webapp/channels/src/components/channel_bookmarks/bookmark_dot_menu.tsx):
+                //   trigger: id="channelBookmarksDotMenuButton-<bookmarkId>"
+                //   delete item: id="channelBookmarksDelete"
+                await deleteAllBookmarksInBar(firstServer!);
+            }
         },
     );
 });

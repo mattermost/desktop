@@ -5,12 +5,60 @@ import {expect} from '@playwright/test';
 
 import type {ServerView} from './serverView';
 
-export const POST_TEXTBOX_SELECTOR = [
+export const POST_TEXTBOX_CANDIDATES = [
+    '[data-slate-editor="true"]',
+    '#post_textbox[contenteditable="true"]',
+    '[data-testid="post_textbox"][contenteditable="true"]',
     '#post_textbox',
     '[data-testid="post_textbox"]',
     '.post-create__input [contenteditable="true"]',
-    '[role="textbox"]',
-].join(', ');
+    '.post-create__input [role="textbox"]',
+    '.AdvancedTextEditor [contenteditable="true"]',
+    '[role="textbox"][contenteditable="true"]',
+    'textarea#post_textbox',
+] as const;
+
+export const POST_TEXTBOX_SELECTOR = POST_TEXTBOX_CANDIDATES.join(', ');
+
+const POST_TEXTBOX_CANDIDATES_JSON = JSON.stringify(POST_TEXTBOX_CANDIDATES);
+
+/**
+ * Shared renderer-side JS, inlined into each `runInRenderer` string below.
+ * Defines `__mmIsVisible` and `__mmResolvePostTextboxRoot` once so the four
+ * functions in this file don't each carry their own copy of the candidate
+ * resolution logic — `runInRenderer` evaluates a raw string in the renderer
+ * process, so this has to be textually interpolated rather than imported.
+ */
+const POST_TEXTBOX_RESOLVER_JS = `
+    const __mmIsVisible = (element) => {
+        if (!element || !element.isConnected) {
+            return false;
+        }
+        const style = window.getComputedStyle(element);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+            return false;
+        }
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    };
+
+    const __mmResolvePostTextboxRoot = () => {
+        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
+        for (const candidate of candidates) {
+            if (!__mmIsVisible(candidate)) {
+                continue;
+            }
+            if (candidate.matches('[contenteditable="true"], textarea, input')) {
+                return candidate;
+            }
+            const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
+            if (nested && __mmIsVisible(nested)) {
+                return nested;
+            }
+        }
+        return null;
+    };
+`;
 
 /**
  * Wait until the Mattermost webapp shell is interactive in a server view.
@@ -55,6 +103,67 @@ export async function recoverServerViewIfNeeded(
     await waitForMattermostShell(win, {channelItem});
 }
 
+/** Wait for the shell to mount, then recover it if the channel content failed to render. */
+export async function waitForMattermostShellReady(
+    win: ServerView,
+    options?: {channelItem?: string; timeout?: number},
+): Promise<void> {
+    await waitForMattermostShell(win, options);
+    await recoverServerViewIfNeeded(win, options);
+}
+
+/** Wait until the channel post list finishes its initial load. */
+export async function waitForChannelPostListLoaded(
+    win: ServerView,
+    options?: {timeout?: number},
+): Promise<void> {
+    const timeout = options?.timeout ?? 15_000;
+    await expect.poll(
+        async () => win.evaluate(() => !document.querySelector(
+            '.post-list__loading, .post-list__dynamic-loading, .loading-screen',
+        )),
+        {timeout, message: 'Channel post list must finish loading'},
+    ).toBe(true);
+}
+
+/** Read the current post textbox contents (textarea value or contenteditable text). */
+export async function getPostTextboxValue(win: ServerView): Promise<string> {
+    const value = await win.runInRenderer(`
+        ${POST_TEXTBOX_RESOLVER_JS}
+
+        const root = __mmResolvePostTextboxRoot();
+        if (!root) {
+            return '';
+        }
+        if (root instanceof HTMLTextAreaElement || root instanceof HTMLInputElement) {
+            return root.value ?? '';
+        }
+        return root.innerText || root.textContent || '';
+    `, true);
+
+    return value ?? '';
+}
+
+/** Press a keyboard shortcut on the post textbox. */
+export async function pressPostTextboxKey(win: ServerView, key: string): Promise<void> {
+    const focused = await win.runInRenderer(`
+        ${POST_TEXTBOX_RESOLVER_JS}
+
+        const root = __mmResolvePostTextboxRoot();
+        if (!root) {
+            return false;
+        }
+        root.focus?.();
+        return true;
+    `, true);
+
+    if (!focused) {
+        throw new Error('Post textbox not found');
+    }
+
+    await win.keyboard.press(key);
+}
+
 /**
  * Type into the post textbox, preferring DOM insertion so Slate keeps text nodes.
  */
@@ -65,44 +174,9 @@ export async function typeIntoPostTextbox(win: ServerView, text: string): Promis
     const inserted = await win.runInRenderer(`
         const value = ${JSON.stringify(text)};
 
-        const isVisible = (element) => {
-            if (!element || !element.isConnected) {
-                return false;
-            }
-            const style = window.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                return false;
-            }
-            const rect = element.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        };
+        ${POST_TEXTBOX_RESOLVER_JS}
 
-        const candidates = [
-            document.querySelector('[data-slate-editor="true"]'),
-            document.querySelector('#post_textbox[contenteditable="true"]'),
-            document.querySelector('[data-testid="post_textbox"][contenteditable="true"]'),
-            document.querySelector('#post_textbox'),
-            document.querySelector('[data-testid="post_textbox"]'),
-            document.querySelector('.post-create__input [contenteditable="true"]'),
-            document.querySelector('textarea#post_textbox'),
-        ].filter(Boolean);
-
-        let root = null;
-        for (const candidate of candidates) {
-            if (!isVisible(candidate)) {
-                continue;
-            }
-            if (candidate.matches('[contenteditable="true"], textarea, input')) {
-                root = candidate;
-                break;
-            }
-            const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
-            if (nested && isVisible(nested)) {
-                root = nested;
-                break;
-            }
-        }
-
+        const root = __mmResolvePostTextboxRoot();
         if (!root) {
             return false;
         }
@@ -111,8 +185,10 @@ export async function typeIntoPostTextbox(win: ServerView, text: string): Promis
         root.setAttribute('spellcheck', 'true');
 
         if (root instanceof HTMLTextAreaElement || root instanceof HTMLInputElement) {
-            root.value = value;
+            const descriptor = Object.getOwnPropertyDescriptor(root.constructor.prototype, 'value');
+            descriptor?.set?.call(root, value);
             root.dispatchEvent(new Event('input', {bubbles: true}));
+            root.dispatchEvent(new Event('change', {bubbles: true}));
             return root.value.includes(value.slice(0, 8));
         }
 
@@ -145,45 +221,7 @@ export async function getPostTextboxWordPoint(
     return win.runInRenderer(`
         const target = ${JSON.stringify(word)};
 
-        const isVisible = (element) => {
-            if (!element || !element.isConnected) {
-                return false;
-            }
-            const style = window.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                return false;
-            }
-            const rect = element.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        };
-
-        const resolveEditor = () => {
-            const candidates = [
-                document.querySelector('[data-slate-editor="true"]'),
-                document.querySelector('#post_textbox[contenteditable="true"]'),
-                document.querySelector('[data-testid="post_textbox"][contenteditable="true"]'),
-                document.querySelector('#post_textbox'),
-                document.querySelector('[data-testid="post_textbox"]'),
-                document.querySelector('.post-create__input [contenteditable="true"]'),
-                document.querySelector('.AdvancedTextEditor [contenteditable="true"]'),
-                document.querySelector('[role="textbox"][contenteditable="true"]'),
-                document.querySelector('textarea#post_textbox'),
-            ].filter(Boolean);
-
-            for (const candidate of candidates) {
-                if (!isVisible(candidate)) {
-                    continue;
-                }
-                if (candidate.matches('[contenteditable="true"], textarea, input')) {
-                    return candidate;
-                }
-                const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
-                if (nested && isVisible(nested)) {
-                    return nested;
-                }
-            }
-            return null;
-        };
+        ${POST_TEXTBOX_RESOLVER_JS}
 
         const getTextareaWordPoint = (textarea, needle) => {
             const text = textarea.value || '';
@@ -230,7 +268,7 @@ export async function getPostTextboxWordPoint(
             // to the textarea's viewport position and subtract scroll for the final point.
             return {
                 x: Math.round(
-                    textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft,
+                    textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft + (markerRect.width / 2),
                 ),
                 y: Math.round(
                     textareaRect.top + (markerRect.top - mirrorRect.top) - textarea.scrollTop + (markerRect.height / 2),
@@ -258,7 +296,7 @@ export async function getPostTextboxWordPoint(
             return null;
         };
 
-        const root = resolveEditor();
+        const root = __mmResolvePostTextboxRoot();
         if (!root) {
             return null;
         }

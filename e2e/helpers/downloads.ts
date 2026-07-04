@@ -3,14 +3,15 @@
 
 import * as fs from 'fs';
 import * as http from 'http';
+import type {Socket} from 'net';
 import * as path from 'path';
 
 import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
 import {waitForAppReady} from './appReadiness';
-import {waitForLockFileRelease} from './cleanup';
 import {electronBinaryPath, appDir, emptyConfig} from './config';
+import {closeElectronAppFast} from './electronApp';
 
 export type DownloadServer = {
     server: http.Server;
@@ -24,6 +25,7 @@ export async function startDownloadServer(
 ): Promise<DownloadServer> {
     const contents = options?.contents ?? 'download test contents';
     const slow = options?.slow ?? false;
+    const connections = new Set<Socket>();
 
     const server = http.createServer((request, response) => {
         if (request.url === '/download.txt') {
@@ -93,7 +95,15 @@ export async function startDownloadServer(
         `);
     });
 
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    server.on('connection', (socket) => {
+        connections.add(socket);
+        socket.on('close', () => connections.delete(socket));
+    });
+
+    await new Promise<void>((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', () => resolve());
+    });
     const address = server.address();
     if (!address || typeof address === 'string') {
         throw new Error('Failed to start local download server');
@@ -103,6 +113,9 @@ export async function startDownloadServer(
         server,
         url: `http://127.0.0.1:${address.port}`,
         close: () => new Promise<void>((resolve, reject) => {
+            for (const socket of connections) {
+                socket.destroy();
+            }
             server.close((error) => (error ? reject(error) : resolve()));
         }),
     };
@@ -161,6 +174,11 @@ export async function triggerDownloadFromPopup(app: ElectronApplication, popupUr
     });
 
     await app.evaluate(async ({BrowserWindow}, url) => {
+        const existing = (global as any).__e2eDownloadPopup;
+        if (existing && !existing.isDestroyed?.()) {
+            existing.close();
+        }
+
         const popup = new BrowserWindow({
             show: true,
             width: 900,
@@ -223,28 +241,32 @@ export async function closeDownloadTestApp(app: ElectronApplication, userDataDir
         delete (global as any).__e2eDownloadPopup;
     }).catch(() => {});
 
-    await app.close().catch(() => {});
-    await waitForLockFileRelease(userDataDir).catch(() => {});
+    await closeElectronAppFast(app, userDataDir).catch(() => {});
 
-    if (!fs.existsSync(downloadLocation)) {
-        return;
-    }
-
-    const timeout = process.platform === 'win32' ? 10_000 : 2_000;
-    const deadline = Date.now() + timeout;
-    let lastError: unknown;
-    while (Date.now() < deadline) {
-        try {
-            fs.rmSync(downloadLocation, {recursive: true, force: true, maxRetries: 3, retryDelay: 200});
+    const removeDirWithRetry = async (dir: string) => {
+        if (!fs.existsSync(dir)) {
             return;
-        } catch (error) {
-            lastError = error;
-            const code = (error as NodeJS.ErrnoException).code;
-            if (code !== 'EBUSY' && code !== 'EPERM' && code !== 'ENOTEMPTY') {
-                throw error;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 250));
         }
-    }
-    throw lastError ?? new Error(`Failed to remove download directory: ${downloadLocation}`);
+
+        const timeout = process.platform === 'win32' ? 10_000 : 2_000;
+        const deadline = Date.now() + timeout;
+        let lastError: unknown;
+        while (Date.now() < deadline) {
+            try {
+                fs.rmSync(dir, {recursive: true, force: true, maxRetries: 3, retryDelay: 200});
+                return;
+            } catch (error) {
+                lastError = error;
+                const code = (error as NodeJS.ErrnoException).code;
+                if (code !== 'EBUSY' && code !== 'EPERM' && code !== 'ENOTEMPTY') {
+                    throw error;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 250));
+            }
+        }
+        throw lastError ?? new Error(`Failed to remove directory: ${dir}`);
+    };
+
+    await removeDirWithRetry(downloadLocation);
+    await removeDirWithRetry(userDataDir);
 }

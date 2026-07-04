@@ -5,6 +5,11 @@ import {test, expect} from '../../fixtures/index';
 
 test.describe('menu/menu', () => {
     test('MM-T4404 should open the 3 dot menu with Alt', {tag: ['@P2', '@win32']}, async ({electronApp, mainWindow}) => {
+        if (process.platform === 'darwin') {
+            test.skip(true, 'No keyboard shortcut for macOS');
+            return;
+        }
+
         expect(mainWindow).toBeDefined();
 
         await mainWindow.waitForSelector('button.three-dot-menu');
@@ -32,9 +37,6 @@ test.describe('menu/menu', () => {
         async ({electronApp, mainWindow}) => {
             expect(mainWindow).toBeDefined();
 
-            // Click the "Show Servers" menu item via the application menu.
-            // The keyboard shortcut (Ctrl+Shift+S / Cmd+Ctrl+S) is handled at
-            // the OS/Electron level and cannot be sent from web content.
             const clicked = await electronApp.evaluate(({Menu}) => {
                 const root = Menu.getApplicationMenu();
                 if (!root) {
@@ -55,7 +57,6 @@ test.describe('menu/menu', () => {
             });
             expect(clicked, '"Show Servers" menu item must exist and be clickable').toBe(true);
 
-            // The server dropdown opens as a separate BrowserWindow with "dropdown" in its URL
             const dropdownWindow = electronApp.windows().find((w) => w.url().includes('dropdown')) ??
                 await electronApp.waitForEvent('window', {
                     predicate: (w) => w.url().includes('dropdown'),

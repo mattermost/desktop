@@ -64,10 +64,24 @@ test.describe('file_menu/dropdown', () => {
         expect(settingsWindow).toBeDefined();
     });
 
-    // appReady ensures the application menu is built before clicking File items.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    test('MM-T805 Sign in to Another Server Window opens using menu item', {tag: ['@P2', '@win32']}, async ({electronApp, appReady: _appReady}) => {
-        await clickApplicationMenuItem(electronApp, 'file', {labelIncludes: 'Sign in'});
+    test('MM-T805 Sign in to Another Server Window opens using menu item', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+        if (process.platform !== 'win32') {
+            test.skip(true, 'Windows-only test');
+            return;
+        }
+
+        // Invoke the File menu item directly — keyboard presses sent via Playwright
+        // do not reliably reach popup menus in headless CI on Windows.
+        await electronApp.evaluate(({app}) => {
+            const fileMenu = (app as any).applicationMenu?.getMenuItemById('file');
+            const signInItem = fileMenu?.submenu?.items?.find(
+                (item: any) => typeof item.label === 'string' && item.label.includes('Sign in'),
+            );
+            if (!signInItem) {
+                throw new Error('Sign in to Another Server menu item not found');
+            }
+            signInItem.click();
+        });
         const signInToAnotherServerWindow = await electronApp.waitForEvent('window', {
             predicate: (window) => window.url().includes('newServer'),
             timeout: 15_000,
@@ -76,6 +90,11 @@ test.describe('file_menu/dropdown', () => {
     });
 
     test('MM-T804 Preferences in Menu Bar open the Settings page', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+        if (process.platform !== 'win32') {
+            test.skip(true, 'Windows-only test');
+            return;
+        }
+
         // Reuse the existing direct-invocation helper instead of keyboard navigation.
         await openPreferencesFromAppMenu(electronApp);
         const settingsWindow = await waitForSettingsWindow(electronApp);
@@ -83,6 +102,11 @@ test.describe('file_menu/dropdown', () => {
     });
 
     test('MM-T806 Exit in the Menu Bar', {tag: ['@P2', '@darwin']}, async ({electronApp, mainWindow}) => {
+        if (process.platform !== 'darwin') {
+            test.skip(true, 'macOS-only test');
+            return;
+        }
+
         expect(mainWindow).toBeDefined();
         await mainWindow.waitForLoadState();
         await mainWindow.bringToFront();
@@ -99,12 +123,7 @@ test.describe('file_menu/dropdown', () => {
         'MM-T1319 Sign in to Another Server — server name input should be focused',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            // On macOS, "Sign in to Another Server" lives in the app menu, not the file menu
-            // (see getSettingsAndSignInToAnotherServerMenu, only spread into the file menu
-            // when process.platform !== 'darwin' — src/app/menus/appMenu/file.ts).
             const menuId = process.platform === 'darwin' ? 'app' : 'file';
-
-            // The Add Server modal opens in a newServer window; start waiting before clicking
             const newServerWindowPromise = electronApp.waitForEvent('window', {
                 predicate: (window) => window.url().includes('newServer'),
                 timeout: 15_000,
@@ -115,10 +134,8 @@ test.describe('file_menu/dropdown', () => {
             const newServerWindow = await newServerWindowPromise;
             await newServerWindow.waitForLoadState();
 
-            // Verify the server URL input is focused (has autoFocus attribute in NewServerModal)
             const focusedElement = await newServerWindow.evaluate(() => {
-                const active = document.activeElement;
-                return active?.id ?? null;
+                return document.activeElement?.id ?? null;
             });
             expect(focusedElement, 'Server URL input must be focused after opening Sign in to Another Server').toBe('serverUrlInput');
         },

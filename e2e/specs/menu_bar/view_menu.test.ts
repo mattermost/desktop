@@ -6,9 +6,9 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {demoMattermostConfig} from '../../helpers/config';
-import {launchDirectTestApp} from '../../helpers/directLaunch';
-import {waitForWindow, closeElectronAppFast} from '../../helpers/electronApp';
+import {waitForAppReady} from '../../helpers/appReadiness';
+import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
+import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {clickApplicationMenuItem} from '../../helpers/menu';
 import {buildServerMap} from '../../helpers/serverMap';
@@ -117,8 +117,39 @@ test.describe('menu/view', () => {
 
     test.beforeAll(async () => {
         userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mm-view-menu-e2e-'));
-        electronApp = await launchDirectTestApp(userDataDir, demoMattermostConfig);
+        writeConfigFile(userDataDir, demoMattermostConfig);
 
+        const {_electron: electron} = await import('playwright');
+        electronApp = await electron.launch({
+            executablePath: electronBinaryPath,
+            args: [
+                appDir,
+                `--user-data-dir=${userDataDir}`,
+                '--no-sandbox',
+                '--disable-gpu',
+                '--disable-gpu-sandbox',
+                '--disable-dev-shm-usage',
+                '--no-zygote',
+                '--disable-software-rasterizer',
+                '--disable-breakpad',
+                '--disable-features=SpareRendererForSitePerProcess',
+                '--disable-features=CrossOriginOpenerPolicy',
+                '--disable-renderer-backgrounding',
+                '--force-color-profile=srgb',
+                '--mute-audio',
+            ],
+            env: {
+                ...process.env,
+                NODE_ENV: 'test',
+                RESOURCES_PATH: appDir,
+                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+                ELECTRON_NO_ATTACH_CONSOLE: 'true',
+                NODE_OPTIONS: '--no-warnings',
+            },
+            timeout: 90_000,
+        });
+
+        await waitForAppReady(electronApp);
         mainWindow = await waitForWindow(electronApp, 'index');
         const serverMap = await buildServerMap(electronApp);
         const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
@@ -132,7 +163,7 @@ test.describe('menu/view', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronAppFast(electronApp, userDataDir);
+        await closeElectronApp(electronApp, userDataDir);
     });
 
     test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async () => {
@@ -233,6 +264,11 @@ test.describe('menu/view', () => {
     });
 
     test('MM-T820 should open Developer Tools For Application Wrapper for main window', {tag: ['@P2', '@darwin', '@win32']}, async () => {
+        if (process.platform === 'linux') {
+            test.skip(true, 'Linux not supported');
+            return;
+        }
+
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         let isDevToolsOpen = await browserWindow.evaluate((window) => {

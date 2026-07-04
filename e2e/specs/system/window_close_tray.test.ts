@@ -29,7 +29,10 @@ test.describe('system/window_close_tray', () => {
             try {
                 await evaluateInMainProcess(electronApp, () => {
                     const refs = (global as any).__e2eTestRefs;
-                    refs?.MainWindow?.get?.()?.close();
+                    if (!refs) {
+                        throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
+                    }
+                    refs.MainWindow.get()?.close();
                 });
 
                 await expect.poll(

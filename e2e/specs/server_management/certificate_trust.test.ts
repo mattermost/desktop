@@ -5,10 +5,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
+import {demoConfig} from '../../helpers/config';
 import {clearCertificateErrorCallbacks, restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
-import {registerElectronMainProcess, closeElectronAppFast} from '../../helpers/electronApp';
+import {closeElectronAppFast} from '../../helpers/electronApp';
+import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {waitForErrorView} from '../../helpers/errorView';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
 
@@ -34,22 +34,12 @@ test(
         fs.mkdirSync(userDataDir, {recursive: true});
         fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(badConfig));
 
-        const {_electron: electron} = await import('playwright');
-        const app = await electron.launch({
-            executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-            env: {
-                ...process.env,
-                NODE_ENV: 'test',
-                MM_E2E_STUB_MESSAGE_BOX: 'cancel',
-            },
-            timeout: 60_000,
+        const app = await launchDirectTestApp(userDataDir, badConfig, {
+            writeConfig: false,
+            extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
         });
 
-        registerElectronMainProcess(app.process()?.pid);
-
         try {
-            await waitForAppReady(app);
             await waitForErrorView(app);
 
             await clearCertificateErrorCallbacks(app);
@@ -57,7 +47,10 @@ test(
 
             await evaluateInMainProcess(app, () => {
                 const refs = (global as any).__e2eTestRefs;
-                const server = refs?.ServerManager?.getOrderedServers?.()?.[0];
+                if (!refs) {
+                    throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
+                }
+                const server = refs.ServerManager.getOrderedServers()?.[0];
                 if (!server) {
                     throw new Error('No server available to reload');
                 }

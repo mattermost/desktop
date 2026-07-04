@@ -179,6 +179,9 @@ export async function openTeamSidebarContextMenu(
                 break;
             }
         }
+        // Prefer the second match when multiple team buttons exist: the first is
+        // usually the active team or add-team control; ensureMultipleTeams adds a
+        // second team whose native context menu this spec exercises.
         const target = buttons.length > 1 ? buttons[1] : buttons[0];
         if (!target) {
             return null;
@@ -227,10 +230,19 @@ export async function listenForNativeContextMenu(
             return;
         }
         delete (global as any).__e2eNativeContextMenu;
-        wc.removeAllListeners('context-menu');
-        wc.on('context-menu', (_event, params) => {
+
+        const previousListener = (global as any).__e2eNativeContextMenuListener as
+            | ((event: unknown, params: unknown) => void)
+            | undefined;
+        if (previousListener) {
+            wc.off('context-menu', previousListener);
+        }
+
+        const listener = (_event: unknown, params: unknown) => {
             (global as any).__e2eNativeContextMenu = params;
-        });
+        };
+        (global as any).__e2eNativeContextMenuListener = listener;
+        wc.on('context-menu', listener);
     }, webContentsId);
 }
 
@@ -370,6 +382,8 @@ export async function deleteAllBookmarksInBar(win: ServerView): Promise<void> {
             await sleep(200);
         }
     }
+
+    throw new Error('Failed to delete all bookmarks in the channel bookmarks bar after 10 attempts');
 }
 
 function sleep(ms: number): Promise<void> {

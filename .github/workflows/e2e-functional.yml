@@ -72,7 +72,7 @@ jobs:
             await updateInitialStatus({ github, context, platforms });
 
   e2e-tests:
-    needs:
+    needs: 
       - prepare-matrix
       - update-initial-status
     name: ${{ matrix.platform }}

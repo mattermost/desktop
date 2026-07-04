@@ -81,10 +81,10 @@ const reporters = process.env.CI ? [
     ['blob', {outputDir: 'blob-report'}],
     ['line'],
     ['junit', {outputFile: 'test-results/e2e-junit.xml'}],
-] : [
+] as const : [
     ['html', {open: 'never', outputFolder: 'playwright-report'}],
     ['list'],
-];
+] as const;
 
 export default defineConfig({
     testDir: './specs',

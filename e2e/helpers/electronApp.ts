@@ -42,6 +42,25 @@ export async function closeElectronAppFast(
     return closeElectronApp(app, dataDir, FAST_TEARDOWN);
 }
 
+/**
+ * Close an app that may not have launched (e.g. the launch itself threw) and may
+ * not have a userDataDir assigned yet. Uses the fast teardown when a dir is known
+ * (unique per-test dir, safe to abandon); otherwise falls back to a plain close.
+ */
+export async function closeAppSafely(
+    app: ElectronApplication | undefined,
+    dataDir?: string,
+): Promise<void> {
+    if (!app) {
+        return;
+    }
+    if (dataDir) {
+        await closeElectronAppFast(app, dataDir);
+    } else {
+        await app.close().catch(() => {});
+    }
+}
+
 function workerRegistryPath(workerPid: number = process.pid): string {
     return path.join(REGISTRY_DIR, `${REGISTRY_PREFIX}-${workerPid}.txt`);
 }
@@ -180,6 +199,17 @@ async function reapPids(pids: number[]): Promise<void> {
         }
         await sleep(200);
     }
+
+    // SIGTERM alone can leave a blocked macOS process alive past the poll,
+    // leaking orphans across runs. Linux already SIGKILL'd above; Windows used
+    // taskkill /F. Escalate survivors on macOS to SIGKILL.
+    if (process.platform === 'darwin') {
+        for (const pid of alive) {
+            if (isProcessAlive(pid)) {
+                signalProcessGroup(pid, 'SIGKILL');
+            }
+        }
+    }
 }
 
 function sleep(ms: number) {
@@ -227,10 +257,14 @@ function forceKillLinuxProcessTree(pid: number): void {
     signalProcessGroup(pid, 'SIGKILL');
 }
 
-async function drainPlaywrightClose(closePromise: Promise<void>): Promise<void> {
+async function drainPlaywrightClose(closePromise: Promise<void>, remainingMs: number): Promise<void> {
     // Playwright keeps a gracefullyClose entry until app.close() settles (#29431).
-    // Cap the wait so worker teardown does not hang for 90s when close never settles.
-    await Promise.race([closePromise, sleep(3_000)]);
+    // Drain within the remaining budget so teardown never exceeds the caller's
+    // timeout (previously +3s on top of the race budget).
+    if (remainingMs <= 0) {
+        return;
+    }
+    await Promise.race([closePromise, sleep(remainingMs)]);
 }
 
 async function forceShutdownLinux(pid: number): Promise<void> {
@@ -266,11 +300,15 @@ function signalShutdownAndReturn(pid: number): void {
 
 async function attemptClose(app: ElectronApplication, timeoutMs: number): Promise<boolean> {
     let closed = false;
-    const closePromise = app.close().catch(() => {}).then(() => {
+
+    // Only mark closed on successful resolve; a rejected close() must leave
+    // closed=false so the caller's SIGTERM/SIGKILL fallback runs.
+    const closePromise = app.close().then(() => {
         closed = true;
-    });
+    }, () => {});
+    const start = Date.now();
     await Promise.race([closePromise, sleep(timeoutMs)]);
-    await drainPlaywrightClose(closePromise);
+    await drainPlaywrightClose(closePromise, timeoutMs - (Date.now() - start));
     return closed;
 }
 

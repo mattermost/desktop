@@ -6,7 +6,9 @@ import {openSidebarChannelMenu, openTeamSidebarContextMenu, listenForNativeConte
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
+import type {ServerEntry} from '../../helpers/serverMap';
 import {ensureMultipleTeams} from '../../helpers/team';
+import type {ServerView} from '../../helpers/serverView';
 
 // ── MM-T1307: Right-click a channel name / team name in LHS ────────────
 // Channel "Copy Link" lives in the webapp's sidebar channel-options menu,
@@ -14,24 +16,43 @@ import {ensureMultipleTeams} from '../../helpers/team';
 // native context menu since MM-57962 removed the webapp Copy Link menu.
 
 test.describe('mattermost/context_menu', () => {
+    test.describe.configure({mode: 'serial'});
     test.use({appConfig: demoMattermostConfig});
     test.setTimeout(120_000);
 
+    test.beforeAll(() => {
+        test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
+    });
+
+    let serverEntry: ServerEntry | undefined;
+    let firstServer: ServerView | undefined;
+    let cleanupCreatedTeam: (() => Promise<void>) | undefined;
+
+    test.afterAll(async () => {
+        await cleanupCreatedTeam?.();
+    });
+
+    // serverMap is test-scoped; Playwright forbids it in beforeAll, so shared
+    // login runs in beforeEach (cheap once the session cookie is established).
+    test.beforeEach(async ({electronApp, serverMap}) => {
+        if (!process.env.MM_TEST_SERVER_URL) {
+            return;
+        }
+
+        serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+        firstServer = serverEntry?.win;
+        expect(firstServer, 'Server view must exist').toBeTruthy();
+
+        await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
+        await loginToMattermost(firstServer!);
+        await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+    });
+
     test('MM-T1307 Right-click a channel name in LHS shows context menu',
         {tag: ['@P2', '@all']},
-        async ({electronApp, serverMap}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
-
-            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
-            const firstServer = serverEntry?.win;
-            expect(firstServer, 'Server view must exist').toBeTruthy();
-
-            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-            await loginToMattermost(firstServer!);
-            await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+        async ({electronApp}) => {
+            expect(serverEntry, 'Shared server entry must be initialized in beforeEach').toBeTruthy();
+            expect(firstServer, 'Shared server view must be initialized in beforeEach').toBeTruthy();
 
             await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await openSidebarChannelMenu(firstServer!, '#sidebarItem_town-square');
@@ -50,22 +71,13 @@ test.describe('mattermost/context_menu', () => {
 
     test('MM-T1307_2 Right-click a team name in LHS shows context menu',
         {tag: ['@P2', '@all']},
-        async ({electronApp, serverMap}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
-
-            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
-            const firstServer = serverEntry?.win;
-            expect(firstServer, 'Server view must exist').toBeTruthy();
+        async ({electronApp}) => {
+            expect(serverEntry, 'Shared server entry must be initialized in beforeEach').toBeTruthy();
+            expect(firstServer, 'Shared server view must be initialized in beforeEach').toBeTruthy();
 
             await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-            await loginToMattermost(firstServer!);
-            await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-
-            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-            await ensureMultipleTeams(electronApp, firstServer!, serverEntry!.webContentsId);
+            const {cleanup} = await ensureMultipleTeams(electronApp, firstServer!, serverEntry!.webContentsId);
+            cleanupCreatedTeam = cleanup;
             await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await firstServer!.waitForSelector('#teamSidebarWrapper, button[aria-label$=" team"]', {timeout: 15_000});
 

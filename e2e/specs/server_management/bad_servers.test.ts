@@ -29,37 +29,95 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     return {app, userDataDir};
 }
 
-async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
+/**
+ * Read a server by name from config.json, tolerating a transient parse failure.
+ * Config.saveLocalConfigData() persists via JsonFileManager.write(), which calls
+ * Node's fs.writeFile() — that truncates the file before writing the new content,
+ * it isn't an atomic write-to-temp-then-rename. Since this reads the same file
+ * from a separate process (the Playwright test runner) while the app may still
+ * be mid-write, an empty/partial read is a real possibility, not a hypothetical
+ * one — confirmed in CI as `SyntaxError: Unexpected end of JSON input` on a
+ * RC4-cipher run. Returning undefined here lets the caller's expect.poll keep
+ * retrying instead of letting the exception fail the test outright.
+ */
+function findServerInConfig(configPath: string, serverName: string): {name: string} | undefined {
+    let raw: string;
+    try {
+        raw = fs.readFileSync(configPath, 'utf8');
+    } catch {
+        return undefined;
+    }
+    if (!raw) {
+        return undefined;
+    }
+    let cfg: {servers?: Array<{name: string}>};
+    try {
+        cfg = JSON.parse(raw);
+    } catch {
+        return undefined;
+    }
+    return cfg.servers?.find((s) => s.name === serverName);
+}
+
+/**
+ * Click the server dropdown button and wait for its WebContentsView to
+ * appear, re-clicking periodically until it does.
+ *
+ * Root cause (found via a diagnostic build that dumped DOM/window state on
+ * failure): ServerDropdownView.handleOpen() in src/app/mainWindow/
+ * serverDropdownView.ts silently no-ops if its WebContentsView hasn't been
+ * created yet — that view is created lazily by init(), run on the
+ * MAIN_WINDOW_CREATED event, which can still be pending on a freshly-booted
+ * shared app under CI load. The diagnostic confirmed the button itself is
+ * fully visible/enabled/unobstructed at click time, and the dropdown.html
+ * window never appears at all — not a DOM/focus issue, the click is just
+ * arriving before the feature is wired up.
+ *
+ * Re-clicking here is safe (unlike re-clicking an already-open dropdown):
+ * handleOpen() only flips isOpen / notifies the renderer once its view
+ * exists, so a click that lands before then changes no state on either the
+ * main or renderer side — the next click is treated as a fresh "open"
+ * attempt, not a toggle-to-close.
+ */
+async function openServerDropdownWindow(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
     const mainView = app.windows().find((w) => w.url().includes('index'));
-    await mainView!.click('.ServerDropdownButton');
-    let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
+    await mainView!.bringToFront().catch(() => {});
+
+    const deadline = Date.now() + 40_000;
+    while (Date.now() < deadline) {
+        await mainView!.click('.ServerDropdownButton');
+        const appeared = await expect.poll(
+            () => app.windows().some((w) => w.url().includes('dropdown')),
+            {timeout: 3_000},
+        ).toBe(true).then(() => true).catch(() => false);
+        if (appeared) {
+            break;
+        }
+    }
+
+    const dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
     if (!dropdownView) {
-        dropdownView = await app.waitForEvent('window', {
-            predicate: (w) => w.url().includes('dropdown'),
-            timeout: 10_000,
-        });
+        throw new Error('Server dropdown window did not appear after repeated clicks over 40s');
     }
     await dropdownView.waitForLoadState().catch(() => {});
+    return dropdownView;
+}
 
-    // Register the window listener BEFORE clicking. The new-server modal is a
-    // WebContentsView, not a BrowserWindow, so Playwright can surface (or miss) it
-    // depending on timing. Polling `app.windows()` is the most reliable fallback if
-    // the event listener races with the modal's WebContents creation on slow CI.
-    const newServerViewPromise = app.waitForEvent('window', {
-        predicate: (w) => w.url().includes('newServer'),
-        timeout: 20_000,
-    }).catch(() => undefined);
+async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
+    const dropdownView = await openServerDropdownWindow(app);
 
-    await dropdownView!.click('.ServerDropdown .ServerDropdown__button.addServer');
+    await dropdownView.click('.ServerDropdown .ServerDropdown__button.addServer');
 
-    let newServerView = app.windows().find((w) => w.url().includes('newServer')) ?? await newServerViewPromise;
-    if (!newServerView) {
-        await expect.poll(
-            () => app.windows().some((w) => w.url().includes('newServer')),
-            {timeout: 15_000, message: 'New server modal window should appear after clicking Add a server'},
-        ).toBe(true);
-        newServerView = app.windows().find((w) => w.url().includes('newServer'));
-    }
+    // The new-server modal is a WebContentsView, not a BrowserWindow, so it can
+    // appear a beat after the click. Polling `app.windows()` picks it up on the
+    // next tick regardless of exactly when it was created — no event-listener
+    // pre-registration needed, since polling isn't edge-triggered.
+    await expect.poll(
+        () => app.windows().some((w) => w.url().includes('newServer')),
+        {timeout: 20_000, message: 'New server modal window should appear after clicking Add a server'},
+    ).toBe(true);
+
+    const newServerView = app.windows().find((w) => w.url().includes('newServer'));
     if (!newServerView) {
         throw new Error('New server modal window did not appear');
     }
@@ -68,25 +126,7 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
 }
 
 async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
-    const mainView = app.windows().find((w) => w.url().includes('index'));
-    expect(mainView).toBeDefined();
-
-    await mainView!.click('.ServerDropdownButton');
-
-    let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
-    if (!dropdownView) {
-        dropdownView = await app.waitForEvent('window', {
-            predicate: (w) => w.url().includes('dropdown'),
-            timeout: 10_000,
-        });
-    }
-
-    await dropdownView.waitForLoadState().catch(() => {});
-    return dropdownView;
-}
-
-async function closeLaunchedApp(app: Awaited<ReturnType<typeof launchWithConfig>>['app'], dataDir: string) {
-    await closeElectronAppFast(app, dataDir);
+    return openServerDropdownWindow(app);
 }
 
 test.describe('Bad Server Configurations', () => {
@@ -104,8 +144,19 @@ test.describe('Bad Server Configurations', () => {
         });
 
         test.afterAll(async () => {
-            await closeLaunchedApp(sharedApp, sharedUserDataDir);
+            await closeElectronAppFast(sharedApp, sharedUserDataDir);
         });
+
+        // Deliberately NO defensive beforeEach here to close stray dropdown/newServer
+        // windows: a `.includes('dropdown')` URL filter matches the SERVER DROPDOWN's
+        // own WebContentsView (mattermost-desktop://renderer/dropdown.html), which is
+        // created at MAIN_WINDOW_CREATED and required for OPEN_SERVERS_DROPDOWN to work
+        // (ServerDropdownView.handleOpen returns silently if this.view is destroyed).
+        // Closing it via Playwright's Page.close() destroys the WebContents, so every
+        // subsequent click on .ServerDropdownButton silently no-ops. Diagnosed from CI
+        // trace showing 13 clicks over 40s producing no dropdown. If serial-mode tests
+        // ever leak state, prefer sending CLOSE_SERVERS_DROPDOWN via IPC instead of
+        // Page.close(), or press Escape at test end.
 
         test('should handle server with unresolvable DNS', {tag: ['@P2', '@all']}, async () => {
             const app = sharedApp;
@@ -116,10 +167,10 @@ test.describe('Bad Server Configurations', () => {
             await newServerView.click('#newServerModal_confirm');
 
             const configPath = path.join(userDataDir, 'config.json');
-            await expect.poll(() => {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.servers.find((s: {name: string}) => s.name === 'Unreachable Server');
-            }, {timeout: 10000}).toBeDefined();
+            await expect.poll(
+                () => findServerInConfig(configPath, 'Unreachable Server'),
+                {timeout: 10000},
+            ).toBeDefined();
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
@@ -137,10 +188,10 @@ test.describe('Bad Server Configurations', () => {
             await newServerView.click('#newServerModal_confirm');
 
             const configPath = path.join(userDataDir, 'config.json');
-            await expect.poll(() => {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.servers.find((s: {name: string}) => s.name === 'Expired Cert Server');
-            }, {timeout: 10000}).toBeDefined();
+            await expect.poll(
+                () => findServerInConfig(configPath, 'Expired Cert Server'),
+                {timeout: 10000},
+            ).toBeDefined();
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
@@ -158,10 +209,10 @@ test.describe('Bad Server Configurations', () => {
             await newServerView.click('#newServerModal_confirm');
 
             const configPath = path.join(userDataDir, 'config.json');
-            await expect.poll(() => {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.servers.find((s: {name: string}) => s.name === 'TLS 1.0 Server');
-            }, {timeout: 10000}).toBeDefined();
+            await expect.poll(
+                () => findServerInConfig(configPath, 'TLS 1.0 Server'),
+                {timeout: 10000},
+            ).toBeDefined();
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
@@ -182,10 +233,10 @@ test.describe('Bad Server Configurations', () => {
             await newServerView.click('#newServerModal_confirm');
 
             const configPath = path.join(userDataDir, 'config.json');
-            await expect.poll(() => {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.servers.find((s: {name: string}) => s.name === 'RC4 Cipher Server');
-            }, {timeout: 10000}).toBeDefined();
+            await expect.poll(
+                () => findServerInConfig(configPath, 'RC4 Cipher Server'),
+                {timeout: 10000},
+            ).toBeDefined();
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
@@ -235,7 +286,7 @@ test.describe('Bad Server Configurations', () => {
                 expect(errorView).toBeNull();
                 expect(Date.now() - start).toBeLessThan(15_000);
             } finally {
-                await closeLaunchedApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
             }
         });
 
@@ -263,7 +314,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
             } finally {
-                await closeLaunchedApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
             }
         });
 
@@ -301,9 +352,16 @@ test.describe('Bad Server Configurations', () => {
                 await dropdownView!.click('.ServerDropdown .ServerDropdown__button:nth-child(2)');
                 await closeOverlayWindowsIfOpen(app);
 
-                const serverMap = await buildServerMap(app);
-                const mmEntry = serverMap[demoMattermostConfig.servers[0].name][0];
-                const mmServer = mmEntry.win;
+                let mmEntry: Awaited<ReturnType<typeof buildServerMap>>[string][0] | undefined;
+                await expect.poll(async () => {
+                    const serverMap = await buildServerMap(app);
+                    mmEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+                    return Boolean(mmEntry);
+                }, {
+                    timeout: 45_000,
+                    message: 'Working Mattermost server view should be registered after switching servers',
+                }).toBe(true);
+                const mmServer = mmEntry!.win;
                 const cloudHost = new URL(process.env.MM_TEST_SERVER_URL!).host;
 
                 await expect.poll(
@@ -317,7 +375,7 @@ test.describe('Bad Server Configurations', () => {
                 const postTextbox = await mmServer.$('#post_textbox');
                 expect(postTextbox).toBeDefined();
             } finally {
-                await closeLaunchedApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
             }
         });
 
@@ -345,7 +403,7 @@ test.describe('Bad Server Configurations', () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
                 expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
             } finally {
-                await closeLaunchedApp(app, badCertUserDataDir);
+                await closeElectronAppFast(app, badCertUserDataDir);
             }
         });
 
@@ -386,10 +444,23 @@ test.describe('Bad Server Configurations', () => {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
 
+                await expect.poll(async () => {
+                    const serverMap = await buildServerMap(app);
+                    const entry = serverMap['Pre-configured Expired Cert Trusted']?.[0];
+                    if (!entry) {
+                        return false;
+                    }
+                    const url = await entry.win.url().catch(() => '');
+                    return url.includes('expired.badssl.com');
+                }, {
+                    timeout: 45_000,
+                    message: 'Trusted expired-cert server view should finish loading before asserting ErrorView absence',
+                }).toBe(true);
+
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeNull();
             } finally {
-                await closeLaunchedApp(app, userDataDir);
+                await closeElectronAppFast(app, userDataDir);
             }
         });
 
@@ -419,7 +490,7 @@ test.describe('Bad Server Configurations', () => {
                     return INSECURE_TLS_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
                 }, {timeout: 15_000, message: 'TLS 1.1 server must surface a connection error'}).not.toBeNull();
             } finally {
-                await closeLaunchedApp(app, tls11UserDataDir);
+                await closeElectronAppFast(app, tls11UserDataDir);
             }
         });
 
@@ -449,7 +520,7 @@ test.describe('Bad Server Configurations', () => {
                     return INSECURE_TLS_ERROR_PATTERN.test(errorInfo) ? errorInfo : null;
                 }, {timeout: 15_000, message: 'RC4 server must surface a connection error'}).not.toBeNull();
             } finally {
-                await closeLaunchedApp(app, rc4UserDataDir);
+                await closeElectronAppFast(app, rc4UserDataDir);
             }
         });
     });

@@ -48,25 +48,19 @@ test.describe('history_menu', () => {
             await loginToMattermost(firstServer);
             await firstServer.waitForSelector('#sidebarItem_off-topic');
 
-            // Navigate to Off-Topic, then Town Square to build history
             await firstServer.click('#sidebarItem_off-topic');
             await expect.poll(
-                async () => {
-                    return firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
-                },
+                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
                 {timeout: 10_000},
             ).toBe('Off-Topic');
             const offTopicTitle = await firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
 
             await firstServer.click('#sidebarItem_town-square');
             await expect.poll(
-                async () => {
-                    return firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
-                },
+                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
                 {timeout: 10_000},
             ).toBe('Town Square');
 
-            // Click History → Back via the application menu
             const clicked = await electronApp.evaluate(({Menu}) => {
                 const root = Menu.getApplicationMenu();
                 if (!root) {
@@ -92,11 +86,8 @@ test.describe('history_menu', () => {
             });
             expect(clicked, 'History → Back menu item must exist and be clickable').toBe(true);
 
-            // Verify navigation went back to Off-Topic
             await expect.poll(
-                async () => {
-                    return firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
-                },
+                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
                 {timeout: 10_000, message: 'Should navigate back to Off-Topic after History → Back'},
             ).toBe(offTopicTitle);
         },

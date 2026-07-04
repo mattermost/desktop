@@ -4,6 +4,14 @@
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {
+    getPostTextboxValue,
+    pressPostTextboxKey,
+    POST_TEXTBOX_SELECTOR,
+    typeIntoPostTextbox,
+    waitForChannelPostListLoaded,
+    waitForMattermostShell,
+} from '../../helpers/mattermostShell';
 
 // ── MM-T2023: ALT+ENTER ───────────────────────────────────────────────
 // Alt/Option + Enter inserts a newline in the post textbox without
@@ -26,34 +34,20 @@ test.describe('mattermost/alt_enter', () => {
             expect(firstServer, 'Server view must exist').toBeTruthy();
 
             await loginToMattermost(firstServer!);
-            await firstServer!.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
+            await waitForMattermostShell(firstServer!, {channelItem: '#sidebarItem_off-topic'});
             await firstServer!.click('#sidebarItem_off-topic');
-            await firstServer!.waitForSelector('#post_textbox', {timeout: 15_000});
-
-            // Wait until the channel post list has finished its initial load so
-            // async system messages don't shift the post count mid-test.
-            await expect.poll(
-                async () => firstServer!.evaluate(() => {
-                    const loading = document.querySelector(
-                        '.post-list__loading, .post-list__dynamic-loading, .loading-screen',
-                    );
-                    return !loading;
-                }),
-                {timeout: 15_000, message: 'Channel post list must finish loading'},
-            ).toBe(true);
+            await firstServer!.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 15_000});
+            await waitForChannelPostListLoaded(firstServer!);
 
             const postsBefore = await firstServer!.evaluate(() =>
                 document.querySelectorAll('.post-message__text').length,
             );
 
-            await firstServer!.fill('#post_textbox', 'Line one');
-            await firstServer!.press('#post_textbox', 'Alt+Enter');
+            await typeIntoPostTextbox(firstServer!, 'Line one');
+            await pressPostTextboxKey(firstServer!, 'Alt+Enter');
             await firstServer!.keyboard.type('Line two');
 
-            const textboxValue = await firstServer!.evaluate(() => {
-                const textbox = document.querySelector('#post_textbox') as HTMLTextAreaElement;
-                return textbox?.value ?? '';
-            });
+            const textboxValue = await getPostTextboxValue(firstServer!);
             expect(textboxValue, 'Textbox must contain both lines after Alt+Enter').toContain('Line one');
             expect(textboxValue, 'Textbox must contain second line').toContain('Line two');
             expect(textboxValue, 'Textbox must have a newline between lines').toMatch(/Line one\nLine two/);

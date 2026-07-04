@@ -8,10 +8,10 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
-import {closeElectronAppFast} from '../../helpers/electronApp';
+import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
+import {clickApplicationMenuItem} from '../../helpers/menu';
 import {buildServerMap} from '../../helpers/serverMap';
-import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 const config = {
     ...demoMattermostConfig,
@@ -26,28 +26,6 @@ let electronApp: ElectronApplication;
 let mainWindow: ElectronPage;
 let userDataDir: string;
 
-async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
-    const timeoutAt = Date.now() + timeout;
-    while (Date.now() < timeoutAt) {
-        const win = app.windows().find((window) => {
-            try {
-                return window.url().includes(pattern);
-            } catch {
-                return false;
-            }
-        });
-
-        if (win) {
-            await win.waitForLoadState().catch(() => {});
-            return win;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
-
 async function getMattermostServer() {
     const serverMap = await buildServerMap(electronApp);
     const mmServer = serverMap[config.servers[0].name]?.[0]?.win;
@@ -59,6 +37,18 @@ async function openPopoutWindow() {
     await mainWindow.bringToFront().catch(() => {});
 
     const popoutTimeout = process.platform === 'linux' ? 45_000 : 30_000;
+
+    // Filter on popout.html rather than accepting the first 'window' event:
+    // PopoutManager attaches a separate LoadingScreen WebContentsView (its own
+    // loadingScreen.html) to the same BrowserWindow before the real content
+    // view loads popout.html (src/app/views/loadingScreen.ts), so the first
+    // 'window' event can be the loading screen, not the popout content. The
+    // predicate is re-evaluated on every 'window' event (not just the first),
+    // so it correctly waits for the later event whose URL actually matches —
+    // confirmed via CI: removing this predicate broke the test (the loading
+    // screen page's URL never becomes popout.html, since it's a different
+    // WebContents entirely), so it's a genuine requirement, not just a
+    // theoretical race.
     const windowPromise = electronApp.waitForEvent('window', {
         timeout: popoutTimeout,
         predicate: (page) => {
@@ -70,21 +60,17 @@ async function openPopoutWindow() {
         },
     });
 
-    await evaluateInMainProcess(electronApp, () => {
-        const refs = (global as any).__e2eTestRefs;
-        const serverId = refs?.ServerManager?.getCurrentServerId?.();
-        if (!serverId) {
-            throw new Error('No current server for popout');
-        }
-        refs.PopoutManager.createNewWindow(serverId);
-    }, {timeoutMs: 20_000});
+    // Trigger through the real File → New Window menu item (which calls
+    // PopoutManager.createNewWindow for the current server) so the
+    // menu → popout wiring stays covered, rather than calling the manager directly.
+    await clickApplicationMenuItem(electronApp, 'file', {label: 'New Window'});
 
     const popout = await windowPromise;
     await popout.waitForLoadState('domcontentloaded').catch(() => {});
     return popout;
 }
 
-async function closePopoutWindow(popoutWindow: import('playwright').Page) {
+async function closePopoutWindow(popoutWindow: import('playwright').Page, waitForAllClosed = true) {
     const browserWindow = await electronApp.browserWindow(popoutWindow);
     const closeTimeout = process.platform === 'linux' ? 5_000 : 15_000;
     await Promise.all([
@@ -97,6 +83,10 @@ async function closePopoutWindow(popoutWindow: import('playwright').Page) {
             }
         }).catch(() => {});
     });
+
+    if (!waitForAllClosed) {
+        return;
+    }
 
     await expect.poll(() => {
         return electronApp.windows().filter((window) => {
@@ -118,9 +108,26 @@ async function closeAllPopouts() {
         }
     });
 
+    // Close every window first without waiting for the full count to reach 0
+    // per-window — with multiple popouts open, waiting inside each call added
+    // up to a 10s timeout per extra window. Poll for the batch once instead.
     for (const popout of popoutWindows) {
-        await closePopoutWindow(popout).catch(() => {});
+        await closePopoutWindow(popout, false).catch(() => {});
     }
+
+    if (popoutWindows.length === 0) {
+        return;
+    }
+
+    await expect.poll(() => {
+        return electronApp.windows().filter((window) => {
+            try {
+                return window.url().includes('popout.html');
+            } catch {
+                return false;
+            }
+        }).length;
+    }, {timeout: 10_000}).toBe(0);
 }
 
 test.describe('server_management/popout_windows', () => {
@@ -173,8 +180,7 @@ test.describe('server_management/popout_windows', () => {
 
             const currentBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
-            // macOS clamps window bounds more aggressively than expected due to menu bar/dock constraints
-            const tolerance = process.platform === 'darwin' ? 350 : 10;
+            const tolerance = process.platform === 'darwin' ? 250 : 10;
             expect(Math.abs(currentBounds.width - newBounds.width)).toBeLessThan(tolerance);
             expect(Math.abs(currentBounds.height - newBounds.height)).toBeLessThan(tolerance);
         });

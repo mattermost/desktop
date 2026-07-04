@@ -50,8 +50,10 @@ test(
                 {timeout: 15_000, message: 'Cancelled download should be marked cancelled in downloads.json'},
             ).toMatch(/cancelled|interrupted/);
         } finally {
-            await closeDownloadTestApp(app, userDataDir, downloadLocation);
-            await close();
+            await Promise.allSettled([
+                closeDownloadTestApp(app, userDataDir, downloadLocation),
+                close(),
+            ]);
         }
     },
 );

@@ -9,9 +9,10 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
-import {closeElectronAppFast} from '../../helpers/electronApp';
+import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
-import {recoverServerViewIfNeeded, waitForMattermostShell} from '../../helpers/mattermostShell';
+import {waitForMattermostShell, waitForMattermostShellReady, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
+import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {buildServerMap} from '../../helpers/serverMap';
 
 if (!process.env.MM_TEST_SERVER_URL) {
@@ -37,28 +38,6 @@ type ElectronPage = import('playwright').Page;
 let electronApp: ElectronApplication;
 let mainWindow: ElectronPage;
 let userDataDir: string;
-
-async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
-    const timeoutAt = Date.now() + timeout;
-    while (Date.now() < timeoutAt) {
-        const win = app.windows().find((window) => {
-            try {
-                return window.url().includes(pattern);
-            } catch {
-                return false;
-            }
-        });
-
-        if (win) {
-            await win.waitForLoadState().catch(() => {});
-            return win;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
 
 async function getMattermostServer() {
     const serverMap = await buildServerMap(electronApp);
@@ -103,8 +82,11 @@ async function resetState() {
     mainWindow = await waitForWindow(electronApp, 'index');
     await mainWindow.bringToFront().catch(() => {});
     await mainWindow.keyboard.press('Escape').catch(() => {});
+
     const mmServer = await getMattermostServer();
-    await mmServer.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
+    await prepareMattermostServerView(electronApp, mmServer.webContentsId);
+    await waitForMattermostShell(mmServer, {timeout: 45_000});
+    await recoverServerViewIfNeeded(mmServer);
     await mmServer.click('#sidebarItem_town-square').catch(() => {});
 }
 
@@ -153,6 +135,33 @@ async function getVisibleTabOrder() {
     return order;
 }
 
+/**
+ * Open a second and third tab (assumed already created), navigate each to a
+ * distinct channel, and return the resolved server map used to reach them.
+ * Shared by MM-T2635_1 and MM-T2635_2, which otherwise duplicated this setup.
+ */
+async function navigateToSecondAndThirdTabs(serverName: string) {
+    let localServerMap = await buildServerMap(electronApp);
+    await expect.poll(async () => {
+        localServerMap = await buildServerMap(electronApp);
+        return localServerMap[serverName]?.length ?? 0;
+    }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
+
+    const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
+    await secondTab.click();
+    const secondView = localServerMap[serverName][1].win;
+    await waitForMattermostShellReady(secondView, {channelItem: '#sidebarItem_off-topic'});
+    await secondView.click('#sidebarItem_off-topic');
+
+    const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
+    await thirdTab.click();
+    const thirdView = localServerMap[serverName][2].win;
+    await waitForMattermostShellReady(thirdView, {channelItem: '#sidebarItem_town-square'});
+    await thirdView.click('#sidebarItem_town-square');
+
+    return localServerMap;
+}
+
 test.describe('server_management/drag_and_drop', () => {
     test.describe.configure({mode: 'serial'});
 
@@ -186,25 +195,7 @@ test.describe('server_management/drag_and_drop', () => {
             // message from the renderer hasn't yet been processed by the main process when
             // getCurrentActiveTabView() runs.
             const serverName = config.servers[0].name;
-            let localServerMap = await buildServerMap(electronApp);
-            await expect.poll(async () => {
-                localServerMap = await buildServerMap(electronApp);
-                return localServerMap[serverName]?.length ?? 0;
-            }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
-
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
-            await secondTab.click();
-            const secondView = localServerMap[serverName][1].win;
-            await recoverServerViewIfNeeded(secondView, {channelItem: '#sidebarItem_off-topic'});
-            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
-            await secondView.click('#sidebarItem_off-topic');
-
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
-            await thirdTab.click();
-            const thirdView = localServerMap[serverName][2].win;
-            await recoverServerViewIfNeeded(thirdView, {channelItem: '#sidebarItem_town-square'});
-            await waitForMattermostShell(thirdView, {channelItem: '#sidebarItem_town-square'});
-            await thirdView.click('#sidebarItem_town-square');
+            await navigateToSecondAndThirdTabs(serverName);
 
             // Tab titles update asynchronously after channel navigation — poll for each.
             await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(1)')).toContainText('Town Square', {timeout: 15_000});
@@ -220,25 +211,7 @@ test.describe('server_management/drag_and_drop', () => {
             await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
 
             const serverName = config.servers[0].name;
-            let localServerMap = await buildServerMap(electronApp);
-            await expect.poll(async () => {
-                localServerMap = await buildServerMap(electronApp);
-                return localServerMap[serverName]?.length ?? 0;
-            }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
-
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
-            await secondTab.click();
-            const secondView = localServerMap[serverName][1].win;
-            await recoverServerViewIfNeeded(secondView, {channelItem: '#sidebarItem_off-topic'});
-            await waitForMattermostShell(secondView, {channelItem: '#sidebarItem_off-topic'});
-            await secondView.click('#sidebarItem_off-topic');
-
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
-            await thirdTab.click();
-            const thirdView = localServerMap[serverName][2].win;
-            await recoverServerViewIfNeeded(thirdView, {channelItem: '#sidebarItem_town-square'});
-            await waitForMattermostShell(thirdView, {channelItem: '#sidebarItem_town-square'});
-            await thirdView.click('#sidebarItem_town-square');
+            await navigateToSecondAndThirdTabs(serverName);
 
             const visibleTabOrder = await getVisibleTabOrder();
 
