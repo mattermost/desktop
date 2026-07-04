@@ -12,7 +12,7 @@ const E2E_STATUS_CONTEXTS = [
 
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
 const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
-const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
+const CANCELLED_STATUS_DESCRIPTION = 'E2E pending — superseded by newer run';
 
 /**
  * Update initial pending status for all platforms
@@ -104,12 +104,15 @@ async function updateFinalStatus({github, context, platforms, outputs, e2eTestsR
         let state;
         let description;
 
-        if (platformStatus === 'error' || (workflowCancelled && ran === 0)) {
-            state = 'error';
+        if (workflowCancelled) {
+            state = 'pending';
             description = CANCELLED_STATUS_DESCRIPTION;
+        } else if (platformStatus === 'error') {
+            state = 'error';
+            description = 'E2E incomplete — platform error';
         } else if (ran === 0 && (platformStatus === 'success' || platformStatus === '')) {
             state = 'error';
-            description = workflowCancelled ? CANCELLED_STATUS_DESCRIPTION : 'E2E incomplete — no tests ran';
+            description = 'E2E incomplete — no tests ran';
         } else if (failed > 0 || platformStatus === 'failure') {
             state = 'failure';
             description = formatStatusDescription({passed, failed});
@@ -131,8 +134,9 @@ async function updateFinalStatus({github, context, platforms, outputs, e2eTestsR
 }
 
 /**
- * Mark standard E2E commit statuses as cancelled/skipped on a SHA.
- * GitHub commit statuses have no "skipped" state — `error` matches mobile E2E.
+ * Mark standard E2E commit statuses as pending when a run is superseded or stopped
+ * without results (e.g. new push re-triggers E2E). Use pending — not error — so PR
+ * checks do not show a false red failure.
  */
 async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION}) {
     const description = String(reason).substring(0, 140);
@@ -142,7 +146,7 @@ async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLE
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha,
-            state: 'error',
+            state: 'pending',
             context: statusContext,
             description,
         }).catch((error) => {

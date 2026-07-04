@@ -175,7 +175,6 @@ test.describe('notification_badge/windows_and_linux', () => {
     });
 
     test('MM-T_BADGE_LNX_02 - should account for session expiry in Linux badge count', {tag: ['@P2', '@linux']}, async ({electronApp}) => {
-
         // showBadgeLinux passes mentionCount + 1 to setBadgeCount when sessionExpired
         await triggerBadge(electronApp, true, 2, false);
         const state = await getBadgeState(electronApp);

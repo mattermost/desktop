@@ -102,7 +102,7 @@ jobs:
                 github,
                 context,
                 sha: pr.head.sha,
-                reason: 'E2E skipped (E2E/Override label active)',
+                reason: 'E2E pending — skipped (E2E/Override label active)',
               });
               return;
             }
@@ -112,6 +112,12 @@ jobs:
               context,
               prNumber: issue_number,
               headBranch: pr.head.ref,
+            });
+
+            await markE2EStatusesCancelled({
+              github,
+              context,
+              sha: pr.head.sha,
             });
 
             try {
@@ -191,7 +197,7 @@ jobs:
               github,
               context,
               sha: pr.head.sha,
-              reason: 'E2E cancelled (E2E/Override label applied)',
+              reason: 'E2E pending — skipped (E2E/Override label applied)',
             });
 
   cancel-on-manual-unlabel:
@@ -222,4 +228,4 @@ jobs:
         uses: ./.github/actions/cancel-e2e-runs
         with:
           pr_number: ${{ github.event.pull_request.number }}
-          reason: E2E cancelled (E2E/Run label removed)
+          reason: E2E pending — superseded by newer run

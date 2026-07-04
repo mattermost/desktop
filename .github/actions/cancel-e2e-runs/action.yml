@@ -2,7 +2,7 @@
 name: Cancel E2E workflow runs
 description: >-
   Cancel active Electron Playwright Tests runs and mark E2E commit statuses as
-  cancelled so PR checks do not show a green "No tests ran" result.
+  pending so PR checks do not show a false red failure or green "No tests ran".
 
 inputs:
   pr_number:
@@ -11,7 +11,7 @@ inputs:
   reason:
     description: Commit status description when cancelling
     required: false
-    default: E2E cancelled — tests skipped
+    default: E2E pending — superseded by newer run
   cancel_workflow_runs:
     description: When false, only update commit statuses (runs already stopped)
     required: false
@@ -33,7 +33,7 @@ runs:
             throw new Error(`Invalid pr_number: ${process.env.PR_NUMBER}`);
           }
 
-          const reason = process.env.REASON || 'E2E cancelled — tests skipped';
+          const reason = process.env.REASON || 'E2E pending — superseded by newer run';
           const shouldCancelRuns = process.env.CANCEL_WORKFLOW_RUNS !== 'false';
 
           if (shouldCancelRuns) {
