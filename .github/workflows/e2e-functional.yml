@@ -25,7 +25,7 @@ on:
         required: true
       run_type:
         type: string
-        description: "Run type for test reporting (PR/RELEASE). Auto-detected from branch if not provided."
+        description: "Run type for test reporting (PR / MASTER / RELEASE). Matterwick sends MASTER for master pushes; PR-label runs leave this blank (default PR). Settable on manual dispatch for ad-hoc RELEASE runs."
         required: false
         default: ""
       pr_number:
@@ -62,15 +62,17 @@ jobs:
 
       - name: Update initial status for all platforms
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateInitialStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
+            const platforms = JSON.parse(process.env.PLATFORMS);
             await updateInitialStatus({ github, context, platforms });
 
   e2e-tests:
-    needs: 
+    needs:
       - prepare-matrix
       - update-initial-status
     name: ${{ matrix.platform }}
@@ -88,7 +90,11 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
-      TYPE: ${{ inputs.run_type != '' && inputs.run_type || startsWith(inputs.version_name, 'release-') && 'RELEASE' || 'PR' }}
+      # When matterwick fires this workflow it sets run_type explicitly (MASTER for master
+      # pushes; PR-label runs are dispatched without run_type, defaulting to PR via the `|| 'PR'`
+      # below). The previous `startsWith(version_name, 'release-') && 'RELEASE'` fallback was
+      # for matterwick's release-branch push, which is no longer wired — removed.
+      TYPE: ${{ inputs.run_type || 'PR' }}
     secrets: inherit
 
   update-final-status:
@@ -107,13 +113,26 @@ jobs:
 
       - name: Update final status for all platforms
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
+          OUTPUTS: ${{ toJSON(needs.e2e-tests.outputs) }}
+          E2E_TESTS_RESULT: ${{ needs.e2e-tests.result }}
         with:
           github-token: ${{ github.token }}
           script: |
             const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = ${{ needs.prepare-matrix.outputs.platforms }};
-            const outputs = ${{ toJSON(needs.e2e-tests.outputs) }};
-            await updateFinalStatus({ github, context, platforms, outputs });
+            const platforms = JSON.parse(process.env.PLATFORMS);
+            const outputs = JSON.parse(process.env.OUTPUTS);
+            const prNumber = parseInt(process.env.PR_NUMBER, 10) || null;
+            await updateFinalStatus({
+              github,
+              context,
+              platforms,
+              outputs,
+              e2eTestsResult: process.env.E2E_TESTS_RESULT,
+              prNumber,
+            });
 
   remove-e2e-label:
     name: Remove E2E label from PR
@@ -241,10 +260,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           # BSD tar on macOS can corrupt actions/cache v5 archives; prefer GNU tar when present.
+          # All current macOS runners are arm64 (Homebrew under /opt/homebrew); keep the
+          # -x guard so a future non-arm64 matrix entry falls back to BSD tar safely.
           if [ -x /opt/homebrew/opt/gnu-tar/libexec/gnubin/gtar ]; then
             echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
-          elif [ -x /usr/local/opt/gnu-tar/libexec/gnubin/gtar ]; then
-            echo "/usr/local/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
           fi
 
       - name: e2e/cache-node-modules
@@ -268,25 +287,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
 
-      # Clear pip's HTTP cache on macOS-26 runners before setup-python. The pre-baked
-      # image cache contains entries serialized by an older pip that the newer pip
-      # shipped with Python 3.10 cannot deserialize, producing the noisy
-      # "WARNING: Cache entry deserialization failed, entry ignored" lines in CI.
-      # See actions/setup-python#1317.
-      - name: e2e/clear-pip-cache-macos
-        if: runner.os == 'macOS'
-        run: |
-          rm -rf "${HOME}/Library/Caches/pip" || true
-          python3 -m pip cache purge >/dev/null 2>&1 || true
-
       - name: e2e/setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         env:
           # Bypass pip's on-disk HTTP cache entirely so a stale/corrupt entry on the
-          # runner image cannot trigger deserialization warnings.
+          # runner image cannot trigger deserialization warnings (actions/setup-python#1317).
           PIP_NO_CACHE_DIR: "1"
         with:
-          python-version: "3.10"
+          # Use a version pre-installed on macOS-26 (3.13 is in its toolcache), so
+          # setup-python doesn't install a mismatched interpreter whose pip can't
+          # deserialize the image's pre-baked cache. PIP_NO_CACHE_DIR above is the
+          # remaining guard for non-macOS runners.
+          python-version: "3.13"
           # Omit `cache` — setup-python only accepts pip/pipenv/poetry, not `false`.
 
       - name: e2e/install-os-dependencies
@@ -381,4 +393,5 @@ jobs:
         with:
           name: policy-test-results-${{ runner.os }}
           path: e2e/playwright-report
+          if-no-files-found: ignore
           retention-days: 7

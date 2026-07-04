@@ -279,9 +279,7 @@ function flashFrame(flash: boolean) {
     }
 }
 
-if (process.env.NODE_ENV === 'test') {
-    setTestField('__e2eFlashEffects', flashFrame);
-}
+setTestField('__e2eFlashEffects', flashFrame);
 
 const notificationManager = new NotificationManager();
 export default notificationManager;

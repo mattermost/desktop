@@ -17,7 +17,14 @@ function getXMLParserClass() {
         try {
             const {XMLParser} = createRequire(packageJson)('fast-xml-parser');
             return XMLParser;
-        } catch {
+        } catch (error) {
+            const isModuleNotFound =
+                error &&
+                (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_MODULE_NOT_FOUND');
+            if (!isModuleNotFound) {
+                throw error;
+            }
+
             // try the other package root (e2e/ vs repo root)
         }
     }
@@ -207,6 +214,18 @@ function analyzeFlakyTests() {
     const hasJunit = fs.existsSync(JUNIT_REPORT_PATH);
 
     if (!hasJunit) {
+        if (process.env.JOB_STATUS === 'cancelled') {
+            return {
+                failureCount: 0,
+                passCount: 0,
+                skipCount: 0,
+                totalCount: 0,
+                newFailedTests: [],
+                os: process.platform,
+                testStatus: 'error',
+            };
+        }
+
         const failureCount = exitCode === 0 ? 0 : 1;
         return {
             failureCount,
