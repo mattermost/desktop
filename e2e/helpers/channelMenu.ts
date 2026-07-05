@@ -138,6 +138,14 @@ export async function enableBookmarksBar(win: ServerView): Promise<void> {
         if (!barItem) {
             return false;
         }
+        const label = (barItem.textContent || '').trim().toLowerCase();
+        const checked = barItem.getAttribute('aria-checked');
+        if (label.includes('hide') || checked === 'true') {
+            return true;
+        }
+        if (!label.includes('show') && checked !== 'false') {
+            return false;
+        }
         barItem.click();
         return true;
     `, true);

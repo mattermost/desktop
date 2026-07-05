@@ -87,7 +87,7 @@ async function getServerContext() {
     await firstServer.waitForURL((url) => url.pathname.includes('/channels/'), {timeout: 30_000});
     await firstServer.waitForSelector('#post_textbox', {timeout: 30_000});
     await mainWindow.bringToFront().catch(() => {});
-    await focusServerView(electronApp, firstServerId);
+    await activateServerView(electronApp, firstServerId);
 
     return {browserWindow, firstServer, firstServerId};
 }

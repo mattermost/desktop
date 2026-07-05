@@ -296,7 +296,11 @@ jobs:
           cd e2e
           export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
           set +e
-          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test -- --project=linux
+          if [ "${E2E_WAYLAND}" = "true" ]; then
+            xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test
+          else
+            xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test -- --project=linux
+          fi
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}

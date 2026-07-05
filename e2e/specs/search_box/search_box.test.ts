@@ -6,7 +6,12 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {clickApplicationMenuItem} from '../../helpers/menu';
 import {waitForMattermostShell} from '../../helpers/mattermostShell';
-import {prepareMattermostServerView} from '../../helpers/prepareServerView';
+import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
+import {
+    activateServerEntry,
+    expectServerViewUrl,
+    getServerEntry,
+} from '../../helpers/serverContext';
 
 const SEARCH_INPUT = 'input.search-bar.form-control';
 
@@ -19,11 +24,14 @@ test.describe('search_box/search_box', () => {
         async ({electronApp, serverMap}) => {
             test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
-            const serverEntry = serverMap[demoMattermostConfig.servers[0].name][0];
-            await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
-            const serverWin = serverEntry.win;
+            const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+            await activateServerEntry(electronApp, entry);
+            await expectServerViewUrl(electronApp, entry.webContentsId, /mattermost|8065/i);
+            const serverWin = entry.win;
             await loginToMattermost(serverWin);
             await waitForMattermostShell(serverWin);
+            await closeDownloadsDropdownIfOpen(electronApp);
+            await activateServerEntry(electronApp, entry);
 
             if (process.platform === 'darwin') {
                 await serverWin.keyboard.press('Meta+f');
@@ -32,11 +40,14 @@ test.describe('search_box/search_box', () => {
                     electronApp,
                     'view',
                     {accelerator: 'CmdOrCtrl+F'},
-                    {webContentsId: serverEntry.webContentsId},
+                    {webContentsId: entry.webContentsId},
                 );
             }
 
-            await serverWin.waitForSelector(SEARCH_INPUT, {timeout: 15_000});
+            await serverWin.waitForFunction(
+                () => document.querySelector('input.search-bar.form-control') === document.activeElement,
+                {timeout: 15_000},
+            );
             await serverWin.fill(SEARCH_INPUT, 'hello');
             await serverWin.click(SEARCH_INPUT);
             await serverWin.keyboard.press('ArrowLeft');

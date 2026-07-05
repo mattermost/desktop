@@ -71,7 +71,7 @@ test.describe('menu_bar/help_menu', () => {
             });
 
             try {
-                await clickApplicationMenuItem(electronApp, 'help', {id: 'Show logs'});
+                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Show logs'});
 
                 await expect.poll(async () => {
                     return electronApp.evaluate(() => ((global as any).__e2eShownInFolder as string[] | undefined)?.length ?? 0);

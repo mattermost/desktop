@@ -169,7 +169,11 @@ export async function cleanupAllRegisteredElectronProcesses(): Promise<void> {
  */
 export function clearAllRegistryFiles(): void {
     for (const file of listRegistryFiles()) {
-        fs.rmSync(file, {force: true});
+        try {
+            fs.rmSync(file, {force: true, recursive: true});
+        } catch {
+            // best-effort stale shard cleanup
+        }
     }
 }
 

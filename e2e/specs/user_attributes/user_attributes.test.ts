@@ -33,13 +33,12 @@ import {
     getCustomProfileAttributeFields,
     isAppResponsive,
     isUserAttributesFeatureAvailable,
-    openProfilePopoverFromLastPost,
+    postAndOpenProfilePopover,
     openProfileSettings,
     patchCustomProfileAttributeField,
     popoverContainsText,
     popoverLinkHasHref,
     recoverFromProfileSettings,
-    postChannelMessage,
     updateCustomProfileAttributeValues,
     type UserPropertyField,
 } from '../../helpers/userAttributes';
@@ -259,7 +258,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5751 Attributes are shown in the user profile pop-over in the same order that they are listed in the System Console',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {win} = await prepareServer(electronApp, serverMap);
+            const {entry, win} = await prepareServer(electronApp, serverMap);
             const names = [`${FIELD_PREFIX}Pop_A`, `${FIELD_PREFIX}Pop_B`, `${FIELD_PREFIX}Pop_C`];
             const created: UserPropertyField[] = [];
 
@@ -270,11 +269,8 @@ test.describe('user_attributes/user_attributes', () => {
                     await updateCustomProfileAttributeValues({[field.id]: `Value-${index + 1}`});
                 }
 
-                await win.click('#sidebarItem_town-square');
-                await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
                 const message = 'User attributes popover order test';
-                await postChannelMessage(win, message);
-                await openProfilePopoverFromLastPost(win, message);
+                await postAndOpenProfilePopover(electronApp, entry, message);
 
                 const popoverText = await win.runInRenderer<string>(`
                     const popover = document.querySelector('#user-profile-popover, .user-profile-popover, .profile-popover');
@@ -296,7 +292,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5752 User profile pop-over is scrollable and bottom bar in pop-over is locked in place',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {win} = await prepareServer(electronApp, serverMap);
+            const {entry, win} = await prepareServer(electronApp, serverMap);
             const created: UserPropertyField[] = [];
 
             try {
@@ -308,11 +304,8 @@ test.describe('user_attributes/user_attributes', () => {
                     await updateCustomProfileAttributeValues({[field.id]: `Scroll value ${index}`});
                 }
 
-                await win.click('#sidebarItem_town-square');
-                await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
                 const scrollMessage = 'User attributes scrollable popover test';
-                await postChannelMessage(win, scrollMessage);
-                await openProfilePopoverFromLastPost(win, scrollMessage);
+                await postAndOpenProfilePopover(electronApp, entry, scrollMessage);
 
                 const layout = await win.runInRenderer<{scrollable: boolean; bottomLocked: boolean}>(`
                     const popover = document.querySelector('#user-profile-popover, .user-profile-popover, .profile-popover, [data-testid="userProfilePopover"]');
@@ -365,7 +358,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5771 Editing Phone and URL Type User Attributes',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {win} = await prepareServer(electronApp, serverMap);
+            const {entry, win} = await prepareServer(electronApp, serverMap);
             const created: UserPropertyField[] = [];
 
             try {
@@ -394,11 +387,8 @@ test.describe('user_attributes/user_attributes', () => {
                 await editTextCustomAttribute(win, urlField.id, TEST_UPDATED_URL);
                 await closeProfileSettings(win);
 
-                await win.click('#sidebarItem_town-square');
-                await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
                 const phoneUrlMessage = 'Phone and URL attribute edit test';
-                await postChannelMessage(win, phoneUrlMessage);
-                await openProfilePopoverFromLastPost(win, phoneUrlMessage);
+                await postAndOpenProfilePopover(electronApp, entry, phoneUrlMessage);
                 expect(await popoverContainsText(win, TEST_UPDATED_PHONE)).toBe(true);
                 expect(await popoverContainsText(win, TEST_UPDATED_URL)).toBe(true);
                 await closeProfilePopover(win);
@@ -411,7 +401,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5772 URL Validation in User Attributes',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {win} = await prepareServer(electronApp, serverMap);
+            const {entry, win} = await prepareServer(electronApp, serverMap);
             let created: UserPropertyField | undefined;
 
             try {
@@ -440,11 +430,8 @@ test.describe('user_attributes/user_attributes', () => {
                 await editTextCustomAttribute(win, created.id, TEST_VALID_URL);
                 await closeProfileSettings(win);
 
-                await win.click('#sidebarItem_town-square');
-                await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
                 const urlValidationMessage = 'URL validation attribute test';
-                await postChannelMessage(win, urlValidationMessage);
-                await openProfilePopoverFromLastPost(win, urlValidationMessage);
+                await postAndOpenProfilePopover(electronApp, entry, urlValidationMessage);
                 expect(await popoverContainsText(win, TEST_VALID_URL)).toBe(true);
                 await closeProfilePopover(win);
             } finally {
@@ -458,7 +445,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5774 Do Not Display User Attributes If None Exist',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {win} = await prepareServer(electronApp, serverMap);
+            const {entry, win} = await prepareServer(electronApp, serverMap);
             const created: UserPropertyField[] = [];
 
             try {
@@ -466,11 +453,8 @@ test.describe('user_attributes/user_attributes', () => {
                 const location = await createCustomProfileAttributeField({name: `${FIELD_PREFIX}EmptyLoc`}, 1);
                 created.push(department, location);
 
-                await win.click('#sidebarItem_town-square');
-                await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
                 const emptyMessage = 'No custom attribute values on this user';
-                await postChannelMessage(win, emptyMessage);
-                await openProfilePopoverFromLastPost(win, emptyMessage);
+                await postAndOpenProfilePopover(electronApp, entry, emptyMessage);
 
                 expect(await popoverContainsText(win, department.name)).toBe(false);
                 expect(await popoverContainsText(win, location.name)).toBe(false);
@@ -485,7 +469,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5776 Hide User Attributes When Visibility Is Set to Hidden',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {win} = await prepareServer(electronApp, serverMap);
+            const {entry, win} = await prepareServer(electronApp, serverMap);
             const created: UserPropertyField[] = [];
 
             try {
@@ -499,11 +483,8 @@ test.describe('user_attributes/user_attributes', () => {
                     [visibleField.id]: 'Remote',
                 });
 
-                await win.click('#sidebarItem_town-square');
-                await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
                 const hiddenMessage = 'Hidden attribute visibility test';
-                await postChannelMessage(win, hiddenMessage);
-                await openProfilePopoverFromLastPost(win, hiddenMessage);
+                await postAndOpenProfilePopover(electronApp, entry, hiddenMessage);
 
                 expect(await popoverContainsText(win, hiddenField.name)).toBe(false);
                 expect(await popoverContainsText(win, 'Remote')).toBe(true);
@@ -548,7 +529,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5778 Display Phone and URL Type User Attributes Correctly',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {win} = await prepareServer(electronApp, serverMap);
+            const {entry, win} = await prepareServer(electronApp, serverMap);
             const created: UserPropertyField[] = [];
 
             try {
@@ -566,11 +547,8 @@ test.describe('user_attributes/user_attributes', () => {
                     [urlField.id]: TEST_URL,
                 });
 
-                await win.click('#sidebarItem_town-square');
-                await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
                 const displayMessage = 'Display phone and URL attributes';
-                await postChannelMessage(win, displayMessage);
-                await openProfilePopoverFromLastPost(win, displayMessage);
+                await postAndOpenProfilePopover(electronApp, entry, displayMessage);
 
                 expect(await popoverContainsText(win, TEST_PHONE)).toBe(true);
                 expect(await popoverContainsText(win, TEST_URL)).toBe(true);
@@ -585,7 +563,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5779 Verify Phone and URL Attributes Are Clickable in Profile Popover',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {win} = await prepareServer(electronApp, serverMap);
+            const {entry, win} = await prepareServer(electronApp, serverMap);
             const created: UserPropertyField[] = [];
 
             try {
@@ -603,11 +581,8 @@ test.describe('user_attributes/user_attributes', () => {
                     [urlField.id]: TEST_URL,
                 });
 
-                await win.click('#sidebarItem_town-square');
-                await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
                 const clickableMessage = 'Clickable phone and URL attributes';
-                await postChannelMessage(win, clickableMessage);
-                await openProfilePopoverFromLastPost(win, clickableMessage);
+                await postAndOpenProfilePopover(electronApp, entry, clickableMessage);
 
                 expect(await popoverLinkHasHref(win, TEST_PHONE, '^tel:')).toBe(true);
                 expect(await popoverLinkHasHref(win, TEST_URL, '^https:')).toBe(true);

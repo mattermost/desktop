@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
+import type {ElectronApplication} from 'playwright';
 
 import {
     pressPostTextboxKey,
@@ -9,7 +10,10 @@ import {
     waitForChannelPostListLoaded,
     waitForMattermostShellReady,
 } from './mattermostShell';
-import {activateServerView} from './serverContext';
+import {activateServerEntry, activateServerView} from './serverContext';
+import {closeDownloadsDropdownIfOpen} from './downloadsDropdown';
+import {closeOverlayWindowsIfOpen} from './overlayWindows';
+import type {ServerEntry} from './serverMap';
 import {ApiRequestError, apiLogin, apiRequest} from './server_api/client';
 import {resolveChannelByName} from './server_api/channel';
 import {getTestServerCredentials} from './server_api/credentials';
@@ -351,19 +355,19 @@ const POST_PROFILE_TRIGGER_SELECTORS = [
     '[data-testid="postHeaderProfile"]',
     '[data-testid="profilePicture"]',
     '.post__header button.user-popover',
-    '.user-popover',
+    '.post__header .user-popover',
     'a.user-popover',
     '.user-popover-profile-link',
-    '.post__header .user-popover',
-    '.post__header button',
-    '.post__header .cursor--pointer',
-    '.post__header a',
+    '.user-popover',
     '.profile-icon',
     'button[aria-label*="profile" i]',
 ];
 
 export async function dismissBlockingOverlays(win: ServerView): Promise<void> {
+    await closeDownloadsDropdownIfOpen(win.app);
+    await closeOverlayWindowsIfOpen(win.app);
     await activateServerView(win.app, win.webContentsId);
+    await win.keyboard.press('Escape').catch(() => undefined);
 }
 
 export async function postChannelMessage(
@@ -415,9 +419,11 @@ export async function openProfilePopoverFromLastPost(
     win: ServerView,
     messageHint?: string,
 ): Promise<void> {
-    await activateServerView(win.app, win.webContentsId);
+    const clickProfileTrigger = async (): Promise<boolean> => {
+        await dismissBlockingOverlays(win);
+        await waitForChannelPostListLoaded(win);
 
-    const clicked = await win.runInRenderer<boolean>(`
+        return win.runInRenderer<boolean>(`
         const messageHint = ${JSON.stringify(messageHint ?? '')};
         const triggerSelectors = ${JSON.stringify(POST_PROFILE_TRIGGER_SELECTORS)};
         const posts = Array.from(document.querySelectorAll('.post-list .post, .post-list__dynamic .post, [id^="post_"]'));
@@ -429,7 +435,9 @@ export async function openProfilePopoverFromLastPost(
                 }
             }
             const header = post.querySelector('.post__header');
-            const fallback = header?.querySelector('button, a, [role="button"]');
+            const fallback = header?.querySelector(
+                '.user-popover, a.user-popover, [data-testid="postHeaderProfile"], [data-testid="profilePicture"]',
+            );
             return fallback instanceof HTMLElement ? fallback : null;
         };
         const candidates = messageHint
@@ -447,10 +455,43 @@ export async function openProfilePopoverFromLastPost(
         }
         return false;
     `);
-    if (!clicked) {
-        throw new Error('Could not open profile popover from last post');
+    };
+
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+        if (await clickProfileTrigger()) {
+            try {
+                await win.waitForSelector(PROFILE_POPOVER_SELECTOR, {timeout: 5_000});
+                return;
+            } catch {
+                await dismissBlockingOverlays(win);
+            }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500));
     }
-    await win.waitForSelector(PROFILE_POPOVER_SELECTOR, {timeout: 15_000});
+
+    throw new Error('Could not open profile popover from last post');
+}
+
+export async function postAndOpenProfilePopover(
+    electronApp: ElectronApplication,
+    entry: ServerEntry,
+    message: string,
+    channelName = 'town-square',
+): Promise<void> {
+    await activateServerEntry(electronApp, entry);
+    await dismissBlockingOverlays(entry.win);
+
+    if (channelName === 'town-square') {
+        await navigateToTownSquare(entry.win);
+    } else {
+        await entry.win.click(`#sidebarItem_${channelName}`);
+        await waitForMattermostShellReady(entry.win, {channelItem: `#sidebarItem_${channelName}`});
+        await waitForChannelPostListLoaded(entry.win);
+    }
+
+    await postChannelMessage(entry.win, message, channelName);
+    await openProfilePopoverFromLastPost(entry.win, message);
 }
 
 export async function closeProfilePopover(win: ServerView): Promise<void> {

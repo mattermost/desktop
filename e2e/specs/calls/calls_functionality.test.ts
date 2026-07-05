@@ -164,8 +164,11 @@ test.describe('calls/calls_functionality', () => {
                     },
                 ).toBe(true);
             } catch {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
+                if (outcome === null) {
+                    test.skip(true, 'Calls plugin/widget not available on this test server');
+                    return;
+                }
+                throw new Error('/call start poll failed after detecting a Calls outcome');
             }
 
             if (outcome && (outcome as Outcome)!.kind === 'widget') {

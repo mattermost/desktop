@@ -58,6 +58,14 @@ test.describe('focus/app_switch', () => {
                 BrowserWindow.fromId(id)?.hide();
             }, mainWindowId as number);
 
+            await expect.poll(
+                () => electronApp.evaluate(({BrowserWindow}, id: number) => {
+                    const win = BrowserWindow.fromId(id);
+                    return Boolean(win && !win.isVisible());
+                }, mainWindowId as number),
+                {timeout: 10_000, message: 'Main window must become hidden before switching back'},
+            ).toBe(true);
+
             // Simulate switching back
             await electronApp.evaluate(({BrowserWindow}, id: number) => {
                 const win = BrowserWindow.fromId(id);

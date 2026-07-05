@@ -4,28 +4,56 @@
 import type {ElectronApplication} from 'playwright';
 
 /**
- * Close the downloads dropdown BrowserWindow if it is open.
- * Parallel download specs can leave this window focused and block other UI flows.
+ * Close the downloads dropdown BrowserWindow and embedded menu view if open.
+ * Parallel download specs can leave these focused and block other UI flows.
  */
+const hasDownloadsDropdownOpen = async (app: ElectronApplication): Promise<boolean> => {
+    return app.evaluate(({BrowserWindow}) => {
+        for (const win of BrowserWindow.getAllWindows()) {
+            if (win.isDestroyed()) {
+                continue;
+            }
+            try {
+                if (win.webContents.getURL().includes('downloadsDropdown')) {
+                    return true;
+                }
+            } catch {
+                // Ignore windows that disappear while iterating.
+            }
+        }
+        return false;
+    }).catch(() => false);
+};
+
 export async function closeDownloadsDropdownIfOpen(app: ElectronApplication): Promise<void> {
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
         try {
-            await app.evaluate(({BrowserWindow}) => {
+            const foundDropdown = await app.evaluate(({BrowserWindow, ipcMain}) => {
+                ipcMain.emit('close-downloads-dropdown-menu');
+                ipcMain.emit('close-downloads-dropdown');
+
+                let found = false;
                 for (const win of BrowserWindow.getAllWindows()) {
                     if (win.isDestroyed()) {
                         continue;
                     }
                     try {
-                        if (win.webContents.getURL().includes('downloadsDropdown.html')) {
+                        const url = win.webContents.getURL();
+                        if (url.includes('downloadsDropdown')) {
+                            found = true;
                             win.close();
                         }
                     } catch {
                         // Ignore windows that disappear while iterating.
                     }
                 }
+                return found;
             });
-            return;
+            if (!foundDropdown) {
+                return;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 100));
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             if (!message.includes('Execution context was destroyed')) {
@@ -35,5 +63,7 @@ export async function closeDownloadsDropdownIfOpen(app: ElectronApplication): Pr
         }
     }
 
-    throw new Error('Timed out closing downloads dropdown after navigation');
+    if (await hasDownloadsDropdownOpen(app)) {
+        throw new Error('Timed out closing downloads dropdown after navigation');
+    }
 }

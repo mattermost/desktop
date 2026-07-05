@@ -1,6 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// CommonJS is required here: GitHub Actions workflows load this file via
+// require() in actions/github-script, which does not support ES modules.
+
 const fs = require('fs');
 const path = require('path');
 const {createRequire} = require('module');
