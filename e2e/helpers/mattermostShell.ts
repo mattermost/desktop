@@ -120,9 +120,34 @@ export async function waitForChannelPostListLoaded(
 ): Promise<void> {
     const timeout = options?.timeout ?? 15_000;
     await expect.poll(
-        async () => win.evaluate(() => !document.querySelector(
-            '.post-list__loading, .post-list__dynamic-loading, .loading-screen',
-        )),
+        async () => win.evaluate(() => {
+            const isVisible = (element: Element | null | undefined) => {
+                if (!(element instanceof HTMLElement)) {
+                    return false;
+                }
+                const style = window.getComputedStyle(element);
+                return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+            };
+
+            const postList = document.querySelector(
+                '#post-list, .post-list, [data-testid="postList"], .post-list-holder',
+            );
+            if ([...(postList?.querySelectorAll('.post-list__loading, .post-list__dynamic-loading') ?? [])].some(isVisible)) {
+                return false;
+            }
+
+            const channelLoading = document.querySelector(
+                '#channelView .loading-screen, .channel-view .loading-screen, .ChannelLoader, .channel-loader',
+            );
+            if (isVisible(channelLoading)) {
+                return false;
+            }
+
+            return Boolean(
+                document.querySelector('#channelHeaderTitle, [data-testid="channelHeaderTitle"], .channel-header__title, [aria-label="channel header region"] strong')
+                && document.querySelector('[data-slate-editor="true"], #post_textbox, [data-testid="post_textbox"], [role="textbox"][contenteditable="true"]'),
+            );
+        }),
         {timeout, message: 'Channel post list must finish loading'},
     ).toBe(true);
 }

@@ -101,6 +101,27 @@ test.describe('file_menu/dropdown', () => {
         expect(settingsWindow).toBeDefined();
     });
 
+    test(
+        'MM-T1319 Sign in to Another Server — server name input should be focused',
+        {tag: ['@P2', '@all']},
+        async ({electronApp}) => {
+            const menuId = process.platform === 'darwin' ? 'app' : 'file';
+            const newServerWindowPromise = electronApp.waitForEvent('window', {
+                predicate: (window) => window.url().includes('newServer'),
+                timeout: 15_000,
+            });
+
+            await clickApplicationMenuItem(electronApp, menuId, {labelIncludes: 'Sign in'});
+
+            const newServerWindow = await newServerWindowPromise;
+            await newServerWindow.waitForLoadState();
+
+            await expect.poll(async () => {
+                return newServerWindow.evaluate(() => document.activeElement?.id ?? null);
+            }, {timeout: 10_000}).toBe('serverUrlInput');
+        },
+    );
+
     test('MM-T806 Exit in the Menu Bar', {tag: ['@P2', '@darwin']}, async ({electronApp, mainWindow}) => {
         if (process.platform !== 'darwin') {
             test.skip(true, 'macOS-only test');
@@ -118,26 +139,4 @@ test.describe('file_menu/dropdown', () => {
             return electronApp.windows().some((window) => window.url().includes('index'));
         }).toBe(false);
     });
-
-    test(
-        'MM-T1319 Sign in to Another Server — server name input should be focused',
-        {tag: ['@P2', '@all']},
-        async ({electronApp}) => {
-            const menuId = process.platform === 'darwin' ? 'app' : 'file';
-            const newServerWindowPromise = electronApp.waitForEvent('window', {
-                predicate: (window) => window.url().includes('newServer'),
-                timeout: 15_000,
-            });
-
-            await clickApplicationMenuItem(electronApp, menuId, {labelIncludes: 'Sign in'});
-
-            const newServerWindow = await newServerWindowPromise;
-            await newServerWindow.waitForLoadState();
-
-            const focusedElement = await newServerWindow.evaluate(() => {
-                return document.activeElement?.id ?? null;
-            });
-            expect(focusedElement, 'Server URL input must be focused after opening Sign in to Another Server').toBe('serverUrlInput');
-        },
-    );
 });

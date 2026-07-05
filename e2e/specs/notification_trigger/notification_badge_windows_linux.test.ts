@@ -271,6 +271,7 @@ test.describe('notification_badge/windows_and_linux', () => {
             }
 
             // setting defaults to falsy — do not enable it
+            await resetBadgeState(electronApp);
             await triggerBadge(electronApp, false, 0, true);
             const state = await getBadgeState(electronApp);
             expect(state).not.toBeNull();

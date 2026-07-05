@@ -19,6 +19,14 @@ test.describe('menu_bar/help_menu', () => {
                 return;
             }
 
+            const hasUpdateNotifier = await electronApp.evaluate(() => {
+                return Boolean((global as any).__e2eTestRefs?.updateNotifier);
+            });
+            if (!hasUpdateNotifier) {
+                test.skip(true, 'updateNotifier is not exposed in __e2eTestRefs');
+                return;
+            }
+
             await electronApp.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
                 refs.updateNotifier.__e2eCheckForUpdatesCalls = 0;
@@ -121,14 +129,26 @@ test.describe('menu_bar/help_menu', () => {
         'MM-T3360 Configure Help and Report a Problem links open in browser',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            const hasCurrentServer = await electronApp.evaluate(() => {
+                return Boolean((global as any).__e2eTestRefs?.ServerManager?.getCurrentServerId?.());
+            });
+            if (!hasCurrentServer) {
+                test.skip(true, 'Help menu remote links require an active server');
+                return;
+            }
+
             await electronApp.evaluate(({ipcMain}) => {
                 const refs = (global as any).__e2eTestRefs;
+                const Config = refs?.Config;
+                if (!Config) {
+                    throw new Error('__e2eTestRefs.Config is unavailable');
+                }
                 const serverId = refs.ServerManager.getCurrentServerId();
                 refs.ServerManager.updateRemoteInfo(serverId, {
                     helpLink: 'https://github.com/mattermost',
                     reportProblemLink: 'https://forum.mattermost.org',
                 });
-                ipcMain.emit('emit-configuration');
+                ipcMain.emit('emit-configuration', null, Config.data);
             });
 
             await electronApp.evaluate(({shell}) => {

@@ -8,6 +8,8 @@ import {clickApplicationMenuItem} from '../../helpers/menu';
 import {waitForMattermostShell} from '../../helpers/mattermostShell';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 
+const SEARCH_INPUT = 'input.search-bar.form-control';
+
 test.describe('search_box/search_box', () => {
     test.use({appConfig: demoMattermostConfig});
 
@@ -23,21 +25,25 @@ test.describe('search_box/search_box', () => {
             await loginToMattermost(serverWin);
             await waitForMattermostShell(serverWin);
 
-            await clickApplicationMenuItem(
-                electronApp,
-                'view',
-                {accelerator: process.platform === 'darwin' ? 'Cmd+F' : 'Ctrl+F'},
-                {webContentsId: serverEntry.webContentsId},
-            );
+            if (process.platform === 'darwin') {
+                await serverWin.keyboard.press('Meta+f');
+            } else {
+                await clickApplicationMenuItem(
+                    electronApp,
+                    'view',
+                    {accelerator: 'CmdOrCtrl+F'},
+                    {webContentsId: serverEntry.webContentsId},
+                );
+            }
 
-            await serverWin.waitForSelector('#searchBox', {timeout: 15_000});
-            await serverWin.fill('#searchBox', 'hello');
-            await serverWin.click('#searchBox');
+            await serverWin.waitForSelector(SEARCH_INPUT, {timeout: 15_000});
+            await serverWin.fill(SEARCH_INPUT, 'hello');
+            await serverWin.click(SEARCH_INPUT);
             await serverWin.keyboard.press('ArrowLeft');
             await serverWin.keyboard.press('ArrowLeft');
             await serverWin.keyboard.press('Backspace');
 
-            expect(await serverWin.inputValue('#searchBox')).toBe('helo');
+            expect(await serverWin.inputValue(SEARCH_INPUT)).toBe('helo');
         },
     );
 });

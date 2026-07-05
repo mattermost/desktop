@@ -10,7 +10,11 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
-import {clickApplicationMenuItem} from '../../helpers/menu';
+import {
+    closeAllPopouts,
+    closePopoutWindow,
+    openPopoutWindow,
+} from '../../helpers/popoutWindow';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const config = {
@@ -33,103 +37,6 @@ async function getMattermostServer() {
     return mmServer!;
 }
 
-async function openPopoutWindow() {
-    await mainWindow.bringToFront().catch(() => {});
-
-    const popoutTimeout = process.platform === 'linux' ? 45_000 : 30_000;
-
-    // Filter on popout.html rather than accepting the first 'window' event:
-    // PopoutManager attaches a separate LoadingScreen WebContentsView (its own
-    // loadingScreen.html) to the same BrowserWindow before the real content
-    // view loads popout.html (src/app/views/loadingScreen.ts), so the first
-    // 'window' event can be the loading screen, not the popout content. The
-    // predicate is re-evaluated on every 'window' event (not just the first),
-    // so it correctly waits for the later event whose URL actually matches —
-    // confirmed via CI: removing this predicate broke the test (the loading
-    // screen page's URL never becomes popout.html, since it's a different
-    // WebContents entirely), so it's a genuine requirement, not just a
-    // theoretical race.
-    const windowPromise = electronApp.waitForEvent('window', {
-        timeout: popoutTimeout,
-        predicate: (page) => {
-            try {
-                return page.url().includes('popout.html');
-            } catch {
-                return false;
-            }
-        },
-    });
-
-    // Trigger through the real File → New Window menu item (which calls
-    // PopoutManager.createNewWindow for the current server) so the
-    // menu → popout wiring stays covered, rather than calling the manager directly.
-    await clickApplicationMenuItem(electronApp, 'file', {label: 'New Window'});
-
-    const popout = await windowPromise;
-    await popout.waitForLoadState('domcontentloaded').catch(() => {});
-    return popout;
-}
-
-async function closePopoutWindow(popoutWindow: import('playwright').Page, waitForAllClosed = true) {
-    const browserWindow = await electronApp.browserWindow(popoutWindow);
-    const closeTimeout = process.platform === 'linux' ? 5_000 : 15_000;
-    await Promise.all([
-        popoutWindow.waitForEvent('close', {timeout: closeTimeout}),
-        browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close()),
-    ]).catch(async () => {
-        await browserWindow.evaluate((w) => {
-            if (!(w as Electron.BrowserWindow).isDestroyed()) {
-                (w as Electron.BrowserWindow).destroy();
-            }
-        }).catch(() => {});
-    });
-
-    if (!waitForAllClosed) {
-        return;
-    }
-
-    await expect.poll(() => {
-        return electronApp.windows().filter((window) => {
-            try {
-                return window.url().includes('popout.html');
-            } catch {
-                return false;
-            }
-        }).length;
-    }, {timeout: 10_000}).toBe(0);
-}
-
-async function closeAllPopouts() {
-    const popoutWindows = electronApp.windows().filter((window) => {
-        try {
-            return window.url().includes('popout.html');
-        } catch {
-            return false;
-        }
-    });
-
-    // Close every window first without waiting for the full count to reach 0
-    // per-window — with multiple popouts open, waiting inside each call added
-    // up to a 10s timeout per extra window. Poll for the batch once instead.
-    for (const popout of popoutWindows) {
-        await closePopoutWindow(popout, false).catch(() => {});
-    }
-
-    if (popoutWindows.length === 0) {
-        return;
-    }
-
-    await expect.poll(() => {
-        return electronApp.windows().filter((window) => {
-            try {
-                return window.url().includes('popout.html');
-            } catch {
-                return false;
-            }
-        }).length;
-    }, {timeout: 10_000}).toBe(0);
-}
-
 test.describe('server_management/popout_windows', () => {
     test.describe.configure({mode: 'serial'});
     test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
@@ -144,7 +51,7 @@ test.describe('server_management/popout_windows', () => {
     });
 
     test.beforeEach(async () => {
-        await closeAllPopouts();
+        await closeAllPopouts(electronApp);
         const mmServer = await getMattermostServer();
         await mmServer.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
         await mmServer.click('#sidebarItem_town-square').catch(() => {});
@@ -157,13 +64,13 @@ test.describe('server_management/popout_windows', () => {
 
     test.describe('MM-TXXXX popout window functionality', () => {
         test('MM-TXXXX_1 should create a new popout window', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
             expect(popoutWindow).toBeDefined();
             expect(electronApp.windows().filter((w) => w.url().includes('popout.html')).length).toBe(1);
         });
 
         test('MM-TXXXX_2 should allow resizing the popout window', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
             const browserWindow = await electronApp.browserWindow(popoutWindow);
             const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
@@ -186,7 +93,7 @@ test.describe('server_management/popout_windows', () => {
         });
 
         test('MM-TXXXX_3 should allow moving the popout window', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
             const browserWindow = await electronApp.browserWindow(popoutWindow);
             const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
@@ -211,8 +118,8 @@ test.describe('server_management/popout_windows', () => {
         });
 
         test('MM-TXXXX_4 should close the popout window using close button', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
-            await closePopoutWindow(popoutWindow);
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
+            await closePopoutWindow(electronApp, popoutWindow);
         });
 
         // NOTE: there is intentionally no "close popout windows when main window is
@@ -223,7 +130,7 @@ test.describe('server_management/popout_windows', () => {
 
     test.describe('MM-T4411 popout window content functionality', () => {
         test('MM-T4411_1 should display the same server content in popout window', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
 
             const mainWindowTitle = await mainWindow.title();
             const popoutWindowTitle = await popoutWindow.title();
@@ -237,7 +144,7 @@ test.describe('server_management/popout_windows', () => {
             await mainView.waitForSelector('#sidebarItem_off-topic');
             await mainView.click('#sidebarItem_off-topic');
 
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
             expect(popoutWindow).toBeDefined();
 
             const mainTabText = await mainWindow.innerText('.TabBar li.serverTabItem.active');

@@ -70,29 +70,7 @@ test.describe('history_menu', () => {
                 {timeout: 10_000},
             ).toBe('Town Square');
 
-            const clicked = await electronApp.evaluate(({Menu}) => {
-                const root = Menu.getApplicationMenu();
-                if (!root) {
-                    return false;
-                }
-                const stack = [...root.items];
-                while (stack.length) {
-                    const item = stack.shift()!;
-                    if (item.label === '&History' || item.label === 'History') {
-                        const backItem = item.submenu?.items?.find(
-                            (sub: any) => sub.label === 'Back',
-                        );
-                        if (backItem) {
-                            backItem.click();
-                            return true;
-                        }
-                    }
-                    if (item.submenu) {
-                        stack.push(...item.submenu.items);
-                    }
-                }
-                return false;
-            });
+            const clicked = await clickHistoryMenuItem(electronApp, 'Back').then(() => true).catch(() => false);
             expect(clicked, 'History → Back menu item must exist and be clickable').toBe(true);
 
             await expect.poll(

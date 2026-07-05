@@ -20,13 +20,37 @@ export async function openSettingsFromTray(app: ElectronApplication) {
         predicate: (window) => window.url().includes('settings'),
         timeout: 15_000,
     });
-    await clickTrayMenuItem(app, traySettingsMenuLabel());
+
+    const labels = process.platform === 'darwin' ?
+        ['Preferences...', 'Preferences'] :
+        ['Settings', '&Settings'];
+    let clicked = false;
+    for (const label of labels) {
+        try {
+            await clickTrayMenuItem(app, label);
+            clicked = true;
+            break;
+        } catch {
+            // try next label variant
+        }
+    }
+    if (!clicked) {
+        await clickTrayMenuItem(app, traySettingsMenuLabel());
+    }
+
     const settingsWindow = await windowPromise;
     await settingsWindow.waitForLoadState();
     return settingsWindow;
 }
 
 export async function clickTrayQuit(app: ElectronApplication): Promise<void> {
+    try {
+        await clickTrayMenuItem(app, 'role:quit');
+        return;
+    } catch {
+        // Fall back to localized quit labels below.
+    }
+
     let quitLabels: string[];
     if (process.platform === 'win32') {
         quitLabels = ['Exit', 'Quit'];

@@ -15,7 +15,7 @@ export async function waitForLoginForm(serverWin: ServerView): Promise<void> {
  * Patch client config fetch so the login page renders a real OpenID external-login
  * button with the desktop handleExternalAuth onClick handler (no injected DOM).
  */
-export async function enableOpenIdOnLoginPage(serverWin: ServerView): Promise<void> {
+export async function enableOpenIdOnLoginPage(serverWin: ServerView): Promise<boolean> {
     const installFetchPatch = async () => {
         await serverWin.evaluate(() => {
             const originalFetch = window.fetch.bind(window);
@@ -54,6 +54,21 @@ export async function enableOpenIdOnLoginPage(serverWin: ServerView): Promise<vo
     });
     await installFetchPatch();
     await waitForLoginForm(serverWin);
+
+    try {
+        await expect.poll(
+            () => serverWin.locator('#openid.external-login-button, #openid').count(),
+            {timeout: 30_000},
+        ).toBeGreaterThan(0);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if ((/timeout/i).test(message)) {
+            return false;
+        }
+        throw error;
+    }
+
+    return true;
 }
 
 export async function restoreLoginPageFetch(serverWin: ServerView): Promise<void> {

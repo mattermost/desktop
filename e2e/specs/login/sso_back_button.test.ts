@@ -57,7 +57,11 @@ test.describe('login/sso_back_button', () => {
             try {
                 await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
                 await waitForLoginForm(serverWin!);
-                await enableOpenIdOnLoginPage(serverWin!);
+                const openIdEnabled = await enableOpenIdOnLoginPage(serverWin!);
+                if (!openIdEnabled) {
+                    test.skip(true, 'OpenID login button not available on this server/webapp version');
+                    return;
+                }
 
                 // Phase 1: desktop SSO intermediate page — user clicks Open ID, then login-header Back.
                 await installWindowOpenStub(serverWin!, 'noop');

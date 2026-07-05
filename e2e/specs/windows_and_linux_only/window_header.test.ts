@@ -7,8 +7,12 @@ test.describe('windows_and_linux_only/window_header', () => {
     test(
         'MM-T3400 Default OS window header (Win 7, Linux)',
         {tag: ['@P2', '@linux', '@win32']},
-        async ({mainWindow}) => {
-            await expect(mainWindow.locator('.app-title')).toBeVisible();
+        async ({electronApp, mainWindow}) => {
+            const runtimeAppName = await electronApp.evaluate(({app}) => app.getName());
+            await expect.poll(
+                async () => mainWindow.innerText('.app-title'),
+                {timeout: 10_000},
+            ).toBe(runtimeAppName);
         },
     );
 });

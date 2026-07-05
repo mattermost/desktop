@@ -1,8 +1,18 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {expect} from '@playwright/test';
+
+import {
+    pressPostTextboxKey,
+    typeIntoPostTextbox,
+    waitForChannelPostListLoaded,
+    waitForMattermostShellReady,
+} from './mattermostShell';
 import {ApiRequestError, apiLogin, apiRequest} from './server_api/client';
+import {resolveChannelByName} from './server_api/channel';
 import {getTestServerCredentials} from './server_api/credentials';
+import {apiCreatePost} from './server_api/post';
 import type {ServerView} from './serverView';
 
 export type UserPropertyField = {
@@ -118,11 +128,38 @@ export async function updateCustomProfileAttributeValues(
     });
 }
 
+export async function navigateToTownSquare(win: ServerView): Promise<void> {
+    const onTownSquare = await win.runInRenderer<boolean>(`
+        const item = document.querySelector('#sidebarItem_town-square');
+        return Boolean(item?.classList.contains('active') || item?.classList.contains('active-link') || item?.getAttribute('aria-current') === 'page');
+    `);
+    if (!onTownSquare) {
+        await win.click('#sidebarItem_town-square');
+    }
+    await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
+    await waitForChannelPostListLoaded(win);
+}
+
+const PROFILE_SETTINGS_MODAL_SELECTOR = [
+    '#accountSettingsModal',
+    '#userAccountModal',
+    '.AccountModal',
+    '.SettingsModal',
+    '[data-testid="userSettingsModal"]',
+    '[data-testid="accountSettingsModal"]',
+].join(', ');
+
+const PROFILE_SETTINGS_BODY_SELECTOR = [
+    '.user-settings',
+    '.UserSettingsModal',
+    '#userAccountModal_body',
+    '[data-testid="userSettingsModalBody"]',
+    '[data-testid="accountSettingsModalBody"]',
+].join(', ');
+
 export async function openProfileSettings(win: ServerView): Promise<void> {
     const opened = await win.runInRenderer<boolean>(`
-        const menuBtn = document.querySelector('#userAccountMenuButton')
-            || document.querySelector('.userAccountMenuButton')
-            || document.querySelector('button[aria-label*="Account" i]');
+        const menuBtn = document.querySelector('#userAccountMenuButton');
         if (!menuBtn) {
             return false;
         }
@@ -133,41 +170,69 @@ export async function openProfileSettings(win: ServerView): Promise<void> {
         throw new Error('Could not open user account menu');
     }
 
-    await win.waitForSelector('#userAccountModal, .AccountModal', {timeout: 15_000});
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     await win.runInRenderer<void>(`
-        const modal = document.querySelector('#userAccountModal, .AccountModal');
+        const profileEntry = Array.from(document.querySelectorAll('[role="menuitem"], .MenuItem'))
+            .find((element) => /^profile$/i.test((element.textContent || '').trim()));
+        if (!(profileEntry instanceof HTMLElement)) {
+            throw new Error('Profile menu item not found');
+        }
+        profileEntry.click();
+    `);
+
+    await win.waitForSelector(PROFILE_SETTINGS_MODAL_SELECTOR, {timeout: 15_000});
+
+    await win.runInRenderer<void>(`
+        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)});
         if (!modal) {
             return;
         }
-        const profileControl = Array.from(modal.querySelectorAll('button, a, [role="tab"], .SettingsModal__tab'))
-            .find((element) => /^profile$/i.test((element.textContent || '').trim()));
-        if (profileControl) {
-            profileControl.click();
+        const profileSettingsNav = Array.from(modal.querySelectorAll('a, button, [role="tab"], [role="menuitem"]'))
+            .find((element) => /profile settings/i.test((element.textContent || '').trim()));
+        if (profileSettingsNav instanceof HTMLElement) {
+            profileSettingsNav.click();
         }
     `);
 
-    await win.waitForSelector('.user-settings, #userAccountModal_body', {timeout: 15_000});
+    await win.waitForSelector(PROFILE_SETTINGS_BODY_SELECTOR, {timeout: 15_000});
 }
 
 export async function closeProfileSettings(win: ServerView): Promise<void> {
     await win.runInRenderer<void>(`
-        const modal = document.querySelector('#userAccountModal, .AccountModal');
+        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)});
         if (!modal) {
             return;
         }
-        const closeBtn = modal.querySelector('.modal-header button.close')
-            || modal.querySelector('[aria-label="Close"]')
-            || modal.querySelector('button.btn-tertiary');
+        const closeBtn = modal.querySelector('.modal-header button.close, button[aria-label="Close"], button.btn-icon-close');
         closeBtn?.click();
     `);
     await win.keyboard.press('Escape').catch(() => undefined);
-    await win.waitForSelector('#userAccountModal, .AccountModal', {state: 'hidden', timeout: 5_000}).catch(() => undefined);
+    await win.waitForSelector(PROFILE_SETTINGS_MODAL_SELECTOR, {state: 'hidden', timeout: 5_000}).catch(() => undefined);
+}
+
+export async function recoverFromProfileSettings(win: ServerView): Promise<void> {
+    await closeProfileSettings(win).catch(() => undefined);
+    const hasSidebar = await win.runInRenderer<boolean>(`
+        return Boolean(document.querySelector('#sidebarItem_town-square'));
+    `);
+    if (hasSidebar) {
+        await navigateToTownSquare(win);
+        return;
+    }
+
+    const channel = await resolveChannelByName('town-square');
+    await win.runInRenderer<void>(`
+        window.location.assign(${JSON.stringify(channel.url)});
+    `);
+    await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
+    await waitForChannelPostListLoaded(win);
 }
 
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
     return win.runInRenderer<string[]>(`
-        const modal = document.querySelector('#userAccountModal, .AccountModal');
+        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
+            || document.querySelector('.user-settings');
         if (!modal) {
             return [];
         }
@@ -179,15 +244,18 @@ export async function getCustomAttributeLabelsInSettings(win: ServerView): Promi
                 continue;
             }
             const fieldId = match[1];
-            const section = button.closest('.setting-list-item, .settings-block, section, div');
-            const label = section?.querySelector('label, .form__label, .setting-list-item__label, h3, h4');
-            if (label?.textContent) {
-                labels.push(label.textContent.trim());
-                continue;
-            }
             const nameEl = modal.querySelector('[for="customAttribute_' + fieldId + '"]');
             if (nameEl?.textContent) {
                 labels.push(nameEl.textContent.trim());
+                continue;
+            }
+            const row = button.closest('.setting-list-item, .SettingsBlock, section, li, div');
+            const rowText = (row?.textContent || '')
+                .replace(/Edit.*$/s, '')
+                .replace(/Click 'Edit' to add your custom attribute/gi, '')
+                .trim();
+            if (rowText) {
+                labels.push(rowText);
             }
         }
         return labels;
@@ -228,69 +296,157 @@ export async function editTextCustomAttribute(
     }
 }
 
-export async function cancelCustomAttributeEdit(win: ServerView): Promise<void> {
-    await win.click('button:has-text("Cancel")');
+export async function cancelCustomAttributeEdit(win: ServerView, fieldId?: string): Promise<void> {
+    await win.runInRenderer<void>(`
+        const modal = document.querySelector('#accountSettingsModal, .user-settings, #userAccountModal, .AccountModal');
+        const scope = modal || document;
+        const cancelBtn = Array.from(scope.querySelectorAll('button'))
+            .find((button) => (button.textContent || '').trim() === 'Cancel');
+        cancelBtn?.click();
+    `);
+    if (fieldId) {
+        await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
+    }
 }
 
 export async function getCustomAttributeInputValue(win: ServerView, fieldId: string): Promise<string> {
     return win.runInRenderer<string>(`
         const fieldId = ${JSON.stringify(fieldId)};
+        const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
         const input = document.querySelector('#customAttribute_' + fieldId);
-        if (!input) {
-            return '';
-        }
-        if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+        const editVisible = Boolean(editBtn && editBtn.getBoundingClientRect().width > 0);
+        if (!editVisible && input instanceof HTMLInputElement) {
             return input.value;
         }
-        return input.textContent || '';
+        if (!editBtn) {
+            return input instanceof HTMLInputElement ? input.value : '';
+        }
+        const row = editBtn.closest('.setting-list-item, .SettingsBlock, section, li, div');
+        if (!row) {
+            return '';
+        }
+        let text = row.textContent || '';
+        const labelEl = row.querySelector('label, .form__label, .setting-list-item__label, h4, h5, strong');
+        const label = labelEl?.textContent?.trim() || '';
+        if (label) {
+            text = text.replace(label, '');
+        }
+        return text
+            .replace(/Edit.*$/s, '')
+            .replace(/Click 'Edit' to add your custom attribute/gi, '')
+            .trim();
     `);
 }
 
-export async function postChannelMessage(win: ServerView, message: string): Promise<void> {
-    await win.runInRenderer<boolean>(`
-        const candidates = [
-            '#post_textbox',
-            '[data-testid="post_textbox"]',
-            '[data-slate-editor="true"]',
-            '.post-create__input [contenteditable="true"]',
-        ];
-        for (const selector of candidates) {
-            const element = document.querySelector(selector);
-            if (element) {
-                element.scrollIntoView({block: 'center'});
-                element.focus?.();
-                return true;
+const PROFILE_POPOVER_SELECTOR = [
+    '#user-profile-popover',
+    '.user-profile-popover',
+    '.profile-popover',
+    '[data-testid="userProfilePopover"]',
+    '[role="tooltip"].popover',
+].join(', ');
+
+const POST_PROFILE_TRIGGER_SELECTORS = [
+    '[data-testid="postHeaderProfile"]',
+    '[data-testid="profilePicture"]',
+    '.user-popover',
+    'a.user-popover',
+    '.user-popover-profile-link',
+    '.post__header .user-popover',
+    '.post__header button',
+    '.post__header .cursor--pointer',
+    '.post__header a',
+    '.profile-icon',
+];
+
+export async function dismissBlockingOverlays(win: ServerView): Promise<void> {
+    await win.keyboard.press('Escape').catch(() => undefined);
+    await win.runInRenderer<void>(`
+        document.querySelector('.download-dropdown, .DownloadsDropdown, [data-testid="downloadDropdown"] button.close')
+            ?.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+    `).catch(() => undefined);
+}
+
+export async function postChannelMessage(
+    win: ServerView,
+    message: string,
+    channelName = 'town-square',
+): Promise<void> {
+    await dismissBlockingOverlays(win);
+
+    const channel = await resolveChannelByName(channelName);
+    const onChannel = await win.runInRenderer<boolean>(`
+        return window.location.pathname.includes('/channels/${channelName}');
+    `);
+    if (!onChannel) {
+        await win.click(`#sidebarItem_${channelName}`);
+        await waitForMattermostShellReady(win, {channelItem: `#sidebarItem_${channelName}`});
+    }
+
+    try {
+        await typeIntoPostTextbox(win, message);
+        const sent = await win.runInRenderer<boolean>(`
+            const sendButton = document.querySelector(
+                '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"]',
+            );
+            if (!sendButton) {
+                return false;
+            }
+            sendButton.click();
+            return true;
+        `);
+        if (!sent) {
+            await pressPostTextboxKey(win, 'Enter');
+        }
+    } catch {
+        await apiCreatePost(channel.id, message);
+    }
+
+    await expect.poll(
+        async () => win.runInRenderer<boolean>(`
+            const message = ${JSON.stringify(message)};
+            return Array.from(document.querySelectorAll('.post-message__text, .post__body, .post'))
+                .some((element) => (element.textContent || '').includes(message));
+        `),
+        {timeout: 20_000, message: 'Posted message must appear in channel'},
+    ).toBe(true);
+}
+
+export async function openProfilePopoverFromLastPost(win: ServerView, messageHint?: string): Promise<void> {
+    const clicked = await win.runInRenderer<boolean>(`
+        const messageHint = ${JSON.stringify(messageHint ?? '')};
+        const triggerSelectors = ${JSON.stringify(POST_PROFILE_TRIGGER_SELECTORS)};
+        const posts = Array.from(document.querySelectorAll('.post-list .post, .post-list__dynamic .post, [id^="post_"]'));
+        let targetPosts = posts;
+        if (messageHint) {
+            const matching = posts.filter((post) => (post.textContent || '').includes(messageHint));
+            if (matching.length > 0) {
+                targetPosts = matching;
             }
         }
-        return false;
-    `);
-    await win.keyboard.type(message);
-    await win.keyboard.press('Enter');
-    await win.waitForSelector('.post-list .post, [id^="post_"]', {timeout: 15_000});
-}
-
-export async function openProfilePopoverFromLastPost(win: ServerView): Promise<void> {
-    const clicked = await win.runInRenderer<boolean>(`
-        const posts = document.querySelectorAll('.post-list .post, .post-list__dynamic .post, [id^="post_"]');
-        const lastPost = posts[posts.length - 1];
+        const lastPost = targetPosts[targetPosts.length - 1];
         if (!lastPost) {
             return false;
         }
-        const trigger = lastPost.querySelector('.user-popover, .profile-icon, a.user-popover, .post__header .user-popover')
-            || lastPost.querySelector('.post__header a');
-        if (!trigger) {
-            return false;
+        for (const selector of triggerSelectors) {
+            const trigger = lastPost.querySelector(selector);
+            if (trigger instanceof HTMLElement) {
+                trigger.click();
+                return true;
+            }
         }
-        trigger.click();
-        return true;
+        const header = lastPost.querySelector('.post__header');
+        const fallback = header?.querySelector('button, a, [role="button"]');
+        if (fallback instanceof HTMLElement) {
+            fallback.click();
+            return true;
+        }
+        return false;
     `);
     if (!clicked) {
         throw new Error('Could not open profile popover from last post');
     }
-    await win.waitForSelector(
-        '#user-profile-popover, .user-profile-popover, .profile-popover, [role="tooltip"].popover',
-        {timeout: 15_000},
-    );
+    await win.waitForSelector(PROFILE_POPOVER_SELECTOR, {timeout: 15_000});
 }
 
 export async function closeProfilePopover(win: ServerView): Promise<void> {
@@ -300,7 +456,7 @@ export async function closeProfilePopover(win: ServerView): Promise<void> {
 
 export async function popoverContainsText(win: ServerView, text: string): Promise<boolean> {
     return win.runInRenderer<boolean>(`
-        const popover = document.querySelector('#user-profile-popover, .user-profile-popover, .profile-popover');
+        const popover = document.querySelector(${JSON.stringify(PROFILE_POPOVER_SELECTOR)});
         if (!popover) {
             return false;
         }

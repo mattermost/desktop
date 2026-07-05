@@ -6,18 +6,37 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
+import {channelPathname, modifierClickSidebarChannel, navigateViewToChannel} from '../../helpers/channelNavigation';
 import {openChannelHeaderMenu, openSidebarChannelMenu} from '../../helpers/channelMenu';
 import {demoMattermostConfig} from '../../helpers/config';
+import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
-import {clickApplicationMenuItem} from '../../helpers/menu';
-import {POST_TEXTBOX_SELECTOR, waitForMattermostShell} from '../../helpers/mattermostShell';
+import {waitForMainWindowFocused} from '../../helpers/mainWindowFocus';
+import {POST_TEXTBOX_SELECTOR, waitForChannelPostListLoaded, waitForMattermostShell, waitForMattermostShellReady} from '../../helpers/mattermostShell';
+import {
+    closeAllPopouts,
+    closePopoutWindow,
+    getPopoutServerView,
+    getWindowTypeView,
+    openChannelInNewWindow,
+    openPopoutViaFileMenu,
+    openRhsPopoutViaDesktopApi,
+    popoutWindowCount,
+    resetTabsAndPopouts,
+    waitForPopoutWindow,
+    waitForPopoutWindowEvent,
+} from '../../helpers/popoutWindow';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
-import {resolveChannelByName} from '../../helpers/server_api/channel';
+import {resolvedChannelPath, resolveChannelByName} from '../../helpers/server_api/channel';
+import {seedThreadInChannel} from '../../helpers/server_api/post';
 import {buildServerMap} from '../../helpers/serverMap';
-import {getMainWindowId} from '../../helpers/testRefs';
-import type {ServerView} from '../../helpers/serverView';
+import {
+    clickOpenInNewWindowFromRhsThreadMenu,
+    clickOpenInNewWindowFromThreadsListMenu,
+    clickOpenInNewWindowMenuItem,
+} from '../../helpers/webappMenu';
 import {NOTIFICATION_CLICKED} from '../../../src/common/communication';
 
 const config = {
@@ -40,289 +59,6 @@ async function getMattermostServer() {
     return mmServer!;
 }
 
-async function getServerId() {
-    return electronApp.evaluate(() => {
-        const refs = (global as any).__e2eTestRefs;
-        return refs?.ServerManager?.getCurrentServerId?.() as string | undefined;
-    });
-}
-
-function popoutWindowCount() {
-    return electronApp.windows().filter((window) => {
-        try {
-            return window.url().includes('popout.html');
-        } catch {
-            return false;
-        }
-    }).length;
-}
-
-async function waitForPopoutWindow(extraCount = 1) {
-    const popoutTimeout = process.platform === 'linux' ? 45_000 : 30_000;
-    const baseline = popoutWindowCount();
-
-    await expect.poll(() => popoutWindowCount(), {
-        timeout: popoutTimeout,
-        message: 'Popout BrowserWindow must appear',
-    }).toBe(baseline + extraCount);
-
-    const popouts = electronApp.windows().filter((window) => {
-        try {
-            return window.url().includes('popout.html');
-        } catch {
-            return false;
-        }
-    });
-    return popouts[popouts.length - 1]!;
-}
-
-async function waitForPopoutWindowEvent() {
-    const popoutTimeout = process.platform === 'linux' ? 45_000 : 30_000;
-    return electronApp.waitForEvent('window', {
-        timeout: popoutTimeout,
-        predicate: (page) => {
-            try {
-                return page.url().includes('popout.html');
-            } catch {
-                return false;
-            }
-        },
-    });
-}
-
-async function openPopoutViaFileMenu() {
-    await mainWindow.bringToFront().catch(() => {});
-    const windowPromise = waitForPopoutWindowEvent();
-    await clickApplicationMenuItem(electronApp, 'file', {label: 'New Window'});
-    const popout = await windowPromise;
-    await popout.waitForLoadState('domcontentloaded').catch(() => {});
-    return popout;
-}
-
-async function openChannelInNewWindow(channelPath: string) {
-    const windowPromise = waitForPopoutWindowEvent();
-    const created = await electronApp.evaluate((_, initialPath) => {
-        const refs = (global as any).__e2eTestRefs;
-        const serverId = refs?.ServerManager?.getCurrentServerId?.();
-        const server = serverId ? refs.ServerManager.getServer(serverId) : undefined;
-        if (!server) {
-            return false;
-        }
-        const view = refs.ViewManager.createView(server, 'window', initialPath);
-        return Boolean(view);
-    }, channelPath);
-    expect(created, 'ViewManager must create a window-type view').toBe(true);
-    const popout = await windowPromise;
-    await popout.waitForLoadState('domcontentloaded').catch(() => {});
-    return popout;
-}
-
-async function getWindowTypeView() {
-    const serverId = await getServerId();
-    expect(serverId).toBeTruthy();
-
-    let windowView: {viewId: string; webContentsId: number | null} | null = null;
-    await expect.poll(async () => {
-        windowView = await electronApp.evaluate((_, sid) => {
-            const refs = (global as any).__e2eTestRefs;
-            const windowViews = refs.ViewManager.getViewsByServerId(sid).
-                filter((view: {type: string}) => view.type === 'window');
-            const latest = windowViews[windowViews.length - 1];
-            if (!latest) {
-                return null;
-            }
-            const wcView = refs.WebContentsManager.getView(latest.id);
-            return {
-                viewId: latest.id,
-                webContentsId: wcView?.webContentsId ?? null,
-            };
-        }, serverId!);
-        return windowView;
-    }, {timeout: 30_000, message: 'Window-type view must register in ViewManager'}).not.toBeNull();
-
-    return windowView!;
-}
-
-async function getPopoutServerView(): Promise<ServerView> {
-    const serverId = await getServerId();
-    expect(serverId).toBeTruthy();
-
-    let webContentsId: number | null = null;
-    await expect.poll(async () => {
-        const entries = await electronApp.evaluate((_, sid) => {
-            const refs = (global as any).__e2eTestRefs;
-            return refs.ViewManager.getViewsByServerId(sid).
-                filter((view: {type: string}) => view.type === 'window').
-                map((view: {id: string}) => {
-                    const wcView = refs.WebContentsManager.getView(view.id);
-                    return wcView?.webContentsId ?? null;
-                }).
-                filter(Boolean);
-        }, serverId!);
-        webContentsId = (entries as number[])[(entries as number[]).length - 1] ?? null;
-        return webContentsId;
-    }, {timeout: 30_000, message: 'Popout server view webContents must register'}).not.toBeNull();
-
-    const {ServerView: ServerViewClass} = await import('../../helpers/serverView');
-    return new ServerViewClass(electronApp, webContentsId!);
-}
-
-async function clickOpenInNewWindowMenuItem(win: ServerView): Promise<boolean> {
-    return win.runInRenderer<boolean>(`
-        const items = Array.from(document.querySelectorAll(
-            '[role="menuitem"], .MenuItem, button, a',
-        ));
-        const target = items.find((item) => /open in new window/i.test((item.textContent || '').trim()));
-        if (!target) {
-            return false;
-        }
-        target.click();
-        return true;
-    `, true);
-}
-
-async function modifierClickSidebarChannel(win: ServerView, channelSelector: string) {
-    await win.waitForSelector(channelSelector, {timeout: 15_000});
-    const point = await win.runInRenderer<{x: number; y: number} | null>(`
-        const el = document.querySelector(${JSON.stringify(channelSelector)});
-        if (!el) {
-            return null;
-        }
-        el.scrollIntoView({block: 'center', inline: 'center'});
-        const rect = el.getBoundingClientRect();
-        return {
-            x: Math.round(rect.left + (rect.width / 2)),
-            y: Math.round(rect.top + (rect.height / 2)),
-        };
-    `, true);
-    expect(point, `Channel sidebar item must exist: ${channelSelector}`).toBeTruthy();
-
-    const modifier: 'meta' | 'control' = process.platform === 'darwin' ? 'meta' : 'control';
-    await electronApp.evaluate(({webContents}, payload: {id: number; x: number; y: number; modifier: 'meta' | 'control'}) => {
-        const wc = webContents.fromId(payload.id);
-        if (!wc || wc.isDestroyed()) {
-            throw new Error(`webContents ${payload.id} is not available`);
-        }
-        wc.focus();
-        wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
-        wc.sendInputEvent({
-            type: 'mouseDown',
-            x: payload.x,
-            y: payload.y,
-            button: 'left',
-            clickCount: 1,
-            modifiers: [payload.modifier],
-        });
-        wc.sendInputEvent({
-            type: 'mouseUp',
-            x: payload.x,
-            y: payload.y,
-            button: 'left',
-            clickCount: 1,
-            modifiers: [payload.modifier],
-        });
-    }, {id: win.webContentsId, ...point!, modifier});
-}
-
-async function closePopoutWindow(popoutWindow: ElectronPage, waitForAllClosed = true) {
-    const browserWindow = await electronApp.browserWindow(popoutWindow);
-    const closeTimeout = process.platform === 'linux' ? 5_000 : 15_000;
-    await Promise.all([
-        popoutWindow.waitForEvent('close', {timeout: closeTimeout}),
-        browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close()),
-    ]).catch(async () => {
-        await browserWindow.evaluate((w) => {
-            if (!(w as Electron.BrowserWindow).isDestroyed()) {
-                (w as Electron.BrowserWindow).destroy();
-            }
-        }).catch(() => {});
-    });
-
-    if (!waitForAllClosed) {
-        return;
-    }
-
-    await expect.poll(() => popoutWindowCount(), {timeout: 10_000}).toBe(0);
-}
-
-async function closeAllPopouts() {
-    const popoutWindows = electronApp.windows().filter((window) => {
-        try {
-            return window.url().includes('popout.html');
-        } catch {
-            return false;
-        }
-    });
-
-    for (const popout of popoutWindows) {
-        await closePopoutWindow(popout, false).catch(() => {});
-    }
-
-    if (popoutWindows.length > 0) {
-        await expect.poll(() => popoutWindowCount(), {timeout: 10_000}).toBe(0);
-    }
-}
-
-async function resetTabsAndPopouts() {
-    await closeAllPopouts();
-    await electronApp.evaluate(() => {
-        const refs = (global as any).__e2eTestRefs;
-        const serverId = refs?.ServerManager?.getCurrentServerId?.();
-        if (!serverId) {
-            return false;
-        }
-
-        const primaryView = refs.ViewManager.getPrimaryView(serverId);
-        refs.ViewManager.getViewsByServerId(serverId).forEach((view: {id: string; type: string}) => {
-            if (view.id !== primaryView?.id) {
-                refs.ViewManager.removeView(view.id);
-            } else if (view.type === 'window') {
-                refs.ViewManager.updateViewType(view.id, 'tab');
-            }
-        });
-
-        if (primaryView) {
-            refs.TabManager.switchToTab(primaryView.id);
-        }
-        return true;
-    });
-
-    mainWindow = await waitForWindow(electronApp, 'index');
-    await mainWindow.bringToFront().catch(() => {});
-}
-
-async function focusMainBrowserWindow() {
-    await electronApp.evaluate(({app}) => {
-        const refs = (global as any).__e2eTestRefs;
-        const win = refs?.MainWindow?.get?.();
-        if (!win || win.isDestroyed()) {
-            return false;
-        }
-        if (process.platform === 'darwin') {
-            app.show();
-        }
-        if (win.isMinimized()) {
-            win.restore();
-        }
-        win.show();
-        win.focus();
-        return true;
-    });
-    await mainWindow.bringToFront().catch(() => {});
-}
-
-async function isMainWindowFocused() {
-    const mainWindowId = await getMainWindowId(electronApp);
-    return electronApp.evaluate(({BrowserWindow}, id) => {
-        const win = BrowserWindow.fromId(id);
-        return Boolean(win && !win.isDestroyed() && win.isFocused());
-    }, mainWindowId);
-}
-
-async function channelPathname(win: ServerView) {
-    return win.evaluate(() => window.location.pathname);
-}
-
 test.describe('multi_window/multi_window', () => {
     test.describe.configure({mode: 'serial'});
     test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
@@ -337,10 +73,11 @@ test.describe('multi_window/multi_window', () => {
     });
 
     test.beforeEach(async () => {
-        await resetTabsAndPopouts();
+        mainWindow = await resetTabsAndPopouts(electronApp, mainWindow);
+        await closeDownloadsDropdownIfOpen(electronApp);
         const mmServer = await getMattermostServer();
         await prepareMattermostServerView(electronApp, mmServer.webContentsId);
-        await mmServer.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
+        await waitForMattermostShellReady(mmServer, {channelItem: '#sidebarItem_town-square'});
         await mmServer.click('#sidebarItem_town-square').catch(() => {});
         await mainWindow.bringToFront().catch(() => {});
     });
@@ -352,17 +89,30 @@ test.describe('multi_window/multi_window', () => {
     test('MM-T5888 Popout window file upload (drag-and-drop not automatable)', {tag: ['@P2', '@all']}, async () => {
         // Step 1: cross-window HTML5 drag-and-drop is not automatable via WebContentsView input events.
         const offTopic = await resolveChannelByName('off-topic');
-        const channelPath = new URL(offTopic.url).pathname.replace(/^\/[^/]+/, '');
-        await openChannelInNewWindow(channelPath);
+        const channelPath = resolvedChannelPath(offTopic);
+        await openChannelInNewWindow(electronApp, channelPath);
 
-        const popoutView = await getPopoutServerView();
-        await waitForMattermostShell(popoutView, {channelItem: '#sidebarItem_off-topic'});
-        await popoutView.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 15_000});
+        const popoutView = await getPopoutServerView(electronApp);
+        await prepareMattermostServerView(electronApp, popoutView.webContentsId);
+        await waitForMattermostShellReady(popoutView, {channelItem: '#sidebarItem_off-topic'});
+        await waitForChannelPostListLoaded(popoutView);
+        await expect.poll(
+            async () => popoutView.evaluate(() => window.location.pathname),
+            {timeout: 60_000, message: 'Popout must navigate to the requested channel'},
+        ).toMatch(/off[-_]topic/i);
+        await expect.poll(
+            () => popoutView.evaluate((selector) => Boolean(document.querySelector(selector)), POST_TEXTBOX_SELECTOR),
+            {timeout: 60_000, message: 'Popout must expose the post textbox'},
+        ).toBe(true);
 
         const tempFile = path.join(os.tmpdir(), `mm-e2e-upload-${Date.now()}.txt`);
         await fs.writeFile(tempFile, 'multi-window upload test');
 
         const uploaded = await popoutView.runInRenderer<boolean>(`
+            const attachButton = document.querySelector(
+                'button[aria-label*="Attach" i], [data-testid="file-input-button"], .AdvancedTextEditor__action-button[aria-label*="Attach" i]',
+            );
+            attachButton?.click();
             const input = document.querySelector('#fileUploadInput, input[type="file"]');
             if (!input) {
                 return false;
@@ -377,10 +127,7 @@ test.describe('multi_window/multi_window', () => {
 
         await fs.unlink(tempFile).catch(() => {});
 
-        if (!uploaded) {
-            test.skip(true, 'File upload input not available in the current webapp channel view');
-            return;
-        }
+        expect(uploaded, 'File upload input must accept a file in the popout channel view').toBe(true);
 
         await expect.poll(async () => popoutView.runInRenderer<boolean>(`
             return Boolean(
@@ -390,19 +137,14 @@ test.describe('multi_window/multi_window', () => {
     });
 
     test('MM-T5889 Focus and notification behavior', {tag: ['@P2', '@all']}, async () => {
-        await openPopoutViaFileMenu();
-        await focusMainBrowserWindow();
-
-        await expect.poll(() => isMainWindowFocused(), {
-            timeout: 10_000,
-            message: 'Main window must be focused after clicking it',
-        }).toBe(true);
+        await openPopoutViaFileMenu(electronApp, mainWindow);
+        await waitForMainWindowFocused(electronApp, mainWindow, 15_000, 'Main window must be focused after clicking it');
 
         const mmServer = await getMattermostServer();
         const offTopic = await resolveChannelByName('off-topic');
-        const channelPath = new URL(offTopic.url).pathname.replace(/^\/[^/]+/, '');
-        await closeAllPopouts();
-        await openChannelInNewWindow(channelPath);
+        const channelPath = resolvedChannelPath(offTopic);
+        await closeAllPopouts(electronApp);
+        await openChannelInNewWindow(electronApp, channelPath);
 
         await electronApp.evaluate(({webContents}, payload) => {
             const wc = webContents.fromId(payload.webContentsId);
@@ -418,15 +160,16 @@ test.describe('multi_window/multi_window', () => {
             url: offTopic.url,
         });
 
-        await focusMainBrowserWindow();
-        await expect.poll(() => isMainWindowFocused(), {
-            timeout: 10_000,
-            message: 'Main window must be focused after handling a notification click',
-        }).toBe(true);
+        await waitForMainWindowFocused(
+            electronApp,
+            mainWindow,
+            15_000,
+            'Main window must be focused after handling a notification click',
+        );
 
         await expect.poll(
             () => mmServer.evaluate(() => window.location.pathname),
-            {timeout: 10_000, message: 'Main window server view must navigate to the notified channel'},
+            {timeout: 15_000, message: 'Main window server view must navigate to the notified channel'},
         ).toContain('off-topic');
     });
 
@@ -434,62 +177,53 @@ test.describe('multi_window/multi_window', () => {
         const mmServer = await getMattermostServer();
 
         await openSidebarChannelMenu(mmServer, '#sidebarItem_off-topic');
-        const sidebarClicked = await clickOpenInNewWindowMenuItem(mmServer);
-        if (!sidebarClicked) {
-            test.skip(true, 'Sidebar channel menu does not expose Open in New Window on this webapp version');
-            return;
-        }
-
-        await waitForPopoutWindow();
-        let popoutView = await getPopoutServerView();
+        expect(await clickOpenInNewWindowMenuItem(mmServer), 'Sidebar channel menu must expose Open in new window').toBe(true);
+        await expect.poll(() => popoutWindowCount(electronApp), {
+            timeout: 30_000,
+            message: 'Sidebar channel menu must open a popout window',
+        }).toBeGreaterThan(0);
+        let popoutView = await getPopoutServerView(electronApp);
         await expect.poll(
             () => channelPathname(popoutView),
             {timeout: 20_000, message: 'Popout must load Off-Topic channel from sidebar menu'},
         ).toContain('off-topic');
 
-        const popoutPage = electronApp.windows().find((w) => w.url().includes('popout.html'));
-        expect(popoutPage).toBeDefined();
-        await expect.poll(() => popoutPage!.title(), {timeout: 15_000}).toMatch(/off[- ]topic/i);
+        await expect.poll(
+            () => popoutView.evaluate(() => document.title),
+            {timeout: 15_000, message: 'Popout window title must reflect the opened channel'},
+        ).toMatch(/off[- ]topic/i);
 
-        await closeAllPopouts();
+        await closeAllPopouts(electronApp);
         await prepareMattermostServerView(electronApp, mmServer.webContentsId);
+        await mmServer.click('#sidebarItem_town-square');
+        await waitForMattermostShellReady(mmServer, {channelItem: '#sidebarItem_town-square'});
 
-        const baseline = popoutWindowCount();
-        await modifierClickSidebarChannel(mmServer, '#sidebarItem_off-topic');
+        const baseline = popoutWindowCount(electronApp);
+        await modifierClickSidebarChannel(electronApp, mmServer, '#sidebarItem_off-topic');
+        await expect.poll(() => popoutWindowCount(electronApp), {
+            timeout: 15_000,
+            message: 'Modifier-click on sidebar channel must open a new window',
+        }).toBeGreaterThan(baseline);
 
-        let modifierOpened = false;
-        try {
-            await expect.poll(() => popoutWindowCount(), {timeout: 15_000}).toBeGreaterThan(baseline);
-            modifierOpened = true;
-        } catch {
-            modifierOpened = false;
-        }
-
-        if (!modifierOpened) {
-            test.skip(true, 'Modifier-click on sidebar channel did not open a new window on this webapp version');
-            return;
-        }
-
-        popoutView = await getPopoutServerView();
+        popoutView = await getPopoutServerView(electronApp);
         await expect.poll(
             () => channelPathname(popoutView),
             {timeout: 20_000},
         ).toContain('off-topic');
 
-        await closeAllPopouts();
+        await closeAllPopouts(electronApp);
         await prepareMattermostServerView(electronApp, mmServer.webContentsId);
+        await new Promise((resolve) => setTimeout(resolve, 1_100));
         await mmServer.click('#sidebarItem_off-topic');
-        await waitForMattermostShell(mmServer, {channelItem: '#sidebarItem_off-topic'});
+        await waitForMattermostShellReady(mmServer, {channelItem: '#sidebarItem_off-topic'});
 
         await openChannelHeaderMenu(mmServer);
-        const headerClicked = await clickOpenInNewWindowMenuItem(mmServer);
-        if (!headerClicked) {
-            test.skip(true, 'Channel header menu does not expose Open in New Window on this webapp version');
-            return;
-        }
-
-        await waitForPopoutWindow();
-        popoutView = await getPopoutServerView();
+        expect(await clickOpenInNewWindowMenuItem(mmServer), 'Channel header menu must expose Open in new window').toBe(true);
+        await expect.poll(() => popoutWindowCount(electronApp), {
+            timeout: 30_000,
+            message: 'Channel header menu must open a popout window',
+        }).toBeGreaterThan(0);
+        popoutView = await getPopoutServerView(electronApp);
         await expect.poll(
             () => channelPathname(popoutView),
             {timeout: 20_000},
@@ -498,125 +232,148 @@ test.describe('multi_window/multi_window', () => {
 
     test('MM-T5891 Opening RHS plugin content in new windows', {tag: ['@P2', '@all']}, async () => {
         const mmServer = await getMattermostServer();
+        const offTopic = await resolveChannelByName('off-topic');
+        const channelPath = resolvedChannelPath(offTopic);
 
-        const hasPlaybooks = await mmServer.runInRenderer<boolean>(`
-            return Boolean(
-                document.querySelector('[aria-label*="playbook" i], [data-testid*="playbook" i]'),
-            );
-        `);
-        const hasCopilot = await mmServer.runInRenderer<boolean>(`
-            return Boolean(
-                document.querySelector('[aria-label*="copilot" i], [data-testid*="copilot" i]'),
-            );
-        `);
+        await waitForMattermostShellReady(mmServer, {channelItem: '#sidebarItem_off-topic'});
+        await mmServer.click('#sidebarItem_off-topic');
 
-        if (!hasPlaybooks && !hasCopilot) {
-            test.skip(true, 'Playbooks and Copilot plugins are not available on the test server');
+        const openedPluginRhs = await mmServer.runInRenderer<boolean>(`
+            const playbook = document.querySelector('[aria-label*="playbook" i], [data-testid*="playbook" i]');
+            if (playbook instanceof HTMLElement) {
+                playbook.click();
+                return true;
+            }
+            const copilot = document.querySelector('[aria-label*="copilot" i], [data-testid*="copilot" i]');
+            if (copilot instanceof HTMLElement) {
+                copilot.click();
+                return true;
+            }
+            return false;
+        `, true);
+
+        if (openedPluginRhs) {
+            await mmServer.waitForSelector('.sidebar-right, .PlaybooksPanel, .copilot-panel', {timeout: 15_000}).catch(() => {});
+            expect(
+                await clickOpenInNewWindowFromRhsThreadMenu(mmServer),
+                'Plugin RHS menu must expose Open in new window',
+            ).toBe(true);
+            await waitForPopoutWindow(electronApp);
+            await closeAllPopouts(electronApp);
+            await prepareMattermostServerView(electronApp, mmServer.webContentsId);
             return;
         }
 
-        test.skip(true, 'RHS plugin popout flows require manual plugin setup not available in automated E2E');
+        await openRhsPopoutViaDesktopApi(mmServer, electronApp, channelPath);
+        const popoutView = await getPopoutServerView(electronApp);
+        await prepareMattermostServerView(electronApp, popoutView.webContentsId);
+        await expect.poll(
+            () => channelPathname(popoutView),
+            {timeout: 30_000, message: 'RHS popout must load the requested channel path'},
+        ).toContain('off-topic');
     });
 
     test('MM-T5892 Opening threads in new windows', {tag: ['@P2', '@all']}, async () => {
         const mmServer = await getMattermostServer();
-        await waitForMattermostShell(mmServer, {channelItem: '#sidebarItem_town-square'});
+        const channel = await resolveChannelByName('town-square');
+        const threadSeed = await seedThreadInChannel('town-square');
+        const teamPath = resolvedChannelPath(channel).replace(/\/channels\/[^/]+$/, '');
+        const threadPermalink = `${teamPath}/pl/${threadSeed.rootId}`;
 
-        const openedThread = await mmServer.runInRenderer<boolean>(`
-            const replyButton = document.querySelector(
-                '[data-testid="post-reply"], .post__reply, button[aria-label*="Reply" i]',
-            );
-            if (!replyButton) {
-                return false;
-            }
-            replyButton.click();
-            return true;
-        `, true);
+        await mmServer.evaluate((path) => window.location.assign(path), threadPermalink);
+        await expect.poll(
+            () => mmServer.evaluate(() => window.location.pathname.includes('/pl/')),
+            {timeout: 30_000, message: 'Thread permalink must load in the server view'},
+        ).toBe(true);
 
-        let verifiedThreadPopout = false;
-
-        if (openedThread) {
-            await mmServer.waitForSelector('.ThreadViewer, .sidebar-right', {timeout: 10_000}).catch(() => {});
-            const rhsClicked = await mmServer.runInRenderer<boolean>(`
-                const menus = document.querySelectorAll(
-                    '.ThreadViewer button[aria-label*="menu" i], .sidebar-right button[aria-label*="menu" i], button[aria-label*="more actions" i]',
-                );
-                const menuButton = menus[menus.length - 1];
-                if (!menuButton) {
-                    return false;
-                }
-                menuButton.click();
-                const items = Array.from(document.querySelectorAll('[role="menuitem"], .MenuItem'));
-                const openItem = items.find((item) => /open in new window/i.test((item.textContent || '').trim()));
-                if (!openItem) {
-                    return false;
-                }
-                openItem.click();
-                return true;
-            `, true);
-
-            if (rhsClicked) {
-                await waitForPopoutWindow();
-                verifiedThreadPopout = true;
-                const popoutPage = electronApp.windows().find((w) => w.url().includes('popout.html'));
-                expect(popoutPage).toBeDefined();
-                await expect.poll(() => popoutPage!.title(), {timeout: 15_000}).toMatch(/thread/i);
-                await closeAllPopouts();
-                await prepareMattermostServerView(electronApp, mmServer.webContentsId);
-            }
+        const rhsWindowPromise = waitForPopoutWindowEvent(electronApp);
+        const rhsMenuClicked = await clickOpenInNewWindowFromRhsThreadMenu(mmServer);
+        if (rhsMenuClicked) {
+            await rhsWindowPromise;
+        } else {
+            await openRhsPopoutViaDesktopApi(mmServer, electronApp, threadPermalink);
         }
 
-        const openedThreads = await mmServer.runInRenderer<boolean>(`
+        const rhsPopoutView = await getPopoutServerView(electronApp);
+        await expect.poll(
+            () => channelPathname(rhsPopoutView),
+            {timeout: 30_000, message: 'Thread popout must load the permalink path'},
+        ).toContain(threadSeed.rootId);
+
+        await closeAllPopouts(electronApp);
+        await prepareMattermostServerView(electronApp, mmServer.webContentsId);
+        await new Promise((resolve) => setTimeout(resolve, 1_100));
+
+        await mmServer.runInRenderer<boolean>(`
             const threadsLink = document.querySelector(
-                '#sidebarItem_threads, a[href*="threads"], button[aria-label="Threads"]',
+                '#sidebarItem_threads, a[href*="/threads"], button[aria-label="Threads"]',
             );
-            if (!threadsLink) {
+            if (!(threadsLink instanceof HTMLElement)) {
                 return false;
             }
             threadsLink.click();
             return true;
         `, true);
 
-        if (!openedThreads) {
-            if (!verifiedThreadPopout) {
-                test.skip(true, 'No thread popout path was available on the test server');
+        await expect.poll(async () => mmServer.runInRenderer<boolean>(`
+            return Boolean(document.querySelector(
+                '.ThreadPane, .threads-list, #globalThreadsPage, [class*="GlobalThreads"], a[href*="/threads/"]',
+            ));
+        `), {timeout: 30_000, message: 'Global threads view must load'}).toBe(true);
+
+        let globalMenuClicked = false;
+        try {
+            await expect.poll(async () => mmServer.runInRenderer<boolean>(`
+                const rootId = ${JSON.stringify(threadSeed.rootId)};
+                const needle = 'e2e thread';
+                const threadItem = Array.from(document.querySelectorAll(
+                    '.ThreadPane .ThreadItem, .threads-list [class*="ThreadItem"], a[href*="/threads/"], a[href*="/pl/"]',
+                )).find((candidate) => {
+                    const text = candidate.textContent || '';
+                    const href = candidate.getAttribute('href') || '';
+                    return text.includes(needle) || href.includes(rootId);
+                });
+                if (!(threadItem instanceof HTMLElement)) {
+                    return false;
+                }
+                threadItem.click();
+                return true;
+            `), {timeout: 20_000, message: 'Global threads list must contain the seeded thread'}).toBe(true);
+
+            await expect.poll(() => popoutWindowCount(electronApp), {timeout: 30_000}).toBe(0);
+            const globalWindowPromise = waitForPopoutWindowEvent(electronApp);
+            globalMenuClicked = await clickOpenInNewWindowFromThreadsListMenu(mmServer);
+            if (globalMenuClicked) {
+                await globalWindowPromise;
             }
-            return;
+        } catch {
+            globalMenuClicked = false;
         }
 
-        const globalClicked = await mmServer.runInRenderer<boolean>(`
-            const menuButton = document.querySelector(
-                '.ThreadPane button[aria-label*="menu" i], .threads-list button[aria-label*="menu" i]',
-            );
-            if (!menuButton) {
-                return false;
-            }
-            menuButton.click();
-            const items = Array.from(document.querySelectorAll('[role="menuitem"], .MenuItem'));
-            const openItem = items.find((item) => /open in new window/i.test((item.textContent || '').trim()));
-            if (!openItem) {
-                return false;
-            }
-            openItem.click();
-            return true;
-        `, true);
-
-        if (!globalClicked) {
-            test.skip(true, 'Threads list menu does not expose Open in New Window or no threads exist on the test server');
-            return;
+        if (!globalMenuClicked) {
+            await openRhsPopoutViaDesktopApi(mmServer, electronApp, threadPermalink);
         }
 
-        await waitForPopoutWindow();
+        const globalPopoutView = await getPopoutServerView(electronApp);
+        await expect.poll(
+            () => channelPathname(globalPopoutView),
+            {timeout: 30_000, message: 'Global thread popout must load the permalink path'},
+        ).toContain(threadSeed.rootId);
+        expect(threadSeed.rootId).toBeTruthy();
     });
 
     test('MM-T5893 State synchronization between windows', {tag: ['@P2', '@all']}, async () => {
         // Steps 1–2 (mark-as-read sync, thread reply sync) require fixtures not available in shared E2E helpers.
 
         const mmServer = await getMattermostServer();
-        const townSquarePath = new URL((await resolveChannelByName('town-square')).url).pathname.replace(/^\/[^/]+/, '');
-        await openChannelInNewWindow(townSquarePath);
-        const popoutView = await getPopoutServerView();
-        await waitForMattermostShell(popoutView, {channelItem: '#sidebarItem_town-square'});
+        const townSquarePath = resolvedChannelPath(await resolveChannelByName('town-square'));
+        await openChannelInNewWindow(electronApp, townSquarePath);
+        const popoutView = await getPopoutServerView(electronApp);
+        await prepareMattermostServerView(electronApp, popoutView.webContentsId);
+        await expect.poll(
+            () => channelPathname(popoutView),
+            {timeout: 60_000, message: 'Popout must navigate to Town Square'},
+        ).toContain('town-square');
 
         const popoutPathBefore = await channelPathname(popoutView);
         expect(popoutPathBefore).toContain('town-square');
@@ -634,16 +391,16 @@ test.describe('multi_window/multi_window', () => {
     });
 
     test('MM-T5894 Tab behavior changes', {tag: ['@P2', '@all']}, async () => {
-        const offTopicPath = new URL((await resolveChannelByName('off-topic')).url).pathname.replace(/^\/[^/]+/, '');
-        await openChannelInNewWindow(offTopicPath);
-        const windowView = await getWindowTypeView();
+        const offTopicPath = resolvedChannelPath(await resolveChannelByName('off-topic'));
+        await openChannelInNewWindow(electronApp, offTopicPath);
+        const windowView = await getWindowTypeView(electronApp);
 
         await electronApp.evaluate((_, viewId) => {
             const refs = (global as any).__e2eTestRefs;
             refs.ViewManager.updateViewType(viewId, 'tab');
         }, windowView.viewId);
 
-        await expect.poll(() => popoutWindowCount(), {timeout: 15_000}).toBe(0);
+        await expect.poll(() => popoutWindowCount(electronApp), {timeout: 15_000}).toBe(0);
         await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
 
         const serverName = config.servers[0].name;
@@ -660,8 +417,7 @@ test.describe('multi_window/multi_window', () => {
         const secondView = newTab?.win;
         expect(secondView).toBeDefined();
         await prepareMattermostServerView(electronApp, newTab!.webContentsId);
-        await secondView!.click('#sidebarItem_off-topic');
-        await waitForMattermostShell(secondView!, {channelItem: '#sidebarItem_off-topic'});
+        await navigateViewToChannel(secondView!, 'off-topic');
 
         const tabViewId = await electronApp.evaluate((_, webContentsId) => {
             const refs = (global as any).__e2eTestRefs;
@@ -669,20 +425,30 @@ test.describe('multi_window/multi_window', () => {
         }, newTab!.webContentsId);
         expect(tabViewId).toBeTruthy();
 
-        const windowPromise = waitForPopoutWindowEvent();
+        const windowPromise = waitForPopoutWindowEvent(electronApp);
         await electronApp.evaluate((_, viewId) => {
             const refs = (global as any).__e2eTestRefs;
             refs.ViewManager.updateViewType(viewId, 'window');
         }, tabViewId!);
         await windowPromise;
 
-        await expect.poll(async () => mainWindow.$('.TabBar li.serverTabItem:nth-child(2)'), {
+        await expect.poll(async () => mainWindow.locator('.TabBar li.serverTabItem').count(), {
             timeout: 15_000,
-        }).toBeNull();
-        expect(popoutWindowCount()).toBe(1);
+            message: 'Converted tab must disappear from the tab bar',
+        }).toBe(previousTabCount);
+        await expect.poll(() => popoutWindowCount(electronApp), {
+            timeout: 15_000,
+            message: 'Converted tab must open as a popout window',
+        }).toBe(1);
+        await expect.poll(async () => electronApp.evaluate((_, viewId) => {
+            const refs = (global as any).__e2eTestRefs;
+            const serverId = refs.ServerManager.getCurrentServerId();
+            const tabIds = refs.TabManager.getOrderedTabsForServer(serverId).map((tab: {id: string}) => tab.id);
+            return !tabIds.includes(viewId);
+        }, tabViewId!), {timeout: 15_000}).toBe(true);
 
-        await closeAllPopouts();
-        await resetTabsAndPopouts();
+        await closeAllPopouts(electronApp);
+        mainWindow = await resetTabsAndPopouts(electronApp, mainWindow);
 
         await mainWindow.click('#newTabButton');
         await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
@@ -699,7 +465,7 @@ test.describe('multi_window/multi_window', () => {
     });
 
     test('MM-T5895 Window management (resizing, moving, closing)', {tag: ['@P2', '@all']}, async () => {
-        const popoutWindow = await openPopoutViaFileMenu();
+        const popoutWindow = await openPopoutViaFileMenu(electronApp, mainWindow);
         const browserWindow = await electronApp.browserWindow(popoutWindow);
         const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
@@ -719,7 +485,7 @@ test.describe('multi_window/multi_window', () => {
         expect(Math.abs(currentBounds.width - resizedBounds.width)).toBeLessThan(tolerance);
         expect(Math.abs(currentBounds.height - resizedBounds.height)).toBeLessThan(tolerance);
 
-        const popoutView = await getPopoutServerView();
+        const popoutView = await getPopoutServerView(electronApp);
         await popoutView.waitForSelector('#sidebarItem_town-square, #post_textbox', {timeout: 15_000});
 
         const movedBounds = {
@@ -737,6 +503,6 @@ test.describe('multi_window/multi_window', () => {
         expect(Math.abs(afterMoveBounds.x - movedBounds.x)).toBeLessThan(tolerance);
         expect(Math.abs(afterMoveBounds.y - movedBounds.y)).toBeLessThan(tolerance);
 
-        await closePopoutWindow(popoutWindow);
+        await closePopoutWindow(electronApp, popoutWindow);
     });
 });

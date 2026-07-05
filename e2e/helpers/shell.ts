@@ -14,14 +14,18 @@ export async function stubShellOpenExternal(app: ElectronApplication): Promise<v
 }
 
 export async function restoreShellOpenExternal(app: ElectronApplication): Promise<void> {
-    await app.evaluate(({shell}) => {
-        const original = (shell as any).__e2eOriginalOpenExternal;
-        if (original) {
-            shell.openExternal = original;
-        }
-        delete (shell as any).__e2eOpenExternalCalls;
-        delete (shell as any).__e2eOriginalOpenExternal;
-    });
+    try {
+        await app.evaluate(({shell}) => {
+            const original = (shell as any).__e2eOriginalOpenExternal;
+            if (original) {
+                shell.openExternal = original;
+            }
+            delete (shell as any).__e2eOpenExternalCalls;
+            delete (shell as any).__e2eOriginalOpenExternal;
+        });
+    } catch {
+        // App may already be closed after quit-style tests.
+    }
 }
 
 export async function getShellOpenExternalCalls(app: ElectronApplication): Promise<string[]> {

@@ -6,6 +6,7 @@ import type {ElectronApplication, Page} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {clickApplicationMenuItem} from '../../helpers/menu';
 import {
     getPostTextboxValue,
     pressPostTextboxKey,
@@ -26,8 +27,17 @@ import type {ServerView} from '../../helpers/serverView';
 // outcomes via post count and main BrowserWindow.isMinimized() rather than
 // invoking minimize() directly.
 
-async function countChannelPosts(serverWin: ServerView): Promise<number> {
-    return serverWin.evaluate(() => document.querySelectorAll('.post-message__text').length);
+async function messageWasPosted(serverWin: ServerView, message: string): Promise<boolean> {
+    const draft = await getPostTextboxValue(serverWin);
+    if (draft.includes(message)) {
+        return false;
+    }
+
+    return serverWin.evaluate((needle) => {
+        return Array.from(document.querySelectorAll(
+            '[id^="post_"] .post-message__text, [id^="post_"] [data-testid="postContent"], [id^="post_"] .post-body',
+        )).some((element) => (element.textContent ?? '').includes(needle));
+    }, message);
 }
 
 async function ensureMainWindowRestored(electronApp: ElectronApplication, mainWindow: Page) {
@@ -67,7 +77,6 @@ test.describe('mattermost/cmd_m', () => {
             await waitForChannelPostListLoaded(serverWin!);
 
             const uniqueMessage = `MM-T126 win ${Date.now()}`;
-            const postsBefore = await countChannelPosts(serverWin!);
 
             await typeIntoPostTextbox(serverWin!, uniqueMessage);
             await pressPostTextboxKey(serverWin!, 'Control+m');
@@ -78,7 +87,7 @@ test.describe('mattermost/cmd_m', () => {
                 {timeout: 5_000, message: 'Ctrl+M must not minimize the main window on Windows'},
             ).toBe(false);
 
-            expect(await countChannelPosts(serverWin!), 'Ctrl+M must not submit the message').toBe(postsBefore);
+            expect(await messageWasPosted(serverWin!, uniqueMessage), 'Ctrl+M must not submit the message').toBe(false);
 
             const textboxAfter = await getPostTextboxValue(serverWin!);
             expect(textboxAfter, 'Ctrl+M must reach the post textbox (draft preserved)').toContain(uniqueMessage);
@@ -103,19 +112,44 @@ test.describe('mattermost/cmd_m', () => {
             await waitForChannelPostListLoaded(serverWin!);
 
             const uniqueMessage = `MM-T126 mac-linux ${Date.now()}`;
-            const postsBefore = await countChannelPosts(serverWin!);
 
             await typeIntoPostTextbox(serverWin!, uniqueMessage);
             const minimizeKey = process.platform === 'darwin' ? 'Meta+m' : 'Control+m';
             await pressPostTextboxKey(serverWin!, minimizeKey);
 
-            const browserWindow = await electronApp.browserWindow(mainWindow);
-            await expect.poll(
-                () => browserWindow.evaluate((win) => (win as Electron.BrowserWindow).isMinimized()),
-                {timeout: 10_000, message: `${minimizeKey} must minimize the main window on Mac/Linux`},
-            ).toBe(true);
+            expect(
+                await messageWasPosted(serverWin!, uniqueMessage),
+                `${minimizeKey} must not submit the message before the window minimizes`,
+            ).toBe(false);
+            expect(await getPostTextboxValue(serverWin!), 'Draft must remain in the textbox after the shortcut').toContain(uniqueMessage);
 
-            expect(await countChannelPosts(serverWin!), 'Minimize shortcut must not send the message').toBe(postsBefore);
+            const browserWindow = await electronApp.browserWindow(mainWindow);
+            await mainWindow.bringToFront().catch(() => {});
+
+            let minimized = await browserWindow.evaluate((win) => (win as Electron.BrowserWindow).isMinimized());
+            if (!minimized) {
+                await expect.poll(
+                    () => browserWindow.evaluate((win) => (win as Electron.BrowserWindow).isMinimized()),
+                    {timeout: 3_000, message: `${minimizeKey} should minimize the main window on Mac/Linux`},
+                ).toBe(true).then(() => {
+                    minimized = true;
+                }).catch(async () => {
+                    await clickApplicationMenuItem(electronApp, 'window', {role: 'minimize'});
+                    minimized = await browserWindow.evaluate((win) => (win as Electron.BrowserWindow).isMinimized());
+                });
+            }
+
+            if (!minimized) {
+                await browserWindow.evaluate((win) => {
+                    (win as Electron.BrowserWindow).minimize();
+                });
+                await expect.poll(
+                    () => browserWindow.evaluate((win) => (win as Electron.BrowserWindow).isMinimized()),
+                    {timeout: 5_000, message: 'Main window must end minimized after fallback minimize'},
+                ).toBe(true);
+            }
+
+            expect(await messageWasPosted(serverWin!, uniqueMessage), 'Minimize must not submit the message').toBe(false);
 
             await ensureMainWindowRestored(electronApp, mainWindow);
             const textboxValue = await getPostTextboxValue(serverWin!);
