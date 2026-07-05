@@ -16,39 +16,43 @@ export async function waitForLoginForm(serverWin: ServerView): Promise<void> {
  * button with the desktop handleExternalAuth onClick handler (no injected DOM).
  */
 export async function enableOpenIdOnLoginPage(serverWin: ServerView): Promise<void> {
-    await serverWin.evaluate(() => {
-        const originalFetch = window.fetch.bind(window);
-        (window as any).__e2eOriginalFetch = originalFetch;
-        window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-            const response = await originalFetch(input, init);
-            let url: string;
-            if (typeof input === 'string') {
-                url = input;
-            } else if (input instanceof URL) {
-                url = input.href;
-            } else {
-                url = input.url;
-            }
-            if (!url.includes('/api/v4/config/client')) {
-                return response;
-            }
+    const installFetchPatch = async () => {
+        await serverWin.evaluate(() => {
+            const originalFetch = window.fetch.bind(window);
+            (window as any).__e2eOriginalFetch = originalFetch;
+            window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+                const response = await originalFetch(input, init);
+                let url: string;
+                if (typeof input === 'string') {
+                    url = input;
+                } else if (input instanceof URL) {
+                    url = input.href;
+                } else {
+                    url = input.url;
+                }
+                if (!url.includes('/api/v4/config/client')) {
+                    return response;
+                }
 
-            const json = await response.clone().json();
-            return new Response(JSON.stringify({
-                ...json,
-                EnableSignUpWithOpenId: 'true',
-                OpenIdButtonText: 'Open ID',
-            }), {
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-            });
-        };
-    });
+                const json = await response.clone().json();
+                return new Response(JSON.stringify({
+                    ...json,
+                    EnableSignUpWithOpenId: 'true',
+                    OpenIdButtonText: 'Open ID',
+                }), {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers,
+                });
+            };
+        });
+    };
 
+    await installFetchPatch();
     await serverWin.evaluate(() => {
         window.location.reload();
     });
+    await installFetchPatch();
     await waitForLoginForm(serverWin);
 }
 

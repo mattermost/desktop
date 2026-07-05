@@ -292,7 +292,7 @@ test.describe('user_attributes/user_attributes', () => {
                     return {scrollable, bottomLocked};
                 `);
 
-                expect(layout.scrollable || layout.bottomLocked, 'Popover should expose scrollable content or a fixed bottom bar').toBe(true);
+                expect(layout.scrollable, 'Popover content should be scrollable when attributes overflow').toBe(true);
                 expect(layout.bottomLocked, 'Popover bottom bar should be present').toBe(true);
 
                 await closeProfilePopover(win);

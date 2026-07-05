@@ -29,9 +29,10 @@ test.describe('right_click_menu_options/spellcheck', () => {
         async ({electronApp, serverMap}) => {
             test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
-            const serverEntry = serverMap[demoMattermostConfig.servers[0].name][0];
-            const serverWin = serverEntry.win;
-            await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
+            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+            expect(serverEntry, 'Server view must exist').toBeTruthy();
+            const serverWin = serverEntry!.win;
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await loginToMattermost(serverWin);
             await waitForMattermostShell(serverWin);
             await serverWin.click('#sidebarItem_off-topic');
@@ -61,9 +62,10 @@ test.describe('right_click_menu_options/spellcheck', () => {
         async ({electronApp, serverMap}) => {
             test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
-            const serverEntry = serverMap[demoMattermostConfig.servers[0].name][0];
-            const serverWin = serverEntry.win;
-            await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
+            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+            expect(serverEntry, 'Server view must exist').toBeTruthy();
+            const serverWin = serverEntry!.win;
+            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
             await loginToMattermost(serverWin);
             await waitForMattermostShell(serverWin);
             await serverWin.click('#sidebarItem_off-topic');

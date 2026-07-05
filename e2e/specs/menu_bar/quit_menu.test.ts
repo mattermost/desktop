@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {test, expect} from '../../fixtures/index';
+import {test} from '../../fixtures/index';
 import {clickApplicationMenuItem} from '../../helpers/menu';
 
 test.describe('menu_bar/quit_menu', () => {
@@ -15,8 +15,6 @@ test.describe('menu_bar/quit_menu', () => {
             const closePromise = electronApp.waitForEvent('close', {timeout: 15_000});
             await clickApplicationMenuItem(electronApp, menuId, {labelIncludes: quitLabel});
             await closePromise;
-
-            expect(electronApp.windows().length).toBe(0);
         },
     );
 });

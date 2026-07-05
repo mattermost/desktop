@@ -9,7 +9,7 @@ import {openSettingsWindow} from '../../helpers/settingsWindow';
 
 test.describe('settings/download_location', () => {
     test(
-        'MM-T4031 Specify default file downloads location saves to config',
+        'MM-T4031 Download location setting is visible and persisted in config (smoke)',
         {tag: ['@P2', '@all']},
         async ({electronApp}, testInfo) => {
             const settingsWindow = await openSettingsWindow(electronApp);

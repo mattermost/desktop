@@ -19,9 +19,17 @@ test.describe('history_menu', () => {
 
         // Click on Off-Topic channel
         await firstServer.click('#sidebarItem_off-topic');
+        await expect.poll(
+            async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
+            {timeout: 10_000},
+        ).toBe('Off-Topic');
 
         // Click on Town Square channel
         await firstServer.click('#sidebarItem_town-square');
+        await expect.poll(
+            async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
+            {timeout: 10_000},
+        ).toBe('Town Square');
         await firstServer.locator('[aria-label="Back"]').click();
 
         // Wait for navigation
@@ -104,7 +112,15 @@ test.describe('history_menu', () => {
             await firstServer.waitForSelector('#sidebarItem_off-topic');
 
             await firstServer.click('#sidebarItem_off-topic');
+            await expect.poll(
+                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
+                {timeout: 10_000},
+            ).toBe('Off-Topic');
             await firstServer.click('#sidebarItem_town-square');
+            await expect.poll(
+                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
+                {timeout: 10_000},
+            ).toBe('Town Square');
             await clickHistoryMenuItem(electronApp, 'Back');
             await expect.poll(
                 async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
